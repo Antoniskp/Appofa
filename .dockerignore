@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+README.md
+.DS_Store
+*.md
+!package*.json
+coverage
+.vscode
+.idea
+dist
+test-api.sh
+setup-db.sh
+doc/API_TESTING.md
