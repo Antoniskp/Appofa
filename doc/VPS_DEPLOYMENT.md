@@ -3,7 +3,7 @@
 ## Important variables to change
 -Database newsapp_user password
 
-IN nano /var/www/appofasiv8/.env
+IN nano /var/www/Appofa/.env
 CHANGE Database user and password
 CHANGE NEXT_PUBLIC_API_URL=http://185.92.192.81
 
@@ -102,8 +102,8 @@ GRANT ALL PRIVILEGES ON DATABASE newsapp TO newsapp_user;
 3. **Clone and configure application**
 ```bash
 cd /var/www
-git clone https://github.com/Antoniskp/appofasiv8.git
-cd appofasiv8
+git clone https://github.com/Antoniskp/Appofa.git
+cd Appofa
 
 # Install all dependencies (including Next.js)
 # Note: Even though 'next' is in dependencies (not devDependencies),
@@ -293,7 +293,7 @@ Use these commands on the VPS after pulling the latest changes from `main`.
 ### Update the repo from GitHub
 
 ```bash
-cd /var/www/appofasiv8
+cd /var/www/Appofa
 
 git fetch --all
 git checkout main
@@ -336,7 +336,7 @@ For a complete rebuild that ensures all changes are properly applied and old bui
 Stop both PM2 processes to prevent conflicts during the update:
 
 ```bash
-cd /var/www/appofasiv8
+cd /var/www/Appofa
 
 # Stop both backend and frontend
 pm2 stop newsapp-backend newsapp-frontend
@@ -439,7 +439,7 @@ Here's the complete sequence for copy-paste convenience:
 
 ```bash
 # Navigate to application directory
-cd /var/www/appofasiv8
+cd /var/www/Appofa
 
 # Stop running services
 pm2 stop newsapp-backend newsapp-frontend
@@ -498,7 +498,7 @@ pm2 save
 
 ```bash
 # Navigate to application directory
-cd /var/www/appofasiv8
+cd /var/www/Appofa
 
 # Stop and delete old single process
 pm2 stop newsapp
@@ -558,7 +558,7 @@ If you encounter the error `sh: 1: next: not found` when running `npm run fronte
 **Step 1: Clean and reinstall dependencies**
 
 ```bash
-cd /var/www/appofasiv8
+cd /var/www/Appofa
 
 # Remove existing node_modules and lock file
 rm -rf node_modules package-lock.json
@@ -657,7 +657,7 @@ npm --version
 **Step 4: Reinstall dependencies**
 
 ```bash
-cd /var/www/appofasiv8
+cd /var/www/Appofa
 
 # Remove existing node_modules to avoid compatibility issues
 rm -rf node_modules package-lock.json
