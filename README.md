@@ -214,10 +214,12 @@ Unauthorized users are automatically redirected to the login page.
 
 ### Frontend Variables
 - `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:3000). When running the frontend with the backend on the same host, you can omit the variable to use a relative `/api` URL.
-- `DB_DIALECT`: Database dialect to use (`postgres` or `sqlite`). Defaults to `sqlite` in non-production environments.
-- `DB_STORAGE`: SQLite storage path for non-production environments (default: `:memory:`).
 
 The `NEXT_PUBLIC_` prefix makes the variable accessible in the browser.
+
+### Backend Variables
+- `DB_DIALECT`: Database dialect to use (`postgres` or `sqlite`). Defaults to `sqlite` in non-production environments.
+- `DB_STORAGE`: SQLite storage path for non-production environments (default: `./data/dev.sqlite`).
 
 ## API Documentation
 

@@ -6,7 +6,7 @@ const isProdEnv = process.env.NODE_ENV === 'production';
 const dbDialect = process.env.DB_DIALECT || (isProdEnv ? 'postgres' : 'sqlite');
 const sqliteStorage = isTestEnv
   ? process.env.TEST_DB_STORAGE || ':memory:'
-  : process.env.DB_STORAGE || ':memory:';
+  : process.env.DB_STORAGE || './data/dev.sqlite';
 
 const sequelize = isTestEnv || dbDialect === 'sqlite'
   ? new Sequelize({
