@@ -24,14 +24,19 @@ function EditorDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchArticles();
-  }, []);
+    if (user?.id) {
+      fetchArticles();
+    }
+  }, [user?.id]);
 
   const fetchArticles = async () => {
     try {
       const response = await articleAPI.getAll({ limit: 50 });
       if (response.success) {
-        setArticles(response.data.articles || []);
+        const userArticles = (response.data.articles || []).filter(
+          (article) => article.authorId === user?.id
+        );
+        setArticles(userArticles);
       }
     } catch (error) {
       console.error('Failed to fetch articles:', error);
