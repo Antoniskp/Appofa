@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import articleCategories from '@/config/articleCategories.json';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -17,6 +18,7 @@ function EditorDashboardContent() {
     title: '',
     content: '',
     summary: '',
+    type: 'personal',
     category: '',
     status: 'draft',
     isNews: false,
@@ -47,10 +49,20 @@ function EditorDashboardContent() {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
+    
+    // If changing article type, reset category
+    if (name === 'type') {
+      setFormData({
+        ...formData,
+        [name]: value,
+        category: '', // Reset category when type changes
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: type === 'checkbox' ? checked : value,
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -66,6 +78,7 @@ function EditorDashboardContent() {
           title: '',
           content: '',
           summary: '',
+          type: 'personal',
           category: '',
           status: 'draft',
           isNews: false,
@@ -169,20 +182,60 @@ function EditorDashboardContent() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                    Category
+                  <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+                    Τύπος Άρθρου (Article Type) *
                   </label>
-                  <input
-                    type="text"
-                    id="category"
-                    name="category"
-                    value={formData.category}
+                  <select
+                    id="type"
+                    name="type"
+                    required
+                    value={formData.type}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., Technology, Sports"
-                  />
+                  >
+                    {Object.values(articleCategories.articleTypes).map((articleType) => (
+                      <option key={articleType.value} value={articleType.value}>
+                        {articleType.labelEl} ({articleType.label})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {articleCategories.articleTypes[formData.type]?.description}
+                  </p>
                 </div>
 
+                <div>
+                  <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+                    Κατηγορία (Category) {articleCategories.articleTypes[formData.type]?.categories.length > 0 && '*'}
+                  </label>
+                  {articleCategories.articleTypes[formData.type]?.categories.length > 0 ? (
+                    <select
+                      id="category"
+                      name="category"
+                      required={articleCategories.articleTypes[formData.type]?.categories.length > 0}
+                      value={formData.category}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Επιλέξτε κατηγορία...</option>
+                      {articleCategories.articleTypes[formData.type].categories.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      disabled
+                      value="Δεν απαιτείται"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                     Status *
@@ -199,20 +252,6 @@ function EditorDashboardContent() {
                     <option value="archived">Archived</option>
                   </select>
                 </div>
-              </div>
-
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  id="isNews"
-                  name="isNews"
-                  checked={formData.isNews}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="isNews" className="ml-2 block text-sm text-gray-700">
-                  Flag as news (requires moderator approval for publication)
-                </label>
               </div>
 
               <div className="flex gap-4">
@@ -275,6 +314,13 @@ function EditorDashboardContent() {
                           }`}>
                             {article.status}
                           </span>
+                          {article.type && (
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded">
+                              {article.type === 'personal' ? 'Προσωπικό' : 
+                               article.type === 'articles' ? 'Άρθρα' : 
+                               article.type === 'news' ? 'Νέα' : article.type}
+                            </span>
+                          )}
                           {article.isNews && (
                             <span className={`px-2 py-1 rounded ${
                               article.newsApprovedAt ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'

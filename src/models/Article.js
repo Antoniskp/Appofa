@@ -46,6 +46,11 @@ const Article = sequelize.define('Article', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  type: {
+    type: DataTypes.ENUM('personal', 'articles', 'news'),
+    defaultValue: 'personal',
+    allowNull: false
+  },
   isNews: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,

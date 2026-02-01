@@ -1,0 +1,48 @@
+{
+  "articleTypes": {
+    "personal": {
+      "value": "personal",
+      "label": "Personal",
+      "labelEl": "Προσωπικό",
+      "description": "Only viewed by creator",
+      "categories": []
+    },
+    "articles": {
+      "value": "articles",
+      "label": "Articles",
+      "labelEl": "Άρθρα",
+      "description": "Educational articles viewed publicly",
+      "categories": [
+        "Γενικά",
+        "Λογική",
+        "Μαθηματικά",
+        "Συνταγές",
+        "Κρατικά",
+        "Οικονομία",
+        "Πολιτική"
+      ]
+    },
+    "news": {
+      "value": "news",
+      "label": "News",
+      "labelEl": "Νέα",
+      "description": "News articles viewed publicly",
+      "categories": [
+        "Κόσμος",
+        "Ελλάδα",
+        "Οικονομία",
+        "Τεχνολογία",
+        "Πολιτική - Παραπολιτικά",
+        "Lifestyle - Πολιτισμός",
+        "Auto-moto",
+        "Sports",
+        "Υγεία - Sexuality",
+        "Ταξίδια",
+        "Απόψεις",
+        "Περιβάλλον - Σεισμοί",
+        "Μάρκετ",
+        "Στον κόσμο τους - Αστεία"
+      ]
+    }
+  }
+}
