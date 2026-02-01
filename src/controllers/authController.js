@@ -309,7 +309,7 @@ const authController = {
           } else if (!HEX_COLOR_REGEX.test(trimmedColor)) {
             return res.status(400).json({
               success: false,
-              message: 'Avatar color must be a valid hex color.'
+              message: 'Avatar color must be a valid hex color (#RRGGBB).'
             });
           } else {
             user.avatarColor = trimmedColor;
