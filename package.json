@@ -10,7 +10,8 @@
     "test:watch": "jest --watch",
     "frontend": "next dev -p 3001",
     "frontend:build": "next build",
-    "frontend:start": "next start -p 3001"
+    "frontend:start": "next start -p 3001",
+    "seed": "node src/populate-db.js"
   },
   "keywords": [],
   "author": "",
