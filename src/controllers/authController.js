@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 const { User, sequelize } = require('../models');
 require('dotenv').config();
 
-const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
+const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 
 const buildUserStats = async () => {
   const totalUsers = await User.count();
@@ -277,7 +277,7 @@ const authController = {
             let avatarUrl;
             try {
               avatarUrl = new URL(trimmedAvatar);
-            } catch (urlError) {
+            } catch (parseError) {
               return res.status(400).json({
                 success: false,
                 message: 'Avatar URL is malformed.'
@@ -306,7 +306,7 @@ const authController = {
           const trimmedColor = avatarColor.trim();
           if (trimmedColor.length === 0) {
             user.avatarColor = null;
-          } else if (!HEX_COLOR_REGEX.test(trimmedColor)) {
+          } else if (!VALID_HEX_COLOR_REGEX.test(trimmedColor)) {
             return res.status(400).json({
               success: false,
               message: 'Avatar color must be a valid hex color (#RGB or #RRGGBB).'
