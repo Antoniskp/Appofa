@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User } = require('../models');
+const { User, sequelize } = require('../models');
 require('dotenv').config();
 
 const authController = {
@@ -334,16 +334,23 @@ const authController = {
     try {
       const totalUsers = await User.count();
       const roles = ['admin', 'moderator', 'editor', 'viewer'];
-      const counts = await Promise.all(
-        roles.map(async (role) => ({
-          role,
-          count: await User.count({ where: { role } })
-        }))
-      );
-      const byRole = counts.reduce((acc, item) => {
-        acc[item.role] = item.count;
+      const counts = await User.findAll({
+        attributes: [
+          'role',
+          [sequelize.fn('COUNT', sequelize.col('role')), 'count']
+        ],
+        group: ['role']
+      });
+      const byRole = roles.reduce((acc, role) => {
+        acc[role] = 0;
         return acc;
       }, {});
+      counts.forEach((item) => {
+        const role = item.get('role');
+        if (byRole[role] !== undefined) {
+          byRole[role] = parseInt(item.get('count'), 10);
+        }
+      });
 
       res.status(200).json({
         success: true,
@@ -382,6 +389,16 @@ const authController = {
           success: false,
           message: 'User not found.'
         });
+      }
+
+      if (user.role === 'admin' && role !== 'admin') {
+        const adminCount = await User.count({ where: { role: 'admin' } });
+        if (adminCount <= 1) {
+          return res.status(400).json({
+            success: false,
+            message: 'At least one admin must remain.'
+          });
+        }
       }
 
       user.role = role;

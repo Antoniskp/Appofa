@@ -145,6 +145,16 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.user.role).toBe('moderator');
     });
 
+    test('should prevent removing last admin role', async () => {
+      const response = await request(app)
+        .put('/api/auth/users/1/role')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'viewer' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
     test('should login as moderator with updated role', async () => {
       const response = await request(app)
         .post('/api/auth/login')

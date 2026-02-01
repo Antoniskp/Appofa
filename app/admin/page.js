@@ -74,8 +74,8 @@ function AdminDashboardContent() {
               },
             });
           } else if (!statsResponse.success) {
-            const roleCounts = usersList.reduce((acc, adminUser) => {
-              acc[adminUser.role] = (acc[adminUser.role] || 0) + 1;
+            const roleCounts = usersList.reduce((acc, user) => {
+              acc[user.role] = (acc[user.role] || 0) + 1;
               return acc;
             }, {});
             setUserStats({
@@ -146,8 +146,8 @@ function AdminDashboardContent() {
         if (statsResponse.success) {
           setUserStats(statsResponse.data);
         } else {
-          const roleCounts = updatedUsers.reduce((acc, adminUser) => {
-            acc[adminUser.role] = (acc[adminUser.role] || 0) + 1;
+          const roleCounts = updatedUsers.reduce((acc, user) => {
+            acc[user.role] = (acc[user.role] || 0) + 1;
             return acc;
           }, {});
           setUserStats({
@@ -395,21 +395,21 @@ function AdminDashboardContent() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((adminUser) => (
-                    <tr key={adminUser.id}>
+                  {users.map((user) => (
+                    <tr key={user.id}>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {adminUser.username}
+                        {user.username}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {adminUser.email}
+                        {user.email}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {[adminUser.firstName, adminUser.lastName].filter(Boolean).join(' ') || '-'}
+                        {[user.firstName, user.lastName].filter(Boolean).join(' ') || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         <select
-                          value={adminUser.role}
-                          onChange={(event) => handleRoleChange(adminUser.id, event.target.value)}
+                          value={user.role}
+                          onChange={(event) => handleRoleChange(user.id, event.target.value)}
                           className="border border-gray-300 rounded px-2 py-1 text-sm"
                         >
                           <option value="viewer">Viewer</option>
@@ -419,7 +419,7 @@ function AdminDashboardContent() {
                         </select>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(adminUser.createdAt).toLocaleDateString()}
+                        {new Date(user.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
