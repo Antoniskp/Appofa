@@ -4,6 +4,8 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 
 ## Highlights
 - JWT-based authentication with role-based access control (Admin, Moderator, Editor, Viewer)
+- **GitHub OAuth integration** for easy signup/login and account linking
+- Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
 - Article types and categories with dependent dropdowns (Personal, Articles, News)
 - Next.js App Router frontend with Tailwind CSS styling
@@ -32,7 +34,23 @@ npm install
 cp .env.example .env
 ```
 
-Update `.env` with your database credentials and JWT secret, then start the API:
+Update `.env` with your database credentials and JWT secret.
+
+### Optional: Configure GitHub OAuth
+To enable GitHub OAuth for social login:
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
+2. Create a new OAuth App
+3. Set Authorization callback URL to `http://localhost:3000/api/auth/github/callback`
+4. Add the credentials to your `.env`:
+   ```
+   GITHUB_CLIENT_ID=your-github-client-id
+   GITHUB_CLIENT_SECRET=your-github-client-secret
+   GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/github/callback
+   FRONTEND_URL=http://localhost:3001
+   ```
+
+### Start the Application
+Start the API:
 ```bash
 npm run dev
 ```

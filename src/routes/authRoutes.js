@@ -9,10 +9,16 @@ const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
 router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
 
+// OAuth routes
+router.get('/oauth/config', apiLimiter, authController.getOAuthConfig);
+router.get('/github', apiLimiter, authController.initiateGithubOAuth);
+router.get('/github/callback', apiLimiter, authController.githubCallback);
+
 // Protected routes with rate limiting
 router.get('/profile', apiLimiter, authMiddleware, authController.getProfile);
 router.put('/profile', apiLimiter, authMiddleware, authController.updateProfile);
 router.put('/password', apiLimiter, authMiddleware, authController.updatePassword);
+router.delete('/github/unlink', apiLimiter, authMiddleware, authController.unlinkGithub);
 router.get('/users', apiLimiter, authMiddleware, checkRole('admin'), authController.getUsers);
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin'), authController.getUserStats);
 router.put('/users/:id/role', apiLimiter, authMiddleware, checkRole('admin'), authController.updateUserRole);
