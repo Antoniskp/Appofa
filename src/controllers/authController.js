@@ -265,25 +265,50 @@ const authController = {
       }
 
       if (avatar !== undefined) {
-        if (avatar !== null && typeof avatar !== 'string') {
+        if (avatar === null) {
+          user.avatar = null;
+        } else if (typeof avatar === 'string') {
+          const trimmedAvatar = avatar.trim();
+          if (trimmedAvatar.length === 0) {
+            user.avatar = null;
+          } else {
+            let avatarUrl;
+            try {
+              avatarUrl = new URL(trimmedAvatar);
+            } catch (urlError) {
+              return res.status(400).json({
+                success: false,
+                message: 'Avatar must be a valid URL.'
+              });
+            }
+            if (!['http:', 'https:'].includes(avatarUrl.protocol)) {
+              return res.status(400).json({
+                success: false,
+                message: 'Avatar must be a valid URL.'
+              });
+            }
+            user.avatar = trimmedAvatar;
+          }
+        } else {
           return res.status(400).json({
             success: false,
             message: 'Avatar must be a string.'
           });
         }
-        const trimmedAvatar = typeof avatar === 'string' ? avatar.trim() : '';
-        user.avatar = trimmedAvatar.length > 0 ? trimmedAvatar : null;
       }
 
       if (avatarColor !== undefined) {
-        if (avatarColor !== null && typeof avatarColor !== 'string') {
+        if (avatarColor === null) {
+          user.avatarColor = null;
+        } else if (typeof avatarColor === 'string') {
+          const trimmedColor = avatarColor.trim();
+          user.avatarColor = trimmedColor.length > 0 ? trimmedColor : null;
+        } else {
           return res.status(400).json({
             success: false,
             message: 'Avatar color must be a string.'
           });
         }
-        const trimmedColor = typeof avatarColor === 'string' ? avatarColor.trim() : '';
-        user.avatarColor = trimmedColor.length > 0 ? trimmedColor : null;
       }
 
       await user.save();

@@ -6,16 +6,18 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
+const DEFAULT_AVATAR_COLOR = '#64748b';
+
 function ProfileContent() {
   const { user, updateProfile } = useAuth();
   const searchParams = useSearchParams();
-const [profileData, setProfileData] = useState({
-  username: '',
-  firstName: '',
-  lastName: '',
-  avatar: '',
-  avatarColor: '',
-});
+  const [profileData, setProfileData] = useState({
+    username: '',
+    firstName: '',
+    lastName: '',
+    avatar: '',
+    avatarColor: '',
+  });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -86,7 +88,7 @@ const [profileData, setProfileData] = useState({
 
   const handleProfileChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = name === 'avatarColor' && value === '#64748b' ? '' : value;
+    const nextValue = name === 'avatarColor' && value === DEFAULT_AVATAR_COLOR ? '' : value;
     setProfileData((prev) => ({
       ...prev,
       [name]: nextValue,
@@ -210,7 +212,7 @@ const [profileData, setProfileData] = useState({
               <div className="flex items-center gap-4">
                 <div
                   className="h-16 w-16 rounded-full border border-gray-200 flex items-center justify-center text-white text-xl font-semibold"
-                  style={{ backgroundColor: profileData.avatarColor || '#64748b' }}
+                  style={{ backgroundColor: profileData.avatarColor || DEFAULT_AVATAR_COLOR }}
                 >
                   {profileData.avatar ? (
                     <img
@@ -265,7 +267,7 @@ const [profileData, setProfileData] = useState({
                   id="avatarColor"
                   name="avatarColor"
                   type="color"
-                  value={profileData.avatarColor || '#64748b'}
+                  value={profileData.avatarColor || DEFAULT_AVATAR_COLOR}
                   onChange={handleProfileChange}
                   className="h-11 w-full rounded-md border border-gray-300 bg-white px-2 py-1"
                 />
