@@ -221,7 +221,7 @@ function ProfileContent() {
                   {profileData.avatar && !avatarLoadError ? (
                     <img
                       src={profileData.avatar}
-                      alt={`${profileData.username || 'User'} avatar`}
+                      alt={profileData.username || 'User'}
                       className="h-full w-full rounded-full object-cover"
                       onError={() => setAvatarLoadError(true)}
                     />

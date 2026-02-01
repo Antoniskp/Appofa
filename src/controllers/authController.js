@@ -3,7 +3,7 @@ const { Op } = require('sequelize');
 const { User, sequelize } = require('../models');
 require('dotenv').config();
 
-const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 
 const buildUserStats = async () => {
   const totalUsers = await User.count();
@@ -309,7 +309,7 @@ const authController = {
           } else if (!HEX_COLOR_REGEX.test(trimmedColor)) {
             return res.status(400).json({
               success: false,
-              message: 'Avatar color must be a valid hex color (#RRGGBB).'
+              message: 'Avatar color must be a valid hex color (#RGB or #RRGGBB).'
             });
           } else {
             user.avatarColor = trimmedColor;

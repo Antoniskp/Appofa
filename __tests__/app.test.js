@@ -271,7 +271,7 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('Avatar color must be a valid hex color (#RRGGBB).');
+      expect(response.body.message).toBe('Avatar color must be a valid hex color (#RGB or #RRGGBB).');
     });
 
     test('should clear avatar fields with null', async () => {
