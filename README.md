@@ -88,17 +88,21 @@ cp .env.example .env
 
 Edit `.env` file with your configuration:
 ```env
-  DB_DIALECT=postgres
-  DB_HOST=localhost
-  DB_PORT=5432
-  DB_NAME=newsapp
-  DB_USER=postgres
-  DB_PASSWORD=your_password
-  DB_STORAGE=./data/dev.sqlite
+DB_DIALECT=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=newsapp
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_STORAGE=./data/dev.sqlite
 JWT_SECRET=your-secret-key-change-this-in-production
 PORT=3000
 NODE_ENV=development
-  NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=http://localhost:3000
+```
+If you use SQLite in development by setting DB_DIALECT=sqlite, create the storage directory before starting the server:
+```bash
+mkdir -p data
 ```
 
 5. (Optional) Populate the database with sample data:
@@ -213,13 +217,13 @@ Unauthorized users are automatically redirected to the login page.
 ## Environment Variables
 
 ### Frontend Variables
-- `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:3000). When running the frontend with the backend on the same host, you can omit the variable to use a relative `/api` URL.
+- `NEXT_PUBLIC_API_URL`: Backend API URL (default: `/api` in the browser and `http://localhost:3000` for server-side rendering). When running the frontend with the backend on the same host, you can omit the variable to use a relative `/api` URL.
 
 The `NEXT_PUBLIC_` prefix makes the variable accessible in the browser.
 
 ### Backend Variables
 - `DB_DIALECT`: Database dialect to use (`postgres` or `sqlite`). Defaults to `sqlite` in non-production environments.
-- `DB_STORAGE`: SQLite storage path for non-production environments (default: `./data/dev.sqlite`).
+- `DB_STORAGE`: SQLite storage path for non-production environments (default: `./data/dev.sqlite`). Ensure the directory exists before starting the server (e.g., `mkdir -p data`); the backend does not create it automatically.
 
 ## API Documentation
 
