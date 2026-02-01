@@ -31,7 +31,7 @@ const articleController = {
         authorId: req.user.id,
         publishedAt: status === 'published' ? new Date() : null,
         type: articleType,
-        isNews: articleType === 'news' || isNews || false
+        isNews: articleType === 'news' || isNews
       });
 
       // Fetch article with author info
@@ -232,7 +232,8 @@ const articleController = {
       }
       
       // Allow author, admin, editor, or moderator to set/unset isNews flag (legacy support)
-      if (isNews !== undefined && type === undefined && (article.authorId === req.user.id || ['admin', 'editor', 'moderator'].includes(req.user.role))) {
+      const canModifyNewsFlag = article.authorId === req.user.id || ['admin', 'editor', 'moderator'].includes(req.user.role);
+      if (isNews !== undefined && type === undefined && canModifyNewsFlag) {
         article.isNews = isNews;
         article.type = isNews ? 'news' : 'personal';
         // Clear approval if user unflags as news

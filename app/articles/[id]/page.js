@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -83,15 +84,8 @@ export default function ArticleDetailPage() {
           <div className="mb-8">
             <div className="flex flex-wrap gap-2 mb-4">
               {article.type && (
-                <span className={`inline-block text-sm px-3 py-1 rounded ${
-                  article.type === 'personal' ? 'bg-gray-100 text-gray-800' :
-                  article.type === 'articles' ? 'bg-purple-100 text-purple-800' :
-                  article.type === 'news' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {article.type === 'personal' ? 'Προσωπικό' : 
-                   article.type === 'articles' ? 'Άρθρα' : 
-                   article.type === 'news' ? 'Νέα' : article.type}
+                <span className={`inline-block text-sm px-3 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                  {getArticleTypeLabel(article.type)}
                 </span>
               )}
               {article.category && (

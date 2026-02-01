@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
+import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -315,10 +316,8 @@ function EditorDashboardContent() {
                             {article.status}
                           </span>
                           {article.type && (
-                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded">
-                              {article.type === 'personal' ? 'Προσωπικό' : 
-                               article.type === 'articles' ? 'Άρθρα' : 
-                               article.type === 'news' ? 'Νέα' : article.type}
+                            <span className={`px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                              {getArticleTypeLabel(article.type)}
                             </span>
                           )}
                           {article.isNews && (

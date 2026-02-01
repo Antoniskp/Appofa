@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
 
 /**
  * Reusable article card component
@@ -15,15 +16,8 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           <div className="flex-grow">
             <div className="flex flex-wrap gap-2 mb-2">
               {article.type && (
-                <span className={`inline-block text-xs px-2 py-1 rounded ${
-                  article.type === 'personal' ? 'bg-gray-100 text-gray-800' :
-                  article.type === 'articles' ? 'bg-purple-100 text-purple-800' :
-                  article.type === 'news' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {article.type === 'personal' ? 'Προσωπικό' : 
-                   article.type === 'articles' ? 'Άρθρα' : 
-                   article.type === 'news' ? 'Νέα' : article.type}
+                <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                  {getArticleTypeLabel(article.type)}
                 </span>
               )}
               {article.category && (
@@ -63,15 +57,8 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         <div className="p-6">
           <div className="flex flex-wrap gap-2 mb-2">
             {article.type && (
-              <span className={`inline-block text-xs px-2 py-1 rounded ${
-                article.type === 'personal' ? 'bg-gray-100 text-gray-800' :
-                article.type === 'articles' ? 'bg-purple-100 text-purple-800' :
-                article.type === 'news' ? 'bg-green-100 text-green-800' :
-                'bg-gray-100 text-gray-800'
-              }`}>
-                {article.type === 'personal' ? 'Προσωπικό' : 
-                 article.type === 'articles' ? 'Άρθρα' : 
-                 article.type === 'news' ? 'Νέα' : article.type}
+              <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                {getArticleTypeLabel(article.type)}
               </span>
             )}
             {article.category && (
