@@ -183,7 +183,7 @@ All requirements from the problem statement have been successfully implemented:
 - ✅ Application for news
 - ✅ Professional authentication (JWT)
 - ✅ PostgreSQL database
-- ✅ User roles (Admin, Editor, Viewer)
+- ✅ User roles (Admin, Moderator, Editor, Viewer)
 
 ---
 

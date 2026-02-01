@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize } = require('../src/models');
+const { sequelize, User } = require('../src/models');
 
 // Create a test app instance
 const express = require('express');
@@ -17,12 +17,37 @@ describe('News Application Integration Tests', () => {
   let adminToken;
   let editorToken;
   let viewerToken;
+  let moderatorToken;
   let testArticleId;
+  let editorUserId;
+  let moderatorUserId;
+  let viewerUserId;
+  let adminUserId;
 
   beforeAll(async () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
     await sequelize.sync({ force: true }); // Reset database for tests
+
+    await User.create({
+      username: 'testadmin',
+      email: 'admin@test.com',
+      password: 'admin123',
+      role: 'admin',
+      firstName: 'Test',
+      lastName: 'Admin'
+    });
+    const adminUser = await User.findOne({ where: { email: 'admin@test.com' } });
+    adminUserId = adminUser?.id;
+
+    const loginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({
+        email: 'admin@test.com',
+        password: 'admin123'
+      });
+
+    adminToken = loginResponse.body.data.token;
   });
 
   afterAll(async () => {
@@ -31,23 +56,23 @@ describe('News Application Integration Tests', () => {
   });
 
   describe('Authentication Tests', () => {
-    test('should register a new admin user', async () => {
+    test('should register a new user with viewer role', async () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send({
-          username: 'testadmin',
-          email: 'admin@test.com',
-          password: 'admin123',
-          role: 'admin',
+          username: 'testviewer',
+          email: 'viewer@test.com',
+          password: 'viewer123',
           firstName: 'Test',
-          lastName: 'Admin'
+          lastName: 'Viewer'
         });
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.data.token).toBeDefined();
-      expect(response.body.data.user.role).toBe('admin');
-      adminToken = response.body.data.token;
+      expect(response.body.data.user.role).toBe('viewer');
+      viewerUserId = response.body.data.user.id;
+      viewerToken = response.body.data.token;
     });
 
     test('should register a new editor user', async () => {
@@ -64,26 +89,86 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
+      expect(response.body.data.user.role).toBe('viewer');
+      editorUserId = response.body.data.user.id;
+    });
+
+    test('admin should update editor role', async () => {
+      const response = await request(app)
+        .put(`/api/auth/users/${editorUserId}/role`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'editor' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.role).toBe('editor');
+    });
+
+    test('should login as editor with updated role', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'editor@test.com',
+          password: 'editor123'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
       expect(response.body.data.user.role).toBe('editor');
       editorToken = response.body.data.token;
     });
 
-    test('should register a new viewer user', async () => {
+    test('should register a new moderator user', async () => {
       const response = await request(app)
         .post('/api/auth/register')
         .send({
-          username: 'testviewer',
-          email: 'viewer@test.com',
-          password: 'viewer123',
-          role: 'viewer',
+          username: 'testmoderator',
+          email: 'moderator@test.com',
+          password: 'moderator123',
+          role: 'moderator',
           firstName: 'Test',
-          lastName: 'Viewer'
+          lastName: 'Moderator'
         });
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.role).toBe('viewer');
-      viewerToken = response.body.data.token;
+      moderatorUserId = response.body.data.user.id;
+    });
+
+    test('admin should update moderator role', async () => {
+      const response = await request(app)
+        .put(`/api/auth/users/${moderatorUserId}/role`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'moderator' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.role).toBe('moderator');
+    });
+
+    test('should prevent removing last admin role', async () => {
+      const response = await request(app)
+        .put(`/api/auth/users/${adminUserId}/role`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ role: 'viewer' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should login as moderator with updated role', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'moderator@test.com',
+          password: 'moderator123'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.role).toBe('moderator');
+      moderatorToken = response.body.data.token;
     });
 
     test('should not register user with duplicate email', async () => {
@@ -182,6 +267,33 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
+    });
+
+    test('admin should fetch user stats', async () => {
+      const response = await request(app)
+        .get('/api/auth/users/stats')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.total).toBe(4);
+      expect(response.body.data.byRole.admin).toBe(1);
+      expect(response.body.data.byRole.editor).toBe(1);
+      expect(response.body.data.byRole.moderator).toBe(1);
+      expect(response.body.data.byRole.viewer).toBe(1);
+    });
+
+    test('admin should fetch users list', async () => {
+      const response = await request(app)
+        .get('/api/auth/users')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.users.length).toBe(4);
+      expect(response.body.data.stats.total).toBe(4);
+      const viewerUser = response.body.data.users.find((user) => user.id === viewerUserId);
+      expect(viewerUser).toBeDefined();
     });
   });
 
@@ -340,24 +452,7 @@ describe('News Application Integration Tests', () => {
   });
 
   describe('News Workflow Tests', () => {
-    let moderatorToken;
     let newsArticleId;
-
-    beforeAll(async () => {
-      // Register a moderator user
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          username: 'testmoderator',
-          email: 'moderator@test.com',
-          password: 'moderator123',
-          role: 'moderator',
-          firstName: 'Test',
-          lastName: 'Moderator'
-        });
-      
-      moderatorToken = response.body.data.token;
-    });
 
     test('should create article with isNews flag', async () => {
       const response = await request(app)

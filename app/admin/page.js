@@ -3,12 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { articleAPI } from '@/lib/api';
+import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
   const [articles, setArticles] = useState([]);
+  const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -16,7 +17,18 @@ function AdminDashboardContent() {
     archived: 0,
     pendingNews: 0,
   });
+  const [userStats, setUserStats] = useState({
+    total: 0,
+    byRole: {
+      admin: 0,
+      moderator: 0,
+      editor: 0,
+      viewer: 0,
+    },
+  });
   const [loading, setLoading] = useState(true);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [userRoleError, setUserRoleError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,7 +55,25 @@ function AdminDashboardContent() {
       }
     };
 
+    const fetchUsers = async () => {
+      try {
+        const usersResponse = await authAPI.getUsers();
+        if (usersResponse.success) {
+          const usersList = usersResponse.data.users || [];
+          setUsers(usersList);
+          if (usersResponse.data.stats) {
+            setUserStats(usersResponse.data.stats);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
     fetchData();
+    fetchUsers();
   }, []);
 
   const handleDelete = async (id) => {
@@ -79,6 +109,29 @@ function AdminDashboardContent() {
     }
   };
 
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      setUserRoleError('');
+      const response = await authAPI.updateUserRole(userId, newRole);
+      if (response.success) {
+        setUsers((prevUsers) => {
+          const index = prevUsers.findIndex((u) => u.id === userId);
+          if (index === -1) {
+            return prevUsers;
+          }
+          const updatedUsers = [...prevUsers];
+          updatedUsers[index] = response.data.user;
+          return updatedUsers;
+        });
+        if (response.data.stats) {
+          setUserStats(response.data.stats);
+        }
+      }
+    } catch (error) {
+      setUserRoleError(error.message || 'Failed to update user role.');
+    }
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -92,7 +145,7 @@ function AdminDashboardContent() {
           </p>
         </div>
 
-        {/* Statistics Cards */}
+        {/* Article Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-gray-500 text-sm font-medium">Total Articles</h3>
@@ -113,6 +166,30 @@ function AdminDashboardContent() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h3 className="text-gray-500 text-sm font-medium">Pending News</h3>
             <p className="text-3xl font-bold mt-2 text-orange-600">{stats.pendingNews}</p>
+          </div>
+        </div>
+
+        {/* User Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-gray-500 text-sm font-medium">Total Users</h3>
+            <p className="text-3xl font-bold mt-2">{userStats.total}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-gray-500 text-sm font-medium">Admins</h3>
+            <p className="text-3xl font-bold mt-2 text-purple-600">{userStats.byRole.admin}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-gray-500 text-sm font-medium">Moderators</h3>
+            <p className="text-3xl font-bold mt-2 text-blue-600">{userStats.byRole.moderator}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-gray-500 text-sm font-medium">Editors</h3>
+            <p className="text-3xl font-bold mt-2 text-green-600">{userStats.byRole.editor}</p>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h3 className="text-gray-500 text-sm font-medium">Viewers</h3>
+            <p className="text-3xl font-bold mt-2 text-gray-600">{userStats.byRole.viewer}</p>
           </div>
         </div>
 
@@ -189,7 +266,7 @@ function AdminDashboardContent() {
                         </Link>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {article.User?.username || 'Unknown'}
+                        {article.author?.username || 'Unknown'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
@@ -238,6 +315,83 @@ function AdminDashboardContent() {
                         >
                           Delete
                         </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Users Table */}
+        <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold">Users</h2>
+          </div>
+
+          {userRoleError && (
+            <div className="mx-6 mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {userRoleError}
+            </div>
+          )}
+
+          {usersLoading ? (
+            <div className="p-6 text-center">
+              <p className="text-gray-600">Loading users...</p>
+            </div>
+          ) : users.length === 0 ? (
+            <div className="p-6 text-center">
+              <p className="text-gray-600">No users found.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Username
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Name
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {users.map((user) => (
+                    <tr key={user.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.username}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {user.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {[user.firstName, user.lastName].filter(Boolean).join(' ') || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <select
+                          value={user.role}
+                          onChange={(event) => handleRoleChange(user.id, event.target.value)}
+                          className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        >
+                          <option value="viewer">Viewer</option>
+                          <option value="editor">Editor</option>
+                          <option value="moderator">Moderator</option>
+                          <option value="admin">Admin</option>
+                        </select>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(user.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}

@@ -8,35 +8,7 @@ This file contains example requests for testing the News Application API.
 
 ## Authentication Examples
 
-### 1. Register a new user (Admin)
-```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "admin",
-    "email": "admin@example.com",
-    "password": "admin123",
-    "role": "admin",
-    "firstName": "Admin",
-    "lastName": "User"
-  }'
-```
-
-### 2. Register a new user (Editor)
-```bash
-curl -X POST http://localhost:3000/api/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "editor",
-    "email": "editor@example.com",
-    "password": "editor123",
-    "role": "editor",
-    "firstName": "Editor",
-    "lastName": "User"
-  }'
-```
-
-### 3. Register a new user (Viewer)
+### 1. Register a new user (Viewer)
 ```bash
 curl -X POST http://localhost:3000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -44,8 +16,33 @@ curl -X POST http://localhost:3000/api/auth/register \
     "username": "viewer",
     "email": "viewer@example.com",
     "password": "viewer123",
-    "role": "viewer",
     "firstName": "Viewer",
+    "lastName": "User"
+  }'
+```
+
+### 2. Register a new user (Editor Request)
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "editorcandidate",
+    "email": "editorcandidate@example.com",
+    "password": "editor123",
+    "firstName": "Editor",
+    "lastName": "User"
+  }'
+```
+
+### 3. Register a new user (Moderator Request)
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "moderatorcandidate",
+    "email": "moderatorcandidate@example.com",
+    "password": "moderator123",
+    "firstName": "Moderator",
     "lastName": "User"
   }'
 ```
@@ -66,6 +63,28 @@ Save the token from the response for subsequent requests.
 ```bash
 curl -X GET http://localhost:3000/api/auth/profile \
   -H "Authorization: Bearer YOUR_TOKEN_HERE"
+```
+
+### 6. Admin: Update User Role
+```bash
+curl -X PUT http://localhost:3000/api/auth/users/USER_ID/role \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer ADMIN_TOKEN_HERE" \
+  -d '{
+    "role": "editor"
+  }'
+```
+
+### 7. Admin: Get User Stats
+```bash
+curl -X GET http://localhost:3000/api/auth/users/stats \
+  -H "Authorization: Bearer ADMIN_TOKEN_HERE"
+```
+
+### 8. Admin: Get Users
+```bash
+curl -X GET http://localhost:3000/api/auth/users \
+  -H "Authorization: Bearer ADMIN_TOKEN_HERE"
 ```
 
 ## Article Examples
@@ -120,7 +139,7 @@ curl -X DELETE http://localhost:3000/api/articles/1 \
 ## Testing Workflow
 
 1. Start the server: `npm run dev`
-2. Register users with different roles (admin, editor, viewer)
+2. Register users (they start as viewers by default)
 3. Login with each user and save their tokens
 4. Test article creation with authenticated users
 5. Test article retrieval (public and authenticated)
