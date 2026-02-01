@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { ArrowPathIcon, BookOpenIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import HomeHero from '@/components/HomeHero';
 import ArticleCard from '@/components/ArticleCard';
@@ -41,7 +42,7 @@ export default function HomePage() {
 
       {/* Latest News Section */}
       <section className="app-container py-16">
-        <h2 className="section-title">Latest News</h2>
+        <h2 className="section-title">Τελευταίες Ειδήσεις</h2>
         
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -52,10 +53,11 @@ export default function HomePage() {
         {error && (
           <EmptyState
             type="error"
-            title="Error Loading Articles"
+            title="Σφάλμα φόρτωσης άρθρων"
             description={error}
             action={{
-              text: 'Try Again',
+              text: 'Δοκιμή ξανά',
+              icon: ArrowPathIcon,
               onClick: () => window.location.reload()
             }}
           />
@@ -64,8 +66,8 @@ export default function HomePage() {
         {!loading && !error && latestArticles.length === 0 && (
           <EmptyState
             type="empty"
-            title="No Articles Found"
-            description="There are no published articles at the moment. Check back soon!"
+            title="Δεν βρέθηκαν άρθρα"
+            description="Δεν υπάρχουν δημοσιευμένα άρθρα αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
           />
         )}
 
@@ -77,8 +79,9 @@ export default function HomePage() {
 
         {latestArticles.length > 0 && (
           <div className="text-center mt-12">
-            <Link href="/articles" className="btn-primary">
-              View All Articles
+            <Link href="/articles" className="btn-primary inline-flex items-center gap-2">
+              <BookOpenIcon className="h-5 w-5" aria-hidden="true" />
+              Όλα τα άρθρα
             </Link>
           </div>
         )}

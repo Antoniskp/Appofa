@@ -3,29 +3,34 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import ArticleForm from '@/components/ArticleForm';
 import { articleAPI } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
-import articleCategories from '@/config/articleCategories.json';
-import { isCategoryRequired } from '@/lib/utils/articleTypes';
 
-function EditArticlePageContent() {
+function EditArticleContent() {
   const params = useParams();
   const router = useRouter();
-  const { user } = useAuth();
-  const [article, setArticle] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
+    subtitle: '',
     content: '',
     summary: '',
-    type: 'personal',
     category: '',
+    articleType: 'personal',
     status: 'draft',
-    isNews: false,
+    isFeatured: false,
+    coverImageUrl: '',
+    coverImageCaption: '',
+    sourceName: '',
+    sourceUrl: '',
+    tags: '',
+    locationId: null,
+    useUserLocation: false
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  const [loadError, setLoadError] = useState('');
   const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
@@ -33,20 +38,29 @@ function EditArticlePageContent() {
       try {
         const response = await articleAPI.getById(params.id);
         if (response.success) {
-          const currentArticle = response.data.article;
-          setArticle(currentArticle);
+          const article = response.data.article;
           setFormData({
-            title: currentArticle.title || '',
-            content: currentArticle.content || '',
-            summary: currentArticle.summary || '',
-            type: currentArticle.type || 'personal',
-            category: currentArticle.category || '',
-            status: currentArticle.status || 'draft',
-            isNews: Boolean(currentArticle.isNews),
+            title: article.title || '',
+            subtitle: article.subtitle || '',
+            content: article.content || '',
+            summary: article.summary || '',
+            category: article.category || '',
+            articleType: article.articleType || 'personal',
+            status: article.status || 'draft',
+            isFeatured: article.isFeatured || false,
+            coverImageUrl: article.coverImageUrl || '',
+            coverImageCaption: article.coverImageCaption || '',
+            sourceName: article.sourceName || '',
+            sourceUrl: article.sourceUrl || '',
+            tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
+            locationId: article.locationId || null,
+            useUserLocation: false
           });
+        } else {
+          setLoadError(response.message || 'Αποτυχία φόρτωσης άρθρου.');
         }
       } catch (err) {
-        setError(err.message);
+        setLoadError(err.message || 'Αποτυχία φόρτωσης άρθρου.');
       } finally {
         setLoading(false);
       }
@@ -57,38 +71,50 @@ function EditArticlePageContent() {
     }
   }, [params.id]);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    // If changing article type, reset category
-    if (name === 'type') {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-        category: '', // Reset category when type changes
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value,
-      }));
+  const handleInputChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    if (type === 'number') {
+      if (value === '') {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: '',
+        }));
+        return;
+      }
+      if (Number.isNaN(Number(value))) {
+        return;
+      }
     }
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setSubmitError('');
+    setSubmitting(true);
 
     try {
-      const response = await articleAPI.update(params.id, formData);
+      const payload = {
+        ...formData,
+        tags: formData.tags
+          ? formData.tags
+            .split(',')
+            .map(tag => tag.trim())
+            .filter(Boolean)
+          : []
+      };
+      const response = await articleAPI.update(params.id, payload);
       if (response.success) {
+        alert('Το άρθρο ενημερώθηκε με επιτυχία!');
         router.push(`/articles/${params.id}`);
       } else {
-        setSubmitError(response.message || 'Failed to update article. Please try again.');
+        setSubmitError(response.message || 'Αποτυχία ενημέρωσης άρθρου.');
       }
     } catch (err) {
-      setSubmitError(`Failed to update article: ${err.message}`);
+      setSubmitError(err.message || 'Αποτυχία ενημέρωσης άρθρου.');
     } finally {
       setSubmitting(false);
     }
@@ -97,34 +123,20 @@ function EditArticlePageContent() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-gray-600">Loading article...</p>
+        <p className="text-gray-600">Φόρτωση άρθρου...</p>
       </div>
     );
   }
 
-  if (error || !article) {
+  if (loadError) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>Error loading article: {error || 'Article not found'}</p>
+          <p>{loadError}</p>
         </div>
-        <Link href="/articles" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
-          ← Back to Articles
-        </Link>
-      </div>
-    );
-  }
-
-  const canEdit = user && (user.role === 'admin' || user.role === 'editor' || user.id === article.authorId);
-
-  if (!canEdit) {
-    return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>You do not have permission to edit this article.</p>
-        </div>
-        <Link href={`/articles/${article.id}`} className="inline-block mt-4 text-blue-600 hover:text-blue-800">
-          ← Back to Article
+        <Link href="/articles" className="inline-flex items-center gap-2 mt-4 text-blue-600 hover:text-blue-800">
+          <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+          Πίσω στα άρθρα
         </Link>
       </div>
     );
@@ -133,157 +145,27 @@ function EditArticlePageContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link href={`/articles/${article.id}`} className="inline-block mb-6 text-blue-600 hover:text-blue-800">
-          ← Back to Article
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <h1 className="text-3xl font-bold">Επεξεργασία Άρθρου</h1>
+          <Link href={`/articles/${params.id}`} className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800">
+            <ArrowLeftIcon className="h-4 w-4" aria-hidden="true" />
+            Πίσω στο άρθρο
+          </Link>
+        </div>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold mb-6">Edit Article</h1>
-
-          {submitError && (
-            <div className="mb-6 border px-4 py-3 rounded bg-red-100 border-red-400 text-red-700">
-              <p>{submitError}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Title *
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                required
-                value={formData.title}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter article title"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="summary" className="block text-sm font-medium text-gray-700 mb-1">
-                Summary
-              </label>
-              <input
-                type="text"
-                id="summary"
-                name="summary"
-                value={formData.summary}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Brief summary (optional)"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                Content *
-              </label>
-              <textarea
-                id="content"
-                name="content"
-                required
-                value={formData.content}
-                onChange={handleInputChange}
-                rows={10}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Write your article content here..."
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-                  Τύπος Άρθρου (Article Type) *
-                </label>
-                <select
-                  id="type"
-                  name="type"
-                  required
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {Object.values(articleCategories.articleTypes).map((articleType) => (
-                    <option key={articleType.value} value={articleType.value}>
-                      {articleType.labelEl} ({articleType.label})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  {articleCategories.articleTypes[formData.type]?.description}
-                </p>
-              </div>
-
-              <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Κατηγορία (Category) {isCategoryRequired(formData.type, articleCategories) && '*'}
-                </label>
-                {articleCategories.articleTypes[formData.type]?.categories.length > 0 ? (
-                  <select
-                    id="category"
-                    name="category"
-                    required={isCategoryRequired(formData.type, articleCategories)}
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Επιλέξτε κατηγορία...</option>
-                    {articleCategories.articleTypes[formData.type].categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    disabled
-                    value="Δεν απαιτείται"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
-                  />
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                  Status *
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {submitting ? 'Saving...' : 'Save Changes'}
-              </button>
-              <Link
-                href={`/articles/${article.id}`}
-                className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 transition"
-              >
-                Cancel
-              </Link>
-            </div>
-          </form>
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <ArticleForm
+            formData={formData}
+            onInputChange={handleInputChange}
+            onSubmit={handleSubmit}
+            submitting={submitting}
+            submitLabel="Αποθήκευση"
+            submitError={submitError}
+            cancelLabel="Ακύρωση"
+            cancelHref={`/articles/${params.id}`}
+            onLocationChange={(locationId) => setFormData((prev) => ({ ...prev, locationId }))}
+            onUseUserLocationChange={(checked) => setFormData((prev) => ({ ...prev, useUserLocation: checked }))}
+          />
         </div>
       </div>
     </div>
@@ -292,8 +174,8 @@ function EditArticlePageContent() {
 
 export default function EditArticlePage() {
   return (
-    <ProtectedRoute>
-      <EditArticlePageContent />
+    <ProtectedRoute allowedRoles={['admin', 'editor', 'viewer', 'moderator']}>
+      <EditArticleContent />
     </ProtectedRoute>
   );
 }
