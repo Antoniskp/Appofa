@@ -2,11 +2,16 @@ const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 const isTestEnv = process.env.NODE_ENV === 'test';
+const isProdEnv = process.env.NODE_ENV === 'production';
+const dbDialect = process.env.DB_DIALECT || (isProdEnv ? 'postgres' : 'sqlite');
+const sqliteStorage = isTestEnv
+  ? process.env.TEST_DB_STORAGE || ':memory:'
+  : process.env.DB_STORAGE || ':memory:';
 
-const sequelize = isTestEnv
+const sequelize = isTestEnv || dbDialect === 'sqlite'
   ? new Sequelize({
       dialect: 'sqlite',
-      storage: process.env.TEST_DB_STORAGE || ':memory:',
+      storage: sqliteStorage,
       logging: false
     })
   : new Sequelize(

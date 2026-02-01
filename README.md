@@ -88,15 +88,17 @@ cp .env.example .env
 
 Edit `.env` file with your configuration:
 ```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=newsapp
-DB_USER=postgres
-DB_PASSWORD=your_password
+  DB_DIALECT=postgres
+  DB_HOST=localhost
+  DB_PORT=5432
+  DB_NAME=newsapp
+  DB_USER=postgres
+  DB_PASSWORD=your_password
+  DB_STORAGE=./data/dev.sqlite
 JWT_SECRET=your-secret-key-change-this-in-production
 PORT=3000
 NODE_ENV=development
-NEXT_PUBLIC_API_URL=http://localhost:3000
+  NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
 5. (Optional) Populate the database with sample data:
@@ -211,7 +213,9 @@ Unauthorized users are automatically redirected to the login page.
 ## Environment Variables
 
 ### Frontend Variables
-- `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:3000)
+- `NEXT_PUBLIC_API_URL`: Backend API URL (default: http://localhost:3000). When running the frontend with the backend on the same host, you can omit the variable to use a relative `/api` URL.
+- `DB_DIALECT`: Database dialect to use (`postgres` or `sqlite`). Defaults to `sqlite` in non-production environments.
+- `DB_STORAGE`: SQLite storage path for non-production environments (default: `:memory:`).
 
 The `NEXT_PUBLIC_` prefix makes the variable accessible in the browser.
 
