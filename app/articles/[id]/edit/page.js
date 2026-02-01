@@ -71,8 +71,8 @@ function EditArticlePageContent() {
     try {
       const response = await articleAPI.update(params.id, formData);
       if (response.success) {
-        setSubmitSuccess('Article updated successfully. Redirecting...');
-        setTimeout(() => router.push(`/articles/${params.id}`), 500);
+        setSubmitSuccess('Article updated successfully.');
+        router.push(`/articles/${params.id}`);
       }
     } catch (err) {
       setSubmitError('Failed to update article: ' + err.message);
