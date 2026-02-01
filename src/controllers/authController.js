@@ -302,7 +302,16 @@ const authController = {
           user.avatarColor = null;
         } else if (typeof avatarColor === 'string') {
           const trimmedColor = avatarColor.trim();
-          user.avatarColor = trimmedColor.length > 0 ? trimmedColor : null;
+          if (trimmedColor.length === 0) {
+            user.avatarColor = null;
+          } else if (!/^#[0-9A-Fa-f]{6}$/.test(trimmedColor)) {
+            return res.status(400).json({
+              success: false,
+              message: 'Avatar color must be a valid hex color.'
+            });
+          } else {
+            user.avatarColor = trimmedColor;
+          }
         } else {
           return res.status(400).json({
             success: false,

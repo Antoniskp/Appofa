@@ -18,6 +18,7 @@ function ProfileContent() {
     avatar: '',
     avatarColor: '',
   });
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -86,12 +87,15 @@ function ProfileContent() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [profileData.avatar]);
+
   const handleProfileChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = name === 'avatarColor' && value === DEFAULT_AVATAR_COLOR ? '' : value;
     setProfileData((prev) => ({
       ...prev,
-      [name]: nextValue,
+      [name]: value,
     }));
   };
 
@@ -214,11 +218,12 @@ function ProfileContent() {
                   className="h-16 w-16 rounded-full border border-gray-200 flex items-center justify-center text-white text-xl font-semibold"
                   style={{ backgroundColor: profileData.avatarColor || DEFAULT_AVATAR_COLOR }}
                 >
-                  {profileData.avatar ? (
+                  {profileData.avatar && !avatarLoadError ? (
                     <img
                       src={profileData.avatar}
                       alt={`${profileData.username || 'User'} avatar`}
                       className="h-full w-full rounded-full object-cover"
+                      onError={() => setAvatarLoadError(true)}
                     />
                   ) : (
                     <span>{(profileData.username || user?.email || 'U').slice(0, 1).toUpperCase()}</span>
