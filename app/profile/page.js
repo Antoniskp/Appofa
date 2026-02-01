@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
-function ProfilePageContent() {
+function ProfileContent() {
   const { user, updateProfile } = useAuth();
   const searchParams = useSearchParams();
   const [profileData, setProfileData] = useState({
@@ -407,7 +407,13 @@ function ProfilePageContent() {
 export default function ProfilePage() {
   return (
     <ProtectedRoute allowedRoles={['admin', 'moderator', 'editor', 'viewer']}>
-      <ProfilePageContent />
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      }>
+        <ProfileContent />
+      </Suspense>
     </ProtectedRoute>
   );
 }
