@@ -63,7 +63,6 @@ describe('News Application Integration Tests', () => {
           username: 'testviewer',
           email: 'viewer@test.com',
           password: 'viewer123',
-          role: 'admin',
           firstName: 'Test',
           lastName: 'Viewer'
         });

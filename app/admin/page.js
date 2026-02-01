@@ -78,8 +78,11 @@ function AdminDashboardContent() {
         ]);
         if (usersResponse.success) {
           const usersList = usersResponse.data.users || [];
+          const hasStats = statsResponse && statsResponse.success;
           setUsers(usersList);
-          if (usersList.length === 0) {
+          if (hasStats) {
+            setUserStats(statsResponse.data);
+          } else if (usersList.length === 0) {
             setUserStats({
               total: 0,
               byRole: {
@@ -89,11 +92,10 @@ function AdminDashboardContent() {
                 viewer: 0,
               },
             });
-          } else if (!statsResponse.success) {
+          } else {
             setUserStats(calculateUserStats(usersList));
           }
-        }
-        if (statsResponse.success) {
+        } else if (statsResponse.success) {
           setUserStats(statsResponse.data);
         }
       } catch (error) {
