@@ -23,6 +23,8 @@ function EditArticlePageContent() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState('');
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -63,15 +65,17 @@ function EditArticlePageContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setSubmitError('');
+    setSubmitSuccess('');
 
     try {
       const response = await articleAPI.update(params.id, formData);
       if (response.success) {
-        alert('Article updated successfully!');
-        router.push(`/articles/${params.id}`);
+        setSubmitSuccess('Article updated successfully. Redirecting...');
+        setTimeout(() => router.push(`/articles/${params.id}`), 500);
       }
     } catch (err) {
-      alert('Failed to update article: ' + err.message);
+      setSubmitError('Failed to update article: ' + err.message);
     } finally {
       setSubmitting(false);
     }
@@ -122,6 +126,18 @@ function EditArticlePageContent() {
 
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold mb-6">Edit Article</h1>
+
+          {(submitError || submitSuccess) && (
+            <div
+              className={`mb-6 border px-4 py-3 rounded ${
+                submitError
+                  ? 'bg-red-100 border-red-400 text-red-700'
+                  : 'bg-green-100 border-green-400 text-green-700'
+              }`}
+            >
+              <p>{submitError || submitSuccess}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -215,7 +231,7 @@ function EditArticlePageContent() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="isNews" className="ml-2 block text-sm text-gray-700">
-                Flag as news (requires moderator/admin approval for publication)
+                Flag as news (requires approval for publication)
               </label>
             </div>
 
