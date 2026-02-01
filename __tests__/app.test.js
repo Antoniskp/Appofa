@@ -22,6 +22,7 @@ describe('News Application Integration Tests', () => {
   let editorUserId;
   let moderatorUserId;
   let viewerUserId;
+  let adminUserId;
 
   beforeAll(async () => {
     // Connect to test database and sync models
@@ -36,6 +37,8 @@ describe('News Application Integration Tests', () => {
       firstName: 'Test',
       lastName: 'Admin'
     });
+    const adminUser = await User.findOne({ where: { email: 'admin@test.com' } });
+    adminUserId = adminUser?.id;
 
     const loginResponse = await request(app)
       .post('/api/auth/login')
@@ -147,7 +150,7 @@ describe('News Application Integration Tests', () => {
 
     test('should prevent removing last admin role', async () => {
       const response = await request(app)
-        .put('/api/auth/users/1/role')
+        .put(`/api/auth/users/${adminUserId}/role`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ role: 'viewer' });
 

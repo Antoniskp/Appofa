@@ -29,6 +29,22 @@ function AdminDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
 
+  const calculateUserStats = (usersList) => {
+    const roleCounts = usersList.reduce((acc, currentUser) => {
+      acc[currentUser.role] = (acc[currentUser.role] || 0) + 1;
+      return acc;
+    }, {});
+    return {
+      total: usersList.length,
+      byRole: {
+        admin: roleCounts.admin || 0,
+        moderator: roleCounts.moderator || 0,
+        editor: roleCounts.editor || 0,
+        viewer: roleCounts.viewer || 0,
+      },
+    };
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -74,19 +90,7 @@ function AdminDashboardContent() {
               },
             });
           } else if (!statsResponse.success) {
-            const roleCounts = usersList.reduce((acc, user) => {
-              acc[user.role] = (acc[user.role] || 0) + 1;
-              return acc;
-            }, {});
-            setUserStats({
-              total: usersList.length,
-              byRole: {
-                admin: roleCounts.admin || 0,
-                moderator: roleCounts.moderator || 0,
-                editor: roleCounts.editor || 0,
-                viewer: roleCounts.viewer || 0,
-              },
-            });
+            setUserStats(calculateUserStats(usersList));
           }
         }
         if (statsResponse.success) {
@@ -146,19 +150,7 @@ function AdminDashboardContent() {
         if (statsResponse.success) {
           setUserStats(statsResponse.data);
         } else {
-          const roleCounts = updatedUsers.reduce((acc, user) => {
-            acc[user.role] = (acc[user.role] || 0) + 1;
-            return acc;
-          }, {});
-          setUserStats({
-            total: updatedUsers.length,
-            byRole: {
-              admin: roleCounts.admin || 0,
-              moderator: roleCounts.moderator || 0,
-              editor: roleCounts.editor || 0,
-              viewer: roleCounts.viewer || 0,
-            },
-          });
+          setUserStats(calculateUserStats(updatedUsers));
         }
       }
     } catch (error) {
