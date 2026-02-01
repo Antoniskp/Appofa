@@ -390,65 +390,75 @@ const authController = {
         });
       }
 
-      const user = await User.findByPk(id);
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
+      let updatedUser = null;
+      let roleAlreadySet = false;
 
-      if (user.role === role) {
-        const stats = await buildUserStats();
-        return res.status(200).json({
-          success: true,
-          message: 'User already has the requested role.',
-          data: {
-            user: {
-              id: user.id,
-              username: user.username,
-              email: user.email,
-              role: user.role,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              createdAt: user.createdAt
-            },
-            stats
-          }
+      await sequelize.transaction(async (transaction) => {
+        const user = await User.findByPk(id, {
+          transaction,
+          lock: transaction.LOCK.UPDATE
         });
-      }
-
-      if (user.role === 'admin' && role !== 'admin') {
-        const adminCount = await User.count({ where: { role: 'admin' } });
-        if (adminCount <= 1) {
-          return res.status(400).json({
-            success: false,
-            message: 'At least one admin must remain.'
-          });
+        if (!user) {
+          const notFoundError = new Error('USER_NOT_FOUND');
+          notFoundError.status = 404;
+          throw notFoundError;
         }
-      }
 
-      user.role = role;
-      await user.save();
+        if (user.role === role) {
+          roleAlreadySet = true;
+          updatedUser = user;
+          return;
+        }
+
+        if (user.role === 'admin' && role !== 'admin') {
+          const adminCount = await User.count({
+            where: { role: 'admin' },
+            transaction,
+            lock: transaction.LOCK.UPDATE
+          });
+          if (adminCount <= 1) {
+            const lastAdminError = new Error('LAST_ADMIN');
+            lastAdminError.status = 400;
+            throw lastAdminError;
+          }
+        }
+
+        user.role = role;
+        await user.save({ transaction });
+        updatedUser = user;
+      });
+
       const stats = await buildUserStats();
 
       res.status(200).json({
         success: true,
-        message: 'User role updated successfully.',
+        message: roleAlreadySet ? 'User already has the requested role.' : 'User role updated successfully.',
         data: {
           user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            createdAt: user.createdAt
+            id: updatedUser.id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            role: updatedUser.role,
+            firstName: updatedUser.firstName,
+            lastName: updatedUser.lastName,
+            createdAt: updatedUser.createdAt
           },
           stats
         }
       });
     } catch (error) {
+      if (error.status === 404) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found.'
+        });
+      }
+      if (error.status === 400) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one admin must remain.'
+        });
+      }
       console.error('Update user role error:', error);
       res.status(500).json({
         success: false,
