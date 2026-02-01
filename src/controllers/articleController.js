@@ -54,7 +54,7 @@ const articleController = {
   // Get all articles
   getAllArticles: async (req, res) => {
     try {
-      const { status, category, page = 1, limit = 10 } = req.query;
+      const { status, category, page = 1, limit = 10, authorId } = req.query;
       
       const where = {};
       
@@ -68,6 +68,29 @@ const articleController = {
       // Filter by category
       if (category) {
         where.category = category;
+      }
+
+      if (authorId !== undefined) {
+        const parsedAuthorId = Number(authorId);
+        if (!req.user) {
+          return res.status(401).json({
+            success: false,
+            message: 'Authentication required.'
+          });
+        }
+        if (!Number.isInteger(parsedAuthorId)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid author ID.'
+          });
+        }
+        if (req.user.role !== 'admin' && req.user.id !== parsedAuthorId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied.'
+          });
+        }
+        where.authorId = parsedAuthorId;
       }
 
       const offset = (page - 1) * limit;
