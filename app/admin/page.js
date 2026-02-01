@@ -28,6 +28,7 @@ function AdminDashboardContent() {
   });
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
+  const [userRoleError, setUserRoleError] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -110,17 +111,17 @@ function AdminDashboardContent() {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
+      setUserRoleError('');
       const response = await authAPI.updateUserRole(userId, newRole);
       if (response.success) {
         const updatedUsers = users.map((u) => (u.id === userId ? response.data.user : u));
         setUsers(updatedUsers);
-        const usersResponse = await authAPI.getUsers();
-        if (usersResponse.success && usersResponse.data.stats) {
-          setUserStats(usersResponse.data.stats);
+        if (response.data.stats) {
+          setUserStats(response.data.stats);
         }
       }
     } catch (error) {
-      alert('Failed to update user role: ' + error.message);
+      setUserRoleError(error.message || 'Failed to update user role.');
     }
   };
 
@@ -321,6 +322,12 @@ function AdminDashboardContent() {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold">Users</h2>
           </div>
+
+          {userRoleError && (
+            <div className="mx-6 mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+              {userRoleError}
+            </div>
+          )}
 
           {usersLoading ? (
             <div className="p-6 text-center">

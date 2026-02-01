@@ -410,6 +410,7 @@ const authController = {
 
       user.role = role;
       await user.save();
+      const stats = await buildUserStats();
 
       res.status(200).json({
         success: true,
@@ -423,7 +424,8 @@ const authController = {
             firstName: user.firstName,
             lastName: user.lastName,
             createdAt: user.createdAt
-          }
+          },
+          stats
         }
       });
     } catch (error) {
