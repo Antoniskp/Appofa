@@ -218,16 +218,16 @@ function ProfileContent() {
                   className="h-16 w-16 rounded-full border border-gray-200 flex items-center justify-center text-white text-xl font-semibold"
                   style={{ backgroundColor: profileData.avatarColor || DEFAULT_AVATAR_COLOR }}
                 >
-            {profileData.avatar && !avatarLoadError ? (
-              <img
-                src={profileData.avatar}
-                alt={profileData.username || 'Χρήστης'}
-                className="h-full w-full rounded-full object-cover"
-                onError={() => setAvatarLoadError(true)}
-              />
-            ) : (
-              <span>{(profileData.username || user?.email || 'Χ').slice(0, 1).toUpperCase()}</span>
-            )}
+                  {profileData.avatar && !avatarLoadError ? (
+                    <img
+                      src={profileData.avatar}
+                      alt={profileData.username ? `Εικόνα προφίλ ${profileData.username}` : 'Εικόνα προφίλ χρήστη'}
+                      className="h-full w-full rounded-full object-cover"
+                      onError={() => setAvatarLoadError(true)}
+                    />
+                  ) : (
+                    <span>{(profileData.username || user?.email || 'Α').slice(0, 1).toUpperCase()}</span>
+                  )}
                 </div>
                 <div>
               <p className="text-sm font-medium text-gray-900">Εικόνα προφίλ</p>
