@@ -73,6 +73,20 @@ function AdminDashboardContent() {
                 viewer: 0,
               },
             });
+          } else if (!statsResponse.success) {
+            const roleCounts = usersList.reduce((acc, adminUser) => {
+              acc[adminUser.role] = (acc[adminUser.role] || 0) + 1;
+              return acc;
+            }, {});
+            setUserStats({
+              total: usersList.length,
+              byRole: {
+                admin: roleCounts.admin || 0,
+                moderator: roleCounts.moderator || 0,
+                editor: roleCounts.editor || 0,
+                viewer: roleCounts.viewer || 0,
+              },
+            });
           }
         }
         if (statsResponse.success) {
