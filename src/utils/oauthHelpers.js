@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const oauthStates = new Map();
 
 // Clean up expired states every 10 minutes
-let cleanupInterval = setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [state, data] of oauthStates.entries()) {
     if (now > data.expiresAt) {
