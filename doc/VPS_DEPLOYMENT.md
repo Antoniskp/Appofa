@@ -65,7 +65,6 @@ sudo systemctl restart ssh
 
 ---
 
-
 1. **Install dependencies**
 ```bash
 # Disable Virtuozzo/OpenVZ repo if present (avoids harmless Translation-en 404s)
@@ -200,7 +199,7 @@ server {
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
+        proxy_cache_bypass $_http_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -256,6 +255,32 @@ sudo systemctl restart nginx
 
 **Note:** The symlink check ensures you can re-run these commands without encountering "File exists" errors when updating your configuration.
 
+**DNS checklist (required for domain access):**
+- Create an `A` record for `your-domain.com` pointing to `YOUR_SERVER_IP`.
+- (Optional) Create a `CNAME` record for `www` pointing to `your-domain.com`.
+- DNS propagation can take time. Verify resolution from the VPS:
+
+```bash
+# Install DNS tools (if missing)
+sudo apt install -y dnsutils
+
+# Verify DNS resolves to your VPS IP
+# Expect to see YOUR_SERVER_IP in the output
+
+dig +short your-domain.com
+dig +short www.your-domain.com
+```
+
+**Quick HTTP validation (before HTTPS):**
+
+```bash
+# Confirm the domain works over HTTP
+curl -I http://your-domain.com
+curl -I http://www.your-domain.com
+```
+
+If HTTP works but HTTPS fails, continue with the SSL steps below.
+
 **Troubleshooting: Apache welcome page still showing**
 
 If you see the Apache welcome page instead of your application, Apache may still be bound to port 80:
@@ -278,11 +303,22 @@ sudo ss -tulpn | grep :80
 
 You should see `nginx` in the output, not `apache2`.
 
-7. **Set up SSL with Let's Encrypt**
+7. **Set up SSL with Let's Encrypt (HTTPS)**
+
+Use certbot to install a free SSL certificate and configure nginx for HTTPS. Run this only after DNS resolves correctly and HTTP works:
+
 ```bash
+# Install certbot + nginx plugin
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
+
+# Request certificates for both apex domain and www
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 ```
+
+**If HTTPS fails but HTTP works:**
+- Double-check that DNS resolves to your VPS IP.
+- Ensure the `server_name` contains your domain(s).
+- Re-run `sudo nginx -t` and `sudo systemctl reload nginx` after edits.
 
 ---
 
@@ -380,7 +416,7 @@ Always use `npm ci` for a clean dependency installation:
 npm ci
 ```
 
-**Important:** Do not use `npm install --omit=dev` as it may skip dependency linking steps required for proper binary installation, even for packages in the main dependencies section (like `next`). The `npm ci` command installs exactly what's in `package-lock.json` and ensures all binaries are properly linked.
+**Important:** Do not use `npm install --omit=dev` as it may skip dependency linking steps required for proper binary installation, even for packages in the main dependencies section (like `next`).
 
 #### Step 5: Build the frontend
 
@@ -425,7 +461,7 @@ If nginx configuration was updated, reload it:
 
 ```bash
 # Test nginx configuration
-sudo nginx -t
+git -t
 
 # Reload nginx if config is valid
 sudo systemctl reload nginx
@@ -545,7 +581,7 @@ For simple code changes without dependency or configuration updates, the basic u
 
 ### Error: `sh: 1: next: not found`
 
-If you encounter the error `sh: 1: next: not found` when running `npm run frontend`, `npm run frontend:build`, or `npm run frontend:start`, this means the Next.js binary is not available in your `node_modules/.bin` directory.
+If you encounter the error `sh: 1: next: not found` when running `npm run frontend`, `npm run frontend:build`, or `npm run frontend:start`, this means the Next.js binary is not available in your PATH.
 
 #### Root Causes
 
