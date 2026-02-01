@@ -3,15 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --background: #d6d2c4;
+  --foreground: #262a3d;
 }
 
 body {
@@ -41,7 +34,7 @@ select:-webkit-autofill:focus {
   }
   
   .btn-secondary {
-    @apply inline-block bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition border border-blue-600;
+    @apply inline-block bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-seafoam transition border border-blue-600;
   }
 
   /* Card Styles */
@@ -51,15 +44,15 @@ select:-webkit-autofill:focus {
 
   /* Typography */
   .section-title {
-    @apply text-3xl font-bold mb-8 text-gray-900;
+    @apply text-3xl font-bold mb-8 text-black;
   }
 
   .headline {
-    @apply text-xl font-semibold mb-2 text-gray-900;
+    @apply text-xl font-semibold mb-2 text-black;
   }
 
   .body-copy {
-    @apply text-gray-600 leading-relaxed;
+    @apply text-black leading-relaxed;
   }
 
   /* Layout */
