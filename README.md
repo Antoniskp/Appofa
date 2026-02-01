@@ -228,7 +228,6 @@ Content-Type: application/json
   "username": "johndoe",
   "email": "john@example.com",
   "password": "securepassword",
-  "role": "viewer",  // Optional: admin, editor, or viewer (default: viewer)
   "firstName": "John",  // Optional
   "lastName": "Doe"     // Optional
 }
@@ -252,6 +251,7 @@ Response:
   }
 }
 ```
+Note: Newly registered users are assigned the `viewer` role by default. Only admins can change user roles.
 
 #### Login
 ```http
@@ -261,6 +261,29 @@ Content-Type: application/json
 {
   "email": "john@example.com",
   "password": "securepassword"
+}
+```
+
+#### Admin: User Statistics
+```http
+GET /api/auth/users/stats
+Authorization: Bearer ADMIN_TOKEN_HERE
+```
+
+#### Admin: User List
+```http
+GET /api/auth/users
+Authorization: Bearer ADMIN_TOKEN_HERE
+```
+
+#### Admin: Update User Role
+```http
+PUT /api/auth/users/:id/role
+Content-Type: application/json
+Authorization: Bearer ADMIN_TOKEN_HERE
+
+{
+  "role": "editor"
 }
 ```
 

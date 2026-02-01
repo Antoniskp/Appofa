@@ -282,7 +282,7 @@ function EditorDashboardContent() {
                               {article.category}
                             </span>
                           )}
-                          <span>By {article.User?.username || 'Unknown'}</span>
+                          <span>By {article.author?.username || 'Unknown'}</span>
                           <span>•</span>
                           <span>{new Date(article.createdAt).toLocaleDateString()}</span>
                         </div>

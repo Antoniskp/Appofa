@@ -7,7 +7,7 @@ const authController = {
   // Register a new user
   register: async (req, res) => {
     try {
-      const { username, email, password, role, firstName, lastName } = req.body;
+      const { username, email, password, firstName, lastName } = req.body;
 
       // Validate required fields
       if (!username || !email || !password) {
@@ -36,7 +36,7 @@ const authController = {
         username,
         email,
         password,
-        role: role || 'viewer',
+        role: 'viewer',
         firstName,
         lastName
       });
@@ -303,6 +303,110 @@ const authController = {
       res.status(500).json({
         success: false,
         message: 'Error updating password.',
+        error: error.message
+      });
+    }
+  },
+  // Get all users (admin only)
+  getUsers: async (req, res) => {
+    try {
+      const users = await User.findAll({
+        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'createdAt'],
+        order: [['createdAt', 'DESC']]
+      });
+
+      res.status(200).json({
+        success: true,
+        data: { users }
+      });
+    } catch (error) {
+      console.error('Get users error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching users.',
+        error: error.message
+      });
+    }
+  },
+
+  // Get user statistics (admin only)
+  getUserStats: async (req, res) => {
+    try {
+      const totalUsers = await User.count();
+      const roles = ['admin', 'moderator', 'editor', 'viewer'];
+      const counts = await Promise.all(
+        roles.map(async (role) => ({
+          role,
+          count: await User.count({ where: { role } })
+        }))
+      );
+      const byRole = counts.reduce((acc, item) => {
+        acc[item.role] = item.count;
+        return acc;
+      }, {});
+
+      res.status(200).json({
+        success: true,
+        data: {
+          total: totalUsers,
+          byRole
+        }
+      });
+    } catch (error) {
+      console.error('Get user stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching user stats.',
+        error: error.message
+      });
+    }
+  },
+
+  // Update user role (admin only)
+  updateUserRole: async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { role } = req.body;
+
+      const allowedRoles = ['admin', 'moderator', 'editor', 'viewer'];
+      if (!allowedRoles.includes(role)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid role.'
+        });
+      }
+
+      const user = await User.findByPk(id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found.'
+        });
+      }
+
+      user.role = role;
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'User role updated successfully.',
+        data: {
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            createdAt: user.createdAt
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Update user role error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating user role.',
         error: error.message
       });
     }
