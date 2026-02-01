@@ -3,6 +3,8 @@ const { Op } = require('sequelize');
 const { User, sequelize } = require('../models');
 require('dotenv').config();
 
+const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
+
 const buildUserStats = async () => {
   const totalUsers = await User.count();
   const roles = ['admin', 'moderator', 'editor', 'viewer'];
@@ -91,7 +93,9 @@ const authController = {
             email: user.email,
             role: user.role,
             firstName: user.firstName,
-            lastName: user.lastName
+            lastName: user.lastName,
+            avatar: user.avatar,
+            avatarColor: user.avatarColor
           }
         }
       });
@@ -161,7 +165,9 @@ const authController = {
             email: user.email,
             role: user.role,
             firstName: user.firstName,
-            lastName: user.lastName
+            lastName: user.lastName,
+            avatar: user.avatar,
+            avatarColor: user.avatarColor
           }
         }
       });
@@ -206,7 +212,7 @@ const authController = {
   // Update current user profile (excluding email)
   updateProfile: async (req, res) => {
     try {
-      const { username, firstName, lastName } = req.body;
+      const { username, firstName, lastName, avatar, avatarColor } = req.body;
 
       const user = await User.findByPk(req.user.id);
 
@@ -258,6 +264,62 @@ const authController = {
 
       if (lastName !== undefined) {
         user.lastName = lastName;
+      }
+
+      if (avatar !== undefined) {
+        if (avatar === null) {
+          user.avatar = null;
+        } else if (typeof avatar === 'string') {
+          const trimmedAvatar = avatar.trim();
+          if (trimmedAvatar.length === 0) {
+            user.avatar = null;
+          } else {
+            let avatarUrl;
+            try {
+              avatarUrl = new URL(trimmedAvatar);
+            } catch (parseError) {
+              return res.status(400).json({
+                success: false,
+                message: 'Avatar URL is malformed.'
+              });
+            }
+            if (!['http:', 'https:'].includes(avatarUrl.protocol)) {
+              return res.status(400).json({
+                success: false,
+                message: 'Avatar URL must use HTTP or HTTPS protocol.'
+              });
+            }
+            user.avatar = trimmedAvatar;
+          }
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'Avatar must be a string.'
+          });
+        }
+      }
+
+      if (avatarColor !== undefined) {
+        if (avatarColor === null) {
+          user.avatarColor = null;
+        } else if (typeof avatarColor === 'string') {
+          const trimmedColor = avatarColor.trim();
+          if (trimmedColor.length === 0) {
+            user.avatarColor = null;
+          } else if (!VALID_HEX_COLOR_REGEX.test(trimmedColor)) {
+            return res.status(400).json({
+              success: false,
+              message: 'Avatar color must be a valid hex color (#RGB or #RRGGBB).'
+            });
+          } else {
+            user.avatarColor = trimmedColor;
+          }
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'Avatar color must be a string.'
+          });
+        }
       }
 
       await user.save();

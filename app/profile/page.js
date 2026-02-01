@@ -6,6 +6,8 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
+const DEFAULT_AVATAR_COLOR = '#64748b';
+
 function ProfileContent() {
   const { user, updateProfile } = useAuth();
   const searchParams = useSearchParams();
@@ -13,7 +15,10 @@ function ProfileContent() {
     username: '',
     firstName: '',
     lastName: '',
+    avatar: '',
+    avatarColor: '',
   });
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -32,11 +37,13 @@ function ProfileContent() {
       try {
         const response = await authAPI.getProfile();
         if (response.success) {
-          const { username, firstName, lastName, githubId } = response.data.user;
+          const { username, firstName, lastName, githubId, avatar, avatarColor } = response.data.user;
           setProfileData({
             username: username || '',
             firstName: firstName || '',
             lastName: lastName || '',
+            avatar: avatar || '',
+            avatarColor: avatarColor || '',
           });
           setGithubLinked(!!githubId);
         }
@@ -79,6 +86,10 @@ function ProfileContent() {
       setProfileError(errorMessages[error] || 'Failed to link GitHub account');
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [profileData.avatar]);
 
   const handleProfileChange = (event) => {
     const { name, value } = event.target;
@@ -201,6 +212,29 @@ function ProfileContent() {
             </div>
           )}
           <form className="space-y-4" onSubmit={handleProfileSubmit}>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div
+                  className="h-16 w-16 rounded-full border border-gray-200 flex items-center justify-center text-white text-xl font-semibold"
+                  style={{ backgroundColor: profileData.avatarColor || DEFAULT_AVATAR_COLOR }}
+                >
+                  {profileData.avatar && !avatarLoadError ? (
+                    <img
+                      src={profileData.avatar}
+                      alt={profileData.username || 'User'}
+                      className="h-full w-full rounded-full object-cover"
+                      onError={() => setAvatarLoadError(true)}
+                    />
+                  ) : (
+                    <span>{(profileData.username || user?.email || 'U').slice(0, 1).toUpperCase()}</span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-900">Profile avatar</p>
+                  <p className="text-xs text-gray-500">Add an image URL or use your initials.</p>
+                </div>
+              </div>
+            </div>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
                 Username
@@ -214,6 +248,35 @@ function ProfileContent() {
                 onChange={handleProfileChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
+                  Avatar image URL
+                </label>
+                <input
+                  id="avatar"
+                  name="avatar"
+                  type="url"
+                  value={profileData.avatar}
+                  onChange={handleProfileChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="https://example.com/avatar.png"
+                />
+              </div>
+              <div>
+                <label htmlFor="avatarColor" className="block text-sm font-medium text-gray-700 mb-1">
+                  Avatar color
+                </label>
+                <input
+                  id="avatarColor"
+                  name="avatarColor"
+                  type="color"
+                  value={profileData.avatarColor || DEFAULT_AVATAR_COLOR}
+                  onChange={handleProfileChange}
+                  className="h-11 w-full rounded-md border border-gray-300 bg-white px-2 py-1"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

@@ -234,7 +234,9 @@ describe('News Application Integration Tests', () => {
         .send({
           username: 'updatedadmin',
           firstName: 'Updated',
-          lastName: 'Admin'
+          lastName: 'Admin',
+          avatar: 'https://example.com/avatar.png',
+          avatarColor: '#1d4ed8'
         });
 
       expect(response.status).toBe(200);
@@ -242,6 +244,49 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.user.username).toBe('updatedadmin');
       expect(response.body.data.user.firstName).toBe('Updated');
       expect(response.body.data.user.lastName).toBe('Admin');
+      expect(response.body.data.user.avatar).toBe('https://example.com/avatar.png');
+      expect(response.body.data.user.avatarColor).toBe('#1d4ed8');
+    });
+
+    test('should reject invalid avatar URL', async () => {
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          avatar: 'not-a-url'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Avatar URL is malformed.');
+    });
+
+    test('should reject invalid avatar color format', async () => {
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          avatarColor: 'blue'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Avatar color must be a valid hex color (#RGB or #RRGGBB).');
+    });
+
+    test('should clear avatar fields with null', async () => {
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          avatar: null,
+          avatarColor: null
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.avatar).toBeNull();
+      expect(response.body.data.user.avatarColor).toBeNull();
     });
 
     test('should update password with current password', async () => {
