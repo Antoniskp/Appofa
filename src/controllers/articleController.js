@@ -1,5 +1,6 @@
 const { Article, User } = require('../models');
 const { Op } = require('sequelize');
+const { ARTICLE_TYPES } = require('../constants/articleTypes');
 
 const articleController = {
   // Create a new article
@@ -219,7 +220,7 @@ const articleController = {
       }
       
       // Update article type
-      if (type !== undefined && ['personal', 'articles', 'news'].includes(type)) {
+      if (type !== undefined && ARTICLE_TYPES.includes(type)) {
         article.type = type;
         // Keep isNews in sync with type for backward compatibility
         article.isNews = type === 'news';
