@@ -71,7 +71,7 @@ function EditArticlePageContent() {
       if (response.success) {
         router.push(`/articles/${params.id}`);
       } else {
-        setSubmitError(response.message || 'Failed to update article: No error details provided.');
+        setSubmitError(response.message || 'An unexpected error occurred while updating the article. Please try again.');
       }
     } catch (err) {
       setSubmitError(`Failed to update article: ${err.message}`);
@@ -127,11 +127,7 @@ function EditArticlePageContent() {
           <h1 className="text-3xl font-bold mb-6">Edit Article</h1>
 
           {submitError && (
-            <div
-              className={`mb-6 border px-4 py-3 rounded ${
-                'bg-red-100 border-red-400 text-red-700'
-              }`}
-            >
+            <div className="mb-6 border px-4 py-3 rounded bg-red-100 border-red-400 text-red-700">
               <p>{submitError}</p>
             </div>
           )}
