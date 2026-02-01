@@ -70,8 +70,27 @@ const articleController = {
         where.category = category;
       }
 
-      if (authorId) {
-        where.authorId = authorId;
+      if (authorId !== undefined) {
+        const parsedAuthorId = Number(authorId);
+        if (!req.user) {
+          return res.status(401).json({
+            success: false,
+            message: 'Authentication required.'
+          });
+        }
+        if (!Number.isInteger(parsedAuthorId)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid author ID.'
+          });
+        }
+        if (req.user.role !== 'admin' && req.user.id !== parsedAuthorId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied.'
+          });
+        }
+        where.authorId = parsedAuthorId;
       }
 
       const offset = (page - 1) * limit;

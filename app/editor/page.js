@@ -24,6 +24,9 @@ function EditorDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
 
   const fetchArticles = useCallback(async () => {
+    if (!user?.id) {
+      return;
+    }
     try {
       const response = await articleAPI.getAll({ authorId: user?.id, limit: 50 });
       if (response.success) {
