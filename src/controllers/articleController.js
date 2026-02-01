@@ -54,7 +54,7 @@ const articleController = {
   // Get all articles
   getAllArticles: async (req, res) => {
     try {
-      const { status, category, page = 1, limit = 10 } = req.query;
+      const { status, category, page = 1, limit = 10, authorId } = req.query;
       
       const where = {};
       
@@ -68,6 +68,10 @@ const articleController = {
       // Filter by category
       if (category) {
         where.category = category;
+      }
+
+      if (authorId) {
+        where.authorId = authorId;
       }
 
       const offset = (page - 1) * limit;

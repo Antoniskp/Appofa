@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -23,27 +23,24 @@ function EditorDashboardContent() {
   });
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchArticles();
-    }
-  }, [user?.id]);
-
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     try {
-      const response = await articleAPI.getAll({ limit: 50 });
+      const response = await articleAPI.getAll({ authorId: user?.id, limit: 50 });
       if (response.success) {
-        const userArticles = (response.data.articles || []).filter(
-          (article) => article.authorId === user?.id
-        );
-        setArticles(userArticles);
+        setArticles(response.data.articles || []);
       }
     } catch (error) {
       console.error('Failed to fetch articles:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchArticles();
+    }
+  }, [user?.id, fetchArticles]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
