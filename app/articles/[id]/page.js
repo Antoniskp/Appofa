@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
+import { getArticleTypeLabel, getArticleTypeClasses, getArticleStatusLabel } from '@/lib/utils/articleTypes';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -35,23 +35,23 @@ export default function ArticleDetailPage() {
   }, [params.id]);
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this article?')) {
+    if (!confirm('Είστε βέβαιοι ότι θέλετε να διαγράψετε αυτό το άρθρο;')) {
       return;
     }
 
     try {
       await articleAPI.delete(params.id);
-      alert('Article deleted successfully');
+      alert('Το άρθρο διαγράφηκε επιτυχώς');
       router.push('/articles');
     } catch (err) {
-      alert('Failed to delete article: ' + err.message);
+      alert('Αποτυχία διαγραφής άρθρου: ' + err.message);
     }
   };
 
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-gray-600">Loading article...</p>
+        <p className="text-gray-600">Φόρτωση άρθρου...</p>
       </div>
     );
   }
@@ -60,10 +60,10 @@ export default function ArticleDetailPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>Error loading article: {error || 'Article not found'}</p>
+          <p>Σφάλμα φόρτωσης άρθρου: {error || 'Το άρθρο δεν βρέθηκε'}</p>
         </div>
         <Link href="/articles" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
-          ← Back to Articles
+          ← Πίσω στα άρθρα
         </Link>
       </div>
     );
@@ -76,7 +76,7 @@ export default function ArticleDetailPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link href="/articles" className="inline-block mb-6 text-blue-600 hover:text-blue-800">
-          ← Back to Articles
+          ← Πίσω στα άρθρα
         </Link>
 
         <div className="bg-white rounded-lg shadow-md p-8">
@@ -95,7 +95,7 @@ export default function ArticleDetailPage() {
               )}
               {article.status !== 'published' && (
                 <span className="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded">
-                  {article.status}
+                  {getArticleStatusLabel(article.status)}
                 </span>
               )}
             </div>
@@ -103,17 +103,17 @@ export default function ArticleDetailPage() {
             
             <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b border-gray-200 pb-4">
               <div className="flex items-center">
-                <span className="font-medium">By {article.author?.username || 'Unknown'}</span>
+                <span className="font-medium">Από {article.author?.username || 'Άγνωστος'}</span>
               </div>
               <span>•</span>
               <div>
-                <span>Published: {new Date(article.createdAt).toLocaleDateString()}</span>
+                <span>Δημοσιεύθηκε: {new Date(article.createdAt).toLocaleDateString()}</span>
               </div>
               {article.updatedAt !== article.createdAt && (
                 <>
                   <span>•</span>
                   <div>
-                    <span>Updated: {new Date(article.updatedAt).toLocaleDateString()}</span>
+                    <span>Ενημερώθηκε: {new Date(article.updatedAt).toLocaleDateString()}</span>
                   </div>
                 </>
               )}
@@ -144,7 +144,7 @@ export default function ArticleDetailPage() {
                   href={`/articles/${article.id}/edit`}
                   className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
                 >
-                  Edit Article
+                  Επεξεργασία άρθρου
                 </Link>
               )}
               {canDelete && (
@@ -152,7 +152,7 @@ export default function ArticleDetailPage() {
                   onClick={handleDelete}
                   className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
                 >
-                  Delete Article
+                  Διαγραφή άρθρου
                 </button>
               )}
             </div>

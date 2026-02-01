@@ -2,16 +2,16 @@
   "articleTypes": {
     "personal": {
       "value": "personal",
-      "label": "Personal",
+      "label": "Προσωπικό",
       "labelEl": "Προσωπικό",
-      "description": "Only viewed by creator",
+      "description": "Ορατό μόνο από τον δημιουργό",
       "categories": []
     },
     "articles": {
       "value": "articles",
-      "label": "Articles",
+      "label": "Άρθρα",
       "labelEl": "Άρθρα",
-      "description": "Educational articles viewed publicly",
+      "description": "Εκπαιδευτικά άρθρα διαθέσιμα δημόσια",
       "categories": [
         "Γενικά",
         "Λογική",
@@ -24,9 +24,9 @@
     },
     "news": {
       "value": "news",
-      "label": "News",
+      "label": "Νέα",
       "labelEl": "Νέα",
-      "description": "News articles viewed publicly",
+      "description": "Ειδησεογραφικά άρθρα διαθέσιμα δημόσια",
       "categories": [
         "Κόσμος",
         "Ελλάδα",
@@ -35,8 +35,8 @@
         "Πολιτική - Παραπολιτικά",
         "Lifestyle - Πολιτισμός",
         "Auto-moto",
-        "Sports",
-        "Υγεία - Sexuality",
+        "Αθλητικά",
+        "Υγεία - Σεξουαλικότητα",
         "Ταξίδια",
         "Απόψεις",
         "Περιβάλλον - Σεισμοί",

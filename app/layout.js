@@ -4,13 +4,13 @@ import Footer from '@/components/Footer';
 import './globals.css';
 
 export const metadata = {
-  title: 'News App',
-  description: 'Your trusted source for the latest news',
+  title: 'Εφαρμογή Ειδήσεων',
+  description: 'Η αξιόπιστη πηγή σας για τα τελευταία νέα',
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
+    <html lang="el">
       <body className="flex flex-col min-h-screen">
         <AuthProvider>
           <TopNav />

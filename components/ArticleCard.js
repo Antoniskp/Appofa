@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
+import { getArticleTypeLabel, getArticleTypeClasses, getArticleStatusLabel } from '@/lib/utils/articleTypes';
 
 /**
  * Reusable article card component
@@ -35,13 +35,13 @@ export default function ArticleCard({ article, variant = 'grid' }) {
               {article.summary || article.content?.substring(0, 200) + '...'}
             </p>
             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-              <span>By {article.author?.username || 'Unknown'}</span>
+              <span>Από {article.author?.username || 'Άγνωστος'}</span>
               <span>•</span>
               <span>{new Date(article.createdAt).toLocaleDateString()}</span>
               {article.status !== 'published' && (
                 <>
                   <span>•</span>
-                  <span className="text-orange-600 font-medium">{article.status}</span>
+                  <span className="text-orange-600 font-medium">{getArticleStatusLabel(article.status)}</span>
                 </>
               )}
             </div>
@@ -50,7 +50,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             href={`/articles/${article.id}`}
             className="inline-block mt-4 md:mt-0 md:ml-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition whitespace-nowrap"
           >
-            Read More
+            Διαβάστε περισσότερα
           </Link>
         </div>
       ) : (
@@ -76,14 +76,14 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             {article.summary || article.content?.substring(0, 150) + '...'}
           </p>
           <div className="flex justify-between items-center text-sm text-gray-500">
-            <span>By {article.author?.username || 'Unknown'}</span>
+            <span>Από {article.author?.username || 'Άγνωστος'}</span>
             <span>{new Date(article.createdAt).toLocaleDateString()}</span>
           </div>
           <Link
             href={`/articles/${article.id}`}
             className="inline-block mt-4 text-blue-600 hover:text-blue-800 font-medium"
           >
-            Read More →
+            Διαβάστε περισσότερα →
           </Link>
         </div>
       )}

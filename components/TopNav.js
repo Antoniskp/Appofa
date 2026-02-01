@@ -73,7 +73,7 @@ export default function TopNav() {
       <div className="app-container">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center" aria-label="Appofasi home">
+            <Link href="/" className="flex items-center" aria-label="Αρχική Appofasi">
               <Image
                 src="/images/branding/appofasi-high-resolution-logo-transparent.png"
                 alt="Appofasi"
@@ -88,13 +88,13 @@ export default function TopNav() {
                 href="/"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/')}`}
               >
-                Home
+                Αρχική
               </Link>
               <Link
                 href="/articles"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/articles')}`}
               >
-                Articles
+                Άρθρα
               </Link>
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function TopNav() {
                   aria-controls="desktop-user-menu"
                   id="desktop-user-menu-button"
                 >
-                  Hello {user.username}
+                  Γεια σου {user.username}
                   <ChevronDownIcon
                     className={`h-4 w-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
                     aria-hidden="true"
@@ -136,7 +136,7 @@ export default function TopNav() {
                       className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/profile')}`}
                     >
                       <UserCircleIcon className="h-4 w-4" aria-hidden="true" />
-                      Profile
+                      Προφίλ
                     </Link>
                     {user.role === 'admin' && (
                       <Link
@@ -145,7 +145,7 @@ export default function TopNav() {
                         className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/admin')}`}
                       >
                         <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
-                        Admin
+                        Διαχείριση
                       </Link>
                     )}
                     {(user.role === 'admin' || user.role === 'editor') && (
@@ -155,7 +155,7 @@ export default function TopNav() {
                         className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/editor')}`}
                       >
                         <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
-                        Editor
+                        Συντάκτης
                       </Link>
                     )}
                     <button
@@ -164,7 +164,7 @@ export default function TopNav() {
                     className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-seafoam/40"
                   >
                     <ArrowRightOnRectangleIcon className="h-4 w-4" aria-hidden="true" />
-                    Logout
+                    Αποσύνδεση
                   </button>
                   </div>
                 )}
@@ -176,14 +176,14 @@ export default function TopNav() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-700"
                 >
                   <ArrowLeftOnRectangleIcon className="h-4 w-4" aria-hidden="true" />
-                  Login
+                  Σύνδεση
                 </Link>
                 <Link
                   href="/register"
                   className="inline-flex items-center gap-2 text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                 >
                   <UserPlusIcon className="h-4 w-4" aria-hidden="true" />
-                  Register
+                  Εγγραφή
                 </Link>
               </>
             )}
@@ -195,7 +195,7 @@ export default function TopNav() {
             aria-expanded={isMenuOpen}
             onClick={() => setIsMenuOpen((open) => !open)}
           >
-            <span className="sr-only">Open main menu</span>
+            <span className="sr-only">Άνοιγμα κύριου μενού</span>
             {isMenuOpen ? (
               <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -214,13 +214,13 @@ export default function TopNav() {
             href="/"
             className={`block text-base font-medium text-blue-900 ${isActive('/')}`}
           >
-            Home
+            Αρχική
           </Link>
           <Link
             href="/articles"
             className={`block text-base font-medium text-blue-900 ${isActive('/articles')}`}
           >
-            Articles
+            Άρθρα
           </Link>
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
@@ -241,7 +241,7 @@ export default function TopNav() {
                 aria-controls="mobile-user-menu"
                 id="mobile-user-menu-button"
               >
-                <span>Hello {user.username}</span>
+                <span>Γεια σου {user.username}</span>
                 <ChevronDownIcon
                   className={`h-4 w-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
                   aria-hidden="true"
@@ -260,7 +260,7 @@ export default function TopNav() {
                   className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/profile')}`}
                 >
                   <UserCircleIcon className="h-5 w-5" aria-hidden="true" />
-                  Profile
+                  Προφίλ
                 </Link>
                 {user.role === 'admin' && (
                   <Link
@@ -269,7 +269,7 @@ export default function TopNav() {
                     className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/admin')}`}
                   >
                     <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
-                    Admin
+                    Διαχείριση
                   </Link>
                 )}
                 {(user.role === 'admin' || user.role === 'editor') && (
@@ -279,7 +279,7 @@ export default function TopNav() {
                     className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/editor')}`}
                   >
                     <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
-                    Editor
+                    Συντάκτης
                   </Link>
                 )}
                 <button
@@ -288,7 +288,7 @@ export default function TopNav() {
                   className="inline-flex w-full items-center gap-2 text-left text-base font-medium text-red-600 hover:text-red-800"
                 >
                   <ArrowRightOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
-                  Logout
+                  Αποσύνδεση
                 </button>
               </div>
             </div>
@@ -299,14 +299,14 @@ export default function TopNav() {
                 className="inline-flex items-center gap-2 text-base font-medium text-blue-900 hover:text-blue-700"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
-                Login
+                Σύνδεση
               </Link>
               <Link
                 href="/register"
                 className="inline-flex w-full items-center justify-center gap-2 text-base font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
                 <UserPlusIcon className="h-5 w-5" aria-hidden="true" />
-                Register
+                Εγγραφή
               </Link>
             </>
           )}

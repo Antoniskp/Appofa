@@ -85,10 +85,10 @@ function EditArticlePageContent() {
       if (response.success) {
         router.push(`/articles/${params.id}`);
       } else {
-        setSubmitError(response.message || 'Failed to update article. Please try again.');
+      setSubmitError(response.message || 'Αποτυχία ενημέρωσης άρθρου. Παρακαλώ δοκιμάστε ξανά.');
       }
     } catch (err) {
-      setSubmitError(`Failed to update article: ${err.message}`);
+    setSubmitError(`Αποτυχία ενημέρωσης άρθρου: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -97,7 +97,7 @@ function EditArticlePageContent() {
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-gray-600">Loading article...</p>
+        <p className="text-gray-600">Φόρτωση άρθρου...</p>
       </div>
     );
   }
@@ -106,10 +106,10 @@ function EditArticlePageContent() {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>Error loading article: {error || 'Article not found'}</p>
+          <p>Σφάλμα φόρτωσης άρθρου: {error || 'Το άρθρο δεν βρέθηκε'}</p>
         </div>
         <Link href="/articles" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
-          ← Back to Articles
+          ← Πίσω στα άρθρα
         </Link>
       </div>
     );
@@ -121,10 +121,10 @@ function EditArticlePageContent() {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>You do not have permission to edit this article.</p>
+          <p>Δεν έχετε άδεια να επεξεργαστείτε αυτό το άρθρο.</p>
         </div>
         <Link href={`/articles/${article.id}`} className="inline-block mt-4 text-blue-600 hover:text-blue-800">
-          ← Back to Article
+          ← Πίσω στο άρθρο
         </Link>
       </div>
     );
@@ -134,11 +134,11 @@ function EditArticlePageContent() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link href={`/articles/${article.id}`} className="inline-block mb-6 text-blue-600 hover:text-blue-800">
-          ← Back to Article
+          ← Πίσω στο άρθρο
         </Link>
 
         <div className="bg-white rounded-lg shadow-md p-8">
-          <h1 className="text-3xl font-bold mb-6">Edit Article</h1>
+          <h1 className="text-3xl font-bold mb-6">Επεξεργασία άρθρου</h1>
 
           {submitError && (
             <div className="mb-6 border px-4 py-3 rounded bg-red-100 border-red-400 text-red-700">
@@ -149,7 +149,7 @@ function EditArticlePageContent() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Title *
+                Τίτλος *
               </label>
               <input
                 type="text"
@@ -159,13 +159,13 @@ function EditArticlePageContent() {
                 value={formData.title}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter article title"
+                placeholder="Εισάγετε τίτλο άρθρου"
               />
             </div>
 
             <div>
               <label htmlFor="summary" className="block text-sm font-medium text-gray-700 mb-1">
-                Summary
+                Περίληψη
               </label>
               <input
                 type="text"
@@ -174,13 +174,13 @@ function EditArticlePageContent() {
                 value={formData.summary}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Brief summary (optional)"
+                placeholder="Σύντομη περίληψη (προαιρετικό)"
               />
             </div>
 
             <div>
               <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-                Content *
+                Περιεχόμενο *
               </label>
               <textarea
                 id="content"
@@ -190,14 +190,14 @@ function EditArticlePageContent() {
                 onChange={handleInputChange}
                 rows={10}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Write your article content here..."
+                placeholder="Γράψτε το περιεχόμενο του άρθρου σας εδώ..."
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-                  Τύπος Άρθρου (Article Type) *
+                  Τύπος άρθρου *
                 </label>
                 <select
                   id="type"
@@ -209,7 +209,7 @@ function EditArticlePageContent() {
                 >
                   {Object.values(articleCategories.articleTypes).map((articleType) => (
                     <option key={articleType.value} value={articleType.value}>
-                      {articleType.labelEl} ({articleType.label})
+                      {articleType.labelEl}
                     </option>
                   ))}
                 </select>
@@ -220,7 +220,7 @@ function EditArticlePageContent() {
 
               <div>
                 <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Κατηγορία (Category) {isCategoryRequired(formData.type, articleCategories) && '*'}
+                  Κατηγορία {isCategoryRequired(formData.type, articleCategories) && '*'}
                 </label>
                 {articleCategories.articleTypes[formData.type]?.categories.length > 0 ? (
                   <select
@@ -252,7 +252,7 @@ function EditArticlePageContent() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-                  Status *
+                  Κατάσταση *
                 </label>
                 <select
                   id="status"
@@ -261,9 +261,9 @@ function EditArticlePageContent() {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
+                  <option value="draft">Πρόχειρο</option>
+                  <option value="published">Δημοσιευμένο</option>
+                  <option value="archived">Αρχειοθετημένο</option>
                 </select>
               </div>
             </div>
@@ -274,13 +274,13 @@ function EditArticlePageContent() {
                 disabled={submitting}
                 className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
               >
-                {submitting ? 'Saving...' : 'Save Changes'}
+                {submitting ? 'Αποθήκευση...' : 'Αποθήκευση αλλαγών'}
               </button>
               <Link
                 href={`/articles/${article.id}`}
                 className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 transition"
               >
-                Cancel
+                Ακύρωση
               </Link>
             </div>
           </form>

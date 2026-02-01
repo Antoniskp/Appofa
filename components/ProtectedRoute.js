@@ -23,7 +23,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+        <p className="text-gray-600">Φόρτωση...</p>
       </div>
     );
   }

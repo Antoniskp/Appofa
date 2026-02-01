@@ -41,7 +41,7 @@ export default function HomePage() {
 
       {/* Latest News Section */}
       <section className="app-container py-16">
-        <h2 className="section-title">Latest News</h2>
+        <h2 className="section-title">Τελευταία Νέα</h2>
         
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -52,10 +52,10 @@ export default function HomePage() {
         {error && (
           <EmptyState
             type="error"
-            title="Error Loading Articles"
+            title="Σφάλμα φόρτωσης άρθρων"
             description={error}
             action={{
-              text: 'Try Again',
+              text: 'Δοκιμάστε ξανά',
               onClick: () => window.location.reload()
             }}
           />
@@ -64,8 +64,8 @@ export default function HomePage() {
         {!loading && !error && latestArticles.length === 0 && (
           <EmptyState
             type="empty"
-            title="No Articles Found"
-            description="There are no published articles at the moment. Check back soon!"
+            title="Δεν βρέθηκαν άρθρα"
+            description="Δεν υπάρχουν δημοσιευμένα άρθρα αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
           />
         )}
 
@@ -78,7 +78,7 @@ export default function HomePage() {
         {latestArticles.length > 0 && (
           <div className="text-center mt-12">
             <Link href="/articles" className="btn-primary">
-              View All Articles
+              Προβολή όλων των άρθρων
             </Link>
           </div>
         )}

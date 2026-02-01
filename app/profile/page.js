@@ -48,7 +48,7 @@ function ProfileContent() {
           setGithubLinked(!!githubId);
         }
       } catch (error) {
-        setProfileError(error.message || 'Failed to load profile.');
+      setProfileError(error.message || 'Αποτυχία φόρτωσης προφίλ.');
       } finally {
         setLoading(false);
       }
@@ -73,17 +73,17 @@ function ProfileContent() {
     const error = searchParams.get('error');
 
     if (success === 'github_linked') {
-      setProfileMessage('GitHub account linked successfully!');
+      setProfileMessage('Ο λογαριασμός GitHub συνδέθηκε επιτυχώς!');
       setGithubLinked(true);
       // Reload profile to get updated data
       loadProfile();
     } else if (error) {
       const errorMessages = {
-        unauthorized: 'Unauthorized to link account',
-        user_not_found: 'User not found',
-        github_already_linked: 'This GitHub account is already linked to another user'
+        unauthorized: 'Μη εξουσιοδοτημένη σύνδεση λογαριασμού',
+        user_not_found: 'Ο χρήστης δεν βρέθηκε',
+        github_already_linked: 'Αυτός ο λογαριασμός GitHub είναι ήδη συνδεδεμένος με άλλον χρήστη'
       };
-      setProfileError(errorMessages[error] || 'Failed to link GitHub account');
+      setProfileError(errorMessages[error] || 'Αποτυχία σύνδεσης λογαριασμού GitHub');
     }
   }, [searchParams]);
 
@@ -114,9 +114,9 @@ function ProfileContent() {
 
     try {
       await updateProfile(profileData);
-      setProfileMessage('Profile updated successfully.');
+      setProfileMessage('Το προφίλ ενημερώθηκε επιτυχώς.');
     } catch (error) {
-      setProfileError(error.message || 'Failed to update profile.');
+      setProfileError(error.message || 'Αποτυχία ενημέρωσης προφίλ.');
     }
   };
 
@@ -134,12 +134,12 @@ function ProfileContent() {
     setPasswordMessage('');
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('New password and confirmation do not match.');
+      setPasswordError('Ο νέος κωδικός πρόσβασης και η επιβεβαίωση δεν ταιριάζουν.');
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters.');
+      setPasswordError('Ο νέος κωδικός πρόσβασης πρέπει να έχει τουλάχιστον 6 χαρακτήρες.');
       return;
     }
 
@@ -148,9 +148,9 @@ function ProfileContent() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
-      setPasswordMessage('Password updated successfully.');
+      setPasswordMessage('Ο κωδικός πρόσβασης ενημερώθηκε επιτυχώς.');
     } catch (error) {
-      setPasswordError(error.message || 'Failed to update password.');
+      setPasswordError(error.message || 'Αποτυχία ενημέρωσης κωδικού πρόσβασης.');
     } finally {
       resetPasswordData();
     }
@@ -163,30 +163,30 @@ function ProfileContent() {
         window.location.href = response.data.authUrl;
       }
     } catch (error) {
-      setProfileError(error.message || 'Failed to initiate GitHub linking');
+      setProfileError(error.message || 'Αποτυχία εκκίνησης σύνδεσης με GitHub');
     }
   };
 
   const handleUnlinkGithub = async () => {
-    if (!confirm('Are you sure you want to unlink your GitHub account?')) {
+    if (!confirm('Είστε βέβαιοι ότι θέλετε να αποσυνδέσετε τον λογαριασμό GitHub;')) {
       return;
     }
 
     try {
       const response = await authAPI.unlinkGithub();
       if (response.success) {
-        setProfileMessage('GitHub account unlinked successfully.');
+        setProfileMessage('Ο λογαριασμός GitHub αποσυνδέθηκε επιτυχώς.');
         setGithubLinked(false);
       }
     } catch (error) {
-      setProfileError(error.message || 'Failed to unlink GitHub account.');
+      setProfileError(error.message || 'Αποτυχία αποσύνδεσης λογαριασμού GitHub.');
     }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
+        <p className="text-gray-600">Φόρτωση προφίλ...</p>
       </div>
     );
   }
@@ -195,12 +195,12 @@ function ProfileContent() {
     <div className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Settings</h1>
-          <p className="text-sm text-gray-600">Signed in as {user?.email}</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Ρυθμίσεις προφίλ</h1>
+          <p className="text-sm text-gray-600">Συνδεδεμένος ως {user?.email}</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Update profile information</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ενημέρωση στοιχείων προφίλ</h2>
           {profileError && (
             <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {profileError}
@@ -218,26 +218,26 @@ function ProfileContent() {
                   className="h-16 w-16 rounded-full border border-gray-200 flex items-center justify-center text-white text-xl font-semibold"
                   style={{ backgroundColor: profileData.avatarColor || DEFAULT_AVATAR_COLOR }}
                 >
-                  {profileData.avatar && !avatarLoadError ? (
-                    <img
-                      src={profileData.avatar}
-                      alt={profileData.username || 'User'}
-                      className="h-full w-full rounded-full object-cover"
-                      onError={() => setAvatarLoadError(true)}
-                    />
-                  ) : (
-                    <span>{(profileData.username || user?.email || 'U').slice(0, 1).toUpperCase()}</span>
-                  )}
+            {profileData.avatar && !avatarLoadError ? (
+              <img
+                src={profileData.avatar}
+                alt={profileData.username || 'Χρήστης'}
+                className="h-full w-full rounded-full object-cover"
+                onError={() => setAvatarLoadError(true)}
+              />
+            ) : (
+              <span>{(profileData.username || user?.email || 'Χ').slice(0, 1).toUpperCase()}</span>
+            )}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-gray-900">Profile avatar</p>
-                  <p className="text-xs text-gray-500">Add an image URL or use your initials.</p>
-                </div>
-              </div>
+              <p className="text-sm font-medium text-gray-900">Εικόνα προφίλ</p>
+              <p className="text-xs text-gray-500">Προσθέστε ένα URL εικόνας ή χρησιμοποιήστε τα αρχικά σας.</p>
             </div>
+          </div>
+        </div>
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
+                Όνομα χρήστη
               </label>
               <input
                 id="username"
@@ -252,7 +252,7 @@ function ProfileContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
-                  Avatar image URL
+                  URL εικόνας προφίλ
                 </label>
                 <input
                   id="avatar"
@@ -266,7 +266,7 @@ function ProfileContent() {
               </div>
               <div>
                 <label htmlFor="avatarColor" className="block text-sm font-medium text-gray-700 mb-1">
-                  Avatar color
+                  Χρώμα προφίλ
                 </label>
                 <input
                   id="avatarColor"
@@ -281,7 +281,7 @@ function ProfileContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                  First name
+                  Όνομα
                 </label>
                 <input
                   id="firstName"
@@ -295,7 +295,7 @@ function ProfileContent() {
               </div>
               <div>
                 <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Last name
+                  Επώνυμο
                 </label>
                 <input
                   id="lastName"
@@ -312,13 +312,13 @@ function ProfileContent() {
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
             >
-              Save changes
+              Αποθήκευση αλλαγών
             </button>
           </form>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Change password</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Αλλαγή κωδικού πρόσβασης</h2>
           {passwordError && (
             <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
               {passwordError}
@@ -332,7 +332,7 @@ function ProfileContent() {
           <form className="space-y-4" onSubmit={handlePasswordSubmit}>
             <div>
               <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Current password
+                Τρέχων κωδικός πρόσβασης
               </label>
               <input
                 id="currentPassword"
@@ -345,7 +345,7 @@ function ProfileContent() {
             </div>
             <div>
               <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                New password
+                Νέος κωδικός πρόσβασης
               </label>
               <input
                 id="newPassword"
@@ -358,7 +358,7 @@ function ProfileContent() {
             </div>
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm new password
+                Επιβεβαίωση νέου κωδικού πρόσβασης
               </label>
               <input
                 id="confirmPassword"
@@ -373,16 +373,16 @@ function ProfileContent() {
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
             >
-              Update password
+              Ενημέρωση κωδικού πρόσβασης
             </button>
           </form>
         </div>
 
         {/* Connected Accounts Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Connected Accounts</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Συνδεδεμένοι λογαριασμοί</h2>
           <p className="text-sm text-gray-600 mb-4">
-            Link your social accounts to sign in more easily or enhance your profile.
+            Συνδέστε τους λογαριασμούς σας για ευκολότερη σύνδεση ή για να εμπλουτίσετε το προφίλ σας.
           </p>
 
           {/* GitHub Connection */}
@@ -394,7 +394,7 @@ function ProfileContent() {
               <div>
                 <p className="font-medium text-gray-900">GitHub</p>
                 <p className="text-sm text-gray-500">
-                  {githubLinked ? 'Connected' : 'Not connected'}
+                  {githubLinked ? 'Συνδεδεμένο' : 'Μη συνδεδεμένο'}
                 </p>
               </div>
             </div>
@@ -403,7 +403,7 @@ function ProfileContent() {
                 onClick={handleUnlinkGithub}
                 className="px-4 py-2 text-sm font-medium text-red-600 border border-red-600 rounded hover:bg-red-50 transition"
               >
-                Disconnect
+                Αποσύνδεση
               </button>
             ) : (
               <button
@@ -414,9 +414,9 @@ function ProfileContent() {
                     ? 'text-blue-600 border border-blue-600 hover:bg-blue-50'
                     : 'text-gray-400 border border-gray-300 cursor-not-allowed bg-gray-50'
                 }`}
-                title={!oauthConfig.github ? 'GitHub OAuth is not configured' : 'Connect GitHub'}
+                title={!oauthConfig.github ? 'Το GitHub OAuth δεν έχει ρυθμιστεί' : 'Σύνδεση με GitHub'}
               >
-                Connect
+                Σύνδεση
               </button>
             )}
           </div>
@@ -431,17 +431,17 @@ function ProfileContent() {
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
               </svg>
               <div>
-                <p className="font-medium text-gray-900">Google</p>
-                <p className="text-sm text-gray-500">Coming soon</p>
-              </div>
-            </div>
-            <button
-              disabled
-              className="px-4 py-2 text-sm font-medium text-gray-400 border border-gray-300 rounded cursor-not-allowed bg-gray-50"
-            >
-              Connect
-            </button>
-          </div>
+                 <p className="font-medium text-gray-900">Google</p>
+                 <p className="text-sm text-gray-500">Σύντομα διαθέσιμο</p>
+               </div>
+             </div>
+             <button
+               disabled
+               className="px-4 py-2 text-sm font-medium text-gray-400 border border-gray-300 rounded cursor-not-allowed bg-gray-50"
+             >
+               Σύνδεση
+             </button>
+           </div>
 
           {/* Facebook Placeholder */}
           <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md opacity-50">
@@ -450,20 +450,20 @@ function ProfileContent() {
                 <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
               </svg>
               <div>
-                <p className="font-medium text-gray-900">Facebook</p>
-                <p className="text-sm text-gray-500">Coming soon</p>
-              </div>
-            </div>
-            <button
-              disabled
-              className="px-4 py-2 text-sm font-medium text-gray-400 border border-gray-300 rounded cursor-not-allowed bg-gray-50"
-            >
-              Connect
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+                 <p className="font-medium text-gray-900">Facebook</p>
+                 <p className="text-sm text-gray-500">Σύντομα διαθέσιμο</p>
+               </div>
+             </div>
+             <button
+               disabled
+               className="px-4 py-2 text-sm font-medium text-gray-400 border border-gray-300 rounded cursor-not-allowed bg-gray-50"
+             >
+               Σύνδεση
+             </button>
+           </div>
+         </div>
+       </div>
+     </div>
   );
 }
 
@@ -472,7 +472,7 @@ export default function ProfilePage() {
     <ProtectedRoute allowedRoles={['admin', 'moderator', 'editor', 'viewer']}>
       <Suspense fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-600">Φόρτωση προφίλ...</p>
         </div>
       }>
         <ProfileContent />

@@ -8,13 +8,13 @@ export default function HomeHero() {
     <section className="bg-blue-600 text-white py-20">
       <div className="app-container text-center">
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Welcome to News App
+          Καλώς ήρθατε στην Εφαρμογή Ειδήσεων
         </h1>
         <p className="text-xl md:text-2xl mb-8">
-          Your trusted source for the latest news and articles
+          Η αξιόπιστη πηγή σας για τα τελευταία νέα και άρθρα
         </p>
         <Link href="/articles" className="btn-secondary bg-white">
-          Browse All Articles
+          Περιήγηση σε Όλα τα Άρθρα
         </Link>
       </div>
     </section>
