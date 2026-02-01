@@ -34,7 +34,7 @@ const authController = {
   // Register a new user
   register: async (req, res) => {
     try {
-      const { username, email, password, firstName, lastName } = req.body;
+      const { username, email, password, firstName, lastName, avatarUrl, profileColor, githubUsername, googleEmail, facebookId } = req.body;
 
       // Validate required fields
       if (!username || !email || !password) {
@@ -65,7 +65,12 @@ const authController = {
         password,
         role: 'viewer',
         firstName,
-        lastName
+        lastName,
+        avatarUrl,
+        profileColor,
+        githubUsername,
+        googleEmail,
+        facebookId
       });
 
       // Generate JWT token
@@ -91,7 +96,9 @@ const authController = {
             email: user.email,
             role: user.role,
             firstName: user.firstName,
-            lastName: user.lastName
+            lastName: user.lastName,
+            avatarUrl: user.avatarUrl,
+            profileColor: user.profileColor
           }
         }
       });
@@ -161,7 +168,9 @@ const authController = {
             email: user.email,
             role: user.role,
             firstName: user.firstName,
-            lastName: user.lastName
+            lastName: user.lastName,
+            avatarUrl: user.avatarUrl,
+            profileColor: user.profileColor
           }
         }
       });
@@ -206,7 +215,7 @@ const authController = {
   // Update current user profile (excluding email)
   updateProfile: async (req, res) => {
     try {
-      const { username, firstName, lastName } = req.body;
+      const { username, firstName, lastName, avatarUrl, profileColor, githubUsername, googleEmail, facebookId } = req.body;
 
       const user = await User.findByPk(req.user.id);
 
@@ -258,6 +267,26 @@ const authController = {
 
       if (lastName !== undefined) {
         user.lastName = lastName;
+      }
+
+      if (avatarUrl !== undefined) {
+        user.avatarUrl = avatarUrl;
+      }
+
+      if (profileColor !== undefined) {
+        user.profileColor = profileColor;
+      }
+
+      if (githubUsername !== undefined) {
+        user.githubUsername = githubUsername;
+      }
+
+      if (googleEmail !== undefined) {
+        user.googleEmail = googleEmail;
+      }
+
+      if (facebookId !== undefined) {
+        user.facebookId = facebookId;
       }
 
       await user.save();
@@ -338,7 +367,7 @@ const authController = {
   getUsers: async (req, res) => {
     try {
       const users = await User.findAll({
-        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'createdAt'],
+        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'avatarUrl', 'profileColor', 'createdAt'],
         order: [['createdAt', 'DESC']]
       });
       const stats = await buildUserStats();
@@ -441,6 +470,8 @@ const authController = {
             role: updatedUser.role,
             firstName: updatedUser.firstName,
             lastName: updatedUser.lastName,
+            avatarUrl: updatedUser.avatarUrl,
+            profileColor: updatedUser.profileColor,
             createdAt: updatedUser.createdAt
           },
           stats

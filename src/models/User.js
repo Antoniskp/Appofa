@@ -40,6 +40,27 @@ const User = sequelize.define('User', {
   lastName: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  avatarUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  profileColor: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: '#3B82F6'
+  },
+  githubUsername: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  googleEmail: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  facebookId: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true,
