@@ -35,7 +35,7 @@
     "tailwindcss": "^3.4.19"
   },
   "overrides": {
-    "tar": "^7.5.6"
+    "tar": "^7.5.7"
   },
   "devDependencies": {
     "jest": "^30.2.0",
