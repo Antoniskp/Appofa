@@ -248,6 +248,34 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.user.avatarColor).toBe('#1d4ed8');
     });
 
+    test('should reject invalid avatar URL and color', async () => {
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          avatar: 'not-a-url',
+          avatarColor: 'blue'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should clear avatar fields with null', async () => {
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          avatar: null,
+          avatarColor: null
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.avatar).toBeNull();
+      expect(response.body.data.user.avatarColor).toBeNull();
+    });
+
     test('should update password with current password', async () => {
       const response = await request(app)
         .put('/api/auth/password')

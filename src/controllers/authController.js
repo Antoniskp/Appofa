@@ -3,6 +3,8 @@ const { Op } = require('sequelize');
 const { User, sequelize } = require('../models');
 require('dotenv').config();
 
+const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+
 const buildUserStats = async () => {
   const totalUsers = await User.count();
   const roles = ['admin', 'moderator', 'editor', 'viewer'];
@@ -278,13 +280,13 @@ const authController = {
             } catch (urlError) {
               return res.status(400).json({
                 success: false,
-                message: 'Avatar must be a valid URL.'
+                message: 'Avatar URL is malformed.'
               });
             }
             if (!['http:', 'https:'].includes(avatarUrl.protocol)) {
               return res.status(400).json({
                 success: false,
-                message: 'Avatar must be a valid URL.'
+                message: 'Avatar URL must use HTTP or HTTPS protocol.'
               });
             }
             user.avatar = trimmedAvatar;
@@ -304,7 +306,7 @@ const authController = {
           const trimmedColor = avatarColor.trim();
           if (trimmedColor.length === 0) {
             user.avatarColor = null;
-          } else if (!/^#[0-9A-Fa-f]{6}$/.test(trimmedColor)) {
+          } else if (!HEX_COLOR_REGEX.test(trimmedColor)) {
             return res.status(400).json({
               success: false,
               message: 'Avatar color must be a valid hex color.'
