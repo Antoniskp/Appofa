@@ -215,7 +215,7 @@ function EditArticlePageContent() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="isNews" className="ml-2 block text-sm text-gray-700">
-                Flag as news (requires moderator approval for publication)
+                Flag as news (requires moderator/admin approval for publication)
               </label>
             </div>
 
