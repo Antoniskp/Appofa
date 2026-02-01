@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 /**
  * Reusable article card component
- * @param {Object} article - Article object with title, category, summary, content, User, createdAt
+ * @param {Object} article - Article object with title, category, summary, content, author, createdAt
  * @param {string} variant - 'grid' for grid layout (compact) or 'list' for list layout (detailed)
  */
 export default function ArticleCard({ article, variant = 'grid' }) {
@@ -27,7 +27,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
               {article.summary || article.content?.substring(0, 200) + '...'}
             </p>
             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-              <span>By {article.User?.username || 'Unknown'}</span>
+              <span>By {article.author?.username || 'Unknown'}</span>
               <span>•</span>
               <span>{new Date(article.createdAt).toLocaleDateString()}</span>
               {article.status !== 'published' && (
@@ -61,7 +61,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             {article.summary || article.content?.substring(0, 150) + '...'}
           </p>
           <div className="flex justify-between items-center text-sm text-gray-500">
-            <span>By {article.User?.username || 'Unknown'}</span>
+            <span>By {article.author?.username || 'Unknown'}</span>
             <span>{new Date(article.createdAt).toLocaleDateString()}</span>
           </div>
           <Link
