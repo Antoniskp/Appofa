@@ -147,6 +147,7 @@ function ProfilePageContent() {
                 id="username"
                 name="username"
                 type="text"
+                autoComplete="username"
                 value={profileData.username}
                 onChange={handleProfileChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
@@ -161,6 +162,7 @@ function ProfilePageContent() {
                   id="firstName"
                   name="firstName"
                   type="text"
+                  autoComplete="given-name"
                   value={profileData.firstName}
                   onChange={handleProfileChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
@@ -174,6 +176,7 @@ function ProfilePageContent() {
                   id="lastName"
                   name="lastName"
                   type="text"
+                  autoComplete="family-name"
                   value={profileData.lastName}
                   onChange={handleProfileChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"

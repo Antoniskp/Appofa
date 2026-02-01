@@ -85,6 +85,7 @@ export default function RegisterPage() {
                 id="username"
                 name="username"
                 type="text"
+                autoComplete="username"
                 required
                 value={formData.username}
                 onChange={handleChange}
@@ -101,6 +102,7 @@ export default function RegisterPage() {
                 id="email"
                 name="email"
                 type="email"
+                autoComplete="email"
                 required
                 value={formData.email}
                 onChange={handleChange}
@@ -118,6 +120,7 @@ export default function RegisterPage() {
                   id="firstName"
                   name="firstName"
                   type="text"
+                  autoComplete="given-name"
                   value={formData.firstName}
                   onChange={handleChange}
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -133,6 +136,7 @@ export default function RegisterPage() {
                   id="lastName"
                   name="lastName"
                   type="text"
+                  autoComplete="family-name"
                   value={formData.lastName}
                   onChange={handleChange}
                   className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
@@ -149,6 +153,7 @@ export default function RegisterPage() {
                 id="password"
                 name="password"
                 type="password"
+                autoComplete="new-password"
                 required
                 value={formData.password}
                 onChange={handleChange}
@@ -165,6 +170,7 @@ export default function RegisterPage() {
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
