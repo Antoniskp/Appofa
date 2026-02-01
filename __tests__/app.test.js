@@ -291,6 +291,7 @@ describe('News Application Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.users.length).toBe(4);
+      expect(response.body.data.stats.total).toBe(4);
       const viewerUser = response.body.data.users.find((user) => user.id === viewerUserId);
       expect(viewerUser).toBeDefined();
     });

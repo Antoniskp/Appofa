@@ -29,22 +29,6 @@ function AdminDashboardContent() {
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(true);
 
-  const calculateUserStats = (usersList) => {
-    const roleCounts = usersList.reduce((acc, currentUser) => {
-      acc[currentUser.role] = (acc[currentUser.role] || 0) + 1;
-      return acc;
-    }, {});
-    return {
-      total: usersList.length,
-      byRole: {
-        admin: roleCounts.admin || 0,
-        moderator: roleCounts.moderator || 0,
-        editor: roleCounts.editor || 0,
-        viewer: roleCounts.viewer || 0,
-      },
-    };
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -72,31 +56,13 @@ function AdminDashboardContent() {
 
     const fetchUsers = async () => {
       try {
-        const [usersResponse, statsResponse] = await Promise.all([
-          authAPI.getUsers(),
-          authAPI.getUserStats(),
-        ]);
+        const usersResponse = await authAPI.getUsers();
         if (usersResponse.success) {
           const usersList = usersResponse.data.users || [];
-          const hasStats = statsResponse && statsResponse.success;
           setUsers(usersList);
-          if (hasStats) {
-            setUserStats(statsResponse.data);
-          } else if (usersList.length === 0) {
-            setUserStats({
-              total: 0,
-              byRole: {
-                admin: 0,
-                moderator: 0,
-                editor: 0,
-                viewer: 0,
-              },
-            });
-          } else {
-            setUserStats(calculateUserStats(usersList));
+          if (usersResponse.data.stats) {
+            setUserStats(usersResponse.data.stats);
           }
-        } else if (statsResponse.success) {
-          setUserStats(statsResponse.data);
         }
       } catch (error) {
         console.error('Failed to fetch users:', error);
@@ -148,11 +114,9 @@ function AdminDashboardContent() {
       if (response.success) {
         const updatedUsers = users.map((u) => (u.id === userId ? response.data.user : u));
         setUsers(updatedUsers);
-        const statsResponse = await authAPI.getUserStats();
-        if (statsResponse.success) {
-          setUserStats(statsResponse.data);
-        } else {
-          setUserStats(calculateUserStats(updatedUsers));
+        const usersResponse = await authAPI.getUsers();
+        if (usersResponse.success && usersResponse.data.stats) {
+          setUserStats(usersResponse.data.stats);
         }
       }
     } catch (error) {

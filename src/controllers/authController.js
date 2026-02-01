@@ -3,6 +3,33 @@ const { Op } = require('sequelize');
 const { User, sequelize } = require('../models');
 require('dotenv').config();
 
+const buildUserStats = async () => {
+  const totalUsers = await User.count();
+  const roles = ['admin', 'moderator', 'editor', 'viewer'];
+  const counts = await User.findAll({
+    attributes: [
+      'role',
+      [sequelize.fn('COUNT', sequelize.col('role')), 'count']
+    ],
+    group: ['role']
+  });
+  const byRole = roles.reduce((acc, role) => {
+    acc[role] = 0;
+    return acc;
+  }, {});
+  counts.forEach((item) => {
+    const role = item.get('role');
+    if (byRole[role] !== undefined) {
+      byRole[role] = parseInt(item.get('count'), 10);
+    }
+  });
+
+  return {
+    total: totalUsers,
+    byRole
+  };
+};
+
 const authController = {
   // Register a new user
   register: async (req, res) => {
@@ -314,10 +341,11 @@ const authController = {
         attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'createdAt'],
         order: [['createdAt', 'DESC']]
       });
+      const stats = await buildUserStats();
 
       res.status(200).json({
         success: true,
-        data: { users }
+        data: { users, stats }
       });
     } catch (error) {
       console.error('Get users error:', error);
@@ -332,32 +360,11 @@ const authController = {
   // Get user statistics (admin only)
   getUserStats: async (req, res) => {
     try {
-      const totalUsers = await User.count();
-      const roles = ['admin', 'moderator', 'editor', 'viewer'];
-      const counts = await User.findAll({
-        attributes: [
-          'role',
-          [sequelize.fn('COUNT', sequelize.col('role')), 'count']
-        ],
-        group: ['role']
-      });
-      const byRole = roles.reduce((acc, role) => {
-        acc[role] = 0;
-        return acc;
-      }, {});
-      counts.forEach((item) => {
-        const role = item.get('role');
-        if (byRole[role] !== undefined) {
-          byRole[role] = parseInt(item.get('count'), 10);
-        }
-      });
+      const stats = await buildUserStats();
 
       res.status(200).json({
         success: true,
-        data: {
-          total: totalUsers,
-          byRole
-        }
+        data: stats
       });
     } catch (error) {
       console.error('Get user stats error:', error);
