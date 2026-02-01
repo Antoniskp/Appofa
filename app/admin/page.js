@@ -114,8 +114,15 @@ function AdminDashboardContent() {
       setUserRoleError('');
       const response = await authAPI.updateUserRole(userId, newRole);
       if (response.success) {
-        const updatedUsers = users.map((u) => (u.id === userId ? response.data.user : u));
-        setUsers(updatedUsers);
+        setUsers((prevUsers) => {
+          const index = prevUsers.findIndex((u) => u.id === userId);
+          if (index === -1) {
+            return prevUsers;
+          }
+          const updatedUsers = [...prevUsers];
+          updatedUsers[index] = response.data.user;
+          return updatedUsers;
+        });
         if (response.data.stats) {
           setUserStats(response.data.stats);
         }

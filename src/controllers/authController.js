@@ -398,6 +398,26 @@ const authController = {
         });
       }
 
+      if (user.role === role) {
+        const stats = await buildUserStats();
+        return res.status(200).json({
+          success: true,
+          message: 'User role updated successfully.',
+          data: {
+            user: {
+              id: user.id,
+              username: user.username,
+              email: user.email,
+              role: user.role,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              createdAt: user.createdAt
+            },
+            stats
+          }
+        });
+      }
+
       if (user.role === 'admin' && role !== 'admin') {
         const adminCount = await User.count({ where: { role: 'admin' } });
         if (adminCount <= 1) {
