@@ -1,11 +1,12 @@
 const { Article, User } = require('../models');
 const { Op } = require('sequelize');
+const { ARTICLE_TYPES } = require('../constants/articleTypes');
 
 const articleController = {
   // Create a new article
   createArticle: async (req, res) => {
     try {
-      const { title, content, summary, category, status, isNews } = req.body;
+      const { title, content, summary, category, status, isNews, type } = req.body;
 
       // Validate required fields
       if (!title || !content) {
@@ -13,6 +14,12 @@ const articleController = {
           success: false,
           message: 'Title and content are required.'
         });
+      }
+
+      // Determine article type - support both old isNews and new type field
+      let articleType = type || 'personal';
+      if (isNews && !type) {
+        articleType = 'news';
       }
 
       // Create article
@@ -24,7 +31,8 @@ const articleController = {
         status: status || 'draft',
         authorId: req.user.id,
         publishedAt: status === 'published' ? new Date() : null,
-        isNews: isNews || false
+        type: articleType,
+        isNews: articleType === 'news' || isNews
       });
 
       // Fetch article with author info
@@ -54,7 +62,7 @@ const articleController = {
   // Get all articles
   getAllArticles: async (req, res) => {
     try {
-      const { status, category, page = 1, limit = 10, authorId } = req.query;
+      const { status, category, page = 1, limit = 10, authorId, type } = req.query;
       
       const where = {};
       
@@ -68,6 +76,11 @@ const articleController = {
       // Filter by category
       if (category) {
         where.category = category;
+      }
+
+      // Filter by article type
+      if (type) {
+        where.type = type;
       }
 
       if (authorId !== undefined) {
@@ -175,7 +188,7 @@ const articleController = {
   updateArticle: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, summary, category, status, isNews } = req.body;
+      const { title, content, summary, category, status, isNews, type } = req.body;
 
       const article = await Article.findByPk(id);
 
@@ -206,9 +219,24 @@ const articleController = {
         }
       }
       
-      // Allow author, admin, editor, or moderator to set/unset isNews flag
-      if (isNews !== undefined && (article.authorId === req.user.id || ['admin', 'editor', 'moderator'].includes(req.user.role))) {
+      // Update article type
+      if (type !== undefined && ARTICLE_TYPES.includes(type)) {
+        article.type = type;
+        // Keep isNews in sync with type for backward compatibility
+        article.isNews = type === 'news';
+        
+        // Clear approval if changing away from news
+        if (type !== 'news') {
+          article.newsApprovedAt = null;
+          article.newsApprovedBy = null;
+        }
+      }
+      
+      // Allow author, admin, editor, or moderator to set/unset isNews flag (legacy support)
+      const canModifyNewsFlag = article.authorId === req.user.id || ['admin', 'editor', 'moderator'].includes(req.user.role);
+      if (isNews !== undefined && type === undefined && canModifyNewsFlag) {
         article.isNews = isNews;
+        article.type = isNews ? 'news' : 'personal';
         // Clear approval if user unflags as news
         if (!isNews) {
           article.newsApprovedAt = null;
@@ -295,7 +323,7 @@ const articleController = {
       }
 
       // Check if article is flagged as news
-      if (!article.isNews) {
+      if (!article.isNews && article.type !== 'news') {
         return res.status(400).json({
           success: false,
           message: 'Article is not flagged as news.'

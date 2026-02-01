@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
 
 /**
  * Reusable article card component
@@ -13,11 +14,18 @@ export default function ArticleCard({ article, variant = 'grid' }) {
       {isListVariant ? (
         <div className="flex flex-col md:flex-row md:items-start md:justify-between">
           <div className="flex-grow">
-            {article.category && (
-              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-2">
-                {article.category}
-              </span>
-            )}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {article.type && (
+                <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                  {getArticleTypeLabel(article.type)}
+                </span>
+              )}
+              {article.category && (
+                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                  {article.category}
+                </span>
+              )}
+            </div>
             <h2 className="text-2xl font-semibold mb-2">
               <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
                 {article.title}
@@ -47,11 +55,18 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         </div>
       ) : (
         <div className="p-6">
-          {article.category && (
-            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-2">
-              {article.category}
-            </span>
-          )}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {article.type && (
+              <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                {getArticleTypeLabel(article.type)}
+              </span>
+            )}
+            {article.category && (
+              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                {article.category}
+              </span>
+            )}
+          </div>
           <h3 className="headline">
             <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
               {article.title}
