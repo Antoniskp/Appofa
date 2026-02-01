@@ -81,16 +81,30 @@ export default function ArticleDetailPage() {
         <div className="bg-white rounded-lg shadow-md p-8">
           {/* Article Header */}
           <div className="mb-8">
-            {article.category && (
-              <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded mb-4">
-                {article.category}
-              </span>
-            )}
-            {article.status !== 'published' && (
-              <span className="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded mb-4 ml-2">
-                {article.status}
-              </span>
-            )}
+            <div className="flex flex-wrap gap-2 mb-4">
+              {article.type && (
+                <span className={`inline-block text-sm px-3 py-1 rounded ${
+                  article.type === 'personal' ? 'bg-gray-100 text-gray-800' :
+                  article.type === 'articles' ? 'bg-purple-100 text-purple-800' :
+                  article.type === 'news' ? 'bg-green-100 text-green-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {article.type === 'personal' ? 'Προσωπικό' : 
+                   article.type === 'articles' ? 'Άρθρα' : 
+                   article.type === 'news' ? 'Νέα' : article.type}
+                </span>
+              )}
+              {article.category && (
+                <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded">
+                  {article.category}
+                </span>
+              )}
+              {article.status !== 'published' && (
+                <span className="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded">
+                  {article.status}
+                </span>
+              )}
+            </div>
             <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
             
             <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b border-gray-200 pb-4">

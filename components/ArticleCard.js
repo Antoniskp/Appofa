@@ -13,11 +13,25 @@ export default function ArticleCard({ article, variant = 'grid' }) {
       {isListVariant ? (
         <div className="flex flex-col md:flex-row md:items-start md:justify-between">
           <div className="flex-grow">
-            {article.category && (
-              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-2">
-                {article.category}
-              </span>
-            )}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {article.type && (
+                <span className={`inline-block text-xs px-2 py-1 rounded ${
+                  article.type === 'personal' ? 'bg-gray-100 text-gray-800' :
+                  article.type === 'articles' ? 'bg-purple-100 text-purple-800' :
+                  article.type === 'news' ? 'bg-green-100 text-green-800' :
+                  'bg-gray-100 text-gray-800'
+                }`}>
+                  {article.type === 'personal' ? 'Προσωπικό' : 
+                   article.type === 'articles' ? 'Άρθρα' : 
+                   article.type === 'news' ? 'Νέα' : article.type}
+                </span>
+              )}
+              {article.category && (
+                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                  {article.category}
+                </span>
+              )}
+            </div>
             <h2 className="text-2xl font-semibold mb-2">
               <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
                 {article.title}
@@ -47,11 +61,25 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         </div>
       ) : (
         <div className="p-6">
-          {article.category && (
-            <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-2">
-              {article.category}
-            </span>
-          )}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {article.type && (
+              <span className={`inline-block text-xs px-2 py-1 rounded ${
+                article.type === 'personal' ? 'bg-gray-100 text-gray-800' :
+                article.type === 'articles' ? 'bg-purple-100 text-purple-800' :
+                article.type === 'news' ? 'bg-green-100 text-green-800' :
+                'bg-gray-100 text-gray-800'
+              }`}>
+                {article.type === 'personal' ? 'Προσωπικό' : 
+                 article.type === 'articles' ? 'Άρθρα' : 
+                 article.type === 'news' ? 'Νέα' : article.type}
+              </span>
+            )}
+            {article.category && (
+              <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                {article.category}
+              </span>
+            )}
+          </div>
           <h3 className="headline">
             <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
               {article.title}

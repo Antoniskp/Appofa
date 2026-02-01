@@ -11,7 +11,8 @@
     "frontend": "next dev -p 3001",
     "frontend:build": "next build",
     "frontend:start": "next start -p 3001",
-    "seed": "node src/populate-db.js"
+    "seed": "node src/populate-db.js",
+    "migrate:article-types": "node src/update-article-types.js"
   },
   "keywords": [],
   "author": "",
