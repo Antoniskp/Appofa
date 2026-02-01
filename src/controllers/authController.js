@@ -508,6 +508,7 @@ const authController = {
     try {
       const axios = require('axios');
       const { validateState } = require('../utils/oauthHelpers');
+      const { encryptToken } = require('../utils/encryption');
       
       const { code, state } = req.query;
 
@@ -576,7 +577,7 @@ const authController = {
         }
 
         user.githubId = githubUser.id.toString();
-        user.githubAccessToken = accessToken;
+        user.githubAccessToken = encryptToken(accessToken);
         if (!user.avatar && githubUser.avatar_url) {
           user.avatar = githubUser.avatar_url;
         }
@@ -591,7 +592,7 @@ const authController = {
 
         if (user) {
           // Update access token
-          user.githubAccessToken = accessToken;
+          user.githubAccessToken = encryptToken(accessToken);
           if (githubUser.avatar_url) {
             user.avatar = githubUser.avatar_url;
           }
@@ -605,7 +606,7 @@ const authController = {
           if (existingEmailUser) {
             // Link GitHub to existing account
             existingEmailUser.githubId = githubUser.id.toString();
-            existingEmailUser.githubAccessToken = accessToken;
+            existingEmailUser.githubAccessToken = encryptToken(accessToken);
             if (!existingEmailUser.avatar && githubUser.avatar_url) {
               existingEmailUser.avatar = githubUser.avatar_url;
             }
@@ -621,7 +622,7 @@ const authController = {
               username,
               email: primaryEmail,
               githubId: githubUser.id.toString(),
-              githubAccessToken: accessToken,
+              githubAccessToken: encryptToken(accessToken),
               firstName: nameParts[0] || githubUser.login,
               lastName: nameParts.slice(1).join(' ') || '',
               avatar: githubUser.avatar_url,

@@ -104,7 +104,8 @@ For production:
 - Users cannot unlink their only authentication method
 - OAuth-only users must set a password before unlinking
 - GitHub IDs are stored securely in the database
-- Access tokens are stored encrypted
+- **Access tokens are encrypted using AES-256-GCM encryption** before storage
+- Encryption keys are derived from JWT_SECRET using PBKDF2
 
 ## API Endpoints
 
