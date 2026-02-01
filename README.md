@@ -99,7 +99,20 @@ NODE_ENV=development
 NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
-5. Start the backend server:
+5. (Optional) Populate the database with sample data:
+```bash
+npm run seed
+```
+
+This will create:
+- **Admin account**: admin@admin.gr / admin123
+- **Moderator account**: moderator@moderator.gr / moderator123
+- **Editor account**: editor@editor.gr / editor123
+- **10 dummy articles** with various categories and statuses
+
+The script is idempotent - it won't create duplicate data if run multiple times.
+
+6. Start the backend server:
 ```bash
 # Development mode with auto-reload
 npm run dev
@@ -121,6 +134,25 @@ npm run frontend:start
 ```
 
 The frontend application will start on `http://localhost:3001`
+
+## Database Population
+
+To populate the database with sample data for testing and development, run:
+
+```bash
+npm run seed
+```
+
+This creates:
+- **3 user accounts** with different roles (admin, moderator, editor)
+- **10 sample articles** with various categories, statuses, and news flags
+
+**Login Credentials:**
+- Admin: `admin@admin.gr` / `admin123`
+- Moderator: `moderator@moderator.gr` / `moderator123`
+- Editor: `editor@editor.gr` / `editor123`
+
+The population script is **idempotent** - running it multiple times won't create duplicates. If you want to reset the database, clear it manually first.
 
 ## Frontend Structure
 
