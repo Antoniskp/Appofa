@@ -82,6 +82,14 @@ function ProfilePageContent() {
     }));
   };
 
+  const handleProfileChange = (event) => {
+    const { name, value } = event.target;
+    setProfileData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
   const fetchGitHubAvatar = async () => {
     if (!profileData.githubUsername) return;
     
@@ -143,22 +151,6 @@ function ProfilePageContent() {
       avatarUrl: facebookAvatarUrl,
     }));
     setProfileMessage('Facebook avatar loaded successfully!');
-  };
-
-  const handleProfileChange = (event) => {
-    const { name, value } = event.target;
-    setProfileData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handlePasswordChange = (event) => {
-    const { name, value } = event.target;
-    setPasswordData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   const handleProfileSubmit = async (event) => {
