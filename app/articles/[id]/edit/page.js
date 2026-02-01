@@ -71,7 +71,7 @@ function EditArticlePageContent() {
       if (response.success) {
         router.push(`/articles/${params.id}`);
       } else {
-        setSubmitError(response.message || 'An unexpected error occurred while updating the article. Please check required fields and try again.');
+        setSubmitError(response.message || 'Failed to update article. Please try again.');
       }
     } catch (err) {
       setSubmitError(`Failed to update article: ${err.message}`);
