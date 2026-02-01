@@ -402,7 +402,7 @@ const authController = {
         const stats = await buildUserStats();
         return res.status(200).json({
           success: true,
-          message: 'User role updated successfully.',
+          message: 'User already has the requested role.',
           data: {
             user: {
               id: user.id,
