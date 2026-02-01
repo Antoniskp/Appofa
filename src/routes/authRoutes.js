@@ -10,9 +10,9 @@ router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
 
 // OAuth routes
-router.get('/oauth/config', authController.getOAuthConfig);
-router.get('/github', authController.initiateGithubOAuth);
-router.get('/github/callback', authController.githubCallback);
+router.get('/oauth/config', apiLimiter, authController.getOAuthConfig);
+router.get('/github', apiLimiter, authController.initiateGithubOAuth);
+router.get('/github/callback', apiLimiter, authController.githubCallback);
 
 // Protected routes with rate limiting
 router.get('/profile', apiLimiter, authMiddleware, authController.getProfile);
