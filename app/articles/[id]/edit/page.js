@@ -24,7 +24,6 @@ function EditArticlePageContent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [submitError, setSubmitError] = useState('');
-  const [submitSuccess, setSubmitSuccess] = useState('');
 
   useEffect(() => {
     const fetchArticle = async () => {
@@ -66,17 +65,16 @@ function EditArticlePageContent() {
     e.preventDefault();
     setSubmitting(true);
     setSubmitError('');
-    setSubmitSuccess('');
 
     try {
       const response = await articleAPI.update(params.id, formData);
       if (response.success) {
         router.push(`/articles/${params.id}`);
       } else {
-        setSubmitError(response.message || 'Failed to update article.');
+        setSubmitError(response.message || 'Failed to update article: No error details provided.');
       }
     } catch (err) {
-      setSubmitError('Failed to update article: ' + err.message);
+      setSubmitError(`Failed to update article: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -128,15 +126,13 @@ function EditArticlePageContent() {
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold mb-6">Edit Article</h1>
 
-          {(submitError || submitSuccess) && (
+          {submitError && (
             <div
               className={`mb-6 border px-4 py-3 rounded ${
-                submitError
-                  ? 'bg-red-100 border-red-400 text-red-700'
-                  : 'bg-green-100 border-green-400 text-green-700'
+                'bg-red-100 border-red-400 text-red-700'
               }`}
             >
-              <p>{submitError || submitSuccess}</p>
+              <p>{submitError}</p>
             </div>
           )}
 
