@@ -23,10 +23,12 @@ const populateDatabase = async () => {
       console.log('Creating user accounts...');
 
       // Create admin account
+      // NOTE: Passwords are automatically hashed by the User model's beforeCreate hook
+      // These are development/testing credentials only - NOT for production use
       const admin = await User.create({
         username: 'admin',
         email: 'admin@admin.gr',
-        password: 'admin123',
+        password: 'admin123', // Will be hashed automatically
         role: 'admin',
         firstName: 'Admin',
         lastName: 'User'
@@ -81,7 +83,7 @@ const populateDatabase = async () => {
       const dummyArticles = [
         {
           title: 'Breaking: Technology Advances in AI Research',
-          content: 'Artificial Intelligence continues to make groundbreaking strides in 2026. Researchers at leading universities have developed new neural network architectures that promise to revolutionize machine learning. These advancements could lead to more efficient AI systems that require less computational power while delivering superior results. The implications for industries ranging from healthcare to finance are profound, as AI becomes increasingly integrated into our daily lives.',
+          content: 'Artificial Intelligence continues to make groundbreaking strides in recent years. Researchers at leading universities have developed new neural network architectures that promise to revolutionize machine learning. These advancements could lead to more efficient AI systems that require less computational power while delivering superior results. The implications for industries ranging from healthcare to finance are profound, as AI becomes increasingly integrated into our daily lives.',
           summary: 'New AI research promises revolutionary advances in machine learning and efficiency.',
           category: 'Technology',
           status: 'published',
@@ -117,7 +119,7 @@ const populateDatabase = async () => {
         },
         {
           title: 'Space Exploration: New Mars Mission Announced',
-          content: 'The international space community is excited about the announcement of a new Mars exploration mission scheduled for 2027. The mission will deploy advanced rovers equipped with cutting-edge scientific instruments designed to search for signs of past or present microbial life. Additionally, the mission will collect samples for potential return to Earth, marking a significant milestone in our understanding of the Red Planet.',
+          content: 'The international space community is excited about the announcement of a new Mars exploration mission scheduled for the near future. The mission will deploy advanced rovers equipped with cutting-edge scientific instruments designed to search for signs of past or present microbial life. Additionally, the mission will collect samples for potential return to Earth, marking a significant milestone in our understanding of the Red Planet.',
           summary: 'Ambitious new Mars mission aims to discover signs of life and collect samples.',
           category: 'Science',
           status: 'published',
