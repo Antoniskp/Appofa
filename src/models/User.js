@@ -26,7 +26,7 @@ const User = sequelize.define('User', {
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true  // Allow null for OAuth-only accounts
   },
   role: {
     type: DataTypes.ENUM('admin', 'moderator', 'editor', 'viewer'),
@@ -38,6 +38,19 @@ const User = sequelize.define('User', {
     allowNull: true
   },
   lastName: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  avatar: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  githubId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  githubAccessToken: {
     type: DataTypes.STRING,
     allowNull: true
   }

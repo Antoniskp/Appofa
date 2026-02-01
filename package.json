@@ -20,6 +20,7 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "autoprefixer": "^10.4.23",
+    "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
