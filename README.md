@@ -5,6 +5,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 ## Highlights
 - JWT-based authentication with role-based access control (Admin, Moderator, Editor, Viewer)
 - Article CRUD with news submission and moderation workflow
+- Article types and categories with dependent dropdowns (Personal, Articles, News)
 - Next.js App Router frontend with Tailwind CSS styling
 
 ## Documentation
@@ -14,6 +15,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [Deployment](doc/DEPLOYMENT.md)
 - [VPS Deployment](doc/VPS_DEPLOYMENT.md)
 - [API Testing Examples](doc/API_TESTING.md)
+- [Article Types & Categories Testing](doc/ARTICLE_TYPES_TESTING.md)
 - [Troubleshooting](doc/TROUBLESHOOTING.md)
 - [Postman Collection](postman_collection.json)
 
@@ -47,12 +49,14 @@ npm run seed
 
 ## Scripts
 ```bash
-npm run dev            # API server (development)
-npm start              # API server (production)
-npm run frontend       # Next.js dev server (port 3001)
-npm run frontend:build # Next.js production build
-npm run frontend:start # Next.js production server
-npm test               # Jest tests
+npm run dev                  # API server (development)
+npm start                    # API server (production)
+npm run frontend             # Next.js dev server (port 3001)
+npm run frontend:build       # Next.js production build
+npm run frontend:start       # Next.js production server
+npm test                     # Jest tests
+npm run seed                 # Seed database with sample data
+npm run migrate:article-types # Migrate existing articles to new type field
 ```
 
 ## License
