@@ -72,6 +72,8 @@ function EditArticlePageContent() {
       const response = await articleAPI.update(params.id, formData);
       if (response.success) {
         router.push(`/articles/${params.id}`);
+      } else {
+        setSubmitError(response.message || 'Failed to update article.');
       }
     } catch (err) {
       setSubmitError('Failed to update article: ' + err.message);
