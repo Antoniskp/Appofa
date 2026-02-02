@@ -8,6 +8,7 @@ import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
+import ImagePicker from '@/components/ImagePicker';
 
 function EditArticlePageContent() {
   const params = useParams();
@@ -23,6 +24,7 @@ function EditArticlePageContent() {
     tags: '',
     status: 'draft',
     isNews: false,
+    introImageId: null,
   });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -45,6 +47,7 @@ function EditArticlePageContent() {
             tags: Array.isArray(currentArticle.tags) ? currentArticle.tags.join(', ') : '',
             status: currentArticle.status || 'draft',
             isNews: Boolean(currentArticle.isNews),
+            introImageId: currentArticle.introImageId ?? null,
           });
         }
       } catch (err) {
@@ -141,7 +144,7 @@ function EditArticlePageContent() {
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Link href={`/articles/${article.id}`} className="inline-block mb-6 text-blue-600 hover:text-blue-800">
           ← Back to Article
         </Link>
@@ -218,7 +221,7 @@ function EditArticlePageContent() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
                   Τύπος Άρθρου (Article Type) *
@@ -273,7 +276,7 @@ function EditArticlePageContent() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                   Status *
@@ -290,6 +293,16 @@ function EditArticlePageContent() {
                   <option value="archived">Archived</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Intro Image
+              </label>
+              <ImagePicker
+                value={formData.introImageId}
+                onChange={(introImageId) => setFormData((prev) => ({ ...prev, introImageId }))}
+              />
             </div>
 
             <div className="flex gap-4">
