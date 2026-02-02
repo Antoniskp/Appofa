@@ -3,23 +3,39 @@
 import Link from 'next/link';
 import { getArticleTypeLabel } from '@/lib/utils/articleTypes';
 
+const ARTICLE_TYPE_CONFIG = {
+  news: {
+    href: '/news',
+    labelKey: 'news',
+  },
+  articles: {
+    href: '/articles',
+    labelKey: 'articles',
+  },
+  personal: {
+    href: '/articles',
+    labelKey: 'personal',
+  },
+};
+
+const resolveArticleType = (article) => {
+  if (typeof article?.type === 'string' && article.type.trim() !== '') {
+    return ARTICLE_TYPE_CONFIG[article.type] ? article.type : 'articles';
+  }
+  if (article?.isNews) {
+    return 'news';
+  }
+  return undefined;
+};
+
 export default function ArticleBreadcrumb({ article, className = '' }) {
-  const articleType = article?.type || (article?.isNews ? 'news' : 'articles');
-  const articleTypeConfig = {
-    news: {
-      href: '/news',
-      label: getArticleTypeLabel('news'),
-    },
-    articles: {
-      href: '/articles',
-      label: getArticleTypeLabel('articles'),
-    },
-    personal: {
-      href: '/articles',
-      label: getArticleTypeLabel('personal'),
-    },
-  };
-  const breadcrumb = articleTypeConfig[articleType] ?? articleTypeConfig.articles;
+  const inferredType = resolveArticleType(article);
+  const fallbackType = inferredType ?? (article ? 'articles' : undefined);
+  if (!fallbackType) {
+    return null;
+  }
+  const breadcrumb = ARTICLE_TYPE_CONFIG[fallbackType];
+  const breadcrumbLabel = getArticleTypeLabel(breadcrumb.labelKey) || breadcrumb.labelKey;
   const categoryLabel = article?.category;
 
   return (
@@ -27,7 +43,7 @@ export default function ArticleBreadcrumb({ article, className = '' }) {
       <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
         <li>
           <Link href={breadcrumb.href} className="text-blue-600 hover:text-blue-800">
-            {breadcrumb.label}
+            {breadcrumbLabel}
           </Link>
         </li>
         {categoryLabel && (
