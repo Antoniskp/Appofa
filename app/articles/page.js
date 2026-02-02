@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
@@ -62,8 +61,6 @@ export default function ArticlesPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <h1 className="text-4xl font-bold mb-8">All Articles</h1>
-
         {/* Filters */}
         <div className="card p-4 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

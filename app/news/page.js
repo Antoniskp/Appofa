@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
@@ -54,16 +53,6 @@ export default function NewsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">News</h1>
-            <p className="text-gray-600">Approved news stories from our community.</p>
-          </div>
-          <Link href="/articles" className="text-blue-600 hover:text-blue-800 font-medium">
-            Browse Articles →
-          </Link>
-        </div>
-
         <div className="card p-4 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
