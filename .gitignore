@@ -10,4 +10,3 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 tmp/
-public/uploads/
