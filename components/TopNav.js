@@ -147,7 +147,7 @@ export default function TopNav() {
                           className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/admin')}`}
                         >
                           <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
-                          Διαχειρηστής
+                          Διαχείριση
                         </Link>
                         <Link
                           href="/admin/status"
@@ -281,7 +281,7 @@ export default function TopNav() {
                       className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/admin')}`}
                     >
                       <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
-                      Διαχείρηση
+                      Διαχείριση
                     </Link>
                     <Link
                       href="/admin/status"
