@@ -1,6 +1,6 @@
  'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { imageAPI } from '@/lib/api';
 
 const emptySelection = {
@@ -34,7 +34,7 @@ export default function ImagePicker({
     setSelection((prev) => ({ ...prev, imageId: value ? String(value) : '' }));
   }, [value]);
 
-  const fetchImages = async (tag) => {
+  const fetchImages = useCallback(async (tag) => {
     setLoading(true);
     setErrorMessage('');
     try {
@@ -51,11 +51,11 @@ export default function ImagePicker({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchImages('');
-  }, []);
+  }, [fetchImages]);
 
   const handleModeChange = (event) => {
     const nextMode = event.target.value;
@@ -79,7 +79,7 @@ export default function ImagePicker({
 
   const notifySelection = (id) => {
     const numericId = id ? Number(id) : null;
-    onChange(numericId || null);
+    onChange(numericId ?? null);
   };
 
   const handleUseExisting = () => {
