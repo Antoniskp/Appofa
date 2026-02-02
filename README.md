@@ -8,6 +8,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
 - Article types and categories with dependent dropdowns (Personal, Articles, News)
+- **Image management** with upload, tagging, and article integration
 - Next.js App Router frontend with Tailwind CSS styling
 
 ## Documentation
@@ -18,6 +19,8 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [VPS Deployment](doc/VPS_DEPLOYMENT.md)
 - [API Testing Examples](doc/API_TESTING.md)
 - [Article Types & Categories Testing](doc/ARTICLE_TYPES_TESTING.md)
+- [Image Management API](doc/IMAGE_API.md)
+- [Image Management User Guide](doc/IMAGE_USER_GUIDE.md)
 - [Troubleshooting](doc/TROUBLESHOOTING.md)
 - [Postman Collection](postman_collection.json)
 
