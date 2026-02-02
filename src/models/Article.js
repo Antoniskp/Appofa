@@ -72,6 +72,14 @@ const Article = sequelize.define('Article', {
     type: DataTypes.JSON,
     allowNull: true,
     defaultValue: []
+  },
+  introImageId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Images',
+      key: 'id'
+    }
   }
 }, {
   timestamps: true

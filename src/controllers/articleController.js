@@ -1,4 +1,4 @@
-const { Article, User, sequelize } = require('../models');
+const { Article, User, Image, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 
@@ -6,7 +6,7 @@ const articleController = {
   // Create a new article
   createArticle: async (req, res) => {
     try {
-      const { title, content, summary, category, status, isNews, type, tags } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, introImageId } = req.body;
 
       // Validate required fields
       if (!title || !content) {
@@ -14,6 +14,24 @@ const articleController = {
           success: false,
           message: 'Title and content are required.'
         });
+      }
+
+      // Validate introImageId if provided
+      if (introImageId) {
+        const image = await Image.findByPk(introImageId);
+        if (!image) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid introImageId. Image not found.'
+          });
+        }
+        // Check if user owns the image or has appropriate permissions
+        if (image.ownerId !== req.user.id && !['admin', 'editor', 'moderator'].includes(req.user.role)) {
+          return res.status(403).json({
+            success: false,
+            message: 'You do not have permission to use this image.'
+          });
+        }
       }
 
       // Determine article type - support both old isNews and new type field
@@ -33,16 +51,24 @@ const articleController = {
         authorId: req.user.id,
         publishedAt: status === 'published' ? new Date() : null,
         type: articleType,
-        isNews: articleType === 'news' || isNews
+        isNews: articleType === 'news' || isNews,
+        introImageId: introImageId || null
       });
 
-      // Fetch article with author info
+      // Fetch article with author info and intro image
       const articleWithAuthor = await Article.findByPk(article.id, {
-        include: [{
-          model: User,
-          as: 'author',
-          attributes: ['id', 'username', 'firstName', 'lastName']
-        }]
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username', 'firstName', 'lastName']
+          },
+          {
+            model: Image,
+            as: 'introImage',
+            attributes: ['id', 'url', 'title', 'width', 'height']
+          }
+        ]
       });
 
       res.status(201).json({
@@ -124,11 +150,18 @@ const articleController = {
           // Non-Postgres fallback uses in-memory filtering (intended for small datasets/testing).
           const allArticles = await Article.findAll({
             where,
-            include: [{
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username', 'firstName', 'lastName']
-            }],
+            include: [
+              {
+                model: User,
+                as: 'author',
+                attributes: ['id', 'username', 'firstName', 'lastName']
+              },
+              {
+                model: Image,
+                as: 'introImage',
+                attributes: ['id', 'url', 'title', 'width', 'height']
+              }
+            ],
             order: [['createdAt', 'DESC']]
           });
 
@@ -160,11 +193,18 @@ const articleController = {
 
       const { count, rows: articles } = await Article.findAndCountAll({
         where,
-        include: [{
-          model: User,
-          as: 'author',
-          attributes: ['id', 'username', 'firstName', 'lastName']
-        }],
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username', 'firstName', 'lastName']
+          },
+          {
+            model: Image,
+            as: 'introImage',
+            attributes: ['id', 'url', 'title', 'width', 'height']
+          }
+        ],
         order: [['createdAt', 'DESC']],
         limit: parsedLimit,
         offset: parseInt(offset)
@@ -198,11 +238,18 @@ const articleController = {
       const { id } = req.params;
 
       const article = await Article.findByPk(id, {
-        include: [{
-          model: User,
-          as: 'author',
-          attributes: ['id', 'username', 'firstName', 'lastName']
-        }]
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username', 'firstName', 'lastName']
+          },
+          {
+            model: Image,
+            as: 'introImage',
+            attributes: ['id', 'url', 'title', 'width', 'height']
+          }
+        ]
       });
 
       if (!article) {
@@ -238,7 +285,7 @@ const articleController = {
   updateArticle: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, summary, category, status, isNews, type, tags } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, introImageId } = req.body;
 
       const article = await Article.findByPk(id);
 
@@ -255,6 +302,30 @@ const articleController = {
           success: false,
           message: 'You do not have permission to update this article.'
         });
+      }
+
+      // Validate introImageId if provided
+      if (introImageId !== undefined) {
+        if (introImageId === null) {
+          // Allow removing the image
+          article.introImageId = null;
+        } else {
+          const image = await Image.findByPk(introImageId);
+          if (!image) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid introImageId. Image not found.'
+            });
+          }
+          // Check if user owns the image or has appropriate permissions
+          if (image.ownerId !== req.user.id && !['admin', 'editor', 'moderator'].includes(req.user.role)) {
+            return res.status(403).json({
+              success: false,
+              message: 'You do not have permission to use this image.'
+            });
+          }
+          article.introImageId = introImageId;
+        }
       }
 
       // Update fields
@@ -299,13 +370,20 @@ const articleController = {
 
       await article.save();
 
-      // Fetch updated article with author info
+      // Fetch updated article with author info and intro image
       const updatedArticle = await Article.findByPk(id, {
-        include: [{
-          model: User,
-          as: 'author',
-          attributes: ['id', 'username', 'firstName', 'lastName']
-        }]
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username', 'firstName', 'lastName']
+          },
+          {
+            model: Image,
+            as: 'introImage',
+            attributes: ['id', 'url', 'title', 'width', 'height']
+          }
+        ]
       });
 
       res.status(200).json({
@@ -400,6 +478,11 @@ const articleController = {
             model: User,
             as: 'author',
             attributes: ['id', 'username', 'firstName', 'lastName']
+          },
+          {
+            model: Image,
+            as: 'introImage',
+            attributes: ['id', 'url', 'title', 'width', 'height']
           }
         ]
       });
