@@ -145,16 +145,18 @@ export default function ArticleDetailPage() {
             </div>
           </div>
 
-          <div className="mb-8">
-            <img
-              src={article.introImage?.url || '/images/article/default-banner.jpg'}
-              alt={article.introImage?.title || article.title}
-              className="w-full max-h-[420px] object-cover rounded-lg"
-            />
-            {article.introImage?.title && (
-              <p className="text-sm text-gray-500 mt-2">{article.introImage.title}</p>
-            )}
-          </div>
+          {article.introImage && (
+            <div className="mb-8">
+              <img
+                src={article.introImage.url}
+                alt={article.introImage.title || article.title}
+                className="w-full max-h-[420px] object-cover rounded-lg"
+              />
+              {article.introImage.title && (
+                <p className="text-sm text-gray-500 mt-2">{article.introImage.title}</p>
+              )}
+            </div>
+          )}
 
           {/* Article Summary */}
           {article.summary && (
