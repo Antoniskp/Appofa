@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
+import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
@@ -19,6 +20,7 @@ export default function ArticlesPage() {
     tag: '',
   });
   const filterInputClassName = 'w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500';
+  const articleCategoryOptions = articleCategories.articleTypes?.articles?.categories ?? [];
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -69,15 +71,20 @@ export default function ArticlesPage() {
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
                 Category
               </label>
-              <input
-                type="text"
+              <select
                 id="category"
                 name="category"
                 value={filters.category}
                 onChange={handleFilterChange}
-                placeholder="Filter by category..."
                 className={filterInputClassName}
-              />
+              >
+                <option value="">All categories</option>
+                {articleCategoryOptions.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label htmlFor="tag" className="block text-sm font-medium text-gray-700 mb-2">

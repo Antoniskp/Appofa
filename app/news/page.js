@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
+import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
@@ -14,6 +15,8 @@ export default function NewsPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [tagFilter, setTagFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const newsCategoryOptions = articleCategories.articleTypes?.news?.categories ?? [];
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -29,6 +32,9 @@ export default function NewsPage() {
         if (tagFilter) {
           params.tag = tagFilter;
         }
+        if (categoryFilter) {
+          params.category = categoryFilter;
+        }
 
         const response = await articleAPI.getAll(params);
         if (response.success) {
@@ -43,7 +49,7 @@ export default function NewsPage() {
     };
 
     fetchNews();
-  }, [page, tagFilter]);
+  }, [page, tagFilter, categoryFilter]);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -60,6 +66,28 @@ export default function NewsPage() {
 
         <div className="card p-4 mb-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+                Category
+              </label>
+              <select
+                id="category"
+                name="category"
+                value={categoryFilter}
+                onChange={(event) => {
+                  setCategoryFilter(event.target.value);
+                  setPage(1);
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All categories</option>
+                {newsCategoryOptions.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </div>
             <div>
               <label htmlFor="tag" className="block text-sm font-medium text-gray-700 mb-2">
                 Tag
