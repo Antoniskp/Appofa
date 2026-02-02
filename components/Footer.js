@@ -10,7 +10,7 @@ export default function Footer() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Απόφαση</h3>
             <p className="text-gray-400 text-sm">
-              Η αξιόπιστη πηγή σας για τις πιο πρόσφατες ειδήσεις και άρθρα. Απάντησε και κάνε τα αποτελέσματα εγκυρότερα.
+              Η αξιόπιστη πηγή σας για τις πιο πρόσφατες ειδήσεις και άρθρα. Απαντήστε και κάντε τα αποτελέσματα εγκυρότερα.
             </p>
           </div>
           <div>
@@ -39,9 +39,11 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <Link href="/contact" className="text-gray-400 hover:text-white text-sm">
-              <h3 className="text-lg font-semibold mb-4">Επικοινωνία</h3>
-            </Link>
+            <h3 className="text-lg font-semibold mb-4 text-gray-400">
+              <Link href="/contact" className="hover:text-white">
+                Επικοινωνία
+              </Link>
+            </h3>
             <p className="text-gray-400 text-sm">
               Email: eimaiautospou@gmail.com
             </p>

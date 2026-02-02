@@ -1,6 +1,6 @@
 export const metadata = {
   title: 'Αποστολή - Απόφαση',
-  description: 'Η αποστολή και οι αρχές του Apofasi',
+  description: 'Η αποστολή και οι αρχές του Απόφαση',
 };
 
 export default function MissionPage() {
