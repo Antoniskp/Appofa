@@ -83,6 +83,15 @@ export default function ImagePicker({
     }
   };
 
+  const resetUploadSelection = (updates = {}) => {
+    setSelection((prev) => ({
+      ...prev,
+      ...updates,
+      file: null,
+    }));
+    setUploadPreview('');
+  };
+
   const handleSearch = async () => {
     await fetchImages(searchTag.trim());
   };
@@ -123,12 +132,7 @@ export default function ImagePicker({
         const newImage = response.data.image;
         setMyImages((prev) => [newImage, ...prev]);
         notifySelection(newImage.id);
-        setSelection((prev) => ({
-          ...prev,
-          imageId: String(newImage.id),
-          file: null,
-        }));
-        setUploadPreview('');
+        resetUploadSelection({ imageId: String(newImage.id) });
       }
     } catch (error) {
       setErrorMessage(error.message || 'Failed to upload image.');
@@ -168,8 +172,7 @@ export default function ImagePicker({
 
   const handleClearSelection = () => {
     notifySelection(null);
-    setSelection((prev) => ({ ...prev, imageId: '', file: null }));
-    setUploadPreview('');
+    resetUploadSelection({ imageId: '' });
   };
 
   return (
@@ -343,7 +346,7 @@ export default function ImagePicker({
         </div>
       )}
 
-      {(value || selection.imageId || uploadPreview) && (
+      {(value || selection.imageId || selection.file) && (
         <button
           type="button"
           onClick={handleClearSelection}
