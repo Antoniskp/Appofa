@@ -8,6 +8,7 @@ import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 import { getArticleTypeLabel, getArticleTypeClasses, isCategoryRequired } from '@/lib/utils/articleTypes';
+import ImagePicker from '@/components/ImagePicker';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -24,6 +25,7 @@ function EditorDashboardContent() {
     tags: '',
     status: 'draft',
     isNews: false,
+    introImageId: null,
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -92,6 +94,7 @@ function EditorDashboardContent() {
           tags: '',
           status: 'draft',
           isNews: false,
+          introImageId: null,
         });
         fetchArticles();
       }
@@ -130,9 +133,9 @@ function EditorDashboardContent() {
         </div>
 
         {/* Create Article Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Create New Article</h2>
+        <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-semibold">Create New Article</h2>
             <button
               onClick={() => setShowForm(!showForm)}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
@@ -205,7 +208,7 @@ function EditorDashboardContent() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
                     Τύπος Άρθρου (Article Type) *
@@ -260,7 +263,7 @@ function EditorDashboardContent() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
                     Status *
@@ -277,6 +280,16 @@ function EditorDashboardContent() {
                     <option value="archived">Archived</option>
                   </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Intro Image
+                </label>
+                <ImagePicker
+                  value={formData.introImageId}
+                  onChange={(introImageId) => setFormData((prev) => ({ ...prev, introImageId }))}
+                />
               </div>
 
               <div className="flex gap-4">
