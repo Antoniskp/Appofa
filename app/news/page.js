@@ -7,32 +7,23 @@ import ArticleCard from '@/components/ArticleCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 
-export default function ArticlesPage() {
+export default function NewsPage() {
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [filters, setFilters] = useState({
-    status: 'published',
-    category: '',
-    type: 'articles',
-  });
 
   useEffect(() => {
-    const fetchArticles = async () => {
+    const fetchNews = async () => {
       setLoading(true);
       try {
         const params = {
           page,
           limit: 10,
-          ...filters,
+          status: 'published',
+          type: 'news',
         };
-        
-        // Remove empty filters
-        Object.keys(params).forEach(key => {
-          if (!params[key]) delete params[key];
-        });
 
         const response = await articleAPI.getAll(params);
         if (response.success) {
@@ -46,69 +37,32 @@ export default function ArticlesPage() {
       }
     };
 
-    fetchArticles();
-  }, [page, filters]);
-
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-    setPage(1); // Reset to first page on filter change
-  };
+    fetchNews();
+  }, [page]);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <h1 className="text-4xl font-bold mb-8">All Articles</h1>
-
-        {/* Filters */}
-        <div className="card p-4 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <input
-                type="text"
-                id="category"
-                name="category"
-                value={filters.category}
-                onChange={handleFilterChange}
-                placeholder="Filter by category..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">News</h1>
+            <p className="text-gray-600">Approved news stories from our community.</p>
           </div>
+          <Link href="/articles" className="text-blue-600 hover:text-blue-800 font-medium">
+            Browse Articles →
+          </Link>
         </div>
 
-        {/* Loading State */}
         {loading && (
           <div className="space-y-6">
             <SkeletonLoader count={5} variant="list" />
           </div>
         )}
 
-        {/* Error State */}
         {error && (
           <EmptyState
             type="error"
-            title="Error Loading Articles"
+            title="Error Loading News"
             description={error}
             action={{
               text: 'Try Again',
@@ -117,12 +71,11 @@ export default function ArticlesPage() {
           />
         )}
 
-        {/* Articles List */}
         {!loading && !error && articles.length === 0 && (
           <EmptyState
             type="empty"
-            title="No Articles Found"
-            description="No articles match your current filters. Try adjusting your search criteria."
+            title="No News Available"
+            description="There are no approved news stories yet. Check back soon!"
           />
         )}
 
@@ -132,7 +85,6 @@ export default function ArticlesPage() {
           ))}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center space-x-4 mt-8">
             <button
