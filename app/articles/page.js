@@ -14,7 +14,6 @@ export default function ArticlesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
-    status: 'published',
     category: '',
     type: 'articles',
     tag: '',
@@ -29,6 +28,7 @@ export default function ArticlesPage() {
           page,
           limit: 10,
           ...filters,
+          status: 'published',
         };
         
         // Remove empty filters
@@ -92,23 +92,6 @@ export default function ArticlesPage() {
                 placeholder="Filter by tag..."
                 className={filterInputClassName}
               />
-            </div>
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <select
-                id="status"
-                name="status"
-                value={filters.status}
-                onChange={handleFilterChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="">All</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="archived">Archived</option>
-              </select>
             </div>
           </div>
         </div>
