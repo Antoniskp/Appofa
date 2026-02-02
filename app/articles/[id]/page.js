@@ -93,6 +93,11 @@ export default function ArticleDetailPage() {
                   {article.category}
                 </span>
               )}
+              {Array.isArray(article.tags) && article.tags.length > 0 && (
+                <span className="inline-block bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded">
+                  {article.tags.join(', ')}
+                </span>
+              )}
               {article.status !== 'published' && (
                 <span className="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded">
                   {article.status}
