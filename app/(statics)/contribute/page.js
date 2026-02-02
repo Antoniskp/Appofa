@@ -122,7 +122,7 @@ export default function ContributePage() {
                     href="https://github.com/Antoniskp/appofasiv8/issues"
                     className="text-blue-600 hover:text-blue-800"
                     target="_blank"
-                    rel="noreferrer noopener"
+                    rel="noopener noreferrer"
                   >
                     GitHub issues
                   </a>
@@ -135,7 +135,7 @@ export default function ContributePage() {
                     href="https://github.com/Antoniskp/appofasiv8"
                     className="text-blue-600 hover:text-blue-800"
                     target="_blank"
-                    rel="noreferrer noopener"
+                    rel="noopener noreferrer"
                   >
                     αποθετηρίου στο GitHub
                   </a>

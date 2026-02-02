@@ -24,7 +24,7 @@ export default function ContactPage() {
                     href="https://discord.gg/pvJftR4T98"
                     className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-4 py-2 text-sm font-medium text-[#5865F2] transition hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                     target="_blank"
-                    rel="noreferrer noopener"
+                    rel="noopener noreferrer"
                   >
                     <svg
                       className="h-6 w-6"
