@@ -27,22 +27,44 @@ const imageController = {
       let processedImagePath = file.path;
       
       if (metadata.width > maxDimension || metadata.height > maxDimension) {
-        await sharp(file.path)
-          .resize(maxDimension, maxDimension, {
-            fit: 'inside',
-            withoutEnlargement: true
-          })
-          .jpeg({ quality: 85 })
-          .toFile(file.path + '.temp');
+        const sharpInstance = sharp(file.path).resize(maxDimension, maxDimension, {
+          fit: 'inside',
+          withoutEnlargement: true
+        });
+
+        // Preserve original format when possible
+        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+          sharpInstance.jpeg({ quality: 85 });
+        } else if (file.mimetype === 'image/png') {
+          sharpInstance.png({ quality: 85, compressionLevel: 8 });
+        } else if (file.mimetype === 'image/webp') {
+          sharpInstance.webp({ quality: 85 });
+        } else {
+          // For GIF and others, keep original format
+          sharpInstance.toFormat(metadata.format, { quality: 85 });
+        }
+
+        await sharpInstance.toFile(file.path + '.temp');
 
         // Replace original with compressed version
         await fs.unlink(file.path);
         await fs.rename(file.path + '.temp', file.path);
       } else {
-        // Just compress without resizing
-        await sharp(file.path)
-          .jpeg({ quality: 85 })
-          .toFile(file.path + '.temp');
+        // Just compress without resizing, preserving format
+        const sharpInstance = sharp(file.path);
+
+        if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/jpg') {
+          sharpInstance.jpeg({ quality: 85 });
+        } else if (file.mimetype === 'image/png') {
+          sharpInstance.png({ quality: 85, compressionLevel: 8 });
+        } else if (file.mimetype === 'image/webp') {
+          sharpInstance.webp({ quality: 85 });
+        } else {
+          // For GIF and others, keep original format
+          sharpInstance.toFormat(metadata.format, { quality: 85 });
+        }
+
+        await sharpInstance.toFile(file.path + '.temp');
 
         await fs.unlink(file.path);
         await fs.rename(file.path + '.temp', file.path);
@@ -60,13 +82,20 @@ const imageController = {
         thumbnailFilename
       );
 
-      await sharp(file.path)
-        .resize(300, 300, {
-          fit: 'cover',
-          position: 'center'
-        })
-        .jpeg({ quality: 80 })
-        .toFile(thumbnailPath);
+      // Preserve PNG transparency for thumbnails, otherwise use JPEG
+      const thumbnailInstance = sharp(file.path).resize(300, 300, {
+        fit: 'cover',
+        position: 'center'
+      });
+
+      if (file.mimetype === 'image/png') {
+        await thumbnailInstance.png({ quality: 80, compressionLevel: 8 }).toFile(thumbnailPath);
+      } else if (file.mimetype === 'image/webp') {
+        await thumbnailInstance.webp({ quality: 80 }).toFile(thumbnailPath);
+      } else {
+        // Use JPEG for JPEG and GIF formats (GIF thumbnails don't need animation)
+        await thumbnailInstance.jpeg({ quality: 80 }).toFile(thumbnailPath);
+      }
 
       // Generate URL (relative to public directory)
       const imageUrl = `/uploads/images/${file.filename}`;
