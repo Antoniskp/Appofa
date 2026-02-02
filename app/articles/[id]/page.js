@@ -34,6 +34,10 @@ export default function ArticleDetailPage() {
     }
   }, [params.id]);
 
+  const isNews = article?.type === 'news' || article?.isNews;
+  const breadcrumbLabel = isNews ? 'News' : 'Articles';
+  const breadcrumbHref = isNews ? '/news' : '/articles';
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this article?')) {
       return;
@@ -62,9 +66,17 @@ export default function ArticleDetailPage() {
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
           <p>Error loading article: {error || 'Article not found'}</p>
         </div>
-        <Link href="/articles" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
-          ← Back to Articles
-        </Link>
+        <nav aria-label="Breadcrumb" className="mt-4">
+          <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+            <li>
+              <Link href={breadcrumbHref} className="text-blue-600 hover:text-blue-800">
+                {breadcrumbLabel}
+              </Link>
+            </li>
+            <li className="text-gray-400">/</li>
+            <li className="text-gray-700">Article</li>
+          </ol>
+        </nav>
       </div>
     );
   }
@@ -75,9 +87,17 @@ export default function ArticleDetailPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link href="/articles" className="inline-block mb-6 text-blue-600 hover:text-blue-800">
-          ← Back to Articles
-        </Link>
+        <nav aria-label="Breadcrumb" className="mb-6">
+          <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+            <li>
+              <Link href={breadcrumbHref} className="text-blue-600 hover:text-blue-800">
+                {breadcrumbLabel}
+              </Link>
+            </li>
+            <li className="text-gray-400">/</li>
+            <li className="text-gray-700">{article.title}</li>
+          </ol>
+        </nav>
 
         <div className="bg-white rounded-lg shadow-md p-8">
           {/* Article Header */}
