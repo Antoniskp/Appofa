@@ -9,20 +9,19 @@ import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleT
 export default function ArticleCard({ article, variant = 'grid' }) {
   const isListVariant = variant === 'list';
   const introImage = article.introImage;
+  const bannerImage = introImage?.url || '/images/article/default-banner.jpg';
 
   return (
     <article className={isListVariant ? 'card p-6' : 'card'}>
       {isListVariant ? (
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-          {introImage && (
-            <div className="w-full md:w-48 flex-shrink-0">
-              <img
-                src={introImage.url}
-                alt={introImage.title || article.title}
-                className="h-32 w-full object-cover rounded"
-              />
-            </div>
-          )}
+          <div className="w-full md:w-48 flex-shrink-0">
+            <img
+              src={bannerImage}
+              alt={introImage?.title || article.title}
+              className="h-32 w-full object-cover rounded"
+            />
+          </div>
           <div className="flex-grow">
             <div className="flex flex-wrap gap-2 mb-2">
               {article.type && (
@@ -70,15 +69,13 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         </div>
       ) : (
         <div className="p-6">
-          {introImage && (
-            <div className="mb-4">
-              <img
-                src={introImage.url}
-                alt={introImage.title || article.title}
-                className="h-40 w-full object-cover rounded"
-              />
-            </div>
-          )}
+          <div className="mb-4">
+            <img
+              src={bannerImage}
+              alt={introImage?.title || article.title}
+              className="h-40 w-full object-cover rounded"
+            />
+          </div>
           <div className="flex flex-wrap gap-2 mb-2">
             {article.type && (
               <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
