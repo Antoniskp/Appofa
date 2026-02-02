@@ -6,12 +6,14 @@ const express = require('express');
 const cors = require('cors');
 const authRoutes = require('../src/routes/authRoutes');
 const articleRoutes = require('../src/routes/articleRoutes');
+const adminRoutes = require('../src/routes/adminRoutes');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
+app.use('/api/admin', adminRoutes);
 
 describe('News Application Integration Tests', () => {
   let adminToken;
@@ -498,6 +500,27 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
+    });
+  });
+
+  describe('Admin Health Checks', () => {
+    test('admin should fetch health status', async () => {
+      const response = await request(app)
+        .get('/api/admin/health')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('healthy');
+      expect(response.body.checks).toBeDefined();
+    });
+
+    test('viewer should not access health status', async () => {
+      const response = await request(app)
+        .get('/api/admin/health')
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
     });
   });
 

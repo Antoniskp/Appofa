@@ -9,6 +9,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   PencilSquareIcon,
+  ServerIcon,
   ShieldCheckIcon,
   UserCircleIcon,
   UserPlusIcon
@@ -139,14 +140,24 @@ export default function TopNav() {
                       Profile
                     </Link>
                     {user.role === 'admin' && (
-                      <Link
-                        href="/admin"
-                        role="menuitem"
-                        className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/admin')}`}
-                      >
-                        <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
-                        Admin
-                      </Link>
+                      <>
+                        <Link
+                          href="/admin"
+                          role="menuitem"
+                          className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/admin')}`}
+                        >
+                          <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
+                          Admin
+                        </Link>
+                        <Link
+                          href="/admin/status"
+                          role="menuitem"
+                          className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/admin/status')}`}
+                        >
+                          <ServerIcon className="h-4 w-4" aria-hidden="true" />
+                          System Health
+                        </Link>
+                      </>
                     )}
                     {(user.role === 'admin' || user.role === 'editor') && (
                       <Link
@@ -263,14 +274,24 @@ export default function TopNav() {
                   Profile
                 </Link>
                 {user.role === 'admin' && (
-                  <Link
-                    href="/admin"
-                    role="menuitem"
-                    className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/admin')}`}
-                  >
-                    <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
-                    Admin
-                  </Link>
+                  <>
+                    <Link
+                      href="/admin"
+                      role="menuitem"
+                      className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/admin')}`}
+                    >
+                      <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
+                      Admin
+                    </Link>
+                    <Link
+                      href="/admin/status"
+                      role="menuitem"
+                      className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/admin/status')}`}
+                    >
+                      <ServerIcon className="h-5 w-5" aria-hidden="true" />
+                      System Health
+                    </Link>
+                  </>
                 )}
                 {(user.role === 'admin' || user.role === 'editor') && (
                   <Link
