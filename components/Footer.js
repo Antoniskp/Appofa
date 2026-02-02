@@ -39,11 +39,11 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <Link href="/contact" className="text-gray-400 hover:text-white text-sm">
-              <h3 className="text-lg font-semibold mb-4">Επικοινωνία</h3>
-            </Link>
+            <h3 className="text-lg font-semibold mb-4">Επικοινωνία</h3>
             <p className="text-gray-400 text-sm">
-              Email: eimaiautospou@gmail.com
+              <Link href="/contact" className="text-gray-400 hover:text-white">
+                Email: eimaiautospou@gmail.com
+              </Link>
             </p>
             <p className="text-gray-400 text-sm">
               Τηλέφωνο: Προσεχώς
