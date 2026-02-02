@@ -19,6 +19,7 @@ export default function ImagePicker({
   helperText = 'Upload or choose an intro image. Leave empty for none.',
 }) {
   const [selection, setSelection] = useState(emptySelection);
+  const [uploadPreview, setUploadPreview] = useState('');
   const [myImages, setMyImages] = useState([]);
   const [searchTag, setSearchTag] = useState('');
   const [loading, setLoading] = useState(false);
@@ -71,6 +72,15 @@ export default function ImagePicker({
   const handleFileChange = (event) => {
     const file = event.target.files?.[0] || null;
     setSelection((prev) => ({ ...prev, file }));
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadPreview(typeof reader.result === 'string' ? reader.result : '');
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setUploadPreview('');
+    }
   };
 
   const handleSearch = async () => {
@@ -118,6 +128,7 @@ export default function ImagePicker({
           imageId: String(newImage.id),
           file: null,
         }));
+        setUploadPreview('');
       }
     } catch (error) {
       setErrorMessage(error.message || 'Failed to upload image.');
@@ -157,7 +168,8 @@ export default function ImagePicker({
 
   const handleClearSelection = () => {
     notifySelection(null);
-    setSelection((prev) => ({ ...prev, imageId: '' }));
+    setSelection((prev) => ({ ...prev, imageId: '', file: null }));
+    setUploadPreview('');
   };
 
   return (
@@ -240,15 +252,24 @@ export default function ImagePicker({
         </div>
       )}
 
-      {selection.mode === 'upload' && (
-        <div className="space-y-3">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className="w-full text-sm text-gray-700"
-            disabled={disabled}
-          />
+        {selection.mode === 'upload' && (
+          <div className="space-y-3">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="w-full text-sm text-gray-700"
+              disabled={disabled}
+            />
+            {uploadPreview && (
+              <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                <img
+                  src={uploadPreview}
+                  alt="Selected upload preview"
+                  className="w-full max-h-56 object-cover rounded"
+                />
+              </div>
+            )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               type="text"
@@ -322,7 +343,7 @@ export default function ImagePicker({
         </div>
       )}
 
-      {(value || selection.imageId) && (
+      {(value || selection.imageId || uploadPreview) && (
         <button
           type="button"
           onClick={handleClearSelection}
