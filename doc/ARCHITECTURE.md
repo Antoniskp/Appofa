@@ -43,15 +43,6 @@
 │  │  │  ├─ POST   /         (Protected, Rate Limited)  │  │   │
 │  │  │  ├─ PUT    /:id      (Protected, Role-Based)    │  │   │
 │  │  │  └─ DELETE /:id      (Protected, Role-Based)    │  │   │
-│  │  │                                                   │  │   │
-│  │  │  /api/images/*                                   │  │   │
-│  │  │  ├─ POST   /upload    (Protected, Rate Limited)  │  │   │
-│  │  │  ├─ POST   /external  (Protected, Rate Limited)  │  │   │
-│  │  │  ├─ GET    /my-images (Protected)                │  │   │
-│  │  │  ├─ GET    /search    (Protected)                │  │   │
-│  │  │  ├─ GET    /:id       (Protected)                │  │   │
-│  │  │  ├─ PUT    /:id       (Protected, Owner)         │  │   │
-│  │  │  └─ DELETE /:id       (Protected, Owner)         │  │   │
 │  │  └──────────────────────────────────────────────────┘  │   │
 │  └─────────────────────────────────────────────────────────┘   │
 └───────────────────────────┬─────────────────────────────────────┘
@@ -61,22 +52,19 @@
 ┌───────────────────────────▼─────────────────────────────────────┐
 │                   Business Logic Layer                           │
 │                                                                   │
-│  ┌────────────────────────┐    ┌─────────────────────────────┐    ┌──────────────────────────┐
-│  │  Auth Controller       │    │  Article Controller         │    │  Image Controller        │
-│  │  ├─ register()        │    │  ├─ createArticle()        │    │  ├─ uploadImage()        │
-│  │  ├─ login()           │    │  ├─ getAllArticles()       │    │  ├─ addExternalImage()   │
-│  │  └─ getProfile()      │    │  ├─ getArticleById()       │    │  ├─ getMyImages()        │
-│  │                        │    │  ├─ updateArticle()        │    │  ├─ getImageById()       │
-│  │  Security:             │    │  └─ deleteArticle()        │    │  ├─ updateImage()        │
-│  │  • Password hashing    │    │                             │    │  ├─ deleteImage()        │
-│  │  • JWT generation      │    │  Authorization:             │    │  └─ searchImages()       │
-│  │  • Input validation    │    │  • Admin: All operations    │    │                          │
-│  └────────────────────────┘    │  • Editor: Create/Edit all  │    │  Image Processing:       │
-│                                 │  • Viewer: Create/Edit own  │    │  • Validation            │
-│                                 └─────────────────────────────┘    │  • Resizing (max 1920px) │
-│                                                                     │  • Compression (85%)     │
-│                                                                     │  • Thumbnail generation  │
-│                                                                     └──────────────────────────┘
+│  ┌────────────────────────┐    ┌─────────────────────────────┐ │
+│  │  Auth Controller       │    │  Article Controller         │ │
+│  │  ├─ register()        │    │  ├─ createArticle()        │ │
+│  │  ├─ login()           │    │  ├─ getAllArticles()       │ │
+│  │  └─ getProfile()      │    │  ├─ getArticleById()       │ │
+│  │                        │    │  ├─ updateArticle()        │ │
+│  │  Security:             │    │  └─ deleteArticle()        │ │
+│  │  • Password hashing    │    │                             │ │
+│  │  • JWT generation      │    │  Authorization:             │ │
+│  │  • Input validation    │    │  • Admin: All operations    │ │
+│  └────────────────────────┘    │  • Editor: Create/Edit all  │ │
+│                                 │  • Viewer: Create/Edit own  │ │
+│                                 └─────────────────────────────┘ │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
                             │ ORM Layer (Sequelize)
@@ -84,28 +72,25 @@
 ┌───────────────────────────▼─────────────────────────────────────┐
 │                      Data Models Layer                           │
 │                                                                   │
-│  ┌────────────────────┐          ┌──────────────────────────┐    ┌──────────────────────┐
-│  │    User Model      │          │    Article Model         │    │    Image Model       │
-│  │                    │          │                          │    │                      │
-│  │  Fields:           │          │  Fields:                 │    │  Fields:             │
-│  │  • id              │◄─────────┤  • id                    │    │  • id                │
-│  │  • username        │  1:N     │  • title                 │    │  • title             │
-│  │  • email           │  Author  │  • content               │    │  • url               │
-│  │  • password        │          │  • summary               │    │  • filename          │
-│  │  • role            │          │  • authorId (FK)         │    │  • originalName      │
-│  │  • firstName       │          │  • status                │    │  • mimeType          │
-│  │  • lastName        │          │  • publishedAt           │    │  • size              │
-│  │  • createdAt       │          │  • category              │    │  • width             │
-│  │  • updatedAt       │          │  • introImageId (FK)     │◄───┤  • height            │
-│  │                    │          │  • createdAt             │ 1:N│  • tags              │
-│  │  Hooks:            │          │  • updatedAt             │    │  • ownerId (FK)  ────┼─┐
-│  │  • beforeCreate    │          │                          │    │  • isExternal        │ │
-│  │  • beforeUpdate    │          │  Validations:            │    │  • createdAt         │ │
-│  │  (Hash password)   │          │  • Title length: 5-200   │    │  • updatedAt         │ │
-│  └────────────────────┘          │  • Content: 10-50000     │    │                      │ │
-│                                   └──────────────────────────┘    └──────────────────────┘ │
-│                                                                           1:N Owner          │
-│                                                                    ◄──────────────────────────┘
+│  ┌────────────────────┐          ┌──────────────────────────┐  │
+│  │    User Model      │          │    Article Model         │  │
+│  │                    │          │                          │  │
+│  │  Fields:           │          │  Fields:                 │  │
+│  │  • id              │◄─────────┤  • id                    │  │
+│  │  • username        │  1:N     │  • title                 │  │
+│  │  • email           │  Author  │  • content               │  │
+│  │  • password        │          │  • summary               │  │
+│  │  • role            │          │  • authorId (FK)         │  │
+│  │  • firstName       │          │  • status                │  │
+│  │  • lastName        │          │  • publishedAt           │  │
+│  │  • createdAt       │          │  • category              │  │
+│  │  • updatedAt       │          │  • createdAt             │  │
+│  │                    │          │  • updatedAt             │  │
+│  │  Hooks:            │          │                          │  │
+│  │  • beforeCreate    │          │  Validations:            │  │
+│  │  • beforeUpdate    │          │  • Title length: 5-200   │  │
+│  │  (Hash password)   │          │  • Content: 10-50000     │  │
+│  └────────────────────┘          └──────────────────────────┘  │
 └───────────────────────────┬─────────────────────────────────────┘
                             │
                             │ Database Driver (pg)
@@ -116,7 +101,6 @@
 │  Tables:                                                         │
 │  • Users                                                         │
 │  • Articles                                                      │
-│  • Images                                                        │
 │                                                                   │
 │  Features:                                                       │
 │  • ACID Compliance                                              │
@@ -124,29 +108,6 @@
 │  • Connection Pooling (5 connections)                           │
 │  • Transaction Support                                          │
 └─────────────────────────────────────────────────────────────────┘
-```
-
-## Image Upload and Processing Flow
-
-```
-User Uploads Image
-    │
-    ├─> Upload Middleware (multer)
-    │   ├─> Validate file type (JPEG, PNG, GIF, WebP)
-    │   ├─> Check file size (max 10MB)
-    │   └─> Save to temp location
-    │
-    ├─> Image Controller.uploadImage()
-    │   ├─> Process with Sharp
-    │   │   ├─> Read metadata
-    │   │   ├─> Resize if > 1920px
-    │   │   ├─> Compress (85% quality)
-    │   │   └─> Generate 300x300 thumbnail
-    │   ├─> Save processed image
-    │   ├─> Create database record
-    │   └─> Return image URL + metadata
-    │
-    └─> Response with image data
 ```
 
 ## Data Flow
