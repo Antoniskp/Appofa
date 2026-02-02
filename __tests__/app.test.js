@@ -344,6 +344,7 @@ describe('News Application Integration Tests', () => {
 
   describe('Article CRUD Tests', () => {
     test('should create article as authenticated user', async () => {
+      const tags = ['feature', 'release'];
       const response = await request(app)
         .post('/api/articles')
         .set('Authorization', `Bearer ${adminToken}`)
@@ -352,12 +353,14 @@ describe('News Application Integration Tests', () => {
           content: 'This is a test article content that is long enough to pass validation.',
           summary: 'Test summary',
           category: 'Technology',
-          status: 'published'
+          status: 'published',
+          tags
         });
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
       expect(response.body.data.article.title).toBe('Test Article');
+      expect(response.body.data.article.tags).toEqual(tags);
       testArticleId = response.body.data.article.id;
     });
 
@@ -397,12 +400,14 @@ describe('News Application Integration Tests', () => {
         .put(`/api/articles/${testArticleId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
-          title: 'Updated Test Article'
+          title: 'Updated Test Article',
+          tags: ['updated', 'news']
         });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.article.title).toBe('Updated Test Article');
+      expect(response.body.data.article.tags).toEqual(['updated', 'news']);
     });
 
     test('should update article as editor (different user)', async () => {

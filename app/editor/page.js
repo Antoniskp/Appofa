@@ -21,6 +21,7 @@ function EditorDashboardContent() {
     summary: '',
     type: 'personal',
     category: '',
+    tags: '',
     status: 'draft',
     isNews: false,
   });
@@ -71,7 +72,14 @@ function EditorDashboardContent() {
     setSubmitting(true);
 
     try {
-      const response = await articleAPI.create(formData);
+      const payload = {
+        ...formData,
+        tags: formData.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      };
+      const response = await articleAPI.create(payload);
       if (response.success) {
         alert('Article created successfully!');
         setShowForm(false);
@@ -81,6 +89,7 @@ function EditorDashboardContent() {
           summary: '',
           type: 'personal',
           category: '',
+          tags: '',
           status: 'draft',
           isNews: false,
         });
@@ -162,6 +171,21 @@ function EditorDashboardContent() {
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="Brief summary (optional)"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+                  Tags (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  id="tags"
+                  name="tags"
+                  value={formData.tags}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="e.g. AI, Research"
                 />
               </div>
 
@@ -330,6 +354,11 @@ function EditorDashboardContent() {
                           {article.category && (
                             <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
                               {article.category}
+                            </span>
+                          )}
+                          {Array.isArray(article.tags) && article.tags.length > 0 && (
+                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded">
+                              {article.tags.join(', ')}
                             </span>
                           )}
                           <span>By {article.User?.username || 'Unknown'}</span>

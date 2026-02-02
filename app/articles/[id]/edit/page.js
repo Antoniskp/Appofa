@@ -20,6 +20,7 @@ function EditArticlePageContent() {
     summary: '',
     type: 'personal',
     category: '',
+    tags: '',
     status: 'draft',
     isNews: false,
   });
@@ -41,6 +42,7 @@ function EditArticlePageContent() {
             summary: currentArticle.summary || '',
             type: currentArticle.type || 'personal',
             category: currentArticle.category || '',
+            tags: Array.isArray(currentArticle.tags) ? currentArticle.tags.join(', ') : '',
             status: currentArticle.status || 'draft',
             isNews: Boolean(currentArticle.isNews),
           });
@@ -81,7 +83,14 @@ function EditArticlePageContent() {
     setSubmitError('');
 
     try {
-      const response = await articleAPI.update(params.id, formData);
+      const payload = {
+        ...formData,
+        tags: formData.tags
+          .split(',')
+          .map((tag) => tag.trim())
+          .filter(Boolean),
+      };
+      const response = await articleAPI.update(params.id, payload);
       if (response.success) {
         router.push(`/articles/${params.id}`);
       } else {
@@ -175,6 +184,21 @@ function EditArticlePageContent() {
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Brief summary (optional)"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+                Tags (comma-separated)
+              </label>
+              <input
+                type="text"
+                id="tags"
+                name="tags"
+                value={formData.tags}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="e.g. AI, Research"
               />
             </div>
 

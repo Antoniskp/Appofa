@@ -1,4 +1,4 @@
-const { Article, User } = require('../models');
+const { Article, User, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 
@@ -6,7 +6,7 @@ const articleController = {
   // Create a new article
   createArticle: async (req, res) => {
     try {
-      const { title, content, summary, category, status, isNews, type } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags } = req.body;
 
       // Validate required fields
       if (!title || !content) {
@@ -28,6 +28,7 @@ const articleController = {
         content,
         summary,
         category,
+        tags: Array.isArray(tags) ? tags : [],
         status: status || 'draft',
         authorId: req.user.id,
         publishedAt: status === 'published' ? new Date() : null,
@@ -62,7 +63,7 @@ const articleController = {
   // Get all articles
   getAllArticles: async (req, res) => {
     try {
-      const { status, category, page = 1, limit = 10, authorId, type } = req.query;
+      const { status, category, page = 1, limit = 10, authorId, type, tag } = req.query;
       
       const where = {};
       
@@ -112,6 +113,50 @@ const articleController = {
       }
 
       const offset = (page - 1) * limit;
+      const parsedLimit = parseInt(limit);
+
+      // Filter by tag (dialect-aware fallback for non-Postgres databases)
+      if (tag) {
+        const trimmedTag = String(tag).trim();
+        const dialect = sequelize.getDialect();
+
+        if (trimmedTag && dialect !== 'postgres') {
+          // Non-Postgres fallback uses in-memory filtering (intended for small datasets/testing).
+          const allArticles = await Article.findAll({
+            where,
+            include: [{
+              model: User,
+              as: 'author',
+              attributes: ['id', 'username', 'firstName', 'lastName']
+            }],
+            order: [['createdAt', 'DESC']]
+          });
+
+          const filteredArticles = allArticles.filter(
+            (article) => Array.isArray(article.tags) && article.tags.includes(trimmedTag)
+          );
+          const count = filteredArticles.length;
+          const paginatedArticles = filteredArticles.slice(offset, offset + parsedLimit);
+
+          return res.status(200).json({
+            success: true,
+            data: {
+              articles: paginatedArticles,
+              pagination: {
+                total: count,
+                page: parseInt(page),
+                limit: parsedLimit,
+                totalPages: Math.ceil(count / parsedLimit)
+              }
+            }
+          });
+        }
+
+        if (trimmedTag && dialect === 'postgres') {
+          // Exact tag match for Postgres arrays.
+          where.tags = { [Op.contains]: [trimmedTag] };
+        }
+      }
 
       const { count, rows: articles } = await Article.findAndCountAll({
         where,
@@ -121,7 +166,7 @@ const articleController = {
           attributes: ['id', 'username', 'firstName', 'lastName']
         }],
         order: [['createdAt', 'DESC']],
-        limit: parseInt(limit),
+        limit: parsedLimit,
         offset: parseInt(offset)
       });
 
@@ -132,8 +177,8 @@ const articleController = {
           pagination: {
             total: count,
             page: parseInt(page),
-            limit: parseInt(limit),
-            totalPages: Math.ceil(count / limit)
+            limit: parsedLimit,
+            totalPages: Math.ceil(count / parsedLimit)
           }
         }
       });
@@ -193,7 +238,7 @@ const articleController = {
   updateArticle: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, summary, category, status, isNews, type } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags } = req.body;
 
       const article = await Article.findByPk(id);
 
@@ -222,6 +267,9 @@ const articleController = {
         if (status === 'published' && !article.publishedAt) {
           article.publishedAt = new Date();
         }
+      }
+      if (tags !== undefined) {
+        article.tags = Array.isArray(tags) ? tags : [];
       }
       
       // Update article type

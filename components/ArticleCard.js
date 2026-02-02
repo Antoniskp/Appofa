@@ -25,6 +25,11 @@ export default function ArticleCard({ article, variant = 'grid' }) {
                   {article.category}
                 </span>
               )}
+              {Array.isArray(article.tags) && article.tags.length > 0 && (
+                <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                  {article.tags.join(', ')}
+                </span>
+              )}
             </div>
             <h2 className="text-2xl font-semibold mb-2">
               <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
@@ -64,6 +69,11 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             {article.category && (
               <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
                 {article.category}
+              </span>
+            )}
+            {Array.isArray(article.tags) && article.tags.length > 0 && (
+              <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                {article.tags.join(', ')}
               </span>
             )}
           </div>

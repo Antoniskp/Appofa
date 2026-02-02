@@ -13,6 +13,7 @@ export default function NewsPage() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [tagFilter, setTagFilter] = useState('');
 
   useEffect(() => {
     const fetchNews = async () => {
@@ -24,6 +25,10 @@ export default function NewsPage() {
           status: 'published',
           type: 'news',
         };
+
+        if (tagFilter) {
+          params.tag = tagFilter;
+        }
 
         const response = await articleAPI.getAll(params);
         if (response.success) {
@@ -38,7 +43,7 @@ export default function NewsPage() {
     };
 
     fetchNews();
-  }, [page]);
+  }, [page, tagFilter]);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -51,6 +56,28 @@ export default function NewsPage() {
           <Link href="/articles" className="text-blue-600 hover:text-blue-800 font-medium">
             Browse Articles →
           </Link>
+        </div>
+
+        <div className="card p-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="tag" className="block text-sm font-medium text-gray-700 mb-2">
+                Tag
+              </label>
+              <input
+                type="text"
+                id="tag"
+                name="tag"
+                value={tagFilter}
+                onChange={(event) => {
+                  setTagFilter(event.target.value);
+                  setPage(1);
+                }}
+                placeholder="Filter by tag..."
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
         </div>
 
         {loading && (

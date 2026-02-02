@@ -17,7 +17,9 @@ export default function ArticlesPage() {
     status: 'published',
     category: '',
     type: 'articles',
+    tag: '',
   });
+  const filterInputClassName = 'w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500';
 
   useEffect(() => {
     const fetchArticles = async () => {
@@ -74,7 +76,21 @@ export default function ArticlesPage() {
                 value={filters.category}
                 onChange={handleFilterChange}
                 placeholder="Filter by category..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                className={filterInputClassName}
+              />
+            </div>
+            <div>
+              <label htmlFor="tag" className="block text-sm font-medium text-gray-700 mb-2">
+                Tag
+              </label>
+              <input
+                type="text"
+                id="tag"
+                name="tag"
+                value={filters.tag}
+                onChange={handleFilterChange}
+                placeholder="Filter by tag..."
+                className={filterInputClassName}
               />
             </div>
             <div>

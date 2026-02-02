@@ -67,6 +67,11 @@ const Article = sequelize.define('Article', {
       model: 'Users',
       key: 'id'
     }
+  },
+  tags: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: []
   }
 }, {
   timestamps: true
