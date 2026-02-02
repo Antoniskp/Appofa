@@ -81,6 +81,11 @@ const articleController = {
       // Filter by article type
       if (type) {
         where.type = type;
+        if (type === 'news') {
+          where.newsApprovedAt = {
+            [Op.ne]: null
+          };
+        }
       }
 
       if (authorId !== undefined) {

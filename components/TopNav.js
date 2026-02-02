@@ -85,16 +85,16 @@ export default function TopNav() {
             </Link>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
-                href="/"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/')}`}
-              >
-                Home
-              </Link>
-              <Link
                 href="/articles"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/articles')}`}
               >
                 Articles
+              </Link>
+              <Link
+                href="/news"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/news')}`}
+              >
+                News
               </Link>
             </div>
           </div>
@@ -211,16 +211,16 @@ export default function TopNav() {
       <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
         <div className="border-t border-seafoam px-4 py-3 space-y-2">
           <Link
-            href="/"
-            className={`block text-base font-medium text-blue-900 ${isActive('/')}`}
-          >
-            Home
-          </Link>
-          <Link
             href="/articles"
             className={`block text-base font-medium text-blue-900 ${isActive('/articles')}`}
           >
             Articles
+          </Link>
+          <Link
+            href="/news"
+            className={`block text-base font-medium text-blue-900 ${isActive('/news')}`}
+          >
+            News
           </Link>
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">

@@ -539,6 +539,32 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.article.status).toBe('published');
     });
 
+    test('should return only approved news items', async () => {
+      const createResponse = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .send({
+          title: 'Unapproved Published News',
+          content: 'This news item should not appear in public listings.',
+          summary: 'Unapproved news summary',
+          status: 'published',
+          isNews: true
+        });
+
+      const unapprovedNewsId = createResponse.body.data.article.id;
+
+      const response = await request(app)
+        .get('/api/articles?type=news');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      const newsArticles = response.body.data.articles || [];
+      const newsIds = newsArticles.map(article => article.id);
+      expect(newsIds).toContain(newsArticleId);
+      expect(newsIds).not.toContain(unapprovedNewsId);
+      expect(newsArticles.every(article => article.newsApprovedAt)).toBe(true);
+    });
+
     test('should not approve already approved news', async () => {
       const response = await request(app)
         .post(`/api/articles/${newsArticleId}/approve-news`)
