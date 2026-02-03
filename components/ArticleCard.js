@@ -51,7 +51,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
                   </Link>
                 </h2>
                 <p className="body-copy mb-4">
-                  {article.summary || article.content?.substring(0, 200) + '...'}
+                  {article.summary || (article.content ? `${article.content.substring(0, 200)}...` : '')}
                 </p>
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                   <span>By {article.author?.username || 'Unknown'}</span>
@@ -106,7 +106,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
               </Link>
             </h3>
             <p className="body-copy mb-4 line-clamp-3">
-              {article.summary || article.content?.substring(0, 150) + '...'}
+              {article.summary || (article.content ? `${article.content.substring(0, 150)}...` : '')}
             </p>
             <div className="flex justify-between items-center text-sm text-gray-500">
               <span>By {article.author?.username || 'Unknown'}</span>
