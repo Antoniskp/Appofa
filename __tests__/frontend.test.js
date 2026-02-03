@@ -9,9 +9,9 @@ const immediateTimers = [];
 
 beforeAll(() => {
   jest.useFakeTimers();
-  global.setTimeout = (callback) => {
+  global.setTimeout = (callback, delay) => {
     if (typeof callback === 'function') {
-      immediateTimers.push(callback);
+      immediateTimers.push(() => callback(delay));
     }
     return immediateTimers.length;
   };

@@ -20,10 +20,14 @@ const buildResponseHeaders = (sourceHeaders) => {
     }
   });
 
-  const setCookie = sourceHeaders.get('set-cookie');
-  if (setCookie) {
-    headers.append('set-cookie', setCookie);
-  }
+  const setCookies = typeof sourceHeaders.getSetCookie === 'function'
+    ? sourceHeaders.getSetCookie()
+    : [];
+  const fallbackSetCookie = sourceHeaders.get('set-cookie');
+  const allSetCookies = setCookies.length
+    ? setCookies
+    : (fallbackSetCookie ? [fallbackSetCookie] : []);
+  allSetCookies.forEach((cookie) => headers.append('set-cookie', cookie));
 
   return headers;
 };
