@@ -219,6 +219,34 @@ describe('News Application Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    test('should reject invalid role updates', async () => {
+      const csrfToken = 'csrf-admin-invalid-role';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .put(`/api/auth/users/${viewerUserId}/role`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ role: 'invalid-role' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Invalid role.');
+    });
+
+    test('should return 404 when updating unknown user role', async () => {
+      const csrfToken = 'csrf-admin-unknown-role';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .put('/api/auth/users/99999/role')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ role: 'viewer' });
+
+      expect(response.status).toBe(404);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('User not found.');
+    });
+
     test('should login as moderator with updated role', async () => {
       const response = await request(app)
         .post('/api/auth/login')
@@ -325,6 +353,19 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.user.lastName).toBe('Admin');
       expect(response.body.data.user.avatar).toBe('https://example.com/avatar.png');
       expect(response.body.data.user.avatarColor).toBe('#1d4ed8');
+    });
+
+    test('should reject profile updates without CSRF token', async () => {
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          username: 'no-csrf-update'
+        });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Invalid CSRF token.');
     });
 
     test('should reject invalid profile names', async () => {
@@ -475,6 +516,24 @@ describe('News Application Integration Tests', () => {
       testArticleId = response.body.data.article.id;
     });
 
+    test('should reject articles with invalid tags', async () => {
+      const csrfToken = 'csrf-admin-invalid-tags';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          title: 'Invalid Tags Article',
+          content: 'This content is long enough to satisfy validation rules.',
+          tags: 'not-an-array'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Tags must be an array of strings.');
+    });
+
     test('should not create article without authentication', async () => {
       const response = await request(app)
         .post('/api/articles')
@@ -495,6 +554,35 @@ describe('News Application Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.articles).toBeDefined();
       expect(Array.isArray(response.body.data.articles)).toBe(true);
+    });
+
+    test('should require authentication for author filter', async () => {
+      const response = await request(app)
+        .get(`/api/articles?authorId=${adminUserId}`);
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Authentication required.');
+    });
+
+    test('should reject invalid author ID filters', async () => {
+      const response = await request(app)
+        .get('/api/articles?authorId=not-a-number')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Invalid author ID.');
+    });
+
+    test('should prevent non-admins from filtering other authors', async () => {
+      const response = await request(app)
+        .get(`/api/articles?authorId=${adminUserId}`)
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Access denied.');
     });
 
     test('should get single article by ID', async () => {
@@ -662,6 +750,14 @@ describe('News Application Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('healthy');
       expect(response.body.checks).toBeDefined();
+    });
+
+    test('should require authentication for health status', async () => {
+      const response = await request(app)
+        .get('/api/admin/health');
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
     });
 
     test('viewer should not access health status', async () => {
