@@ -1,7 +1,27 @@
 /** @jest-environment jsdom */
 
 const React = require('react');
-const { act } = require('react-dom/test-utils');
+const { act } = require('react');
+
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+const immediateTimers = [];
+
+beforeAll(() => {
+  jest.useFakeTimers();
+  global.setTimeout = (callback, delay) => {
+    if (typeof callback === 'function') {
+      immediateTimers.push(() => callback(delay));
+    }
+    return immediateTimers.length;
+  };
+  global.clearTimeout = () => {};
+});
+
+afterAll(() => {
+  immediateTimers.splice(0, immediateTimers.length);
+  jest.useRealTimers();
+});
 const { createRoot } = require('react-dom/client');
 
 jest.mock('next/link', () => {
@@ -20,10 +40,13 @@ jest.mock('next/image', () => {
   };
 });
 
+const mockRouter = { push: jest.fn() };
+const mockSearchParams = { get: jest.fn(() => null) };
+
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn() }),
+  useRouter: () => mockRouter,
   usePathname: () => '/',
-  useSearchParams: () => ({ get: () => null })
+  useSearchParams: () => mockSearchParams
 }));
 
 jest.mock('@/lib/auth-context', () => ({
@@ -35,6 +58,10 @@ jest.mock('@/lib/api', () => ({
     getOAuthConfig: jest.fn(() => Promise.resolve({
       success: true,
       data: { github: false, google: false, facebook: false }
+    })),
+    getProfile: jest.fn(() => Promise.resolve({
+      success: true,
+      data: { user: null }
     }))
   },
   articleAPI: {
@@ -61,6 +88,12 @@ jest.mock('@/lib/api', () => ({
   }
 }));
 
+jest.mock('next/headers', () => ({
+  cookies: jest.fn(() => ({
+    get: jest.fn(() => null)
+  }))
+}));
+
 const { useAuth } = require('@/lib/auth-context');
 
 const buildAuthState = (overrides = {}) => ({
@@ -73,7 +106,13 @@ const buildAuthState = (overrides = {}) => ({
   ...overrides
 });
 
-const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
+const flushPromises = async () => {
+  await Promise.resolve();
+  while (immediateTimers.length) {
+    const pending = immediateTimers.splice(0, immediateTimers.length);
+    pending.forEach((callback) => callback());
+  }
+};
 
 const renderPage = async (Component) => {
   const container = document.createElement('div');
@@ -82,6 +121,8 @@ const renderPage = async (Component) => {
 
   await act(async () => {
     root.render(React.createElement(Component));
+  });
+  await act(async () => {
     await flushPromises();
   });
 
@@ -91,6 +132,8 @@ const renderPage = async (Component) => {
 describe('Frontend smoke tests', () => {
   afterEach(() => {
     useAuth.mockReset();
+    mockSearchParams.get.mockReset();
+    mockRouter.push.mockReset();
     document.body.innerHTML = '';
   });
 
@@ -102,7 +145,9 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Welcome to News App');
     expect(container.textContent).toContain('Latest News');
 
-    root.unmount();
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   test('renders articles page filters', async () => {
@@ -113,7 +158,9 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Category');
     expect(container.textContent).toContain('Tag');
 
-    root.unmount();
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   test('renders news page filters', async () => {
@@ -124,10 +171,13 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Category');
     expect(container.textContent).toContain('No News Available');
 
-    root.unmount();
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   test('renders login page form', async () => {
+    mockSearchParams.get.mockReturnValue(null);
     useAuth.mockReturnValue(buildAuthState());
     const LoginPage = require('../app/login/page').default;
     const { container, root } = await renderPage(LoginPage);
@@ -135,10 +185,13 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Sign in to your account');
     expect(container.textContent).toContain('Continue with GitHub');
 
-    root.unmount();
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   test('renders register page form', async () => {
+    mockSearchParams.get.mockReturnValue(null);
     useAuth.mockReturnValue(buildAuthState());
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
@@ -146,10 +199,13 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Create your account');
     expect(container.textContent).toContain('Confirm Password');
 
-    root.unmount();
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   test('renders admin status page for admin users', async () => {
+    mockSearchParams.get.mockReturnValue(null);
     useAuth.mockReturnValue(buildAuthState({
       user: { role: 'admin', username: 'AdminUser', email: 'admin@test.com' }
     }));
@@ -159,6 +215,8 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('System Health');
     expect(container.textContent).toContain('Overall Status');
 
-    root.unmount();
+    await act(async () => {
+      root.unmount();
+    });
   });
 });
