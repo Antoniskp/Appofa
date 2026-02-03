@@ -3,6 +3,113 @@ const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 
 const DEFAULT_BANNER_IMAGE_URL = '/images/branding/news default.png';
+const ARTICLE_STATUSES = ['draft', 'published', 'archived'];
+const TITLE_MIN_LENGTH = 5;
+const TITLE_MAX_LENGTH = 200;
+const CONTENT_MIN_LENGTH = 10;
+const CONTENT_MAX_LENGTH = 50000;
+const SUMMARY_MAX_LENGTH = 500;
+
+const normalizeRequiredText = (value, fieldLabel, minLength, maxLength) => {
+  if (typeof value !== 'string') {
+    return { error: `${fieldLabel} must be a string.` };
+  }
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return { error: `${fieldLabel} is required.` };
+  }
+  if (minLength != null && trimmedValue.length < minLength) {
+    return { error: `${fieldLabel} must be between ${minLength} and ${maxLength} characters.` };
+  }
+  if (maxLength != null && trimmedValue.length > maxLength) {
+    return { error: `${fieldLabel} must be between ${minLength} and ${maxLength} characters.` };
+  }
+  return { value: trimmedValue };
+};
+
+const normalizeOptionalText = (value, fieldLabel, minLength, maxLength) => {
+  if (value === undefined) {
+    return { value: undefined };
+  }
+  if (value === null) {
+    return { value: null };
+  }
+  if (typeof value !== 'string') {
+    return { error: `${fieldLabel} must be a string.` };
+  }
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return { value: null };
+  }
+  if (minLength != null && trimmedValue.length < minLength) {
+    return { error: `${fieldLabel} must be at least ${minLength} characters.` };
+  }
+  if (maxLength != null && trimmedValue.length > maxLength) {
+    return { error: `${fieldLabel} must be ${maxLength} characters or fewer.` };
+  }
+  return { value: trimmedValue };
+};
+
+const normalizeTags = (tags) => {
+  if (tags === undefined) {
+    return { value: undefined };
+  }
+  if (tags === null) {
+    return { value: [] };
+  }
+  if (!Array.isArray(tags)) {
+    return { error: 'Tags must be an array of strings.' };
+  }
+  const normalizedTags = [];
+  for (const tag of tags) {
+    if (typeof tag !== 'string') {
+      return { error: 'Tags must be an array of strings.' };
+    }
+    const trimmedTag = tag.trim();
+    if (trimmedTag) {
+      normalizedTags.push(trimmedTag);
+    }
+  }
+  return { value: normalizedTags };
+};
+
+const normalizeStatus = (status) => {
+  if (status === undefined) {
+    return { value: undefined };
+  }
+  if (typeof status !== 'string') {
+    return { error: 'Status must be a string.' };
+  }
+  const trimmedStatus = status.trim();
+  if (!ARTICLE_STATUSES.includes(trimmedStatus)) {
+    return { error: `Status must be one of: ${ARTICLE_STATUSES.join(', ')}.` };
+  }
+  return { value: trimmedStatus };
+};
+
+const normalizeType = (type) => {
+  if (type === undefined) {
+    return { value: undefined };
+  }
+  if (typeof type !== 'string') {
+    return { error: 'Article type must be a string.' };
+  }
+  const trimmedType = type.trim();
+  if (!ARTICLE_TYPES.includes(trimmedType)) {
+    return { error: 'Article type is invalid.' };
+  }
+  return { value: trimmedType };
+};
+
+const normalizeBoolean = (value, fieldLabel) => {
+  if (value === undefined) {
+    return { value: undefined };
+  }
+  if (typeof value !== 'boolean') {
+    return { error: `${fieldLabel} must be a boolean.` };
+  }
+  return { value };
+};
 
 const normalizeBannerImageUrl = (value) => {
   if (value === undefined) {
@@ -39,18 +146,68 @@ const articleController = {
     try {
       const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl } = req.body;
 
-      // Validate required fields
-      if (!title || !content) {
+      const titleResult = normalizeRequiredText(title, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
+      if (titleResult.error) {
         return res.status(400).json({
           success: false,
-          message: 'Title and content are required.'
+          message: titleResult.error
         });
       }
 
-      // Determine article type - support both old isNews and new type field
-      let articleType = type || 'personal';
-      if (isNews && !type) {
-        articleType = 'news';
+      const contentResult = normalizeRequiredText(content, 'Content', CONTENT_MIN_LENGTH, CONTENT_MAX_LENGTH);
+      if (contentResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: contentResult.error
+        });
+      }
+
+      const summaryResult = normalizeOptionalText(summary, 'Summary', null, SUMMARY_MAX_LENGTH);
+      if (summaryResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: summaryResult.error
+        });
+      }
+
+      const categoryResult = normalizeOptionalText(category, 'Category', null, 100);
+      if (categoryResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: categoryResult.error
+        });
+      }
+
+      const statusResult = normalizeStatus(status);
+      if (statusResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: statusResult.error
+        });
+      }
+
+      const typeResult = normalizeType(type);
+      if (typeResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: typeResult.error
+        });
+      }
+
+      const isNewsResult = normalizeBoolean(isNews, 'isNews');
+      if (isNewsResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: isNewsResult.error
+        });
+      }
+
+      const tagsResult = normalizeTags(tags);
+      if (tagsResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: tagsResult.error
+        });
       }
 
       const bannerImageResult = normalizeBannerImageUrl(bannerImageUrl);
@@ -60,20 +217,28 @@ const articleController = {
           message: bannerImageResult.error
         });
       }
+
+      // Determine article type - support both old isNews and new type field
+      let articleType = typeResult.value || 'personal';
+      if (isNewsResult.value && !typeResult.value) {
+        articleType = 'news';
+      }
+
       const resolvedBannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
+      const resolvedStatus = statusResult.value || 'draft';
 
       // Create article
       const article = await Article.create({
-        title,
-        content,
-        summary,
-        category,
-        tags: Array.isArray(tags) ? tags : [],
-        status: status || 'draft',
+        title: titleResult.value,
+        content: contentResult.value,
+        summary: summaryResult.value,
+        category: categoryResult.value,
+        tags: tagsResult.value ?? [],
+        status: resolvedStatus,
         authorId: req.user.id,
-        publishedAt: status === 'published' ? new Date() : null,
+        publishedAt: resolvedStatus === 'published' ? new Date() : null,
         type: articleType,
-        isNews: articleType === 'news' || isNews,
+        isNews: articleType === 'news' || isNewsResult.value,
         bannerImageUrl: resolvedBannerImageUrl
       });
 
@@ -298,20 +463,75 @@ const articleController = {
         });
       }
 
-      // Update fields
-      if (title) article.title = title;
-      if (content) article.content = content;
-      if (summary !== undefined) article.summary = summary;
-      if (category !== undefined) article.category = category;
-      if (status) {
-        article.status = status;
-        if (status === 'published' && !article.publishedAt) {
+      const titleResult = normalizeOptionalText(title, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
+      if (titleResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: titleResult.error
+        });
+      }
+      if (titleResult.value !== undefined && titleResult.value !== null) {
+        article.title = titleResult.value;
+      }
+
+      const contentResult = normalizeOptionalText(content, 'Content', CONTENT_MIN_LENGTH, CONTENT_MAX_LENGTH);
+      if (contentResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: contentResult.error
+        });
+      }
+      if (contentResult.value !== undefined && contentResult.value !== null) {
+        article.content = contentResult.value;
+      }
+
+      const summaryResult = normalizeOptionalText(summary, 'Summary', null, SUMMARY_MAX_LENGTH);
+      if (summaryResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: summaryResult.error
+        });
+      }
+      if (summaryResult.value !== undefined) {
+        article.summary = summaryResult.value;
+      }
+
+      const categoryResult = normalizeOptionalText(category, 'Category', null, 100);
+      if (categoryResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: categoryResult.error
+        });
+      }
+      if (categoryResult.value !== undefined) {
+        article.category = categoryResult.value;
+      }
+
+      const statusResult = normalizeStatus(status);
+      if (statusResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: statusResult.error
+        });
+      }
+      if (statusResult.value) {
+        article.status = statusResult.value;
+        if (statusResult.value === 'published' && !article.publishedAt) {
           article.publishedAt = new Date();
         }
       }
-      if (tags !== undefined) {
-        article.tags = Array.isArray(tags) ? tags : [];
+
+      const tagsResult = normalizeTags(tags);
+      if (tagsResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: tagsResult.error
+        });
       }
+      if (tagsResult.value !== undefined) {
+        article.tags = tagsResult.value;
+      }
+
       if (bannerImageUrl !== undefined) {
         const bannerImageResult = normalizeBannerImageUrl(bannerImageUrl);
         if (bannerImageResult.error) {
@@ -322,27 +542,42 @@ const articleController = {
         }
         article.bannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
       }
-      
+
+      const typeResult = normalizeType(type);
+      if (typeResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: typeResult.error
+        });
+      }
+
       // Update article type
-      if (type !== undefined && ARTICLE_TYPES.includes(type)) {
-        article.type = type;
+      if (typeResult.value) {
+        article.type = typeResult.value;
         // Keep isNews in sync with type for backward compatibility
-        article.isNews = type === 'news';
-        
+        article.isNews = typeResult.value === 'news';
+
         // Clear approval if changing away from news
-        if (type !== 'news') {
+        if (typeResult.value !== 'news') {
           article.newsApprovedAt = null;
           article.newsApprovedBy = null;
         }
       }
-      
+
       // Allow author, admin, editor, or moderator to set/unset isNews flag (legacy support)
       const canModifyNewsFlag = article.authorId === req.user.id || ['admin', 'editor', 'moderator'].includes(req.user.role);
-      if (isNews !== undefined && type === undefined && canModifyNewsFlag) {
-        article.isNews = isNews;
-        article.type = isNews ? 'news' : 'personal';
+      const isNewsResult = normalizeBoolean(isNews, 'isNews');
+      if (isNewsResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: isNewsResult.error
+        });
+      }
+      if (isNewsResult.value !== undefined && typeResult.value === undefined && canModifyNewsFlag) {
+        article.isNews = isNewsResult.value;
+        article.type = isNewsResult.value ? 'news' : 'personal';
         // Clear approval if user unflags as news
-        if (!isNews) {
+        if (!isNewsResult.value) {
           article.newsApprovedAt = null;
           article.newsApprovedBy = null;
         }
