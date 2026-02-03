@@ -13,6 +13,7 @@ const toastStyles = {
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
   const timeoutsRef = useRef(new Map());
+  const fallbackCounterRef = useRef(0);
 
   useEffect(() => {
     return () => {
@@ -37,7 +38,7 @@ export function ToastProvider({ children }) {
       : (type === 'error' ? 6000 : 4000);
     const id = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      : `${Date.now()}-${fallbackCounterRef.current++}`;
     setToasts((prev) => [...prev, { id, message, type }]);
     if (resolvedDuration > 0) {
       const timeoutId = setTimeout(() => removeToast(id), resolvedDuration);
@@ -47,12 +48,14 @@ export function ToastProvider({ children }) {
 
   const value = useMemo(() => ({ addToast }), [addToast]);
 
+  const hasErrorToast = toasts.some((toast) => toast.type === 'error');
+
   return (
     <ToastContext.Provider value={value}>
       {children}
       <div
         className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3 px-4 sm:px-0"
-        aria-live="polite"
+        aria-live={hasErrorToast ? 'assertive' : 'polite'}
         aria-relevant="additions text"
         aria-atomic="true"
       >
