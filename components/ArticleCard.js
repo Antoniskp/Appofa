@@ -10,6 +10,9 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const isListVariant = variant === 'list';
   const defaultBannerImageUrl = '/images/branding/news default.png';
   const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
+  const createdAt = new Date(article.createdAt);
+  const formattedDate = createdAt.toLocaleDateString();
+  const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const handleBannerError = (event) => {
     event.currentTarget.onerror = null;
     event.currentTarget.src = defaultBannerImageUrl;
@@ -19,12 +22,14 @@ export default function ArticleCard({ article, variant = 'grid' }) {
     <article className="card overflow-hidden">
       {isListVariant ? (
         <div className="flex">
-          <img
-            src={bannerImageUrl}
-            alt={`${article.title} banner`}
-            className="w-32 h-24 object-cover flex-shrink-0"
-            onError={handleBannerError}
-          />
+          <Link href={`/articles/${article.id}`} className="flex-shrink-0">
+            <img
+              src={bannerImageUrl}
+              alt={`${article.title} banner`}
+              className="w-32 h-24 object-cover"
+              onError={handleBannerError}
+            />
+          </Link>
           <div className="p-6 flex-1 min-w-0">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between">
               <div className="flex-grow">
@@ -56,7 +61,9 @@ export default function ArticleCard({ article, variant = 'grid' }) {
                 <div className="flex flex-wrap gap-4 text-sm text-gray-500">
                   <span>By {article.author?.username || 'Unknown'}</span>
                   <span>•</span>
-                  <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                  <span>
+                    {formattedDate} {formattedTime}
+                  </span>
                   {article.status !== 'published' && (
                     <>
                       <span>•</span>
@@ -76,12 +83,14 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         </div>
       ) : (
         <>
-          <img
-            src={bannerImageUrl}
-            alt={`${article.title} banner`}
-            className="w-full h-32 object-cover"
-            onError={handleBannerError}
-          />
+          <Link href={`/articles/${article.id}`}>
+            <img
+              src={bannerImageUrl}
+              alt={`${article.title} banner`}
+              className="w-full h-32 object-cover"
+              onError={handleBannerError}
+            />
+          </Link>
           <div className="p-6">
             <div className="flex flex-wrap gap-2 mb-2">
               {article.type && (
@@ -110,14 +119,10 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             </p>
             <div className="flex justify-between items-center text-sm text-gray-500">
               <span>By {article.author?.username || 'Unknown'}</span>
-              <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+              <span>
+                {formattedDate} {formattedTime}
+              </span>
             </div>
-            <Link
-              href={`/articles/${article.id}`}
-              className="inline-block mt-4 text-blue-600 hover:text-blue-800 font-medium"
-            >
-              Read More →
-            </Link>
           </div>
         </>
       )}
