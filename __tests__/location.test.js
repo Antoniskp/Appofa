@@ -6,12 +6,19 @@ describe('Location API Tests', () => {
   let authToken;
   let adminToken;
   let moderatorToken;
-  let csrfToken;
-  let adminCsrfToken;
-  let moderatorCsrfToken;
   let userId;
   let adminId;
   let moderatorId;
+
+  const csrfHeaderFor = (token) => ({
+    Cookie: [`csrf_token=${token}`],
+    'x-csrf-token': token
+  });
+
+  const setCsrfToken = (token, userId) => {
+    const { storeCsrfToken } = require('../src/utils/csrf');
+    storeCsrfToken(token, userId);
+  };
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });
@@ -41,39 +48,27 @@ describe('Location API Tests', () => {
     });
     moderatorId = moderator.id;
 
-    // Login users
+    // Login users to get auth tokens
     const userLogin = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'testuser', password: 'password123' });
+      .send({ email: 'test@example.com', password: 'password123' });
     
-    if (userLogin.headers['set-cookie']) {
-      const authCookie = userLogin.headers['set-cookie'].find(c => c.startsWith('auth_token='));
-      authToken = authCookie ? authCookie.split(';')[0] : null;
-      const csrfCookie = userLogin.headers['set-cookie'].find(c => c.startsWith('csrf_token='));
-      csrfToken = csrfCookie ? csrfCookie.split('=')[1].split(';')[0] : null;
-    }
+    const userCookie = userLogin.headers['set-cookie']?.find(c => c.startsWith('auth_token='));
+    authToken = userCookie ? userCookie.split(';')[0].replace('auth_token=', '') : null;
 
     const adminLogin = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'adminuser', password: 'password123' });
+      .send({ email: 'admin@example.com', password: 'password123' });
     
-    if (adminLogin.headers['set-cookie']) {
-      const adminCookie = adminLogin.headers['set-cookie'].find(c => c.startsWith('auth_token='));
-      adminToken = adminCookie ? adminCookie.split(';')[0] : null;
-      const adminCsrf = adminLogin.headers['set-cookie'].find(c => c.startsWith('csrf_token='));
-      adminCsrfToken = adminCsrf ? adminCsrf.split('=')[1].split(';')[0] : null;
-    }
+    const adminCookie = adminLogin.headers['set-cookie']?.find(c => c.startsWith('auth_token='));
+    adminToken = adminCookie ? adminCookie.split(';')[0].replace('auth_token=', '') : null;
 
     const moderatorLogin = await request(app)
       .post('/api/auth/login')
-      .send({ username: 'moderatoruser', password: 'password123' });
+      .send({ email: 'moderator@example.com', password: 'password123' });
     
-    if (moderatorLogin.headers['set-cookie']) {
-      const modCookie = moderatorLogin.headers['set-cookie'].find(c => c.startsWith('auth_token='));
-      moderatorToken = modCookie ? modCookie.split(';')[0] : null;
-      const modCsrf = moderatorLogin.headers['set-cookie'].find(c => c.startsWith('csrf_token='));
-      moderatorCsrfToken = modCsrf ? modCsrf.split('=')[1].split(';')[0] : null;
-    }
+    const modCookie = moderatorLogin.headers['set-cookie']?.find(c => c.startsWith('auth_token='));
+    moderatorToken = modCookie ? modCookie.split(';')[0].replace('auth_token=', '') : null;
   });
 
   afterAll(async () => {
@@ -84,10 +79,12 @@ describe('Location API Tests', () => {
     let worldId, japanId, tokyoId, shibuyaId;
 
     test('Admin should create international location', async () => {
+      const csrfToken = 'csrf-create-world';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .post('/api/locations')
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'World',
           type: 'international',
@@ -104,10 +101,12 @@ describe('Location API Tests', () => {
     });
 
     test('Moderator should create country location', async () => {
+      const csrfToken = 'csrf-create-japan';
+      setCsrfToken(csrfToken, moderatorId);
       const res = await request(app)
         .post('/api/locations')
-        .set('Cookie', [moderatorToken])
-        .set('x-csrf-token', moderatorCsrfToken)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'Japan',
           name_local: '日本',
@@ -127,10 +126,12 @@ describe('Location API Tests', () => {
     });
 
     test('Admin should create prefecture location', async () => {
+      const csrfToken = 'csrf-create-tokyo';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .post('/api/locations')
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'Tokyo',
           name_local: '東京',
@@ -147,10 +148,12 @@ describe('Location API Tests', () => {
     });
 
     test('Admin should create municipality location', async () => {
+      const csrfToken = 'csrf-create-shibuya';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .post('/api/locations')
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'Shibuya',
           name_local: '渋谷区',
@@ -167,10 +170,12 @@ describe('Location API Tests', () => {
     });
 
     test('Regular user should NOT create location', async () => {
+      const csrfToken = 'csrf-user-create';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .post('/api/locations')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'Unauthorized Location',
           type: 'country',
@@ -181,10 +186,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should prevent duplicate location at same level', async () => {
+      const csrfToken = 'csrf-duplicate';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .post('/api/locations')
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'Japan',
           type: 'country',
@@ -197,10 +204,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should prevent duplicate slug', async () => {
+      const csrfToken = 'csrf-duplicate-slug';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .post('/api/locations')
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'Different Name',
           type: 'country',
@@ -271,10 +280,12 @@ describe('Location API Tests', () => {
     });
 
     test('Admin should update location', async () => {
+      const csrfToken = 'csrf-update-tokyo';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .put(`/api/locations/${tokyoId}`)
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           name: 'Tokyo Prefecture',
           bounding_box: { north: 36, south: 35, east: 140, west: 139 }
@@ -286,10 +297,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should prevent circular parent references', async () => {
+      const csrfToken = 'csrf-circular';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .put(`/api/locations/${japanId}`)
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           parent_id: tokyoId
         });
@@ -300,10 +313,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should prevent location from being its own parent', async () => {
+      const csrfToken = 'csrf-self-parent';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .put(`/api/locations/${tokyoId}`)
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           parent_id: tokyoId
         });
@@ -313,10 +328,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should NOT delete location with children', async () => {
+      const csrfToken = 'csrf-delete-with-children';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .delete(`/api/locations/${tokyoId}`)
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send();
 
       expect(res.status).toBe(400);
@@ -324,10 +341,12 @@ describe('Location API Tests', () => {
     });
 
     test('Admin should delete location without children', async () => {
+      const csrfToken = 'csrf-delete-shibuya';
+      setCsrfToken(csrfToken, adminId);
       const res = await request(app)
         .delete(`/api/locations/${shibuyaId}`)
-        .set('Cookie', [adminToken])
-        .set('x-csrf-token', adminCsrfToken)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send();
 
       expect(res.status).toBe(200);
@@ -360,10 +379,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should link article to location', async () => {
+      const csrfToken = 'csrf-link-article';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .post('/api/locations/links')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           location_id: locationId,
           entity_type: 'article',
@@ -375,10 +396,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should prevent duplicate links', async () => {
+      const csrfToken = 'csrf-duplicate-link';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .post('/api/locations/links')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           location_id: locationId,
           entity_type: 'article',
@@ -401,25 +424,32 @@ describe('Location API Tests', () => {
     });
 
     test('Should unlink article from location', async () => {
+      const csrfToken = 'csrf-unlink-article';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .delete('/api/locations/links')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           location_id: locationId,
           entity_type: 'article',
           entity_id: articleId
         });
 
+      if (res.status !== 200) {
+        console.log('Unlink response:', res.status, res.body);
+      }
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('unlinked');
     });
 
     test('Should link user to location', async () => {
+      const csrfToken = 'csrf-link-user';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .post('/api/locations/links')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           location_id: locationId,
           entity_type: 'user',
@@ -443,10 +473,12 @@ describe('Location API Tests', () => {
     });
 
     test('User should update home location', async () => {
+      const csrfToken = 'csrf-set-home';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           home_location_id: homeLocationId
         });
@@ -456,10 +488,12 @@ describe('Location API Tests', () => {
     });
 
     test('User should remove home location', async () => {
+      const csrfToken = 'csrf-remove-home';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           home_location_id: null
         });
@@ -469,10 +503,12 @@ describe('Location API Tests', () => {
     });
 
     test('Should reject invalid location ID', async () => {
+      const csrfToken = 'csrf-invalid-location';
+      setCsrfToken(csrfToken, userId);
       const res = await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', [authToken])
-        .set('x-csrf-token', csrfToken)
+        .set('Authorization', `Bearer ${authToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           home_location_id: 99999
         });

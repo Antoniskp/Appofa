@@ -9,8 +9,25 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 
 // Public routes - anyone can view locations
 router.get('/', apiLimiter, locationController.getAllLocations);
-router.get('/:id', apiLimiter, locationController.getLocationById);
 router.get('/:id/children', apiLimiter, locationController.getChildLocations);
+router.get('/:id', apiLimiter, locationController.getLocationById);
+
+// Location linking - authenticated users can link their own content
+router.post(
+  '/links',
+  apiLimiter,
+  authMiddleware,
+  csrfProtection,
+  locationController.linkEntity
+);
+
+router.delete(
+  '/links',
+  apiLimiter,
+  authMiddleware,
+  csrfProtection,
+  locationController.unlinkEntity
+);
 
 // Protected routes - moderators and admins can manage locations
 router.post(
@@ -38,23 +55,6 @@ router.delete(
   csrfProtection,
   checkRole('admin', 'moderator'),
   locationController.deleteLocation
-);
-
-// Location linking - authenticated users can link their own content
-router.post(
-  '/links',
-  apiLimiter,
-  authMiddleware,
-  csrfProtection,
-  locationController.linkEntity
-);
-
-router.delete(
-  '/links',
-  apiLimiter,
-  authMiddleware,
-  csrfProtection,
-  locationController.unlinkEntity
 );
 
 module.exports = router;
