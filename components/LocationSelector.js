@@ -114,14 +114,6 @@ export default function LocationSelector({
     }
   };
 
-  const handleMunicipalityChange = (e) => {
-    const municipalityId = e.target.value ? parseInt(e.target.value) : null;
-    setSelectedMunicipality(municipalityId);
-
-    // This will be implemented when municipalities are loaded
-    // For now, just update the selection
-  };
-
   const [prefectures, setPrefectures] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
 
