@@ -2,11 +2,42 @@ const { Article, User, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 
+const DEFAULT_BANNER_IMAGE_URL = '/images/branding/news default.png';
+
+const normalizeBannerImageUrl = (value) => {
+  if (value === undefined) {
+    return { value: undefined };
+  }
+  if (value === null) {
+    return { value: null };
+  }
+  if (typeof value !== 'string') {
+    return { error: 'Banner image URL must be a string.' };
+  }
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return { value: null };
+  }
+  if (trimmedValue.startsWith('/')) {
+    return { value: trimmedValue };
+  }
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(trimmedValue);
+  } catch (parseError) {
+    return { error: 'Banner image URL is malformed.' };
+  }
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    return { error: 'Banner image URL must use HTTP or HTTPS protocol.' };
+  }
+  return { value: trimmedValue };
+};
+
 const articleController = {
   // Create a new article
   createArticle: async (req, res) => {
     try {
-      const { title, content, summary, category, status, isNews, type, tags } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl } = req.body;
 
       // Validate required fields
       if (!title || !content) {
@@ -22,6 +53,15 @@ const articleController = {
         articleType = 'news';
       }
 
+      const bannerImageResult = normalizeBannerImageUrl(bannerImageUrl);
+      if (bannerImageResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: bannerImageResult.error
+        });
+      }
+      const resolvedBannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
+
       // Create article
       const article = await Article.create({
         title,
@@ -33,7 +73,8 @@ const articleController = {
         authorId: req.user.id,
         publishedAt: status === 'published' ? new Date() : null,
         type: articleType,
-        isNews: articleType === 'news' || isNews
+        isNews: articleType === 'news' || isNews,
+        bannerImageUrl: resolvedBannerImageUrl
       });
 
       // Fetch article with author info
@@ -238,7 +279,7 @@ const articleController = {
   updateArticle: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, summary, category, status, isNews, type, tags } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl } = req.body;
 
       const article = await Article.findByPk(id);
 
@@ -270,6 +311,16 @@ const articleController = {
       }
       if (tags !== undefined) {
         article.tags = Array.isArray(tags) ? tags : [];
+      }
+      if (bannerImageUrl !== undefined) {
+        const bannerImageResult = normalizeBannerImageUrl(bannerImageUrl);
+        if (bannerImageResult.error) {
+          return res.status(400).json({
+            success: false,
+            message: bannerImageResult.error
+          });
+        }
+        article.bannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
       }
       
       // Update article type

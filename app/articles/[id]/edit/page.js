@@ -18,6 +18,7 @@ function EditArticlePageContent() {
     title: '',
     content: '',
     summary: '',
+    bannerImageUrl: '',
     type: 'personal',
     category: '',
     tags: '',
@@ -40,6 +41,7 @@ function EditArticlePageContent() {
             title: currentArticle.title || '',
             content: currentArticle.content || '',
             summary: currentArticle.summary || '',
+            bannerImageUrl: currentArticle.bannerImageUrl || '',
             type: currentArticle.type || 'personal',
             category: currentArticle.category || '',
             tags: Array.isArray(currentArticle.tags) ? currentArticle.tags.join(', ') : '',
@@ -184,6 +186,21 @@ function EditArticlePageContent() {
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Brief summary (optional)"
+              />
+            </div>
+ 
+            <div>
+              <label htmlFor="bannerImageUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                Banner Image URL
+              </label>
+              <input
+                type="url"
+                id="bannerImageUrl"
+                name="bannerImageUrl"
+                value={formData.bannerImageUrl}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="https://example.com/banner.jpg"
               />
             </div>
 

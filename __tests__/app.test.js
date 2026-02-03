@@ -363,6 +363,7 @@ describe('News Application Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.article.title).toBe('Test Article');
       expect(response.body.data.article.tags).toEqual(tags);
+      expect(response.body.data.article.bannerImageUrl).toBe('/images/branding/news default.png');
       testArticleId = response.body.data.article.id;
     });
 
@@ -403,13 +404,15 @@ describe('News Application Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({
           title: 'Updated Test Article',
-          tags: ['updated', 'news']
+          tags: ['updated', 'news'],
+          bannerImageUrl: 'https://example.com/banner.png'
         });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.article.title).toBe('Updated Test Article');
       expect(response.body.data.article.tags).toEqual(['updated', 'news']);
+      expect(response.body.data.article.bannerImageUrl).toBe('https://example.com/banner.png');
     });
 
     test('should update article as editor (different user)', async () => {
