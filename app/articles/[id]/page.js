@@ -83,7 +83,12 @@ export default function ArticleDetailPage() {
 
   const canEdit = user && (user.role === 'admin' || user.role === 'editor' || user.id === article.authorId);
   const canDelete = user && (user.role === 'admin' || user.id === article.authorId);
-  const bannerImageUrl = article.bannerImageUrl || '/images/branding/news default.png';
+  const defaultBannerImageUrl = '/images/branding/news default.png';
+  const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
+  const handleBannerError = (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = defaultBannerImageUrl;
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -105,6 +110,7 @@ export default function ArticleDetailPage() {
             src={bannerImageUrl}
             alt={`${article.title} banner`}
             className="w-full h-64 object-cover"
+            onError={handleBannerError}
           />
           <div className="p-8">
             {/* Article Header */}

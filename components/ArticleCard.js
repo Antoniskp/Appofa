@@ -8,7 +8,12 @@ import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleT
  */
 export default function ArticleCard({ article, variant = 'grid' }) {
   const isListVariant = variant === 'list';
-  const bannerImageUrl = article.bannerImageUrl || '/images/branding/news default.png';
+  const defaultBannerImageUrl = '/images/branding/news default.png';
+  const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
+  const handleBannerError = (event) => {
+    event.currentTarget.onerror = null;
+    event.currentTarget.src = defaultBannerImageUrl;
+  };
 
   return (
     <article className="card overflow-hidden">
@@ -16,6 +21,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         src={bannerImageUrl}
         alt={`${article.title} banner`}
         className="w-full h-48 object-cover"
+        onError={handleBannerError}
       />
       {isListVariant ? (
         <div className="p-6">
