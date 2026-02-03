@@ -6,6 +6,11 @@ const { getCookie } = require('../utils/cookies');
 require('dotenv').config();
 
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_MIN_LENGTH = 3;
+const USERNAME_MAX_LENGTH = 50;
+const PASSWORD_MIN_LENGTH = 6;
+const NAME_MAX_LENGTH = 100;
 const AUTH_COOKIE = 'auth_token';
 
 const authCookieOptions = {
@@ -22,6 +27,70 @@ const csrfCookieOptions = {
   secure: process.env.NODE_ENV === 'production',
   maxAge: 2 * 60 * 60 * 1000,
   path: '/'
+};
+
+const normalizeRequiredString = (value, fieldLabel, minLength, maxLength) => {
+  if (typeof value !== 'string') {
+    return { error: `${fieldLabel} must be a string.` };
+  }
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return { error: `${fieldLabel} is required.` };
+  }
+  if (minLength != null && trimmedValue.length < minLength) {
+    return { error: `${fieldLabel} must be at least ${minLength} characters.` };
+  }
+  if (maxLength != null && trimmedValue.length > maxLength) {
+    return { error: `${fieldLabel} must be ${maxLength} characters or fewer.` };
+  }
+  return { value: trimmedValue };
+};
+
+const normalizeOptionalString = (value, fieldLabel, maxLength) => {
+  if (value === undefined) {
+    return { value: undefined };
+  }
+  if (value === null) {
+    return { value: null };
+  }
+  if (typeof value !== 'string') {
+    return { error: `${fieldLabel} must be a string.` };
+  }
+  const trimmedValue = value.trim();
+  if (!trimmedValue) {
+    return { value: null };
+  }
+  if (maxLength != null && trimmedValue.length > maxLength) {
+    return { error: `${fieldLabel} must be ${maxLength} characters or fewer.` };
+  }
+  return { value: trimmedValue };
+};
+
+const normalizeEmail = (email) => {
+  if (typeof email !== 'string') {
+    return { error: 'Email must be a string.' };
+  }
+  const trimmedEmail = email.trim().toLowerCase();
+  if (!trimmedEmail) {
+    return { error: 'Email is required.' };
+  }
+  if (!EMAIL_REGEX.test(trimmedEmail)) {
+    return { error: 'Email must be a valid email address.' };
+  }
+  return { value: trimmedEmail };
+};
+
+const normalizePassword = (password, fieldLabel) => {
+  if (typeof password !== 'string') {
+    return { error: `${fieldLabel} must be a string.` };
+  }
+  if (!password) {
+    return { error: `${fieldLabel} is required.` };
+  }
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    return { error: `${fieldLabel} must be at least ${PASSWORD_MIN_LENGTH} characters.` };
+  }
+  return { value: password };
 };
 
 const setAuthCookies = (res, token, userId) => {
@@ -79,18 +148,50 @@ const authController = {
     try {
       const { username, email, password, firstName, lastName } = req.body;
 
-      // Validate required fields
-      if (!username || !email || !password) {
+      const usernameResult = normalizeRequiredString(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+      if (usernameResult.error) {
         return res.status(400).json({
           success: false,
-          message: 'Username, email, and password are required.'
+          message: usernameResult.error
+        });
+      }
+
+      const emailResult = normalizeEmail(email);
+      if (emailResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: emailResult.error
+        });
+      }
+
+      const passwordResult = normalizePassword(password, 'Password');
+      if (passwordResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: passwordResult.error
+        });
+      }
+
+      const firstNameResult = normalizeOptionalString(firstName, 'First name', NAME_MAX_LENGTH);
+      if (firstNameResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: firstNameResult.error
+        });
+      }
+
+      const lastNameResult = normalizeOptionalString(lastName, 'Last name', NAME_MAX_LENGTH);
+      if (lastNameResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: lastNameResult.error
         });
       }
 
       // Check if user already exists
       const existingUser = await User.findOne({
         where: {
-          [Op.or]: [{ email }, { username }]
+          [Op.or]: [{ email: emailResult.value }, { username: usernameResult.value }]
         }
       });
 
@@ -103,12 +204,12 @@ const authController = {
 
       // Create new user
       const user = await User.create({
-        username,
-        email,
-        password,
+        username: usernameResult.value,
+        email: emailResult.value,
+        password: passwordResult.value,
         role: 'viewer',
-        firstName,
-        lastName
+        firstName: firstNameResult.value,
+        lastName: lastNameResult.value
       });
 
       // Generate JWT token
@@ -155,16 +256,24 @@ const authController = {
     try {
       const { email, password } = req.body;
 
-      // Validate required fields
-      if (!email || !password) {
+      const emailResult = normalizeEmail(email);
+      if (emailResult.error) {
         return res.status(400).json({
           success: false,
-          message: 'Email and password are required.'
+          message: emailResult.error
+        });
+      }
+
+      const passwordResult = normalizePassword(password, 'Password');
+      if (passwordResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: passwordResult.error
         });
       }
 
       // Find user by email
-      const user = await User.findOne({ where: { email } });
+      const user = await User.findOne({ where: { email: emailResult.value } });
 
       if (!user) {
         return res.status(401).json({
@@ -174,7 +283,7 @@ const authController = {
       }
 
       // Verify password
-      const isValidPassword = await user.comparePassword(password);
+      const isValidPassword = await user.comparePassword(passwordResult.value);
 
       if (!isValidPassword) {
         return res.status(401).json({
@@ -267,26 +376,18 @@ const authController = {
       }
 
       if (username !== undefined) {
-        if (typeof username !== 'string') {
+        const usernameResult = normalizeRequiredString(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+        if (usernameResult.error) {
           return res.status(400).json({
             success: false,
-            message: 'Username must be a string.'
+            message: usernameResult.error
           });
         }
 
-        const trimmedUsername = username.trim();
-
-        if (trimmedUsername.length < 3 || trimmedUsername.length > 50) {
-          return res.status(400).json({
-            success: false,
-            message: 'Username must be between 3 and 50 characters.'
-          });
-        }
-
-        if (trimmedUsername !== user.username) {
+        if (usernameResult.value !== user.username) {
           const existingUser = await User.findOne({
             where: {
-              username: trimmedUsername,
+              username: usernameResult.value,
               id: { [Op.ne]: user.id }
             }
           });
@@ -297,16 +398,30 @@ const authController = {
               message: 'Username is already taken.'
             });
           }
-          user.username = trimmedUsername;
+          user.username = usernameResult.value;
         }
       }
 
-      if (firstName !== undefined) {
-        user.firstName = firstName;
+      const firstNameResult = normalizeOptionalString(firstName, 'First name', NAME_MAX_LENGTH);
+      if (firstNameResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: firstNameResult.error
+        });
+      }
+      if (firstNameResult.value !== undefined) {
+        user.firstName = firstNameResult.value;
       }
 
-      if (lastName !== undefined) {
-        user.lastName = lastName;
+      const lastNameResult = normalizeOptionalString(lastName, 'Last name', NAME_MAX_LENGTH);
+      if (lastNameResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: lastNameResult.error
+        });
+      }
+      if (lastNameResult.value !== undefined) {
+        user.lastName = lastNameResult.value;
       }
 
       if (avatar !== undefined) {
@@ -391,17 +506,19 @@ const authController = {
     try {
       const { currentPassword, newPassword } = req.body;
 
-      if (!currentPassword || !newPassword) {
+      const currentPasswordResult = normalizePassword(currentPassword, 'Current password');
+      if (currentPasswordResult.error) {
         return res.status(400).json({
           success: false,
-          message: 'Current password and new password are required.'
+          message: currentPasswordResult.error
         });
       }
 
-      if (newPassword.length < 6) {
+      const newPasswordResult = normalizePassword(newPassword, 'New password');
+      if (newPasswordResult.error) {
         return res.status(400).json({
           success: false,
-          message: 'New password must be at least 6 characters.'
+          message: newPasswordResult.error
         });
       }
 
@@ -414,7 +531,7 @@ const authController = {
         });
       }
 
-      const isValidPassword = await user.comparePassword(currentPassword);
+      const isValidPassword = await user.comparePassword(currentPasswordResult.value);
 
       if (!isValidPassword) {
         return res.status(400).json({
@@ -423,7 +540,7 @@ const authController = {
         });
       }
 
-      user.password = newPassword;
+      user.password = newPasswordResult.value;
       await user.save();
 
       res.status(200).json({

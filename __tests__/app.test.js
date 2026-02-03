@@ -272,6 +272,19 @@ describe('News Application Integration Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
+    test('should reject invalid registration data', async () => {
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          username: 'ab',
+          email: 'not-an-email',
+          password: '123'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
     test('should get user profile with valid token', async () => {
       const response = await request(app)
         .get('/api/auth/profile')
@@ -312,6 +325,22 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.user.lastName).toBe('Admin');
       expect(response.body.data.user.avatar).toBe('https://example.com/avatar.png');
       expect(response.body.data.user.avatarColor).toBe('#1d4ed8');
+    });
+
+    test('should reject invalid profile names', async () => {
+      const csrfToken = 'csrf-admin-profile-invalid-names';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .put('/api/auth/profile')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          firstName: 'A'.repeat(120),
+          lastName: 'B'.repeat(120)
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
     });
 
     test('should reject invalid avatar URL', async () => {
@@ -495,6 +524,21 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.article.title).toBe('Updated Test Article');
       expect(response.body.data.article.tags).toEqual(['updated', 'news']);
       expect(response.body.data.article.bannerImageUrl).toBe('https://example.com/banner.png');
+    });
+
+    test('should reject invalid article status update', async () => {
+      const csrfToken = 'csrf-admin-update-invalid-status';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .put(`/api/articles/${testArticleId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          status: 'invalid-status'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
     });
 
     test('should update article as editor (different user)', async () => {
