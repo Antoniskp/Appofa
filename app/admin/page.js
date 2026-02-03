@@ -5,9 +5,12 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import AlertMessage from '@/components/AlertMessage';
+import { useToast } from '@/components/ToastProvider';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [articles, setArticles] = useState([]);
   const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({
@@ -84,9 +87,9 @@ function AdminDashboardContent() {
     try {
       await articleAPI.delete(id);
       setArticles(articles.filter(a => a.id !== id));
-      alert('Article deleted successfully');
+      addToast('Article deleted successfully', { type: 'success' });
     } catch (error) {
-      alert('Failed to delete article: ' + error.message);
+      addToast(`Failed to delete article: ${error.message}`, { type: 'error' });
     }
   };
 
@@ -102,10 +105,10 @@ function AdminDashboardContent() {
         setArticles(articles.map(a => 
           a.id === id ? response.data.article : a
         ));
-        alert('News approved and published successfully!');
+        addToast('News approved and published successfully!', { type: 'success' });
       }
     } catch (error) {
-      alert('Failed to approve news: ' + error.message);
+      addToast(`Failed to approve news: ${error.message}`, { type: 'error' });
     }
   };
 
@@ -342,11 +345,7 @@ function AdminDashboardContent() {
             <h2 className="text-xl font-semibold">Users</h2>
           </div>
 
-          {userRoleError && (
-            <div className="mx-6 mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {userRoleError}
-            </div>
-          )}
+          <AlertMessage className="mx-6 mt-4" message={userRoleError} />
 
           {usersLoading ? (
             <div className="p-6 text-center">

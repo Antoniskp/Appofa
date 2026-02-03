@@ -6,6 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import AlertMessage from '@/components/AlertMessage';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
 
@@ -116,9 +117,7 @@ function EditArticlePageContent() {
   if (error || !article) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>Error loading article: {error || 'Article not found'}</p>
-        </div>
+        <AlertMessage message={`Error loading article: ${error || 'Article not found'}`} />
         <Link href="/articles" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
           ← Back to Articles
         </Link>
@@ -131,9 +130,7 @@ function EditArticlePageContent() {
   if (!canEdit) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>You do not have permission to edit this article.</p>
-        </div>
+        <AlertMessage message="You do not have permission to edit this article." />
         <Link href={`/articles/${article.id}`} className="inline-block mt-4 text-blue-600 hover:text-blue-800">
           ← Back to Article
         </Link>
@@ -151,11 +148,7 @@ function EditArticlePageContent() {
         <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold mb-6">Edit Article</h1>
 
-          {submitError && (
-            <div className="mb-6 border px-4 py-3 rounded bg-red-100 border-red-400 text-red-700">
-              <p>{submitError}</p>
-            </div>
-          )}
+          <AlertMessage className="mb-6" message={submitError} />
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

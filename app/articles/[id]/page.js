@@ -6,11 +6,14 @@ import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
+import { useToast } from '@/components/ToastProvider';
+import AlertMessage from '@/components/AlertMessage';
 
 export default function ArticleDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [article, setArticle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,10 +48,10 @@ export default function ArticleDetailPage() {
 
     try {
       await articleAPI.delete(params.id);
-      alert('Article deleted successfully');
+      addToast('Article deleted successfully', { type: 'success' });
       router.push('/articles');
     } catch (err) {
-      alert('Failed to delete article: ' + err.message);
+      addToast(`Failed to delete article: ${err.message}`, { type: 'error' });
     }
   };
 
@@ -63,9 +66,7 @@ export default function ArticleDetailPage() {
   if (error || !article) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>Error loading article: {error || 'Article not found'}</p>
-        </div>
+        <AlertMessage message={`Error loading article: ${error || 'Article not found'}`} />
         <nav aria-label="Breadcrumb" className="mt-4">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>

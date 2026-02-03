@@ -8,10 +8,12 @@ import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 import { getArticleTypeLabel, getArticleTypeClasses, isCategoryRequired } from '@/lib/utils/articleTypes';
+import { useToast } from '@/components/ToastProvider';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
+  const { addToast } = useToast();
   const [articles, setArticles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -82,23 +84,23 @@ function EditorDashboardContent() {
       };
       const response = await articleAPI.create(payload);
       if (response.success) {
-        alert('Article created successfully!');
+        addToast('Article created successfully!', { type: 'success' });
         setShowForm(false);
-          setFormData({
-            title: '',
-            content: '',
-            summary: '',
-            bannerImageUrl: '',
-            type: 'personal',
-            category: '',
-            tags: '',
-            status: 'draft',
-            isNews: false,
+        setFormData({
+          title: '',
+          content: '',
+          summary: '',
+          bannerImageUrl: '',
+          type: 'personal',
+          category: '',
+          tags: '',
+          status: 'draft',
+          isNews: false,
         });
         fetchArticles();
       }
     } catch (error) {
-      alert('Failed to create article: ' + error.message);
+      addToast(`Failed to create article: ${error.message}`, { type: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -112,9 +114,9 @@ function EditorDashboardContent() {
     try {
       await articleAPI.delete(id);
       setArticles(articles.filter(a => a.id !== id));
-      alert('Article deleted successfully');
+      addToast('Article deleted successfully', { type: 'success' });
     } catch (error) {
-      alert('Failed to delete article: ' + error.message);
+      addToast(`Failed to delete article: ${error.message}`, { type: 'error' });
     }
   };
 

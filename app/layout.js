@@ -1,6 +1,7 @@
 import { AuthProvider } from '@/lib/auth-context';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
+import { ToastProvider } from '@/components/ToastProvider';
 import './globals.css';
 
 export const metadata = {
@@ -13,11 +14,13 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className="flex flex-col min-h-screen">
         <AuthProvider>
-          <TopNav />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
+          <ToastProvider>
+            <TopNav />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>
