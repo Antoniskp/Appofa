@@ -4,11 +4,15 @@ const { sequelize, User } = require('../src/models');
 // Create a test app instance
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const { helmetConfig, frontendUrl } = require('../src/config/securityHeaders');
+
 const authRoutes = require('../src/routes/authRoutes');
 const articleRoutes = require('../src/routes/articleRoutes');
 const adminRoutes = require('../src/routes/adminRoutes');
 
 const app = express();
+app.use(helmet(helmetConfig));
 app.use(cors());
 app.use(express.json());
 app.use('/api/auth', authRoutes);
@@ -66,6 +70,23 @@ describe('News Application Integration Tests', () => {
   afterAll(async () => {
     // Close database connection
     await sequelize.close();
+  });
+
+  describe('Security Headers Tests', () => {
+    test('should include security headers', async () => {
+      const response = await request(app)
+        .get('/api/articles');
+
+      const cspHeader = response.headers['content-security-policy'];
+      expect(cspHeader).toContain("frame-ancestors 'self'");
+      expect(cspHeader).toContain(`connect-src 'self' ${frontendUrl}`);
+      expect(cspHeader).toContain("img-src 'self' data:");
+      expect(cspHeader).toContain("script-src 'self'");
+      expect(cspHeader).toContain("style-src 'self'");
+      expect(response.headers['x-frame-options']).toBe('SAMEORIGIN');
+      expect(response.headers['x-content-type-options']).toBe('nosniff');
+      expect(response.headers['referrer-policy']).toBe('no-referrer');
+    });
   });
 
   describe('Authentication Tests', () => {
