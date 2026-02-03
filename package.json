@@ -12,7 +12,6 @@
     "frontend:build": "next build",
     "frontend:start": "next start -p 3001",
     "seed": "node src/populate-db.js",
-    "seed:locations": "node src/seed-locations.js",
     "migrate:article-types": "node src/update-article-types.js"
   },
   "keywords": [],
@@ -43,7 +42,6 @@
     "tar": "^7.5.7"
   },
   "devDependencies": {
-    "@babel/runtime": "^7.28.6",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "nodemon": "^3.1.11",
