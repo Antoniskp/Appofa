@@ -8,7 +8,6 @@ require('dotenv').config();
 const authRoutes = require('./routes/authRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const adminRoutes = require('./routes/adminRoutes');
-const locationRoutes = require('./routes/locationRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,8 +27,7 @@ app.get('/', (req, res) => {
     version: '1.0.0',
     endpoints: {
       auth: '/api/auth',
-      articles: '/api/articles',
-      locations: '/api/locations'
+      articles: '/api/articles'
     }
   });
 });
@@ -37,7 +35,6 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/locations', locationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
