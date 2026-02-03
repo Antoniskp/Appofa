@@ -43,6 +43,12 @@ jest.mock('@/lib/api', () => ({
       data: { articles: [], pagination: { totalPages: 1 } }
     }))
   },
+  locationAPI: {
+    getAll: jest.fn(() => Promise.resolve({
+      success: true,
+      data: []
+    }))
+  },
   adminAPI: {
     getHealthStatus: jest.fn(() => Promise.resolve({
       success: true,
@@ -158,6 +164,17 @@ describe('Frontend smoke tests', () => {
 
     expect(container.textContent).toContain('System Health');
     expect(container.textContent).toContain('Overall Status');
+
+    root.unmount();
+  });
+
+  test('renders locations page filters', async () => {
+    useAuth.mockReturnValue(buildAuthState());
+    const LocationsPage = require('../app/locations/page').default;
+    const { container, root } = await renderPage(LocationsPage);
+
+    expect(container.textContent).toContain('Τοποθεσίες');
+    expect(container.textContent).toContain('Αναζήτηση');
 
     root.unmount();
   });
