@@ -436,9 +436,6 @@ describe('Location API Tests', () => {
           entity_id: articleId
         });
 
-      if (res.status !== 200) {
-        console.log('Unlink response:', res.status, res.body);
-      }
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('unlinked');
     });
