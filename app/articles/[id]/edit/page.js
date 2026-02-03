@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { articleAPI } from '@/lib/api';
+import { articleAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
+import LocationSelector from '@/components/LocationSelector';
 
 function EditArticlePageContent() {
   const params = useParams();
@@ -26,6 +27,8 @@ function EditArticlePageContent() {
     status: 'draft',
     isNews: false,
   });
+  const [selectedLocations, setSelectedLocations] = useState([]);
+  const [originalLocationIds, setOriginalLocationIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -49,6 +52,17 @@ function EditArticlePageContent() {
             status: currentArticle.status || 'draft',
             isNews: Boolean(currentArticle.isNews),
           });
+
+          // Load existing locations
+          try {
+            const locResponse = await locationAPI.getLinkedLocations('article', params.id);
+            if (locResponse.success && locResponse.data.length > 0) {
+              setSelectedLocations(locResponse.data);
+              setOriginalLocationIds(locResponse.data.map(loc => loc.id));
+            }
+          } catch (locErr) {
+            console.error('Failed to load locations:', locErr);
+          }
         }
       } catch (err) {
         setError(err.message);
@@ -95,6 +109,39 @@ function EditArticlePageContent() {
       };
       const response = await articleAPI.update(params.id, payload);
       if (response.success) {
+        // Update locations
+        const currentLocationIds = selectedLocations.map(loc => loc.id);
+        
+        // Unlink removed locations
+        for (const oldId of originalLocationIds) {
+          if (!currentLocationIds.includes(oldId)) {
+            try {
+              await locationAPI.unlinkLocation({
+                location_id: oldId,
+                entity_type: 'article',
+                entity_id: params.id
+              });
+            } catch (unlinkErr) {
+              console.error('Failed to unlink location:', unlinkErr);
+            }
+          }
+        }
+        
+        // Link new locations
+        for (const location of selectedLocations) {
+          if (!originalLocationIds.includes(location.id)) {
+            try {
+              await locationAPI.linkLocation({
+                location_id: location.id,
+                entity_type: 'article',
+                entity_id: params.id
+              });
+            } catch (linkErr) {
+              console.error('Failed to link location:', linkErr);
+            }
+          }
+        }
+        
         router.push(`/articles/${params.id}`);
       } else {
         setSubmitError(response.message || 'Failed to update article. Please try again.');
@@ -300,6 +347,15 @@ function EditArticlePageContent() {
                   <option value="archived">Archived</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <LocationSelector
+                selectedLocations={selectedLocations}
+                onChange={setSelectedLocations}
+                label="Article Location (Optional)"
+                allowedTypes={['country', 'prefecture', 'municipality']}
+              />
             </div>
 
             <div className="flex gap-4">
