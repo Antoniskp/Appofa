@@ -8,55 +8,63 @@ import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleT
  */
 export default function ArticleCard({ article, variant = 'grid' }) {
   const isListVariant = variant === 'list';
+  const bannerImageUrl = article.bannerImageUrl || '/images/branding/news default.png';
 
   return (
-    <article className={isListVariant ? 'card p-6' : 'card'}>
+    <article className="card overflow-hidden">
+      <img
+        src={bannerImageUrl}
+        alt={`${article.title} banner`}
+        className="w-full h-48 object-cover"
+      />
       {isListVariant ? (
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between">
-          <div className="flex-grow">
-            <div className="flex flex-wrap gap-2 mb-2">
-              {article.type && (
-                <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
-                  {getArticleTypeLabel(article.type)}
-                </span>
-              )}
-              {article.category && (
-                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                  {article.category}
-                </span>
-              )}
-              {Array.isArray(article.tags) && article.tags.length > 0 && (
-                <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
-                  {article.tags.join(', ')}
-                </span>
-              )}
+        <div className="p-6">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between">
+            <div className="flex-grow">
+              <div className="flex flex-wrap gap-2 mb-2">
+                {article.type && (
+                  <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                    {getArticleTypeLabel(article.type)}
+                  </span>
+                )}
+                {article.category && (
+                  <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                    {article.category}
+                  </span>
+                )}
+                {Array.isArray(article.tags) && article.tags.length > 0 && (
+                  <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
+                    {article.tags.join(', ')}
+                  </span>
+                )}
+              </div>
+              <h2 className="text-2xl font-semibold mb-2">
+                <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
+                  {article.title}
+                </Link>
+              </h2>
+              <p className="body-copy mb-4">
+                {article.summary || article.content?.substring(0, 200) + '...'}
+              </p>
+              <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                <span>By {article.author?.username || 'Unknown'}</span>
+                <span>•</span>
+                <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                {article.status !== 'published' && (
+                  <>
+                    <span>•</span>
+                    <span className="text-orange-600 font-medium">{article.status}</span>
+                  </>
+                )}
+              </div>
             </div>
-            <h2 className="text-2xl font-semibold mb-2">
-              <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
-                {article.title}
-              </Link>
-            </h2>
-            <p className="body-copy mb-4">
-              {article.summary || article.content?.substring(0, 200) + '...'}
-            </p>
-            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-              <span>By {article.author?.username || 'Unknown'}</span>
-              <span>•</span>
-              <span>{new Date(article.createdAt).toLocaleDateString()}</span>
-              {article.status !== 'published' && (
-                <>
-                  <span>•</span>
-                  <span className="text-orange-600 font-medium">{article.status}</span>
-                </>
-              )}
-            </div>
+            <Link
+              href={`/articles/${article.id}`}
+              className="inline-block mt-4 md:mt-0 md:ml-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition whitespace-nowrap"
+            >
+              Read More
+            </Link>
           </div>
-          <Link
-            href={`/articles/${article.id}`}
-            className="inline-block mt-4 md:mt-0 md:ml-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition whitespace-nowrap"
-          >
-            Read More
-          </Link>
         </div>
       ) : (
         <div className="p-6">

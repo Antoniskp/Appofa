@@ -25,6 +25,11 @@ const Article = sequelize.define('Article', {
     type: DataTypes.STRING(500),
     allowNull: true
   },
+  bannerImageUrl: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: '/images/branding/news default.png'
+  },
   authorId: {
     type: DataTypes.INTEGER,
     allowNull: false,

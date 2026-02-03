@@ -83,6 +83,7 @@ export default function ArticleDetailPage() {
 
   const canEdit = user && (user.role === 'admin' || user.role === 'editor' || user.id === article.authorId);
   const canDelete = user && (user.role === 'admin' || user.id === article.authorId);
+  const bannerImageUrl = article.bannerImageUrl || '/images/branding/news default.png';
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -99,89 +100,96 @@ export default function ArticleDetailPage() {
           </ol>
         </nav>
 
-        <div className="bg-white rounded-lg shadow-md p-8">
-          {/* Article Header */}
-          <div className="mb-8">
-            <div className="flex flex-wrap gap-2 mb-4">
-              {article.type && (
-                <span className={`inline-block text-sm px-3 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
-                  {getArticleTypeLabel(article.type)}
-                </span>
-              )}
-              {article.category && (
-                <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded">
-                  {article.category}
-                </span>
-              )}
-              {Array.isArray(article.tags) && article.tags.length > 0 && (
-                <span className="inline-block bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded">
-                  {article.tags.join(', ')}
-                </span>
-              )}
-              {article.status !== 'published' && (
-                <span className="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded">
-                  {article.status}
-                </span>
-              )}
-            </div>
-            <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
-            
-            <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b border-gray-200 pb-4">
-              <div className="flex items-center">
-                <span className="font-medium">By {article.author?.username || 'Unknown'}</span>
-              </div>
-              <span>•</span>
-              <div>
-                <span>Published: {new Date(article.createdAt).toLocaleDateString()}</span>
-              </div>
-              {article.updatedAt !== article.createdAt && (
-                <>
-                  <span>•</span>
-                  <div>
-                    <span>Updated: {new Date(article.updatedAt).toLocaleDateString()}</span>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Article Summary */}
-          {article.summary && (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <img
+            src={bannerImageUrl}
+            alt={`${article.title} banner`}
+            className="w-full h-64 object-cover"
+          />
+          <div className="p-8">
+            {/* Article Header */}
             <div className="mb-8">
-              <p className="text-xl text-gray-700 italic border-l-4 border-blue-600 pl-4">
-                {article.summary}
-              </p>
-            </div>
-          )}
+              <div className="flex flex-wrap gap-2 mb-4">
+                {article.type && (
+                  <span className={`inline-block text-sm px-3 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
+                    {getArticleTypeLabel(article.type)}
+                  </span>
+                )}
+                {article.category && (
+                  <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded">
+                    {article.category}
+                  </span>
+                )}
+                {Array.isArray(article.tags) && article.tags.length > 0 && (
+                  <span className="inline-block bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded">
+                    {article.tags.join(', ')}
+                  </span>
+                )}
+                {article.status !== 'published' && (
+                  <span className="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded">
+                    {article.status}
+                  </span>
+                )}
+              </div>
+              <h1 className="text-4xl font-bold mb-4">{article.title}</h1>
 
-          {/* Article Content */}
-          <div className="prose max-w-none mb-8">
-            <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-              {article.content}
+              <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b border-gray-200 pb-4">
+                <div className="flex items-center">
+                  <span className="font-medium">By {article.author?.username || 'Unknown'}</span>
+                </div>
+                <span>•</span>
+                <div>
+                  <span>Published: {new Date(article.createdAt).toLocaleDateString()}</span>
+                </div>
+                {article.updatedAt !== article.createdAt && (
+                  <>
+                    <span>•</span>
+                    <div>
+                      <span>Updated: {new Date(article.updatedAt).toLocaleDateString()}</span>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
+
+            {/* Article Summary */}
+            {article.summary && (
+              <div className="mb-8">
+                <p className="text-xl text-gray-700 italic border-l-4 border-blue-600 pl-4">
+                  {article.summary}
+                </p>
+              </div>
+            )}
+
+            {/* Article Content */}
+            <div className="prose max-w-none mb-8">
+              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {article.content}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            {(canEdit || canDelete) && (
+              <div className="flex gap-4 pt-8 border-t border-gray-200">
+                {canEdit && (
+                  <Link
+                    href={`/articles/${article.id}/edit`}
+                    className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+                  >
+                    Edit Article
+                  </Link>
+                )}
+                {canDelete && (
+                  <button
+                    onClick={handleDelete}
+                    className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
+                  >
+                    Delete Article
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-
-          {/* Action Buttons */}
-          {(canEdit || canDelete) && (
-            <div className="flex gap-4 pt-8 border-t border-gray-200">
-              {canEdit && (
-                <Link
-                  href={`/articles/${article.id}/edit`}
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
-                >
-                  Edit Article
-                </Link>
-              )}
-              {canDelete && (
-                <button
-                  onClick={handleDelete}
-                  className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
-                >
-                  Delete Article
-                </button>
-              )}
-            </div>
-          )}
         </div>
       </article>
     </div>
