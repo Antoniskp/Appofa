@@ -62,14 +62,15 @@ Save the token from the response for subsequent requests.
 ### 5. Get User Profile
 ```bash
 curl -X GET http://localhost:3000/api/auth/profile \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+  -b "auth_token=YOUR_TOKEN_HERE"
 ```
 
 ### 6. Admin: Update User Role
 ```bash
 curl -X PUT http://localhost:3000/api/auth/users/USER_ID/role \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ADMIN_TOKEN_HERE" \
+  -b "auth_token=ADMIN_TOKEN_HERE" \
+  -H "X-CSRF-Token: YOUR_CSRF_TOKEN_HERE" \
   -d '{
     "role": "editor"
   }'
@@ -78,13 +79,13 @@ curl -X PUT http://localhost:3000/api/auth/users/USER_ID/role \
 ### 7. Admin: Get User Stats
 ```bash
 curl -X GET http://localhost:3000/api/auth/users/stats \
-  -H "Authorization: Bearer ADMIN_TOKEN_HERE"
+  -b "auth_token=ADMIN_TOKEN_HERE"
 ```
 
 ### 8. Admin: Get Users
 ```bash
 curl -X GET http://localhost:3000/api/auth/users \
-  -H "Authorization: Bearer ADMIN_TOKEN_HERE"
+  -b "auth_token=ADMIN_TOKEN_HERE"
 ```
 
 ## Article Examples
@@ -93,7 +94,8 @@ curl -X GET http://localhost:3000/api/auth/users \
 ```bash
 curl -X POST http://localhost:3000/api/articles \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -b "auth_token=YOUR_TOKEN_HERE" \
+  -H "X-CSRF-Token: YOUR_CSRF_TOKEN_HERE" \
   -d '{
     "title": "Breaking News: Technology Breakthrough",
     "content": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
@@ -122,7 +124,8 @@ curl -X GET http://localhost:3000/api/articles/1
 ```bash
 curl -X PUT http://localhost:3000/api/articles/1 \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE" \
+  -b "auth_token=YOUR_TOKEN_HERE" \
+  -H "X-CSRF-Token: YOUR_CSRF_TOKEN_HERE" \
   -d '{
     "title": "Updated Breaking News Title",
     "content": "Updated content goes here...",
@@ -133,14 +136,15 @@ curl -X PUT http://localhost:3000/api/articles/1 \
 ### 11. Delete Article (Authenticated - Admin or Author only)
 ```bash
 curl -X DELETE http://localhost:3000/api/articles/1 \
-  -H "Authorization: Bearer YOUR_TOKEN_HERE"
+  -b "auth_token=YOUR_TOKEN_HERE" \
+  -H "X-CSRF-Token: YOUR_CSRF_TOKEN_HERE"
 ```
 
 ## Testing Workflow
 
 1. Start the server: `npm run dev`
 2. Register users (they start as viewers by default)
-3. Login with each user and save their tokens
+3. Login with each user and save their auth + CSRF cookies
 4. Test article creation with authenticated users
 5. Test article retrieval (public and authenticated)
 6. Test article updates with different roles

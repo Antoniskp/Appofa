@@ -62,7 +62,7 @@ For production deployment, consider implementing:
 
 1. **HTTPS**: Use SSL/TLS certificates (Let's Encrypt recommended)
 2. **Helmet.js**: Add security headers
-3. **CSRF Protection**: Add CSRF tokens for state-changing operations
+3. **CSRF Protection**: CSRF tokens are required for state-changing operations and validated against HttpOnly session cookies.
 4. **Input Sanitization**: Add additional sanitization for HTML/SQL injection prevention
 5. **Logging & Monitoring**: Implement comprehensive logging (Winston, Morgan)
 6. **Security Headers**: Add CSP, X-Frame-Options, etc.

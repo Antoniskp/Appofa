@@ -26,6 +26,16 @@ describe('News Application Integration Tests', () => {
   let viewerUserId;
   let adminUserId;
 
+  const csrfHeaderFor = (token) => ({
+    Cookie: [`csrf_token=${token}`],
+    'x-csrf-token': token
+  });
+
+  const setCsrfToken = (token, userId) => {
+    const { storeCsrfToken } = require('../src/utils/csrf');
+    storeCsrfToken(token, userId);
+  };
+
   beforeAll(async () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
@@ -49,7 +59,8 @@ describe('News Application Integration Tests', () => {
         password: 'admin123'
       });
 
-    adminToken = loginResponse.body.data.token;
+    const adminCookie = loginResponse.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+    adminToken = adminCookie.split(';')[0].replace('auth_token=', '');
   });
 
   afterAll(async () => {
@@ -71,10 +82,12 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.token).toBeDefined();
+      const csrfCookie = response.headers['set-cookie'].find((cookie) => cookie.startsWith('csrf_token='));
+      expect(csrfCookie).toBeDefined();
       expect(response.body.data.user.role).toBe('viewer');
       viewerUserId = response.body.data.user.id;
-      viewerToken = response.body.data.token;
+      const viewerCookie = response.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+      viewerToken = viewerCookie.split(';')[0].replace('auth_token=', '');
     });
 
     test('should register a new editor user', async () => {
@@ -96,9 +109,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('admin should update editor role', async () => {
+      const csrfToken = 'csrf-admin-role';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put(`/api/auth/users/${editorUserId}/role`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({ role: 'editor' });
 
       expect(response.status).toBe(200);
@@ -117,7 +133,8 @@ describe('News Application Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.role).toBe('editor');
-      editorToken = response.body.data.token;
+      const editorCookie = response.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+      editorToken = editorCookie.split(';')[0].replace('auth_token=', '');
     });
 
     test('should register a new moderator user', async () => {
@@ -139,9 +156,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('admin should update moderator role', async () => {
+      const csrfToken = 'csrf-admin-moderator-role';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put(`/api/auth/users/${moderatorUserId}/role`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({ role: 'moderator' });
 
       expect(response.status).toBe(200);
@@ -150,9 +170,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should prevent removing last admin role', async () => {
+      const csrfToken = 'csrf-admin-demote';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put(`/api/auth/users/${adminUserId}/role`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({ role: 'viewer' });
 
       expect(response.status).toBe(400);
@@ -170,7 +193,8 @@ describe('News Application Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.role).toBe('moderator');
-      moderatorToken = response.body.data.token;
+      const moderatorCookie = response.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+      moderatorToken = moderatorCookie.split(';')[0].replace('auth_token=', '');
     });
 
     test('should not register user with duplicate email', async () => {
@@ -196,7 +220,7 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.token).toBeDefined();
+      expect(response.headers['set-cookie']).toEqual(expect.arrayContaining([expect.stringContaining('auth_token=')]));
     });
 
     test('should not login with invalid credentials', async () => {
@@ -230,9 +254,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should update profile details', async () => {
+      const csrfToken = 'csrf-admin-profile';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put('/api/auth/profile')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           username: 'updatedadmin',
           firstName: 'Updated',
@@ -251,9 +278,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should reject invalid avatar URL', async () => {
+      const csrfToken = 'csrf-admin-avatar';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put('/api/auth/profile')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           avatar: 'not-a-url'
         });
@@ -264,9 +294,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should reject invalid avatar color format', async () => {
+      const csrfToken = 'csrf-admin-color';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put('/api/auth/profile')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           avatarColor: 'blue'
         });
@@ -277,9 +310,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should clear avatar fields with null', async () => {
+      const csrfToken = 'csrf-admin-clear';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put('/api/auth/profile')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           avatar: null,
           avatarColor: null
@@ -292,9 +328,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should update password with current password', async () => {
+      const csrfToken = 'csrf-admin-password';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put('/api/auth/password')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           currentPassword: 'admin123',
           newPassword: 'newadmin123'
@@ -347,9 +386,12 @@ describe('News Application Integration Tests', () => {
   describe('Article CRUD Tests', () => {
     test('should create article as authenticated user', async () => {
       const tags = ['feature', 'release'];
+      const csrfToken = 'csrf-admin-create-article';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .post('/api/articles')
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Test Article',
           content: 'This is a test article content that is long enough to pass validation.',
@@ -399,9 +441,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should update article as author', async () => {
+      const csrfToken = 'csrf-admin-update-article';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .put(`/api/articles/${testArticleId}`)
         .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Updated Test Article',
           tags: ['updated', 'news'],
@@ -416,9 +461,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should update article as editor (different user)', async () => {
+      const csrfToken = 'csrf-editor-update-article';
+      setCsrfToken(csrfToken, editorUserId);
       const response = await request(app)
         .put(`/api/articles/${testArticleId}`)
         .set('Authorization', `Bearer ${editorToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Editor Updated Article'
         });
@@ -428,18 +476,24 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should not delete article as viewer', async () => {
+      const csrfToken = 'csrf-viewer-delete';
+      setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
         .delete(`/api/articles/${testArticleId}`)
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
     test('should delete article as admin', async () => {
+      const csrfToken = 'csrf-admin-delete';
+      setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
         .delete(`/api/articles/${testArticleId}`)
-        .set('Authorization', `Bearer ${adminToken}`);
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -458,9 +512,12 @@ describe('News Application Integration Tests', () => {
     let viewerArticleId;
 
     test('viewer should be able to create their own article', async () => {
+      const csrfToken = 'csrf-viewer-create';
+      setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
         .post('/api/articles')
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Viewer Article',
           content: 'This is an article created by a viewer user.',
@@ -473,9 +530,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('viewer should be able to update their own article', async () => {
+      const csrfToken = 'csrf-viewer-update';
+      setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
         .put(`/api/articles/${viewerArticleId}`)
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Updated Viewer Article'
         });
@@ -485,9 +545,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('editor should be able to update any article', async () => {
+      const csrfToken = 'csrf-editor-update';
+      setCsrfToken(csrfToken, editorUserId);
       const response = await request(app)
         .put(`/api/articles/${viewerArticleId}`)
         .set('Authorization', `Bearer ${editorToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Editor Modified Viewer Article'
         });
@@ -497,9 +560,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('viewer should be able to delete their own article', async () => {
+      const csrfToken = 'csrf-viewer-delete-own';
+      setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
         .delete(`/api/articles/${viewerArticleId}`)
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -531,9 +597,12 @@ describe('News Application Integration Tests', () => {
     let newsArticleId;
 
     test('should create article with isNews flag', async () => {
+      const csrfToken = 'csrf-viewer-news';
+      setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
         .post('/api/articles')
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Breaking News Article',
           content: 'This is a news article that needs moderation approval.',
@@ -551,18 +620,24 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should not approve news without moderator/admin role', async () => {
+      const csrfToken = 'csrf-viewer-approve';
+      setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
         .post(`/api/articles/${newsArticleId}/approve-news`)
-        .set('Authorization', `Bearer ${viewerToken}`);
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
 
     test('moderator should approve news successfully', async () => {
+      const csrfToken = 'csrf-moderator-approve';
+      setCsrfToken(csrfToken, moderatorUserId);
       const response = await request(app)
         .post(`/api/articles/${newsArticleId}/approve-news`)
-        .set('Authorization', `Bearer ${moderatorToken}`);
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -571,9 +646,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should return only approved news items', async () => {
+      const csrfToken = 'csrf-viewer-news-unapproved';
+      setCsrfToken(csrfToken, viewerUserId);
       const createResponse = await request(app)
         .post('/api/articles')
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Unapproved Published News',
           content: 'This news item should not appear in public listings.',
@@ -597,9 +675,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should not approve already approved news', async () => {
+      const csrfToken = 'csrf-moderator-approve-repeat';
+      setCsrfToken(csrfToken, moderatorUserId);
       const response = await request(app)
         .post(`/api/articles/${newsArticleId}/approve-news`)
-        .set('Authorization', `Bearer ${moderatorToken}`);
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       // Should still succeed but article is already approved
       expect(response.status).toBe(200);
@@ -607,9 +688,12 @@ describe('News Application Integration Tests', () => {
 
     test('should not approve article not flagged as news', async () => {
       // Create a regular article
+      const csrfToken = 'csrf-viewer-regular';
+      setCsrfToken(csrfToken, viewerUserId);
       const createResponse = await request(app)
         .post('/api/articles')
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Regular Article',
           content: 'This is not a news article.',
@@ -619,9 +703,12 @@ describe('News Application Integration Tests', () => {
 
       const regularArticleId = createResponse.body.data.article.id;
 
+      const csrfTokenApprove = 'csrf-moderator-regular-approve';
+      setCsrfToken(csrfTokenApprove, moderatorUserId);
       const response = await request(app)
         .post(`/api/articles/${regularArticleId}/approve-news`)
-        .set('Authorization', `Bearer ${moderatorToken}`);
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfTokenApprove));
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -629,9 +716,12 @@ describe('News Application Integration Tests', () => {
     });
 
     test('should update article and maintain isNews flag', async () => {
+      const csrfToken = 'csrf-viewer-update-news';
+      setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
         .put(`/api/articles/${newsArticleId}`)
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'Updated Breaking News Article'
         });
@@ -643,9 +733,12 @@ describe('News Application Integration Tests', () => {
 
     test('should allow author to unflag article as news', async () => {
       // Create a news article
+      const csrfToken = 'csrf-viewer-unflag';
+      setCsrfToken(csrfToken, viewerUserId);
       const createResponse = await request(app)
         .post('/api/articles')
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
         .send({
           title: 'News to Unflag',
           content: 'This will be unflagged as news.',
@@ -655,9 +748,12 @@ describe('News Application Integration Tests', () => {
       const articleId = createResponse.body.data.article.id;
 
       // Unflag as news
+      const csrfTokenUpdate = 'csrf-viewer-unflag-update';
+      setCsrfToken(csrfTokenUpdate, viewerUserId);
       const response = await request(app)
         .put(`/api/articles/${articleId}`)
         .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfTokenUpdate))
         .send({
           isNews: false
         });

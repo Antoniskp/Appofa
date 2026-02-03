@@ -135,7 +135,7 @@ Handles the callback from GitHub after authorization.
 #### Unlink GitHub Account
 ```
 DELETE /api/auth/github/unlink
-Authorization: Bearer <token>
+Cookie: auth_token=<token>
 ```
 Unlinks the GitHub account from the current user.
 

@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { authAPI, setAuthToken } from '@/lib/api';
+import { authAPI } from '@/lib/api';
 
 function LoginForm() {
   const router = useRouter();
@@ -33,13 +33,21 @@ function LoginForm() {
 
     loadOAuthConfig();
 
-    // Handle OAuth callback with token
-    const token = searchParams.get('token');
+    // Handle OAuth callback
     const errorParam = searchParams.get('error');
 
-    if (token) {
-      setAuthToken(token);
-      router.push('/');
+    if (searchParams.get('oauth')) {
+      setLoading(true);
+      authAPI.getProfile()
+        .then((response) => {
+          if (response.success) {
+            router.push('/');
+          }
+        })
+        .catch((err) => {
+          console.error('OAuth login failed:', err);
+          setLoading(false);
+        });
     } else if (errorParam) {
       const errorMessages = {
         missing_params: 'OAuth failed: Missing parameters',
