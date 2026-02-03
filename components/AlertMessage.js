@@ -13,7 +13,7 @@ export default function AlertMessage({ tone = 'error', message, className = '' }
       className={`${baseClasses} ${toneClasses} ${className}`}
       role={tone === 'success' ? 'status' : 'alert'}
     >
-      {message}
+      <p>{message}</p>
     </div>
   );
 }

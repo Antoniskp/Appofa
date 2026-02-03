@@ -31,13 +31,16 @@ export function ToastProvider({ children }) {
   }, []);
 
   const addToast = useCallback((message, options = {}) => {
-    const { type = 'info', duration = 4000 } = options;
+    const { type = 'info' } = options;
+    const resolvedDuration = typeof options.duration === 'number'
+      ? options.duration
+      : (type === 'error' ? 6000 : 4000);
     const id = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
-    if (duration > 0) {
-      const timeoutId = setTimeout(() => removeToast(id), duration);
+    if (resolvedDuration > 0) {
+      const timeoutId = setTimeout(() => removeToast(id), resolvedDuration);
       timeoutsRef.current.set(id, timeoutId);
     }
   }, [removeToast]);
@@ -47,7 +50,12 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3 px-4 sm:px-0">
+      <div
+        className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3 px-4 sm:px-0"
+        aria-live="polite"
+        aria-relevant="additions text"
+        aria-atomic="true"
+      >
         {toasts.map((toast) => (
           <div
             key={toast.id}
