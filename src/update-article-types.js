@@ -14,9 +14,7 @@ const updateArticleTypes = async () => {
     await sequelize.authenticate();
     console.log('Database connection established.');
 
-    // Sync database models (alter tables to add new fields)
-    await sequelize.sync({ alter: true });
-    console.log('Database schema updated.');
+    console.log('Skipping automatic schema sync. Run explicit migrations before this script.');
 
     // Update articles based on isNews field
     const articles = await Article.findAll();

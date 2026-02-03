@@ -11,6 +11,7 @@ const adminRoutes = require('./routes/adminRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProductionEnv = () => process.env.NODE_ENV === 'production';
 
 // Middleware
 app.use(helmet(helmetConfig));
@@ -60,9 +61,13 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
 
-    // Sync database models
-    await sequelize.sync({ alter: true });
-    console.log('Database models synchronized.');
+    if (!isProductionEnv()) {
+      // Sync database models in non-production environments
+      await sequelize.sync({ alter: true });
+      console.log('Database models synchronized.');
+    } else {
+      console.log('Skipping Sequelize sync in production. Run migrations before starting the server.');
+    }
 
     // Start server
     app.listen(PORT, () => {
@@ -75,6 +80,10 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (require.main === module) {
+  startServer();
+}
 
 module.exports = app;
+module.exports.startServer = startServer;
+module.exports.shouldSyncSchema = () => !isProductionEnv();

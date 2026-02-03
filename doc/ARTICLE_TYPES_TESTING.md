@@ -50,9 +50,10 @@ npm run migrate:article-types
 ```
 
 This will:
-- Update the database schema to add the `type` field
 - Set existing articles' type based on their `isNews` field
 - Keep the `isNews` field for backward compatibility
+
+Before running the script, ensure you have applied the Sequelize migration for the `type` field in your environment.
 
 ## Testing Instructions
 
