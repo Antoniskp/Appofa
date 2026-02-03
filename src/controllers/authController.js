@@ -364,7 +364,7 @@ const authController = {
   // Update current user profile (excluding email)
   updateProfile: async (req, res) => {
     try {
-      const { username, firstName, lastName, avatar, avatarColor } = req.body;
+      const { username, firstName, lastName, avatar, avatarColor, home_location_id } = req.body;
 
       const user = await User.findByPk(req.user.id);
 
@@ -476,6 +476,29 @@ const authController = {
           return res.status(400).json({
             success: false,
             message: 'Avatar color must be a string.'
+          });
+        }
+      }
+
+      // Handle home location update
+      if (home_location_id !== undefined) {
+        if (home_location_id === null) {
+          user.home_location_id = null;
+        } else if (typeof home_location_id === 'number') {
+          // Verify location exists
+          const { Location } = require('../models');
+          const location = await Location.findByPk(home_location_id);
+          if (!location) {
+            return res.status(400).json({
+              success: false,
+              message: 'Invalid location ID.'
+            });
+          }
+          user.home_location_id = home_location_id;
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'Home location ID must be a number.'
           });
         }
       }

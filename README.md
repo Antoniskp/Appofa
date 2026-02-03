@@ -5,6 +5,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 ## Highlights
 - JWT-based authentication with role-based access control (Admin, Moderator, Editor, Viewer)
 - **GitHub OAuth integration** for easy signup/login and account linking
+- **Hierarchical Locations System** - International/Country/Prefecture/Municipality with polymorphic linking
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
 - Article types and categories with dependent dropdowns (Personal, Articles, News)
@@ -14,6 +15,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [Project Summary](doc/PROJECT_SUMMARY.md)
 - [Architecture](doc/ARCHITECTURE.md)
 - [Security](doc/SECURITY.md)
+- [Hierarchical Locations Guide](doc/LOCATIONS.md)
 - [Deployment](doc/DEPLOYMENT.md)
 - [VPS Deployment](doc/VPS_DEPLOYMENT.md)
 - [API Testing Examples](doc/API_TESTING.md)
@@ -65,16 +67,22 @@ Optional: seed the database (see [Project Summary](doc/PROJECT_SUMMARY.md) for s
 npm run seed
 ```
 
+Optional: seed locations database with sample hierarchical data:
+```bash
+npm run seed:locations
+```
+
 ## Scripts
 ```bash
-npm run dev                  # API server (development)
-npm start                    # API server (production)
-npm run frontend             # Next.js dev server (port 3001)
-npm run frontend:build       # Next.js production build
-npm run frontend:start       # Next.js production server
-npm test                     # Jest tests
-npm run seed                 # Seed database with sample data
-npm run migrate:article-types # Migrate existing articles to new type field
+npm run dev                    # API server (development)
+npm start                      # API server (production)
+npm run frontend               # Next.js dev server (port 3001)
+npm run frontend:build         # Next.js production build
+npm run frontend:start         # Next.js production server
+npm test                       # Jest tests
+npm run seed                   # Seed database with sample data
+npm run seed:locations         # Seed locations database with hierarchical data
+npm run migrate:article-types  # Migrate existing articles to new type field
 ```
 
 ## License
