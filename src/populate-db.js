@@ -1,4 +1,4 @@
-const { sequelize, User, Article } = require('./models');
+const { sequelize, User, Article, Location } = require('./models');
 require('dotenv').config();
 
 const populateDatabase = async () => {
@@ -209,6 +209,120 @@ const populateDatabase = async () => {
       console.log('- Technology, Environment, Health, Science');
       console.log('- Business, History, Agriculture, Education');
       console.log('- Mix of published, draft, and news-approved articles');
+    }
+
+    // Check if locations already exist
+    const existingLocations = await Location.count();
+    if (existingLocations > 0) {
+      console.log(`\nDatabase already has ${existingLocations} locations. Skipping location creation.`);
+    } else {
+      console.log('\nCreating Greece locations...');
+      
+      // Create Greece country
+      const greece = await Location.create({
+        name: 'Greece',
+        name_local: 'Ελλάδα',
+        type: 'country',
+        code: 'GR',
+        slug: 'greece',
+        lat: 39.0742,
+        lng: 21.8243,
+        bounding_box: {
+          north: 41.7488,
+          south: 34.8021,
+          east: 29.6528,
+          west: 19.3736
+        }
+      });
+      console.log('✓ Created Greece country');
+
+      // Create Greek prefectures (administrative regions)
+      const prefectures = [
+        { name: 'Attica', name_local: 'Αττική', code: 'GR-A', lat: 38.0756, lng: 23.8156 },
+        { name: 'Central Macedonia', name_local: 'Κεντρική Μακεδονία', code: 'GR-B', lat: 40.6401, lng: 22.9444 },
+        { name: 'Central Greece', name_local: 'Στερεά Ελλάδα', code: 'GR-H', lat: 38.4681, lng: 22.6010 },
+        { name: 'Crete', name_local: 'Κρήτη', code: 'GR-M', lat: 35.2401, lng: 24.8093 },
+        { name: 'East Macedonia and Thrace', name_local: 'Ανατολική Μακεδονία και Θράκη', code: 'GR-C', lat: 41.1289, lng: 24.8883 },
+        { name: 'Epirus', name_local: 'Ήπειρος', code: 'GR-D', lat: 39.6650, lng: 20.8537 },
+        { name: 'Ionian Islands', name_local: 'Ιόνια Νησιά', code: 'GR-F', lat: 38.6933, lng: 20.6425 },
+        { name: 'North Aegean', name_local: 'Βόρειο Αιγαίο', code: 'GR-K', lat: 39.1976, lng: 26.1558 },
+        { name: 'Peloponnese', name_local: 'Πελοπόννησος', code: 'GR-J', lat: 37.5079, lng: 22.3736 },
+        { name: 'South Aegean', name_local: 'Νότιο Αιγαίο', code: 'GR-L', lat: 37.0853, lng: 25.1488 },
+        { name: 'Thessaly', name_local: 'Θεσσαλία', code: 'GR-E', lat: 39.6390, lng: 22.4194 },
+        { name: 'West Greece', name_local: 'Δυτική Ελλάδα', code: 'GR-G', lat: 38.6935, lng: 21.3503 },
+        { name: 'West Macedonia', name_local: 'Δυτική Μακεδονία', code: 'GR-I', lat: 40.3006, lng: 21.7950 }
+      ];
+
+      const prefectureIds = {};
+      for (const prefData of prefectures) {
+        const pref = await Location.create({
+          ...prefData,
+          type: 'prefecture',
+          parent_id: greece.id,
+          slug: `greece-${prefData.name.toLowerCase().replace(/\s+/g, '-')}`
+        });
+        prefectureIds[prefData.name] = pref.id;
+      }
+      console.log(`✓ Created ${prefectures.length} prefectures`);
+
+      // Create major cities/municipalities
+      const municipalities = [
+        // Attica
+        { name: 'Athens', name_local: 'Αθήνα', prefecture: 'Attica', lat: 37.9838, lng: 23.7275 },
+        { name: 'Piraeus', name_local: 'Πειραιάς', prefecture: 'Attica', lat: 37.9421, lng: 23.6463 },
+        { name: 'Peristeri', name_local: 'Περιστέρι', prefecture: 'Attica', lat: 38.0158, lng: 23.6917 },
+        { name: 'Kallithea', name_local: 'Καλλιθέα', prefecture: 'Attica', lat: 37.9536, lng: 23.7011 },
+        
+        // Central Macedonia
+        { name: 'Thessaloniki', name_local: 'Θεσσαλονίκη', prefecture: 'Central Macedonia', lat: 40.6401, lng: 22.9444 },
+        { name: 'Katerini', name_local: 'Κατερίνη', prefecture: 'Central Macedonia', lat: 40.2706, lng: 22.5086 },
+        
+        // Crete
+        { name: 'Heraklion', name_local: 'Ηράκλειο', prefecture: 'Crete', lat: 35.3387, lng: 25.1442 },
+        { name: 'Chania', name_local: 'Χανιά', prefecture: 'Crete', lat: 35.5138, lng: 24.0180 },
+        { name: 'Rethymno', name_local: 'Ρέθυμνο', prefecture: 'Crete', lat: 35.3662, lng: 24.4824 },
+        
+        // Thessaly
+        { name: 'Larissa', name_local: 'Λάρισα', prefecture: 'Thessaly', lat: 39.6390, lng: 22.4194 },
+        { name: 'Volos', name_local: 'Βόλος', prefecture: 'Thessaly', lat: 39.3617, lng: 22.9425 },
+        
+        // Central Greece
+        { name: 'Lamia', name_local: 'Λαμία', prefecture: 'Central Greece', lat: 38.8998, lng: 22.4342 },
+        { name: 'Chalcis', name_local: 'Χαλκίδα', prefecture: 'Central Greece', lat: 38.4636, lng: 23.5911 },
+        
+        // Epirus
+        { name: 'Ioannina', name_local: 'Ιωάννινα', prefecture: 'Epirus', lat: 39.6650, lng: 20.8537 },
+        
+        // Peloponnese
+        { name: 'Patras', name_local: 'Πάτρα', prefecture: 'West Greece', lat: 38.2466, lng: 21.7346 },
+        { name: 'Kalamata', name_local: 'Καλαμάτα', prefecture: 'Peloponnese', lat: 37.0393, lng: 22.1142 },
+        { name: 'Tripoli', name_local: 'Τρίπολη', prefecture: 'Peloponnese', lat: 37.5089, lng: 22.3794 },
+        
+        // Ionian Islands
+        { name: 'Corfu', name_local: 'Κέρκυρα', prefecture: 'Ionian Islands', lat: 39.6243, lng: 19.9217 },
+        
+        // South Aegean
+        { name: 'Rhodes', name_local: 'Ρόδος', prefecture: 'South Aegean', lat: 36.4341, lng: 28.2176 },
+        
+        // North Aegean
+        { name: 'Mytilene', name_local: 'Μυτιλήνη', prefecture: 'North Aegean', lat: 39.1076, lng: 26.5543 }
+      ];
+
+      for (const cityData of municipalities) {
+        const parentId = prefectureIds[cityData.prefecture];
+        if (parentId) {
+          await Location.create({
+            name: cityData.name,
+            name_local: cityData.name_local,
+            type: 'municipality',
+            parent_id: parentId,
+            lat: cityData.lat,
+            lng: cityData.lng,
+            slug: `greece-${cityData.prefecture.toLowerCase().replace(/\s+/g, '-')}-${cityData.name.toLowerCase().replace(/\s+/g, '-')}`
+          });
+        }
+      }
+      console.log(`✓ Created ${municipalities.length} major municipalities`);
     }
 
     console.log('\n✅ Database population completed successfully!');
