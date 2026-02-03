@@ -9,7 +9,10 @@ export default function AlertMessage({ tone = 'error', message, className = '' }
     : 'bg-red-100 border-red-400 text-red-700';
 
   return (
-    <div className={`${baseClasses} ${toneClasses} ${className}`}>
+    <div
+      className={`${baseClasses} ${toneClasses} ${className}`}
+      role={tone === 'success' ? 'status' : 'alert'}
+    >
       {message}
     </div>
   );

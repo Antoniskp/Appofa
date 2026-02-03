@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 const ToastContext = createContext(null);
 
@@ -12,17 +12,33 @@ const toastStyles = {
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
+  const timeoutsRef = useRef(new Map());
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+      timeoutsRef.current.clear();
+    };
+  }, []);
 
   const removeToast = useCallback((id) => {
+    const timeoutId = timeoutsRef.current.get(id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      timeoutsRef.current.delete(id);
+    }
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
   const addToast = useCallback((message, options = {}) => {
     const { type = 'info', duration = 4000 } = options;
-    const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     setToasts((prev) => [...prev, { id, message, type }]);
     if (duration > 0) {
-      setTimeout(() => removeToast(id), duration);
+      const timeoutId = setTimeout(() => removeToast(id), duration);
+      timeoutsRef.current.set(id, timeoutId);
     }
   }, [removeToast]);
 
@@ -36,7 +52,7 @@ export function ToastProvider({ children }) {
           <div
             key={toast.id}
             className={`flex items-start justify-between gap-4 rounded-lg px-4 py-3 text-sm shadow-lg ${toastStyles[toast.type] || toastStyles.info}`}
-            role="status"
+            role={toast.type === 'error' ? 'alert' : 'status'}
           >
             <span>{toast.message}</span>
             <button
