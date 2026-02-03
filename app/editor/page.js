@@ -4,12 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { articleAPI, locationAPI } from '@/lib/api';
+import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 import { getArticleTypeLabel, getArticleTypeClasses, isCategoryRequired } from '@/lib/utils/articleTypes';
 import { useToast } from '@/components/ToastProvider';
-import LocationSelector from '@/components/LocationSelector';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -29,7 +28,6 @@ function EditorDashboardContent() {
     status: 'draft',
     isNews: false,
   });
-  const [selectedLocations, setSelectedLocations] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchArticles = useCallback(async () => {
@@ -86,21 +84,6 @@ function EditorDashboardContent() {
       };
       const response = await articleAPI.create(payload);
       if (response.success) {
-        // Link locations to the article if any selected
-        if (selectedLocations.length > 0) {
-          for (const location of selectedLocations) {
-            try {
-              await locationAPI.linkLocation({
-                location_id: location.id,
-                entity_type: 'article',
-                entity_id: response.data.article.id
-              });
-            } catch (linkError) {
-              console.error('Failed to link location:', linkError);
-            }
-          }
-        }
-        
         addToast('Article created successfully!', { type: 'success' });
         setShowForm(false);
         setFormData({
@@ -114,7 +97,6 @@ function EditorDashboardContent() {
           status: 'draft',
           isNews: false,
         });
-        setSelectedLocations([]);
         fetchArticles();
       }
     } catch (error) {
@@ -314,15 +296,6 @@ function EditorDashboardContent() {
                     <option value="archived">Archived</option>
                   </select>
                 </div>
-              </div>
-
-              <div>
-                <LocationSelector
-                  selectedLocations={selectedLocations}
-                  onChange={setSelectedLocations}
-                  label="Article Location (Optional)"
-                  allowedTypes={['country', 'prefecture', 'municipality']}
-                />
               </div>
 
               <div className="flex gap-4">
