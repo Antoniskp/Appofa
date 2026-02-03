@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const { helmetConfig, frontendUrl } = require('./config/securityHeaders');
 const { sequelize } = require('./models');
 require('dotenv').config();
 
@@ -11,7 +13,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3001', credentials: true }));
+app.use(helmet(helmetConfig));
+app.use(cors({ origin: frontendUrl, credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

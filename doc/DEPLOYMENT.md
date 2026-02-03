@@ -285,7 +285,7 @@ kill -9 <PID>
 ## Security Best Practices
 
 1. Keep dependencies updated: `npm audit fix`
-2. Use helmet.js for security headers
+2. Helmet.js is enabled in the API server for security headers
 3. Implement rate limiting
 4. Validate all user inputs
 5. Use HTTPS in production

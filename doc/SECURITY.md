@@ -61,11 +61,11 @@ All CodeQL security alerts have been resolved:
 For production deployment, consider implementing:
 
 1. **HTTPS**: Use SSL/TLS certificates (Let's Encrypt recommended)
-2. **Helmet.js**: Add security headers
+2. **Helmet.js**: Security headers are enabled via Helmet in the API server.
 3. **CSRF Protection**: CSRF tokens are required for state-changing operations and validated against HttpOnly session cookies.
 4. **Input Sanitization**: Add additional sanitization for HTML/SQL injection prevention
 5. **Logging & Monitoring**: Implement comprehensive logging (Winston, Morgan)
-6. **Security Headers**: Add CSP, X-Frame-Options, etc.
+6. **Security Headers**: CSP, X-Frame-Options, and related headers are provided by Helmet.
 7. **Session Management**: Consider Redis for token blacklisting
 8. **Two-Factor Authentication**: Add 2FA for enhanced security
 9. **API Documentation**: Add Swagger/OpenAPI for API documentation
