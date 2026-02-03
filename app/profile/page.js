@@ -3,9 +3,10 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI } from '@/lib/api';
+import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
+import LocationSelector from '@/components/LocationSelector';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -18,7 +19,9 @@ function ProfileContent() {
     lastName: '',
     avatar: '',
     avatarColor: '',
+    home_location_id: null,
   });
+  const [homeLocation, setHomeLocation] = useState([]);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -38,15 +41,43 @@ function ProfileContent() {
       try {
         const response = await authAPI.getProfile();
         if (response.success) {
-          const { username, firstName, lastName, githubId, avatar, avatarColor } = response.data.user;
+          const { username, firstName, lastName, githubId, avatar, avatarColor, home_location_id, homeLocation: userHomeLocation } = response.data.user;
           setProfileData({
             username: username || '',
             firstName: firstName || '',
             lastName: lastName || '',
             avatar: avatar || '',
             avatarColor: avatarColor || '',
+            home_location_id: home_location_id || null,
           });
           setGithubLinked(!!githubId);
+          
+          // Load home location hierarchy if set
+          if (userHomeLocation) {
+            const locationHierarchy = [];
+            let currentLocation = userHomeLocation;
+            locationHierarchy.push(currentLocation);
+            
+            // Get parent locations if needed
+            if (currentLocation.type === 'municipality' && home_location_id) {
+              try {
+                const locResponse = await locationAPI.getById(home_location_id);
+                if (locResponse.success && locResponse.data.parent) {
+                  const hierarchy = [];
+                  if (locResponse.data.parent.parent) {
+                    hierarchy.push(locResponse.data.parent.parent);
+                  }
+                  hierarchy.push(locResponse.data.parent);
+                  hierarchy.push(locResponse.data);
+                  setHomeLocation(hierarchy);
+                }
+              } catch (err) {
+                console.error('Error loading location hierarchy:', err);
+              }
+            } else {
+              setHomeLocation([userHomeLocation]);
+            }
+          }
         }
       } catch (error) {
         setProfileError(error.message || 'Failed to load profile.');
@@ -119,6 +150,16 @@ function ProfileContent() {
     } catch (error) {
       setProfileError(error.message || 'Failed to update profile.');
     }
+  };
+
+  const handleLocationChange = (locations) => {
+    // Get the most specific location (last in array)
+    const mostSpecific = locations.length > 0 ? locations[locations.length - 1] : null;
+    setHomeLocation(locations);
+    setProfileData(prev => ({
+      ...prev,
+      home_location_id: mostSpecific ? mostSpecific.id : null
+    }));
   };
 
   const resetPasswordData = () => {
@@ -300,6 +341,14 @@ function ProfileContent() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
+            </div>
+            <div>
+              <LocationSelector
+                selectedLocations={homeLocation}
+                onChange={handleLocationChange}
+                label="Home Location (Optional)"
+                allowedTypes={['country', 'prefecture', 'municipality']}
+              />
             </div>
             <button
               type="submit"
