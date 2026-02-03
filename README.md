@@ -21,7 +21,6 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [API Testing Examples](doc/API_TESTING.md)
 - [Article Types & Categories Testing](doc/ARTICLE_TYPES_TESTING.md)
 - [Troubleshooting](doc/TROUBLESHOOTING.md)
-- [API Routing Fix](doc/FIX_API_ROUTING.md)
 - [Postman Collection](postman_collection.json)
 
 ## Prerequisites
