@@ -5,7 +5,7 @@ const { sequelize, User } = require('../src/models');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const { helmetConfig, frontendUrl } = require('../src/config/securityHeaders');
+const { helmetConfig, frontendUrl, corsOptions } = require('../src/config/securityHeaders');
 
 const authRoutes = require('../src/routes/authRoutes');
 const articleRoutes = require('../src/routes/articleRoutes');
@@ -13,7 +13,7 @@ const adminRoutes = require('../src/routes/adminRoutes');
 
 const app = express();
 app.use(helmet(helmetConfig));
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);

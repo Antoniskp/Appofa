@@ -32,8 +32,8 @@ Implemented comprehensive rate limiting to prevent abuse:
 - Environment variables used for all sensitive configuration
 
 ### 6. CORS Configuration
-- CORS enabled for cross-origin requests
-- Can be configured to specific domains in production
+- CORS restricted to the configured frontend origin
+- Credentials are enabled for cross-origin requests
 
 ## Security Vulnerabilities Fixed
 

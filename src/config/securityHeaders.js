@@ -1,4 +1,5 @@
 const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+const corsOptions = { origin: frontendUrl, credentials: true };
 
 const helmetConfig = {
   contentSecurityPolicy: {
@@ -17,5 +18,6 @@ const helmetConfig = {
 
 module.exports = {
   helmetConfig,
-  frontendUrl
+  frontendUrl,
+  corsOptions
 };
