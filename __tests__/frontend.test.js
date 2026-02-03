@@ -136,7 +136,7 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Continue with GitHub');
 
     root.unmount();
-  }, 30000);
+  });
 
   test.skip('renders register page form', async () => {
     useAuth.mockReturnValue(buildAuthState());
@@ -147,7 +147,7 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Confirm Password');
 
     root.unmount();
-  }, 30000);
+  });
 
   test.skip('renders admin status page for admin users', async () => {
     useAuth.mockReturnValue(buildAuthState({
