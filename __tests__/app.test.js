@@ -72,6 +72,22 @@ describe('News Application Integration Tests', () => {
     await sequelize.close();
   });
 
+  test('should enable schema sync in non-production environments', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'test';
+    const { shouldSyncSchema } = require('../src/index');
+    expect(shouldSyncSchema()).toBe(true);
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  test('should disable schema sync in production environments', () => {
+    const originalEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    const { shouldSyncSchema } = require('../src/index');
+    expect(shouldSyncSchema()).toBe(false);
+    process.env.NODE_ENV = originalEnv;
+  });
+
   describe('Security Headers Tests', () => {
     test('should include security headers', async () => {
       const response = await request(app)

@@ -52,7 +52,7 @@ cp .env.example .env
 # Edit .env with your database credentials
 ```
 
-5. **Start the application**
+5. **Run database migrations and start the application**
 ```bash
 # Development mode (with auto-reload)
 npm run dev
