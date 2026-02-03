@@ -16,6 +16,16 @@ describe('OAuth Integration Tests', () => {
   let testUser;
   let testToken;
 
+  const csrfHeaderFor = (token) => ({
+    Cookie: [`csrf_token=${token}`],
+    'x-csrf-token': token
+  });
+
+  const setCsrfToken = (token, userId) => {
+    const { storeCsrfToken } = require('../src/utils/csrf');
+    storeCsrfToken(token, userId);
+  };
+
   beforeAll(async () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
@@ -39,7 +49,8 @@ describe('OAuth Integration Tests', () => {
         password: 'test123'
       });
 
-    testToken = loginResponse.body.data.token;
+    const authCookie = loginResponse.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+    testToken = authCookie.split(';')[0].replace('auth_token=', '');
   });
 
   afterAll(async () => {
@@ -117,9 +128,12 @@ describe('OAuth Integration Tests', () => {
     });
 
     test('should handle unlinking GitHub when not linked', async () => {
+      const csrfToken = 'csrf-oauth-unlink';
+      setCsrfToken(csrfToken, testUser.id);
       const response = await request(app)
         .delete('/api/auth/github/unlink')
-        .set('Authorization', `Bearer ${testToken}`);
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
@@ -156,9 +170,12 @@ describe('OAuth Integration Tests', () => {
         githubAccessToken: 'test-token'
       });
 
+      const csrfToken = 'csrf-oauth-unlink-success';
+      setCsrfToken(csrfToken, testUser.id);
       const response = await request(app)
         .delete('/api/auth/github/unlink')
-        .set('Authorization', `Bearer ${testToken}`);
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
@@ -193,9 +210,12 @@ describe('OAuth Integration Tests', () => {
         { expiresIn: '24h' }
       );
 
+      const csrfToken = 'csrf-oauth-unlink-no-password';
+      setCsrfToken(csrfToken, oauthOnlyUser.id);
       const response = await request(app)
         .delete('/api/auth/github/unlink')
-        .set('Authorization', `Bearer ${oauthToken}`);
+        .set('Authorization', `Bearer ${oauthToken}`)
+        .set(csrfHeaderFor(csrfToken));
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);

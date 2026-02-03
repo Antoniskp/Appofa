@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const articleController = require('../controllers/articleController');
 const authMiddleware = require('../middleware/auth');
+const csrfProtection = require('../middleware/csrfProtection');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
@@ -11,15 +12,15 @@ router.get('/', apiLimiter, optionalAuthMiddleware, articleController.getAllArti
 router.get('/:id', apiLimiter, optionalAuthMiddleware, articleController.getArticleById);
 
 // Protected routes - require authentication and rate limiting
-router.post('/', createLimiter, authMiddleware, articleController.createArticle);
+router.post('/', createLimiter, authMiddleware, csrfProtection, articleController.createArticle);
 
 // Update - author can update their own, admin/editor can update all
-router.put('/:id', apiLimiter, authMiddleware, articleController.updateArticle);
+router.put('/:id', apiLimiter, authMiddleware, csrfProtection, articleController.updateArticle);
 
 // Delete - author can delete their own, admin can delete all
-router.delete('/:id', apiLimiter, authMiddleware, articleController.deleteArticle);
+router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, articleController.deleteArticle);
 
 // Approve news - moderator/admin only
-router.post('/:id/approve-news', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), articleController.approveNews);
+router.post('/:id/approve-news', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), articleController.approveNews);
 
 module.exports = router;

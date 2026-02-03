@@ -2,9 +2,13 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
 // Optional authentication middleware - doesn't fail if no token is provided
+const { getCookie } = require('../utils/cookies');
+
 const optionalAuthMiddleware = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1];
+    const bearerToken = req.headers.authorization?.split(' ')[1];
+    const cookieToken = getCookie(req, 'auth_token');
+    const token = bearerToken || cookieToken;
     
     if (token) {
       // Ensure JWT_SECRET is set in production

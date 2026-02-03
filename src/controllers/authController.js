@@ -1,9 +1,50 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const { User, sequelize } = require('../models');
+const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
+const { getCookie } = require('../utils/cookies');
 require('dotenv').config();
 
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
+const AUTH_COOKIE = 'auth_token';
+
+const authCookieOptions = {
+  httpOnly: true,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 24 * 60 * 60 * 1000,
+  path: '/'
+};
+
+const csrfCookieOptions = {
+  httpOnly: false,
+  sameSite: 'lax',
+  secure: process.env.NODE_ENV === 'production',
+  maxAge: 2 * 60 * 60 * 1000,
+  path: '/'
+};
+
+const setAuthCookies = (res, token, userId) => {
+  res.cookie(AUTH_COOKIE, token, authCookieOptions);
+  const csrfToken = generateCsrfToken();
+  storeCsrfToken(csrfToken, userId);
+  res.cookie(CSRF_COOKIE, csrfToken, csrfCookieOptions);
+};
+
+const ensureUserCsrfCookie = (req, res, userId) => {
+  const existingToken = getCookie(req, CSRF_COOKIE);
+  if (existingToken && ensureCsrfToken(existingToken, userId)) {
+    return;
+  }
+  const csrfToken = generateCsrfToken();
+  storeCsrfToken(csrfToken, userId);
+  res.cookie(CSRF_COOKIE, csrfToken, csrfCookieOptions);
+};
+
+const clearAuthCookies = (res) => {
+  res.clearCookie(AUTH_COOKIE, { path: '/' });
+  res.clearCookie(CSRF_COOKIE, { path: '/' });
+};
 
 const buildUserStats = async () => {
   const totalUsers = await User.count();
@@ -82,11 +123,11 @@ const authController = {
         { expiresIn: '24h' }
       );
 
+      setAuthCookies(res, token, user.id);
       res.status(201).json({
         success: true,
         message: 'User registered successfully.',
         data: {
-          token,
           user: {
             id: user.id,
             username: user.username,
@@ -154,11 +195,11 @@ const authController = {
         { expiresIn: '24h' }
       );
 
+      setAuthCookies(res, token, user.id);
       res.status(200).json({
         success: true,
         message: 'Login successful.',
         data: {
-          token,
           user: {
             id: user.id,
             username: user.username,
@@ -194,6 +235,8 @@ const authController = {
           message: 'User not found.'
         });
       }
+
+      ensureUserCsrfCookie(req, res, user.id);
 
       res.status(200).json({
         success: true,
@@ -705,8 +748,8 @@ const authController = {
           { expiresIn: '24h' }
         );
 
-        // Redirect to frontend with token
-        return res.redirect(`${process.env.FRONTEND_URL}/login?token=${token}`);
+        setAuthCookies(res, token, user.id);
+        return res.redirect(`${process.env.FRONTEND_URL}/login?oauth=1`);
       }
     } catch (error) {
       console.error('GitHub callback error:', error);
@@ -777,6 +820,22 @@ const authController = {
       res.status(500).json({
         success: false,
         message: 'Error fetching OAuth configuration.',
+        error: error.message
+      });
+    }
+  },
+  logout: async (req, res) => {
+    try {
+      clearAuthCookies(res);
+      res.status(200).json({
+        success: true,
+        message: 'Logged out successfully.'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error logging out.',
         error: error.message
       });
     }
