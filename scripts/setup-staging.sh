@@ -24,7 +24,11 @@ fi
 
 # Step 1: Clone repository
 echo "Step 1: Cloning repository to /var/www/Appofa-staging..."
-cd /var/www
+if ! cd /var/www 2>/dev/null; then
+    echo "Error: Cannot access /var/www directory. Please ensure it exists and you have permission."
+    exit 1
+fi
+
 if [ -d "Appofa-staging" ]; then
     echo "Warning: Appofa-staging directory already exists. Skipping clone."
     cd Appofa-staging
