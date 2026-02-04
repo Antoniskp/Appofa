@@ -31,7 +31,7 @@ Repeated merges for issue #64 have caused 502 responses in production. This sub-
    - Confirm DB host, port, user, and password are valid.
    - Ensure the database exists and is reachable from the app host/container.
 2. **Schema readiness**
-   - If new tables or columns are added, ensure the deployment process runs the required setup (`setup-db.sh` or model sync) before app restart.
+   - If new tables or columns are added, ensure the deployment process runs the required setup (`/setup-db.sh` in the repo root or model sync) before app restart.
 3. **Reverse proxy routing**
    - Confirm nginx (or other proxy) forwards to the correct port (`PORT` default 3000).
 
@@ -42,7 +42,7 @@ Repeated merges for issue #64 have caused 502 responses in production. This sub-
    npm install --production
    ```
 2. **Restart the app**
-   - **PM2**: `pm2 restart newsapp`
+   - **PM2**: `pm2 restart newsapp-backend newsapp-frontend` (use your configured PM2 process names; see `doc/VPS_DEPLOYMENT.md`)
    - **Docker**: `docker-compose up -d --build`
 
 ### 4) Post-Deployment Verification
@@ -52,7 +52,7 @@ Repeated merges for issue #64 have caused 502 responses in production. This sub-
    - Load home page and an article list page.
 3. **Log scan**
    - Check logs for startup errors:
-     - PM2: `pm2 logs newsapp --lines 200`
+     - PM2: `pm2 logs newsapp-backend --lines 200` (use your configured PM2 process names; see `doc/VPS_DEPLOYMENT.md`)
      - Docker: `docker-compose logs -f app`
 
 ### 5) If 502 Happens (Immediate Triage)
