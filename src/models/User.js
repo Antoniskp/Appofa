@@ -57,6 +57,15 @@ const User = sequelize.define('User', {
   githubAccessToken: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  homeLocationId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Locations',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
   }
 }, {
   timestamps: true,
