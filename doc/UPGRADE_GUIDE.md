@@ -147,6 +147,8 @@ ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "homeLocationId" INTEGER REFERENCES
 CREATE INDEX IF NOT EXISTS location_code_index ON "Locations"(code);
 CREATE INDEX IF NOT EXISTS location_parent_index ON "Locations"(parent_id);
 CREATE INDEX IF NOT EXISTS location_slug_index ON "Locations"(slug);
+-- Note: COALESCE(parent_id, -1) is used in the index because PostgreSQL doesn't allow NULL in unique constraints with multiple NULL values
+-- The application code uses NULL directly, but the index treats NULL as -1 for uniqueness
 CREATE UNIQUE INDEX IF NOT EXISTS unique_location_name_per_parent ON "Locations"(type, name, COALESCE(parent_id, -1));
 CREATE INDEX IF NOT EXISTS entity_index ON "LocationLinks"(entity_type, entity_id);
 CREATE INDEX IF NOT EXISTS location_index ON "LocationLinks"(location_id);

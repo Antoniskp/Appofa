@@ -449,7 +449,7 @@ exports.unlinkLocation = async (req, res) => {
         });
       }
     } else if (entity_type === 'user') {
-      if (entity_id !== req.user.id && req.user.role !== 'admin') {
+      if (parseInt(entity_id) !== req.user.id && req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           message: 'Not authorized to unlink this user'
@@ -545,30 +545,27 @@ exports.getLocationEntities = async (req, res) => {
       attributes: ['id', 'entity_type', 'entity_id']
     });
 
-    // Group by entity type
-    const articles = [];
-    const users = [];
+    // Group entity IDs by type
+    const articleIds = links.filter(l => l.entity_type === 'article').map(l => l.entity_id);
+    const userIds = links.filter(l => l.entity_type === 'user').map(l => l.entity_id);
 
-    for (const link of links) {
-      if (link.entity_type === 'article') {
-        const article = await Article.findByPk(link.entity_id, {
-          attributes: ['id', 'title', 'summary', 'status', 'createdAt'],
-          include: [
-            {
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username']
-            }
-          ]
-        });
-        if (article) articles.push(article);
-      } else if (link.entity_type === 'user') {
-        const user = await User.findByPk(link.entity_id, {
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar']
-        });
-        if (user) users.push(user);
-      }
-    }
+    // Fetch all articles and users in batch queries
+    const articles = articleIds.length > 0 ? await Article.findAll({
+      where: { id: articleIds },
+      attributes: ['id', 'title', 'summary', 'status', 'createdAt'],
+      include: [
+        {
+          model: User,
+          as: 'author',
+          attributes: ['id', 'username']
+        }
+      ]
+    }) : [];
+
+    const users = userIds.length > 0 ? await User.findAll({
+      where: { id: userIds },
+      attributes: ['id', 'username', 'firstName', 'lastName', 'avatar']
+    }) : [];
 
     res.json({
       success: true,

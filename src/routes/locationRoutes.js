@@ -3,7 +3,6 @@ const router = express.Router();
 const locationController = require('../controllers/locationController');
 const authMiddleware = require('../middleware/auth');
 const checkRole = require('../middleware/checkRole');
-const optionalAuthMiddleware = require('../middleware/optionalAuth');
 
 // Public routes
 router.get('/', locationController.getLocations);
