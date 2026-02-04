@@ -4,9 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { articleAPI } from '@/lib/api';
+import { articleAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
+import LocationSelector from '@/components/LocationSelector';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
 
@@ -26,6 +27,8 @@ function EditArticlePageContent() {
     status: 'draft',
     isNews: false,
   });
+  const [linkedLocations, setLinkedLocations] = useState([]);
+  const [newLocationId, setNewLocationId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -49,6 +52,16 @@ function EditArticlePageContent() {
             status: currentArticle.status || 'draft',
             isNews: Boolean(currentArticle.isNews),
           });
+
+          // Fetch linked locations
+          try {
+            const locationsResponse = await locationAPI.getEntityLocations('article', params.id);
+            if (locationsResponse.success) {
+              setLinkedLocations(locationsResponse.locations || []);
+            }
+          } catch (err) {
+            console.error('Failed to load locations:', err);
+          }
         }
       } catch (err) {
         setError(err.message);
@@ -77,6 +90,35 @@ function EditArticlePageContent() {
         ...prev,
         [name]: type === 'checkbox' ? checked : value,
       }));
+    }
+  };
+
+  const handleAddLocation = async () => {
+    if (!newLocationId) return;
+
+    try {
+      const response = await locationAPI.link('article', params.id, newLocationId);
+      if (response.success) {
+        // Reload locations
+        const locationsResponse = await locationAPI.getEntityLocations('article', params.id);
+        if (locationsResponse.success) {
+          setLinkedLocations(locationsResponse.locations || []);
+        }
+        setNewLocationId(null);
+      }
+    } catch (err) {
+      setSubmitError(`Failed to link location: ${err.message}`);
+    }
+  };
+
+  const handleRemoveLocation = async (locationId) => {
+    try {
+      const response = await locationAPI.unlink('article', params.id, locationId);
+      if (response.success) {
+        setLinkedLocations(prev => prev.filter(loc => loc.id !== locationId));
+      }
+    } catch (err) {
+      setSubmitError(`Failed to unlink location: ${err.message}`);
     }
   };
 
@@ -299,6 +341,59 @@ function EditArticlePageContent() {
                   <option value="published">Published</option>
                   <option value="archived">Archived</option>
                 </select>
+              </div>
+            </div>
+
+            {/* Locations Section */}
+            <div className="border-t pt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Locations
+              </label>
+              
+              {/* Linked Locations */}
+              {linkedLocations.length > 0 && (
+                <div className="mb-3 space-y-2">
+                  {linkedLocations.map(location => (
+                    <div key={location.id} className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <div>
+                        <span className="font-medium text-gray-900">{location.name}</span>
+                        {location.name_local && (
+                          <span className="text-gray-500 ml-2">({location.name_local})</span>
+                        )}
+                        <span className="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
+                          {location.type}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveLocation(location.id)}
+                        className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add New Location */}
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <LocationSelector
+                    value={newLocationId}
+                    onChange={setNewLocationId}
+                    placeholder="Select a location to add"
+                    allowClear={true}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddLocation}
+                  disabled={!newLocationId}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  Add
+                </button>
               </div>
             </div>
 

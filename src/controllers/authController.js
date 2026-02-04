@@ -338,8 +338,16 @@ const authController = {
   // Get current user profile
   getProfile: async (req, res) => {
     try {
+      const { Location } = require('../models');
       const user = await User.findByPk(req.user.id, {
-        attributes: { exclude: ['password'] }
+        attributes: { exclude: ['password'] },
+        include: [
+          {
+            model: Location,
+            as: 'homeLocation',
+            attributes: ['id', 'name', 'type', 'slug']
+          }
+        ]
       });
 
       if (!user) {
@@ -367,7 +375,7 @@ const authController = {
   // Update current user profile (excluding email)
   updateProfile: async (req, res) => {
     try {
-      const { username, firstName, lastName, avatar, avatarColor } = req.body;
+      const { username, firstName, lastName, avatar, avatarColor, homeLocationId } = req.body;
 
       const user = await User.findByPk(req.user.id);
 
@@ -480,6 +488,31 @@ const authController = {
             success: false,
             message: 'Avatar color must be a string.'
           });
+        }
+      }
+
+      // Handle homeLocationId update
+      if (homeLocationId !== undefined) {
+        if (homeLocationId === null) {
+          user.homeLocationId = null;
+        } else {
+          const locationId = parseInt(homeLocationId);
+          if (isNaN(locationId)) {
+            return res.status(400).json({
+              success: false,
+              message: 'Home location ID must be a number.'
+            });
+          }
+          // Verify location exists
+          const { Location } = require('../models');
+          const location = await Location.findByPk(locationId);
+          if (!location) {
+            return res.status(404).json({
+              success: false,
+              message: 'Location not found.'
+            });
+          }
+          user.homeLocationId = locationId;
         }
       }
 
