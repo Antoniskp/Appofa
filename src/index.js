@@ -73,15 +73,15 @@ const startServer = async () => {
       // (ENUM + comment causes invalid USING clause in COMMENT statement)
       try {
         await sequelize.query(`
-          COMMENT ON COLUMN "Locations"."type" IS 'Hierarchical level of the location';
+          COMMENT ON COLUMN "${sequelize.models.Location.tableName}"."type" IS 'Hierarchical level of the location';
         `);
         await sequelize.query(`
-          COMMENT ON COLUMN "LocationLinks"."entity_type" IS 'Type of entity linked to location';
+          COMMENT ON COLUMN "${sequelize.models.LocationLink.tableName}"."entity_type" IS 'Type of entity linked to location';
         `);
         console.log('Column comments applied successfully.');
       } catch (error) {
         // Ignore errors if columns don't exist yet (first run)
-        if (!error.message.includes('does not exist')) {
+        if (error?.message && !error.message.includes('does not exist')) {
           console.warn('Warning: Could not apply column comments:', error.message);
         }
       }
