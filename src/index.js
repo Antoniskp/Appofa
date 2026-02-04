@@ -68,6 +68,23 @@ const startServer = async () => {
       // Sync database models in non-production environments
       await sequelize.sync({ alter: true });
       console.log('Database models synchronized.');
+      
+      // Apply column comments separately to avoid Sequelize bug #17894
+      // (ENUM + comment causes invalid USING clause in COMMENT statement)
+      try {
+        await sequelize.query(`
+          COMMENT ON COLUMN "Locations"."type" IS 'Hierarchical level of the location';
+        `);
+        await sequelize.query(`
+          COMMENT ON COLUMN "LocationLinks"."entity_type" IS 'Type of entity linked to location';
+        `);
+        console.log('Column comments applied successfully.');
+      } catch (error) {
+        // Ignore errors if columns don't exist yet (first run)
+        if (!error.message.includes('does not exist')) {
+          console.warn('Warning: Could not apply column comments:', error.message);
+        }
+      }
     } else {
       console.log('Skipping Sequelize sync in production. Run migrations before starting the server.');
     }
