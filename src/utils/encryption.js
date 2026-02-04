@@ -20,7 +20,10 @@ function deriveKey(secret, salt) {
 function encryptToken(token) {
   if (!token) return null;
   
-  const secret = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET must be configured');
+  }
+  const secret = process.env.JWT_SECRET;
   const salt = crypto.randomBytes(SALT_LENGTH);
   const key = deriveKey(secret, salt);
   const iv = crypto.randomBytes(IV_LENGTH);
@@ -45,7 +48,10 @@ function decryptToken(encryptedToken) {
   if (!encryptedToken) return null;
   
   try {
-    const secret = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET must be configured');
+    }
+    const secret = process.env.JWT_SECRET;
     const buffer = Buffer.from(encryptedToken, 'base64');
     
     const salt = buffer.subarray(0, SALT_LENGTH);

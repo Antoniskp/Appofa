@@ -213,6 +213,9 @@ const authController = {
       });
 
       // Generate JWT token
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET must be configured');
+      }
       const token = jwt.sign(
         { 
           id: user.id, 
@@ -220,7 +223,7 @@ const authController = {
           email: user.email,
           role: user.role 
         },
-        process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
+        process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
 
@@ -245,8 +248,7 @@ const authController = {
       console.error('Registration error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error registering user.',
-        error: error.message
+        message: 'Error registering user.'
       });
     }
   },
@@ -293,6 +295,9 @@ const authController = {
       }
 
       // Generate JWT token
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET must be configured');
+      }
       const token = jwt.sign(
         { 
           id: user.id, 
@@ -300,7 +305,7 @@ const authController = {
           email: user.email,
           role: user.role 
         },
-        process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
+        process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
 
@@ -325,8 +330,7 @@ const authController = {
       console.error('Login error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error logging in.',
-        error: error.message
+        message: 'Error logging in.'
       });
     }
   },
@@ -355,8 +359,7 @@ const authController = {
       console.error('Get profile error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error fetching user profile.',
-        error: error.message
+        message: 'Error fetching user profile.'
       });
     }
   },
@@ -495,8 +498,7 @@ const authController = {
       console.error('Update profile error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error updating profile.',
-        error: error.message
+        message: 'Error updating profile.'
       });
     }
   },
@@ -551,8 +553,7 @@ const authController = {
       console.error('Update password error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error updating password.',
-        error: error.message
+        message: 'Error updating password.'
       });
     }
   },
@@ -573,8 +574,7 @@ const authController = {
       console.error('Get users error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error fetching users.',
-        error: error.message
+        message: 'Error fetching users.'
       });
     }
   },
@@ -592,8 +592,7 @@ const authController = {
       console.error('Get user stats error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error fetching user stats.',
-        error: error.message
+        message: 'Error fetching user stats.'
       });
     }
   },
@@ -684,8 +683,7 @@ const authController = {
       console.error('Update user role error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error updating user role.',
-        error: error.message
+        message: 'Error updating user role.'
       });
     }
   },
@@ -719,8 +717,7 @@ const authController = {
       console.error('GitHub OAuth initiation error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error initiating GitHub OAuth.',
-        error: error.message
+        message: 'Error initiating GitHub OAuth.'
       });
     }
   },
@@ -854,6 +851,9 @@ const authController = {
         }
 
         // Generate JWT token
+        if (!process.env.JWT_SECRET) {
+          throw new Error('JWT_SECRET must be configured');
+        }
         const token = jwt.sign(
           { 
             id: user.id, 
@@ -861,7 +861,7 @@ const authController = {
             email: user.email,
             role: user.role 
           },
-          process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
+          process.env.JWT_SECRET,
           { expiresIn: '24h' }
         );
 
@@ -913,8 +913,7 @@ const authController = {
       console.error('Unlink GitHub error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error unlinking GitHub account.',
-        error: error.message
+        message: 'Error unlinking GitHub account.'
       });
     }
   },
@@ -936,8 +935,7 @@ const authController = {
       console.error('Get OAuth config error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error fetching OAuth configuration.',
-        error: error.message
+        message: 'Error fetching OAuth configuration.'
       });
     }
   },
@@ -952,8 +950,7 @@ const authController = {
       console.error('Logout error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error logging out.',
-        error: error.message
+        message: 'Error logging out.'
       });
     }
   }

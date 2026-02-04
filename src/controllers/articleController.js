@@ -260,8 +260,7 @@ const articleController = {
       console.error('Create article error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error creating article.',
-        error: error.message
+        message: 'Error creating article.'
       });
     }
   },
@@ -270,6 +269,24 @@ const articleController = {
   getAllArticles: async (req, res) => {
     try {
       const { status, category, page = 1, limit = 10, authorId, type, tag } = req.query;
+      
+      // Validate pagination parameters
+      const parsedPage = Number(page);
+      const parsedLimit = Number(limit);
+      
+      if (!Number.isInteger(parsedPage) || parsedPage < 1) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid page parameter.'
+        });
+      }
+      
+      if (!Number.isInteger(parsedLimit) || parsedLimit < 1 || parsedLimit > 100) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid limit parameter. Must be between 1 and 100.'
+        });
+      }
       
       const where = {};
       
@@ -303,7 +320,7 @@ const articleController = {
             message: 'Authentication required.'
           });
         }
-        if (!Number.isInteger(parsedAuthorId)) {
+        if (!Number.isInteger(parsedAuthorId) || parsedAuthorId < 1) {
           return res.status(400).json({
             success: false,
             message: 'Invalid author ID.'
@@ -318,8 +335,7 @@ const articleController = {
         where.authorId = parsedAuthorId;
       }
 
-      const offset = (page - 1) * limit;
-      const parsedLimit = parseInt(limit);
+      const offset = (parsedPage - 1) * parsedLimit;
 
       // Filter by tag (dialect-aware fallback for non-Postgres databases)
       if (tag) {
@@ -350,7 +366,7 @@ const articleController = {
               articles: paginatedArticles,
               pagination: {
                 total: count,
-                page: parseInt(page),
+                page: parsedPage,
                 limit: parsedLimit,
                 totalPages: Math.ceil(count / parsedLimit)
               }
@@ -382,7 +398,7 @@ const articleController = {
           articles,
           pagination: {
             total: count,
-            page: parseInt(page),
+            page: parsedPage,
             limit: parsedLimit,
             totalPages: Math.ceil(count / parsedLimit)
           }
@@ -392,8 +408,7 @@ const articleController = {
       console.error('Get articles error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error fetching articles.',
-        error: error.message
+        message: 'Error fetching articles.'
       });
     }
   },
@@ -434,8 +449,7 @@ const articleController = {
       console.error('Get article error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error fetching article.',
-        error: error.message
+        message: 'Error fetching article.'
       });
     }
   },
@@ -603,8 +617,7 @@ const articleController = {
       console.error('Update article error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error updating article.',
-        error: error.message
+        message: 'Error updating article.'
       });
     }
   },
@@ -641,8 +654,7 @@ const articleController = {
       console.error('Delete article error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error deleting article.',
-        error: error.message
+        message: 'Error deleting article.'
       });
     }
   },
@@ -699,8 +711,7 @@ const articleController = {
       console.error('Approve news error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error approving news.',
-        error: error.message
+        message: 'Error approving news.'
       });
     }
   }
