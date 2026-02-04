@@ -16,6 +16,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [Security](doc/SECURITY.md)
 - [Deployment](doc/DEPLOYMENT.md)
 - [VPS Deployment](doc/VPS_DEPLOYMENT.md)
+- [Staging Deployment](doc/STAGING_DEPLOYMENT.md) - Automated staging environment deployment
 - [API Testing Examples](doc/API_TESTING.md)
 - [Article Types & Categories Testing](doc/ARTICLE_TYPES_TESTING.md)
 - [Troubleshooting](doc/TROUBLESHOOTING.md)
