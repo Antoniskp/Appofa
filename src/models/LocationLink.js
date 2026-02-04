@@ -19,8 +19,8 @@ const LocationLink = sequelize.define('LocationLink', {
   },
   entity_type: {
     type: DataTypes.ENUM('article', 'user'),
-    allowNull: false,
-    comment: 'Type of entity linked to location'
+    allowNull: false
+    // Comment moved to post-sync hook to avoid Sequelize bug #17894
   },
   entity_id: {
     type: DataTypes.INTEGER,

@@ -19,8 +19,8 @@ const Location = sequelize.define('Location', {
   },
   type: {
     type: DataTypes.ENUM('international', 'country', 'prefecture', 'municipality'),
-    allowNull: false,
-    comment: 'Hierarchical level of the location'
+    allowNull: false
+    // Comment moved to post-sync hook to avoid Sequelize bug #17894
   },
   parent_id: {
     type: DataTypes.INTEGER,
