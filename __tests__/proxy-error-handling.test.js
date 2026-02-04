@@ -108,6 +108,7 @@ describe('API Proxy Error Handling', () => {
   test('returns JSON 405 for disallowed methods', async () => {
     const { GET } = require('../app/api/[...path]/route.js');
     
+    // Testing method validation - handler checks request.method regardless of which export is used
     const mockRequest = {
       method: 'TRACE',
       nextUrl: {

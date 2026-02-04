@@ -99,22 +99,14 @@ const proxyRequest = async (request) => {
 };
 
 const handler = async (request) => {
-  try {
-    if (!ALLOWED_METHODS.has(request.method)) {
-      return createJsonResponse({
-        success: false,
-        message: 'Method Not Allowed'
-      }, 405);
-    }
-
-    return await proxyRequest(request);
-  } catch (error) {
-    console.error('[Proxy Handler Error]:', error);
+  if (!ALLOWED_METHODS.has(request.method)) {
     return createJsonResponse({
       success: false,
-      message: 'An unexpected error occurred.'
-    }, 500);
+      message: 'Method Not Allowed'
+    }, 405);
   }
+
+  return await proxyRequest(request);
 };
 
 export { handler as GET, handler as POST, handler as PUT, handler as PATCH, handler as DELETE, handler as OPTIONS, handler as HEAD };
