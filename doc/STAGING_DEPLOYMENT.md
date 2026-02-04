@@ -194,7 +194,9 @@ Configure these secrets in your GitHub repository settings (Settings → Secrets
 | `VPS_SSH_KEY` | Private SSH key for authentication | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
 | `VPS_PORT` | SSH port (optional, defaults to 22) | `22` |
 
-### How to Set Up Secrets
+**For detailed setup instructions, see:** [GitHub Actions Secrets Setup Guide](GITHUB_ACTIONS_SECRETS.md)
+
+### Quick Setup Summary
 
 1. **Generate SSH Key (if not already done):**
    ```bash

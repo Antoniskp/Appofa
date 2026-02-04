@@ -11,7 +11,7 @@ jobs:
     name: Deploy to Staging Environment
     runs-on: ubuntu-latest
     environment: staging
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,47 +25,47 @@ jobs:
           port: ${{ secrets.VPS_PORT || 22 }}
           script: |
             set -e
-            
+
             echo "========================================="
             echo "Starting Staging Deployment"
             echo "========================================="
-            
+
             # Navigate to staging directory
             cd /var/www/Appofa-staging
-            
+
             echo "Step 1: Stopping PM2 processes..."
             pm2 stop newsapp-staging-backend newsapp-staging-frontend || true
-            
+
             echo "Step 2: Fetching latest changes..."
             git fetch --all
             git checkout main
             git pull origin main
-            
+
             echo "Step 3: Removing old build artifacts..."
             rm -rf .next
-            
+
             echo "Step 4: Installing dependencies..."
             npm ci
-            
+
             echo "Step 5: Copying staging environment file..."
             cp .env.staging .env
-            
+
             echo "Step 6: Building frontend..."
             npm run frontend:build
-            
+
             echo "Step 7: Restarting PM2 processes..."
             # Start backend on port 3002 (configured in .env.staging)
             pm2 restart newsapp-staging-backend || pm2 start src/index.js --name newsapp-staging-backend
-            
+
             # Start frontend on port 3003
             pm2 restart newsapp-staging-frontend || pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -- -p 3003
-            
+
             echo "Step 8: Saving PM2 configuration..."
             pm2 save
-            
+
             echo "Step 9: Checking process status..."
             pm2 status | grep staging
-            
+
             echo "========================================="
             echo "Staging Deployment Complete!"
             echo "URL: https://staging.appofasi.gr"
