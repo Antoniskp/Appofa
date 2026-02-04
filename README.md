@@ -20,6 +20,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [Article Types & Categories Testing](doc/ARTICLE_TYPES_TESTING.md)
 - [Troubleshooting](doc/TROUBLESHOOTING.md)
 - [Postman Collection](postman_collection.json)
+- [Copilot Agents](doc/COPILOT_AGENTS.md)
 
 ## Prerequisites
 - Node.js 18+
