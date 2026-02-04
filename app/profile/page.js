@@ -3,9 +3,10 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI } from '@/lib/api';
+import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
+import LocationSelector from '@/components/LocationSelector';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -18,7 +19,9 @@ function ProfileContent() {
     lastName: '',
     avatar: '',
     avatarColor: '',
+    homeLocationId: null,
   });
+  const [homeLocation, setHomeLocation] = useState(null);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -38,15 +41,28 @@ function ProfileContent() {
       try {
         const response = await authAPI.getProfile();
         if (response.success) {
-          const { username, firstName, lastName, githubId, avatar, avatarColor } = response.data.user;
+          const { username, firstName, lastName, githubId, avatar, avatarColor, homeLocationId } = response.data.user;
           setProfileData({
             username: username || '',
             firstName: firstName || '',
             lastName: lastName || '',
             avatar: avatar || '',
             avatarColor: avatarColor || '',
+            homeLocationId: homeLocationId || null,
           });
           setGithubLinked(!!githubId);
+
+          // Load home location details if set
+          if (homeLocationId) {
+            try {
+              const locationResponse = await locationAPI.getById(homeLocationId);
+              if (locationResponse.success) {
+                setHomeLocation(locationResponse.location);
+              }
+            } catch (err) {
+              console.error('Failed to load home location:', err);
+            }
+          }
         }
       } catch (error) {
         setProfileError(error.message || 'Failed to load profile.');
@@ -300,6 +316,32 @@ function ProfileContent() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
+            </div>
+            <div>
+              <label htmlFor="homeLocation" className="block text-sm font-medium text-gray-700 mb-1">
+                Home Location
+              </label>
+              <LocationSelector
+                value={profileData.homeLocationId}
+                onChange={(locationId) => {
+                  setProfileData(prev => ({ ...prev, homeLocationId: locationId }));
+                  if (locationId) {
+                    locationAPI.getById(locationId).then(res => {
+                      if (res.success) setHomeLocation(res.location);
+                    });
+                  } else {
+                    setHomeLocation(null);
+                  }
+                }}
+                placeholder="Select your home location"
+                allowClear={true}
+              />
+              {homeLocation && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Selected: {homeLocation.name}
+                  {homeLocation.name_local && ` (${homeLocation.name_local})`}
+                </p>
+              )}
             </div>
             <button
               type="submit"

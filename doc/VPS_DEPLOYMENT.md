@@ -322,6 +322,24 @@ sudo certbot --nginx -d your-domain.com -d www.your-domain.com
 
 ---
 
+## Upgrading to Location Feature (Issue #64)
+
+**CRITICAL**: The hierarchical locations feature requires special upgrade steps to prevent 502 errors. See [UPGRADE_GUIDE.md](./UPGRADE_GUIDE.md) for detailed instructions.
+
+**Quick Summary**:
+1. Backup database before upgrade
+2. Stop PM2 services
+3. Pull code and install dependencies
+4. Database schema will auto-create on first start
+5. Build frontend
+6. Start backend first, verify logs
+7. Start frontend second
+8. Verify both are online before considering deployment complete
+
+For full step-by-step instructions with troubleshooting, **read [UPGRADE_GUIDE.md](./UPGRADE_GUIDE.md) before proceeding**.
+
+---
+
 ## Update After Merge (Server)
 
 Use these commands on the VPS after pulling the latest changes from `main`.
