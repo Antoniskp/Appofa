@@ -194,7 +194,7 @@ Configure these secrets in your GitHub repository settings (Settings → Secrets
 | `VPS_SSH_KEY` | Private SSH key for authentication | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
 | `VPS_PORT` | SSH port (optional, defaults to 22) | `22` |
 
-**For detailed setup instructions, see:** [GitHub Actions Secrets Setup Guide](GITHUB_ACTIONS_SECRETS.md)
+**For detailed setup instructions, see:** [GitHub Actions Secrets Setup Guide](./GITHUB_ACTIONS_SECRETS.md)
 
 ### Quick Setup Summary
 
@@ -395,10 +395,10 @@ After staging is deployed:
 
 ## Related Documentation
 
-- [VPS Deployment Guide](VPS_DEPLOYMENT.md) - Production deployment
-- [Production Architecture](ARCHITECTURE.md) - System architecture
-- [API Testing](API_TESTING.md) - API endpoint testing
-- [Troubleshooting](TROUBLESHOOTING.md) - General troubleshooting
+- [VPS Deployment Guide](./VPS_DEPLOYMENT.md) - Production deployment
+- [Production Architecture](./ARCHITECTURE.md) - System architecture
+- [API Testing](./API_TESTING.md) - API endpoint testing
+- [Troubleshooting](./TROUBLESHOOTING.md) - General troubleshooting
 
 ## Support
 

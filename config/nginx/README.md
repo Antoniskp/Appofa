@@ -196,8 +196,8 @@ netstat -tlnp | grep -E '3002|3003'
 
 ## Related Documentation
 
-- [Staging Deployment Guide](../STAGING_DEPLOYMENT.md) - Complete staging setup
-- [VPS Deployment Guide](../VPS_DEPLOYMENT.md) - Production deployment reference
+- [Staging Deployment Guide](../doc/STAGING_DEPLOYMENT.md) - Complete staging setup
+- [VPS Deployment Guide](../doc/VPS_DEPLOYMENT.md) - Production deployment reference
 - [Nginx Official Documentation](https://nginx.org/en/docs/) - Nginx docs
 
 ## Security Considerations
