@@ -6,7 +6,6 @@ This repository includes custom GitHub Copilot agents to specialize on key areas
 - **backend-api-specialist**: Focused on the Node.js/Express API in `src/`.
 - **frontend-ui-specialist**: Focused on the Next.js App Router UI in `app/` and `components/`.
 - **database-data-specialist**: Focused on Sequelize models, migrations, and data scripts.
-- **readme-creator**: Focused on README and documentation updates.
 
 ## Managing Agents
 1. Edit or add agent files in `.github/agents/`.
