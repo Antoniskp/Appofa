@@ -61,7 +61,7 @@ echo "Step 7: Restarting PM2 processes..."
 # Backend on port 3002 (configured in .env)
 pm2 restart newsapp-staging-backend 2>/dev/null || pm2 start src/index.js --name newsapp-staging-backend
 # Frontend on port 3003
-pm2 restart newsapp-staging-frontend 2>/dev/null || pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -- -p 3003
+pm2 restart newsapp-staging-frontend 2>/dev/null || pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -p 3003
 
 # Step 8: Save PM2 configuration
 echo ""

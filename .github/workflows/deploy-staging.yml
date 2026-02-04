@@ -58,7 +58,7 @@ jobs:
             pm2 restart newsapp-staging-backend || pm2 start src/index.js --name newsapp-staging-backend
 
             # Start frontend on port 3003
-            pm2 restart newsapp-staging-frontend || pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -- -p 3003
+            pm2 restart newsapp-staging-frontend || pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -p 3003
 
             echo "Step 8: Saving PM2 configuration..."
             pm2 save

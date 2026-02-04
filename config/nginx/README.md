@@ -188,7 +188,7 @@ pm2 status
 
 # Start missing processes
 pm2 start src/index.js --name newsapp-staging-backend
-pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -- -p 3003
+pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -p 3003
 
 # Verify services are listening
 netstat -tlnp | grep -E '3002|3003'

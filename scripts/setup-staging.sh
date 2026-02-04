@@ -109,7 +109,7 @@ if pm2 describe newsapp-staging-frontend > /dev/null 2>&1; then
     pm2 restart newsapp-staging-frontend
 else
     echo "Starting newsapp-staging-frontend process..."
-    pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -- -p 3003
+    pm2 start npm --name newsapp-staging-frontend -- run frontend:start -- -p 3003
 fi
 
 pm2 save
