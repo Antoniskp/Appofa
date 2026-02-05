@@ -503,6 +503,9 @@ git fetch --all
 git checkout main
 git pull origin main
 
+# Run migrations
+npm run migrate
+
 # Remove build artifacts
 rm -rf .next
 
