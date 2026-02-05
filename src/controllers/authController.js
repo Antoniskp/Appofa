@@ -1011,8 +1011,11 @@ const authController = {
       };
 
       if (search) {
+        const sequelize = require('../config/database');
+        const isPostgres = sequelize.getDialect() === 'postgres';
+        
         whereClause.username = {
-          [Op.iLike]: `%${search}%`
+          [isPostgres ? Op.iLike : Op.like]: `%${search}%`
         };
       }
 

@@ -15,7 +15,7 @@ export default function UsersPage() {
     page,
     totalPages,
     setTotalPages,
-    handleFilterChange,
+    updateFilter,
     resetFilters,
     nextPage,
     prevPage,
@@ -71,7 +71,7 @@ export default function UsersPage() {
               type="text"
               placeholder="Search users by username..."
               value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={(e) => updateFilter('search', e.target.value)}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             />
           </div>
