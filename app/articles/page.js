@@ -1,22 +1,32 @@
 'use client';
 
-import { useState } from 'react';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { useFilters } from '@/hooks/useFilters';
+import Pagination from '@/components/Pagination';
+import FilterBar from '@/components/FilterBar';
 
 export default function ArticlesPage() {
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [filters, setFilters] = useState({
+  const {
+    filters,
+    page,
+    totalPages,
+    setTotalPages,
+    handleFilterChange,
+    resetFilters,
+    nextPage,
+    prevPage,
+    goToPage,
+  } = useFilters({
     category: '',
     type: 'articles',
     tag: '',
   });
-  const filterInputClassName = 'w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500';
+
   const articleCategoryOptions = articleCategories.articleTypes?.articles?.categories ?? [];
 
   const { data: articles, loading, error } = useAsyncData(
@@ -49,53 +59,31 @@ export default function ArticlesPage() {
     }
   );
 
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
-    setPage(1); // Reset to first page on filter change
-  };
-
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         {/* Filters */}
-        <div className="card p-4 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category
-              </label>
-              <select
-                id="category"
-                name="category"
-                value={filters.category}
-                onChange={handleFilterChange}
-                className={filterInputClassName}
-              >
-                <option value="">All categories</option>
-                {articleCategoryOptions.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="tag" className="block text-sm font-medium text-gray-700 mb-2">
-                Tag
-              </label>
-              <input
-                type="text"
-                id="tag"
-                name="tag"
-                value={filters.tag}
-                onChange={handleFilterChange}
-                placeholder="Filter by tag..."
-                className={filterInputClassName}
-              />
-            </div>
-          </div>
-        </div>
+        <FilterBar
+          filters={filters}
+          onChange={handleFilterChange}
+          onReset={resetFilters}
+          filterConfig={[
+            {
+              name: 'category',
+              label: 'Category',
+              type: 'select',
+              options: articleCategoryOptions,
+              placeholder: 'All categories',
+            },
+            {
+              name: 'tag',
+              label: 'Tag',
+              type: 'text',
+              placeholder: 'Filter by tag...',
+            },
+          ]}
+          className="mb-8"
+        />
 
         {/* Loading State */}
         {loading && (
@@ -133,27 +121,13 @@ export default function ArticlesPage() {
         </div>
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center items-center space-x-4 mt-8">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Previous
-            </button>
-            <span className="text-gray-700">
-              Page {page} of {totalPages}
-            </span>
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="px-4 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              Next
-            </button>
-          </div>
-        )}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          onPrevious={prevPage}
+          onNext={nextPage}
+        />
       </div>
     </div>
   );
