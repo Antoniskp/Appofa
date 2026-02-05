@@ -12,6 +12,7 @@
     "frontend:build": "next build",
     "frontend:start": "next start -p 3001",
     "seed": "node src/populate-db.js",
+    "seed:locations": "node src/seed-locations.js",
     "migrate": "node src/run-migrations.js",
     "migrate:up": "node src/run-migrations.js up",
     "migrate:down": "node src/run-migrations.js down",
