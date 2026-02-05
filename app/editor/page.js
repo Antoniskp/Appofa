@@ -296,7 +296,7 @@ function EditorDashboardContent() {
                 </label>
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-3">
                   <p className="text-sm text-blue-800">
-                    <strong>ℹ️ Note:</strong> Locations can be added after creating the article. 
+                    <span className="font-semibold" aria-label="Information">ℹ️ Note:</span> Locations can be added after creating the article. 
                     You will be redirected to the edit page where you can link locations to your article.
                   </p>
                 </div>
