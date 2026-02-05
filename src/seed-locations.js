@@ -12,8 +12,7 @@ const seedLocations = async () => {
     // Check if locations already exist
     const existingLocations = await Location.count();
     if (existingLocations > 0) {
-      console.log(`Database already has ${existingLocations} locations.`);
-      console.log('Do you want to add more locations? (This won\'t delete existing ones)');
+      console.log(`Database already has ${existingLocations} locations. Adding more without deleting existing ones.`);
     }
 
     // Create Greece as a country

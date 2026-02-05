@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react';
 import { locationAPI } from '@/lib/api';
 
+// Helper function to format location name with local name
+const formatLocationName = (location) => {
+  if (!location) return '';
+  let name = location.name;
+  if (location.name_local) {
+    name += ` (${location.name_local})`;
+  }
+  return name;
+};
+
 export default function CascadingLocationSelector({ 
   value, 
   onChange, 
@@ -28,7 +38,7 @@ export default function CascadingLocationSelector({
 
   // Load selected location if value is provided
   useEffect(() => {
-    if (value && !selectedMunicipality && !selectedPrefecture && !selectedCountry) {
+    if (value && value !== selectedMunicipality?.id && value !== selectedPrefecture?.id && value !== selectedCountry?.id && value !== 'international') {
       loadSelectedLocation(value);
     } else if (!value) {
       // Clear all selections
@@ -38,7 +48,7 @@ export default function CascadingLocationSelector({
       setPrefectures([]);
       setMunicipalities([]);
     }
-  }, [value]);
+  }, [value, selectedMunicipality, selectedPrefecture, selectedCountry]);
 
   const fetchCountries = async () => {
     setLoading(true);
@@ -253,8 +263,7 @@ export default function CascadingLocationSelector({
             <option value="">Select a country</option>
             {countries.map((country) => (
               <option key={country.id} value={country.id}>
-                {country.name}
-                {country.name_local && ` (${country.name_local})`}
+                {formatLocationName(country)}
               </option>
             ))}
           </select>
@@ -286,8 +295,7 @@ export default function CascadingLocationSelector({
             <option value="">Select a prefecture</option>
             {prefectures.map((prefecture) => (
               <option key={prefecture.id} value={prefecture.id}>
-                {prefecture.name}
-                {prefecture.name_local && ` (${prefecture.name_local})`}
+                {formatLocationName(prefecture)}
               </option>
             ))}
           </select>
@@ -312,8 +320,7 @@ export default function CascadingLocationSelector({
             <option value="">Select a city/municipality</option>
             {municipalities.map((municipality) => (
               <option key={municipality.id} value={municipality.id}>
-                {municipality.name}
-                {municipality.name_local && ` (${municipality.name_local})`}
+                {formatLocationName(municipality)}
               </option>
             ))}
           </select>
@@ -333,8 +340,7 @@ export default function CascadingLocationSelector({
           <strong>Selected:</strong>{' '}
           {selectedMunicipality ? (
             <>
-              {selectedMunicipality.name}
-              {selectedMunicipality.name_local && ` (${selectedMunicipality.name_local})`}
+              {formatLocationName(selectedMunicipality)}
               {' → '}
               {selectedPrefecture.name}
               {' → '}
@@ -342,8 +348,7 @@ export default function CascadingLocationSelector({
             </>
           ) : selectedPrefecture ? (
             <>
-              {selectedPrefecture.name}
-              {selectedPrefecture.name_local && ` (${selectedPrefecture.name_local})`}
+              {formatLocationName(selectedPrefecture)}
               {' → '}
               {selectedCountry.name}
             </>
