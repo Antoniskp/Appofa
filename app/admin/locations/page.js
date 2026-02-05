@@ -5,14 +5,20 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { locationAPI } from '@/lib/api';
 import AlertMessage from '@/components/AlertMessage';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { useFilters } from '@/hooks/useFilters';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
 
 function LocationManagementContent() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterType, setFilterType] = useState('');
+  const {
+    filters,
+    handleFilterChange,
+  } = useFilters({
+    search: '',
+    type: '',
+  });
   const [showModal, setShowModal] = useState(false);
   const [editingLocation, setEditingLocation] = useState(null);
   const [formData, setFormData] = useState({
@@ -30,7 +36,7 @@ function LocationManagementContent() {
   const { data: locations, loading, refetch } = useAsyncData(
     async () => {
       const params = {};
-      if (filterType) params.type = filterType;
+      if (filters.type) params.type = filters.type;
       
       const response = await locationAPI.getAll(params);
       if (response.success) {
@@ -38,7 +44,7 @@ function LocationManagementContent() {
       }
       return [];
     },
-    [filterType],
+    [filters.type],
     {
       initialData: [],
       onError: (err) => {
@@ -142,10 +148,10 @@ function LocationManagementContent() {
   };
 
   const filteredLocations = locations.filter(loc => {
-    const matchesSearch = !searchTerm || 
-      loc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (loc.name_local && loc.name_local.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (loc.code && loc.code.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = !filters.search || 
+      loc.name.toLowerCase().includes(filters.search.toLowerCase()) ||
+      (loc.name_local && loc.name_local.toLowerCase().includes(filters.search.toLowerCase())) ||
+      (loc.code && loc.code.toLowerCase().includes(filters.search.toLowerCase()));
     
     return matchesSearch;
   });
@@ -249,13 +255,15 @@ function LocationManagementContent() {
                 <input
                   type="text"
                   placeholder="Search locations..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  name="search"
+                  value={filters.search}
+                  onChange={handleFilterChange}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                 />
                 <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
+                  name="type"
+                  value={filters.type}
+                  onChange={handleFilterChange}
                   className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">All Types</option>
