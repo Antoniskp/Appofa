@@ -7,7 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
-import LocationSelector from '@/components/LocationSelector';
+import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
 
@@ -94,7 +94,7 @@ function EditArticlePageContent() {
   };
 
   const handleAddLocation = async () => {
-    if (!newLocationId) return;
+    if (!newLocationId || newLocationId === 'international') return;
 
     try {
       const response = await locationAPI.link('article', params.id, newLocationId);
@@ -379,7 +379,7 @@ function EditArticlePageContent() {
               {/* Add New Location */}
               <div className="flex gap-2">
                 <div className="flex-1">
-                  <LocationSelector
+                  <CascadingLocationSelector
                     value={newLocationId}
                     onChange={setNewLocationId}
                     placeholder="Select a location to add"
@@ -389,7 +389,7 @@ function EditArticlePageContent() {
                 <button
                   type="button"
                   onClick={handleAddLocation}
-                  disabled={!newLocationId}
+                  disabled={!newLocationId || newLocationId === 'international'}
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   Add

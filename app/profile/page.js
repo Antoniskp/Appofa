@@ -6,7 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
-import LocationSelector from '@/components/LocationSelector';
+import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -318,14 +318,14 @@ function ProfileContent() {
               </div>
             </div>
             <div>
-              <label htmlFor="homeLocation" className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Home Location
               </label>
-              <LocationSelector
+              <CascadingLocationSelector
                 value={profileData.homeLocationId}
                 onChange={(locationId) => {
                   setProfileData(prev => ({ ...prev, homeLocationId: locationId }));
-                  if (locationId) {
+                  if (locationId && locationId !== 'international') {
                     locationAPI.getById(locationId).then(res => {
                       if (res.success) setHomeLocation(res.location);
                     });
@@ -336,12 +336,6 @@ function ProfileContent() {
                 placeholder="Select your home location"
                 allowClear={true}
               />
-              {homeLocation && (
-                <p className="mt-1 text-xs text-gray-500">
-                  Selected: {homeLocation.name}
-                  {homeLocation.name_local && ` (${homeLocation.name_local})`}
-                </p>
-              )}
             </div>
             <button
               type="submit"
