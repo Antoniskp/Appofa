@@ -11,6 +11,11 @@ const adminRoutes = require('./routes/adminRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 
 const app = express();
+
+// Trust nginx proxy headers for proper rate limiting and security
+// Enables Express to read X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Host
+app.set('trust proxy', true);
+
 const PORT = process.env.PORT || 3000;
 const isProductionEnv = () => process.env.NODE_ENV === 'production';
 
