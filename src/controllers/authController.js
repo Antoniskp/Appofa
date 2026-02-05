@@ -146,7 +146,7 @@ const authController = {
   // Register a new user
   register: async (req, res) => {
     try {
-      const { username, email, password, firstName, lastName } = req.body;
+      const { username, email, password, firstName, lastName, searchable } = req.body;
 
       const usernameResult = normalizeRequiredString(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
       if (usernameResult.error) {
@@ -209,7 +209,8 @@ const authController = {
         password: passwordResult.value,
         role: 'viewer',
         firstName: firstNameResult.value,
-        lastName: lastNameResult.value
+        lastName: lastNameResult.value,
+        searchable: searchable !== undefined ? Boolean(searchable) : true
       });
 
       // Generate JWT token
@@ -375,7 +376,7 @@ const authController = {
   // Update current user profile (excluding email)
   updateProfile: async (req, res) => {
     try {
-      const { username, firstName, lastName, avatar, avatarColor, homeLocationId } = req.body;
+      const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable } = req.body;
 
       const user = await User.findByPk(req.user.id);
 
@@ -514,6 +515,17 @@ const authController = {
           }
           user.homeLocationId = locationId;
         }
+      }
+
+      // Handle searchable update
+      if (searchable !== undefined) {
+        if (typeof searchable !== 'boolean') {
+          return res.status(400).json({
+            success: false,
+            message: 'Searchable must be a boolean.'
+          });
+        }
+        user.searchable = searchable;
       }
 
       await user.save();
@@ -984,6 +996,63 @@ const authController = {
       res.status(500).json({
         success: false,
         message: 'Error logging out.'
+      });
+    }
+  },
+
+  // Search users (public, returns only searchable users)
+  searchUsers: async (req, res) => {
+    try {
+      const { search = '', page = 1, limit = 20 } = req.query;
+      
+      // Validate and sanitize pagination parameters
+      const pageNum = Math.max(1, parseInt(page) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+      const offset = (pageNum - 1) * limitNum;
+
+      const whereClause = {
+        searchable: true
+      };
+
+      if (search && typeof search === 'string') {
+        const sequelize = require('../config/database');
+        const isPostgres = sequelize.getDialect() === 'postgres';
+        
+        // Escape special LIKE characters to prevent SQL injection
+        const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&');
+        
+        whereClause.username = {
+          [isPostgres ? Op.iLike : Op.like]: `%${sanitizedSearch}%`
+        };
+      }
+
+      const { count, rows: users } = await User.findAndCountAll({
+        where: whereClause,
+        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt'],
+        order: [['username', 'ASC']],
+        limit: limitNum,
+        offset: offset
+      });
+
+      const totalPages = Math.ceil(count / limitNum);
+
+      res.status(200).json({
+        success: true,
+        data: {
+          users,
+          pagination: {
+            currentPage: pageNum,
+            totalPages,
+            totalItems: count,
+            itemsPerPage: limitNum
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Search users error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error searching users.'
       });
     }
   }

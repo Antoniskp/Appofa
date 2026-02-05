@@ -11,3 +11,4 @@ out/
 next-env.d.ts
 tmp/
 *.db
+*.sqlite

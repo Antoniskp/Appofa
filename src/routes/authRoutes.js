@@ -25,4 +25,7 @@ router.get('/users', apiLimiter, authMiddleware, checkRole('admin'), authControl
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin'), authController.getUserStats);
 router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), authController.updateUserRole);
 
+// Public search route
+router.get('/users/search', apiLimiter, authController.searchUsers);
+
 module.exports = router;
