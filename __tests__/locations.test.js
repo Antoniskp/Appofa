@@ -122,6 +122,23 @@ describe('Location API Tests', () => {
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('already exists');
     });
+
+    it('should create location with Wikipedia URL', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Japan',
+          type: 'country',
+          code: 'JP',
+          wikipedia_url: 'https://en.wikipedia.org/wiki/Japan'
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.name).toBe('Japan');
+      expect(response.body.location.wikipedia_url).toBe('https://en.wikipedia.org/wiki/Japan');
+    });
   });
 
   describe('GET /api/locations/:id', () => {
@@ -148,6 +165,19 @@ describe('Location API Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.location.name).toBe('Hellenic Republic');
+    });
+
+    it('should update location Wikipedia URL as admin', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${testLocation.id}`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          wikipedia_url: 'https://en.wikipedia.org/wiki/Greece'
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.wikipedia_url).toBe('https://en.wikipedia.org/wiki/Greece');
     });
   });
 
