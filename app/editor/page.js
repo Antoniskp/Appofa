@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 import { getArticleTypeLabel, getArticleTypeClasses, isCategoryRequired } from '@/lib/utils/articleTypes';
 import { useToast } from '@/components/ToastProvider';
+import LocationSelector from '@/components/LocationSelector';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -85,19 +86,9 @@ function EditorDashboardContent() {
       const response = await articleAPI.create(payload);
       if (response.success) {
         addToast('Article created successfully!', { type: 'success' });
-        setShowForm(false);
-        setFormData({
-          title: '',
-          content: '',
-          summary: '',
-          bannerImageUrl: '',
-          type: 'personal',
-          category: '',
-          tags: '',
-          status: 'draft',
-          isNews: false,
-        });
-        fetchArticles();
+        const articleId = response.data.article.id;
+        // Redirect to edit page where users can add locations
+        router.push(`/articles/${articleId}/edit`);
       }
     } catch (error) {
       addToast(`Failed to create article: ${error.message}`, { type: 'error' });
@@ -295,6 +286,29 @@ function EditorDashboardContent() {
                     <option value="published">Published</option>
                     <option value="archived">Archived</option>
                   </select>
+                </div>
+              </div>
+
+              {/* Locations Section - Disabled with informational message */}
+              <div className="border-t pt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Locations
+                </label>
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-3">
+                  <p className="text-sm text-blue-800">
+                    <strong>ℹ️ Note:</strong> Locations can be added after creating the article. 
+                    You will be redirected to the edit page where you can link locations to your article.
+                  </p>
+                </div>
+                
+                {/* Disabled location selector */}
+                <div className="opacity-50 pointer-events-none">
+                  <LocationSelector
+                    value={null}
+                    onChange={() => {}}
+                    placeholder="Locations can be added after article creation"
+                    allowClear={false}
+                  />
                 </div>
               </div>
 
