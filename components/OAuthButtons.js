@@ -26,6 +26,7 @@ export default function OAuthButtons({
           type="button"
           onClick={onGithubLogin}
           disabled={disabled}
+          aria-label="Continue with GitHub"
           className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -40,6 +41,7 @@ export default function OAuthButtons({
           type="button"
           onClick={onGoogleLogin}
           disabled={disabled}
+          aria-label="Continue with Google"
           className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -57,6 +59,7 @@ export default function OAuthButtons({
           type="button"
           onClick={onFacebookLogin}
           disabled={disabled}
+          aria-label="Continue with Facebook"
           className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <svg className="w-5 h-5" fill="#1877F2" viewBox="0 0 24 24" aria-hidden="true">
