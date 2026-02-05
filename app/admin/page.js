@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import AdminTable from '@/components/admin/AdminTable';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
@@ -82,13 +83,13 @@ function AdminDashboardContent() {
     }
   );
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (article) => {
     if (!confirm('Are you sure you want to delete this article?')) {
       return;
     }
 
     try {
-      await articleAPI.delete(id);
+      await articleAPI.delete(article.id);
       refetch();
       addToast('Article deleted successfully', { type: 'success' });
     } catch (error) {
@@ -96,13 +97,13 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleApproveNews = async (id) => {
+  const handleApproveNews = async (article) => {
     if (!confirm('Approve this article as news and publish it?')) {
       return;
     }
 
     try {
-      const response = await articleAPI.approveNews(id);
+      const response = await articleAPI.approveNews(article.id);
       if (response.success) {
         refetch();
         addToast('News approved and published successfully!', { type: 'success' });
@@ -233,116 +234,102 @@ function AdminDashboardContent() {
             <h2 className="text-xl font-semibold">All Articles</h2>
           </div>
           
-          {loading ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">Loading articles...</p>
-            </div>
-          ) : articles.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">No articles found.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Title
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Author
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      News Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Tags
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {articles.map((article) => (
-                    <tr key={article.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Link
-                          href={`/articles/${article.id}`}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          {article.title}
-                        </Link>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {article.author?.username || 'Unknown'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          article.status === 'published' ? 'bg-green-100 text-green-800' :
-                          article.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {article.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {article.isNews ? (
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            article.newsApprovedAt ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                          }`}>
-                            {article.newsApprovedAt ? '✓ Approved' : '⏳ Pending'}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {article.category || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {Array.isArray(article.tags) && article.tags.length > 0 ? article.tags.join(', ') : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(article.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <Link
-                          href={`/articles/${article.id}`}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
-                          View
-                        </Link>
-                        {article.isNews && !article.newsApprovedAt && (
-                          <button
-                            onClick={() => handleApproveNews(article.id)}
-                            className="text-green-600 hover:text-green-900 mr-4"
-                          >
-                            Approve
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(article.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <AdminTable
+            columns={[
+              {
+                key: 'title',
+                header: 'Title',
+                render: (article) => (
+                  <Link
+                    href={`/articles/${article.id}`}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    {article.title}
+                  </Link>
+                )
+              },
+              {
+                key: 'author',
+                header: 'Author',
+                render: (article) => article.author?.username || 'Unknown'
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (article) => (
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    article.status === 'published' ? 'bg-green-100 text-green-800' :
+                    article.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {article.status}
+                  </span>
+                )
+              },
+              {
+                key: 'newsStatus',
+                header: 'News Status',
+                render: (article) => (
+                  article.isNews ? (
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      article.newsApprovedAt ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+                    }`}>
+                      {article.newsApprovedAt ? '✓ Approved' : '⏳ Pending'}
+                    </span>
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )
+                )
+              },
+              {
+                key: 'category',
+                header: 'Category',
+                render: (article) => article.category || '-'
+              },
+              {
+                key: 'tags',
+                header: 'Tags',
+                render: (article) => Array.isArray(article.tags) && article.tags.length > 0 ? article.tags.join(', ') : '-'
+              },
+              {
+                key: 'createdAt',
+                header: 'Created',
+                render: (article) => new Date(article.createdAt).toLocaleDateString()
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                render: (article) => (
+                  <div className="flex gap-3 items-center justify-end">
+                    <Link
+                      href={`/articles/${article.id}`}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      View
+                    </Link>
+                    {article.isNews && !article.newsApprovedAt && (
+                      <button
+                        onClick={() => handleApproveNews(article)}
+                        className="text-green-600 hover:text-green-900"
+                      >
+                        Approve
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(article)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                )
+              }
+            ]}
+            data={articles}
+            loading={loading}
+            emptyMessage="No articles found."
+            actions={false}
+          />
         </div>
 
         {/* Users Table */}
@@ -353,69 +340,48 @@ function AdminDashboardContent() {
 
           <AlertMessage className="mx-6 mt-4" message={userRoleError} />
 
-          {usersLoading ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">Loading users...</p>
-            </div>
-          ) : users.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">No users found.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Username
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Email
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Name
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {user.username}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {user.email}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {[user.firstName, user.lastName].filter(Boolean).join(' ') || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <select
-                          value={user.role}
-                          onChange={(event) => handleRoleChange(user.id, event.target.value)}
-                          className="border border-gray-300 rounded px-2 py-1 text-sm"
-                        >
-                          <option value="viewer">Viewer</option>
-                          <option value="editor">Editor</option>
-                          <option value="moderator">Moderator</option>
-                          <option value="admin">Admin</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.createdAt).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          <AdminTable
+            columns={[
+              {
+                key: 'username',
+                header: 'Username',
+              },
+              {
+                key: 'email',
+                header: 'Email',
+              },
+              {
+                key: 'name',
+                header: 'Name',
+                render: (user) => [user.firstName, user.lastName].filter(Boolean).join(' ') || '-'
+              },
+              {
+                key: 'role',
+                header: 'Role',
+                render: (user) => (
+                  <select
+                    value={user.role}
+                    onChange={(event) => handleRoleChange(user.id, event.target.value)}
+                    className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  >
+                    <option value="viewer">Viewer</option>
+                    <option value="editor">Editor</option>
+                    <option value="moderator">Moderator</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                )
+              },
+              {
+                key: 'createdAt',
+                header: 'Created',
+                render: (user) => new Date(user.createdAt).toLocaleDateString()
+              }
+            ]}
+            data={users}
+            loading={usersLoading}
+            emptyMessage="No users found."
+            actions={false}
+          />
         </div>
       </div>
     </div>

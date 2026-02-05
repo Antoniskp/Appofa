@@ -6,6 +6,8 @@ import { locationAPI } from '@/lib/api';
 import AlertMessage from '@/components/AlertMessage';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
+import AdminTable from '@/components/admin/AdminTable';
+import AdminHeader from '@/components/admin/AdminHeader';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
 
@@ -31,7 +33,6 @@ function LocationManagementContent() {
     lng: '',
   });
   const [submitting, setSubmitting] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const { data: locations, loading, refetch } = useAsyncData(
     async () => {
@@ -128,22 +129,15 @@ function LocationManagementContent() {
   };
 
   const handleDelete = async (location) => {
-    if (deleteConfirm !== location.id) {
-      setDeleteConfirm(location.id);
-      return;
-    }
-
     setError('');
     try {
       const response = await locationAPI.delete(location.id);
       if (response.success) {
         setSuccessMessage('Location deleted successfully!');
-        setDeleteConfirm(null);
         refetch();
       }
     } catch (err) {
       setError(err.message || 'Failed to delete location');
-      setDeleteConfirm(null);
     }
   };
 
@@ -156,79 +150,6 @@ function LocationManagementContent() {
     return matchesSearch;
   });
 
-  // Build hierarchical structure for display
-  const buildHierarchy = (locs) => {
-    const locMap = new Map(locs.map(loc => [loc.id, { ...loc, children: [] }]));
-    const roots = [];
-
-    locs.forEach(loc => {
-      const node = locMap.get(loc.id);
-      if (loc.parent_id && locMap.has(loc.parent_id)) {
-        locMap.get(loc.parent_id).children.push(node);
-      } else {
-        roots.push(node);
-      }
-    });
-
-    return roots;
-  };
-
-  const hierarchicalLocations = buildHierarchy(filteredLocations);
-
-  const renderLocationTree = (location, level = 0) => {
-    return (
-      <div key={location.id}>
-        <div className={`border-b border-gray-200 hover:bg-gray-50 ${level > 0 ? 'bg-gray-50' : ''}`}>
-          <div className="px-6 py-4 flex items-center justify-between" style={{ paddingLeft: `${1.5 + level * 2}rem` }}>
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <h3 className="text-sm font-medium text-gray-900">
-                  {location.name}
-                  {location.name_local && (
-                    <span className="text-gray-500 font-normal ml-2">({location.name_local})</span>
-                  )}
-                </h3>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  {location.type}
-                </span>
-                {location.code && (
-                  <span className="text-xs text-gray-500">Code: {location.code}</span>
-                )}
-              </div>
-              <div className="mt-1 text-sm text-gray-500">
-                {location.lat && location.lng && (
-                  <span>Coordinates: {location.lat}, {location.lng}</span>
-                )}
-                {location.children && location.children.length > 0 && (
-                  <span className="ml-4">• {location.children.length} child location{location.children.length !== 1 ? 's' : ''}</span>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleOpenModal(location)}
-                className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(location)}
-                className={`px-3 py-1 text-sm font-medium rounded ${
-                  deleteConfirm === location.id
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'text-red-600 hover:text-red-800'
-                }`}
-              >
-                {deleteConfirm === location.id ? 'Confirm Delete?' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-        {location.children && location.children.map(child => renderLocationTree(child, level + 1))}
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
@@ -240,56 +161,78 @@ function LocationManagementContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Location Management</h1>
-          <p className="mt-2 text-gray-600">Manage hierarchical locations for the platform</p>
-        </div>
+        <AdminHeader
+          title="Location Management"
+          subtitle="Manage hierarchical locations for the platform"
+          actionText="Add Location"
+          onAction={() => handleOpenModal()}
+        />
 
         {error && <AlertMessage message={error} tone="error" className="mb-6" />}
         {successMessage && <AlertMessage message={successMessage} tone="success" className="mb-6" />}
 
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-              <div className="flex-1 flex gap-4 w-full sm:w-auto">
-                <input
-                  type="text"
-                  placeholder="Search locations..."
-                  name="search"
-                  value={filters.search}
-                  onChange={handleFilterChange}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-                <select
-                  name="type"
-                  value={filters.type}
-                  onChange={handleFilterChange}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="">All Types</option>
-                  {LOCATION_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
-              </div>
-              <button
-                onClick={() => handleOpenModal()}
-                className="w-full sm:w-auto bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 font-medium"
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+              <input
+                type="text"
+                placeholder="Search locations..."
+                name="search"
+                value={filters.search}
+                onChange={handleFilterChange}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+              />
+              <select
+                name="type"
+                value={filters.type}
+                onChange={handleFilterChange}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
               >
-                Add Location
-              </button>
+                <option value="">All Types</option>
+                {LOCATION_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
             </div>
           </div>
 
-          <div className="divide-y divide-gray-200">
-            {filteredLocations.length === 0 ? (
-              <div className="px-6 py-12 text-center text-gray-500">
-                No locations found
-              </div>
-            ) : (
-              hierarchicalLocations.map(location => renderLocationTree(location))
-            )}
-          </div>
+          <AdminTable
+            columns={[
+              { key: 'name', header: 'Name' },
+              { key: 'name_local', header: 'Local Name' },
+              {
+                key: 'type',
+                header: 'Type',
+                render: (loc) => (
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
+                    {loc.type}
+                  </span>
+                )
+              },
+              {
+                key: 'parent',
+                header: 'Parent',
+                render: (loc) => loc.parent?.name || '-'
+              },
+              {
+                key: 'code',
+                header: 'Code',
+                render: (loc) => loc.code || '-'
+              },
+              {
+                key: 'coordinates',
+                header: 'Coordinates',
+                render: (loc) => (
+                  loc.lat && loc.lng ? `${loc.lat}, ${loc.lng}` : '-'
+                )
+              },
+            ]}
+            data={filteredLocations}
+            onEdit={handleOpenModal}
+            onDelete={handleDelete}
+            loading={loading}
+            emptyMessage="No locations found. Create one to get started."
+          />
         </div>
       </div>
 
