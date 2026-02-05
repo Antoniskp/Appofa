@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * Reusable action buttons for admin tables
@@ -11,11 +11,20 @@ import { useState } from 'react';
 export default function AdminTableActions({ item, onEdit, onDelete }) {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
+  useEffect(() => {
+    if (!confirmingDelete) return;
+
+    // Auto-cancel after 3 seconds
+    const timeoutId = setTimeout(() => {
+      setConfirmingDelete(false);
+    }, 3000);
+
+    return () => clearTimeout(timeoutId);
+  }, [confirmingDelete]);
+
   const handleDeleteClick = async () => {
     if (!confirmingDelete) {
       setConfirmingDelete(true);
-      // Auto-cancel after 3 seconds
-      setTimeout(() => setConfirmingDelete(false), 3000);
       return;
     }
 

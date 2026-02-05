@@ -222,8 +222,9 @@ function LocationManagementContent() {
               {
                 key: 'coordinates',
                 header: 'Coordinates',
-                render: (loc) => 
+                render: (loc) => (
                   loc.lat && loc.lng ? `${loc.lat}, ${loc.lng}` : '-'
+                )
               },
             ]}
             data={filteredLocations}
