@@ -122,6 +122,54 @@ describe('Location API Tests', () => {
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('already exists');
     });
+
+    it('should create location with Wikipedia URL', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Japan',
+          type: 'country',
+          code: 'JP',
+          wikipedia_url: 'https://en.wikipedia.org/wiki/Japan'
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.name).toBe('Japan');
+      expect(response.body.location.wikipedia_url).toBe('https://en.wikipedia.org/wiki/Japan');
+    });
+
+    it('should reject invalid Wikipedia URL', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'TestCountry',
+          type: 'country',
+          wikipedia_url: 'https://example.com/fake-wiki'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Invalid Wikipedia URL');
+    });
+
+    it('should accept empty Wikipedia URL', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Germany',
+          type: 'country',
+          code: 'DE',
+          wikipedia_url: ''
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.name).toBe('Germany');
+    });
   });
 
   describe('GET /api/locations/:id', () => {
@@ -148,6 +196,32 @@ describe('Location API Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.location.name).toBe('Hellenic Republic');
+    });
+
+    it('should update location Wikipedia URL as admin', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${testLocation.id}`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          wikipedia_url: 'https://en.wikipedia.org/wiki/Greece'
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.wikipedia_url).toBe('https://en.wikipedia.org/wiki/Greece');
+    });
+
+    it('should reject invalid Wikipedia URL on update', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${testLocation.id}`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          wikipedia_url: 'https://notawiki.com/page'
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Invalid Wikipedia URL');
     });
   });
 

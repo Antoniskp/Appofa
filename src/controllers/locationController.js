@@ -6,10 +6,22 @@ const generateSlug = (name, type) => {
   return `${type}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
 };
 
+// Helper function to validate Wikipedia URL
+const isValidWikipediaUrl = (url) => {
+  if (!url) return true; // Allow empty/null values
+  try {
+    const parsedUrl = new URL(url);
+    // Check if the hostname is a Wikipedia domain
+    return parsedUrl.hostname.endsWith('.wikipedia.org');
+  } catch (error) {
+    return false;
+  }
+};
+
 // Create a new location (admin/moderator only)
 exports.createLocation = async (req, res) => {
   try {
-    const { name, name_local, type, parent_id, code, lat, lng, bounding_box } = req.body;
+    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = req.body;
 
     // Validation
     if (!name || !type) {
@@ -24,6 +36,14 @@ exports.createLocation = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Invalid location type'
+      });
+    }
+
+    // Validate Wikipedia URL if provided
+    if (wikipedia_url && !isValidWikipediaUrl(wikipedia_url)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Wikipedia URL. Must be a valid Wikipedia domain URL (e.g., https://en.wikipedia.org/wiki/...)'
       });
     }
 
@@ -74,7 +94,8 @@ exports.createLocation = async (req, res) => {
       slug,
       lat,
       lng,
-      bounding_box
+      bounding_box,
+      wikipedia_url
     });
 
     res.status(201).json({
@@ -219,7 +240,7 @@ exports.getLocation = async (req, res) => {
 exports.updateLocation = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, name_local, type, parent_id, code, lat, lng, bounding_box } = req.body;
+    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = req.body;
 
     const location = await Location.findByPk(id);
 
@@ -227,6 +248,14 @@ exports.updateLocation = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Location not found'
+      });
+    }
+
+    // Validate Wikipedia URL if provided
+    if (wikipedia_url !== undefined && wikipedia_url !== null && wikipedia_url !== '' && !isValidWikipediaUrl(wikipedia_url)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid Wikipedia URL. Must be a valid Wikipedia domain URL (e.g., https://en.wikipedia.org/wiki/...)'
       });
     }
 
@@ -274,7 +303,8 @@ exports.updateLocation = async (req, res) => {
       slug,
       lat: lat !== undefined ? lat : location.lat,
       lng: lng !== undefined ? lng : location.lng,
-      bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box
+      bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box,
+      wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url
     });
 
     res.json({
