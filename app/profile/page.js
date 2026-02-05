@@ -21,6 +21,7 @@ function ProfileContent() {
     avatar: '',
     avatarColor: '',
     homeLocationId: null,
+    searchable: true,
   });
   const [homeLocation, setHomeLocation] = useState(null);
   const [avatarLoadError, setAvatarLoadError] = useState(false);
@@ -48,7 +49,7 @@ function ProfileContent() {
     [],
     {
       onSuccess: async (userData) => {
-        const { username, firstName, lastName, githubId, avatar, avatarColor, homeLocationId } = userData;
+        const { username, firstName, lastName, githubId, avatar, avatarColor, homeLocationId, searchable } = userData;
         setProfileData({
           username: username || '',
           firstName: firstName || '',
@@ -56,6 +57,7 @@ function ProfileContent() {
           avatar: avatar || '',
           avatarColor: avatarColor || '',
           homeLocationId: homeLocationId || null,
+          searchable: searchable !== undefined ? searchable : true,
         });
         setGithubLinked(!!githubId);
 
@@ -340,6 +342,19 @@ function ProfileContent() {
                 placeholder="Select your home location"
                 allowClear={true}
               />
+            </div>
+            <div className="flex items-center">
+              <input
+                id="searchable"
+                name="searchable"
+                type="checkbox"
+                checked={profileData.searchable}
+                onChange={(e) => setProfileData(prev => ({ ...prev, searchable: e.target.checked }))}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="searchable" className="ml-2 block text-sm text-gray-700">
+                Allow other users to find me in user search
+              </label>
             </div>
             <button
               type="submit"

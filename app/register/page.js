@@ -20,6 +20,7 @@ export default function RegisterPage() {
     confirmPassword: '',
     firstName: '',
     lastName: '',
+    searchable: true,
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -171,6 +172,20 @@ export default function RegisterPage() {
               autoComplete="new-password"
               placeholder="Confirm Password"
             />
+
+            <div className="flex items-center">
+              <input
+                id="searchable"
+                name="searchable"
+                type="checkbox"
+                checked={formData.searchable}
+                onChange={(e) => setFormData({ ...formData, searchable: e.target.checked })}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="searchable" className="ml-2 block text-sm text-gray-900">
+                Allow other users to find me in user search
+              </label>
+            </div>
 
           </div>
 

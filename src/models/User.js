@@ -66,6 +66,11 @@ const User = sequelize.define('User', {
       key: 'id'
     },
     onDelete: 'SET NULL'
+  },
+  searchable: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true
   }
 }, {
   timestamps: true,
