@@ -76,11 +76,13 @@ export function useAsyncData(
         setLoading(false);
       }
     }
-  }, [fetchFunction, transform, onSuccess, onError]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...dependencies]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData, ...dependencies]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [...dependencies]);
 
   useEffect(() => {
     return () => {
