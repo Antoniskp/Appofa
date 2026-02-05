@@ -1004,18 +1004,25 @@ const authController = {
   searchUsers: async (req, res) => {
     try {
       const { search = '', page = 1, limit = 20 } = req.query;
-      const offset = (parseInt(page) - 1) * parseInt(limit);
+      
+      // Validate and sanitize pagination parameters
+      const pageNum = Math.max(1, parseInt(page) || 1);
+      const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+      const offset = (pageNum - 1) * limitNum;
 
       const whereClause = {
         searchable: true
       };
 
-      if (search) {
+      if (search && typeof search === 'string') {
         const sequelize = require('../config/database');
         const isPostgres = sequelize.getDialect() === 'postgres';
         
+        // Escape special LIKE characters to prevent SQL injection
+        const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&');
+        
         whereClause.username = {
-          [isPostgres ? Op.iLike : Op.like]: `%${search}%`
+          [isPostgres ? Op.iLike : Op.like]: `%${sanitizedSearch}%`
         };
       }
 
@@ -1023,21 +1030,21 @@ const authController = {
         where: whereClause,
         attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt'],
         order: [['username', 'ASC']],
-        limit: parseInt(limit),
+        limit: limitNum,
         offset: offset
       });
 
-      const totalPages = Math.ceil(count / parseInt(limit));
+      const totalPages = Math.ceil(count / limitNum);
 
       res.status(200).json({
         success: true,
         data: {
           users,
           pagination: {
-            currentPage: parseInt(page),
+            currentPage: pageNum,
             totalPages,
             totalItems: count,
-            itemsPerPage: parseInt(limit)
+            itemsPerPage: limitNum
           }
         }
       });
