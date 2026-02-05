@@ -260,4 +260,31 @@ describe('ArticleForm Component', () => {
       root.unmount();
     });
   });
+
+  test('banner image URL input accepts relative paths', async () => {
+    const ArticleForm = require('../components/ArticleForm').default;
+    const onSubmit = jest.fn();
+    const onCancel = jest.fn();
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit,
+      onCancel,
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    const bannerInput = container.querySelector('input[name="bannerImageUrl"]');
+    
+    // Verify input type is "text" not "url" to allow relative paths
+    expect(bannerInput.type).toBe('text');
+    
+    // Verify placeholder suggests both URLs and relative paths
+    expect(bannerInput.placeholder).toContain('https://');
+    expect(bannerInput.placeholder).toContain('/images/');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });

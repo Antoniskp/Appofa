@@ -166,13 +166,13 @@ export default function ArticleForm({
           Banner Image URL
         </label>
         <input
-          type="url"
+          type="text"
           id="bannerImageUrl"
           name="bannerImageUrl"
           value={formData.bannerImageUrl}
           onChange={handleInputChange}
           className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="https://example.com/banner.jpg"
+          placeholder="https://example.com/banner.jpg or /images/yourimage.png"
         />
       </div>
 
