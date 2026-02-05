@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 'use strict';
 
+require('dotenv').config();
+
 const fs = require('fs');
 const path = require('path');
 const sequelize = require('./config/database');
-require('dotenv').config();
 
 /**
  * Migration runner script for Sequelize migrations

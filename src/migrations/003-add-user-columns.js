@@ -18,8 +18,14 @@ module.exports = {
           name: 'users_github_id_unique'
         });
       } catch (error) {
-        // Ignore if index already exists
-        if (!error.message.includes('already exists') && !error.message.includes('UNIQUE')) {
+        // PostgreSQL: error.name === 'SequelizeDatabaseError' and error.original.code === '42P07'
+        // SQLite: error includes 'already exists' or 'UNIQUE'
+        const isDuplicateIndex = error.name === 'SequelizeDatabaseError' && 
+          (error.original?.code === '42P07' || // PostgreSQL duplicate index
+           error.message?.includes('already exists') || 
+           error.message?.includes('UNIQUE'));
+        
+        if (!isDuplicateIndex) {
           throw error;
         }
       }

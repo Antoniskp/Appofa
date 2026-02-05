@@ -98,6 +98,7 @@ describe('Database Migrations', () => {
     test('should have migration files in the correct directory', () => {
       const files = getMigrationFiles();
       expect(files.length).toBeGreaterThan(0);
+      expect(files).toContain('000-create-base-tables.js');
       expect(files).toContain('001-create-locations-table.js');
       expect(files).toContain('002-create-location-links-table.js');
       expect(files).toContain('003-add-user-columns.js');
@@ -270,10 +271,10 @@ describe('Database Migrations', () => {
       expect(tables).not.toContain('Locations');
       expect(tables).not.toContain('LocationLinks');
       
-      // Users table should still exist but without new columns
-      expect(tables).toContain('Users');
-      const usersTable = await queryInterface.describeTable('Users');
-      expect(usersTable).not.toHaveProperty('homeLocationId');
+      // After rolling back all migrations (including 000-create-base-tables),
+      // the Users and Articles tables should also be dropped
+      expect(tables).not.toContain('Users');
+      expect(tables).not.toContain('Articles');
     });
   });
 });
