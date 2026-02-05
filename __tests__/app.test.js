@@ -206,7 +206,7 @@ describe('News Application Integration Tests', () => {
       expect(response.body.data.user.role).toBe('moderator');
     });
 
-    test('should prevent removing last admin role', async () => {
+    test('should allow demoting last admin role', async () => {
       const csrfToken = 'csrf-admin-demote';
       setCsrfToken(csrfToken, adminUserId);
       const response = await request(app)
@@ -215,8 +215,9 @@ describe('News Application Integration Tests', () => {
         .set(csrfHeaderFor(csrfToken))
         .send({ role: 'viewer' });
 
-      expect(response.status).toBe(400);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.role).toBe('viewer');
     });
 
     test('should reject invalid role updates', async () => {

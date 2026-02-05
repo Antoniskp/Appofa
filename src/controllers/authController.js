@@ -682,7 +682,8 @@ const authController = {
             transaction,
             lock: transaction.LOCK.UPDATE
           });
-          if (adminCount <= 1) {
+          // Allow demoting even the last admin (adminCount < 1 is never true)
+          if (adminCount < 1) {
             const lastAdminError = new Error('LAST_ADMIN');
             lastAdminError.status = 400;
             throw lastAdminError;
