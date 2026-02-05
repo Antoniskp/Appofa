@@ -19,6 +19,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [VPS Deployment](doc/VPS_DEPLOYMENT.md)
 - [API Testing Examples](doc/API_TESTING.md)
 - [Article Types & Categories Testing](doc/ARTICLE_TYPES_TESTING.md)
+- [Google Analytics Integration](doc/GOOGLE_ANALYTICS.md)
 - [Troubleshooting](doc/TROUBLESHOOTING.md)
 - [Postman Collection](postman_collection.json)
 - [Copilot Agents](doc/COPILOT_AGENTS.md)
