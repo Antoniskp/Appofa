@@ -12,6 +12,10 @@
     "frontend:build": "next build",
     "frontend:start": "next start -p 3001",
     "seed": "node src/populate-db.js",
+    "migrate": "node src/run-migrations.js",
+    "migrate:up": "node src/run-migrations.js up",
+    "migrate:down": "node src/run-migrations.js down",
+    "migrate:status": "node src/run-migrations.js status",
     "migrate:article-types": "node src/update-article-types.js"
   },
   "keywords": [],
