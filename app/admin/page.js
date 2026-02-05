@@ -59,7 +59,7 @@ function AdminDashboardContent() {
     }
   );
 
-  const { data: users, loading: usersLoading } = useAsyncData(
+  const { data: users, loading: usersLoading, refetch: refetchUsers } = useAsyncData(
     async () => {
       const usersResponse = await authAPI.getUsers();
       if (usersResponse.success) {
@@ -118,21 +118,13 @@ function AdminDashboardContent() {
       setUserRoleError('');
       const response = await authAPI.updateUserRole(userId, newRole);
       if (response.success) {
-        setUsers((prevUsers) => {
-          const index = prevUsers.findIndex((u) => u.id === userId);
-          if (index === -1) {
-            return prevUsers;
-          }
-          const updatedUsers = [...prevUsers];
-          updatedUsers[index] = response.data.user;
-          return updatedUsers;
-        });
-        if (response.data.stats) {
-          setUserStats(response.data.stats);
-        }
+        // Refetch users to get the updated list
+        await refetchUsers();
+        addToast('User role updated successfully!', { type: 'success' });
       }
     } catch (error) {
       setUserRoleError(error.message || 'Failed to update user role.');
+      addToast(`Failed to update user role: ${error.message}`, { type: 'error' });
     }
   };
 
