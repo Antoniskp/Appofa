@@ -117,15 +117,13 @@ export default function NewsPage() {
           ))}
         </div>
 
-        {totalPages > 1 && (
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            onPageChange={goToPage}
-            onPrevious={prevPage}
-            onNext={nextPage}
-          />
-        )}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={goToPage}
+          onPrevious={prevPage}
+          onNext={nextPage}
+        />
       </div>
     </div>
   );
