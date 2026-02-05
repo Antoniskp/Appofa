@@ -1,16 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 export default function ArticlesPage() {
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
@@ -21,36 +19,35 @@ export default function ArticlesPage() {
   const filterInputClassName = 'w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500';
   const articleCategoryOptions = articleCategories.articleTypes?.articles?.categories ?? [];
 
-  useEffect(() => {
-    const fetchArticles = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          page,
-          limit: 10,
-          ...filters,
-          status: 'published',
-        };
-        
-        // Remove empty filters
-        Object.keys(params).forEach(key => {
-          if (!params[key]) delete params[key];
-        });
+  const { data: articles, loading, error } = useAsyncData(
+    async () => {
+      const params = {
+        page,
+        limit: 10,
+        ...filters,
+        status: 'published',
+      };
+      
+      // Remove empty filters
+      Object.keys(params).forEach(key => {
+        if (!params[key]) delete params[key];
+      });
 
-        const response = await articleAPI.getAll(params);
-        if (response.success) {
-          setArticles(response.data.articles || []);
-          setTotalPages(response.data.pagination?.totalPages || 1);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      const response = await articleAPI.getAll(params);
+      if (response.success) {
+        return response;
       }
-    };
-
-    fetchArticles();
-  }, [page, filters]);
+      return { data: { articles: [], pagination: { totalPages: 1 } } };
+    },
+    [page, filters],
+    {
+      initialData: [],
+      transform: (response) => {
+        setTotalPages(response.data.pagination?.totalPages || 1);
+        return response.data.articles || [];
+      }
+    }
+  );
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;

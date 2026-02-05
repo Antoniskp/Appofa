@@ -1,15 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { locationAPI } from '@/lib/api';
 import AlertMessage from '@/components/AlertMessage';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
 
 function LocationManagementContent() {
-  const [locations, setLocations] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,27 +27,25 @@ function LocationManagementContent() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  useEffect(() => {
-    fetchLocations();
-  }, [filterType]);
-
-  const fetchLocations = async () => {
-    setLoading(true);
-    setError('');
-    try {
+  const { data: locations, loading, refetch } = useAsyncData(
+    async () => {
       const params = {};
       if (filterType) params.type = filterType;
       
       const response = await locationAPI.getAll(params);
       if (response.success) {
-        setLocations(response.locations || []);
+        return response.locations || [];
       }
-    } catch (err) {
-      setError(err.message || 'Failed to load locations');
-    } finally {
-      setLoading(false);
+      return [];
+    },
+    [filterType],
+    {
+      initialData: [],
+      onError: (err) => {
+        setError(err || 'Failed to load locations');
+      }
     }
-  };
+  );
 
   const handleOpenModal = (location = null) => {
     if (location) {
@@ -115,7 +112,7 @@ function LocationManagementContent() {
       if (response.success) {
         setSuccessMessage(editingLocation ? 'Location updated successfully!' : 'Location created successfully!');
         handleCloseModal();
-        fetchLocations();
+        refetch();
       }
     } catch (err) {
       setError(err.message || 'Failed to save location');
@@ -136,7 +133,7 @@ function LocationManagementContent() {
       if (response.success) {
         setSuccessMessage('Location deleted successfully!');
         setDeleteConfirm(null);
-        fetchLocations();
+        refetch();
       }
     } catch (err) {
       setError(err.message || 'Failed to delete location');

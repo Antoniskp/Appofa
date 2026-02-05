@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -9,38 +9,35 @@ import { useAuth } from '@/lib/auth-context';
 import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
 import { useToast } from '@/components/ToastProvider';
 import ArticleForm from '@/components/ArticleForm';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const fetchArticles = useCallback(async () => {
-    if (!user?.id) {
-      return;
-    }
-    try {
+  const { data: articles, loading, refetch } = useAsyncData(
+    async () => {
+      if (!user?.id) {
+        return [];
+      }
       const response = await articleAPI.getAll({ authorId: user?.id, limit: 50 });
       if (response.success) {
-        setArticles(response.data.articles || []);
+        return response.data.articles || [];
       }
-    } catch (error) {
-      console.error('Failed to fetch articles:', error);
-    } finally {
-      setLoading(false);
+      return [];
+    },
+    [user?.id],
+    {
+      initialData: [],
+      onError: (error) => {
+        console.error('Failed to fetch articles:', error);
+      }
     }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchArticles();
-    }
-  }, [user?.id, fetchArticles]);
+  );
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);
@@ -70,7 +67,7 @@ function EditorDashboardContent() {
 
     try {
       await articleAPI.delete(id);
-      setArticles(articles.filter(a => a.id !== id));
+      refetch();
       addToast('Article deleted successfully', { type: 'success' });
     } catch (error) {
       addToast(`Failed to delete article: ${error.message}`, { type: 'error' });
