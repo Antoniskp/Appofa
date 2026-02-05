@@ -7,6 +7,7 @@ import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -32,45 +33,51 @@ function ProfileContent() {
   const [profileError, setProfileError] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [loading, setLoading] = useState(true);
   const [oauthConfig, setOauthConfig] = useState({ github: false, google: false, facebook: false });
   const [githubLinked, setGithubLinked] = useState(false);
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await authAPI.getProfile();
-        if (response.success) {
-          const { username, firstName, lastName, githubId, avatar, avatarColor, homeLocationId } = response.data.user;
-          setProfileData({
-            username: username || '',
-            firstName: firstName || '',
-            lastName: lastName || '',
-            avatar: avatar || '',
-            avatarColor: avatarColor || '',
-            homeLocationId: homeLocationId || null,
-          });
-          setGithubLinked(!!githubId);
+  // Load profile using the hook
+  const { loading } = useAsyncData(
+    async () => {
+      const response = await authAPI.getProfile();
+      if (response.success) {
+        return response.data.user;
+      }
+      throw new Error('Failed to load profile');
+    },
+    [],
+    {
+      onSuccess: async (userData) => {
+        const { username, firstName, lastName, githubId, avatar, avatarColor, homeLocationId } = userData;
+        setProfileData({
+          username: username || '',
+          firstName: firstName || '',
+          lastName: lastName || '',
+          avatar: avatar || '',
+          avatarColor: avatarColor || '',
+          homeLocationId: homeLocationId || null,
+        });
+        setGithubLinked(!!githubId);
 
-          // Load home location details if set
-          if (homeLocationId) {
-            try {
-              const locationResponse = await locationAPI.getById(homeLocationId);
-              if (locationResponse.success) {
-                setHomeLocation(locationResponse.location);
-              }
-            } catch (err) {
-              console.error('Failed to load home location:', err);
+        // Load home location details if set
+        if (homeLocationId) {
+          try {
+            const locationResponse = await locationAPI.getById(homeLocationId);
+            if (locationResponse.success) {
+              setHomeLocation(locationResponse.location);
             }
+          } catch (err) {
+            console.error('Failed to load home location:', err);
           }
         }
-      } catch (error) {
-        setProfileError(error.message || 'Failed to load profile.');
-      } finally {
-        setLoading(false);
+      },
+      onError: (error) => {
+        setProfileError(error || 'Failed to load profile.');
       }
-    };
+    }
+  );
 
+  useEffect(() => {
     const loadOAuthConfig = async () => {
       try {
         const response = await authAPI.getOAuthConfig();
@@ -82,7 +89,6 @@ function ProfileContent() {
       }
     };
 
-    loadProfile();
     loadOAuthConfig();
 
     // Handle OAuth callback messages
@@ -92,8 +98,6 @@ function ProfileContent() {
     if (success === 'github_linked') {
       setProfileMessage('GitHub account linked successfully!');
       setGithubLinked(true);
-      // Reload profile to get updated data
-      loadProfile();
     } else if (error) {
       const errorMessages = {
         unauthorized: 'Unauthorized to link account',

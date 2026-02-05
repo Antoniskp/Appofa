@@ -1,18 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
 import { useToast } from '@/components/ToastProvider';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
   const { addToast } = useToast();
-  const [articles, setArticles] = useState([]);
-  const [users, setUsers] = useState([]);
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -29,55 +28,59 @@ function AdminDashboardContent() {
       viewer: 0,
     },
   });
-  const [loading, setLoading] = useState(true);
-  const [usersLoading, setUsersLoading] = useState(true);
   const [userRoleError, setUserRoleError] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch all articles (admin can see all)
-        const response = await articleAPI.getAll({ limit: 100 });
-        if (response.success) {
-          const allArticles = response.data.articles || [];
-          setArticles(allArticles);
-          
-          // Calculate stats
-          setStats({
-            total: allArticles.length,
-            published: allArticles.filter(a => a.status === 'published').length,
-            draft: allArticles.filter(a => a.status === 'draft').length,
-            archived: allArticles.filter(a => a.status === 'archived').length,
-            pendingNews: allArticles.filter(a => a.isNews && !a.newsApprovedAt).length,
-          });
-        }
-      } catch (error) {
+  const { data: articles, loading, refetch } = useAsyncData(
+    async () => {
+      const response = await articleAPI.getAll({ limit: 100 });
+      if (response.success) {
+        return response.data.articles || [];
+      }
+      return [];
+    },
+    [],
+    {
+      initialData: [],
+      transform: (allArticles) => {
+        // Calculate stats
+        setStats({
+          total: allArticles.length,
+          published: allArticles.filter(a => a.status === 'published').length,
+          draft: allArticles.filter(a => a.status === 'draft').length,
+          archived: allArticles.filter(a => a.status === 'archived').length,
+          pendingNews: allArticles.filter(a => a.isNews && !a.newsApprovedAt).length,
+        });
+        return allArticles;
+      },
+      onError: (error) => {
         console.error('Failed to fetch articles:', error);
-      } finally {
-        setLoading(false);
       }
-    };
+    }
+  );
 
-    const fetchUsers = async () => {
-      try {
-        const usersResponse = await authAPI.getUsers();
-        if (usersResponse.success) {
-          const usersList = usersResponse.data.users || [];
-          setUsers(usersList);
-          if (usersResponse.data.stats) {
-            setUserStats(usersResponse.data.stats);
-          }
+  const { data: users, loading: usersLoading } = useAsyncData(
+    async () => {
+      const usersResponse = await authAPI.getUsers();
+      if (usersResponse.success) {
+        return usersResponse;
+      }
+      return { data: { users: [], stats: null } };
+    },
+    [],
+    {
+      initialData: [],
+      transform: (response) => {
+        const usersList = response.data.users || [];
+        if (response.data.stats) {
+          setUserStats(response.data.stats);
         }
-      } catch (error) {
+        return usersList;
+      },
+      onError: (error) => {
         console.error('Failed to fetch users:', error);
-      } finally {
-        setUsersLoading(false);
       }
-    };
-
-    fetchData();
-    fetchUsers();
-  }, []);
+    }
+  );
 
   const handleDelete = async (id) => {
     if (!confirm('Are you sure you want to delete this article?')) {
@@ -86,7 +89,7 @@ function AdminDashboardContent() {
 
     try {
       await articleAPI.delete(id);
-      setArticles(articles.filter(a => a.id !== id));
+      refetch();
       addToast('Article deleted successfully', { type: 'success' });
     } catch (error) {
       addToast(`Failed to delete article: ${error.message}`, { type: 'error' });
@@ -101,10 +104,7 @@ function AdminDashboardContent() {
     try {
       const response = await articleAPI.approveNews(id);
       if (response.success) {
-        // Update the article in the list with server response
-        setArticles(articles.map(a => 
-          a.id === id ? response.data.article : a
-        ));
+        refetch();
         addToast('News approved and published successfully!', { type: 'success' });
       }
     } catch (error) {

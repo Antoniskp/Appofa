@@ -5,75 +5,62 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI } from '@/lib/api';
 import AlertMessage from '@/components/AlertMessage';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 export default function LocationDetailPage() {
   const params = useParams();
-  const [location, setLocation] = useState(null);
   const [entities, setEntities] = useState({ articles: [], users: [] });
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    if (params.slug) {
-      fetchLocationData();
-    }
-  }, [params.slug]);
-
-  const fetchLocationData = async () => {
-    setLoading(true);
-    setError('');
-
-    try {
-      // Fetch location details
+  const { data: location, loading, error } = useAsyncData(
+    async () => {
       const locationResponse = await locationAPI.getById(params.slug);
       if (!locationResponse.success) {
-        setError('Location not found');
-        return;
+        throw new Error('Location not found');
       }
-
-      const loc = locationResponse.location;
-      setLocation(loc);
-
-      // Build breadcrumb
-      const crumbs = [];
-      let current = loc;
-      while (current) {
-        crumbs.unshift(current);
-        current = current.parent;
-      }
-      setBreadcrumb(crumbs);
-
-      // Fetch entities linked to this location
-      try {
-        const entitiesResponse = await locationAPI.getLocationEntities(params.slug);
-        if (entitiesResponse.success) {
-          setEntities({
-            articles: entitiesResponse.articles || [],
-            users: entitiesResponse.users || [],
-          });
+      return locationResponse.location;
+    },
+    [params.slug],
+    {
+      onSuccess: async (loc) => {
+        // Build breadcrumb
+        const crumbs = [];
+        let current = loc;
+        while (current) {
+          crumbs.unshift(current);
+          current = current.parent;
         }
-      } catch (err) {
-        console.error('Failed to load entities:', err);
-      }
+        setBreadcrumb(crumbs);
 
-      // Fetch child locations
-      try {
-        const childrenResponse = await locationAPI.getAll({ parent_id: params.slug });
-        if (childrenResponse.success) {
-          setChildren(childrenResponse.locations || []);
+        // Fetch entities linked to this location
+        try {
+          const entitiesResponse = await locationAPI.getLocationEntities(params.slug);
+          if (entitiesResponse.success) {
+            setEntities({
+              articles: entitiesResponse.articles || [],
+              users: entitiesResponse.users || [],
+            });
+          }
+        } catch (err) {
+          console.error('Failed to load entities:', err);
         }
-      } catch (err) {
-        console.error('Failed to load child locations:', err);
-      }
 
-    } catch (err) {
-      setError(err.message || 'Failed to load location');
-    } finally {
-      setLoading(false);
+        // Fetch child locations
+        try {
+          const childrenResponse = await locationAPI.getAll({ parent_id: params.slug });
+          if (childrenResponse.success) {
+            setChildren(childrenResponse.locations || []);
+          }
+        } catch (err) {
+          console.error('Failed to load child locations:', err);
+        }
+      },
+      onError: (err) => {
+        console.error('Failed to load location:', err);
+      }
     }
-  };
+  );
 
   if (loading) {
     return (

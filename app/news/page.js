@@ -1,54 +1,51 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
+import { useAsyncData } from '@/hooks/useAsyncData';
 
 export default function NewsPage() {
-  const [articles, setArticles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [tagFilter, setTagFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const newsCategoryOptions = articleCategories.articleTypes?.news?.categories ?? [];
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      setLoading(true);
-      try {
-        const params = {
-          page,
-          limit: 10,
-          status: 'published',
-          type: 'news',
-        };
+  const { data: articles, loading, error } = useAsyncData(
+    async () => {
+      const params = {
+        page,
+        limit: 10,
+        status: 'published',
+        type: 'news',
+      };
 
-        if (tagFilter) {
-          params.tag = tagFilter;
-        }
-        if (categoryFilter) {
-          params.category = categoryFilter;
-        }
-
-        const response = await articleAPI.getAll(params);
-        if (response.success) {
-          setArticles(response.data.articles || []);
-          setTotalPages(response.data.pagination?.totalPages || 1);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      if (tagFilter) {
+        params.tag = tagFilter;
       }
-    };
+      if (categoryFilter) {
+        params.category = categoryFilter;
+      }
 
-    fetchNews();
-  }, [page, tagFilter, categoryFilter]);
+      const response = await articleAPI.getAll(params);
+      if (response.success) {
+        return response;
+      }
+      return { data: { articles: [], pagination: { totalPages: 1 } } };
+    },
+    [page, tagFilter, categoryFilter],
+    {
+      initialData: [],
+      transform: (response) => {
+        setTotalPages(response.data.pagination?.totalPages || 1);
+        return response.data.articles || [];
+      }
+    }
+  );
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
