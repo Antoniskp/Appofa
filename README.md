@@ -5,6 +5,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 ## Highlights
 - JWT-based authentication with role-based access control (Admin, Moderator, Editor, Viewer)
 - **GitHub OAuth integration** for easy signup/login and account linking
+- **Google Analytics integration** for tracking page views and custom events
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
 - Article types and categories with dependent dropdowns (Personal, Articles, News)
@@ -49,6 +50,18 @@ To enable GitHub OAuth for social login:
    GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/github/callback
    FRONTEND_URL=http://localhost:3001
    ```
+
+### Optional: Configure Google Analytics
+To enable Google Analytics tracking:
+1. Go to [Google Analytics](https://analytics.google.com/)
+2. Create a new GA4 property or use an existing one
+3. Get your Measurement ID (format: G-XXXXXXXXXX)
+4. Add the measurement ID to your `.env`:
+   ```
+   NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
+   ```
+
+The application will automatically track page views and provides utilities for tracking custom events.
 
 ### Start the Application
 Start the API:
