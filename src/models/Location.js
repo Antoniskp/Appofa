@@ -40,7 +40,6 @@ const Location = sequelize.define('Location', {
   slug: {
     type: DataTypes.STRING,
     allowNull: false,
-    unique: true,
     comment: 'URL-friendly identifier'
   },
   lat: {
@@ -75,6 +74,7 @@ const Location = sequelize.define('Location', {
       name: 'location_parent_index'
     },
     {
+      unique: true,
       fields: ['slug'],
       name: 'location_slug_index'
     }
