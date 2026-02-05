@@ -140,6 +140,19 @@ export default function LocationDetailPage() {
                 </span>
               </div>
             )}
+            {location.wikipedia_url && (
+              <div className="md:col-span-2">
+                <span className="font-medium text-gray-700">Wikipedia:</span>
+                <a
+                  href={location.wikipedia_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-2 text-blue-600 hover:text-blue-800 underline"
+                >
+                  View on Wikipedia →
+                </a>
+              </div>
+            )}
           </div>
         </div>
 

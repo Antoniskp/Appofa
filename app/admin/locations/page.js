@@ -31,6 +31,7 @@ function LocationManagementContent() {
     code: '',
     lat: '',
     lng: '',
+    wikipedia_url: '',
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -65,6 +66,7 @@ function LocationManagementContent() {
         code: location.code || '',
         lat: location.lat || '',
         lng: location.lng || '',
+        wikipedia_url: location.wikipedia_url || '',
       });
     } else {
       setEditingLocation(null);
@@ -76,6 +78,7 @@ function LocationManagementContent() {
         code: '',
         lat: '',
         lng: '',
+        wikipedia_url: '',
       });
     }
     setShowModal(true);
@@ -353,6 +356,23 @@ function LocationManagementContent() {
                         className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Wikipedia URL
+                    </label>
+                    <input
+                      type="url"
+                      name="wikipedia_url"
+                      value={formData.wikipedia_url}
+                      onChange={handleInputChange}
+                      placeholder="https://en.wikipedia.org/wiki/..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Link to the Wikipedia article for this location
+                    </p>
                   </div>
                 </div>
 

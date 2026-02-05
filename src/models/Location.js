@@ -56,6 +56,11 @@ const Location = sequelize.define('Location', {
     type: DataTypes.JSON,
     allowNull: true,
     comment: 'Optional bounding box for map display: {north, south, east, west}'
+  },
+  wikipedia_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    comment: 'Wikipedia URL for this location'
   }
 }, {
   timestamps: true,

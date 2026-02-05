@@ -9,7 +9,7 @@ const generateSlug = (name, type) => {
 // Create a new location (admin/moderator only)
 exports.createLocation = async (req, res) => {
   try {
-    const { name, name_local, type, parent_id, code, lat, lng, bounding_box } = req.body;
+    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = req.body;
 
     // Validation
     if (!name || !type) {
@@ -74,7 +74,8 @@ exports.createLocation = async (req, res) => {
       slug,
       lat,
       lng,
-      bounding_box
+      bounding_box,
+      wikipedia_url
     });
 
     res.status(201).json({
@@ -219,7 +220,7 @@ exports.getLocation = async (req, res) => {
 exports.updateLocation = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, name_local, type, parent_id, code, lat, lng, bounding_box } = req.body;
+    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = req.body;
 
     const location = await Location.findByPk(id);
 
@@ -274,7 +275,8 @@ exports.updateLocation = async (req, res) => {
       slug,
       lat: lat !== undefined ? lat : location.lat,
       lng: lng !== undefined ? lng : location.lng,
-      bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box
+      bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box,
+      wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url
     });
 
     res.json({
