@@ -8,9 +8,21 @@ module.exports = {
     if (!tableDescription.githubId) {
       await queryInterface.addColumn('Users', 'githubId', {
         type: Sequelize.STRING,
-        allowNull: true,
-        unique: true
+        allowNull: true
       });
+      
+      // Add unique constraint separately (SQLite doesn't support unique in addColumn)
+      try {
+        await queryInterface.addIndex('Users', ['githubId'], {
+          unique: true,
+          name: 'users_github_id_unique'
+        });
+      } catch (error) {
+        // Ignore if index already exists
+        if (!error.message.includes('already exists') && !error.message.includes('UNIQUE')) {
+          throw error;
+        }
+      }
       console.log('Added githubId column to Users table');
     } else {
       console.log('githubId column already exists in Users table');
@@ -19,7 +31,7 @@ module.exports = {
     // Add githubAccessToken column if it doesn't exist
     if (!tableDescription.githubAccessToken) {
       await queryInterface.addColumn('Users', 'githubAccessToken', {
-        type: Sequelize.TEXT,
+        type: Sequelize.STRING,
         allowNull: true
       });
       console.log('Added githubAccessToken column to Users table');
@@ -95,8 +107,15 @@ module.exports = {
       console.log('Removed githubAccessToken column from Users table');
     }
 
-    // Remove githubId column if it exists
+    // Remove githubId column and its unique index if it exists
     if (tableDescription.githubId) {
+      // Try to remove the unique index first
+      try {
+        await queryInterface.removeIndex('Users', 'users_github_id_unique');
+      } catch (error) {
+        // Ignore if index doesn't exist
+      }
+      
       await queryInterface.removeColumn('Users', 'githubId');
       console.log('Removed githubId column from Users table');
     }
