@@ -67,51 +67,6 @@ export default function LocationsPage() {
     }
   };
 
-  // Fetch prefectures when country changes
-  useEffect(() => {
-    if (selectedCountry) {
-      fetchPrefectures(selectedCountry);
-      updateBreadcrumbs();
-    } else {
-      setPrefectures([]);
-      setSelectedPrefecture('');
-      setSelectedMunicipality('');
-      setMunicipalities([]);
-      setBreadcrumbs([]);
-      if (!searchTerm) {
-        setDisplayedLocations(countries);
-      }
-    }
-  }, [selectedCountry]);
-
-  // Fetch municipalities when prefecture changes
-  useEffect(() => {
-    if (selectedPrefecture) {
-      fetchMunicipalities(selectedPrefecture);
-      updateBreadcrumbs();
-    } else {
-      setMunicipalities([]);
-      setSelectedMunicipality('');
-      if (selectedCountry && !searchTerm) {
-        setDisplayedLocations(prefectures);
-      }
-    }
-  }, [selectedPrefecture]);
-
-  // Update displayed locations when municipality changes
-  useEffect(() => {
-    if (selectedMunicipality) {
-      updateBreadcrumbs();
-      // Show the selected municipality
-      const municipality = municipalities.find(m => m.id === parseInt(selectedMunicipality));
-      if (municipality && !searchTerm) {
-        setDisplayedLocations([municipality]);
-      }
-    } else if (selectedPrefecture && !searchTerm) {
-      setDisplayedLocations(municipalities);
-    }
-  }, [selectedMunicipality]);
-
   const fetchPrefectures = async (countryId) => {
     setLoading(true);
     setError('');
@@ -188,33 +143,50 @@ export default function LocationsPage() {
     setBreadcrumbs(crumbs);
   };
 
-  // Debounced search
+  // Fetch prefectures when country changes
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      setShowSearchDropdown(false);
-      setIsSearching(false);
-      // Reset to current dropdown selection
-      if (selectedMunicipality) {
-        const municipality = municipalities.find(m => m.id === parseInt(selectedMunicipality));
-        if (municipality) setDisplayedLocations([municipality]);
-      } else if (selectedPrefecture) {
-        setDisplayedLocations(municipalities);
-      } else if (selectedCountry) {
-        setDisplayedLocations(prefectures);
-      } else {
+    if (selectedCountry) {
+      fetchPrefectures(selectedCountry);
+      updateBreadcrumbs();
+    } else {
+      setPrefectures([]);
+      setSelectedPrefecture('');
+      setSelectedMunicipality('');
+      setMunicipalities([]);
+      setBreadcrumbs([]);
+      if (!searchTerm) {
         setDisplayedLocations(countries);
       }
-      return;
     }
+  }, [selectedCountry]);
 
-    setIsSearching(true);
-    const timeoutId = setTimeout(() => {
-      performSearch(searchTerm);
-    }, DEBOUNCE_DELAY);
+  // Fetch municipalities when prefecture changes
+  useEffect(() => {
+    if (selectedPrefecture) {
+      fetchMunicipalities(selectedPrefecture);
+      updateBreadcrumbs();
+    } else {
+      setMunicipalities([]);
+      setSelectedMunicipality('');
+      if (selectedCountry && !searchTerm) {
+        setDisplayedLocations(prefectures);
+      }
+    }
+  }, [selectedPrefecture]);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm]);
+  // Update displayed locations when municipality changes
+  useEffect(() => {
+    if (selectedMunicipality) {
+      updateBreadcrumbs();
+      // Show the selected municipality
+      const municipality = municipalities.find(m => m.id === parseInt(selectedMunicipality));
+      if (municipality && !searchTerm) {
+        setDisplayedLocations([municipality]);
+      }
+    } else if (selectedPrefecture && !searchTerm) {
+      setDisplayedLocations(municipalities);
+    }
+  }, [selectedMunicipality]);
 
   const performSearch = async (query) => {
     if (!query.trim()) {
@@ -244,6 +216,34 @@ export default function LocationsPage() {
       setIsSearching(false);
     }
   };
+
+  // Debounced search
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      setShowSearchDropdown(false);
+      setIsSearching(false);
+      // Reset to current dropdown selection
+      if (selectedMunicipality) {
+        const municipality = municipalities.find(m => m.id === parseInt(selectedMunicipality));
+        if (municipality) setDisplayedLocations([municipality]);
+      } else if (selectedPrefecture) {
+        setDisplayedLocations(municipalities);
+      } else if (selectedCountry) {
+        setDisplayedLocations(prefectures);
+      } else {
+        setDisplayedLocations(countries);
+      }
+      return;
+    }
+
+    setIsSearching(true);
+    const timeoutId = setTimeout(() => {
+      performSearch(searchTerm);
+    }, DEBOUNCE_DELAY);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const handleCountryChange = (e) => {
     const value = e.target.value;
