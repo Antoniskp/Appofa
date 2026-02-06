@@ -167,7 +167,7 @@ export default function TopNav() {
               </Link>
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-4 ml-auto">
             {loading ? (
               <div className="flex items-center gap-4">
                 <SkeletonLoader type="button" count={2} className="flex gap-4" />
