@@ -1,6 +1,7 @@
 'use client';
 
 import AdminTableActions from './AdminTableActions';
+import SkeletonLoader from '@/components/SkeletonLoader';
 
 /**
  * Reusable admin table component
@@ -26,8 +27,31 @@ export default function AdminTable({
 }) {
   if (loading) {
     return (
-      <div className="bg-white shadow-md rounded-lg overflow-hidden p-8 text-center">
-        <p className="text-gray-600">Loading...</p>
+      <div className="bg-white shadow-md rounded-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                {columns.map((column) => (
+                  <th
+                    key={column.key}
+                    className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.width || ''}`}
+                  >
+                    {column.header}
+                  </th>
+                ))}
+                {actions && (onEdit || onDelete) && (
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              <SkeletonLoader type="table" count={10} />
+            </tbody>
+          </table>
+        </div>
       </div>
     );
   }

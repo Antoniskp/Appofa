@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
+import SkeletonLoader from '@/components/SkeletonLoader';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
@@ -109,9 +110,8 @@ export default function TopNav() {
           </div>
           <div className="hidden sm:flex flex-wrap items-center gap-4">
             {loading ? (
-              <div className="flex items-center gap-4 animate-pulse">
-                <div className="h-9 w-20 bg-gray-200 rounded"></div>
-                <div className="h-9 w-24 bg-gray-200 rounded"></div>
+              <div className="flex items-center gap-4">
+                <SkeletonLoader type="button" count={2} className="flex gap-4" />
               </div>
             ) : user ? (
               <div className="relative" ref={userMenuRef}>
@@ -250,9 +250,8 @@ export default function TopNav() {
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
           {loading ? (
-            <div className="space-y-2 animate-pulse">
-              <div className="h-10 bg-gray-200 rounded"></div>
-              <div className="h-10 bg-gray-200 rounded"></div>
+            <div className="space-y-2">
+              <SkeletonLoader type="button" count={2} className="space-y-2" />
             </div>
           ) : user ? (
             <div ref={mobileUserMenuRef}>
