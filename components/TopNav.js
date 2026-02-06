@@ -15,9 +15,11 @@ import {
   UserPlusIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
+  const { isAdmin, isEditor } = usePermissions();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -145,7 +147,7 @@ export default function TopNav() {
                       <UserCircleIcon className="h-4 w-4" aria-hidden="true" />
                       Προφίλ
                     </Link>
-                    {user.role === 'admin' && (
+                    {isAdmin && (
                       <>
                         <Link
                           href="/admin"
@@ -165,7 +167,7 @@ export default function TopNav() {
                         </Link>
                       </>
                     )}
-                    {(user.role === 'admin' || user.role === 'editor') && (
+                    {(isAdmin || isEditor) && (
                       <Link
                         href="/editor"
                         role="menuitem"
@@ -285,7 +287,7 @@ export default function TopNav() {
                   <UserCircleIcon className="h-5 w-5" aria-hidden="true" />
                   Προφίλ
                 </Link>
-                {user.role === 'admin' && (
+                {isAdmin && (
                   <>
                     <Link
                       href="/admin"
@@ -305,7 +307,7 @@ export default function TopNav() {
                     </Link>
                   </>
                 )}
-                {(user.role === 'admin' || user.role === 'editor') && (
+                {(isAdmin || isEditor) && (
                   <Link
                     href="/editor"
                     role="menuitem"
