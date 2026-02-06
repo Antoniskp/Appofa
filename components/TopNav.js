@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -17,60 +17,118 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import DropdownMenu from '@/components/DropdownMenu';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
   const { isAdmin, isEditor } = usePermissions();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const userMenuRef = useRef(null);
-  const mobileUserMenuRef = useRef(null);
+  const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
+  const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
 
   const isActive = (path) => pathname === path ? 'text-blue-600' : '';
 
   useEffect(() => {
+    // Close all menus when pathname changes (navigation occurs)
     setIsMenuOpen(false);
-    setIsUserMenuOpen(false);
+    setIsDesktopUserMenuOpen(false);
+    setIsMobileUserMenuOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    if (!isMenuOpen) {
-      setIsUserMenuOpen(false);
-    }
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    if (!isUserMenuOpen) {
-      return;
-    }
-
-    const handleClickOutside = (event) => {
-      const isDesktopMenu = userMenuRef.current?.contains(event.target);
-      const isMobileMenu = mobileUserMenuRef.current?.contains(event.target);
-      if (!isDesktopMenu && !isMobileMenu) {
-        setIsUserMenuOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isUserMenuOpen]);
 
   const handleLogout = async () => {
     await logout();
     window.location.href = '/';
   };
 
-  const handleUserMenuKeyDown = (event) => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      setIsUserMenuOpen(false);
+  // Build user menu items for DropdownMenu (desktop - smaller icons)
+  const userMenuItems = [
+    {
+      id: 'profile',
+      label: 'Προφίλ',
+      href: '/profile',
+      icon: <UserCircleIcon className="h-4 w-4" />,
+      className: isActive('/profile')
+    },
+    ...(isAdmin ? [
+      {
+        id: 'admin',
+        label: 'Διαχείριση',
+        href: '/admin',
+        icon: <ShieldCheckIcon className="h-4 w-4" />,
+        className: isActive('/admin')
+      },
+      {
+        id: 'admin-status',
+        label: 'Διαγνωστικά',
+        href: '/admin/status',
+        icon: <ServerIcon className="h-4 w-4" />,
+        className: isActive('/admin/status')
+      }
+    ] : []),
+    ...((isAdmin || isEditor) ? [
+      {
+        id: 'editor',
+        label: 'Τα άρθρα μου',
+        href: '/editor',
+        icon: <PencilSquareIcon className="h-4 w-4" />,
+        className: isActive('/editor')
+      }
+    ] : []),
+    { divider: true },
+    {
+      id: 'logout',
+      label: 'Έξοδος',
+      icon: <ArrowRightOnRectangleIcon className="h-4 w-4" />,
+      onClick: handleLogout,
+      variant: 'danger'
     }
-  };
+  ];
+
+  // Build mobile menu items (larger icons and font)
+  const mobileMenuItems = [
+    {
+      id: 'profile',
+      label: 'Προφίλ',
+      href: '/profile',
+      icon: <UserCircleIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/profile')}`
+    },
+    ...(isAdmin ? [
+      {
+        id: 'admin',
+        label: 'Διαχείριση',
+        href: '/admin',
+        icon: <ShieldCheckIcon className="h-5 w-5" />,
+        className: `text-base font-medium ${isActive('/admin')}`
+      },
+      {
+        id: 'admin-status',
+        label: 'Διαγνωστικά',
+        href: '/admin/status',
+        icon: <ServerIcon className="h-5 w-5" />,
+        className: `text-base font-medium ${isActive('/admin/status')}`
+      }
+    ] : []),
+    ...((isAdmin || isEditor) ? [
+      {
+        id: 'editor',
+        label: 'Τα άρθρα μου',
+        href: '/editor',
+        icon: <PencilSquareIcon className="h-5 w-5" />,
+        className: `text-base font-medium ${isActive('/editor')}`
+      }
+    ] : []),
+    { divider: true },
+    {
+      id: 'logout',
+      label: 'Έξοδος',
+      icon: <ArrowRightOnRectangleIcon className="h-5 w-5" />,
+      onClick: handleLogout,
+      variant: 'danger',
+      className: 'text-base font-medium'
+    }
+  ];
 
   return (
     <nav className="bg-sand shadow-md border-b border-seafoam/70">
@@ -114,80 +172,15 @@ export default function TopNav() {
                 <SkeletonLoader type="button" count={2} className="flex gap-4" />
               </div>
             ) : user ? (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-                  onClick={() => setIsUserMenuOpen((open) => !open)}
-                  onKeyDown={handleUserMenuKeyDown}
-                  aria-haspopup="true"
-                  aria-expanded={isUserMenuOpen}
-                  aria-controls="desktop-user-menu"
-                  id="desktop-user-menu-button"
-                >
-                  Γεια σου {user.username}
-                  <ChevronDownIcon
-                    className={`h-4 w-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                    aria-hidden="true"
-                  />
-                </button>
-                {isUserMenuOpen && (
-                  <div
-                    id="desktop-user-menu"
-                    role="menu"
-                    aria-labelledby="desktop-user-menu-button"
-                    onKeyDown={handleUserMenuKeyDown}
-                    className="absolute right-0 z-20 mt-2 w-52 rounded-md border border-seafoam bg-white py-1 shadow-lg"
-                  >
-                    <Link
-                      href="/profile"
-                      role="menuitem"
-                      className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/profile')}`}
-                    >
-                      <UserCircleIcon className="h-4 w-4" aria-hidden="true" />
-                      Προφίλ
-                    </Link>
-                    {isAdmin && (
-                      <>
-                        <Link
-                          href="/admin"
-                          role="menuitem"
-                          className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/admin')}`}
-                        >
-                          <ShieldCheckIcon className="h-4 w-4" aria-hidden="true" />
-                          Διαχείριση
-                        </Link>
-                        <Link
-                          href="/admin/status"
-                          role="menuitem"
-                          className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/admin/status')}`}
-                        >
-                          <ServerIcon className="h-4 w-4" aria-hidden="true" />
-                          Διαγνωστικά
-                        </Link>
-                      </>
-                    )}
-                    {(isAdmin || isEditor) && (
-                      <Link
-                        href="/editor"
-                        role="menuitem"
-                        className={`flex items-center gap-2 px-4 py-2 text-sm text-blue-900 hover:bg-seafoam/40 ${isActive('/editor')}`}
-                      >
-                        <PencilSquareIcon className="h-4 w-4" aria-hidden="true" />
-                        Τα άρθρα μου
-                      </Link>
-                    )}
-                    <button
-                      onClick={handleLogout}
-                      role="menuitem"
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-seafoam/40"
-                  >
-                    <ArrowRightOnRectangleIcon className="h-4 w-4" aria-hidden="true" />
-                    Έξοδος
-                  </button>
-                  </div>
-                )}
-              </div>
+              <DropdownMenu
+                triggerText={`Γεια σου ${user.username}`}
+                items={userMenuItems}
+                align="right"
+                showChevron={true}
+                menuId="desktop-user-menu"
+                open={isDesktopUserMenuOpen}
+                onOpenChange={setIsDesktopUserMenuOpen}
+              />
             ) : (
               <>
                 <Link
@@ -254,78 +247,26 @@ export default function TopNav() {
               <SkeletonLoader type="button" count={2} className="space-y-2" />
             </div>
           ) : user ? (
-            <div ref={mobileUserMenuRef}>
-              <button
-                type="button"
-                className="flex w-full items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
-                onClick={() => setIsUserMenuOpen((open) => !open)}
-                onKeyDown={handleUserMenuKeyDown}
-                aria-haspopup="true"
-                aria-expanded={isUserMenuOpen}
-                aria-controls="mobile-user-menu"
-                id="mobile-user-menu-button"
-              >
-                <span>Hello {user.username}</span>
-                <ChevronDownIcon
-                  className={`h-4 w-4 transition-transform ${isUserMenuOpen ? 'rotate-180' : ''}`}
-                  aria-hidden="true"
-                />
-              </button>
-              <div
-                id="mobile-user-menu"
-                role="menu"
-                aria-labelledby="mobile-user-menu-button"
-                onKeyDown={handleUserMenuKeyDown}
-                className={`${isUserMenuOpen ? 'space-y-2' : 'hidden'} pt-1`}
-              >
-                <Link
-                  href="/profile"
-                  role="menuitem"
-                  className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/profile')}`}
-                >
-                  <UserCircleIcon className="h-5 w-5" aria-hidden="true" />
-                  Προφίλ
-                </Link>
-                {isAdmin && (
-                  <>
-                    <Link
-                      href="/admin"
-                      role="menuitem"
-                      className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/admin')}`}
-                    >
-                      <ShieldCheckIcon className="h-5 w-5" aria-hidden="true" />
-                      Διαχείριση
-                    </Link>
-                    <Link
-                      href="/admin/status"
-                      role="menuitem"
-                      className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/admin/status')}`}
-                    >
-                      <ServerIcon className="h-5 w-5" aria-hidden="true" />
-                      Διαγνωστικά
-                    </Link>
-                  </>
-                )}
-                {(isAdmin || isEditor) && (
-                  <Link
-                    href="/editor"
-                    role="menuitem"
-                    className={`flex items-center gap-2 text-base font-medium text-blue-900 ${isActive('/editor')}`}
-                  >
-                    <PencilSquareIcon className="h-5 w-5" aria-hidden="true" />
-                    Τα άρθρα μου
-                  </Link>
-                )}
+            <DropdownMenu
+              trigger={
                 <button
-                  onClick={handleLogout}
-                  role="menuitem"
-                  className="inline-flex w-full items-center gap-2 text-left text-base font-medium text-red-600 hover:text-red-800"
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
                 >
-                  <ArrowRightOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
-                  Έξοδος
+                  <span>Γεια σου {user.username}</span>
+                  <ChevronDownIcon
+                    className={`h-4 w-4 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
+                    aria-hidden="true"
+                  />
                 </button>
-              </div>
-            </div>
+              }
+              items={mobileMenuItems}
+              align="left"
+              menuId="mobile-user-menu"
+              menuClassName="w-full"
+              open={isMobileUserMenuOpen}
+              onOpenChange={setIsMobileUserMenuOpen}
+            />
           ) : (
             <>
               <Link
