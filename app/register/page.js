@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
-import AuthInput from '@/components/AuthInput';
+import FormInput from '@/components/FormInput';
 import OAuthButtons from '@/components/OAuthButtons';
 import AuthDivider from '@/components/AuthDivider';
 import { authAPI } from '@/lib/api';
@@ -94,8 +94,8 @@ export default function RegisterPage() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <AlertMessage message={error} />
           <div className="space-y-4">
-            <AuthInput
-              id="username"
+            <FormInput
+              name="username"
               type="text"
               label="Username"
               value={formData.username}
@@ -105,8 +105,8 @@ export default function RegisterPage() {
               placeholder="Username"
             />
 
-            <AuthInput
-              id="email"
+            <FormInput
+              name="email"
               type="email"
               label="Email address"
               value={formData.email}
@@ -117,8 +117,8 @@ export default function RegisterPage() {
             />
 
             <div className="grid grid-cols-2 gap-4">
-              <AuthInput
-                id="firstName"
+              <FormInput
+                name="firstName"
                 type="text"
                 label="First Name"
                 value={formData.firstName}
@@ -126,8 +126,8 @@ export default function RegisterPage() {
                 autoComplete="given-name"
                 placeholder="First Name"
               />
-              <AuthInput
-                id="lastName"
+              <FormInput
+                name="lastName"
                 type="text"
                 label="Last Name"
                 value={formData.lastName}
@@ -137,8 +137,8 @@ export default function RegisterPage() {
               />
             </div>
 
-            <AuthInput
-              id="password"
+            <FormInput
+              name="password"
               type="password"
               label="Password"
               value={formData.password}
@@ -148,8 +148,8 @@ export default function RegisterPage() {
               placeholder="Password"
             />
 
-            <AuthInput
-              id="confirmPassword"
+            <FormInput
+              name="confirmPassword"
               type="password"
               label="Confirm Password"
               value={formData.confirmPassword}

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
-import AuthInput from '@/components/AuthInput';
+import FormInput from '@/components/FormInput';
 import OAuthButtons from '@/components/OAuthButtons';
 import AuthDivider from '@/components/AuthDivider';
 import { authAPI } from '@/lib/api';
@@ -109,8 +109,8 @@ function LoginForm() {
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <AlertMessage message={error} />
           <div className="space-y-4">
-            <AuthInput
-              id="email"
+            <FormInput
+              name="email"
               type="email"
               label="Email address"
               value={formData.email}
@@ -119,8 +119,8 @@ function LoginForm() {
               autoComplete="email"
               placeholder="Email address"
             />
-            <AuthInput
-              id="password"
+            <FormInput
+              name="password"
               type="password"
               label="Password"
               value={formData.password}
