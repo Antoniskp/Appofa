@@ -41,7 +41,6 @@
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "sequelize": "^6.37.7",
-    "sqlite3": "^5.1.7",
     "tailwindcss": "^3.4.19"
   },
   "overrides": {
@@ -51,7 +50,7 @@
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "nodemon": "^3.1.11",
-    "playwright": "^1.58.1",
+    "sqlite3": "^5.1.7",
     "supertest": "^7.2.2"
   }
 }
