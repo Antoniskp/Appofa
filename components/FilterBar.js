@@ -24,8 +24,8 @@ export default function FilterBar({
   const hasActiveFilters = Object.values(filters).some(v => v !== '' && v !== null);
 
   return (
-    <div className={`card p-4 ${className}`}>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className={`card p-6 ${className}`}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {filterConfig.map((config) => {
           const { name, label, type = 'select', options = [], placeholder } = config;
 
@@ -46,7 +46,7 @@ export default function FilterBar({
           if (type === 'text') {
             return (
               <div key={name}>
-                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
                   {label}
                 </label>
                 <input
