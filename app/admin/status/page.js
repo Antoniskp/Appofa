@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { adminAPI } from '@/lib/api';
+import Badge from '@/components/Badge';
 
 const statusStyles = {
   healthy: 'bg-green-50 border-green-200 text-green-800',
@@ -93,15 +94,9 @@ function HealthStatusContent() {
                   <div key={key} className="bg-white rounded-lg shadow-md p-6">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold capitalize">{key}</h3>
-                      <span
-                        className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                          check.status === 'healthy'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}
-                      >
+                      <Badge variant={check.status === 'healthy' ? 'success' : 'danger'}>
                         {check.status}
-                      </span>
+                      </Badge>
                     </div>
                     <div className="mt-3 text-sm text-gray-600 space-y-1">
                       {check.message && <p>{check.message}</p>}

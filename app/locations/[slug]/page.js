@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI } from '@/lib/api';
+import Badge from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
 import { useAsyncData } from '@/hooks/useAsyncData';
 
@@ -115,9 +116,7 @@ export default function LocationDetailPage() {
                 <h1 className="text-3xl font-bold text-gray-900">
                   {location.name}
                 </h1>
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                  {location.type}
-                </span>
+                <Badge variant="primary" size="md">{location.type}</Badge>
               </div>
               {location.name_local && (
                 <p className="text-xl text-gray-600 mb-4">{location.name_local}</p>

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
+import Badge, { TypeBadge } from '@/components/Badge';
 import Button from '@/components/Button';
 
 /**
@@ -35,20 +35,12 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             <div className="flex flex-col md:flex-row md:items-start md:justify-between">
               <div className="flex-grow">
                 <div className="flex flex-wrap gap-2 mb-2">
-                  {article.type && (
-                    <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
-                      {getArticleTypeLabel(article.type)}
-                    </span>
-                  )}
+                  {article.type && <TypeBadge type={article.type} />}
                   {article.category && (
-                    <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                      {article.category}
-                    </span>
+                    <Badge variant="primary">{article.category}</Badge>
                   )}
                   {Array.isArray(article.tags) && article.tags.length > 0 && (
-                    <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
-                      {article.tags.join(', ')}
-                    </span>
+                    <Badge variant="purple">{article.tags.join(', ')}</Badge>
                   )}
                 </div>
                 <h2 className="text-2xl font-semibold mb-2">
@@ -93,20 +85,12 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           </Link>
           <div className="p-6">
             <div className="flex flex-wrap gap-2 mb-2">
-              {article.type && (
-                <span className={`inline-block text-xs px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
-                  {getArticleTypeLabel(article.type)}
-                </span>
-              )}
+              {article.type && <TypeBadge type={article.type} />}
               {article.category && (
-                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
-                  {article.category}
-                </span>
+                <Badge variant="primary">{article.category}</Badge>
               )}
               {Array.isArray(article.tags) && article.tags.length > 0 && (
-                <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
-                  {article.tags.join(', ')}
-                </span>
+                <Badge variant="purple">{article.tags.join(', ')}</Badge>
               )}
             </div>
             <h3 className="headline">

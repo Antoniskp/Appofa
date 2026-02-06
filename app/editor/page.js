@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
+import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import ArticleForm from '@/components/ArticleForm';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -142,34 +142,21 @@ function EditorDashboardContent() {
                           {article.summary || article.content?.substring(0, 100) + '...'}
                         </p>
                         <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-                          <span className={`px-2 py-1 rounded ${
-                            article.status === 'published' ? 'bg-green-100 text-green-800' :
-                            article.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {article.status}
-                          </span>
-                          {article.type && (
-                            <span className={`px-2 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
-                              {getArticleTypeLabel(article.type)}
-                            </span>
-                          )}
+                          <StatusBadge status={article.status} />
+                          {article.type && <TypeBadge type={article.type} />}
                           {article.isNews && (
-                            <span className={`px-2 py-1 rounded ${
-                              article.newsApprovedAt ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                            }`}>
-                              {article.newsApprovedAt ? '📰 Approved News' : '📰 Pending News'}
-                            </span>
+                            <Badge 
+                              variant={article.newsApprovedAt ? 'success' : 'warning'}
+                              aria-label={article.newsApprovedAt ? 'Approved News' : 'Pending News'}
+                            >
+                              {article.newsApprovedAt ? '✓ Approved News' : '⏳ Pending News'}
+                            </Badge>
                           )}
                           {article.category && (
-                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                              {article.category}
-                            </span>
+                            <Badge variant="primary">{article.category}</Badge>
                           )}
                           {Array.isArray(article.tags) && article.tags.length > 0 && (
-                            <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded">
-                              {article.tags.join(', ')}
-                            </span>
+                            <Badge variant="purple">{article.tags.join(', ')}</Badge>
                           )}
                           <span>By {article.User?.username || 'Unknown'}</span>
                           <span>•</span>
