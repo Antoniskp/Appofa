@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import AlertMessage from '@/components/AlertMessage';
+import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/FormInput';
 import OAuthButtons from '@/components/OAuthButtons';
 import AuthDivider from '@/components/AuthDivider';
@@ -16,11 +16,11 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, user } = useAuth();
+  const { success, error } = useToast();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { config: oauthConfig } = useOAuthConfig();
 
@@ -33,11 +33,13 @@ function LoginForm() {
       authAPI.getProfile()
         .then((response) => {
           if (response.success) {
+            success('Welcome back! Redirecting...');
             router.push('/');
           }
         })
         .catch((err) => {
           console.error('OAuth login failed:', err);
+          error('OAuth authentication failed');
           setLoading(false);
         });
     } else if (errorParam) {
@@ -47,9 +49,9 @@ function LoginForm() {
         token_exchange_failed: 'OAuth failed: Could not exchange token',
         oauth_failed: 'OAuth authentication failed'
       };
-      setError(errorMessages[errorParam] || 'OAuth authentication failed');
+      error(errorMessages[errorParam] || 'OAuth authentication failed');
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, success, error]);
 
   // Redirect if already logged in
   if (user) {
@@ -66,14 +68,14 @@ function LoginForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
       await login(formData);
+      success('Welcome back! Redirecting...');
       router.push('/');
     } catch (err) {
-      setError(err.message || 'Login failed. Please try again.');
+      error(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -87,7 +89,7 @@ function LoginForm() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      setError(err.message || 'Failed to initiate GitHub login');
+      error(err.message || 'Failed to initiate GitHub login');
       setLoading(false);
     }
   };
@@ -107,7 +109,6 @@ function LoginForm() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <AlertMessage message={error} />
           <div className="space-y-4">
             <FormInput
               name="email"
