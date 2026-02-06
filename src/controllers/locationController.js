@@ -594,7 +594,7 @@ exports.getLocationEntities = async (req, res) => {
 
     const users = userIds.length > 0 ? await User.findAll({
       where: { id: userIds },
-      attributes: ['id', 'username', 'firstName', 'lastName', 'avatar']
+      attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor']
     }) : [];
 
     res.json({
