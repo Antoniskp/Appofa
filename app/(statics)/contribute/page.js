@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import StaticPageLayout from '@/components/StaticPageLayout';
 
 export const metadata = {
   title: 'Συνεργασία με νόημα - Απόφαση',
@@ -7,13 +8,8 @@ export const metadata = {
 
 export default function ContributePage() {
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container">
-        <h1 className="text-4xl font-bold mb-8">Συνεργασία με νόημα</h1>
-
-        <div className="card p-8">
-          <div className="max-w-4xl space-y-12">
-            <section>
+    <StaticPageLayout title="Συνεργασία με νόημα">
+      <section>
               <h2 className="text-2xl font-semibold mb-3">Το Apofasi χτίζεται από την κοινότητα</h2>
               <p className="text-gray-700 mb-4">
                 Το Apofasi υπάρχει για να προσφέρει καθαρή, διαφανή ενημέρωση και μια ειλικρινή εικόνα της διάθεσης της
@@ -146,9 +142,6 @@ export default function ContributePage() {
                 </li>
               </ul>
             </section>
-          </div>
-        </div>
-      </div>
-    </div>
+    </StaticPageLayout>
   );
 }

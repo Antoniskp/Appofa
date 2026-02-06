@@ -1,3 +1,5 @@
+import StaticPageLayout from '@/components/StaticPageLayout';
+
 export const metadata = {
   title: 'Αποστολή - Απόφαση',
   description: 'Η αποστολή και οι αρχές του Apofasi',
@@ -5,13 +7,8 @@ export const metadata = {
 
 export default function MissionPage() {
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container">
-        <h1 className="text-4xl font-bold mb-8">Αποστολή</h1>
-
-        <div className="card p-8">
-          <div className="max-w-4xl space-y-12">
-            <section>
+    <StaticPageLayout title="Αποστολή">
+      <section>
               <h2 className="text-2xl font-semibold mb-3">Τι προσπαθούμε να πετύχουμε</h2>
               <p className="text-gray-700 mb-4">
                 Ένας καθαρός, διαφανής τρόπος να βλέπουμε την ενημέρωση και τη διάθεση της κοινωνίας.
@@ -208,9 +205,6 @@ export default function MissionPage() {
                 </ul>
               </div>
             </section>
-          </div>
-        </div>
-      </div>
-    </div>
+    </StaticPageLayout>
   );
 }

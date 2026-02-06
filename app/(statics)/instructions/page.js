@@ -1,3 +1,5 @@
+import StaticPageLayout from '@/components/StaticPageLayout';
+
 export const metadata = {
   title: 'Οδηγίες Χρήσης - Απόφαση',
   description: 'Μάθετε πώς να χρησιμοποιείτε την πλατφόρμα Απόφαση και πώς να δημιουργείτε άρθρα',
@@ -5,14 +7,9 @@ export const metadata = {
 
 export default function InstructionsPage() {
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container">
-        <h1 className="text-4xl font-bold mb-8">Οδηγίες Χρήσης</h1>
-
-        <div className="card p-8">
-          <div className="max-w-4xl space-y-12">
-            {/* Section 1: Introduction */}
-            <section>
+    <StaticPageLayout title="Οδηγίες Χρήσης">
+      {/* Section 1: Introduction */}
+      <section>
               <h2 className="text-2xl font-semibold mb-3">Καλώς ήρθατε στην Απόφαση</h2>
               <p className="text-gray-700 mb-4">
                 Η πλατφόρμα Απόφαση σας επιτρέπει να δημιουργείτε και να μοιράζεστε άρθρα και ειδήσεις με την κοινότητα.
@@ -449,9 +446,6 @@ export default function InstructionsPage() {
                 <li>Μάθετε πώς μπορείτε να <a href="/contribute" className="text-blue-600 hover:underline font-semibold">Συνεισφέρετε</a> στην κοινότητα</li>
               </ul>
             </section>
-          </div>
-        </div>
-      </div>
-    </div>
+    </StaticPageLayout>
   );
 }
