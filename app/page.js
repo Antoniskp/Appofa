@@ -45,7 +45,7 @@ export default function HomePage() {
         
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <SkeletonLoader count={6} variant="grid" />
+            <SkeletonLoader type="card" count={6} variant="grid" />
           </div>
         )}
 
