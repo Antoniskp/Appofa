@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import AlertMessage from '@/components/AlertMessage';
+import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/FormInput';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -16,6 +16,7 @@ const DEFAULT_AVATAR_COLOR = '#64748b';
 
 function ProfileContent() {
   const { user, updateProfile } = useAuth();
+  const { success, error } = useToast();
   const searchParams = useSearchParams();
   const [profileData, setProfileData] = useState({
     username: '',
@@ -33,10 +34,6 @@ function ProfileContent() {
     newPassword: '',
     confirmPassword: '',
   });
-  const [profileMessage, setProfileMessage] = useState('');
-  const [profileError, setProfileError] = useState('');
-  const [passwordMessage, setPasswordMessage] = useState('');
-  const [passwordError, setPasswordError] = useState('');
   const { config: oauthConfig } = useOAuthConfig();
   const [githubLinked, setGithubLinked] = useState(false);
 
@@ -76,29 +73,29 @@ function ProfileContent() {
           }
         }
       },
-      onError: (error) => {
-        setProfileError(error || 'Failed to load profile.');
+      onError: (err) => {
+        error(err || 'Failed to load profile.');
       }
     }
   );
 
   useEffect(() => {
     // Handle OAuth callback messages
-    const success = searchParams.get('success');
-    const error = searchParams.get('error');
+    const successParam = searchParams.get('success');
+    const errorParam = searchParams.get('error');
 
-    if (success === 'github_linked') {
-      setProfileMessage('GitHub account linked successfully!');
+    if (successParam === 'github_linked') {
+      success('GitHub account linked successfully!');
       setGithubLinked(true);
-    } else if (error) {
+    } else if (errorParam) {
       const errorMessages = {
         unauthorized: 'Unauthorized to link account',
         user_not_found: 'User not found',
         github_already_linked: 'This GitHub account is already linked to another user'
       };
-      setProfileError(errorMessages[error] || 'Failed to link GitHub account');
+      error(errorMessages[errorParam] || 'Failed to link GitHub account');
     }
-  }, [searchParams]);
+  }, [searchParams, success, error]);
 
   useEffect(() => {
     setAvatarLoadError(false);
@@ -122,14 +119,12 @@ function ProfileContent() {
 
   const handleProfileSubmit = async (event) => {
     event.preventDefault();
-    setProfileError('');
-    setProfileMessage('');
 
     try {
       await updateProfile(profileData);
-      setProfileMessage('Profile updated successfully.');
-    } catch (error) {
-      setProfileError(error.message || 'Failed to update profile.');
+      success('Profile updated successfully!');
+    } catch (err) {
+      error(err.message || 'Failed to update profile.');
     }
   };
 
@@ -143,16 +138,14 @@ function ProfileContent() {
 
   const handlePasswordSubmit = async (event) => {
     event.preventDefault();
-    setPasswordError('');
-    setPasswordMessage('');
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('New password and confirmation do not match.');
+      error('New password and confirmation do not match.');
       return;
     }
 
     if (passwordData.newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters.');
+      error('New password must be at least 6 characters.');
       return;
     }
 
@@ -161,9 +154,9 @@ function ProfileContent() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
-      setPasswordMessage('Password updated successfully.');
-    } catch (error) {
-      setPasswordError(error.message || 'Failed to update password.');
+      success('Password updated successfully!');
+    } catch (err) {
+      error(err.message || 'Failed to update password.');
     } finally {
       resetPasswordData();
     }
@@ -175,8 +168,8 @@ function ProfileContent() {
       if (response.success && response.data.authUrl) {
         window.location.href = response.data.authUrl;
       }
-    } catch (error) {
-      setProfileError(error.message || 'Failed to initiate GitHub linking');
+    } catch (err) {
+      error(err.message || 'Failed to initiate GitHub linking');
     }
   };
 
@@ -188,11 +181,11 @@ function ProfileContent() {
     try {
       const response = await authAPI.unlinkGithub();
       if (response.success) {
-        setProfileMessage('GitHub account unlinked successfully.');
+        success('GitHub account disconnected');
         setGithubLinked(false);
       }
-    } catch (error) {
-      setProfileError(error.message || 'Failed to unlink GitHub account.');
+    } catch (err) {
+      error(err.message || 'Failed to unlink GitHub account.');
     }
   };
 
@@ -222,8 +215,6 @@ function ProfileContent() {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Update profile information</h2>
-          <AlertMessage className="mb-4" message={profileError} />
-          <AlertMessage className="mb-4" tone="success" message={profileMessage} />
           <form className="space-y-4" onSubmit={handleProfileSubmit}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -345,8 +336,6 @@ function ProfileContent() {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Change password</h2>
-          <AlertMessage className="mb-4" message={passwordError} />
-          <AlertMessage className="mb-4" tone="success" message={passwordMessage} />
           <form className="space-y-4" onSubmit={handlePasswordSubmit}>
             <FormInput
               name="currentPassword"

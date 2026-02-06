@@ -93,6 +93,17 @@ select:-webkit-autofill:focus {
   }
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .animate-fadeIn {
   animation: fadeIn 0.2s ease-out;
 }
@@ -103,4 +114,8 @@ select:-webkit-autofill:focus {
 
 .animate-slideDown {
   animation: slideDown 0.2s ease-out;
+}
+
+.animate-slideIn {
+  animation: slideIn 0.3s ease-out;
 }

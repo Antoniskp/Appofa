@@ -6,7 +6,6 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge, { StatusBadge } from '@/components/Badge';
-import AlertMessage from '@/components/AlertMessage';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import AdminTable from '@/components/admin/AdminTable';
@@ -31,7 +30,6 @@ function AdminDashboardContent() {
       viewer: 0,
     },
   });
-  const [userRoleError, setUserRoleError] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
@@ -116,7 +114,6 @@ function AdminDashboardContent() {
 
   const handleRoleChange = async (userId, newRole) => {
     try {
-      setUserRoleError('');
       const response = await authAPI.updateUserRole(userId, newRole);
       if (response.success) {
         // Refetch users to get the updated list
@@ -124,7 +121,6 @@ function AdminDashboardContent() {
         addToast('User role updated successfully!', { type: 'success' });
       }
     } catch (error) {
-      setUserRoleError(error.message || 'Failed to update user role.');
       addToast(`Failed to update user role: ${error.message}`, { type: 'error' });
     }
   };
@@ -326,8 +322,6 @@ function AdminDashboardContent() {
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-xl font-semibold">Users</h2>
           </div>
-
-          <AlertMessage className="mx-6 mt-4" message={userRoleError} />
 
           <AdminTable
             columns={[

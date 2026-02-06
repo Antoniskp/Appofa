@@ -7,7 +7,6 @@ import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
-import AlertMessage from '@/components/AlertMessage';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
 import Button from '@/components/Button';
@@ -19,6 +18,7 @@ export default function ArticleDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const { error: toastError } = useToast();
   const { article, loading, error } = useFetchArticle(params.id);
   const { canEditArticle, canDeleteArticle } = usePermissions();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -46,9 +46,12 @@ export default function ArticleDetailPage() {
   }
 
   if (error || !article) {
+    if (error) {
+      toastError(error || 'Article not found');
+    }
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <AlertMessage message={`Error loading article: ${error || 'Article not found'}`} />
+        <p className="text-red-600 mb-4">Error loading article: {error || 'Article not found'}</p>
         <nav aria-label="Breadcrumb" className="mt-4">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>

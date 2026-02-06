@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import AlertMessage from '@/components/AlertMessage';
+import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/FormInput';
 import OAuthButtons from '@/components/OAuthButtons';
 import AuthDivider from '@/components/AuthDivider';
@@ -15,6 +15,7 @@ import Button from '@/components/Button';
 export default function RegisterPage() {
   const router = useRouter();
   const { register, user } = useAuth();
+  const { success, error } = useToast();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -24,7 +25,6 @@ export default function RegisterPage() {
     lastName: '',
     searchable: true,
   });
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { config: oauthConfig } = useOAuthConfig();
 
@@ -43,11 +43,10 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      error('Passwords do not match');
       return;
     }
 
@@ -56,9 +55,10 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
+      success('Account created successfully! Welcome!');
       router.push('/');
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.');
+      error(err.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export default function RegisterPage() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      setError(err.message || 'Failed to initiate GitHub signup');
+      error(err.message || 'Failed to initiate GitHub signup');
       setLoading(false);
     }
   };
@@ -92,7 +92,6 @@ export default function RegisterPage() {
           </p>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <AlertMessage message={error} />
           <div className="space-y-4">
             <FormInput
               name="username"

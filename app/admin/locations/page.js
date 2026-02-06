@@ -4,7 +4,7 @@ import { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { locationAPI } from '@/lib/api';
 import Badge from '@/components/Badge';
-import AlertMessage from '@/components/AlertMessage';
+import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import AdminTable from '@/components/admin/AdminTable';
@@ -15,8 +15,7 @@ import Button from '@/components/Button';
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
 
 function LocationManagementContent() {
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  const { success, error: toastError } = useToast();
   const {
     filters,
     handleFilterChange,
@@ -53,7 +52,7 @@ function LocationManagementContent() {
     {
       initialData: [],
       onError: (err) => {
-        setError(err || 'Failed to load locations');
+        toastError(err || 'Failed to load locations');
       }
     }
   );
@@ -85,8 +84,6 @@ function LocationManagementContent() {
       });
     }
     setShowModal(true);
-    setError('');
-    setSuccessMessage('');
   };
 
   const handleCloseModal = () => {
@@ -105,7 +102,6 @@ function LocationManagementContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    setError('');
 
     try {
       const payload = {
@@ -123,27 +119,26 @@ function LocationManagementContent() {
       }
 
       if (response.success) {
-        setSuccessMessage(editingLocation ? 'Location updated successfully!' : 'Location created successfully!');
+        success(editingLocation ? 'Location updated successfully!' : 'Location created successfully!');
         handleCloseModal();
         refetch();
       }
     } catch (err) {
-      setError(err.message || 'Failed to save location');
+      toastError(err.message || 'Failed to save location');
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (location) => {
-    setError('');
     try {
       const response = await locationAPI.delete(location.id);
       if (response.success) {
-        setSuccessMessage('Location deleted successfully!');
+        success('Location deleted successfully!');
         refetch();
       }
     } catch (err) {
-      setError(err.message || 'Failed to delete location');
+      toastError(err.message || 'Failed to delete location');
     }
   };
 
@@ -173,9 +168,6 @@ function LocationManagementContent() {
           actionText="Add Location"
           onAction={() => handleOpenModal()}
         />
-
-        {error && <AlertMessage message={error} tone="error" className="mb-6" />}
-        {successMessage && <AlertMessage message={successMessage} tone="success" className="mb-6" />}
 
         <div className="bg-white rounded-lg shadow mb-6">
           <div className="p-6 border-b border-gray-200">

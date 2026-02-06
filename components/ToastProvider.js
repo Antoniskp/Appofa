@@ -1,16 +1,60 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { 
+  CheckCircleIcon, 
+  XCircleIcon, 
+  ExclamationTriangleIcon, 
+  InformationCircleIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 
 const ToastContext = createContext(null);
 
+const DEFAULT_TOAST_DURATION = 4000;
+const ERROR_TOAST_DURATION = 6000;
+
 const toastStyles = {
-  success: 'bg-green-600 text-white',
-  error: 'bg-red-600 text-white',
-  info: 'bg-blue-600 text-white',
+  success: {
+    bg: 'bg-green-50',
+    border: 'border-green-200',
+    text: 'text-green-800',
+    icon: CheckCircleIcon,
+    iconColor: 'text-green-500'
+  },
+  error: {
+    bg: 'bg-red-50',
+    border: 'border-red-200',
+    text: 'text-red-800',
+    icon: XCircleIcon,
+    iconColor: 'text-red-500'
+  },
+  warning: {
+    bg: 'bg-orange-50',
+    border: 'border-orange-200',
+    text: 'text-orange-800',
+    icon: ExclamationTriangleIcon,
+    iconColor: 'text-orange-500'
+  },
+  info: {
+    bg: 'bg-blue-50',
+    border: 'border-blue-200',
+    text: 'text-blue-800',
+    icon: InformationCircleIcon,
+    iconColor: 'text-blue-500'
+  }
 };
 
-export function ToastProvider({ children }) {
+const positions = {
+  'top-right': 'top-4 right-4',
+  'top-center': 'top-4 left-1/2 -translate-x-1/2',
+  'top-left': 'top-4 left-4',
+  'bottom-right': 'bottom-4 right-4',
+  'bottom-center': 'bottom-4 left-1/2 -translate-x-1/2',
+  'bottom-left': 'bottom-4 left-4'
+};
+
+export function ToastProvider({ children, position = 'top-right', maxToasts = 5 }) {
   const [toasts, setToasts] = useState([]);
   const timeoutsRef = useRef(new Map());
   const fallbackCounterRef = useRef(0);
@@ -31,22 +75,55 @@ export function ToastProvider({ children }) {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  /**
+   * Add a toast notification
+   * @param {string} message - The message to display
+   * @param {Object} options - Toast options
+   * @param {string} options.type - Toast type: 'success', 'error', 'warning', 'info'
+   * @param {number} options.duration - Auto-dismiss duration in milliseconds
+   * @param {Object} options.action - Action button with label and onClick
+   * @param {boolean} options.persistent - If true, toast won't auto-dismiss
+   * @param {React.Component} options.icon - Custom icon component
+   * @returns {string} Toast ID for programmatic removal
+   */
   const addToast = useCallback((message, options = {}) => {
-    const { type = 'info' } = options;
-    const resolvedDuration = typeof options.duration === 'number'
-      ? options.duration
-      : (type === 'error' ? 6000 : 4000);
+    const { 
+      type = 'info',
+      duration,
+      action,
+      persistent = false,
+      icon
+    } = options;
+    
+    const resolvedDuration = duration ?? (type === 'error' ? ERROR_TOAST_DURATION : DEFAULT_TOAST_DURATION);
     const id = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${fallbackCounterRef.current++}`;
-    setToasts((prev) => [...prev, { id, message, type }]);
-    if (resolvedDuration > 0) {
+    
+    const newToast = { id, message, type, action, icon };
+    
+    setToasts((prev) => {
+      const updated = [...prev, newToast];
+      // Limit number of toasts
+      return updated.slice(-maxToasts);
+    });
+    
+    if (!persistent && resolvedDuration > 0) {
       const timeoutId = setTimeout(() => removeToast(id), resolvedDuration);
       timeoutsRef.current.set(id, timeoutId);
     }
-  }, [removeToast]);
+    
+    return id;
+  }, [removeToast, maxToasts]);
 
-  const value = useMemo(() => ({ addToast }), [addToast]);
+  const value = useMemo(() => ({ 
+    addToast,
+    success: (message, options) => addToast(message, { ...options, type: 'success' }),
+    error: (message, options) => addToast(message, { ...options, type: 'error' }),
+    warning: (message, options) => addToast(message, { ...options, type: 'warning' }),
+    info: (message, options) => addToast(message, { ...options, type: 'info' }),
+    removeToast
+  }), [addToast, removeToast]);
 
   const hasErrorToast = toasts.some((toast) => toast.type === 'error');
 
@@ -54,28 +131,55 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={value}>
       {children}
       <div
-        className="fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3 px-4 sm:px-0"
+        className={`fixed z-50 flex flex-col gap-3 w-full max-w-sm px-4 sm:px-0 ${positions[position]}`}
         aria-live={hasErrorToast ? 'assertive' : 'polite'}
         aria-relevant="additions text"
         aria-atomic="true"
       >
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            className={`flex items-start justify-between gap-4 rounded-lg px-4 py-3 text-sm shadow-lg ${toastStyles[toast.type] || toastStyles.info}`}
-            role={toast.type === 'error' ? 'alert' : 'status'}
-          >
-            <span>{toast.message}</span>
-            <button
-              type="button"
-              onClick={() => removeToast(toast.id)}
-              className="text-white/80 hover:text-white"
-              aria-label="Dismiss notification"
+        {toasts.map((toast) => {
+          const style = toastStyles[toast.type];
+          const IconComponent = toast.icon || style.icon;
+          
+          return (
+            <div
+              key={toast.id}
+              className={`flex items-start gap-3 p-4 rounded-lg border shadow-lg ${style.bg} ${style.border} ${style.text} animate-slideIn`}
+              role={toast.type === 'error' ? 'alert' : 'status'}
             >
-              ×
-            </button>
-          </div>
-        ))}
+              {/* Icon */}
+              <IconComponent className={`h-5 w-5 flex-shrink-0 ${style.iconColor}`} aria-hidden="true" />
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{toast.message}</p>
+                
+                {/* Action button */}
+                {toast.action && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.action.onClick();
+                      removeToast(toast.id);
+                    }}
+                    className={`mt-2 text-xs font-semibold underline hover:no-underline ${style.text}`}
+                  >
+                    {toast.action.label}
+                  </button>
+                )}
+              </div>
+              
+              {/* Close button */}
+              <button
+                type="button"
+                onClick={() => removeToast(toast.id)}
+                className={`flex-shrink-0 ${style.text} hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-current rounded`}
+                aria-label="Dismiss notification"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </ToastContext.Provider>
   );

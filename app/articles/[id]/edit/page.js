@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import AlertMessage from '@/components/AlertMessage';
+import { useToast } from '@/components/ToastProvider';
 import ArticleForm from '@/components/ArticleForm';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -15,10 +15,25 @@ function EditArticlePageContent() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { article, loading, error, refetch } = useFetchArticle(params.id);
+  const { success, error } = useToast();
+  const { article, loading, error: loadError, refetch } = useFetchArticle(params.id);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const { canEditArticle } = usePermissions();
+
+  // Show error toast only when loading completes with an error
+  useEffect(() => {
+    if (!loading && loadError) {
+      error('Article not found');
+    }
+  }, [loading, loadError, error]);
+
+  // Show permission error toast only once when permission check fails
+  useEffect(() => {
+    if (!loading && article && !canEditArticle(article)) {
+      error('You do not have permission to edit this article.');
+    }
+  }, [loading, article, canEditArticle, error]);
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);
@@ -27,6 +42,7 @@ function EditArticlePageContent() {
     try {
       const response = await articleAPI.update(params.id, formData);
       if (response.success) {
+        success('Article updated successfully!');
         router.push(`/articles/${params.id}`);
       } else {
         setSubmitError(response.message || 'Failed to update article. Please try again.');
@@ -46,10 +62,10 @@ function EditArticlePageContent() {
     );
   }
 
-  if (error || !article) {
+  if (!article) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <AlertMessage message={`Error loading article: ${error || 'Article not found'}`} />
+        <p className="text-red-600 mb-4">Article not found</p>
         <Link href="/articles" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
           ← Back to Articles
         </Link>
@@ -60,7 +76,7 @@ function EditArticlePageContent() {
   if (!canEditArticle(article)) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <AlertMessage message="You do not have permission to edit this article." />
+        <p className="text-red-600 mb-4">You do not have permission to edit this article.</p>
         <Link href={`/articles/${article.id}`} className="inline-block mt-4 text-blue-600 hover:text-blue-800">
           ← Back to Article
         </Link>
