@@ -9,6 +9,7 @@ import AuthInput from '@/components/AuthInput';
 import OAuthButtons from '@/components/OAuthButtons';
 import AuthDivider from '@/components/AuthDivider';
 import { authAPI } from '@/lib/api';
+import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -24,23 +25,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [oauthConfig, setOauthConfig] = useState({ github: false, google: false, facebook: false });
-
-  useEffect(() => {
-    // Load OAuth configuration
-    const loadOAuthConfig = async () => {
-      try {
-        const response = await authAPI.getOAuthConfig();
-        if (response.success) {
-          setOauthConfig(response.data);
-        }
-      } catch (err) {
-        console.error('Failed to load OAuth config:', err);
-      }
-    };
-
-    loadOAuthConfig();
-  }, []);
+  const { config: oauthConfig } = useOAuthConfig();
 
   // Redirect if already logged in
   if (user) {

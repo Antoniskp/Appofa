@@ -9,6 +9,7 @@ import AuthInput from '@/components/AuthInput';
 import OAuthButtons from '@/components/OAuthButtons';
 import AuthDivider from '@/components/AuthDivider';
 import { authAPI } from '@/lib/api';
+import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 
 function LoginForm() {
   const router = useRouter();
@@ -20,23 +21,9 @@ function LoginForm() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [oauthConfig, setOauthConfig] = useState({ github: false, google: false, facebook: false });
+  const { config: oauthConfig } = useOAuthConfig();
 
   useEffect(() => {
-    // Load OAuth configuration
-    const loadOAuthConfig = async () => {
-      try {
-        const response = await authAPI.getOAuthConfig();
-        if (response.success) {
-          setOauthConfig(response.data);
-        }
-      } catch (err) {
-        console.error('Failed to load OAuth config:', err);
-      }
-    };
-
-    loadOAuthConfig();
-
     // Handle OAuth callback
     const errorParam = searchParams.get('error');
 

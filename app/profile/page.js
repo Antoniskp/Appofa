@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -34,7 +35,7 @@ function ProfileContent() {
   const [profileError, setProfileError] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
-  const [oauthConfig, setOauthConfig] = useState({ github: false, google: false, facebook: false });
+  const { config: oauthConfig } = useOAuthConfig();
   const [githubLinked, setGithubLinked] = useState(false);
 
   // Load profile using the hook
@@ -80,19 +81,6 @@ function ProfileContent() {
   );
 
   useEffect(() => {
-    const loadOAuthConfig = async () => {
-      try {
-        const response = await authAPI.getOAuthConfig();
-        if (response.success) {
-          setOauthConfig(response.data);
-        }
-      } catch (err) {
-        console.error('Failed to load OAuth config:', err);
-      }
-    };
-
-    loadOAuthConfig();
-
     // Handle OAuth callback messages
     const success = searchParams.get('success');
     const error = searchParams.get('error');
