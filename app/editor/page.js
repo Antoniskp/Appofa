@@ -10,6 +10,7 @@ import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleT
 import { useToast } from '@/components/ToastProvider';
 import ArticleForm from '@/components/ArticleForm';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { usePermissions } from '@/hooks/usePermissions';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ function EditorDashboardContent() {
   const [showForm, setShowForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const { canEditArticle, canDeleteArticle } = usePermissions();
 
   const { data: articles, loading, refetch } = useAsyncData(
     async () => {
@@ -127,9 +129,6 @@ function EditorDashboardContent() {
           ) : (
             <div className="divide-y divide-gray-200">
               {articles.slice(0, 10).map((article) => {
-                const canEdit = user.role === 'admin' || user.role === 'editor' || user.id === article.authorId;
-                const canDelete = user.role === 'admin' || user.id === article.authorId;
-                
                 return (
                   <div key={article.id} className="p-6 hover:bg-gray-50">
                     <div className="flex justify-between items-start">
@@ -184,7 +183,7 @@ function EditorDashboardContent() {
                         >
                           View
                         </Link>
-                        {canDelete && (
+                        {canDeleteArticle(article) && (
                           <button
                             onClick={() => handleDelete(article.id)}
                             className="text-red-600 hover:text-red-800 text-sm"

@@ -8,6 +8,7 @@ import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleT
 import { useToast } from '@/components/ToastProvider';
 import AlertMessage from '@/components/AlertMessage';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -15,6 +16,7 @@ export default function ArticleDetailPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
   const { article, loading, error } = useFetchArticle(params.id);
+  const { canEditArticle, canDeleteArticle } = usePermissions();
 
   const isNews = article?.type === 'news' || article?.isNews;
   const breadcrumbLabel = isNews ? 'News' : 'Articles';
@@ -61,8 +63,6 @@ export default function ArticleDetailPage() {
     );
   }
 
-  const canEdit = user && (user.role === 'admin' || user.role === 'editor' || user.id === article.authorId);
-  const canDelete = user && (user.role === 'admin' || user.id === article.authorId);
   const defaultBannerImageUrl = '/images/branding/news default.png';
   const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
   const handleBannerError = (event) => {
@@ -155,9 +155,9 @@ export default function ArticleDetailPage() {
             </div>
 
             {/* Action Buttons */}
-            {(canEdit || canDelete) && (
+            {(canEditArticle(article) || canDeleteArticle(article)) && (
               <div className="flex gap-4 pt-8 border-t border-gray-200">
-                {canEdit && (
+                {canEditArticle(article) && (
                   <Link
                     href={`/articles/${article.id}/edit`}
                     className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
@@ -165,7 +165,7 @@ export default function ArticleDetailPage() {
                     Edit Article
                   </Link>
                 )}
-                {canDelete && (
+                {canDeleteArticle(article) && (
                   <button
                     onClick={handleDelete}
                     className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
