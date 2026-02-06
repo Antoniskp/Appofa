@@ -582,7 +582,7 @@ exports.getLocationEntities = async (req, res) => {
     // Fetch all articles and users in batch queries
     const articles = articleIds.length > 0 ? await Article.findAll({
       where: { id: articleIds },
-      attributes: ['id', 'title', 'summary', 'status', 'createdAt'],
+      attributes: ['id', 'title', 'summary', 'status', 'type', 'createdAt'],
       include: [
         {
           model: User,
