@@ -5,11 +5,12 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI } from '@/lib/api';
 import Badge from '@/components/Badge';
-import AlertMessage from '@/components/AlertMessage';
+import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 
 export default function LocationDetailPage() {
   const params = useParams();
+  const { error: toastError } = useToast();
   const [entities, setEntities] = useState({ articles: [], users: [] });
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
@@ -59,6 +60,7 @@ export default function LocationDetailPage() {
       },
       onError: (err) => {
         console.error('Failed to load location:', err);
+        toastError(err || 'Location not found');
       }
     }
   );
@@ -74,7 +76,7 @@ export default function LocationDetailPage() {
   if (error || !location) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <AlertMessage message={error || 'Location not found'} />
+        <p className="text-red-600 mb-4">{error || 'Location not found'}</p>
         <Link href="/" className="inline-block mt-4 text-blue-600 hover:text-blue-800">
           ← Back to Home
         </Link>
