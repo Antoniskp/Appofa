@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, CheckIcon, XMarkIcon, TrashIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import Card, { StatsCard } from '@/components/Card';
 import Badge, { StatusBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -136,63 +137,74 @@ function AdminDashboardContent() {
         <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
 
         {/* Welcome Message */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <Card className="mb-8">
           <h2 className="text-xl font-semibold mb-2">Welcome, {user?.username}!</h2>
           <p className="text-gray-600">
             You have {user?.role} access. You can {user?.role === 'admin' ? 'create, edit, and delete all articles' : 'approve news submissions and manage content'}.
           </p>
-        </div>
+        </Card>
 
         {/* Article Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Total Articles</h3>
-            <p className="text-3xl font-bold mt-2">{stats.total}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Published</h3>
-            <p className="text-3xl font-bold mt-2 text-green-600">{stats.published}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Drafts</h3>
-            <p className="text-3xl font-bold mt-2 text-yellow-600">{stats.draft}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Archived</h3>
-            <p className="text-3xl font-bold mt-2 text-gray-600">{stats.archived}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Pending News</h3>
-            <p className="text-3xl font-bold mt-2 text-orange-600">{stats.pendingNews}</p>
-          </div>
+          <StatsCard
+            title="Total Articles"
+            value={stats.total}
+            icon={DocumentTextIcon}
+          />
+          <StatsCard
+            title="Published"
+            value={stats.published}
+            icon={CheckIcon}
+          />
+          <StatsCard
+            title="Drafts"
+            value={stats.draft}
+            icon={PencilIcon}
+          />
+          <StatsCard
+            title="Archived"
+            value={stats.archived}
+            icon={ArchiveBoxIcon}
+          />
+          <StatsCard
+            title="Pending News"
+            value={stats.pendingNews}
+            icon={NewspaperIcon}
+            variant="elevated"
+          />
         </div>
 
         {/* User Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Total Users</h3>
-            <p className="text-3xl font-bold mt-2">{userStats.total}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Admins</h3>
-            <p className="text-3xl font-bold mt-2 text-purple-600">{userStats.byRole.admin}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Moderators</h3>
-            <p className="text-3xl font-bold mt-2 text-blue-600">{userStats.byRole.moderator}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Editors</h3>
-            <p className="text-3xl font-bold mt-2 text-green-600">{userStats.byRole.editor}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h3 className="text-gray-500 text-sm font-medium">Viewers</h3>
-            <p className="text-3xl font-bold mt-2 text-gray-600">{userStats.byRole.viewer}</p>
-          </div>
+          <StatsCard
+            title="Total Users"
+            value={userStats.total}
+            icon={UserGroupIcon}
+          />
+          <StatsCard
+            title="Admins"
+            value={userStats.byRole.admin}
+            icon={ShieldCheckIcon}
+          />
+          <StatsCard
+            title="Moderators"
+            value={userStats.byRole.moderator}
+            icon={UserIcon}
+          />
+          <StatsCard
+            title="Editors"
+            value={userStats.byRole.editor}
+            icon={UserIcon}
+          />
+          <StatsCard
+            title="Viewers"
+            value={userStats.byRole.viewer}
+            icon={UserIcon}
+          />
         </div>
 
         {/* Quick Actions */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <Card className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
           <div className="flex flex-wrap gap-4">
             <Link
@@ -220,13 +232,13 @@ function AdminDashboardContent() {
               System Health
             </Link>
           </div>
-        </div>
+        </Card>
 
         {/* Recent Articles Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">All Articles</h2>
-          </div>
+        <Card 
+          className="overflow-hidden"
+          header={<h2 className="text-xl font-semibold">All Articles</h2>}
+        >
           
           <AdminTable
             columns={[
@@ -319,13 +331,13 @@ function AdminDashboardContent() {
             emptyMessage="No articles found."
             actions={false}
           />
-        </div>
+        </Card>
 
         {/* Users Table */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden mt-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Users</h2>
-          </div>
+        <Card 
+          className="overflow-hidden mt-8"
+          header={<h2 className="text-xl font-semibold">Users</h2>}
+        >
 
           <AdminTable
             columns={[
@@ -371,7 +383,7 @@ function AdminDashboardContent() {
             emptyMessage="No users found."
             actions={false}
           />
-        </div>
+        </Card>
       </div>
 
       {/* Delete Confirmation Dialog */}

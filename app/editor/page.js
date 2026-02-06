@@ -7,6 +7,7 @@ import { EyeIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import Card from '@/components/Card';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import ArticleForm from '@/components/ArticleForm';
@@ -86,22 +87,25 @@ function EditorDashboardContent() {
         <h1 className="text-4xl font-bold mb-8">Article Dashboard</h1>
 
         {/* Welcome Message */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <Card className="mb-8">
           <h2 className="text-2xl font-semibold mb-2">Welcome, {user?.username}!</h2>
           <p className="text-gray-600">
             You can create and manage articles here.
           </p>
-        </div>
+        </Card>
 
         {/* Create Article Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">Create New Article</h2>
-            <Button onClick={() => setShowForm(!showForm)} variant="primary">
-              {showForm ? 'Hide Form' : 'Show Form'}
-            </Button>
-          </div>
-
+        <Card 
+          header={
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Create New Article</h2>
+              <Button onClick={() => setShowForm(!showForm)} variant="primary">
+                {showForm ? 'Hide Form' : 'Show Form'}
+              </Button>
+            </div>
+          }
+          className="mb-8"
+        >
           {showForm && (
             <ArticleForm
               article={null}
@@ -111,13 +115,13 @@ function EditorDashboardContent() {
               submitError={submitError}
             />
           )}
-        </div>
+        </Card>
 
         {/* Articles List */}
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Recent Articles</h2>
-          </div>
+        <Card 
+          className="overflow-hidden"
+          header={<h2 className="text-xl font-semibold">Recent Articles</h2>}
+        >
 
           {loading ? (
             <SkeletonLoader type="card" count={5} variant="list" />
@@ -204,7 +208,7 @@ function EditorDashboardContent() {
               </Link>
             </div>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Delete Confirmation Dialog */}

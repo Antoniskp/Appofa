@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import Card from '@/components/Card';
+import Badge from '@/components/Badge';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -12,8 +14,9 @@ export default function UserCard({ user }) {
     : user.firstName || user.lastName || '';
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+    <Card hoverable href={`/users/${user.id}`}>
       <div className="flex items-center gap-4">
+        {/* Avatar */}
         <div
           className="h-16 w-16 rounded-full border border-gray-200 flex items-center justify-center text-white text-xl font-semibold flex-shrink-0"
           style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
@@ -29,18 +32,29 @@ export default function UserCard({ user }) {
             <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
           )}
         </div>
+        
+        {/* User Info */}
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 truncate">
-            {user.username}
-          </h3>
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="text-lg font-semibold text-gray-900 truncate">
+              {user.username}
+            </h3>
+            {user.role && (
+              <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
+                {user.role}
+              </Badge>
+            )}
+          </div>
+          
           {displayName && (
             <p className="text-sm text-gray-600 truncate">{displayName}</p>
           )}
+          
           <p className="text-xs text-gray-500 mt-1">
             Member since {new Date(user.createdAt).toLocaleDateString()}
           </p>
         </div>
       </div>
-    </div>
+    </Card>
   );
 }
