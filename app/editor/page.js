@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { EyeIcon, TrashIcon, PencilIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -15,6 +16,7 @@ import Button from '@/components/Button';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import { ConfirmDialog } from '@/components/Modal';
+import { TooltipIconButton } from '@/components/Tooltip';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -163,23 +165,29 @@ function EditorDashboardContent() {
                         </div>
                       </div>
                       <div className="flex gap-2 ml-4">
-                        <Link
-                          href={`/articles/${article.id}`}
-                          className="text-blue-600 hover:text-blue-800 text-sm"
-                        >
-                          View
-                        </Link>
+                        <TooltipIconButton
+                          icon={EyeIcon}
+                          tooltip="Προβολή άρθρου"
+                          onClick={() => router.push(`/articles/${article.id}`)}
+                        />
+                        {canEditArticle(article) && (
+                          <TooltipIconButton
+                            icon={PencilIcon}
+                            tooltip="Επεξεργασία άρθρου"
+                            onClick={() => router.push(`/articles/${article.id}/edit`)}
+                            variant="primary"
+                          />
+                        )}
                         {canDeleteArticle(article) && (
-                          <Button 
-                            variant="danger" 
-                            size="sm" 
+                          <TooltipIconButton
+                            icon={TrashIcon}
+                            tooltip="Διαγραφή άρθρου"
                             onClick={() => {
                               setArticleToDelete(article.id);
                               setDeleteDialogOpen(true);
                             }}
-                          >
-                            Delete
-                          </Button>
+                            variant="danger"
+                          />
                         )}
                       </div>
                     </div>

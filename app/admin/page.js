@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { EyeIcon, CheckIcon, XMarkIcon, TrashIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -10,10 +12,13 @@ import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import AdminTable from '@/components/admin/AdminTable';
 import { ConfirmDialog } from '@/components/Modal';
+import { TooltipIconButton } from '@/components/Tooltip';
+import Tooltip from '@/components/Tooltip';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const router = useRouter();
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -279,33 +284,32 @@ function AdminDashboardContent() {
                 key: 'actions',
                 header: 'Actions',
                 render: (article) => (
-                  <div className="flex gap-3 items-center justify-end">
-                    <Link
-                      href={`/articles/${article.id}`}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      View
-                    </Link>
+                  <div className="flex gap-2 items-center justify-end">
+                    <TooltipIconButton
+                      icon={EyeIcon}
+                      tooltip="Προβολή άρθρου"
+                      onClick={() => router.push(`/articles/${article.id}`)}
+                    />
                     {article.isNews && !article.newsApprovedAt && (
-                      <button
+                      <TooltipIconButton
+                        icon={CheckIcon}
+                        tooltip="Έγκριση άρθρου"
                         onClick={() => {
                           setSelectedArticle(article);
                           setApproveDialogOpen(true);
                         }}
-                        className="text-green-600 hover:text-green-900"
-                      >
-                        Approve
-                      </button>
+                        variant="primary"
+                      />
                     )}
-                    <button
+                    <TooltipIconButton
+                      icon={TrashIcon}
+                      tooltip="Διαγραφή άρθρου"
                       onClick={() => {
                         setSelectedArticle(article);
                         setDeleteDialogOpen(true);
                       }}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      Delete
-                    </button>
+                      variant="danger"
+                    />
                   </div>
                 )
               }
@@ -342,16 +346,18 @@ function AdminDashboardContent() {
                 key: 'role',
                 header: 'Role',
                 render: (user) => (
-                  <select
-                    value={user.role}
-                    onChange={(event) => handleRoleChange(user.id, event.target.value)}
-                    className="border border-gray-300 rounded px-2 py-1 text-sm"
-                  >
-                    <option value="viewer">Viewer</option>
-                    <option value="editor">Editor</option>
-                    <option value="moderator">Moderator</option>
-                    <option value="admin">Admin</option>
-                  </select>
+                  <Tooltip content="Αλλαγή ρόλου χρήστη" position="top">
+                    <select
+                      value={user.role}
+                      onChange={(event) => handleRoleChange(user.id, event.target.value)}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm"
+                    >
+                      <option value="viewer">Viewer</option>
+                      <option value="editor">Editor</option>
+                      <option value="moderator">Moderator</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </Tooltip>
                 )
               },
               {

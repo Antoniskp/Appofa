@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import DropdownMenu from '@/components/DropdownMenu';
+import Tooltip from '@/components/Tooltip';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
@@ -200,24 +201,26 @@ export default function TopNav() {
               </>
             )}
           </div>
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 sm:hidden"
-            aria-controls="mobile-menu"
-            aria-expanded={isMenuOpen}
-            onClick={() => setIsMenuOpen((open) => !open)}
-          >
-            <span className="sr-only">Open main menu</span>
-            {isMenuOpen ? (
-              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            )}
-          </button>
+          <Tooltip content={isMenuOpen ? "Κλείσιμο μενού" : "Άνοιγμα μενού"} position="bottom">
+            <button
+              type="button"
+              className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 sm:hidden"
+              aria-controls="mobile-menu"
+              aria-expanded={isMenuOpen}
+              onClick={() => setIsMenuOpen((open) => !open)}
+            >
+              <span className="sr-only">Open main menu</span>
+              {isMenuOpen ? (
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </Tooltip>
         </div>
       </div>
       <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">

@@ -3,6 +3,7 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import { ShareIcon, BookmarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
@@ -12,6 +13,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import Button from '@/components/Button';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { ConfirmDialog } from '@/components/Modal';
+import { TooltipIconButton } from '@/components/Tooltip';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -35,6 +37,24 @@ export default function ArticleDetailPage() {
     } catch (err) {
       addToast(`Failed to delete article: ${err.message}`, { type: 'error' });
     }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: article?.title,
+        text: article?.summary || article?.content?.substring(0, 200),
+        url: window.location.href
+      }).catch(err => console.log('Error sharing:', err));
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+      addToast('Link copied to clipboard!', { type: 'success' });
+    }
+  };
+
+  const handleBookmark = () => {
+    addToast('Bookmark feature coming soon!', { type: 'info' });
   };
 
   if (loading) {
@@ -133,6 +153,23 @@ export default function ArticleDetailPage() {
                     </div>
                   </>
                 )}
+                <div className="ml-auto flex gap-2">
+                  <TooltipIconButton
+                    icon={ShareIcon}
+                    tooltip="Κοινοποίηση άρθρου"
+                    onClick={handleShare}
+                  />
+                  <TooltipIconButton
+                    icon={BookmarkIcon}
+                    tooltip="Αποθήκευση"
+                    onClick={handleBookmark}
+                  />
+                  <TooltipIconButton
+                    icon={PrinterIcon}
+                    tooltip="Εκτύπωση"
+                    onClick={() => window.print()}
+                  />
+                </div>
               </div>
             </div>
 

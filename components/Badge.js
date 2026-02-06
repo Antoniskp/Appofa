@@ -1,5 +1,7 @@
 'use client';
 
+import Tooltip from '@/components/Tooltip';
+
 /**
  * Reusable badge component for tags, statuses, categories
  * 
@@ -86,20 +88,48 @@ export default function Badge({
  */
 export function StatusBadge({ status, size = 'sm', className = '' }) {
   const statusMap = {
-    published: { variant: 'success', label: 'Published' },
-    draft: { variant: 'warning', label: 'Draft' },
-    archived: { variant: 'danger', label: 'Archived' },
-    active: { variant: 'success', label: 'Active' },
-    inactive: { variant: 'default', label: 'Inactive' },
-    pending: { variant: 'warning', label: 'Pending' }
+    published: { 
+      variant: 'success', 
+      label: 'Published',
+      tooltip: 'Το άρθρο είναι δημοσιευμένο και ορατό σε όλους'
+    },
+    draft: { 
+      variant: 'warning', 
+      label: 'Draft',
+      tooltip: 'Το άρθρο είναι πρόχειρο και δεν είναι ορατό'
+    },
+    archived: { 
+      variant: 'danger', 
+      label: 'Archived',
+      tooltip: 'Το άρθρο έχει αρχειοθετηθεί'
+    },
+    active: { 
+      variant: 'success', 
+      label: 'Active',
+      tooltip: 'Ενεργός'
+    },
+    inactive: { 
+      variant: 'default', 
+      label: 'Inactive',
+      tooltip: 'Ανενεργός'
+    },
+    pending: { 
+      variant: 'warning', 
+      label: 'Pending',
+      tooltip: 'Εκκρεμεί'
+    }
   };
   
   const statusConfig = statusMap[status?.toLowerCase()] || { variant: 'default', label: status };
   
   return (
-    <Badge variant={statusConfig.variant} size={size} className={className}>
-      {statusConfig.label}
-    </Badge>
+    <Tooltip content={statusConfig.tooltip} position="top">
+      <span>
+        <Badge variant={statusConfig.variant} size={size} className={className}>
+          {statusConfig.label}
+        </Badge>
+      </span>
+    </Tooltip>
   );
 }
 

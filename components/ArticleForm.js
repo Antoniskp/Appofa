@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import Badge from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
 import FormInput from '@/components/FormInput';
@@ -9,6 +10,7 @@ import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { locationAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
+import Tooltip from '@/components/Tooltip';
 
 export default function ArticleForm({
   article = null,
@@ -183,18 +185,27 @@ export default function ArticleForm({
       />
 
       <div className="grid grid-cols-2 gap-4">
-        <FormSelect
-          name="type"
-          label="Τύπος Άρθρου (Article Type)"
-          value={formData.type}
-          onChange={handleInputChange}
-          required
-          options={Object.values(articleCategories.articleTypes).map((articleType) => ({
-            value: articleType.value,
-            label: `${articleType.labelEl} (${articleType.label})`
-          }))}
-          helpText={articleCategories.articleTypes[formData.type]?.description}
-        />
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <label className="block text-sm font-medium text-gray-700">
+              Τύπος Άρθρου (Article Type)
+            </label>
+            <Tooltip content="Επιλέξτε τον τύπο του άρθρου. 'Νέα' για ειδήσεις, 'Άρθρα' για εκπαιδευτικό περιεχόμενο.">
+              <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
+            </Tooltip>
+          </div>
+          <FormSelect
+            name="type"
+            value={formData.type}
+            onChange={handleInputChange}
+            required
+            options={Object.values(articleCategories.articleTypes).map((articleType) => ({
+              value: articleType.value,
+              label: `${articleType.labelEl} (${articleType.label})`
+            }))}
+            helpText={articleCategories.articleTypes[formData.type]?.description}
+          />
+        </div>
 
         {articleCategories.articleTypes[formData.type]?.categories.length > 0 ? (
           <FormSelect

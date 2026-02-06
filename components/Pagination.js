@@ -1,6 +1,7 @@
 'use client';
 
 import Button from '@/components/Button';
+import Tooltip from '@/components/Tooltip';
 
 /**
  * Reusable pagination component
@@ -53,14 +54,18 @@ export default function Pagination({
       {/* First page */}
       {startPage > 1 && (
         <>
-          <Button
-            onClick={() => onPageChange(1)}
-            variant="ghost"
-            size="sm"
-            aria-label="Page 1"
-          >
-            1
-          </Button>
+          <Tooltip content="Πρώτη σελίδα">
+            <span>
+              <Button
+                onClick={() => onPageChange(1)}
+                variant="ghost"
+                size="sm"
+                aria-label="Page 1"
+              >
+                1
+              </Button>
+            </span>
+          </Tooltip>
           {startPage > 2 && (
             <span className="px-2 text-gray-500">...</span>
           )}
@@ -87,14 +92,18 @@ export default function Pagination({
           {endPage < totalPages - 1 && (
             <span className="px-2 text-gray-500">...</span>
           )}
-          <Button
-            onClick={() => onPageChange(totalPages)}
-            variant="ghost"
-            size="sm"
-            aria-label={`Page ${totalPages}`}
-          >
-            {totalPages}
-          </Button>
+          <Tooltip content="Τελευταία σελίδα">
+            <span>
+              <Button
+                onClick={() => onPageChange(totalPages)}
+                variant="ghost"
+                size="sm"
+                aria-label={`Page ${totalPages}`}
+              >
+                {totalPages}
+              </Button>
+            </span>
+          </Tooltip>
         </>
       )}
 
