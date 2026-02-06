@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
 import ArticleForm from '@/components/ArticleForm';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
+import { usePermissions } from '@/hooks/usePermissions';
 
 function EditArticlePageContent() {
   const params = useParams();
@@ -17,6 +18,7 @@ function EditArticlePageContent() {
   const { article, loading, error, refetch } = useFetchArticle(params.id);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const { canEditArticle } = usePermissions();
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);
@@ -55,9 +57,7 @@ function EditArticlePageContent() {
     );
   }
 
-  const canEdit = user && (user.role === 'admin' || user.role === 'editor' || user.id === article.authorId);
-
-  if (!canEdit) {
+  if (!canEditArticle(article)) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <AlertMessage message="You do not have permission to edit this article." />
