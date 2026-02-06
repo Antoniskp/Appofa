@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -184,18 +184,22 @@ function AdminDashboardContent() {
           <StatsCard
             title="Admins"
             value={userStats.byRole.admin}
+            icon={ShieldCheckIcon}
           />
           <StatsCard
             title="Moderators"
             value={userStats.byRole.moderator}
+            icon={UserIcon}
           />
           <StatsCard
             title="Editors"
             value={userStats.byRole.editor}
+            icon={UserIcon}
           />
           <StatsCard
             title="Viewers"
             value={userStats.byRole.viewer}
+            icon={UserIcon}
           />
         </div>
 

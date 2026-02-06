@@ -46,7 +46,7 @@ export default function Card({
   };
   
   const hoverClasses = hoverable || href || onClick 
-    ? 'hover:shadow-lg transition-shadow cursor-pointer' 
+    ? variant === 'elevated' ? 'hover:shadow-xl transition-shadow cursor-pointer' : 'hover:shadow-lg transition-shadow cursor-pointer'
     : '';
   
   const baseClasses = `${variants[variant]} ${hoverClasses} ${className}`;
@@ -133,7 +133,7 @@ export function ImageCard({
           alt={imageAlt} 
           className="w-full h-full object-cover"
           loading="lazy"
-          onError={(e) => {
+          onError={(_e) => {
             if (!imageError && imageFallback) {
               setImageError(true);
             }
@@ -184,7 +184,7 @@ export function ImageTopCard({
           alt={imageAlt} 
           className="w-full h-full object-cover"
           loading="lazy"
-          onError={(e) => {
+          onError={(_e) => {
             if (!imageError && imageFallback) {
               setImageError(true);
             }
