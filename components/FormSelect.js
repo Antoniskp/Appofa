@@ -59,9 +59,9 @@ export default function FormSelect({
         {...rest}
       >
         <option value="">{placeholder}</option>
-        {options.map((option) => (
+        {options.map((option, index) => (
           <option 
-            key={option.value || option} 
+            key={option.value || `${option}-${index}`} 
             value={option.value || option}
           >
             {option.label || option}

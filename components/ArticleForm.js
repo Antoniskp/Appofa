@@ -226,6 +226,7 @@ export default function ArticleForm({
           label="Status"
           value={formData.status}
           onChange={handleInputChange}
+          required
           options={[
             { value: 'draft', label: 'Draft' },
             { value: 'published', label: 'Published' },
