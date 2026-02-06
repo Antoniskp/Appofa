@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Badge, { TypeBadge } from '@/components/Badge';
 import Button from '@/components/Button';
+import { TruncatedTextTooltip } from '@/components/Tooltip';
 
 /**
  * Reusable article card component
@@ -45,7 +46,9 @@ export default function ArticleCard({ article, variant = 'grid' }) {
                 </div>
                 <h2 className="text-2xl font-semibold mb-2">
                   <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
-                    {article.title}
+                    <TruncatedTextTooltip maxLength={80} className="text-2xl font-semibold">
+                      {article.title}
+                    </TruncatedTextTooltip>
                   </Link>
                 </h2>
                 <p className="body-copy mb-4">
@@ -95,7 +98,9 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             </div>
             <h3 className="headline">
               <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
-                {article.title}
+                <TruncatedTextTooltip maxLength={60} className="headline">
+                  {article.title}
+                </TruncatedTextTooltip>
               </Link>
             </h3>
             <p className="body-copy mb-4 line-clamp-3">

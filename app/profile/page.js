@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -11,6 +12,7 @@ import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import Tooltip from '@/components/Tooltip';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -312,7 +314,7 @@ function ProfileContent() {
                 allowClear={true}
               />
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-2">
               <input
                 id="searchable"
                 name="searchable"
@@ -321,8 +323,11 @@ function ProfileContent() {
                 onChange={(e) => setProfileData(prev => ({ ...prev, searchable: e.target.checked }))}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="searchable" className="ml-2 block text-sm text-gray-700">
+              <label htmlFor="searchable" className="flex items-center gap-2 text-sm text-gray-700">
                 Allow other users to find me in user search
+                <Tooltip content="Επιτρέψτε σε άλλους χρήστες να σας βρουν στην αναζήτηση">
+                  <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
+                </Tooltip>
               </label>
             </div>
             <button
