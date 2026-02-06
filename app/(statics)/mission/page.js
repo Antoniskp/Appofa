@@ -42,7 +42,7 @@ export default function MissionPage() {
         </p>
       </section>
 
-            <section className="space-y-8">
+      <section className="space-y-8">
         <div>
           <h2 className="text-2xl font-semibold mb-3">Οι αρχές μας</h2>
           <p className="text-gray-700">
@@ -91,8 +91,8 @@ export default function MissionPage() {
 
         <div className="space-y-6">
           <div>
-            <h3 className="text-xl font-semibold mb-2">Δημοκρατικά μοντέλα που μας εμπνέουν</h3>
-            <p className="text-gray-700">
+          <h3 className="text-xl font-semibold mb-2">Δημοκρατικά μοντέλα που μας εμπνέουν</h3>
+          <p className="text-gray-700">
               Η Apofasi στηρίζεται σε αξίες συμμετοχής και διαφάνειας. Γι' αυτό εξετάζουμε πώς ιδέες από την
               άμεση και την ηλεκτρονική δημοκρατία μπορούν να ενισχύσουν την πλατφόρμα χωρίς να θυσιάζουν την
               αξιοπιστία ή την ασφάλεια.
@@ -100,12 +100,12 @@ export default function MissionPage() {
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Άμεση δημοκρατία</h4>
-            <p className="text-gray-700">
+          <h4 className="text-lg font-semibold">Άμεση δημοκρατία</h4>
+          <p className="text-gray-700">
               Οι πολίτες αποφασίζουν απευθείας για τα κρίσιμα ζητήματα, χωρίς μεσολάβηση. Είναι μια ιδέα που
               συνδέεται με τη συμμετοχή και την προσωπική ευθύνη.
             </p>
-            <div className="space-y-3">
+          <div className="space-y-3">
               <div>
                 <p className="font-semibold text-gray-800 mb-2">Τι προσφέρει</p>
                 <ul className="list-disc pl-6 text-gray-700 space-y-2">
@@ -122,16 +122,16 @@ export default function MissionPage() {
                   <li>Χρειάζεται μηχανισμούς για να αποφεύγεται η χειραγώγηση</li>
                 </ul>
               </div>
-            </div>
+          </div>
           </div>
 
           <div className="space-y-4">
-            <h4 className="text-lg font-semibold">Ηλεκτρονική δημοκρατία</h4>
-            <p className="text-gray-700">
+          <h4 className="text-lg font-semibold">Ηλεκτρονική δημοκρατία</h4>
+          <p className="text-gray-700">
               Χρήση ψηφιακών εργαλείων για διαβούλευση, ψηφοφορίες και ανοιχτή λογοδοσία. Μπορεί να μειώσει
               εμπόδια συμμετοχής, ειδικά για νέους ή απομακρυσμένους πολίτες.
             </p>
-            <div className="space-y-3">
+          <div className="space-y-3">
               <div>
                 <p className="font-semibold text-gray-800 mb-2">Τι προσφέρει</p>
                 <ul className="list-disc pl-6 text-gray-700 space-y-2">
@@ -148,7 +148,7 @@ export default function MissionPage() {
                   <li>Χρειάζεται σαφείς κανόνες για την εγκυρότητα των αποτελεσμάτων</li>
                 </ul>
               </div>
-            </div>
+          </div>
           </div>
         </div>
 
