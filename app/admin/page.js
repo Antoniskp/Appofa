@@ -89,6 +89,8 @@ function AdminDashboardContent() {
   );
 
   const handleDelete = async () => {
+    if (!selectedArticle) return;
+    
     try {
       await articleAPI.delete(selectedArticle.id);
       refetch();
@@ -99,6 +101,8 @@ function AdminDashboardContent() {
   };
 
   const handleApproveNews = async () => {
+    if (!selectedArticle) return;
+    
     try {
       const response = await articleAPI.approveNews(selectedArticle.id);
       if (response.success) {

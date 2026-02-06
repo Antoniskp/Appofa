@@ -251,7 +251,8 @@ function LocationManagementContent() {
             </Button>
             <Button 
               variant="primary" 
-              onClick={handleSubmit}
+              type="submit"
+              form="location-form"
               loading={submitting}
             >
               {editingLocation ? 'Update Location' : 'Create Location'}
@@ -259,7 +260,7 @@ function LocationManagementContent() {
           </>
         }
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form id="location-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
