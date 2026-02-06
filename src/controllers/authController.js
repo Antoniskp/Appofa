@@ -495,14 +495,18 @@ const authController = {
       // Handle homeLocationId update
       if (homeLocationId !== undefined) {
         if (homeLocationId === null) {
+          // Only remove location link if user had a homeLocationId set
+          // This prevents deleting manual links created via /api/locations/link
+          if (user.homeLocationId !== null) {
+            await LocationLink.destroy({
+              where: {
+                entity_type: 'user',
+                entity_id: user.id,
+                location_id: user.homeLocationId
+              }
+            });
+          }
           user.homeLocationId = null;
-          // Remove existing location link for this user
-          await LocationLink.destroy({
-            where: {
-              entity_type: 'user',
-              entity_id: user.id
-            }
-          });
         } else {
           const locationId = parseInt(homeLocationId);
           if (isNaN(locationId)) {
