@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef } from 'react';
+import { forwardRef, useId } from 'react';
 
 /**
  * Reusable form input component with consistent styling and accessibility
@@ -41,7 +41,8 @@ const FormInput = forwardRef(function FormInput({
   inputClassName = '',
   ...rest
 }, ref) {
-  const inputId = `input-${name}`;
+  const uniqueId = useId();
+  const inputId = `input-${name}-${uniqueId}`;
   const errorId = `${inputId}-error`;
   const helpId = `${inputId}-help`;
   

@@ -1,5 +1,7 @@
 'use client';
 
+import { useId } from 'react';
+
 /**
  * Reusable select/dropdown component
  * 
@@ -29,7 +31,8 @@ export default function FormSelect({
   className = '',
   ...rest
 }) {
-  const selectId = `select-${name}`;
+  const uniqueId = useId();
+  const selectId = `select-${name}-${uniqueId}`;
   const errorId = `${selectId}-error`;
   const helpId = `${selectId}-help`;
   
