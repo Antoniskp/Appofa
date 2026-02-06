@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
@@ -8,34 +7,14 @@ import { useAuth } from '@/lib/auth-context';
 import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
 import { useToast } from '@/components/ToastProvider';
 import AlertMessage from '@/components/AlertMessage';
+import { useFetchArticle } from '@/hooks/useFetchArticle';
 
 export default function ArticleDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
-  const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchArticle = async () => {
-      try {
-        const response = await articleAPI.getById(params.id);
-        if (response.success) {
-          setArticle(response.data.article);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (params.id) {
-      fetchArticle();
-    }
-  }, [params.id]);
+  const { article, loading, error } = useFetchArticle(params.id);
 
   const isNews = article?.type === 'news' || article?.isNews;
   const breadcrumbLabel = isNews ? 'News' : 'Articles';
