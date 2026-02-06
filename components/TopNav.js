@@ -160,6 +160,12 @@ export default function TopNav() {
                 Ειδήσεις
               </Link>
               <Link
+                href="/locations"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/locations')}`}
+              >
+                Τοποθεσίες
+              </Link>
+              <Link
                 href="/users"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/users')}`}
               >
@@ -236,6 +242,12 @@ export default function TopNav() {
             className={`block text-base font-medium text-blue-900 ${isActive('/news')}`}
           >
             Ειδήσεις
+          </Link>
+          <Link
+            href="/locations"
+            className={`block text-base font-medium text-blue-900 ${isActive('/locations')}`}
+          >
+            Τοποθεσίες
           </Link>
           <Link
             href="/users"
