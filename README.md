@@ -105,7 +105,12 @@ npm run migrate:article-types # Migrate existing articles to new type field
 ```
 
 ## License
-ISC
+
+Copyright (c) 2026 Antoniskp. All Rights Reserved.
+
+This repository is made publicly available for transparency, audit, and contributions only. See the [LICENSE](LICENSE) file for details.
+
+**Note**: No license is granted to use, copy, modify, merge, publish, distribute, sublicense, or sell copies of this software without explicit permission.
 
 ## Author
 Antoniskp
