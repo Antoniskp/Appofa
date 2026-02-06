@@ -87,7 +87,7 @@ export default function NewsPage() {
 
         {loading && (
           <div className="space-y-6">
-            <SkeletonLoader count={5} variant="list" />
+            <SkeletonLoader type="card" count={5} variant="list" />
           </div>
         )}
 

@@ -10,6 +10,7 @@ import FormInput from '@/components/FormInput';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
+import SkeletonLoader from '@/components/SkeletonLoader';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -197,8 +198,16 @@ function ProfileContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600">Loading profile...</p>
+      <div className="bg-gray-50 min-h-screen py-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="h-8 w-48 bg-gray-200 rounded mb-2 animate-pulse"></div>
+            <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
+          </div>
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <SkeletonLoader type="form" count={1} />
+          </div>
+        </div>
       </div>
     );
   }

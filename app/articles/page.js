@@ -88,7 +88,7 @@ export default function ArticlesPage() {
         {/* Loading State */}
         {loading && (
           <div className="space-y-6">
-            <SkeletonLoader count={5} variant="list" />
+            <SkeletonLoader type="card" count={5} variant="list" />
           </div>
         )}
 

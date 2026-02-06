@@ -12,6 +12,8 @@ import ArticleForm from '@/components/ArticleForm';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
 import Button from '@/components/Button';
+import SkeletonLoader from '@/components/SkeletonLoader';
+import EmptyState from '@/components/EmptyState';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -117,13 +119,13 @@ function EditorDashboardContent() {
           </div>
 
           {loading ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">Loading articles...</p>
-            </div>
+            <SkeletonLoader type="card" count={5} variant="list" />
           ) : articles.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-gray-600">No articles found. Create your first article!</p>
-            </div>
+            <EmptyState 
+              type="empty"
+              title="No articles found"
+              description="Create your first article!"
+            />
           ) : (
             <div className="divide-y divide-gray-200">
               {articles.slice(0, 10).map((article) => {

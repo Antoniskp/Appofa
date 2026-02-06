@@ -88,7 +88,7 @@ export default function UsersPage() {
         {/* Loading State */}
         {loading && (
           <div className="space-y-6">
-            <SkeletonLoader count={5} variant="list" />
+            <SkeletonLoader type="list" count={5} />
           </div>
         )}
 

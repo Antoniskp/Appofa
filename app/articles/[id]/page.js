@@ -10,6 +10,7 @@ import AlertMessage from '@/components/AlertMessage';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
 import Button from '@/components/Button';
+import SkeletonLoader from '@/components/SkeletonLoader';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -39,8 +40,8 @@ export default function ArticleDetailPage() {
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
-        <p className="text-gray-600">Loading article...</p>
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <SkeletonLoader type="article" count={1} />
       </div>
     );
   }
