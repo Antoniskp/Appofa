@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 
 /**
@@ -113,6 +114,7 @@ export default function Card({
 export function ImageCard({
   image,
   imageAlt,
+  imageFallback,
   imageClassName = 'w-32 h-24',
   children,
   href,
@@ -120,14 +122,22 @@ export function ImageCard({
   hoverable = true,
   className = ''
 }) {
+  const [imageError, setImageError] = useState(false);
+  const imageSrc = imageError && imageFallback ? imageFallback : image;
+  
   const content = (
     <div className="flex">
       <div className={`flex-shrink-0 overflow-hidden ${imageClassName}`}>
         <img 
-          src={image} 
+          src={imageSrc} 
           alt={imageAlt} 
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={(e) => {
+            if (!imageError && imageFallback) {
+              setImageError(true);
+            }
+          }}
         />
       </div>
       <div className="p-6 flex-1 min-w-0">
@@ -155,6 +165,7 @@ export function ImageCard({
 export function ImageTopCard({
   image,
   imageAlt,
+  imageFallback,
   imageClassName = 'h-48',
   children,
   footer,
@@ -162,14 +173,22 @@ export function ImageTopCard({
   hoverable = true,
   className = ''
 }) {
+  const [imageError, setImageError] = useState(false);
+  const imageSrc = imageError && imageFallback ? imageFallback : image;
+  
   const content = (
     <>
       <div className={`overflow-hidden ${imageClassName}`}>
         <img 
-          src={image} 
+          src={imageSrc} 
           alt={imageAlt} 
           className="w-full h-full object-cover"
           loading="lazy"
+          onError={(e) => {
+            if (!imageError && imageFallback) {
+              setImageError(true);
+            }
+          }}
         />
       </div>
       <div className="p-6">

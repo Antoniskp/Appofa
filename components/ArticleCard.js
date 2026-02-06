@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { ImageCard, ImageTopCard } from '@/components/Card';
 import Badge, { TypeBadge } from '@/components/Badge';
 import Button from '@/components/Button';
@@ -22,6 +21,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
       <ImageCard
         image={bannerImageUrl}
         imageAlt={`${article.title} banner`}
+        imageFallback={defaultBannerImageUrl}
         href={`/articles/${article.id}`}
         hoverable
         className="overflow-hidden"
@@ -38,12 +38,10 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             </div>
             
             {/* Title */}
-            <h2 className="text-2xl font-semibold mb-2">
-              <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
-                <TruncatedTextTooltip maxLength={80} className="text-2xl font-semibold">
-                  {article.title}
-                </TruncatedTextTooltip>
-              </Link>
+            <h2 className="text-2xl font-semibold mb-2 hover:text-blue-600">
+              <TruncatedTextTooltip maxLength={80} className="text-2xl font-semibold">
+                {article.title}
+              </TruncatedTextTooltip>
             </h2>
             
             {/* Summary */}
@@ -64,11 +62,11 @@ export default function ArticleCard({ article, variant = 'grid' }) {
               )}
             </div>
           </div>
-          <Link href={`/articles/${article.id}`} className="inline-block mt-4 md:mt-0 md:ml-4">
-            <Button variant="primary" size="md" className="whitespace-nowrap">
+          <div className="mt-4 md:mt-0 md:ml-4">
+            <Button variant="primary" size="md" className="whitespace-nowrap pointer-events-none">
               Read More
             </Button>
-          </Link>
+          </div>
         </div>
       </ImageCard>
     );
@@ -79,6 +77,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
     <ImageTopCard
       image={bannerImageUrl}
       imageAlt={`${article.title} banner`}
+      imageFallback={defaultBannerImageUrl}
       imageClassName="h-32"
       href={`/articles/${article.id}`}
       hoverable
@@ -91,12 +90,10 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           <Badge variant="purple">{article.tags.join(', ')}</Badge>
         )}
       </div>
-      <h3 className="headline">
-        <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
-          <TruncatedTextTooltip maxLength={60} className="headline">
-            {article.title}
-          </TruncatedTextTooltip>
-        </Link>
+      <h3 className="headline hover:text-blue-600">
+        <TruncatedTextTooltip maxLength={60} className="headline">
+          {article.title}
+        </TruncatedTextTooltip>
       </h3>
       <p className="body-copy mb-4 line-clamp-3">
         {article.summary || (article.content ? `${article.content.substring(0, 150)}...` : '')}

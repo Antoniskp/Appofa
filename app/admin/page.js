@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, CheckIcon, XMarkIcon, TrashIcon, PencilIcon, ShieldCheckIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
