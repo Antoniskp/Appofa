@@ -16,7 +16,6 @@ export default function UsersPage() {
     totalPages,
     setTotalPages,
     updateFilter,
-    resetFilters,
     nextPage,
     prevPage,
     goToPage,

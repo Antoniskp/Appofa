@@ -7,14 +7,12 @@ import FormSelect from '@/components/FormSelect';
  * @param {object} filters - Current filter values
  * @param {function} onChange - Filter change handler
  * @param {array} filterConfig - Array of filter configurations
- * @param {function} onReset - Reset filters handler
  * @param {string} className - Additional CSS classes
  */
 export default function FilterBar({
   filters,
   onChange,
   filterConfig = [],
-  onReset,
   className = ''
 }) {
   if (filterConfig.length === 0) {
