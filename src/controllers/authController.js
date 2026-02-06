@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, sequelize } = require('../models');
+const { User, Location, LocationLink, sequelize } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 require('dotenv').config();
@@ -494,8 +494,6 @@ const authController = {
 
       // Handle homeLocationId update
       if (homeLocationId !== undefined) {
-        const { Location, LocationLink } = require('../models');
-        
         if (homeLocationId === null) {
           user.homeLocationId = null;
           // Remove existing location link for this user
@@ -530,9 +528,7 @@ const authController = {
               entity_id: user.id
             },
             defaults: {
-              location_id: locationId,
-              entity_type: 'user',
-              entity_id: user.id
+              location_id: locationId
             }
           });
           
