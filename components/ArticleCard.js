@@ -1,6 +1,5 @@
 import { ImageCard, ImageTopCard } from '@/components/Card';
 import Badge, { TypeBadge } from '@/components/Badge';
-import Button from '@/components/Button';
 import { TruncatedTextTooltip } from '@/components/Tooltip';
 
 /**
