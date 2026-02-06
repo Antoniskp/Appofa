@@ -9,6 +9,8 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import AdminTable from '@/components/admin/AdminTable';
 import AdminHeader from '@/components/admin/AdminHeader';
+import Modal from '@/components/Modal';
+import Button from '@/components/Button';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
 
@@ -237,163 +239,154 @@ function LocationManagementContent() {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold mb-6">
-                {editingLocation ? 'Edit Location' : 'Add New Location'}
-              </h2>
-
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Name (English) *
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Local Name
-                      </label>
-                      <input
-                        type="text"
-                        name="name_local"
-                        value={formData.name_local}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Type *
-                      </label>
-                      <select
-                        name="type"
-                        value={formData.type}
-                        onChange={handleInputChange}
-                        required
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        {LOCATION_TYPES.map(type => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Code
-                      </label>
-                      <input
-                        type="text"
-                        name="code"
-                        value={formData.code}
-                        onChange={handleInputChange}
-                        placeholder="e.g., JP-13"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Parent Location ID
-                    </label>
-                    <input
-                      type="number"
-                      name="parent_id"
-                      value={formData.parent_id}
-                      onChange={handleInputChange}
-                      placeholder="Leave empty for top-level location"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Enter the ID of the parent location (e.g., country for prefecture)
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Latitude
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        name="lat"
-                        value={formData.lat}
-                        onChange={handleInputChange}
-                        placeholder="35.6762"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Longitude
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        name="lng"
-                        value={formData.lng}
-                        onChange={handleInputChange}
-                        placeholder="139.6503"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Wikipedia URL
-                    </label>
-                    <input
-                      type="url"
-                      name="wikipedia_url"
-                      value={formData.wikipedia_url}
-                      onChange={handleInputChange}
-                      placeholder="https://en.wikipedia.org/wiki/..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Link to the Wikipedia article for this location
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex gap-3 justify-end">
-                  <button
-                    type="button"
-                    onClick={handleCloseModal}
-                    className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-blue-400"
-                  >
-                    {submitting ? 'Saving...' : editingLocation ? 'Update' : 'Create'}
-                  </button>
-                </div>
-              </form>
+      <Modal
+        isOpen={showModal}
+        onClose={handleCloseModal}
+        title={editingLocation ? 'Edit Location' : 'Add New Location'}
+        size="lg"
+        footer={
+          <>
+            <Button variant="secondary" onClick={handleCloseModal}>
+              Cancel
+            </Button>
+            <Button 
+              variant="primary" 
+              type="submit"
+              form="location-form"
+              loading={submitting}
+            >
+              {editingLocation ? 'Update Location' : 'Create Location'}
+            </Button>
+          </>
+        }
+      >
+        <form id="location-form" onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Name (English) *
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Local Name
+              </label>
+              <input
+                type="text"
+                name="name_local"
+                value={formData.name_local}
+                onChange={handleInputChange}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
             </div>
           </div>
-        </div>
-      )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Type *
+              </label>
+              <select
+                name="type"
+                value={formData.type}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {LOCATION_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Code
+              </label>
+              <input
+                type="text"
+                name="code"
+                value={formData.code}
+                onChange={handleInputChange}
+                placeholder="e.g., JP-13"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Parent Location ID
+            </label>
+            <input
+              type="number"
+              name="parent_id"
+              value={formData.parent_id}
+              onChange={handleInputChange}
+              placeholder="Leave empty for top-level location"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Enter the ID of the parent location (e.g., country for prefecture)
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Latitude
+              </label>
+              <input
+                type="number"
+                step="any"
+                name="lat"
+                value={formData.lat}
+                onChange={handleInputChange}
+                placeholder="35.6762"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Longitude
+              </label>
+              <input
+                type="number"
+                step="any"
+                name="lng"
+                value={formData.lng}
+                onChange={handleInputChange}
+                placeholder="139.6503"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Wikipedia URL
+            </label>
+            <input
+              type="url"
+              name="wikipedia_url"
+              value={formData.wikipedia_url}
+              onChange={handleInputChange}
+              placeholder="https://en.wikipedia.org/wiki/..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              Link to the Wikipedia article for this location
+            </p>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

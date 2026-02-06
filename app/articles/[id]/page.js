@@ -1,6 +1,7 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -11,6 +12,7 @@ import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
 import Button from '@/components/Button';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import { ConfirmDialog } from '@/components/Modal';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -19,16 +21,13 @@ export default function ArticleDetailPage() {
   const { addToast } = useToast();
   const { article, loading, error } = useFetchArticle(params.id);
   const { canEditArticle, canDeleteArticle } = usePermissions();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const isNews = article?.type === 'news' || article?.isNews;
   const breadcrumbLabel = isNews ? 'News' : 'Articles';
   const breadcrumbHref = isNews ? '/news' : '/articles';
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this article?')) {
-      return;
-    }
-
     try {
       await articleAPI.delete(params.id);
       addToast('Article deleted successfully', { type: 'success' });
@@ -161,7 +160,10 @@ export default function ArticleDetailPage() {
                   </Link>
                 )}
                 {canDeleteArticle(article) && (
-                  <Button variant="danger" onClick={handleDelete}>
+                  <Button 
+                    variant="danger" 
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
                     Delete Article
                   </Button>
                 )}
@@ -170,6 +172,18 @@ export default function ArticleDetailPage() {
           </div>
         </div>
       </article>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Article"
+        message="Are you sure you want to delete this article? This action cannot be undone."
+        confirmText="Delete Article"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }

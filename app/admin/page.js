@@ -10,6 +10,7 @@ import AlertMessage from '@/components/AlertMessage';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import AdminTable from '@/components/admin/AdminTable';
+import { ConfirmDialog } from '@/components/Modal';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
@@ -31,6 +32,9 @@ function AdminDashboardContent() {
     },
   });
   const [userRoleError, setUserRoleError] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [selectedArticle, setSelectedArticle] = useState(null);
 
   const { data: articles, loading, refetch } = useAsyncData(
     async () => {
@@ -84,13 +88,11 @@ function AdminDashboardContent() {
     }
   );
 
-  const handleDelete = async (article) => {
-    if (!confirm('Are you sure you want to delete this article?')) {
-      return;
-    }
-
+  const handleDelete = async () => {
+    if (!selectedArticle) return;
+    
     try {
-      await articleAPI.delete(article.id);
+      await articleAPI.delete(selectedArticle.id);
       refetch();
       addToast('Article deleted successfully', { type: 'success' });
     } catch (error) {
@@ -98,13 +100,11 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleApproveNews = async (article) => {
-    if (!confirm('Approve this article as news and publish it?')) {
-      return;
-    }
-
+  const handleApproveNews = async () => {
+    if (!selectedArticle) return;
+    
     try {
-      const response = await articleAPI.approveNews(article.id);
+      const response = await articleAPI.approveNews(selectedArticle.id);
       if (response.success) {
         refetch();
         addToast('News approved and published successfully!', { type: 'success' });
@@ -292,14 +292,20 @@ function AdminDashboardContent() {
                     </Link>
                     {article.isNews && !article.newsApprovedAt && (
                       <button
-                        onClick={() => handleApproveNews(article)}
+                        onClick={() => {
+                          setSelectedArticle(article);
+                          setApproveDialogOpen(true);
+                        }}
                         className="text-green-600 hover:text-green-900"
                       >
                         Approve
                       </button>
                     )}
                     <button
-                      onClick={() => handleDelete(article)}
+                      onClick={() => {
+                        setSelectedArticle(article);
+                        setDeleteDialogOpen(true);
+                      }}
                       className="text-red-600 hover:text-red-900"
                     >
                       Delete
@@ -367,6 +373,30 @@ function AdminDashboardContent() {
           />
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Article"
+        message="Are you sure you want to delete this article? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
+
+      {/* Approve News Dialog */}
+      <ConfirmDialog
+        isOpen={approveDialogOpen}
+        onClose={() => setApproveDialogOpen(false)}
+        onConfirm={handleApproveNews}
+        title="Approve News"
+        message="Approve this article as news and publish it?"
+        confirmText="Approve & Publish"
+        cancelText="Cancel"
+        variant="primary"
+      />
     </div>
   );
 }
