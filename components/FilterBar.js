@@ -52,7 +52,7 @@ export default function FilterBar({
                   value={filters[name] || ''}
                   onChange={onChange}
                   placeholder={placeholder || `Filter by ${label.toLowerCase()}...`}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full h-10 px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             );
