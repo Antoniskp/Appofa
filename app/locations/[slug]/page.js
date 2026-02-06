@@ -84,6 +84,10 @@ export default function LocationDetailPage() {
     );
   }
 
+  // Separate articles into news and regular articles
+  const newsArticles = entities.articles.filter(article => article.type === 'news');
+  const regularArticles = entities.articles.filter(article => article.type !== 'news');
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -155,47 +159,74 @@ export default function LocationDetailPage() {
               </div>
             )}
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Child Locations */}
+          {/* Compact Sub-locations */}
           {children.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">
                 Sub-locations ({children.length})
               </h2>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
                 {children.map(child => (
                   <Link
                     key={child.id}
                     href={`/locations/${child.id}`}
-                    className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 border border-blue-200 transition-colors text-sm"
                   >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium text-gray-900">{child.name}</div>
-                        {child.name_local && (
-                          <div className="text-sm text-gray-500">{child.name_local}</div>
-                        )}
-                      </div>
-                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
-                        {child.type}
-                      </span>
-                    </div>
+                    <span className="font-medium">{child.name}</span>
+                    {child.name_local && (
+                      <span className="text-blue-600">({child.name_local})</span>
+                    )}
                   </Link>
                 ))}
               </div>
             </div>
           )}
+        </div>
 
-          {/* Linked Articles */}
-          {entities.articles.length > 0 && (
+        {/* News Articles */}
+        {newsArticles.length > 0 && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">
+              News ({newsArticles.length})
+            </h2>
+            <div className="space-y-3">
+              {newsArticles.map(article => (
+                <Link
+                  key={article.id}
+                  href={`/articles/${article.id}`}
+                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                >
+                  <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
+                  {article.summary && (
+                    <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                    {article.author && (
+                      <span>by {article.author.username}</span>
+                    )}
+                    {article.createdAt && (
+                      <>
+                        <span>•</span>
+                        <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Regular Articles */}
+          {regularArticles.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Related Articles ({entities.articles.length})
+                Articles ({regularArticles.length})
               </h2>
               <div className="space-y-3">
-                {entities.articles.map(article => (
+                {regularArticles.map(article => (
                   <Link
                     key={article.id}
                     href={`/articles/${article.id}`}
