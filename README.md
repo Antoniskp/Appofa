@@ -12,17 +12,29 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - Next.js App Router frontend with Tailwind CSS styling
 
 ## Documentation
-- [Project Summary](doc/PROJECT_SUMMARY.md)
-- [Architecture](doc/ARCHITECTURE.md)
-- [Security](doc/SECURITY.md)
-- [Deployment](doc/DEPLOYMENT.md)
-- [VPS Deployment](doc/VPS_DEPLOYMENT.md)
-- [API Testing Examples](doc/API_TESTING.md)
-- [Article Types & Categories Testing](doc/ARTICLE_TYPES_TESTING.md)
-- [Google Analytics Integration](doc/GOOGLE_ANALYTICS.md)
-- [Troubleshooting](doc/TROUBLESHOOTING.md)
-- [Postman Collection](postman_collection.json)
-- [Copilot Agents](doc/COPILOT_AGENTS.md)
+
+### Core Documentation
+- [Project Summary](doc/PROJECT_SUMMARY.md) - Holistic project overview
+- [Architecture](doc/ARCHITECTURE.md) - System architecture and middleware
+- [Security](doc/SECURITY.md) - Security best practices and considerations
+
+### Features
+- [Locations Model](doc/LOCATION_MODEL.md) - Hierarchical locations system
+- [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
+- [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
+- [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
+
+### Deployment & Operations
+- [Deployment Guide](doc/DEPLOYMENT.md) - General deployment instructions
+- [VPS Deployment](doc/VPS_DEPLOYMENT.md) - VPS-specific deployment guide
+- [Upgrade Guide](doc/UPGRADE_GUIDE.md) - Migration and upgrade instructions
+- [Migrations](doc/MIGRATIONS.md) - Database migration guide
+- [Troubleshooting](doc/TROUBLESHOOTING.md) - Common issues and solutions
+
+### Development
+- [API Testing Examples](doc/API_TESTING.md) - API usage and testing
+- [Copilot Agents](doc/COPILOT_AGENTS.md) - AI agent configuration
+- [Postman Collection](postman_collection.json) - API testing collection
 
 ## Prerequisites
 - Node.js 18+
