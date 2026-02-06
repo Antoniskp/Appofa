@@ -53,7 +53,7 @@ export default function FormSelect({
         onChange={onChange}
         disabled={disabled}
         required={required}
-        className={`w-full px-4 py-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500
+        className={`w-full h-10 px-4 py-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500
           ${hasError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}
           ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}
         `}

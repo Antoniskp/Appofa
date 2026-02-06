@@ -17,7 +17,6 @@ export default function NewsPage() {
     totalPages,
     setTotalPages,
     handleFilterChange,
-    resetFilters,
     nextPage,
     prevPage,
     goToPage,
@@ -66,7 +65,6 @@ export default function NewsPage() {
         <FilterBar
           filters={filters}
           onChange={handleFilterChange}
-          onReset={resetFilters}
           filterConfig={[
             {
               name: 'category',
