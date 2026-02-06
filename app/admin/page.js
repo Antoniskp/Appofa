@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { EyeIcon, CheckIcon, XMarkIcon, TrashIcon, PencilIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
@@ -17,6 +18,7 @@ import Tooltip from '@/components/Tooltip';
 function AdminDashboardContent() {
   const { user } = useAuth();
   const { addToast } = useToast();
+  const router = useRouter();
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
@@ -286,7 +288,7 @@ function AdminDashboardContent() {
                     <TooltipIconButton
                       icon={EyeIcon}
                       tooltip="Προβολή άρθρου"
-                      onClick={() => window.location.href = `/articles/${article.id}`}
+                      onClick={() => router.push(`/articles/${article.id}`)}
                     />
                     {article.isNews && !article.newsApprovedAt && (
                       <TooltipIconButton
