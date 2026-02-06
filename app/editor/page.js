@@ -145,8 +145,11 @@ function EditorDashboardContent() {
                           <StatusBadge status={article.status} />
                           {article.type && <TypeBadge type={article.type} />}
                           {article.isNews && (
-                            <Badge variant={article.newsApprovedAt ? 'success' : 'warning'}>
-                              {article.newsApprovedAt ? '📰 Approved News' : '📰 Pending News'}
+                            <Badge 
+                              variant={article.newsApprovedAt ? 'success' : 'warning'}
+                              aria-label={article.newsApprovedAt ? 'Approved News' : 'Pending News'}
+                            >
+                              {article.newsApprovedAt ? '✓ Approved News' : '⏳ Pending News'}
                             </Badge>
                           )}
                           {article.category && (

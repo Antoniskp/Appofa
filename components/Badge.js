@@ -49,12 +49,17 @@ export default function Badge({
     lg: 'h-5 w-5'
   };
   
+  // Validate and fallback to defaults if invalid values provided
+  const variantClass = variants[variant] || variants.default;
+  const sizeClass = sizes[size] || sizes.sm;
+  const iconSizeClass = iconSizes[size] || iconSizes.sm;
+  
   return (
     <span 
-      className={`inline-flex items-center gap-1.5 rounded-full font-medium border ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-full font-medium border ${variantClass} ${sizeClass} ${className}`}
     >
       {icon && (
-        <span className={`flex-shrink-0 ${iconSizes[size]}`} aria-hidden="true">
+        <span className={`flex-shrink-0 ${iconSizeClass}`} aria-hidden="true">
           {icon}
         </span>
       )}
@@ -66,7 +71,7 @@ export default function Badge({
           className="flex-shrink-0 ml-0.5 hover:opacity-70 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-current rounded-full"
           aria-label={`Remove ${children}`}
         >
-          <svg className={iconSizes[size]} fill="currentColor" viewBox="0 0 20 20">
+          <svg className={iconSizeClass} fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>
         </button>
