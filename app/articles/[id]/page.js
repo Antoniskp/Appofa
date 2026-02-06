@@ -18,6 +18,7 @@ export default function ArticleDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const { error: toastError } = useToast();
   const { article, loading, error } = useFetchArticle(params.id);
   const { canEditArticle, canDeleteArticle } = usePermissions();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -45,7 +46,6 @@ export default function ArticleDetailPage() {
   }
 
   if (error || !article) {
-    const { error: toastError } = useToast();
     if (error) {
       toastError(error || 'Article not found');
     }

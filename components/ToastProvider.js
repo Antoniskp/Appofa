@@ -11,6 +11,9 @@ import {
 
 const ToastContext = createContext(null);
 
+const DEFAULT_TOAST_DURATION = 4000;
+const ERROR_TOAST_DURATION = 6000;
+
 const toastStyles = {
   success: {
     bg: 'bg-green-50',
@@ -72,6 +75,17 @@ export function ToastProvider({ children, position = 'top-right', maxToasts = 5 
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
 
+  /**
+   * Add a toast notification
+   * @param {string} message - The message to display
+   * @param {Object} options - Toast options
+   * @param {string} options.type - Toast type: 'success', 'error', 'warning', 'info'
+   * @param {number} options.duration - Auto-dismiss duration in milliseconds
+   * @param {Object} options.action - Action button with label and onClick
+   * @param {boolean} options.persistent - If true, toast won't auto-dismiss
+   * @param {React.Component} options.icon - Custom icon component
+   * @returns {string} Toast ID for programmatic removal
+   */
   const addToast = useCallback((message, options = {}) => {
     const { 
       type = 'info',
@@ -81,7 +95,7 @@ export function ToastProvider({ children, position = 'top-right', maxToasts = 5 
       icon
     } = options;
     
-    const resolvedDuration = duration ?? (type === 'error' ? 6000 : 4000);
+    const resolvedDuration = duration ?? (type === 'error' ? ERROR_TOAST_DURATION : DEFAULT_TOAST_DURATION);
     const id = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
       : `${Date.now()}-${fallbackCounterRef.current++}`;

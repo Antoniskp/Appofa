@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -16,10 +16,24 @@ function EditArticlePageContent() {
   const router = useRouter();
   const { user } = useAuth();
   const { success, error } = useToast();
-  const { article, loading, refetch } = useFetchArticle(params.id);
+  const { article, loading, error: loadError, refetch } = useFetchArticle(params.id);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const { canEditArticle } = usePermissions();
+
+  // Show error toast only when loading completes with an error
+  useEffect(() => {
+    if (!loading && loadError) {
+      error('Article not found');
+    }
+  }, [loading, loadError, error]);
+
+  // Show permission error toast only once when permission check fails
+  useEffect(() => {
+    if (!loading && article && !canEditArticle(article)) {
+      error('You do not have permission to edit this article.');
+    }
+  }, [loading, article, canEditArticle, error]);
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);
@@ -49,7 +63,6 @@ function EditArticlePageContent() {
   }
 
   if (!article) {
-    error('Article not found');
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p className="text-red-600 mb-4">Article not found</p>
@@ -61,7 +74,6 @@ function EditArticlePageContent() {
   }
 
   if (!canEditArticle(article)) {
-    error('You do not have permission to edit this article.');
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p className="text-red-600 mb-4">You do not have permission to edit this article.</p>

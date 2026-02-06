@@ -134,15 +134,7 @@ function LocationManagementContent() {
     try {
       const response = await locationAPI.delete(location.id);
       if (response.success) {
-        success('Location deleted successfully!', {
-          action: {
-            label: 'Undo',
-            onClick: () => {
-              // This would require implementing an undo mechanism
-              console.log('Undo delete not yet implemented');
-            }
-          }
-        });
+        success('Location deleted successfully!');
         refetch();
       }
     } catch (err) {
