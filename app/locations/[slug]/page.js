@@ -84,9 +84,18 @@ export default function LocationDetailPage() {
     );
   }
 
-  // Separate articles into news and regular articles
-  const newsArticles = entities.articles.filter(article => article.type === 'news');
-  const regularArticles = entities.articles.filter(article => article.type !== 'news');
+  // Separate articles into news and regular articles (single iteration)
+  const { newsArticles, regularArticles } = entities.articles.reduce(
+    (acc, article) => {
+      if (article.type === 'news') {
+        acc.newsArticles.push(article);
+      } else {
+        acc.regularArticles.push(article);
+      }
+      return acc;
+    },
+    { newsArticles: [], regularArticles: [] }
+  );
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
