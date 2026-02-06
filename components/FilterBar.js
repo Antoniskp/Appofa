@@ -21,8 +21,6 @@ export default function FilterBar({
     return null;
   }
 
-  const hasActiveFilters = Object.values(filters).some(v => v !== '' && v !== null);
-
   return (
     <div className={`card p-6 ${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -65,17 +63,6 @@ export default function FilterBar({
           return null;
         })}
       </div>
-
-      {hasActiveFilters && onReset && (
-        <div className="mt-4 flex justify-end">
-          <button
-            onClick={onReset}
-            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Clear all filters
-          </button>
-        </div>
-      )}
     </div>
   );
 }
