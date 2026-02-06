@@ -11,6 +11,7 @@ import { useToast } from '@/components/ToastProvider';
 import ArticleForm from '@/components/ArticleForm';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
+import Button from '@/components/Button';
 
 function EditorDashboardContent() {
   const { user } = useAuth();
@@ -93,12 +94,9 @@ function EditorDashboardContent() {
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-semibold">Create New Article</h2>
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-            >
+            <Button onClick={() => setShowForm(!showForm)} variant="primary">
               {showForm ? 'Hide Form' : 'Show Form'}
-            </button>
+            </Button>
           </div>
 
           {showForm && (
@@ -184,12 +182,9 @@ function EditorDashboardContent() {
                           View
                         </Link>
                         {canDeleteArticle(article) && (
-                          <button
-                            onClick={() => handleDelete(article.id)}
-                            className="text-red-600 hover:text-red-800 text-sm"
-                          >
+                          <Button variant="danger" size="sm" onClick={() => handleDelete(article.id)}>
                             Delete
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>

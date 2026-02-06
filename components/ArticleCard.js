@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
+import Button from '@/components/Button';
 
 /**
  * Reusable article card component
@@ -72,11 +73,10 @@ export default function ArticleCard({ article, variant = 'grid' }) {
                   )}
                 </div>
               </div>
-              <Link
-                href={`/articles/${article.id}`}
-                className="inline-block mt-4 md:mt-0 md:ml-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition whitespace-nowrap"
-              >
-                Read More
+              <Link href={`/articles/${article.id}`} className="inline-block mt-4 md:mt-0 md:ml-4">
+                <Button variant="primary" size="md" className="whitespace-nowrap">
+                  Read More
+                </Button>
               </Link>
             </div>
           </div>

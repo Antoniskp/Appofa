@@ -9,6 +9,7 @@ import { useToast } from '@/components/ToastProvider';
 import AlertMessage from '@/components/AlertMessage';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
+import Button from '@/components/Button';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -158,20 +159,16 @@ export default function ArticleDetailPage() {
             {(canEditArticle(article) || canDeleteArticle(article)) && (
               <div className="flex gap-4 pt-8 border-t border-gray-200">
                 {canEditArticle(article) && (
-                  <Link
-                    href={`/articles/${article.id}/edit`}
-                    className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
-                  >
-                    Edit Article
+                  <Link href={`/articles/${article.id}/edit`}>
+                    <Button variant="secondary">
+                      Edit Article
+                    </Button>
                   </Link>
                 )}
                 {canDeleteArticle(article) && (
-                  <button
-                    onClick={handleDelete}
-                    className="bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
-                  >
+                  <Button variant="danger" onClick={handleDelete}>
                     Delete Article
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

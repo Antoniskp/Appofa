@@ -10,6 +10,7 @@ import OAuthButtons from '@/components/OAuthButtons';
 import AuthDivider from '@/components/AuthDivider';
 import { authAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
+import Button from '@/components/Button';
 
 function LoginForm() {
   const router = useRouter();
@@ -131,13 +132,9 @@ function LoginForm() {
           </div>
 
           <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
-            </button>
+            <Button type="submit" loading={loading} size="md" className="w-full">
+              Sign in
+            </Button>
           </div>
         </form>
 

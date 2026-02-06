@@ -1,5 +1,7 @@
 'use client';
 
+import Button from '@/components/Button';
+
 /**
  * Reusable pagination component
  * @param {number} currentPage - Current page number
@@ -38,24 +40,27 @@ export default function Pagination({
   return (
     <div className={`flex justify-center items-center gap-2 mt-8 ${className}`}>
       {/* Previous Button */}
-      <button
+      <Button
         onClick={onPrevious}
         disabled={currentPage === 1}
-        className="px-4 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+        variant="secondary"
+        size="sm"
         aria-label="Previous page"
       >
         Previous
-      </button>
+      </Button>
 
       {/* First page */}
       {startPage > 1 && (
         <>
-          <button
+          <Button
             onClick={() => onPageChange(1)}
-            className="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            variant="ghost"
+            size="sm"
+            aria-label="Page 1"
           >
             1
-          </button>
+          </Button>
           {startPage > 2 && (
             <span className="px-2 text-gray-500">...</span>
           )}
@@ -64,19 +69,16 @@ export default function Pagination({
 
       {/* Page numbers */}
       {pages.map(pageNum => (
-        <button
+        <Button
           key={pageNum}
           onClick={() => onPageChange(pageNum)}
-          className={`px-3 py-2 border rounded-md transition-colors ${
-            pageNum === currentPage
-              ? 'bg-blue-600 text-white border-blue-600'
-              : 'bg-white border-gray-300 hover:bg-gray-50'
-          }`}
+          variant={pageNum === currentPage ? 'primary' : 'ghost'}
+          size="sm"
           aria-label={`Page ${pageNum}`}
           aria-current={pageNum === currentPage ? 'page' : undefined}
         >
           {pageNum}
-        </button>
+        </Button>
       ))}
 
       {/* Last page */}
@@ -85,24 +87,27 @@ export default function Pagination({
           {endPage < totalPages - 1 && (
             <span className="px-2 text-gray-500">...</span>
           )}
-          <button
+          <Button
             onClick={() => onPageChange(totalPages)}
-            className="px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            variant="ghost"
+            size="sm"
+            aria-label={`Page ${totalPages}`}
           >
             {totalPages}
-          </button>
+          </Button>
         </>
       )}
 
       {/* Next Button */}
-      <button
+      <Button
         onClick={onNext}
         disabled={currentPage === totalPages}
-        className="px-4 py-2 bg-white border border-gray-300 rounded-md disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+        variant="secondary"
+        size="sm"
         aria-label="Next page"
       >
         Next
-      </button>
+      </Button>
     </div>
   );
 }
