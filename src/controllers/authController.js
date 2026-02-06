@@ -494,8 +494,17 @@ const authController = {
 
       // Handle homeLocationId update
       if (homeLocationId !== undefined) {
+        const { Location, LocationLink } = require('../models');
+        
         if (homeLocationId === null) {
           user.homeLocationId = null;
+          // Remove existing location link for this user
+          await LocationLink.destroy({
+            where: {
+              entity_type: 'user',
+              entity_id: user.id
+            }
+          });
         } else {
           const locationId = parseInt(homeLocationId);
           if (isNaN(locationId)) {
@@ -505,7 +514,6 @@ const authController = {
             });
           }
           // Verify location exists
-          const { Location } = require('../models');
           const location = await Location.findByPk(locationId);
           if (!location) {
             return res.status(404).json({
@@ -514,6 +522,25 @@ const authController = {
             });
           }
           user.homeLocationId = locationId;
+          
+          // Create or update LocationLink
+          const [link, created] = await LocationLink.findOrCreate({
+            where: {
+              entity_type: 'user',
+              entity_id: user.id
+            },
+            defaults: {
+              location_id: locationId,
+              entity_type: 'user',
+              entity_id: user.id
+            }
+          });
+          
+          // If link exists but points to different location, update it
+          if (!created && link.location_id !== locationId) {
+            link.location_id = locationId;
+            await link.save();
+          }
         }
       }
 
