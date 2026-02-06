@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { getArticleTypeLabel, getArticleTypeClasses } from '@/lib/utils/articleTypes';
+import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import AlertMessage from '@/components/AlertMessage';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
@@ -98,25 +98,19 @@ export default function ArticleDetailPage() {
             {/* Article Header */}
             <div className="mb-8">
               <div className="flex flex-wrap gap-2 mb-4">
-                {article.type && (
-                  <span className={`inline-block text-sm px-3 py-1 rounded ${getArticleTypeClasses(article.type)}`}>
-                    {getArticleTypeLabel(article.type)}
-                  </span>
-                )}
+                {article.type && <TypeBadge type={article.type} size="md" />}
                 {article.category && (
-                  <span className="inline-block bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded">
+                  <Badge variant="primary" size="md">
                     {article.category}
-                  </span>
+                  </Badge>
                 )}
                 {Array.isArray(article.tags) && article.tags.length > 0 && (
-                  <span className="inline-block bg-purple-100 text-purple-800 text-sm px-3 py-1 rounded">
+                  <Badge variant="purple" size="md">
                     {article.tags.join(', ')}
-                  </span>
+                  </Badge>
                 )}
                 {article.status !== 'published' && (
-                  <span className="inline-block bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded">
-                    {article.status}
-                  </span>
+                  <StatusBadge status={article.status} size="md" />
                 )}
               </div>
               <h1 className="text-4xl font-bold mb-4">{article.title}</h1>

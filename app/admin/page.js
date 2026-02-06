@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import Badge, { StatusBadge } from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -248,26 +249,16 @@ function AdminDashboardContent() {
               {
                 key: 'status',
                 header: 'Status',
-                render: (article) => (
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    article.status === 'published' ? 'bg-green-100 text-green-800' :
-                    article.status === 'draft' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {article.status}
-                  </span>
-                )
+                render: (article) => <StatusBadge status={article.status} />
               },
               {
                 key: 'newsStatus',
                 header: 'News Status',
                 render: (article) => (
                   article.isNews ? (
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      article.newsApprovedAt ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
-                    }`}>
+                    <Badge variant={article.newsApprovedAt ? 'success' : 'warning'}>
                       {article.newsApprovedAt ? '✓ Approved' : '⏳ Pending'}
-                    </span>
+                    </Badge>
                   ) : (
                     <span className="text-gray-400 text-xs">-</span>
                   )
