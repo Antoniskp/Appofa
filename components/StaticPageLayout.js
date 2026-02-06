@@ -8,7 +8,7 @@
  * @param {string} props.title - Page title (optional, can be included in children)
  * @param {React.ReactNode} props.children - Page content
  * @param {string} props.maxWidth - Max width class (default: 'max-w-4xl')
- * @param {Object} props.metadata - Page metadata for SEO (optional)
+ * @param {string} props.className - Additional CSS classes for the card element (optional)
  */
 export default function StaticPageLayout({ 
   title, 
