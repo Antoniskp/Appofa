@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
+import Card from '@/components/Card';
 import FormInput from '@/components/FormInput';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -195,13 +196,13 @@ function ProfileContent() {
     return (
       <div className="bg-gray-50 min-h-screen py-10">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <Card>
             <div className="h-8 w-48 bg-gray-200 rounded mb-2 animate-pulse"></div>
             <div className="h-4 w-64 bg-gray-200 rounded animate-pulse"></div>
-          </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
+          </Card>
+          <Card>
             <SkeletonLoader type="form" count={1} />
-          </div>
+          </Card>
         </div>
       </div>
     );
@@ -210,12 +211,12 @@ function ProfileContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-10">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <Card>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Profile Settings</h1>
           <p className="text-sm text-gray-600">Signed in as {user?.email}</p>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Update profile information</h2>
           <form className="space-y-4" onSubmit={handleProfileSubmit}>
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -337,9 +338,9 @@ function ProfileContent() {
               Save changes
             </button>
           </form>
-        </div>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Change password</h2>
           <form className="space-y-4" onSubmit={handlePasswordSubmit}>
             <FormInput
@@ -370,10 +371,10 @@ function ProfileContent() {
               Update password
             </button>
           </form>
-        </div>
+        </Card>
 
         {/* Connected Accounts Section */}
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Connected Accounts</h2>
           <p className="text-sm text-gray-600 mb-4">
             Link your social accounts to sign in more easily or enhance your profile.
@@ -455,7 +456,7 @@ function ProfileContent() {
               Connect
             </button>
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );
