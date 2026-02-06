@@ -648,12 +648,16 @@ describe('Location API Tests', () => {
     });
 
     it('should not delete manual LocationLink when clearing null homeLocationId', async () => {
-      // First, ensure homeLocationId is null
-      const viewerUser = await User.findOne({ where: { email: 'viewer@test.com' } });
-      viewerUser.homeLocationId = null;
-      await viewerUser.save();
+      // First, ensure homeLocationId is null using the API
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: null
+        })
+        .expect(200);
 
-      // Delete any existing LocationLinks
+      // Delete any existing LocationLinks to start fresh
       await LocationLink.destroy({
         where: {
           entity_type: 'user',
