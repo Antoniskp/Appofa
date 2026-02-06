@@ -62,11 +62,6 @@ export default function ArticleCard({ article, variant = 'grid' }) {
               )}
             </div>
           </div>
-          <div className="mt-4 md:mt-0 md:ml-4">
-            <span className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium whitespace-nowrap">
-              Read More
-            </span>
-          </div>
         </div>
       </ImageCard>
     );
