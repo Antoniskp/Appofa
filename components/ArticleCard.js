@@ -63,9 +63,9 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             </div>
           </div>
           <div className="mt-4 md:mt-0 md:ml-4">
-            <Button variant="primary" size="md" className="whitespace-nowrap pointer-events-none">
+            <span className="bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium whitespace-nowrap">
               Read More
-            </Button>
+            </span>
           </div>
         </div>
       </ImageCard>

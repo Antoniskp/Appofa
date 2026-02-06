@@ -86,8 +86,10 @@ export default function Card({
       <div 
         onClick={onClick}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
+          if (e.key === 'Enter') {
             e.preventDefault();
+            onClick(e);
+          } else if (e.key === ' ') {
             onClick(e);
           }
         }}
