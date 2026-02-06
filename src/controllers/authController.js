@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, sequelize } = require('../models');
+const { User, Location, LocationLink, sequelize } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 require('dotenv').config();
@@ -495,6 +495,17 @@ const authController = {
       // Handle homeLocationId update
       if (homeLocationId !== undefined) {
         if (homeLocationId === null) {
+          // Only remove location link if user had a homeLocationId set
+          // This prevents deleting manual links created via /api/locations/link
+          if (user.homeLocationId !== null) {
+            await LocationLink.destroy({
+              where: {
+                entity_type: 'user',
+                entity_id: user.id,
+                location_id: user.homeLocationId
+              }
+            });
+          }
           user.homeLocationId = null;
         } else {
           const locationId = parseInt(homeLocationId);
@@ -505,7 +516,6 @@ const authController = {
             });
           }
           // Verify location exists
-          const { Location } = require('../models');
           const location = await Location.findByPk(locationId);
           if (!location) {
             return res.status(404).json({
@@ -514,6 +524,23 @@ const authController = {
             });
           }
           user.homeLocationId = locationId;
+          
+          // Create or update LocationLink
+          const [link, created] = await LocationLink.findOrCreate({
+            where: {
+              entity_type: 'user',
+              entity_id: user.id
+            },
+            defaults: {
+              location_id: locationId
+            }
+          });
+          
+          // If link exists but points to different location, update it
+          if (!created && link.location_id !== locationId) {
+            link.location_id = locationId;
+            await link.save();
+          }
         }
       }
 

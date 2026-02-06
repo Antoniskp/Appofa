@@ -395,4 +395,314 @@ describe('Location API Tests', () => {
       expect(response.body.success).toBe(true);
     });
   });
+
+  describe('User homeLocationId syncing with LocationLinks', () => {
+    let testLocationForSync;
+    let anotherTestLocation;
+    let testUserId;
+
+    beforeAll(async () => {
+      // Create test locations for syncing
+      const loc1 = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'TestCity1',
+          type: 'municipality',
+          code: 'TC1'
+        })
+        .expect(201);
+      testLocationForSync = loc1.body.location;
+
+      const loc2 = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'TestCity2',
+          type: 'municipality',
+          code: 'TC2'
+        })
+        .expect(201);
+      anotherTestLocation = loc2.body.location;
+
+      // Use the viewer user for testing
+      const viewer = await User.findOne({ where: { email: 'viewer@test.com' } });
+      testUserId = viewer.id;
+    });
+
+    it('should create LocationLink when setting homeLocationId', async () => {
+      // Update user profile with homeLocationId
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: testLocationForSync.id
+        })
+        .expect(200);
+
+      // Verify LocationLink was created
+      const link = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId,
+          location_id: testLocationForSync.id
+        }
+      });
+
+      expect(link).not.toBeNull();
+      expect(link.location_id).toBe(testLocationForSync.id);
+      expect(link.entity_type).toBe('user');
+      expect(link.entity_id).toBe(testUserId);
+    });
+
+    it('should show user on location page after setting homeLocationId', async () => {
+      // Get location entities
+      const response = await request(app)
+        .get(`/api/locations/${testLocationForSync.id}/entities`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.users).toBeDefined();
+      expect(response.body.users.length).toBeGreaterThan(0);
+      
+      const user = response.body.users.find(u => u.id === testUserId);
+      expect(user).toBeDefined();
+      expect(user.username).toBe('viewer');
+    });
+
+    it('should update LocationLink when changing homeLocationId', async () => {
+      // Change homeLocationId to a different location
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: anotherTestLocation.id
+        })
+        .expect(200);
+
+      // Verify old link is gone or updated
+      const oldLink = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId,
+          location_id: testLocationForSync.id
+        }
+      });
+      expect(oldLink).toBeNull();
+
+      // Verify new link exists
+      const newLink = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId,
+          location_id: anotherTestLocation.id
+        }
+      });
+
+      expect(newLink).not.toBeNull();
+      expect(newLink.location_id).toBe(anotherTestLocation.id);
+    });
+
+    it('should show user on new location page and not on old location page', async () => {
+      // User should appear on new location
+      const newLocationResponse = await request(app)
+        .get(`/api/locations/${anotherTestLocation.id}/entities`)
+        .expect(200);
+
+      expect(newLocationResponse.body.success).toBe(true);
+      const userOnNewLocation = newLocationResponse.body.users.find(u => u.id === testUserId);
+      expect(userOnNewLocation).toBeDefined();
+
+      // User should NOT appear on old location
+      const oldLocationResponse = await request(app)
+        .get(`/api/locations/${testLocationForSync.id}/entities`)
+        .expect(200);
+
+      expect(oldLocationResponse.body.success).toBe(true);
+      const userOnOldLocation = oldLocationResponse.body.users.find(u => u.id === testUserId);
+      expect(userOnOldLocation).toBeUndefined();
+    });
+
+    it('should remove LocationLink when clearing homeLocationId', async () => {
+      // Clear homeLocationId (set to null)
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: null
+        })
+        .expect(200);
+
+      // Verify link is removed
+      const link = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId
+        }
+      });
+
+      expect(link).toBeNull();
+    });
+
+    it('should not show user on location page after clearing homeLocationId', async () => {
+      // User should NOT appear on the location anymore
+      const response = await request(app)
+        .get(`/api/locations/${anotherTestLocation.id}/entities`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const user = response.body.users.find(u => u.id === testUserId);
+      expect(user).toBeUndefined();
+    });
+
+    it('should not create duplicate LocationLinks', async () => {
+      // Set homeLocationId
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: testLocationForSync.id
+        })
+        .expect(200);
+
+      // Set the same homeLocationId again
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: testLocationForSync.id
+        })
+        .expect(200);
+
+      // Verify only one link exists
+      const links = await LocationLink.findAll({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId
+        }
+      });
+
+      expect(links.length).toBe(1);
+      expect(links[0].location_id).toBe(testLocationForSync.id);
+    });
+
+    it('should update manually created LocationLink when setting homeLocationId', async () => {
+      // First, clear any existing homeLocationId
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: null
+        })
+        .expect(200);
+
+      // Manually create a LocationLink via the API (simulating manual linking)
+      await request(app)
+        .post('/api/locations/link')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          location_id: anotherTestLocation.id,
+          entity_type: 'user',
+          entity_id: testUserId
+        })
+        .expect(201);
+
+      // Verify the manual link was created
+      const manualLink = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId,
+          location_id: anotherTestLocation.id
+        }
+      });
+      expect(manualLink).not.toBeNull();
+
+      // Now set homeLocationId to a different location
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: testLocationForSync.id
+        })
+        .expect(200);
+
+      // Verify the link was updated (not duplicated)
+      const updatedLink = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId
+        }
+      });
+
+      expect(updatedLink).not.toBeNull();
+      expect(updatedLink.location_id).toBe(testLocationForSync.id);
+
+      // Verify only one link exists
+      const allLinks = await LocationLink.findAll({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId
+        }
+      });
+      expect(allLinks.length).toBe(1);
+    });
+
+    it('should not delete manual LocationLink when clearing null homeLocationId', async () => {
+      // First, ensure homeLocationId is null using the API
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: null
+        })
+        .expect(200);
+
+      // Delete any existing LocationLinks to start fresh
+      await LocationLink.destroy({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId
+        }
+      });
+
+      // Manually create a LocationLink via the API (without setting homeLocationId)
+      await request(app)
+        .post('/api/locations/link')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          location_id: testLocationForSync.id,
+          entity_type: 'user',
+          entity_id: testUserId
+        })
+        .expect(201);
+
+      // Verify the manual link exists
+      const manualLink = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId
+        }
+      });
+      expect(manualLink).not.toBeNull();
+
+      // Try to clear homeLocationId (which is already null)
+      await request(app)
+        .put('/api/auth/profile')
+        .set('Cookie', `auth_token=${viewerToken}`)
+        .send({
+          homeLocationId: null
+        })
+        .expect(200);
+
+      // Verify the manual link still exists (wasn't deleted)
+      const linkAfterClear = await LocationLink.findOne({
+        where: {
+          entity_type: 'user',
+          entity_id: testUserId
+        }
+      });
+      expect(linkAfterClear).not.toBeNull();
+      expect(linkAfterClear.location_id).toBe(testLocationForSync.id);
+    });
+  });
 });
