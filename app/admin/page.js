@@ -231,10 +231,10 @@ function AdminDashboardContent() {
         </Card>
 
         {/* Recent Articles Table */}
-        <Card className="overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">All Articles</h2>
-          </div>
+        <Card 
+          className="overflow-hidden"
+          header={<h2 className="text-xl font-semibold">All Articles</h2>}
+        >
           
           <AdminTable
             columns={[
@@ -330,10 +330,10 @@ function AdminDashboardContent() {
         </Card>
 
         {/* Users Table */}
-        <Card className="overflow-hidden mt-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Users</h2>
-          </div>
+        <Card 
+          className="overflow-hidden mt-8"
+          header={<h2 className="text-xl font-semibold">Users</h2>}
+        >
 
           <AdminTable
             columns={[

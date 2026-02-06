@@ -58,7 +58,7 @@ export default function Card({
         </div>
       )}
       
-      <div className={header || footer ? paddings[padding] : ''}>
+      <div className={paddings[padding]}>
         {children}
       </div>
       
@@ -136,20 +136,11 @@ export function ImageCard({
     </div>
   );
   
-  if (href) {
-    return (
-      <Link href={href}>
-        <Card hoverable={hoverable} padding="none" className={className}>
-          {content}
-        </Card>
-      </Link>
-    );
-  }
-  
   return (
     <Card 
       hoverable={hoverable} 
       onClick={onClick}
+      href={href}
       padding="none" 
       className={className}
     >
@@ -192,18 +183,13 @@ export function ImageTopCard({
     </>
   );
   
-  if (href) {
-    return (
-      <Link href={href}>
-        <Card hoverable={hoverable} padding="none" className={className}>
-          {content}
-        </Card>
-      </Link>
-    );
-  }
-  
   return (
-    <Card hoverable={hoverable} padding="none" className={className}>
+    <Card 
+      hoverable={hoverable} 
+      href={href}
+      padding="none" 
+      className={className}
+    >
       {content}
     </Card>
   );

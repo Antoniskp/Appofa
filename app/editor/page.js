@@ -118,10 +118,10 @@ function EditorDashboardContent() {
         </Card>
 
         {/* Articles List */}
-        <Card className="overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold">Recent Articles</h2>
-          </div>
+        <Card 
+          className="overflow-hidden"
+          header={<h2 className="text-xl font-semibold">Recent Articles</h2>}
+        >
 
           {loading ? (
             <SkeletonLoader type="card" count={5} variant="list" />
