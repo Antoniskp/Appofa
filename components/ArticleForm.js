@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Badge from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
 import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
@@ -256,8 +257,8 @@ export default function ArticleForm({
                     {location.name_local && (
                       <span className="text-gray-500 ml-2">({location.name_local})</span>
                     )}
-                    <span className="ml-2 text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
-                      {location.type}
+                    <span className="ml-2">
+                      <Badge variant="primary">{location.type}</Badge>
                     </span>
                   </div>
                   <button

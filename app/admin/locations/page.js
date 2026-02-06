@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { locationAPI } from '@/lib/api';
+import Badge from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
@@ -206,11 +207,7 @@ function LocationManagementContent() {
               {
                 key: 'type',
                 header: 'Type',
-                render: (loc) => (
-                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                    {loc.type}
-                  </span>
-                )
+                render: (loc) => <Badge variant="primary">{loc.type}</Badge>
               },
               {
                 key: 'parent',
