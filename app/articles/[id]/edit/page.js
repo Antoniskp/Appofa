@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -8,36 +8,15 @@ import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
 import ArticleForm from '@/components/ArticleForm';
+import { useFetchArticle } from '@/hooks/useFetchArticle';
 
 function EditArticlePageContent() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const [article, setArticle] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { article, loading, error, refetch } = useFetchArticle(params.id);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
   const [submitError, setSubmitError] = useState('');
-
-  useEffect(() => {
-    const fetchArticle = async () => {
-      try {
-        const response = await articleAPI.getById(params.id);
-        if (response.success) {
-          const currentArticle = response.data.article;
-          setArticle(currentArticle);
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (params.id) {
-      fetchArticle();
-    }
-  }, [params.id]);
 
   const handleSubmit = async (formData) => {
     setSubmitting(true);
