@@ -233,7 +233,7 @@ export default function DropdownMenu({
           id={menuElementId}
           role="menu"
           aria-labelledby={`${menuElementId}-button`}
-          className={`absolute ${alignmentClasses[align]} z-20 mt-2 w-52 rounded-md border border-seafoam bg-white py-1 shadow-lg animate-slideDown ${menuClassName}`}
+          className={`absolute ${alignmentClasses[align]} z-50 mt-2 w-52 rounded-md border border-seafoam bg-white py-1 shadow-lg animate-slideDown ${menuClassName}`}
         >
           {items.map((item, index) => {
             // Render divider

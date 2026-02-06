@@ -82,7 +82,7 @@ export default function NewsPage() {
               placeholder: 'Filter by tag...',
             },
           ]}
-          className="mb-8"
+          className="mt-4 mb-8"
         />
 
         {loading && (
