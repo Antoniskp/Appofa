@@ -6,6 +6,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/AlertMessage';
+import FormInput from '@/components/FormInput';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
@@ -239,31 +240,23 @@ function ProfileContent() {
               </div>
             </div>
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <input
-                id="username"
+              <FormInput
                 name="username"
                 type="text"
-                autoComplete="username"
+                label="Username"
                 value={profileData.username}
                 onChange={handleProfileChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                autoComplete="username"
               />
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="avatar" className="block text-sm font-medium text-gray-700 mb-1">
-                  Avatar image URL
-                </label>
-                <input
-                  id="avatar"
+                <FormInput
                   name="avatar"
                   type="url"
+                  label="Avatar image URL"
                   value={profileData.avatar}
                   onChange={handleProfileChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="https://example.com/avatar.png"
                 />
               </div>
@@ -282,34 +275,22 @@ function ProfileContent() {
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                  First name
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  autoComplete="given-name"
-                  value={profileData.firstName}
-                  onChange={handleProfileChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                  Last name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  autoComplete="family-name"
-                  value={profileData.lastName}
-                  onChange={handleProfileChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+              <FormInput
+                name="firstName"
+                type="text"
+                label="First name"
+                value={profileData.firstName}
+                onChange={handleProfileChange}
+                autoComplete="given-name"
+              />
+              <FormInput
+                name="lastName"
+                type="text"
+                label="Last name"
+                value={profileData.lastName}
+                onChange={handleProfileChange}
+                autoComplete="family-name"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -358,45 +339,27 @@ function ProfileContent() {
           <AlertMessage className="mb-4" message={passwordError} />
           <AlertMessage className="mb-4" tone="success" message={passwordMessage} />
           <form className="space-y-4" onSubmit={handlePasswordSubmit}>
-            <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Current password
-              </label>
-              <input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={handlePasswordChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                New password
-              </label>
-              <input
-                id="newPassword"
-                name="newPassword"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={handlePasswordChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm new password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={handlePasswordChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+            <FormInput
+              name="currentPassword"
+              type="password"
+              label="Current password"
+              value={passwordData.currentPassword}
+              onChange={handlePasswordChange}
+            />
+            <FormInput
+              name="newPassword"
+              type="password"
+              label="New password"
+              value={passwordData.newPassword}
+              onChange={handlePasswordChange}
+            />
+            <FormInput
+              name="confirmPassword"
+              type="password"
+              label="Confirm new password"
+              value={passwordData.confirmPassword}
+              onChange={handlePasswordChange}
+            />
             <button
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"

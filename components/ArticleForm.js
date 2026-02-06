@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import AlertMessage from '@/components/AlertMessage';
+import FormInput from '@/components/FormInput';
+import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import { locationAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
@@ -130,110 +132,72 @@ export default function ArticleForm({
     <form onSubmit={handleSubmit} className="space-y-4">
       <AlertMessage className="mb-6" message={submitError} />
 
-      <div>
-        <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-          Title *
-        </label>
-        <input
-          type="text"
-          id="title"
-          name="title"
-          required
-          value={formData.title}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Enter article title"
-        />
-      </div>
+      <FormInput
+        name="title"
+        label="Title"
+        value={formData.title}
+        onChange={handleInputChange}
+        required
+        maxLength={200}
+        showCharCount
+        placeholder="Enter article title"
+        helpText="A clear, descriptive title for your article"
+      />
 
-      <div>
-        <label htmlFor="summary" className="block text-sm font-medium text-gray-700 mb-1">
-          Summary
-        </label>
-        <input
-          type="text"
-          id="summary"
-          name="summary"
-          value={formData.summary}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Brief summary (optional)"
-        />
-      </div>
+      <FormInput
+        name="summary"
+        label="Summary"
+        value={formData.summary}
+        onChange={handleInputChange}
+        placeholder="Brief summary (optional)"
+      />
  
-      <div>
-        <label htmlFor="bannerImageUrl" className="block text-sm font-medium text-gray-700 mb-1">
-          Banner Image URL
-        </label>
-        <input
-          type="text"
-          id="bannerImageUrl"
-          name="bannerImageUrl"
-          value={formData.bannerImageUrl}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="https://example.com/banner.jpg or /images/yourimage.png"
-        />
-      </div>
+      <FormInput
+        name="bannerImageUrl"
+        label="Banner Image URL"
+        value={formData.bannerImageUrl}
+        onChange={handleInputChange}
+        placeholder="https://example.com/banner.jpg or /images/yourimage.png"
+      />
 
-      <div>
-        <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
-          Tags (comma-separated)
-        </label>
-        <input
-          type="text"
-          id="tags"
-          name="tags"
-          value={formData.tags}
-          onChange={handleInputChange}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="e.g. AI, Research"
-        />
-      </div>
+      <FormInput
+        name="tags"
+        label="Tags (comma-separated)"
+        value={formData.tags}
+        onChange={handleInputChange}
+        placeholder="e.g. AI, Research"
+      />
 
-      <div>
-        <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-          Content *
-        </label>
-        <textarea
-          id="content"
-          name="content"
-          required
-          value={formData.content}
-          onChange={handleInputChange}
-          rows={10}
-          className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          placeholder="Write your article content here..."
-        />
-      </div>
+      <FormInput
+        name="content"
+        type="textarea"
+        label="Content"
+        rows={10}
+        value={formData.content}
+        onChange={handleInputChange}
+        required
+        maxLength={50000}
+        showCharCount
+        placeholder="Write your article content here..."
+      />
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-            Τύπος Άρθρου (Article Type) *
-          </label>
-          <select
-            id="type"
-            name="type"
-            required
-            value={formData.type}
-            onChange={handleInputChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          >
-            {Object.values(articleCategories.articleTypes).map((articleType) => (
-              <option key={articleType.value} value={articleType.value}>
-                {articleType.labelEl} ({articleType.label})
-              </option>
-            ))}
-          </select>
-          <p className="text-xs text-gray-500 mt-1">
-            {articleCategories.articleTypes[formData.type]?.description}
-          </p>
-        </div>
+        <FormSelect
+          name="type"
+          label="Τύπος Άρθρου (Article Type)"
+          value={formData.type}
+          onChange={handleInputChange}
+          required
+          options={Object.values(articleCategories.articleTypes).map((articleType) => ({
+            value: articleType.value,
+            label: `${articleType.labelEl} (${articleType.label})`
+          }))}
+          helpText={articleCategories.articleTypes[formData.type]?.description}
+        />
 
         <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-            Κατηγορία (Category) {isCategoryRequired(formData.type, articleCategories) && '*'}
+            Κατηγορία (Category) {isCategoryRequired(formData.type, articleCategories) && <span className="text-red-600" aria-label="required">*</span>}
           </label>
           {articleCategories.articleTypes[formData.type]?.categories.length > 0 ? (
             <select
@@ -263,22 +227,17 @@ export default function ArticleForm({
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
-            Status *
-          </label>
-          <select
-            id="status"
-            name="status"
-            value={formData.status}
-            onChange={handleInputChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="archived">Archived</option>
-          </select>
-        </div>
+        <FormSelect
+          name="status"
+          label="Status"
+          value={formData.status}
+          onChange={handleInputChange}
+          options={[
+            { value: 'draft', label: 'Draft' },
+            { value: 'published', label: 'Published' },
+            { value: 'archived', label: 'Archived' }
+          ]}
+        />
       </div>
 
       {/* Locations Section - Only show in edit mode when article.id exists */}
