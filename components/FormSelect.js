@@ -1,6 +1,7 @@
 'use client';
 
 import { useId } from 'react';
+import { ChevronDownIcon } from '@heroicons/react/24/outline';
 
 /**
  * Reusable select/dropdown component
@@ -46,31 +47,37 @@ export default function FormSelect({
         </label>
       )}
       
-      <select
-        id={selectId}
-        name={name}
-        value={value}
-        onChange={onChange}
-        disabled={disabled}
-        required={required}
-        className={`w-full px-4 py-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500
-          ${hasError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}
-          ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}
-        `}
-        aria-invalid={hasError}
-        aria-describedby={hasError ? errorId : (helpText ? helpId : undefined)}
-        {...rest}
-      >
-        <option value="">{placeholder}</option>
-        {options.map((option, index) => (
-          <option 
-            key={option.value || `${option}-${index}`} 
-            value={option.value || option}
-          >
-            {option.label || option}
-          </option>
-        ))}
-      </select>
+      <div className="relative">
+        <select
+          id={selectId}
+          name={name}
+          value={value}
+          onChange={onChange}
+          disabled={disabled}
+          required={required}
+          className={`w-full px-4 py-2 pr-10 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 appearance-none
+            ${hasError ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}
+            ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}
+          `}
+          aria-invalid={hasError}
+          aria-describedby={hasError ? errorId : (helpText ? helpId : undefined)}
+          {...rest}
+        >
+          <option value="">{placeholder}</option>
+          {options.map((option, index) => (
+            <option 
+              key={option.value || `${option}-${index}`} 
+              value={option.value || option}
+            >
+              {option.label || option}
+            </option>
+          ))}
+        </select>
+        <ChevronDownIcon 
+          className={`absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 pointer-events-none ${disabled ? 'text-gray-300' : 'text-gray-400'}`}
+          aria-hidden="true"
+        />
+      </div>
       
       {helpText && !error && (
         <p id={helpId} className="mt-1 text-sm text-gray-500">

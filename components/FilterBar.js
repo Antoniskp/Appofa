@@ -24,7 +24,7 @@ export default function FilterBar({
   const hasActiveFilters = Object.values(filters).some(v => v !== '' && v !== null);
 
   return (
-    <div className={`card p-4 ${className}`}>
+    <div className={`card p-4 mt-4 ${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filterConfig.map((config) => {
           const { name, label, type = 'select', options = [], placeholder } = config;
