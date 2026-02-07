@@ -9,6 +9,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   PencilSquareIcon,
+  PlusCircleIcon,
   ServerIcon,
   ShieldCheckIcon,
   UserCircleIcon,
@@ -74,6 +75,13 @@ export default function TopNav() {
         href: '/editor',
         icon: <PencilSquareIcon className="h-4 w-4" />,
         className: isActive('/editor')
+      },
+      {
+        id: 'create-poll',
+        label: 'Δημιουργία Δημοσκόπησης',
+        href: '/polls/create',
+        icon: <PlusCircleIcon className="h-4 w-4" />,
+        className: isActive('/polls/create')
       }
     ] : []),
     { divider: true },
@@ -118,6 +126,13 @@ export default function TopNav() {
         href: '/editor',
         icon: <PencilSquareIcon className="h-5 w-5" />,
         className: `text-base font-medium ${isActive('/editor')}`
+      },
+      {
+        id: 'create-poll',
+        label: 'Δημιουργία Δημοσκόπησης',
+        href: '/polls/create',
+        icon: <PlusCircleIcon className="h-5 w-5" />,
+        className: `text-base font-medium ${isActive('/polls/create')}`
       }
     ] : []),
     { divider: true },
@@ -164,6 +179,12 @@ export default function TopNav() {
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/locations')}`}
               >
                 Τοποθεσίες
+              </Link>
+              <Link
+                href="/polls"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/polls')}`}
+              >
+                Δημοσκοπήσεις
               </Link>
               <Link
                 href="/users"
@@ -248,6 +269,12 @@ export default function TopNav() {
             className={`block text-base font-medium text-blue-900 ${isActive('/locations')}`}
           >
             Τοποθεσίες
+          </Link>
+          <Link
+            href="/polls"
+            className={`block text-base font-medium text-blue-900 ${isActive('/polls')}`}
+          >
+            Δημοσκοπήσεις
           </Link>
           <Link
             href="/users"
