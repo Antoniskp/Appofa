@@ -208,7 +208,7 @@ const authController = {
         });
       }
 
-      const passwordResult = normalizePassword(password, 'Password');
+      const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
       if (passwordResult.error) {
         return res.status(400).json({
           success: false,
@@ -521,7 +521,7 @@ const authController = {
     try {
       const { currentPassword, newPassword } = req.body;
 
-      const currentPasswordResult = normalizePassword(currentPassword, 'Current password');
+      const currentPasswordResult = normalizePassword(currentPassword, 'Current password', PASSWORD_MIN_LENGTH);
       if (currentPasswordResult.error) {
         return res.status(400).json({
           success: false,
@@ -529,7 +529,7 @@ const authController = {
         });
       }
 
-      const newPasswordResult = normalizePassword(newPassword, 'New password');
+      const newPasswordResult = normalizePassword(newPassword, 'New password', PASSWORD_MIN_LENGTH);
       if (newPasswordResult.error) {
         return res.status(400).json({
           success: false,

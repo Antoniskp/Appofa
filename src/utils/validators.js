@@ -89,10 +89,10 @@ const normalizeEmail = (email) => {
  * Normalize and validate a password
  * @param {*} password - The password to validate
  * @param {string} fieldLabel - Human-readable field name for error messages
- * @param {number} minLength - Minimum password length
+ * @param {number} minLength - Minimum password length (required)
  * @returns {{value?: string, error?: string}}
  */
-const normalizePassword = (password, fieldLabel, minLength = 6) => {
+const normalizePassword = (password, fieldLabel, minLength) => {
   if (typeof password !== 'string') {
     return { error: `${fieldLabel} must be a string.` };
   }
