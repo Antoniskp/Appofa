@@ -158,6 +158,8 @@ module.exports = {
       await queryInterface.addIndex('PollOptions', ['pollId']);
 
       console.log('PollOptions table created successfully');
+    } else {
+      console.log('PollOptions table already exists, skipping creation');
     }
 
     // Create PollVotes table
@@ -230,6 +232,8 @@ module.exports = {
       await queryInterface.addIndex('PollVotes', ['pollId', 'sessionId']);
 
       console.log('PollVotes table created successfully');
+    } else {
+      console.log('PollVotes table already exists, skipping creation');
     }
   },
 
