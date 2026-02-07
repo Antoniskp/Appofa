@@ -77,11 +77,30 @@ jest.mock('@/lib/api', () => ({
       timestamp: '2024-01-01T12:00:00.000Z',
       responseTimeMs: 12,
       uptime: 120,
-      checks: {
+      infrastructureChecks: {
         api: {
           status: 'healthy',
           responseTimeMs: 0,
           message: 'API responding'
+        },
+        database: {
+          status: 'healthy',
+          responseTimeMs: 5,
+          message: 'Database connection successful'
+        }
+      },
+      functionalChecks: {
+        articleRead: {
+          status: 'healthy',
+          responseTimeMs: 8,
+          message: 'Article retrieval working',
+          count: 10
+        },
+        authValidation: {
+          status: 'healthy',
+          responseTimeMs: 3,
+          message: 'User authentication ready',
+          activeUsers: 5
         }
       }
     }))
