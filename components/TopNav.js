@@ -9,7 +9,6 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   PencilSquareIcon,
-  PlusCircleIcon,
   ServerIcon,
   ShieldCheckIcon,
   UserCircleIcon,
@@ -77,13 +76,6 @@ export default function TopNav() {
         className: isActive('/editor')
       }
     ] : []),
-    {
-      id: 'create-poll',
-      label: 'Δημιουργία Ψηφοφορίας',
-      href: '/polls/create',
-      icon: <PlusCircleIcon className="h-4 w-4" />,
-      className: isActive('/polls/create')
-    },
     { divider: true },
     {
       id: 'logout',
@@ -168,12 +160,6 @@ export default function TopNav() {
                 Ειδήσεις
               </Link>
               <Link
-                href="/polls"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/polls')}`}
-              >
-                Ψηφοφορίες
-              </Link>
-              <Link
                 href="/locations"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/locations')}`}
               >
@@ -256,12 +242,6 @@ export default function TopNav() {
             className={`block text-base font-medium text-blue-900 ${isActive('/news')}`}
           >
             Ειδήσεις
-          </Link>
-          <Link
-            href="/polls"
-            className={`block text-base font-medium text-blue-900 ${isActive('/polls')}`}
-          >
-            Ψηφοφορίες
           </Link>
           <Link
             href="/locations"
