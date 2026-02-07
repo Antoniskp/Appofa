@@ -3,6 +3,9 @@ const User = require('./User');
 const Article = require('./Article');
 const Location = require('./Location');
 const LocationLink = require('./LocationLink');
+const Poll = require('./Poll');
+const PollOption = require('./PollOption');
+const Vote = require('./Vote');
 
 // Define associations
 User.hasMany(Article, {
@@ -13,6 +16,67 @@ User.hasMany(Article, {
 Article.belongsTo(User, {
   foreignKey: 'authorId',
   as: 'author'
+});
+
+// Poll associations
+User.hasMany(Poll, {
+  foreignKey: 'creatorId',
+  as: 'polls'
+});
+
+Poll.belongsTo(User, {
+  foreignKey: 'creatorId',
+  as: 'creator'
+});
+
+Poll.hasMany(PollOption, {
+  foreignKey: 'pollId',
+  as: 'options'
+});
+
+PollOption.belongsTo(Poll, {
+  foreignKey: 'pollId',
+  as: 'poll'
+});
+
+PollOption.belongsTo(User, {
+  foreignKey: 'createdById',
+  as: 'createdBy'
+});
+
+User.hasMany(PollOption, {
+  foreignKey: 'createdById',
+  as: 'pollOptions'
+});
+
+Poll.hasMany(Vote, {
+  foreignKey: 'pollId',
+  as: 'votes'
+});
+
+Vote.belongsTo(Poll, {
+  foreignKey: 'pollId',
+  as: 'poll'
+});
+
+Vote.belongsTo(PollOption, {
+  foreignKey: 'optionId',
+  as: 'option'
+});
+
+PollOption.hasMany(Vote, {
+  foreignKey: 'optionId',
+  as: 'votes'
+});
+
+Vote.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+User.hasMany(Vote, {
+  foreignKey: 'userId',
+  as: 'votes'
 });
 
 // Location self-referencing for hierarchy
@@ -48,5 +112,8 @@ module.exports = {
   User,
   Article,
   Location,
-  LocationLink
+  LocationLink,
+  Poll,
+  PollOption,
+  Vote
 };
