@@ -1,1 +1,59 @@
-{\n  "name": "Appofa Development Environment",\n  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",\n  \n  "features": {\n    "ghcr.io/devcontainers/features/node:1": {\n      "version": "18"\n    },\n    "ghcr.io/devcontainers-contrib/features/postgres-asdf:1": {\n      "version": "15"\n    }\n  },\n  \n  "forwardPorts": [3000, 3001, 5432],\n  \n  "portsAttributes": {\n    "3000": {\n      "label": "Backend API",\n      "onAutoForward": "notify"\n    },\n    "3001": {\n      "label": "Next.js Frontend",\n      "onAutoForward": "openBrowser"\n    },\n    "5432": {\n      "label": "PostgreSQL",\n      "onAutoForward": "silent"\n    }\n  },\n  \n  "postCreateCommand": "bash .devcontainer/setup.sh",\n  \n  "customizations": {\n    "vscode": {\n      "extensions": [\n        "dbaeumer.vscode-eslint",\n        "esbenp.prettier-vscode",\n        "bradlc.vscode-tailwindcss",\n        "ms-azuretools.vscode-docker"\n      ],\n      "settings": {\n        "editor.formatOnSave": true,\n        "editor.defaultFormatter": "esbenp.prettier-vscode"\n      }\n    }\n  },\n  \n  "remoteEnv": {\n    "DB_HOST": "localhost",\n    "DB_PORT": "5432",\n    "DB_NAME": "newsapp",\n    "DB_USER": "postgres",\n    "DB_PASSWORD": "password",\n    "JWT_SECRET": "dev-secret-key-change-in-production",\n    "PORT": "3000",\n    "NODE_ENV": "development",\n    "API_URL": "http://localhost:3000"\n  }\n}
+{
+  "name": "Appofa Development Environment",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:18",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "18"
+    },
+    "ghcr.io/devcontainers-contrib/features/postgres-asdf:1": {
+      "version": "15"
+    }
+  },
+  
+  "forwardPorts": [3000, 3001, 5432],
+  
+  "portsAttributes": {
+    "3000": {
+      "label": "Backend API",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "Next.js Frontend",
+      "onAutoForward": "openBrowser"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "silent"
+    }
+  },
+  
+  "postCreateCommand": "npm install && cp .env.example .env || true",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "ms-azuretools.vscode-docker"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+      }
+    }
+  },
+  
+  "remoteEnv": {
+    "DB_HOST": "localhost",
+    "DB_PORT": "5432",
+    "DB_NAME": "newsapp",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "password",
+    "JWT_SECRET": "dev-secret-key-change-in-production",
+    "PORT": "3000",
+    "NODE_ENV": "development",
+    "API_URL": "http://localhost:3000"
+  }
+}
