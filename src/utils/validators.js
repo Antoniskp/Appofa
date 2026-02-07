@@ -211,6 +211,36 @@ const normalizeUrl = (value, fieldLabel = 'URL', allowRelative = true) => {
   return { value: trimmedValue };
 };
 
+/**
+ * Normalize and validate an integer
+ * @param {*} value - The value to validate
+ * @param {string} fieldLabel - Human-readable field name for error messages
+ * @param {number} minValue - Minimum allowed value (optional)
+ * @param {number} maxValue - Maximum allowed value (optional)
+ * @returns {{value?: number, error?: string}}
+ */
+const normalizeInteger = (value, fieldLabel, minValue, maxValue) => {
+  if (value === undefined || value === null) {
+    return { error: `${fieldLabel} is required.` };
+  }
+  
+  const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
+  
+  if (!Number.isInteger(numValue)) {
+    return { error: `${fieldLabel} must be an integer.` };
+  }
+  
+  if (minValue != null && numValue < minValue) {
+    return { error: `${fieldLabel} must be at least ${minValue}.` };
+  }
+  
+  if (maxValue != null && numValue > maxValue) {
+    return { error: `${fieldLabel} must be at most ${maxValue}.` };
+  }
+  
+  return { value: numValue };
+};
+
 module.exports = {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -220,4 +250,5 @@ module.exports = {
   normalizeStringArray,
   normalizeEnum,
   normalizeUrl,
+  normalizeInteger,
 };
