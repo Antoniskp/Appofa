@@ -2,16 +2,11 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Check if Polls table already exists
     const tables = await queryInterface.showAllTables();
     
-    if (tables.includes('Polls')) {
-      console.log('Polls table already exists, skipping creation');
-      return;
-    }
-
     // Create Polls table
-    await queryInterface.createTable('Polls', {
+    if (!tables.includes('Polls')) {
+      await queryInterface.createTable('Polls', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -88,9 +83,12 @@ module.exports = {
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
-    });
+      });
 
-    console.log('Polls table created successfully');
+      console.log('Polls table created successfully');
+    } else {
+      console.log('Polls table already exists, skipping creation');
+    }
 
     // Create PollOptions table
     if (!tables.includes('PollOptions')) {
@@ -223,15 +221,10 @@ module.exports = {
       });
 
       // Add unique partial index for authenticated users (one vote per user per poll)
-      await queryInterface.addIndex('PollVotes', ['pollId', 'userId'], {
-        unique: true,
-        name: 'unique_user_vote_per_poll',
-        where: {
-          userId: {
-            [Sequelize.Op.ne]: null
-          }
-        }
-      });
+      // Use raw SQL because partial indexes require native database syntax
+      await queryInterface.sequelize.query(
+        'CREATE UNIQUE INDEX "unique_user_vote_per_poll" ON "PollVotes" ("pollId", "userId") WHERE "userId" IS NOT NULL;'
+      );
 
       // Add index on pollId and sessionId
       await queryInterface.addIndex('PollVotes', ['pollId', 'sessionId']);
