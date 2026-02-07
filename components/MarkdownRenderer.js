@@ -75,11 +75,11 @@ export default function MarkdownRenderer({ content, className = '' }) {
   const components = {
     // Make images responsive and add lazy loading
     img: ({ node, alt, src, title, ...props }) => {
-      // Block data URIs and javascript: URLs for security (case-insensitive)
+      // Block dangerous URL schemes for security (case-insensitive)
       if (!src) return null;
       
       const lowerSrc = src.toLowerCase();
-      if (lowerSrc.startsWith('javascript:') || lowerSrc.startsWith('data:')) {
+      if (lowerSrc.startsWith('javascript:') || lowerSrc.startsWith('data:') || lowerSrc.startsWith('vbscript:')) {
         return null;
       }
 
@@ -122,11 +122,11 @@ export default function MarkdownRenderer({ content, className = '' }) {
 
     // Handle video tags
     video: ({ node, src, poster, controls, ...props }) => {
-      // Block data URIs and javascript: URLs for security (case-insensitive)
+      // Block dangerous URL schemes for security (case-insensitive)
       if (!src) return null;
       
       const lowerSrc = src.toLowerCase();
-      if (lowerSrc.startsWith('javascript:') || lowerSrc.startsWith('data:')) {
+      if (lowerSrc.startsWith('javascript:') || lowerSrc.startsWith('data:') || lowerSrc.startsWith('vbscript:')) {
         return null;
       }
 
@@ -147,11 +147,11 @@ export default function MarkdownRenderer({ content, className = '' }) {
 
     // Style links
     a: ({ node, href, children, ...props }) => {
-      // Block javascript: URLs for security (case-insensitive)
+      // Block dangerous URL schemes for security (case-insensitive)
       if (!href) return <span>{children}</span>;
       
       const lowerHref = href.toLowerCase();
-      if (lowerHref.startsWith('javascript:')) {
+      if (lowerHref.startsWith('javascript:') || lowerHref.startsWith('data:') || lowerHref.startsWith('vbscript:')) {
         return <span>{children}</span>;
       }
 
