@@ -47,7 +47,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             {/* Summary */}
             <div className="body-copy mb-4">
               <MarkdownRenderer 
-                content={article.summary || article.content?.substring(0, 200) + '...' || ''} 
+                content={article.summary || (article.content ? article.content.substring(0, 200) + '...' : '')} 
                 className="line-clamp-3"
               />
             </div>
@@ -95,7 +95,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
       </h3>
       <div className="body-copy line-clamp-3">
         <MarkdownRenderer 
-          content={article.summary || article.content?.substring(0, 150) + '...' || ''} 
+          content={article.summary || (article.content ? article.content.substring(0, 150) + '...' : '')} 
         />
       </div>
       <div className="flex justify-between items-center text-sm text-gray-500">
