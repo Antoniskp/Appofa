@@ -1,1 +1,0 @@
-{\n  "name": "Node.js Dev Container",\n  "dockerFile": "Dockerfile",\n  "settings": {\n    "terminal.integrated.defaultProfile.linux": "bash"\n  },\n  "extensions": [\n    "dbaeumer.vscode-eslint",\n    "esbenp.prettier-vscode"\n  ],\n  "remoteUser": "vscode",\n  "updateRemoteUserUID": true,\n  "image": "mcr.microsoft.com/devcontainers/javascript-node:18-jammy"\n}
