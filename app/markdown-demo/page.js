@@ -2,9 +2,10 @@
 
 import { useRef, useState } from 'react';
 import MarkdownToolbar from '@/components/MarkdownToolbar';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 /**
- * Demo page for the MarkdownToolbar component
+ * Demo page for the MarkdownToolbar and MarkdownRenderer components
  * Shows both desktop and mobile views with live preview
  */
 const DEFAULT_CONTENT = `# Welcome to the Markdown Editor
@@ -70,7 +71,17 @@ export default function MarkdownDemo() {
           </div>
         </div>
 
-        {/* Preview Section */}
+        {/* Live Preview Section */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+          <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
+            <h2 className="text-lg font-semibold text-gray-900">Live Preview</h2>
+          </div>
+          <div className="p-6">
+            <MarkdownRenderer content={content} />
+          </div>
+        </div>
+
+        {/* Markdown Source Section */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="border-b border-gray-200 bg-gray-50 px-4 py-3">
             <h2 className="text-lg font-semibold text-gray-900">Markdown Source</h2>
