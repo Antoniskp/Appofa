@@ -9,6 +9,7 @@ const authRoutes = require('./routes/authRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const locationRoutes = require('./routes/locationRoutes');
+const pollRoutes = require('./routes/pollRoutes');
 
 const app = express();
 
@@ -34,7 +35,8 @@ app.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       articles: '/api/articles',
-      locations: '/api/locations'
+      locations: '/api/locations',
+      polls: '/api/polls'
     }
   });
 });
@@ -43,6 +45,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/articles', articleRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/locations', locationRoutes);
+app.use('/api/polls', pollRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
