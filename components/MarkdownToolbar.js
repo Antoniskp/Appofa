@@ -50,9 +50,36 @@ export default function MarkdownToolbar({ onInsert, textareaRef }) {
     }, 0);
   };
 
+  // Sanitize video ID (only allow alphanumeric, hyphens, underscores)
+  const sanitizeVideoId = (id) => {
+    return id.replace(/[^a-zA-Z0-9_-]/g, '');
+  };
+
+  // Validate and sanitize URL
+  const isValidUrl = (urlString) => {
+    try {
+      new URL(urlString);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Get video file type from URL
+  const getVideoType = (url) => {
+    const extension = url.split('.').pop().split('?')[0].toLowerCase();
+    const typeMap = {
+      'mp4': 'video/mp4',
+      'webm': 'video/webm',
+      'ogg': 'video/ogg',
+      'mov': 'video/quicktime'
+    };
+    return typeMap[extension] || 'video/mp4';
+  };
+
   // Handle link insertion
   const handleLinkInsert = () => {
-    if (!linkDialog.url) return;
+    if (!linkDialog.url || !isValidUrl(linkDialog.url)) return;
     const text = linkDialog.text || linkDialog.url;
     insertMarkdown(`[${text}](${linkDialog.url})`);
     setLinkDialog({ open: false, url: '', text: '' });
@@ -60,7 +87,7 @@ export default function MarkdownToolbar({ onInsert, textareaRef }) {
 
   // Handle image insertion
   const handleImageInsert = () => {
-    if (!imageDialog.url) return;
+    if (!imageDialog.url || !isValidUrl(imageDialog.url)) return;
     const alt = imageDialog.alt || 'image';
     insertMarkdown(`![${alt}](${imageDialog.url})`);
     setImageDialog({ open: false, url: '', alt: '' });
@@ -68,32 +95,42 @@ export default function MarkdownToolbar({ onInsert, textareaRef }) {
 
   // Handle video insertion
   const handleVideoInsert = () => {
-    if (!videoDialog.url) return;
+    if (!videoDialog.url || !isValidUrl(videoDialog.url)) return;
     let videoMarkdown = '';
 
-    // YouTube
-    if (videoDialog.url.includes('youtube.com') || videoDialog.url.includes('youtu.be')) {
-      let videoId = '';
-      if (videoDialog.url.includes('youtu.be/')) {
-        videoId = videoDialog.url.split('youtu.be/')[1].split(/[?#]/)[0];
-      } else if (videoDialog.url.includes('youtube.com')) {
-        const urlParams = new URLSearchParams(new URL(videoDialog.url).search);
-        videoId = urlParams.get('v');
+    try {
+      // YouTube
+      if (videoDialog.url.includes('youtube.com') || videoDialog.url.includes('youtu.be')) {
+        let videoId = '';
+        if (videoDialog.url.includes('youtu.be/')) {
+          videoId = videoDialog.url.split('youtu.be/')[1].split(/[?#]/)[0];
+        } else if (videoDialog.url.includes('youtube.com')) {
+          const urlParams = new URLSearchParams(new URL(videoDialog.url).search);
+          videoId = urlParams.get('v') || '';
+        }
+        videoId = sanitizeVideoId(videoId);
+        if (!videoId) return;
+        videoMarkdown = `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" style="border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
       }
-      videoMarkdown = `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" style="border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-    }
-    // Vimeo
-    else if (videoDialog.url.includes('vimeo.com')) {
-      const videoId = videoDialog.url.split('vimeo.com/')[1].split(/[?#]/)[0];
-      videoMarkdown = `<iframe width="100%" height="400" src="https://player.vimeo.com/video/${videoId}" style="border:0;" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
-    }
-    // Direct video URL
-    else {
-      videoMarkdown = `<video width="100%" controls><source src="${videoDialog.url}" type="video/mp4">Your browser does not support the video tag.</video>`;
-    }
+      // Vimeo
+      else if (videoDialog.url.includes('vimeo.com')) {
+        let videoId = videoDialog.url.split('vimeo.com/')[1].split(/[?#]/)[0];
+        videoId = sanitizeVideoId(videoId);
+        if (!videoId) return;
+        videoMarkdown = `<iframe width="100%" height="400" src="https://player.vimeo.com/video/${videoId}" style="border:0;" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+      }
+      // Direct video URL
+      else {
+        const videoType = getVideoType(videoDialog.url);
+        videoMarkdown = `<video width="100%" controls><source src="${videoDialog.url}" type="${videoType}">Your browser does not support the video tag.</video>`;
+      }
 
-    insertMarkdown(videoMarkdown);
-    setVideoDialog({ open: false, url: '' });
+      insertMarkdown(videoMarkdown);
+      setVideoDialog({ open: false, url: '' });
+    } catch (error) {
+      console.error('Error processing video URL:', error);
+      // Could show user feedback here
+    }
   };
 
   // Toolbar button component
