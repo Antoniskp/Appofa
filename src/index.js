@@ -3,6 +3,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { helmetConfig, corsOptions } = require('./config/securityHeaders');
 const { sequelize } = require('./models');
+const { errorHandler } = require('./middleware/errorHandler');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -44,16 +45,6 @@ app.use('/api/articles', articleRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/locations', locationRoutes);
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -61,6 +52,9 @@ app.use((req, res) => {
     message: 'Route not found'
   });
 });
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 // Database sync and server start
 const startServer = async () => {
