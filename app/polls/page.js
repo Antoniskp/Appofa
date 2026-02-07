@@ -53,8 +53,8 @@ export default function PollsPage() {
     {
       initialData: [],
       transform: (response) => {
-        setTotalPages(response.data?.pagination?.totalPages || 1);
-        return response.data?.polls || [];
+        setTotalPages(response.pagination?.totalPages || 1);
+        return response.data || [];
       }
     }
   );

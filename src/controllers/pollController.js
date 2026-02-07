@@ -33,7 +33,7 @@ const getSessionId = (req) => {
     req.session = {};
   }
   if (!req.session.id) {
-    req.session.id = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    req.session.id = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   }
   return req.session.id;
 };

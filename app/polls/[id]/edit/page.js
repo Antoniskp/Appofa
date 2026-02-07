@@ -32,7 +32,7 @@ function EditPollContent() {
       try {
         const response = await pollAPI.getById(pollId);
         if (response.success) {
-          const pollData = response.data.poll;
+          const pollData = response.data;
           
           // Check permissions
           if (!user || (pollData.creatorId !== user.id && !isAdmin)) {
