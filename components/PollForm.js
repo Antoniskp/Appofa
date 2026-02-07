@@ -114,7 +114,7 @@ export default function PollForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validate()) {
@@ -141,7 +141,7 @@ export default function PollForm({
           })
     };
 
-    onSubmit(submitData);
+    await onSubmit(submitData);
   };
 
   const isComplexPoll = formData.pollType === 'complex';
