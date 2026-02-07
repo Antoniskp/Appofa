@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { adminAPI } from '@/lib/api';
@@ -10,6 +10,32 @@ const statusStyles = {
   healthy: 'bg-green-50 border-green-200 text-green-800',
   unhealthy: 'bg-red-50 border-red-200 text-red-800',
   unknown: 'bg-gray-50 border-gray-200 text-gray-700'
+};
+
+// Utility function to format camelCase to Title Case
+const formatCheckName = (name) => {
+  return name
+    .replace(/([A-Z])/g, ' $1')
+    .trim()
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+// Tailwind class mappings for color-coded sections
+const borderColorClasses = {
+  blue: 'border-blue-500',
+  purple: 'border-purple-500',
+  green: 'border-green-500',
+  yellow: 'border-yellow-500',
+  red: 'border-red-500'
+};
+
+// Grid column mappings based on number of items
+const gridColsMap = {
+  1: 'md:grid-cols-1',
+  2: 'md:grid-cols-2',
+  3: 'md:grid-cols-3'
 };
 
 function HealthStatusContent() {
@@ -41,35 +67,76 @@ function HealthStatusContent() {
   const infrastructureChecks = health?.infrastructureChecks || {};
   const functionalChecks = health?.functionalChecks || {};
 
-  const renderCheckCard = (key, check) => (
-    <div key={key} className="bg-white rounded-lg shadow-md p-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold capitalize">
-          {key.replace(/([A-Z])/g, ' $1').trim()}
-        </h3>
-        <Badge variant={check.status === 'healthy' ? 'success' : 'danger'}>
-          {check.status === 'healthy' ? '✓' : '✗'} {check.status}
-        </Badge>
+  // Organize functional checks by category
+  const functionalCheckGroups = useMemo(() => ({
+    articleCrud: {
+      title: 'Article CRUD Operations',
+      color: 'blue',
+      checks: ['articleRead', 'articleCreate', 'articleUpdate', 'articleDelete']
+    },
+    frontpage: {
+      title: 'Frontpage Functionality',
+      color: 'purple',
+      checks: ['frontpageQuery', 'frontpageFiltering']
+    },
+    authentication: {
+      title: 'Authentication',
+      color: 'green',
+      checks: ['authValidation', 'sessionValidation']
+    },
+    locations: {
+      title: 'Location Management',
+      color: 'yellow',
+      checks: ['locationRead', 'locationCreate', 'locationArticleLink']
+    },
+    newsApproval: {
+      title: 'News Approval Workflows',
+      color: 'red',
+      checks: ['newsApprovalRead', 'newsStatusTransition']
+    }
+  }), []);
+
+  const renderCheckCard = (key, check) => {
+    const isHealthy = check.status === 'healthy';
+    
+    return (
+      <div key={key} className="bg-white rounded-lg shadow-md p-6">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold">
+            {formatCheckName(key)}
+          </h3>
+          <Badge variant={isHealthy ? 'success' : 'danger'}>
+            <span aria-label={isHealthy ? 'Healthy' : 'Unhealthy'}>
+              {isHealthy ? '✓' : '✗'}
+            </span>
+            {' '}
+            {check.status}
+          </Badge>
+        </div>
+        <div className="mt-3 text-sm text-gray-600 space-y-1">
+          {check.message && <p>{check.message}</p>}
+          {typeof check.count === 'number' && <p>Count: {check.count}</p>}
+          {typeof check.activeUsers === 'number' && <p>Active Users: {check.activeUsers}</p>}
+          {typeof check.publishedCount === 'number' && <p>Published: {check.publishedCount}</p>}
+          {typeof check.categoryCount === 'number' && <p>Categories: {check.categoryCount}</p>}
+          {typeof check.linkCount === 'number' && <p>Links: {check.linkCount}</p>}
+          {typeof check.pendingNews === 'number' && <p>Pending News: {check.pendingNews}</p>}
+          {typeof check.approvedNews === 'number' && <p>Approved News: {check.approvedNews}</p>}
+          {typeof check.totalNewsArticles === 'number' && <p>Total News: {check.totalNewsArticles}</p>}
+          {typeof check.draftCount === 'number' && <p>Draft Articles: {check.draftCount}</p>}
+          {check.sampleId && <p>Sample ID: {check.sampleId}</p>}
+          {check.userId && <p>User ID: {check.userId}</p>}
+          {check.role && <p>Role: {check.role}</p>}
+          <p className="font-medium">Response Time: {check.responseTimeMs ?? '-'} ms</p>
+          {check.error && (
+            <p className="text-red-600 font-medium" role="alert">
+              Error: {check.error}
+            </p>
+          )}
+        </div>
       </div>
-      <div className="mt-3 text-sm text-gray-600 space-y-1">
-        {check.message && <p>{check.message}</p>}
-        {typeof check.count === 'number' && <p>Count: {check.count}</p>}
-        {typeof check.activeUsers === 'number' && <p>Active Users: {check.activeUsers}</p>}
-        {typeof check.publishedCount === 'number' && <p>Published: {check.publishedCount}</p>}
-        {typeof check.categoryCount === 'number' && <p>Categories: {check.categoryCount}</p>}
-        {typeof check.linkCount === 'number' && <p>Links: {check.linkCount}</p>}
-        {typeof check.pendingNews === 'number' && <p>Pending News: {check.pendingNews}</p>}
-        {typeof check.approvedNews === 'number' && <p>Approved News: {check.approvedNews}</p>}
-        {typeof check.totalNewsArticles === 'number' && <p>Total News: {check.totalNewsArticles}</p>}
-        {typeof check.draftCount === 'number' && <p>Draft Articles: {check.draftCount}</p>}
-        {check.sampleId && <p>Sample ID: {check.sampleId}</p>}
-        {check.userId && <p>User ID: {check.userId}</p>}
-        {check.role && <p>Role: {check.role}</p>}
-        <p className="font-medium">Response Time: {check.responseTimeMs ?? '-'} ms</p>
-        {check.error && <p className="text-red-600">Error: {check.error}</p>}
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -84,6 +151,7 @@ function HealthStatusContent() {
               onClick={loadHealth}
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
               type="button"
+              aria-label="Refresh health status"
             >
               Refresh
             </button>
@@ -127,11 +195,17 @@ function HealthStatusContent() {
                 <h2 className="text-2xl font-bold text-gray-900">Infrastructure Checks</h2>
                 <Badge variant="info">Core Services</Badge>
               </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {Object.entries(infrastructureChecks).map(([key, check]) => 
-                  renderCheckCard(key, check)
-                )}
-              </div>
+              {Object.keys(infrastructureChecks).length === 0 ? (
+                <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+                  No infrastructure checks available
+                </div>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {Object.entries(infrastructureChecks).map(([key, check]) => 
+                    renderCheckCard(key, check)
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Functional Checks Section */}
@@ -142,65 +216,30 @@ function HealthStatusContent() {
                   <Badge variant="info">Feature Tests</Badge>
                 </div>
                 
-                {/* Article CRUD Operations */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-800 border-l-4 border-blue-500 pl-3">
-                    Article CRUD Operations
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    {['articleRead', 'articleCreate', 'articleUpdate', 'articleDelete'].map(key => 
-                      functionalChecks[key] && renderCheckCard(key, functionalChecks[key])
-                    )}
-                  </div>
-                </div>
-
-                {/* Frontpage Functionality */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-800 border-l-4 border-purple-500 pl-3">
-                    Frontpage Functionality
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {['frontpageQuery', 'frontpageFiltering'].map(key => 
-                      functionalChecks[key] && renderCheckCard(key, functionalChecks[key])
-                    )}
-                  </div>
-                </div>
-
-                {/* Authentication */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-800 border-l-4 border-green-500 pl-3">
-                    Authentication
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {['authValidation', 'sessionValidation'].map(key => 
-                      functionalChecks[key] && renderCheckCard(key, functionalChecks[key])
-                    )}
-                  </div>
-                </div>
-
-                {/* Location Management */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-800 border-l-4 border-yellow-500 pl-3">
-                    Location Management
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    {['locationRead', 'locationCreate', 'locationArticleLink'].map(key => 
-                      functionalChecks[key] && renderCheckCard(key, functionalChecks[key])
-                    )}
-                  </div>
-                </div>
-
-                {/* News Approval Workflows */}
-                <div className="space-y-3">
-                  <h3 className="text-lg font-semibold text-gray-800 border-l-4 border-red-500 pl-3">
-                    News Approval Workflows
-                  </h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {['newsApprovalRead', 'newsStatusTransition'].map(key => 
-                      functionalChecks[key] && renderCheckCard(key, functionalChecks[key])
-                    )}
-                  </div>
-                </div>
+                {Object.entries(functionalCheckGroups).map(([groupKey, group]) => {
+                  // Filter only checks that exist in functionalChecks
+                  const availableChecks = group.checks.filter(key => functionalChecks[key]);
+                  
+                  // Skip rendering this group if no checks are available
+                  if (availableChecks.length === 0) return null;
+                  
+                  // Determine grid columns based on number of checks
+                  const gridColsClass = gridColsMap[availableChecks.length] || 'md:grid-cols-2 lg:grid-cols-4';
+                  
+                  return (
+                    <div key={groupKey} className="space-y-3">
+                      <h3 className={`text-lg font-semibold text-gray-800 border-l-4 ${borderColorClasses[group.color]} pl-3`}>
+                        {group.title}
+                        <span className="sr-only"> - {availableChecks.length} check{availableChecks.length !== 1 ? 's' : ''}</span>
+                      </h3>
+                      <div className={`grid gap-4 ${gridColsClass}`}>
+                        {availableChecks.map(key => 
+                          renderCheckCard(key, functionalChecks[key])
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
