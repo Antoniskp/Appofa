@@ -18,17 +18,9 @@ const PollOption = sequelize.define('PollOption', {
   },
   text: {
     type: DataTypes.STRING,
-    allowNull: true,
-    validate: {
-      requiredForSimple(value) {
-        // Custom validator: text is required for simple polls
-        // This will be validated at the application level
-        if (!value && this.text === null) {
-          // Allow validation - will be enforced in application logic
-          return;
-        }
-      }
-    }
+    allowNull: true
+    // Note: text is required for simple polls but validation is enforced at the application level
+    // since we need to check the parent poll's type which isn't accessible in model validation
   },
   photoUrl: {
     type: DataTypes.STRING,
