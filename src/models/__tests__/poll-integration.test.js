@@ -14,7 +14,7 @@ async function setupTestDatabase() {
 
 async function createTestUser(username = 'testuser') {
   // Add timestamp to ensure uniqueness
-  const uniqueUsername = `${username}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const uniqueUsername = `${username}_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
   return await User.create({
     username: uniqueUsername,
     email: `${uniqueUsername}@test.com`,
