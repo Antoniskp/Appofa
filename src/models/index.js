@@ -3,6 +3,9 @@ const User = require('./User');
 const Article = require('./Article');
 const Location = require('./Location');
 const LocationLink = require('./LocationLink');
+const Poll = require('./Poll');
+const PollOption = require('./PollOption');
+const PollVote = require('./PollVote');
 
 // Define associations
 User.hasMany(Article, {
@@ -43,10 +46,77 @@ User.belongsTo(Location, {
   as: 'homeLocation'
 });
 
+// Poll associations
+Poll.belongsTo(User, {
+  foreignKey: 'creatorId',
+  as: 'creator'
+});
+
+Poll.belongsTo(Location, {
+  foreignKey: 'locationId',
+  as: 'location'
+});
+
+Poll.hasMany(PollOption, {
+  foreignKey: 'pollId',
+  as: 'options'
+});
+
+Poll.hasMany(PollVote, {
+  foreignKey: 'pollId',
+  as: 'votes'
+});
+
+// PollOption associations
+PollOption.belongsTo(Poll, {
+  foreignKey: 'pollId',
+  as: 'poll'
+});
+
+PollOption.belongsTo(User, {
+  foreignKey: 'addedByUserId',
+  as: 'addedBy'
+});
+
+PollOption.hasMany(PollVote, {
+  foreignKey: 'optionId',
+  as: 'votes'
+});
+
+// PollVote associations
+PollVote.belongsTo(Poll, {
+  foreignKey: 'pollId',
+  as: 'poll'
+});
+
+PollVote.belongsTo(PollOption, {
+  foreignKey: 'optionId',
+  as: 'option'
+});
+
+PollVote.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+// User poll associations
+User.hasMany(Poll, {
+  foreignKey: 'creatorId',
+  as: 'polls'
+});
+
+User.hasMany(PollVote, {
+  foreignKey: 'userId',
+  as: 'pollVotes'
+});
+
 module.exports = {
   sequelize,
   User,
   Article,
   Location,
-  LocationLink
+  LocationLink,
+  Poll,
+  PollOption,
+  PollVote
 };
