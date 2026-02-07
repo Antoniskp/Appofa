@@ -39,7 +39,7 @@ export default function MarkdownRenderer({ content, className = '' }) {
     try {
       const url = new URL(src);
       return ALLOWED_IFRAME_DOMAINS.some(domain => 
-        url.hostname === domain || url.hostname.endsWith(`.${domain}`)
+        url.hostname === domain || url.hostname.endsWith('.' + domain)
       );
     } catch {
       return false;
@@ -75,8 +75,9 @@ export default function MarkdownRenderer({ content, className = '' }) {
   const components = {
     // Make images responsive and add lazy loading
     img: ({ node, alt, src, title, ...props }) => {
-      // Block data URIs and javascript: URLs for security
-      if (!src || src.startsWith('javascript:') || src.startsWith('data:')) {
+      // Block data URIs and javascript: URLs for security (case-insensitive)
+      const lowerSrc = src ? src.toLowerCase() : '';
+      if (!src || lowerSrc.startsWith('javascript:') || lowerSrc.startsWith('data:')) {
         return null;
       }
 
@@ -119,8 +120,9 @@ export default function MarkdownRenderer({ content, className = '' }) {
 
     // Handle video tags
     video: ({ node, src, poster, controls, ...props }) => {
-      // Block data URIs and javascript: URLs for security
-      if (!src || src.startsWith('javascript:') || src.startsWith('data:')) {
+      // Block data URIs and javascript: URLs for security (case-insensitive)
+      const lowerSrc = src ? src.toLowerCase() : '';
+      if (!src || lowerSrc.startsWith('javascript:') || lowerSrc.startsWith('data:')) {
         return null;
       }
 
@@ -141,8 +143,9 @@ export default function MarkdownRenderer({ content, className = '' }) {
 
     // Style links
     a: ({ node, href, children, ...props }) => {
-      // Block javascript: URLs for security
-      if (!href || href.startsWith('javascript:')) {
+      // Block javascript: URLs for security (case-insensitive)
+      const lowerHref = href ? href.toLowerCase() : '';
+      if (!href || lowerHref.startsWith('javascript:')) {
         return <span>{children}</span>;
       }
 
