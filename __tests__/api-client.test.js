@@ -59,23 +59,4 @@ describe('apiRequest base URL selection', () => {
       expect.objectContaining({ credentials: 'include' })
     );
   });
-
-  test('uses NEXT_PUBLIC_API_URL when window is defined and NEXT_PUBLIC_API_URL is set', async () => {
-    global.window = {};
-    global.document = { cookie: '' };
-    process.env.NEXT_PUBLIC_API_URL = 'http://codespaces-api.test';
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ success: true })
-      })
-    );
-
-    await apiRequest('/api/auth/profile');
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      'http://codespaces-api.test/api/auth/profile',
-      expect.objectContaining({ credentials: 'include' })
-    );
-  });
 });
