@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import Badge from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
 import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import MarkdownToolbar from '@/components/MarkdownToolbar';
 import { locationAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
@@ -34,6 +35,7 @@ export default function ArticleForm({
   const [linkedLocations, setLinkedLocations] = useState([]);
   const [newLocationId, setNewLocationId] = useState(null);
   const [locationError, setLocationError] = useState('');
+  const contentTextareaRef = useRef(null);
 
   // Initialize form data from article prop (edit mode)
   useEffect(() => {
@@ -84,6 +86,22 @@ export default function ArticleForm({
         [name]: type === 'checkbox' ? checked : value,
       }));
     }
+  };
+
+  const handleToolbarInsert = (start, end, text) => {
+    const textarea = contentTextareaRef.current;
+    if (!textarea) return;
+
+    const currentContent = formData.content;
+    const newContent = 
+      currentContent.substring(0, start) + 
+      text + 
+      currentContent.substring(end);
+    
+    setFormData(prev => ({
+      ...prev,
+      content: newContent
+    }));
   };
 
   const handleAddLocation = async () => {
@@ -171,18 +189,29 @@ export default function ArticleForm({
         placeholder="e.g. AI, Research"
       />
 
-      <FormInput
-        name="content"
-        type="textarea"
-        label="Content"
-        rows={10}
-        value={formData.content}
-        onChange={handleInputChange}
-        required
-        maxLength={50000}
-        showCharCount
-        placeholder="Write your article content here..."
-      />
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Content *
+        </label>
+        <MarkdownToolbar 
+          onInsert={handleToolbarInsert}
+          textareaRef={contentTextareaRef}
+        />
+        <textarea
+          ref={contentTextareaRef}
+          name="content"
+          rows={15}
+          value={formData.content}
+          onChange={handleInputChange}
+          required
+          maxLength={50000}
+          className="w-full px-4 py-2 border border-gray-300 rounded-b-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+          placeholder="Write your article content here... (Markdown supported)"
+        />
+        <div className="text-xs text-gray-500 mt-1">
+          {formData.content.length} / 50000 characters • Markdown supported
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div>
