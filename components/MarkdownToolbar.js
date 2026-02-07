@@ -93,6 +93,30 @@ export default function MarkdownToolbar({ onInsert, textareaRef }) {
     setImageDialog({ open: false, url: '', alt: '' });
   };
 
+  // Check if URL hostname matches allowed domains
+  const isYouTubeUrl = (url) => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      return hostname === 'youtube.com' || 
+             hostname === 'www.youtube.com' || 
+             hostname === 'youtu.be' || 
+             hostname === 'www.youtu.be';
+    } catch {
+      return false;
+    }
+  };
+
+  const isVimeoUrl = (url) => {
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.toLowerCase();
+      return hostname === 'vimeo.com' || hostname === 'www.vimeo.com';
+    } catch {
+      return false;
+    }
+  };
+
   // Handle video insertion
   const handleVideoInsert = () => {
     if (!videoDialog.url || !isValidUrl(videoDialog.url)) return;
@@ -100,21 +124,25 @@ export default function MarkdownToolbar({ onInsert, textareaRef }) {
 
     try {
       // YouTube
-      if (videoDialog.url.includes('youtube.com') || videoDialog.url.includes('youtu.be')) {
+      if (isYouTubeUrl(videoDialog.url)) {
         let videoId = '';
-        if (videoDialog.url.includes('youtu.be/')) {
-          videoId = videoDialog.url.split('youtu.be/')[1].split(/[?#]/)[0];
-        } else if (videoDialog.url.includes('youtube.com')) {
-          const urlParams = new URLSearchParams(new URL(videoDialog.url).search);
-          videoId = urlParams.get('v') || '';
+        const urlObj = new URL(videoDialog.url);
+        const hostname = urlObj.hostname.toLowerCase();
+        
+        if (hostname === 'youtu.be' || hostname === 'www.youtu.be') {
+          videoId = urlObj.pathname.substring(1).split(/[?#]/)[0];
+        } else {
+          videoId = urlObj.searchParams.get('v') || '';
         }
+        
         videoId = sanitizeVideoId(videoId);
         if (!videoId) return;
         videoMarkdown = `<iframe width="100%" height="400" src="https://www.youtube.com/embed/${videoId}" style="border:0;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
       }
       // Vimeo
-      else if (videoDialog.url.includes('vimeo.com')) {
-        let videoId = videoDialog.url.split('vimeo.com/')[1].split(/[?#]/)[0];
+      else if (isVimeoUrl(videoDialog.url)) {
+        const urlObj = new URL(videoDialog.url);
+        let videoId = urlObj.pathname.substring(1).split(/[?#]/)[0];
         videoId = sanitizeVideoId(videoId);
         if (!videoId) return;
         videoMarkdown = `<iframe width="100%" height="400" src="https://player.vimeo.com/video/${videoId}" style="border:0;" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
