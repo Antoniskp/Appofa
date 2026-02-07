@@ -1,6 +1,14 @@
 const { Article, User, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
+const {
+  normalizeRequiredText,
+  normalizeOptionalText,
+  normalizeBoolean,
+  normalizeStringArray,
+  normalizeEnum,
+  normalizeUrl
+} = require('../utils/validators');
 
 const DEFAULT_BANNER_IMAGE_URL = '/images/branding/news default.png';
 const ARTICLE_STATUSES = ['draft', 'published', 'archived'];
@@ -10,135 +18,11 @@ const CONTENT_MIN_LENGTH = 10;
 const CONTENT_MAX_LENGTH = 50000;
 const SUMMARY_MAX_LENGTH = 500;
 
-const normalizeRequiredText = (value, fieldLabel, minLength, maxLength) => {
-  if (typeof value !== 'string') {
-    return { error: `${fieldLabel} must be a string.` };
-  }
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return { error: `${fieldLabel} is required.` };
-  }
-  if (minLength != null && trimmedValue.length < minLength) {
-    return { error: `${fieldLabel} must be between ${minLength} and ${maxLength} characters.` };
-  }
-  if (maxLength != null && trimmedValue.length > maxLength) {
-    return { error: `${fieldLabel} must be between ${minLength} and ${maxLength} characters.` };
-  }
-  return { value: trimmedValue };
-};
-
-const normalizeOptionalText = (value, fieldLabel, minLength, maxLength) => {
-  if (value === undefined) {
-    return { value: undefined };
-  }
-  if (value === null) {
-    return { value: null };
-  }
-  if (typeof value !== 'string') {
-    return { error: `${fieldLabel} must be a string.` };
-  }
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return { value: null };
-  }
-  if (minLength != null && trimmedValue.length < minLength) {
-    return { error: `${fieldLabel} must be at least ${minLength} characters.` };
-  }
-  if (maxLength != null && trimmedValue.length > maxLength) {
-    return { error: `${fieldLabel} must be ${maxLength} characters or fewer.` };
-  }
-  return { value: trimmedValue };
-};
-
-const normalizeTags = (tags) => {
-  if (tags === undefined) {
-    return { value: undefined };
-  }
-  if (tags === null) {
-    return { value: [] };
-  }
-  if (!Array.isArray(tags)) {
-    return { error: 'Tags must be an array of strings.' };
-  }
-  const normalizedTags = [];
-  for (const tag of tags) {
-    if (typeof tag !== 'string') {
-      return { error: 'Tags must be an array of strings.' };
-    }
-    const trimmedTag = tag.trim();
-    if (trimmedTag) {
-      normalizedTags.push(trimmedTag);
-    }
-  }
-  return { value: normalizedTags };
-};
-
-const normalizeStatus = (status) => {
-  if (status === undefined) {
-    return { value: undefined };
-  }
-  if (typeof status !== 'string') {
-    return { error: 'Status must be a string.' };
-  }
-  const trimmedStatus = status.trim();
-  if (!ARTICLE_STATUSES.includes(trimmedStatus)) {
-    return { error: `Status must be one of: ${ARTICLE_STATUSES.join(', ')}.` };
-  }
-  return { value: trimmedStatus };
-};
-
-const normalizeType = (type) => {
-  if (type === undefined) {
-    return { value: undefined };
-  }
-  if (typeof type !== 'string') {
-    return { error: 'Article type must be a string.' };
-  }
-  const trimmedType = type.trim();
-  if (!ARTICLE_TYPES.includes(trimmedType)) {
-    return { error: 'Article type is invalid.' };
-  }
-  return { value: trimmedType };
-};
-
-const normalizeBoolean = (value, fieldLabel) => {
-  if (value === undefined) {
-    return { value: undefined };
-  }
-  if (typeof value !== 'boolean') {
-    return { error: `${fieldLabel} must be a boolean.` };
-  }
-  return { value };
-};
-
-const normalizeBannerImageUrl = (value) => {
-  if (value === undefined) {
-    return { value: undefined };
-  }
-  if (value === null) {
-    return { value: null };
-  }
-  if (typeof value !== 'string') {
-    return { error: 'Banner image URL must be a string.' };
-  }
-  const trimmedValue = value.trim();
-  if (trimmedValue.length === 0) {
-    return { value: null };
-  }
-  if (trimmedValue.startsWith('/')) {
-    return { value: trimmedValue };
-  }
-  let parsedUrl;
-  try {
-    parsedUrl = new URL(trimmedValue);
-  } catch (parseError) {
-    return { error: 'Banner image URL is malformed.' };
-  }
-  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-    return { error: 'Banner image URL must use HTTP or HTTPS protocol.' };
-  }
-  return { value: trimmedValue };
-};
+// Helper functions using shared validators
+const normalizeStatus = (status) => normalizeEnum(status, ARTICLE_STATUSES, 'Status');
+const normalizeType = (type) => normalizeEnum(type, ARTICLE_TYPES, 'Article type');
+const normalizeTags = (tags) => normalizeStringArray(tags, 'Tags');
+const normalizeBannerImageUrl = (value) => normalizeUrl(value, 'Banner image URL', true);
 
 const articleController = {
   // Create a new article

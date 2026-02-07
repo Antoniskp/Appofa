@@ -3,10 +3,15 @@ const { Op } = require('sequelize');
 const { User, Location, LocationLink, sequelize } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
+const {
+  normalizeRequiredText,
+  normalizeOptionalText,
+  normalizeEmail,
+  normalizePassword
+} = require('../utils/validators');
 require('dotenv').config();
 
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
 const PASSWORD_MIN_LENGTH = 6;
@@ -27,70 +32,6 @@ const csrfCookieOptions = {
   secure: process.env.NODE_ENV === 'production',
   maxAge: 2 * 60 * 60 * 1000,
   path: '/'
-};
-
-const normalizeRequiredString = (value, fieldLabel, minLength, maxLength) => {
-  if (typeof value !== 'string') {
-    return { error: `${fieldLabel} must be a string.` };
-  }
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return { error: `${fieldLabel} is required.` };
-  }
-  if (minLength != null && trimmedValue.length < minLength) {
-    return { error: `${fieldLabel} must be at least ${minLength} characters.` };
-  }
-  if (maxLength != null && trimmedValue.length > maxLength) {
-    return { error: `${fieldLabel} must be ${maxLength} characters or fewer.` };
-  }
-  return { value: trimmedValue };
-};
-
-const normalizeOptionalString = (value, fieldLabel, maxLength) => {
-  if (value === undefined) {
-    return { value: undefined };
-  }
-  if (value === null) {
-    return { value: null };
-  }
-  if (typeof value !== 'string') {
-    return { error: `${fieldLabel} must be a string.` };
-  }
-  const trimmedValue = value.trim();
-  if (!trimmedValue) {
-    return { value: null };
-  }
-  if (maxLength != null && trimmedValue.length > maxLength) {
-    return { error: `${fieldLabel} must be ${maxLength} characters or fewer.` };
-  }
-  return { value: trimmedValue };
-};
-
-const normalizeEmail = (email) => {
-  if (typeof email !== 'string') {
-    return { error: 'Email must be a string.' };
-  }
-  const trimmedEmail = email.trim().toLowerCase();
-  if (!trimmedEmail) {
-    return { error: 'Email is required.' };
-  }
-  if (!EMAIL_REGEX.test(trimmedEmail)) {
-    return { error: 'Email must be a valid email address.' };
-  }
-  return { value: trimmedEmail };
-};
-
-const normalizePassword = (password, fieldLabel) => {
-  if (typeof password !== 'string') {
-    return { error: `${fieldLabel} must be a string.` };
-  }
-  if (!password) {
-    return { error: `${fieldLabel} is required.` };
-  }
-  if (password.length < PASSWORD_MIN_LENGTH) {
-    return { error: `${fieldLabel} must be at least ${PASSWORD_MIN_LENGTH} characters.` };
-  }
-  return { value: password };
 };
 
 const setAuthCookies = (res, token, userId) => {
@@ -267,7 +208,7 @@ const authController = {
         });
       }
 
-      const passwordResult = normalizePassword(password, 'Password');
+      const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
       if (passwordResult.error) {
         return res.status(400).json({
           success: false,
@@ -580,7 +521,7 @@ const authController = {
     try {
       const { currentPassword, newPassword } = req.body;
 
-      const currentPasswordResult = normalizePassword(currentPassword, 'Current password');
+      const currentPasswordResult = normalizePassword(currentPassword, 'Current password', PASSWORD_MIN_LENGTH);
       if (currentPasswordResult.error) {
         return res.status(400).json({
           success: false,
@@ -588,7 +529,7 @@ const authController = {
         });
       }
 
-      const newPasswordResult = normalizePassword(newPassword, 'New password');
+      const newPasswordResult = normalizePassword(newPassword, 'New password', PASSWORD_MIN_LENGTH);
       if (newPasswordResult.error) {
         return res.status(400).json({
           success: false,
