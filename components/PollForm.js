@@ -89,32 +89,29 @@ export default function PollForm({
       newErrors.title = 'Ο τίτλος είναι υποχρεωτικός';
     }
 
-    // Skip option validation for free-text polls
-    if (formData.questionType !== 'free-text') {
-      // At least 2 options required
-      if (formData.options.length < 2) {
-        newErrors.options = 'Πρέπει να έχετε τουλάχιστον 2 επιλογές';
-      }
+    // At least 2 options required
+    if (formData.options.length < 2) {
+      newErrors.options = 'Πρέπει να έχετε τουλάχιστον 2 επιλογές';
+    }
 
-      // Check that all options have required fields
-      const hasEmptyOptions = formData.options.some(opt => {
-        if (formData.pollType === 'simple') {
-          return !opt.optionText?.trim();
-        } else {
-          return !opt.optionText?.trim() && !opt.displayName?.trim();
-        }
-      });
-
-      if (hasEmptyOptions) {
-        newErrors.options = 'Όλες οι επιλογές πρέπει να έχουν κείμενο';
+    // Check that all options have required fields
+    const hasEmptyOptions = formData.options.some(opt => {
+      if (formData.pollType === 'simple') {
+        return !opt.optionText?.trim();
+      } else {
+        return !opt.optionText?.trim() && !opt.displayName?.trim();
       }
+    });
+
+    if (hasEmptyOptions) {
+      newErrors.options = 'Όλες οι επιλογές πρέπει να έχουν κείμενο';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!validate()) {
@@ -138,7 +135,7 @@ export default function PollForm({
       })
     };
 
-    await onSubmit(submitData);
+    onSubmit(submitData);
   };
 
   const isComplexPoll = formData.pollType === 'complex';
