@@ -89,25 +89,22 @@ export default function PollForm({
       newErrors.title = 'Ο τίτλος είναι υποχρεωτικός';
     }
 
-    // Options validation only for non-free-text types
-    if (formData.questionType !== 'free-text') {
-      // At least 2 options required
-      if (formData.options.length < 2) {
-        newErrors.options = 'Πρέπει να έχετε τουλάχιστον 2 επιλογές';
-      }
+    // At least 2 options required
+    if (formData.options.length < 2) {
+      newErrors.options = 'Πρέπει να έχετε τουλάχιστον 2 επιλογές';
+    }
 
-      // Check that all options have required fields
-      const hasEmptyOptions = formData.options.some(opt => {
-        if (formData.pollType === 'simple') {
-          return !opt.optionText?.trim();
-        } else {
-          return !opt.optionText?.trim() && !opt.displayName?.trim();
-        }
-      });
-
-      if (hasEmptyOptions) {
-        newErrors.options = 'Όλες οι επιλογές πρέπει να έχουν κείμενο';
+    // Check that all options have required fields
+    const hasEmptyOptions = formData.options.some(opt => {
+      if (formData.pollType === 'simple') {
+        return !opt.optionText?.trim();
+      } else {
+        return !opt.optionText?.trim() && !opt.displayName?.trim();
       }
+    });
+
+    if (hasEmptyOptions) {
+      newErrors.options = 'Όλες οι επιλογές πρέπει να έχουν κείμενο';
     }
 
     setErrors(newErrors);
@@ -124,21 +121,18 @@ export default function PollForm({
     // Prepare data for submission
     const submitData = {
       ...formData,
-      // Only process options for question types that need them
-      options: formData.questionType === 'free-text' 
-        ? [] 
-        : formData.options.map(opt => {
-            if (formData.pollType === 'simple') {
-              return { optionText: opt.optionText.trim() };
-            } else {
-              return {
-                optionText: opt.optionText.trim(),
-                imageUrl: opt.imageUrl?.trim() || null,
-                linkUrl: opt.linkUrl?.trim() || null,
-                displayName: opt.displayName?.trim() || opt.optionText.trim()
-              };
-            }
-          })
+      options: formData.options.map(opt => {
+        if (formData.pollType === 'simple') {
+          return { optionText: opt.optionText.trim() };
+        } else {
+          return {
+            optionText: opt.optionText.trim(),
+            imageUrl: opt.imageUrl?.trim() || null,
+            linkUrl: opt.linkUrl?.trim() || null,
+            displayName: opt.displayName?.trim() || opt.optionText.trim()
+          };
+        }
+      })
     };
 
     onSubmit(submitData);
