@@ -6,6 +6,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - JWT-based authentication with role-based access control (Admin, Moderator, Editor, Viewer)
 - **GitHub OAuth integration** for easy signup/login and account linking
 - **Google Analytics integration** for tracking page views and custom events
+- **Poll and Statistics System** with flexible answer types, voting, and Chart.js visualizations
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
 - Article types and categories with dependent dropdowns (Personal, Articles, News)
@@ -23,6 +24,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
 - [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
 - [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
+- [Poll System](doc/POLL_API.md) - Poll creation, voting, and results visualization
 
 ### Deployment & Operations
 - [Deployment Guide](doc/DEPLOYMENT.md) - General deployment instructions
