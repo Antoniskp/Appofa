@@ -20,11 +20,10 @@ import remarkGfm from 'remark-gfm';
  * - Tailwind typography styling
  */
 export default function MarkdownRenderer({ content, className = '' }) {
-  // Allowed YouTube and Vimeo domains for iframe embeds
+  // Allowed base domains for iframe embeds
+  // The validation logic will also allow proper subdomains (e.g., www.youtube.com)
   const ALLOWED_IFRAME_DOMAINS = [
-    'www.youtube.com',
     'youtube.com',
-    'www.youtube-nocookie.com',
     'youtube-nocookie.com',
     'player.vimeo.com',
     'vimeo.com'
@@ -32,15 +31,26 @@ export default function MarkdownRenderer({ content, className = '' }) {
 
   /**
    * Check if an iframe source is from an allowed domain
+   * Allows exact domain match or proper subdomains (e.g., www.youtube.com)
+   * Prevents evil.com and evilyoutube.com from passing
    */
   const isAllowedIframeSrc = (src) => {
     if (!src) return false;
     
     try {
       const url = new URL(src);
-      return ALLOWED_IFRAME_DOMAINS.some(domain => 
-        url.hostname === domain || url.hostname.endsWith('.' + domain)
-      );
+      const hostname = url.hostname;
+      
+      return ALLOWED_IFRAME_DOMAINS.some(domain => {
+        // Exact match (e.g., youtube.com)
+        if (hostname === domain) return true;
+        
+        // Proper subdomain (e.g., www.youtube.com, m.youtube.com)
+        // Must end with .domain to prevent evilyoutube.com from passing
+        if (hostname.endsWith('.' + domain)) return true;
+        
+        return false;
+      });
     } catch {
       return false;
     }
@@ -156,7 +166,10 @@ export default function MarkdownRenderer({ content, className = '' }) {
       }
 
       // Open external links in new tab
-      const isExternal = href.startsWith('http://') || href.startsWith('https://');
+      // Check for http://, https://, and protocol-relative URLs (//)
+      const isExternal = href.startsWith('http://') || 
+                        href.startsWith('https://') || 
+                        href.startsWith('//');
       
       return (
         <a
