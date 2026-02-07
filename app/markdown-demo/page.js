@@ -7,9 +7,20 @@ import MarkdownToolbar from '@/components/MarkdownToolbar';
  * Demo page for the MarkdownToolbar component
  * Shows both desktop and mobile views with live preview
  */
+const DEFAULT_CONTENT = `# Welcome to the Markdown Editor
+
+Try using the toolbar above to format your text!
+
+## Features
+- Easy formatting
+- Insert links and images
+- Add videos from YouTube, Vimeo, or direct URLs
+
+Start typing or select text and click toolbar buttons...`;
+
 export default function MarkdownDemo() {
   const textareaRef = useRef(null);
-  const [content, setContent] = useState('# Welcome to the Markdown Editor\n\nTry using the toolbar above to format your text!\n\n## Features\n- Easy formatting\n- Insert links and images\n- Add videos from YouTube, Vimeo, or direct URLs\n\nStart typing or select text and click toolbar buttons...');
+  const [content, setContent] = useState(DEFAULT_CONTENT);
 
   const handleInsert = (start, end, text) => {
     // Insert the text at the cursor position
