@@ -42,7 +42,7 @@ export default function PollDetailPage() {
     try {
       const response = await pollAPI.getById(pollId);
       if (response.success) {
-        setPoll(response.data.poll);
+        setPoll(response.data);
       }
     } catch (err) {
       setError(err.message || 'Σφάλμα κατά τη φόρτωση της δημοσκόπησης');
@@ -83,7 +83,7 @@ export default function PollDetailPage() {
     if (!poll) return false;
     
     if (poll.resultsVisibility === 'always') return true;
-    if (poll.resultsVisibility === 'after_close' && poll.status === 'closed') return true;
+    if (poll.resultsVisibility === 'after_deadline' && poll.status === 'closed') return true;
     if (poll.resultsVisibility === 'after_vote' && poll.userVote) return true;
     
     // Creator and admin can always view results
@@ -238,7 +238,7 @@ export default function PollDetailPage() {
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
             <p className="text-gray-600">
               Τα αποτελέσματα θα είναι διαθέσιμα {
-                poll.resultsVisibility === 'after_close' ? 'μετά το κλείσιμο της δημοσκόπησης' :
+                poll.resultsVisibility === 'after_deadline' ? 'μετά την προθεσμία της δημοσκόπησης' :
                 poll.resultsVisibility === 'after_vote' ? 'αφού ψηφίσετε' :
                 'σύντομα'
               }.

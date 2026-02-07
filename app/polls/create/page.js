@@ -18,7 +18,7 @@ function CreatePollContent() {
     try {
       const response = await pollAPI.create(pollData);
       if (response.success) {
-        router.push(`/polls/${response.data.poll.id}`);
+        router.push(`/polls/${response.data.id}`);
       }
     } catch (err) {
       setSubmitError(err.message || 'Σφάλμα κατά τη δημιουργία της δημοσκόπησης');

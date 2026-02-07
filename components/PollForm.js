@@ -189,7 +189,7 @@ export default function PollForm({
             options={[
               { value: 'public', label: 'Δημόσια' },
               { value: 'locals_only', label: 'Μόνο Τοπικοί' },
-              { value: 'authenticated_only', label: 'Μόνο Συνδεδεμένοι' },
+              { value: 'private', label: 'Μόνο Συνδεδεμένοι' },
             ]}
           />
 
@@ -201,7 +201,7 @@ export default function PollForm({
             required
             options={[
               { value: 'after_vote', label: 'Μετά την Ψηφοφορία' },
-              { value: 'after_close', label: 'Μετά το Κλείσιμο' },
+              { value: 'after_deadline', label: 'Μετά την Προθεσμία' },
               { value: 'always', label: 'Πάντα' },
             ]}
           />

@@ -47,7 +47,7 @@ export default function PollsPage() {
       if (response.success) {
         return response;
       }
-      return { data: { polls: [], pagination: { totalPages: 1 } } };
+      return { data: [], pagination: { totalPages: 1 } };
     },
     [page, filters],
     {
