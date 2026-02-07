@@ -372,7 +372,7 @@ const pollController = {
         ],
         order: [['createdAt', 'DESC']],
         limit: parsedLimit,
-        offset: parseInt(offset)
+        offset
       });
 
       // Add vote count and user vote status for each poll
