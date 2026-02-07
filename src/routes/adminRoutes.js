@@ -66,7 +66,7 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
   });
 
   functionalChecks.articleCreate = await runCheck(async () => {
-    // Test creation logic without actually creating
+    // Validate article creation data structure
     const testData = {
       title: 'Health Check Test',
       content: 'Test content for health check',
@@ -76,7 +76,7 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     // Validate the data structure
     const isValid = testData.title && testData.content && testData.authorId;
     if (!isValid) throw new Error('Invalid article structure');
-    return { message: 'Article creation endpoint ready' };
+    return { message: 'Article creation data validation passed' };
   });
 
   functionalChecks.articleUpdate = await runCheck(async () => {
@@ -160,7 +160,7 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
   });
 
   functionalChecks.locationCreate = await runCheck(async () => {
-    // Validate location creation structure
+    // Validate location creation data structure
     const testData = {
       name: 'Test Location',
       slug: 'test-location',
@@ -168,7 +168,7 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     };
     const isValid = testData.name && testData.slug && testData.type;
     if (!isValid) throw new Error('Invalid location structure');
-    return { message: 'Location creation endpoint ready' };
+    return { message: 'Location creation data validation passed' };
   });
 
   functionalChecks.locationArticleLink = await runCheck(async () => {
