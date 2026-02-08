@@ -9,7 +9,7 @@ import { StatsCard } from '@/components/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
-import { MagnifyingGlassIcon, UserGroupIcon, UserIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 export default function UsersPage() {
@@ -65,11 +65,11 @@ export default function UsersPage() {
       if (response.success) {
         return response.data;
       }
-      return { totalUsers: 0, activeUsers: 0 };
+      return { totalUsers: 0 };
     },
     [],
     {
-      initialData: { totalUsers: 0, activeUsers: 0 }
+      initialData: { totalUsers: 0 }
     }
   );
 
@@ -82,27 +82,16 @@ export default function UsersPage() {
         </div>
 
         {/* User Statistics */}
-        <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <div className="mb-8">
           {statsLoading ? (
-            <>
-              <SkeletonLoader type="card" count={1} />
-              <SkeletonLoader type="card" count={1} />
-            </>
+            <SkeletonLoader type="card" count={1} />
           ) : (
-            <>
-              <StatsCard
-                title="Total Users"
-                value={stats.totalUsers}
-                icon={UserGroupIcon}
-                variant="default"
-              />
-              <StatsCard
-                title="Active Users (Last 30 Days)"
-                value={stats.activeUsers}
-                icon={UserIcon}
-                variant="default"
-              />
-            </>
+            <StatsCard
+              title="Total Registered Users"
+              value={stats.totalUsers}
+              icon={UserGroupIcon}
+              variant="default"
+            />
           )}
         </div>
 
