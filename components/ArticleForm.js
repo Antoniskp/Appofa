@@ -102,6 +102,23 @@ export default function ArticleForm({
       ...prev,
       content: newContent
     }));
+
+    // Use requestAnimationFrame for better timing with React's render cycle
+    requestAnimationFrame(() => {
+      const currentTextarea = contentTextareaRef.current;
+      if (currentTextarea) {
+        currentTextarea.focus();
+        const newPosition = start + text.length;
+        currentTextarea.setSelectionRange(newPosition, newPosition);
+      }
+    });
+  };
+
+  const handleContentChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      content: e.target.value,
+    }));
   };
 
   const handleAddLocation = async () => {
@@ -202,7 +219,7 @@ export default function ArticleForm({
           name="content"
           rows={15}
           value={formData.content}
-          onChange={handleInputChange}
+          onChange={handleContentChange}
           required
           maxLength={50000}
           className="w-full px-4 py-2 border border-gray-300 rounded-b-md text-gray-900 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
