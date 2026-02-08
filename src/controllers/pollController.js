@@ -230,14 +230,18 @@ const pollController = {
           
           createdOptions.push(pollOption);
         } else {
-          // For complex polls, validate based on answer type
-          const answerTypeResult = normalizeEnum(option.answerType, ANSWER_TYPES, 'Answer type');
-          if (answerTypeResult.error) {
-            await transaction.rollback();
-            return res.status(400).json({
-              success: false,
-              message: answerTypeResult.error
-            });
+          // For complex polls, answerType is optional
+          let answerTypeValue = null;
+          if (option.answerType) {
+            const answerTypeResult = normalizeEnum(option.answerType, ANSWER_TYPES, 'Answer type');
+            if (answerTypeResult.error) {
+              await transaction.rollback();
+              return res.status(400).json({
+                success: false,
+                message: answerTypeResult.error
+              });
+            }
+            answerTypeValue = answerTypeResult.value;
           }
 
           const pollOption = await PollOption.create({
@@ -246,7 +250,7 @@ const pollController = {
             photoUrl: option.photoUrl || null,
             linkUrl: option.linkUrl || null,
             displayText: option.displayText || null,
-            answerType: answerTypeResult.value,
+            answerType: answerTypeValue,
             order: i
           }, { transaction });
           
@@ -983,20 +987,24 @@ const pollController = {
         }
         optionData.text = textResult.value;
       } else {
-        // Complex poll
-        const answerTypeResult = normalizeEnum(answerType, ANSWER_TYPES, 'Answer type');
-        if (answerTypeResult.error) {
-          return res.status(400).json({
-            success: false,
-            message: answerTypeResult.error
-          });
+        // Complex poll - answerType is optional
+        let answerTypeValue = null;
+        if (answerType) {
+          const answerTypeResult = normalizeEnum(answerType, ANSWER_TYPES, 'Answer type');
+          if (answerTypeResult.error) {
+            return res.status(400).json({
+              success: false,
+              message: answerTypeResult.error
+            });
+          }
+          answerTypeValue = answerTypeResult.value;
         }
 
         optionData.text = text || null;
         optionData.photoUrl = photoUrl || null;
         optionData.linkUrl = linkUrl || null;
         optionData.displayText = displayText || null;
-        optionData.answerType = answerTypeResult.value;
+        optionData.answerType = answerTypeValue;
       }
 
       const option = await PollOption.create(optionData);

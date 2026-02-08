@@ -258,6 +258,42 @@ describe('Poll API Tests', () => {
       expect(response.body.data.allowUserContributions).toBe(true);
     });
 
+    test('should create a complex poll without answerType', async () => {
+      const csrfToken = 'test-csrf-token-complex-no-answer-type';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Best Product',
+          description: 'Vote for the best product',
+          type: 'complex',
+          allowUserContributions: false,
+          allowUnauthenticatedVotes: false,
+          visibility: 'public',
+          resultsVisibility: 'after_vote',
+          options: [
+            {
+              text: 'Product A',
+              photoUrl: '/images/product-a.jpg',
+              displayText: 'Great product'
+            },
+            {
+              text: 'Product B',
+              photoUrl: '/images/product-b.jpg',
+              linkUrl: 'https://example.com/product-b'
+            }
+          ]
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.type).toBe('complex');
+      expect(response.body.data.options).toHaveLength(2);
+    });
+
     test('should create poll with future deadline', async () => {
       const csrfToken = 'test-csrf-token-deadline';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
