@@ -1028,13 +1028,36 @@ const authController = {
   // Get public user statistics (no authentication required)
   getPublicUserStats: async (req, res) => {
     try {
-      // Total number of users
-      const totalUsers = await User.count();
+      // Get counts in a single optimized query
+      const stats = await User.findAll({
+        attributes: [
+          'searchable',
+          [sequelize.fn('COUNT', sequelize.col('searchable')), 'count']
+        ],
+        group: ['searchable']
+      });
+
+      // Parse results
+      let totalUsers = 0;
+      let searchableUsers = 0;
+      let nonSearchableUsers = 0;
+
+      stats.forEach((item) => {
+        const count = parseInt(item.get('count'), 10);
+        totalUsers += count;
+        if (item.get('searchable')) {
+          searchableUsers = count;
+        } else {
+          nonSearchableUsers = count;
+        }
+      });
 
       res.status(200).json({
         success: true,
         data: {
-          totalUsers
+          totalUsers,
+          searchableUsers,
+          nonSearchableUsers
         }
       });
     } catch (error) {

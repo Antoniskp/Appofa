@@ -68,6 +68,9 @@ describe('User Statistics Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeDefined();
       expect(response.body.data.totalUsers).toBe(4);
+      expect(response.body.data.searchableUsers).toBeDefined();
+      expect(response.body.data.nonSearchableUsers).toBeDefined();
+      expect(response.body.data.searchableUsers + response.body.data.nonSearchableUsers).toBe(4);
       // Should not include activeUsers
       expect(response.body.data.activeUsers).toBeUndefined();
     });
@@ -82,6 +85,8 @@ describe('User Statistics Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.totalUsers).toBe(0);
+      expect(response.body.data.searchableUsers).toBe(0);
+      expect(response.body.data.nonSearchableUsers).toBe(0);
     });
 
     test('should count all users regardless of role', async () => {
@@ -92,14 +97,16 @@ describe('User Statistics Tests', () => {
         username: 'viewer1',
         email: 'viewer1@test.com',
         password: 'password123',
-        role: 'viewer'
+        role: 'viewer',
+        searchable: true
       });
 
       await User.create({
         username: 'admin1',
         email: 'admin1@test.com',
         password: 'password123',
-        role: 'admin'
+        role: 'admin',
+        searchable: false
       });
 
       const response = await request(app)
@@ -108,6 +115,8 @@ describe('User Statistics Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.totalUsers).toBe(2);
+      expect(response.body.data.searchableUsers).toBe(1);
+      expect(response.body.data.nonSearchableUsers).toBe(1);
     });
   });
 });
