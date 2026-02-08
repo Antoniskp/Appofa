@@ -29,7 +29,17 @@ export default function TopNav() {
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
   const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
 
-  const isActive = (path) => pathname === path ? 'text-blue-600' : '';
+  const isActive = (path) => {
+    // Check if current path starts with the given path
+    const isCurrentPath = pathname === path || pathname.startsWith(path + '/');
+    return isCurrentPath ? 'text-blue-600 border-b-2 border-blue-600' : '';
+  };
+
+  const isMobileActive = (path) => {
+    // Check if current path starts with the given path for mobile menu
+    const isCurrentPath = pathname === path || pathname.startsWith(path + '/');
+    return isCurrentPath ? 'text-blue-600 bg-blue-50 font-semibold' : '';
+  };
 
   useEffect(() => {
     // Close all menus when pathname changes (navigation occurs)
@@ -254,31 +264,31 @@ export default function TopNav() {
         <div className="border-t border-seafoam px-4 py-3 space-y-2">
           <Link
             href="/articles"
-            className={`block text-base font-medium text-blue-900 ${isActive('/articles')}`}
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/articles')}`}
           >
             Άρθρα
           </Link>
           <Link
             href="/news"
-            className={`block text-base font-medium text-blue-900 ${isActive('/news')}`}
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/news')}`}
           >
             Ειδήσεις
           </Link>
           <Link
             href="/locations"
-            className={`block text-base font-medium text-blue-900 ${isActive('/locations')}`}
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/locations')}`}
           >
             Τοποθεσίες
           </Link>
           <Link
             href="/polls"
-            className={`block text-base font-medium text-blue-900 ${isActive('/polls')}`}
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/polls')}`}
           >
             Δημοσκοπήσεις
           </Link>
           <Link
             href="/users"
-            className={`block text-base font-medium text-blue-900 ${isActive('/users')}`}
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/users')}`}
           >
             Χρήστες
           </Link>

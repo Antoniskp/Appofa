@@ -62,26 +62,6 @@ export default function PollsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Δημοσκοπήσεις</h1>
-            <p className="text-gray-600 mt-2">
-              Συμμετέχετε σε δημοσκοπήσεις και μοιραστείτε τη γνώμη σας
-            </p>
-          </div>
-          
-          {user && (
-            <Link
-              href="/polls/create"
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
-            >
-              <PlusCircleIcon className="h-5 w-5" />
-              Δημιουργία Δημοσκόπησης
-            </Link>
-          )}
-        </div>
-
         {/* Filters */}
         <FilterBar
           filters={filters}
@@ -116,6 +96,18 @@ export default function PollsPage() {
           ]}
           className="mb-8"
         />
+
+        {user && (
+          <div className="mb-8 flex justify-end">
+            <Link
+              href="/polls/create"
+              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              <PlusCircleIcon className="h-5 w-5" />
+              Δημιουργία Δημοσκόπησης
+            </Link>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
