@@ -38,8 +38,8 @@ export default function PollForm({
   });
 
   const [options, setOptions] = useState([
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'text' },
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'text' },
+    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
+    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
   ]);
 
   // Initialize form data from poll prop (edit mode)
@@ -63,7 +63,7 @@ export default function PollForm({
           photoUrl: opt.photoUrl || '',
           linkUrl: opt.linkUrl || '',
           displayText: opt.displayText || '',
-          answerType: opt.answerType || 'text',
+          answerType: opt.answerType || 'custom',
         })));
       }
     }
@@ -91,7 +91,7 @@ export default function PollForm({
       photoUrl: '',
       linkUrl: '',
       displayText: '',
-      answerType: 'text'
+      answerType: 'custom'
     }]);
   };
 
