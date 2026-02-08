@@ -96,7 +96,9 @@ export default function PollForm({
   };
 
   const handleRemoveOption = (index) => {
-    if (options.length > 2) {
+    // Allow removing all options if user contributions are enabled
+    const minOptions = formData.allowUserContributions ? 0 : 2;
+    if (options.length > minOptions) {
       setOptions(prev => prev.filter((_, i) => i !== index));
     }
   };
@@ -107,8 +109,11 @@ export default function PollForm({
     // Filter out empty options
     const validOptions = options.filter(opt => opt.text.trim() !== '');
     
-    if (validOptions.length < 2) {
-      alert('Πρέπει να προσθέσετε τουλάχιστον 2 επιλογές');
+    // Require at least 2 options unless user contributions are allowed
+    const minOptions = formData.allowUserContributions ? 0 : 2;
+    if (validOptions.length < minOptions) {
+      // Greek grammar: 0 and 2+ use plural 'επιλογές'
+      alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} επιλογές`);
       return;
     }
     
@@ -274,20 +279,25 @@ export default function PollForm({
         </div>
 
         <div className="space-y-4">
-          {options.map((option, index) => (
-            <div key={index} className="border border-gray-300 rounded-lg p-4">
-              <div className="flex items-start justify-between mb-3">
-                <h4 className="font-medium text-gray-900">Επιλογή {index + 1}</h4>
-                {options.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveOption(index)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
+          {options.map((option, index) => {
+            // Show delete button if number of options exceeds minimum required
+            const minOptions = formData.allowUserContributions ? 0 : 2;
+            const canDeleteOption = options.length > minOptions;
+            
+            return (
+              <div key={index} className="border border-gray-300 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <h4 className="font-medium text-gray-900">Επιλογή {index + 1}</h4>
+                  {canDeleteOption && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveOption(index)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
 
               <FormInput
                 name={`option-text-${index}`}
@@ -326,7 +336,8 @@ export default function PollForm({
                 </>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
 

@@ -107,15 +107,6 @@ const pollController = {
         });
       }
 
-      // Validate options
-      if (!Array.isArray(options) || options.length < 2) {
-        await transaction.rollback();
-        return res.status(400).json({
-          success: false,
-          message: 'At least 2 options are required.'
-        });
-      }
-
       // Validate deadline (optional)
       let deadlineValue = null;
       if (deadline) {
@@ -176,6 +167,22 @@ const pollController = {
         return res.status(400).json({
           success: false,
           message: allowUnauthenticatedVotesResult.error
+        });
+      }
+
+      // Validate options
+      // If user contributions are allowed, poll can be created with 0 options
+      const minOptionsRequired = allowUserContributionsResult.value ? 0 : 2;
+      if (!Array.isArray(options) || options.length < minOptionsRequired) {
+        await transaction.rollback();
+        // When minOptionsRequired is 0, the only failure is invalid array type
+        // When minOptionsRequired is 2, we need at least 2 options
+        const errorMessage = minOptionsRequired === 0 
+          ? 'Options must be an array.'
+          : 'At least 2 options are required.';
+        return res.status(400).json({
+          success: false,
+          message: errorMessage
         });
       }
 
