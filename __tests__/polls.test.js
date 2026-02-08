@@ -1079,6 +1079,37 @@ describe('Poll API Tests', () => {
       expect(response.body.message).toContain('Poll type');
     });
 
+    test('should reject invalid answerType when provided', async () => {
+      const csrfToken = 'test-csrf-token-invalid-answertype';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Invalid Answer Type Poll',
+          type: 'complex',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { 
+              text: 'Option 1',
+              photoUrl: '/image.jpg',
+              answerType: 'invalid_answer_type'
+            },
+            { 
+              text: 'Option 2',
+              photoUrl: '/image2.jpg',
+              answerType: 'custom'
+            }
+          ]
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Answer type');
+    });
+
     test('should require CSRF token for state-changing operations', async () => {
       const response = await request(app)
         .post('/api/polls')
