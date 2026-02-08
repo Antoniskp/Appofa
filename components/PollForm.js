@@ -112,7 +112,7 @@ export default function PollForm({
     // Require at least 2 options unless user contributions are allowed
     const minOptions = formData.allowUserContributions ? 0 : 2;
     if (validOptions.length < minOptions) {
-      alert('Πρέπει να προσθέσετε τουλάχιστον 2 επιλογές');
+      alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} επιλογές`);
       return;
     }
     
