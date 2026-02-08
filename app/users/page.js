@@ -16,11 +16,16 @@ import { useEffect, useState, useRef } from 'react';
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
   const [sessionId] = useState(() => {
-    // Generate a unique session ID for this browser session
+    // Generate a cryptographically secure session ID for this browser session
     if (typeof window !== 'undefined') {
       let sid = sessionStorage.getItem('sessionId');
       if (!sid) {
-        sid = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+        // Use crypto.randomUUID if available, otherwise fallback
+        if (window.crypto && window.crypto.randomUUID) {
+          sid = window.crypto.randomUUID();
+        } else {
+          sid = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 15)}_${Math.random().toString(36).substring(2, 15)}`;
+        }
         sessionStorage.setItem('sessionId', sid);
       }
       return sid;

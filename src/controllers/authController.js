@@ -1111,15 +1111,25 @@ const authController = {
       });
     } catch (error) {
       console.error('Get public user stats error:', error);
-      res.status(200).json({
-        success: true,
-        data: {
-          total: await User.count(),
-          active: 0,
-          onlineUsers: 0,
-          anonymousVisitors: 0
-        }
-      });
+      // Return partial data on error to maintain service availability
+      try {
+        const totalUsers = await User.count();
+        res.status(200).json({
+          success: true,
+          data: {
+            total: totalUsers,
+            active: 0,
+            onlineUsers: 0,
+            anonymousVisitors: 0
+          }
+        });
+      } catch (fallbackError) {
+        console.error('Fallback stats error:', fallbackError);
+        res.status(500).json({
+          success: false,
+          message: 'Error fetching user statistics.'
+        });
+      }
     }
   },
 
