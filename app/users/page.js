@@ -95,7 +95,7 @@ export default function UsersPage() {
                   name: 'search',
                   label: 'Αναζήτηση',
                   type: 'text',
-                  placeholder: 'Search users by username...',
+                  placeholder: 'Αναζήτηση χρηστών...',
                 },
               ]}
               className="mb-8"
