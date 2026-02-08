@@ -56,20 +56,23 @@ const clearAuthCookies = (res) => {
   res.clearCookie(CSRF_COOKIE, { path: '/' });
 };
 
-const buildUserStats = async () => {
-  const totalUsers = await User.count();
-  
+const getActiveUserCount = async () => {
   // Calculate active users (users who logged in within the last 30 days)
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   
-  const activeUsers = await User.count({
+  return await User.count({
     where: {
       lastLoginAt: {
         [Op.gte]: thirtyDaysAgo
       }
     }
   });
+};
+
+const buildUserStats = async () => {
+  const totalUsers = await User.count();
+  const activeUsers = await getActiveUserCount();
   
   const roles = ['admin', 'moderator', 'editor', 'viewer'];
   const counts = await User.findAll({
@@ -1049,18 +1052,7 @@ const authController = {
   getPublicUserStats: async (req, res) => {
     try {
       const totalUsers = await User.count();
-      
-      // Calculate active users (users who logged in within the last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      
-      const activeUsers = await User.count({
-        where: {
-          lastLoginAt: {
-            [Op.gte]: thirtyDaysAgo
-          }
-        }
-      });
+      const activeUsers = await getActiveUserCount();
 
       res.status(200).json({
         success: true,

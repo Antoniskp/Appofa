@@ -42,8 +42,14 @@ export default function UsersPage() {
     }
   );
 
+  // Only fetch users when authenticated
   const { data: users, loading, error } = useAsyncData(
     async () => {
+      // Don't fetch users if not authenticated
+      if (!user) {
+        return [];
+      }
+      
       const params = {
         page,
         limit: 20,
@@ -61,7 +67,7 @@ export default function UsersPage() {
       }
       return { data: { users: [], pagination: { totalPages: 1 } } };
     },
-    [page, filters],
+    [page, filters, user],
     {
       initialData: [],
       transform: (response) => {
