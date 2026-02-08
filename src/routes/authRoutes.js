@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
+const optionalAuth = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
@@ -30,5 +31,8 @@ router.get('/users/search', apiLimiter, authController.searchUsers);
 
 // Public stats route
 router.get('/users/public-stats', apiLimiter, authController.getPublicUserStats);
+
+// Session heartbeat route (accepts both authenticated and anonymous)
+router.post('/session/heartbeat', apiLimiter, optionalAuth, authController.updateSessionActivity);
 
 module.exports = router;

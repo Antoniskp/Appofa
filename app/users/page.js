@@ -9,10 +9,24 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
 import { MagnifyingGlassIcon, UsersIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, SignalIcon } from '@heroicons/react/24/solid';
 import Link from 'next/link';
+import { useEffect, useState, useRef } from 'react';
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
+  const [sessionId] = useState(() => {
+    // Generate a unique session ID for this browser session
+    if (typeof window !== 'undefined') {
+      let sid = sessionStorage.getItem('sessionId');
+      if (!sid) {
+        sid = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+        sessionStorage.setItem('sessionId', sid);
+      }
+      return sid;
+    }
+    return null;
+  });
   
   const {
     filters,
@@ -27,20 +41,49 @@ export default function UsersPage() {
     search: '',
   });
 
-  // Fetch user statistics (available to all users)
-  const { data: stats, loading: statsLoading } = useAsyncData(
+  // Fetch user statistics (available to all users) - refresh every 30 seconds
+  const { data: stats, loading: statsLoading, refetch: refetchStats } = useAsyncData(
     async () => {
       const response = await authAPI.getPublicUserStats();
       if (response.success) {
         return response.data;
       }
-      return { total: 0, active: 0 };
+      return { total: 0, active: 0, onlineUsers: 0, anonymousVisitors: 0 };
     },
     [],
     {
-      initialData: { total: 0, active: 0 }
+      initialData: { total: 0, active: 0, onlineUsers: 0, anonymousVisitors: 0 }
     }
   );
+
+  // Send heartbeat to track active session
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const sendHeartbeat = async () => {
+      try {
+        await authAPI.sendHeartbeat(sessionId);
+      } catch (error) {
+        console.error('Failed to send heartbeat:', error);
+      }
+    };
+
+    // Send initial heartbeat
+    sendHeartbeat();
+
+    // Send heartbeat every 60 seconds
+    const heartbeatInterval = setInterval(sendHeartbeat, 60000);
+
+    // Refresh stats every 30 seconds
+    const statsInterval = setInterval(() => {
+      refetchStats();
+    }, 30000);
+
+    return () => {
+      clearInterval(heartbeatInterval);
+      clearInterval(statsInterval);
+    };
+  }, [sessionId, refetchStats]);
 
   // Only fetch users when authenticated
   const { data: users, loading, error } = useAsyncData(
@@ -86,7 +129,7 @@ export default function UsersPage() {
         </div>
 
         {/* User Statistics */}
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -115,7 +158,41 @@ export default function UsersPage() {
                 ) : (
                   <p className="text-3xl font-bold text-gray-900">{stats.active}</p>
                 )}
-                <p className="text-xs text-gray-500 mt-1">Active in last 30 days</p>
+                <p className="text-xs text-gray-500 mt-1">Last 30 days</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <SignalIcon className="h-12 w-12 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Online Now</p>
+                {statsLoading ? (
+                  <div className="h-8 w-16 bg-gray-200 animate-pulse rounded mt-1"></div>
+                ) : (
+                  <p className="text-3xl font-bold text-gray-900">{stats.onlineUsers || 0}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Logged in users</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <EyeIcon className="h-12 w-12 text-orange-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Visitors</p>
+                {statsLoading ? (
+                  <div className="h-8 w-16 bg-gray-200 animate-pulse rounded mt-1"></div>
+                ) : (
+                  <p className="text-3xl font-bold text-gray-900">{stats.anonymousVisitors || 0}</p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Browsing now</p>
               </div>
             </div>
           </div>

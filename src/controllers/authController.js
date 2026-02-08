@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, Location, LocationLink, sequelize } = require('../models');
+const { User, Location, LocationLink, ActiveSession, sequelize } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 const {
@@ -68,6 +68,51 @@ const getActiveUserCount = async () => {
       }
     }
   });
+};
+
+const cleanupStaleSessions = async () => {
+  // Remove sessions inactive for more than 5 minutes
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  
+  try {
+    await ActiveSession.destroy({
+      where: {
+        lastActivity: {
+          [Op.lt]: fiveMinutesAgo
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error cleaning up stale sessions:', error);
+  }
+};
+
+const getOnlineStats = async () => {
+  // Clean up stale sessions first
+  await cleanupStaleSessions();
+  
+  // Count authenticated online users (sessions with userId)
+  const onlineUsers = await ActiveSession.count({
+    where: {
+      userId: {
+        [Op.ne]: null
+      }
+    },
+    distinct: true,
+    col: 'userId'
+  });
+  
+  // Count anonymous visitors (sessions without userId)
+  const anonymousVisitors = await ActiveSession.count({
+    where: {
+      userId: null
+    }
+  });
+  
+  return {
+    onlineUsers,
+    anonymousVisitors
+  };
 };
 
 const buildUserStats = async () => {
@@ -1053,19 +1098,61 @@ const authController = {
     try {
       const totalUsers = await User.count();
       const activeUsers = await getActiveUserCount();
+      const onlineStats = await getOnlineStats();
 
       res.status(200).json({
         success: true,
         data: {
           total: totalUsers,
-          active: activeUsers
+          active: activeUsers,
+          onlineUsers: onlineStats.onlineUsers,
+          anonymousVisitors: onlineStats.anonymousVisitors
         }
       });
     } catch (error) {
       console.error('Get public user stats error:', error);
+      res.status(200).json({
+        success: true,
+        data: {
+          total: await User.count(),
+          active: 0,
+          onlineUsers: 0,
+          anonymousVisitors: 0
+        }
+      });
+    }
+  },
+
+  // Update session activity (heartbeat)
+  updateSessionActivity: async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      
+      if (!sessionId || typeof sessionId !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid session ID is required.'
+        });
+      }
+
+      const userId = req.user ? req.user.id : null;
+
+      // Upsert session (create or update)
+      await ActiveSession.upsert({
+        sessionId,
+        userId,
+        lastActivity: new Date()
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Session activity updated.'
+      });
+    } catch (error) {
+      console.error('Update session activity error:', error);
       res.status(500).json({
         success: false,
-        message: 'Error fetching user statistics.'
+        message: 'Error updating session activity.'
       });
     }
   }
