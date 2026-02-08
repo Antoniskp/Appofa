@@ -280,20 +280,24 @@ export default function PollForm({
         </div>
 
         <div className="space-y-4">
-          {options.map((option, index) => (
-            <div key={index} className="border border-gray-300 rounded-lg p-4">
-              <div className="flex items-start justify-between mb-3">
-                <h4 className="font-medium text-gray-900">Επιλογή {index + 1}</h4>
-                {(options.length > 2 || (formData.allowUserContributions && options.length > 0)) && (
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveOption(index)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    <TrashIcon className="h-5 w-5" />
-                  </button>
-                )}
-              </div>
+          {options.map((option, index) => {
+            // Show delete button if: more than 2 options OR user contributions enabled and has options
+            const canDeleteOption = options.length > 2 || (formData.allowUserContributions && options.length > 0);
+            
+            return (
+              <div key={index} className="border border-gray-300 rounded-lg p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <h4 className="font-medium text-gray-900">Επιλογή {index + 1}</h4>
+                  {canDeleteOption && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveOption(index)}
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <TrashIcon className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
 
               <FormInput
                 name={`option-text-${index}`}
@@ -332,7 +336,8 @@ export default function PollForm({
                 </>
               )}
             </div>
-          ))}
+          );
+          })}
         </div>
       </div>
 

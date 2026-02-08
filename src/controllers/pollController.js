@@ -177,7 +177,7 @@ const pollController = {
         await transaction.rollback();
         const errorMessage = minOptionsRequired === 0 
           ? 'Options must be an array.'
-          : `At least ${minOptionsRequired} option${minOptionsRequired === 1 ? ' is' : 's are'} required.`;
+          : 'At least 2 options are required.'; // minOptionsRequired is always 2 here
         return res.status(400).json({
           success: false,
           message: errorMessage
