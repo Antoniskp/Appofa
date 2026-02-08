@@ -105,10 +105,11 @@ export default function ArticleForm({
 
     // Use requestAnimationFrame for better timing with React's render cycle
     requestAnimationFrame(() => {
-      if (textarea) {
-        textarea.focus();
+      const currentTextarea = contentTextareaRef.current;
+      if (currentTextarea) {
+        currentTextarea.focus();
         const newPosition = start + text.length;
-        textarea.setSelectionRange(newPosition, newPosition);
+        currentTextarea.setSelectionRange(newPosition, newPosition);
       }
     });
   };
