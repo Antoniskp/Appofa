@@ -77,9 +77,9 @@ sudo apt update && sudo apt upgrade -y
 # Install prerequisites for NodeSource setup (plus nano and git)
 sudo apt install -y curl ca-certificates gnupg nano git
 
-# Install Node.js 20 LTS via NodeSource (includes npm)
-# Note: Next.js 16.x requires Node.js >=20.9.0
-curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+# Install Node.js 22 LTS via NodeSource (includes npm)
+# Note: Next.js 16.x requires Node.js >=20.9.0, Node 22 recommended
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Install PostgreSQL
