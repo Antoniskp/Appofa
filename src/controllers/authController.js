@@ -1030,11 +1030,23 @@ const authController = {
     try {
       // Total number of users
       const totalUsers = await User.count();
+      
+      // Count searchable users (registered)
+      const searchableUsers = await User.count({
+        where: { searchable: true }
+      });
+      
+      // Count non-searchable users (unregistered)
+      const nonSearchableUsers = await User.count({
+        where: { searchable: false }
+      });
 
       res.status(200).json({
         success: true,
         data: {
-          totalUsers
+          totalUsers,
+          searchableUsers,
+          nonSearchableUsers
         }
       });
     } catch (error) {

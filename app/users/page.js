@@ -57,9 +57,45 @@ export default function UsersPage() {
     }
   );
 
+  // Fetch public user statistics
+  const { data: userStats, loading: statsLoading } = useAsyncData(
+    async () => {
+      const response = await authAPI.getPublicUserStats();
+      if (response.success) {
+        return response.data;
+      }
+      return null;
+    },
+    [],
+    {
+      initialData: null
+    }
+  );
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        {/* User Statistics - shown to everyone */}
+        {!statsLoading && userStats && (
+          <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Community Statistics</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-blue-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Total Users</p>
+                <p className="text-3xl font-bold text-blue-600">{userStats.totalUsers}</p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Registered (Searchable)</p>
+                <p className="text-3xl font-bold text-green-600">{userStats.searchableUsers}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-600 mb-1">Unregistered (Non-searchable)</p>
+                <p className="text-3xl font-bold text-gray-600">{userStats.nonSearchableUsers}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Login/Register links for non-authenticated users */}
         {!authLoading && !isAuthenticated && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">
