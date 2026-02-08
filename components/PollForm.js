@@ -103,13 +103,16 @@ export default function PollForm({
     const minOptions = formData.allowUserContributions ? 0 : 2;
     if (options.length > minOptions) {
       setOptions(prev => prev.filter((_, i) => i !== index));
-      // Clear image error state for this option
-      setImageErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[index];
-        return newErrors;
-      });
+      clearImageError(index);
     }
+  };
+
+  const clearImageError = (index) => {
+    setImageErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[index];
+      return newErrors;
+    });
   };
 
   const handleImageError = (index) => {
@@ -117,11 +120,7 @@ export default function PollForm({
   };
 
   const handleImageLoad = (index) => {
-    setImageErrors(prev => {
-      const newErrors = { ...prev };
-      delete newErrors[index];
-      return newErrors;
-    });
+    clearImageError(index);
   };
 
   const handleSubmit = async (e) => {
