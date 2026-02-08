@@ -27,7 +27,8 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
 
 ### Deployment & Operations
-- [Deployment Guide](doc/DEPLOYMENT_GUIDE.md) - Comprehensive deployment guide for local, Docker, VPS, and cloud platforms
+- [VPS Setup Guide](doc/VPS_SETUP.md) - **Complete VPS deployment guide** (Ubuntu/Debian)
+- [Deployment Guide](doc/DEPLOYMENT_GUIDE.md) - Local, Docker, and cloud platform deployments
 - [Upgrade Guide](doc/UPGRADE_GUIDE.md) - Migration and upgrade instructions
 - [Migrations](doc/MIGRATIONS.md) - Database migration guide
 - [Node Upgrade Guide](doc/NODE_UPGRADE_VPS.md) - Node.js upgrade instructions for VPS
