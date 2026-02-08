@@ -386,13 +386,16 @@ export default function PollForm({
                           value={option.photoUrl}
                           onChange={(e) => handleOptionChange(index, 'photoUrl', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="https://example.com/image.jpg"
+                          placeholder="https://example.com/image.png"
                         />
                         {option.photoUrl && imageErrors[index] && (
                           <p className="mt-1 text-xs text-red-600">
                             Δεν ήταν δυνατή η φόρτωση της εικόνας
                           </p>
                         )}
+                        <p className="mt-1 text-xs text-gray-500">
+                          Υποστηρίζονται: JPG, JPEG, PNG, WebP, GIF, AVIF
+                        </p>
                       </div>
                     </div>
                   </div>
