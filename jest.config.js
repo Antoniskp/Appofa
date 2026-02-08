@@ -4,9 +4,11 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1'
   },
-  transform: {
-    '^.+\\.[jt]sx?$': ['babel-jest', { presets: ['next/babel'] }]
-  },
+  // Backend Node.js code doesn't need Babel transformation
+  // Node 22 already supports all the features we need
+  transform: {},
+  // Use v8 coverage provider for better performance and compatibility
+  coverageProvider: 'v8',
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/index.js',
