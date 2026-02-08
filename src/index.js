@@ -14,9 +14,10 @@ const pollRoutes = require('./routes/pollRoutes');
 
 const app = express();
 
-// Trust nginx proxy headers for proper rate limiting and security
-// Enables Express to read X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Host
-app.set('trust proxy', true);
+// Trust only the first proxy (nginx) for security
+// This prevents IP spoofing attacks and ensures rate limiting works correctly
+// See: https://express-rate-limit.github.io/ERR_ERL_PERMISSIVE_TRUST_PROXY/
+app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3000;
 const isProductionEnv = () => process.env.NODE_ENV === 'production';
