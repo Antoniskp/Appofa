@@ -219,13 +219,16 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                           value={newOptionPhotoUrl}
                           onChange={(e) => setNewOptionPhotoUrl(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="https://example.com/image.jpg"
+                          placeholder="https://example.com/image.png"
                         />
                         {newOptionPhotoUrl && newOptionImageError && (
                           <p className="mt-1 text-xs text-red-600">
                             Δεν ήταν δυνατή η φόρτωση της εικόνας
                           </p>
                         )}
+                        <p className="mt-1 text-xs text-gray-500">
+                          Υποστηρίζονται: JPG, JPEG, PNG, WebP, GIF, AVIF
+                        </p>
                       </div>
                     </div>
                   </div>
