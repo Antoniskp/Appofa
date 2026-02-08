@@ -1023,6 +1023,27 @@ const authController = {
         message: 'Error searching users.'
       });
     }
+  },
+
+  // Get public user statistics (no authentication required)
+  getPublicUserStats: async (req, res) => {
+    try {
+      // Total number of users
+      const totalUsers = await User.count();
+
+      res.status(200).json({
+        success: true,
+        data: {
+          totalUsers
+        }
+      });
+    } catch (error) {
+      console.error('Get public user stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching user statistics.'
+      });
+    }
   }
 };
 
