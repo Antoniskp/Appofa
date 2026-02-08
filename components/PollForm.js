@@ -249,19 +249,20 @@ export default function PollForm({
           </label>
         </div>
 
-        {formData.visibility === 'locals_only' && (
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Τοποθεσία
-            </label>
-            <CascadingLocationSelector
-              value={formData.locationId}
-              onChange={(value) => setFormData(prev => ({ ...prev, locationId: value }))}
-              placeholder="Επιλέξτε τοποθεσία"
-              allowClear={true}
-            />
-          </div>
-        )}
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Τοποθεσία (Προαιρετικό)
+          </label>
+          <CascadingLocationSelector
+            value={formData.locationId}
+            onChange={(value) => setFormData(prev => ({ ...prev, locationId: value }))}
+            placeholder="Επιλέξτε τοποθεσία"
+            allowClear={true}
+          />
+          <p className="mt-1 text-sm text-gray-500">
+            Η δημοσκόπηση θα εμφανίζεται στη σελίδα της επιλεγμένης τοποθεσίας
+          </p>
+        </div>
       </div>
 
       {/* Poll Options */}

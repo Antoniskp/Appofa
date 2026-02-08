@@ -1,4 +1,4 @@
-const { Poll, PollOption, PollVote, User, Location, sequelize } = require('../models');
+const { Poll, PollOption, PollVote, User, Location, LocationLink, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
@@ -252,6 +252,15 @@ const pollController = {
           
           createdOptions.push(pollOption);
         }
+      }
+
+      // Create LocationLink if locationId is provided
+      if (locationIdValue) {
+        await LocationLink.create({
+          location_id: locationIdValue,
+          entity_type: 'poll',
+          entity_id: poll.id
+        }, { transaction });
       }
 
       await transaction.commit();
@@ -519,9 +528,11 @@ const pollController = {
 
   // Update a poll
   updatePoll: async (req, res) => {
+    const transaction = await sequelize.transaction();
+    
     try {
       const { id } = req.params;
-      const { title, description, deadline, status } = req.body;
+      const { title, description, deadline, status, locationId } = req.body;
 
       const poll = await Poll.findByPk(id, {
         include: [
@@ -533,6 +544,7 @@ const pollController = {
       });
 
       if (!poll) {
+        await transaction.rollback();
         return res.status(404).json({
           success: false,
           message: 'Poll not found.'
@@ -541,6 +553,7 @@ const pollController = {
 
       // Check permissions - must be creator or admin
       if (poll.creatorId !== req.user.id && req.user.role !== 'admin') {
+        await transaction.rollback();
         return res.status(403).json({
           success: false,
           message: 'Access denied. Only the poll creator or admin can update this poll.'
@@ -553,6 +566,7 @@ const pollController = {
       if (title !== undefined) {
         const titleResult = normalizeRequiredText(title, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
         if (titleResult.error) {
+          await transaction.rollback();
           return res.status(400).json({
             success: false,
             message: titleResult.error
@@ -565,6 +579,7 @@ const pollController = {
       if (description !== undefined) {
         const descriptionResult = normalizeOptionalText(description, 'Description', null, DESCRIPTION_MAX_LENGTH);
         if (descriptionResult.error) {
+          await transaction.rollback();
           return res.status(400).json({
             success: false,
             message: descriptionResult.error
@@ -580,6 +595,7 @@ const pollController = {
         } else {
           const deadlineValue = new Date(deadline);
           if (isNaN(deadlineValue.getTime())) {
+            await transaction.rollback();
             return res.status(400).json({
               success: false,
               message: 'Invalid deadline date.'
@@ -593,6 +609,7 @@ const pollController = {
       if (status !== undefined) {
         const statusResult = normalizeEnum(status, POLL_STATUSES, 'Status');
         if (statusResult.error) {
+          await transaction.rollback();
           return res.status(400).json({
             success: false,
             message: statusResult.error
@@ -601,8 +618,56 @@ const pollController = {
         updateData.status = statusResult.value;
       }
 
+      // Validate and update locationId
+      if (locationId !== undefined) {
+        if (locationId === null) {
+          updateData.locationId = null;
+        } else {
+          const locationIdResult = normalizeInteger(locationId, 'Location ID', 1);
+          if (locationIdResult.error) {
+            await transaction.rollback();
+            return res.status(400).json({
+              success: false,
+              message: locationIdResult.error
+            });
+          }
+          // Verify location exists
+          const location = await Location.findByPk(locationIdResult.value);
+          if (!location) {
+            await transaction.rollback();
+            return res.status(404).json({
+              success: false,
+              message: 'Location not found.'
+            });
+          }
+          updateData.locationId = locationIdResult.value;
+        }
+      }
+
       // Update the poll
-      await poll.update(updateData);
+      await poll.update(updateData, { transaction });
+
+      // Update LocationLink if locationId changed
+      if (locationId !== undefined) {
+        // Remove existing location link
+        await LocationLink.destroy({
+          where: {
+            entity_type: 'poll',
+            entity_id: id
+          }
+        }, { transaction });
+
+        // Create new location link if locationId is provided
+        if (updateData.locationId) {
+          await LocationLink.create({
+            location_id: updateData.locationId,
+            entity_type: 'poll',
+            entity_id: id
+          }, { transaction });
+        }
+      }
+
+      await transaction.commit();
 
       // Fetch updated poll with associations
       const updatedPoll = await Poll.findByPk(id, {
@@ -627,6 +692,14 @@ const pollController = {
         data: updatedPoll
       });
     } catch (error) {
+      // Safely rollback transaction if it hasn't been committed
+      if (transaction && !transaction.finished) {
+        try {
+          await transaction.rollback();
+        } catch (rollbackError) {
+          console.error('Error rolling back transaction:', rollbackError);
+        }
+      }
       console.error('Error updating poll:', error);
       return res.status(500).json({
         success: false,

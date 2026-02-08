@@ -11,7 +11,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 export default function LocationDetailPage() {
   const params = useParams();
   const { error: toastError } = useToast();
-  const [entities, setEntities] = useState({ articles: [], users: [] });
+  const [entities, setEntities] = useState({ articles: [], users: [], polls: [] });
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
 
@@ -42,6 +42,7 @@ export default function LocationDetailPage() {
             setEntities({
               articles: entitiesResponse.articles || [],
               users: entitiesResponse.users || [],
+              polls: entitiesResponse.polls || [],
             });
           }
         } catch (err) {
@@ -292,11 +293,49 @@ export default function LocationDetailPage() {
             </div>
           )}
 
+          {/* Linked Polls */}
+          {entities.polls.length > 0 && (
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">
+                Polls ({entities.polls.length})
+              </h2>
+              <div className="space-y-3">
+                {entities.polls.map(poll => (
+                  <Link
+                    key={poll.id}
+                    href={`/polls/${poll.id}`}
+                    className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                  >
+                    <h3 className="font-medium text-gray-900 mb-1">{poll.title}</h3>
+                    {poll.description && (
+                      <p className="text-sm text-gray-600 line-clamp-2">{poll.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                      <span className="capitalize">{poll.status}</span>
+                      {poll.creator && (
+                        <>
+                          <span>•</span>
+                          <span>by {poll.creator.username}</span>
+                        </>
+                      )}
+                      {poll.createdAt && (
+                        <>
+                          <span>•</span>
+                          <span>{new Date(poll.createdAt).toLocaleDateString()}</span>
+                        </>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Empty State */}
-          {entities.articles.length === 0 && entities.users.length === 0 && children.length === 0 && (
+          {entities.articles.length === 0 && entities.users.length === 0 && entities.polls.length === 0 && children.length === 0 && (
             <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
               <p className="text-center text-gray-500">
-                No articles, users, or sub-locations linked to this location yet.
+                No articles, users, polls, or sub-locations linked to this location yet.
               </p>
             </div>
           )}

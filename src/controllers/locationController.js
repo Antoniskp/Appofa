@@ -1,4 +1,4 @@
-const { Location, LocationLink, Article, User } = require('../models');
+const { Location, LocationLink, Article, User, Poll } = require('../models');
 const { Op } = require('sequelize');
 
 // Helper function to generate slug from name
@@ -217,12 +217,20 @@ exports.getLocation = async (req, res) => {
       }
     });
 
+    const pollCount = await LocationLink.count({
+      where: {
+        location_id: id,
+        entity_type: 'poll'
+      }
+    });
+
     res.json({
       success: true,
       location,
       stats: {
         articleCount,
         userCount,
+        pollCount,
         childrenCount: location.children?.length || 0
       }
     });
@@ -374,10 +382,10 @@ exports.linkLocation = async (req, res) => {
       });
     }
 
-    if (!['article', 'user'].includes(entity_type)) {
+    if (!['article', 'user', 'poll'].includes(entity_type)) {
       return res.status(400).json({
         success: false,
-        message: 'entity_type must be either "article" or "user"'
+        message: 'entity_type must be either "article", "user", or "poll"'
       });
     }
 
@@ -419,6 +427,21 @@ exports.linkLocation = async (req, res) => {
         return res.status(403).json({
           success: false,
           message: 'Not authorized to link this user'
+        });
+      }
+    } else if (entity_type === 'poll') {
+      const poll = await Poll.findByPk(entity_id);
+      if (!poll) {
+        return res.status(404).json({
+          success: false,
+          message: 'Poll not found'
+        });
+      }
+      // Check authorization - only creator or admin/moderator can link
+      if (poll.creatorId !== req.user.id && !['admin', 'moderator'].includes(req.user.role)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to link this poll'
         });
       }
     }
@@ -485,6 +508,14 @@ exports.unlinkLocation = async (req, res) => {
           message: 'Not authorized to unlink this user'
         });
       }
+    } else if (entity_type === 'poll') {
+      const poll = await Poll.findByPk(entity_id);
+      if (poll && poll.creatorId !== req.user.id && !['admin', 'moderator'].includes(req.user.role)) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to unlink this poll'
+        });
+      }
     }
 
     const link = await LocationLink.findOne({
@@ -519,10 +550,10 @@ exports.getEntityLocations = async (req, res) => {
   try {
     const { entity_type, entity_id } = req.params;
 
-    if (!['article', 'user'].includes(entity_type)) {
+    if (!['article', 'user', 'poll'].includes(entity_type)) {
       return res.status(400).json({
         success: false,
-        message: 'entity_type must be either "article" or "user"'
+        message: 'entity_type must be either "article", "user", or "poll"'
       });
     }
 
@@ -559,14 +590,14 @@ exports.getEntityLocations = async (req, res) => {
   }
 };
 
-// Get all entities (articles/users) linked to a location
+// Get all entities (articles/users/polls) linked to a location
 exports.getLocationEntities = async (req, res) => {
   try {
     const { id } = req.params;
     const { entity_type } = req.query;
 
     const where = { location_id: id };
-    if (entity_type && ['article', 'user'].includes(entity_type)) {
+    if (entity_type && ['article', 'user', 'poll'].includes(entity_type)) {
       where.entity_type = entity_type;
     }
 
@@ -578,6 +609,7 @@ exports.getLocationEntities = async (req, res) => {
     // Group entity IDs by type
     const articleIds = links.filter(l => l.entity_type === 'article').map(l => l.entity_id);
     const userIds = links.filter(l => l.entity_type === 'user').map(l => l.entity_id);
+    const pollIds = links.filter(l => l.entity_type === 'poll').map(l => l.entity_id);
 
     // Fetch all articles and users in batch queries
     const articles = articleIds.length > 0 ? await Article.findAll({
@@ -597,10 +629,23 @@ exports.getLocationEntities = async (req, res) => {
       attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor']
     }) : [];
 
+    const polls = pollIds.length > 0 ? await Poll.findAll({
+      where: { id: pollIds },
+      attributes: ['id', 'title', 'description', 'status', 'visibility', 'createdAt'],
+      include: [
+        {
+          model: User,
+          as: 'creator',
+          attributes: ['id', 'username']
+        }
+      ]
+    }) : [];
+
     res.json({
       success: true,
       articles,
-      users
+      users,
+      polls
     });
   } catch (error) {
     console.error('Error fetching location entities:', error);
