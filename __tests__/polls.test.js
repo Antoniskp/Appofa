@@ -198,6 +198,30 @@ describe('Poll API Tests', () => {
       expect(response.body.message).toContain('At least 2 options');
     });
 
+    test('should allow creating poll with 0 options when user contributions are enabled', async () => {
+      const csrfToken = 'test-csrf-token-zero-options';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'User Contribution Poll',
+          description: 'Users will add their own options',
+          type: 'simple',
+          allowUserContributions: true,
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: []
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.allowUserContributions).toBe(true);
+      expect(response.body.data.options).toHaveLength(0);
+    });
+
     test('should create a complex poll', async () => {
       const csrfToken = 'test-csrf-token-complex';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
