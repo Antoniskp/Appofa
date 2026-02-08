@@ -112,6 +112,7 @@ export default function PollForm({
     // Require at least 2 options unless user contributions are allowed
     const minOptions = formData.allowUserContributions ? 0 : 2;
     if (validOptions.length < minOptions) {
+      // Greek grammar: 0 and 2+ use plural 'επιλογές', 1 uses singular 'επιλογή'
       const optionWord = minOptions === 1 ? 'επιλογή' : 'επιλογές';
       alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} ${optionWord}`);
       return;

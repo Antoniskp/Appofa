@@ -176,7 +176,7 @@ const pollController = {
       if (!Array.isArray(options) || options.length < minOptionsRequired) {
         await transaction.rollback();
         const errorMessage = minOptionsRequired === 0 
-          ? 'Options array is invalid.'
+          ? 'Options must be an array.'
           : `At least ${minOptionsRequired} option${minOptionsRequired === 1 ? ' is' : 's are'} required.`;
         return res.status(400).json({
           success: false,
