@@ -692,7 +692,14 @@ const pollController = {
         data: updatedPoll
       });
     } catch (error) {
-      await transaction.rollback();
+      // Safely rollback transaction if it hasn't been committed
+      if (transaction && !transaction.finished) {
+        try {
+          await transaction.rollback();
+        } catch (rollbackError) {
+          console.error('Error rolling back transaction:', rollbackError);
+        }
+      }
       console.error('Error updating poll:', error);
       return res.status(500).json({
         success: false,
