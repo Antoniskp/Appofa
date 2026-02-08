@@ -6,6 +6,7 @@ describe('Location API Tests', () => {
   let adminToken;
   let editorToken;
   let viewerToken;
+  let viewerCsrfToken;
   let testLocation;
 
   beforeAll(async () => {
@@ -48,6 +49,7 @@ describe('Location API Tests', () => {
       .post('/api/auth/login')
       .send({ email: 'viewer@test.com', password: 'password123' });
     viewerToken = viewerLogin.headers['set-cookie'].find(c => c.startsWith('auth_token=')).split(';')[0].replace('auth_token=', '');
+    viewerCsrfToken = viewerLogin.headers['set-cookie'].find(c => c.startsWith('csrf_token=')).split(';')[0].replace('csrf_token=', '');
   });
 
   afterAll(async () => {
@@ -234,9 +236,9 @@ describe('Location API Tests', () => {
         .post('/api/locations')
         .set('Cookie', `auth_token=${adminToken}`)
         .send({
-          name: 'Japan',
+          name: 'Hierarchy Test Country',
           type: 'country',
-          code: 'JP'
+          code: 'HTC'
         })
         .expect(201);
 
@@ -434,7 +436,8 @@ describe('Location API Tests', () => {
       // Update user profile with homeLocationId
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id
         })
@@ -474,7 +477,8 @@ describe('Location API Tests', () => {
       // Change homeLocationId to a different location
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: anotherTestLocation.id
         })
@@ -527,7 +531,8 @@ describe('Location API Tests', () => {
       // Clear homeLocationId (set to null)
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: null
         })
@@ -559,7 +564,8 @@ describe('Location API Tests', () => {
       // Set homeLocationId
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id
         })
@@ -568,7 +574,8 @@ describe('Location API Tests', () => {
       // Set the same homeLocationId again
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id
         })
@@ -590,7 +597,8 @@ describe('Location API Tests', () => {
       // First, clear any existing homeLocationId
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: null
         })
@@ -620,7 +628,8 @@ describe('Location API Tests', () => {
       // Now set homeLocationId to a different location
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id
         })
@@ -651,7 +660,8 @@ describe('Location API Tests', () => {
       // First, ensure homeLocationId is null using the API
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: null
         })
@@ -688,7 +698,8 @@ describe('Location API Tests', () => {
       // Try to clear homeLocationId (which is already null)
       await request(app)
         .put('/api/auth/profile')
-        .set('Cookie', `auth_token=${viewerToken}`)
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
+        .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: null
         })

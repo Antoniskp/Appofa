@@ -347,17 +347,17 @@ async function runAllTests() {
     
     console.log('\n' + '='.repeat(60));
     console.log('🎉 All integration tests passed successfully!\n');
-    
-    await sequelize.close();
-    process.exit(0);
-    
   } catch (error) {
     console.error('\n❌ Test failed:', error.message);
     console.error(error.stack);
+    throw error;
+  } finally {
     await sequelize.close();
-    process.exit(1);
   }
 }
 
-// Run all tests
-runAllTests();
+describe('Poll system integration', () => {
+  test('runs poll integration suite', async () => {
+    await runAllTests();
+  });
+});

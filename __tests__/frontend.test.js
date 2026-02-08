@@ -23,6 +23,7 @@ afterAll(() => {
   jest.useRealTimers();
 });
 const { createRoot } = require('react-dom/client');
+const { ToastProvider } = require('../components/ToastProvider');
 
 jest.mock('next/link', () => {
   const React = require('react');
@@ -139,7 +140,7 @@ const renderPage = async (Component) => {
   const root = createRoot(container);
 
   await act(async () => {
-    root.render(React.createElement(Component));
+    root.render(React.createElement(ToastProvider, null, React.createElement(Component)));
   });
   await act(async () => {
     await flushPromises();
@@ -202,7 +203,7 @@ describe('Frontend smoke tests', () => {
     const { container, root } = await renderPage(LoginPage);
 
     expect(container.textContent).toContain('Sign in to your account');
-    expect(container.textContent).toContain('Continue with GitHub');
+    expect(container.textContent).toContain('Or continue with');
 
     await act(async () => {
       root.unmount();
