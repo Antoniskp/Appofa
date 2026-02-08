@@ -41,6 +41,14 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const canVote = isPollActive && (user || poll.allowUnauthenticatedVotes);
   
+  const resetAddOptionForm = () => {
+    setNewOptionText('');
+    setNewOptionPhotoUrl('');
+    setNewOptionLinkUrl('');
+    setNewOptionDisplayText('');
+    setShowAddOption(false);
+  };
+
   const handleAddOption = async () => {
     if (!newOptionText.trim()) {
       setError('Παρακαλώ εισάγετε κείμενο για την επιλογή');
@@ -65,15 +73,11 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       const response = await pollAPI.addOption(poll.id, optionData);
       if (response.success) {
         setSuccess('Η επιλογή προστέθηκε επιτυχώς!');
-        setNewOptionText('');
-        setNewOptionPhotoUrl('');
-        setNewOptionLinkUrl('');
-        setNewOptionDisplayText('');
-        setShowAddOption(false);
+        resetAddOptionForm();
         
         // Refresh poll data to show the new option
         if (onVoteSuccess) {
-          setTimeout(() => onVoteSuccess(), 1000);
+          onVoteSuccess();
         }
       }
     } catch (err) {
@@ -133,7 +137,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       
       {/* Show message and add option UI if poll allows user contributions */}
       {poll.allowUserContributions && poll.options.length === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4" role="status">
           <p className="text-blue-800 mb-2">
             Αυτή η δημοσκόπηση επιτρέπει σε χρήστες να προσθέσουν επιλογές. Προσθέστε την πρώτη επιλογή για να ξεκινήσετε!
           </p>
@@ -219,13 +223,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                   {isAddingOption ? 'Προσθήκη...' : 'Προσθήκη Επιλογής'}
                 </button>
                 <button
-                  onClick={() => {
-                    setShowAddOption(false);
-                    setNewOptionText('');
-                    setNewOptionPhotoUrl('');
-                    setNewOptionLinkUrl('');
-                    setNewOptionDisplayText('');
-                  }}
+                  onClick={resetAddOptionForm}
                   className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition text-sm font-medium"
                 >
                   Ακύρωση
