@@ -101,6 +101,19 @@ jest.mock('@/lib/api', () => ({
           responseTimeMs: 3,
           message: 'User authentication ready',
           activeUsers: 5
+        },
+        pollRead: {
+          status: 'healthy',
+          responseTimeMs: 6,
+          message: 'Poll retrieval working',
+          count: 5,
+          activePolls: 3
+        },
+        pollVoting: {
+          status: 'healthy',
+          responseTimeMs: 4,
+          message: 'Poll voting functionality ready',
+          totalVotes: 15
         }
       }
     }))

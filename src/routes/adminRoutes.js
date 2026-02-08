@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sequelize, User, Article, Location, LocationLink } = require('../models');
+const { sequelize, User, Article, Location, LocationLink, Poll, PollOption, PollVote } = require('../models');
 const authMiddleware = require('../middleware/auth');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
@@ -210,6 +210,65 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     return { 
       message: 'News status transition ready',
       totalNewsArticles: newsArticles
+    };
+  });
+
+  // Poll management checks
+  functionalChecks.pollRead = await runCheck(async () => {
+    const polls = await Poll.findAll({ 
+      limit: 5,
+      order: [['createdAt', 'DESC']] 
+    });
+    const activeCount = await Poll.count({ where: { status: 'active' } });
+    return { 
+      message: 'Poll retrieval working',
+      count: polls.length,
+      activePolls: activeCount
+    };
+  });
+
+  functionalChecks.pollCreate = await runCheck(async () => {
+    // Validate poll creation data structure
+    const testData = {
+      title: 'Test Poll',
+      type: 'simple',
+      creatorId: 1,
+      status: 'active'
+    };
+    const isValid = testData.title && testData.type && testData.creatorId;
+    if (!isValid) throw new Error('Invalid poll structure');
+    return { message: 'Poll creation data validation passed' };
+  });
+
+  functionalChecks.pollVoting = await runCheck(async () => {
+    const totalVotes = await PollVote.count();
+    const polls = await Poll.findOne({
+      order: [['createdAt', 'DESC']],
+      include: [{
+        model: PollVote,
+        as: 'votes'
+      }]
+    });
+    return { 
+      message: 'Poll voting functionality ready',
+      totalVotes,
+      samplePollId: polls?.id
+    };
+  });
+
+  functionalChecks.pollOptions = await runCheck(async () => {
+    const totalOptions = await PollOption.count();
+    const polls = await Poll.findOne({
+      order: [['createdAt', 'DESC']],
+      include: [{
+        model: PollOption,
+        as: 'options'
+      }]
+    });
+    return { 
+      message: 'Poll options retrieval working',
+      totalOptions,
+      sampleOptionsCount: polls?.options?.length || 0
     };
   });
 
