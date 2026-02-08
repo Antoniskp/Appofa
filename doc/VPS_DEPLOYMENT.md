@@ -78,9 +78,16 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y curl ca-certificates gnupg nano git
 
 # Install Node.js 22 LTS via NodeSource (includes npm)
-# Note: Next.js 16.x requires Node.js >=20.9.0, Node 22 recommended
+# Node 22 is required for:
+# - Next.js 16.x (requires >=20.9.0)
+# - npm overrides: glob@11 and rimraf@6 (require Node 20+)
+# - Long-term support until April 2027
 curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
+
+# Verify installation
+node -v  # Should show v22.x.x
+npm -v   # Should show v10.x.x or higher
 
 # Install PostgreSQL
 sudo apt install -y postgresql postgresql-contrib
@@ -88,6 +95,8 @@ sudo apt install -y postgresql postgresql-contrib
 # Install PM2 for process management
 sudo npm install -g pm2
 ```
+
+**Upgrading from Node 20?** See `doc/NODE_UPGRADE_VPS.md` for step-by-step upgrade instructions.
 
 2. **Set up PostgreSQL**
 ```bash
@@ -108,7 +117,16 @@ cd Appofa
 # Note: Even though 'next' is in dependencies (not devDependencies),
 # you should install all packages to ensure proper binary linking
 npm ci
+```
 
+**Note:** The project uses npm overrides in `package.json` to force newer versions of transitive dependencies:
+- `glob@11.0.0` (requires Node 22+)
+- `rimraf@6.0.1` (requires Node 22+)
+- `tar@7.5.7` (security updates)
+
+These overrides eliminate deprecation warnings and security issues. They require Node.js 22+, which is why we install Node 22 LTS above.
+
+```bash
 cp .env.example .env
 # Edit .env with production credentials
 nano .env
@@ -139,6 +157,19 @@ pm2 startup
 ```
 
 **Important:** Both processes must be running for the application to work properly. The backend handles API requests at `/api/*`, while the frontend serves the Next.js application and its static assets at `/_next/*`.
+
+## Express Trust Proxy Configuration
+
+The application uses `app.set('trust proxy', 1)` to properly handle rate limiting behind nginx.
+
+**What this means:**
+- Express trusts the first proxy (nginx) to set the `X-Forwarded-For` header
+- Rate limiting works correctly based on real client IPs
+- Security is maintained - only nginx can set the forwarded IP
+
+**DO NOT** change this to `true` as it creates a security vulnerability where attackers can bypass rate limiting.
+
+See: https://expressjs.com/en/guide/behind-proxies.html
 
 6. **Set up nginx reverse proxy**
 
@@ -736,3 +767,73 @@ npm run frontend:start
 - Next.js 16.x requires Node.js >=20.9.0 for compatibility
 - The initial deployment guide has been updated to install Node.js 20 LTS
 - Older deployments using Node.js 18 must upgrade to support Next.js 16
+
+---
+
+## Post-Deployment Verification
+
+After deployment, verify everything is working:
+
+### 1. Check Node Version
+```bash
+node -v  # Should be v22.x.x
+npm -v   # Should be v10.x.x or higher
+```
+
+### 2. Check PM2 Status
+```bash
+pm2 status
+# Both newsapp-backend and newsapp-frontend should show "online"
+```
+
+### 3. Check for Errors
+```bash
+# Check for any errors in the logs
+pm2 logs --err --lines 50
+
+# Should NOT see:
+# - ValidationError: trust proxy
+# - Deprecation warnings (or very minimal)
+# - Module not found errors
+```
+
+### 4. Test Endpoints
+```bash
+# Test backend
+curl http://localhost:3000/api/health || curl http://localhost:3000
+
+# Test frontend
+curl http://localhost:3001
+
+# Test from external IP (replace with your IP)
+curl http://YOUR_SERVER_IP:3000
+curl http://YOUR_SERVER_IP:3001
+```
+
+### 5. Check npm audit
+```bash
+cd /var/www/Appofa
+npm audit
+# Should show 0 vulnerabilities
+```
+
+### Common Issues
+
+#### Backend shows "ValidationError: trust proxy"
+**Cause:** express-rate-limit update requires proper trust proxy configuration
+**Fix:** Ensure `src/index.js` has `app.set('trust proxy', 1);` not `true`
+**Reference:** PR #153
+
+#### Frontend shows "Could not find production build"
+**Cause:** Missing .next build directory
+**Fix:**
+```bash
+cd /var/www/Appofa
+npm run frontend:build
+pm2 restart newsapp-frontend
+```
+
+#### npm deprecation warnings
+**Cause:** Transitive dependencies using old packages
+**Status:** Normal - handled by npm overrides in package.json (PR #150)
+**Action:** No action needed if using Node 22+ with current package.json
