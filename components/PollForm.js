@@ -112,10 +112,8 @@ export default function PollForm({
     // Require at least 2 options unless user contributions are allowed
     const minOptions = formData.allowUserContributions ? 0 : 2;
     if (validOptions.length < minOptions) {
-      // Greek grammar: 0 and 2+ use plural 'επιλογές', 1 uses singular 'επιλογή'
-      // Currently minOptions is only 0 or 2, but keeping singular logic for future-proofing
-      const optionWord = minOptions === 1 ? 'επιλογή' : 'επιλογές';
-      alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} ${optionWord}`);
+      // Greek grammar: 0 and 2+ use plural 'επιλογές'
+      alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} επιλογές`);
       return;
     }
     
@@ -282,8 +280,9 @@ export default function PollForm({
 
         <div className="space-y-4">
           {options.map((option, index) => {
-            // Show delete button if: more than 2 options OR user contributions enabled and has options
-            const canDeleteOption = options.length > 2 || (formData.allowUserContributions && options.length > 0);
+            // Show delete button if number of options exceeds minimum required
+            const minOptions = formData.allowUserContributions ? 0 : 2;
+            const canDeleteOption = options.length > minOptions;
             
             return (
               <div key={index} className="border border-gray-300 rounded-lg p-4">
