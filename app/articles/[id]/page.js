@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ShareIcon, BookmarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
@@ -183,10 +184,8 @@ export default function ArticleDetailPage() {
             )}
 
             {/* Article Content */}
-            <div className="prose max-w-none mb-8">
-              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                {article.content}
-              </div>
+            <div className="mb-8">
+              <MarkdownRenderer content={article.content} />
             </div>
 
             {/* Action Buttons */}

@@ -1,6 +1,7 @@
 import { ImageCard, ImageTopCard } from '@/components/Card';
 import Badge, { TypeBadge } from '@/components/Badge';
 import { TruncatedTextTooltip } from '@/components/Tooltip';
+import MarkdownRenderer from '@/components/MarkdownRenderer';
 
 /**
  * Reusable article card component
@@ -44,9 +45,12 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             </h2>
             
             {/* Summary */}
-            <p className="body-copy mb-4">
-              {article.summary || (article.content ? `${article.content.substring(0, 200)}...` : '')}
-            </p>
+            <div className="body-copy mb-4">
+              <MarkdownRenderer 
+                content={article.summary || (article.content ? article.content.substring(0, 200) + '...' : '')} 
+                className="line-clamp-3"
+              />
+            </div>
             
             {/* Meta */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
@@ -89,9 +93,11 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           {article.title}
         </TruncatedTextTooltip>
       </h3>
-      <p className="body-copy mb-4 line-clamp-3">
-        {article.summary || (article.content ? `${article.content.substring(0, 150)}...` : '')}
-      </p>
+      <div className="body-copy line-clamp-3">
+        <MarkdownRenderer 
+          content={article.summary || (article.content ? article.content.substring(0, 150) + '...' : '')} 
+        />
+      </div>
       <div className="flex justify-between items-center text-sm text-gray-500">
         <span>By {article.author?.username || 'Unknown'}</span>
         <span>{formattedDate} {formattedTime}</span>
