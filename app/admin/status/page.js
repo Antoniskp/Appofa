@@ -28,7 +28,8 @@ const borderColorClasses = {
   purple: 'border-purple-500',
   green: 'border-green-500',
   yellow: 'border-yellow-500',
-  red: 'border-red-500'
+  red: 'border-red-500',
+  indigo: 'border-indigo-500'
 };
 
 // Grid column mappings based on number of items
@@ -94,6 +95,11 @@ function HealthStatusContent() {
       title: 'News Approval Workflows',
       color: 'red',
       checks: ['newsApprovalRead', 'newsStatusTransition']
+    },
+    polls: {
+      title: 'Poll Management',
+      color: 'indigo',
+      checks: ['pollRead', 'pollCreate', 'pollVoting', 'pollOptions']
     }
   }), []);
 
@@ -125,7 +131,12 @@ function HealthStatusContent() {
           {typeof check.approvedNews === 'number' && <p>Approved News: {check.approvedNews}</p>}
           {typeof check.totalNewsArticles === 'number' && <p>Total News: {check.totalNewsArticles}</p>}
           {typeof check.draftCount === 'number' && <p>Draft Articles: {check.draftCount}</p>}
+          {typeof check.activePolls === 'number' && <p>Active Polls: {check.activePolls}</p>}
+          {typeof check.totalVotes === 'number' && <p>Total Votes: {check.totalVotes}</p>}
+          {typeof check.totalOptions === 'number' && <p>Total Options: {check.totalOptions}</p>}
+          {typeof check.sampleOptionsCount === 'number' && <p>Sample Options: {check.sampleOptionsCount}</p>}
           {check.sampleId && <p>Sample ID: {check.sampleId}</p>}
+          {check.samplePollId && <p>Sample Poll ID: {check.samplePollId}</p>}
           {check.userId && <p>User ID: {check.userId}</p>}
           {check.role && <p>Role: {check.role}</p>}
           <p className="font-medium">Response Time: {check.responseTimeMs ?? '-'} ms</p>
