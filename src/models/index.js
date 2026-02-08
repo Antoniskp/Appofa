@@ -6,6 +6,7 @@ const LocationLink = require('./LocationLink');
 const Poll = require('./Poll');
 const PollOption = require('./PollOption');
 const PollVote = require('./PollVote');
+const ActiveSession = require('./ActiveSession');
 
 // Define associations
 User.hasMany(Article, {
@@ -110,6 +111,17 @@ User.hasMany(PollVote, {
   as: 'pollVotes'
 });
 
+// ActiveSession associations
+User.hasMany(ActiveSession, {
+  foreignKey: 'userId',
+  as: 'activeSessions'
+});
+
+ActiveSession.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
 module.exports = {
   sequelize,
   User,
@@ -118,5 +130,6 @@ module.exports = {
   LocationLink,
   Poll,
   PollOption,
-  PollVote
+  PollVote,
+  ActiveSession
 };

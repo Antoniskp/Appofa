@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
-const { User, Location, LocationLink, sequelize } = require('../models');
+const { User, Location, LocationLink, ActiveSession, sequelize } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 const {
@@ -56,8 +56,69 @@ const clearAuthCookies = (res) => {
   res.clearCookie(CSRF_COOKIE, { path: '/' });
 };
 
+const getActiveUserCount = async () => {
+  // Calculate active users (users who logged in within the last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  return await User.count({
+    where: {
+      lastLoginAt: {
+        [Op.gte]: thirtyDaysAgo
+      }
+    }
+  });
+};
+
+const cleanupStaleSessions = async () => {
+  // Remove sessions inactive for more than 5 minutes
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  
+  try {
+    await ActiveSession.destroy({
+      where: {
+        lastActivity: {
+          [Op.lt]: fiveMinutesAgo
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error cleaning up stale sessions:', error);
+  }
+};
+
+const getOnlineStats = async () => {
+  // Clean up stale sessions first
+  await cleanupStaleSessions();
+  
+  // Count authenticated online users (sessions with userId)
+  const onlineUsers = await ActiveSession.count({
+    where: {
+      userId: {
+        [Op.ne]: null
+      }
+    },
+    distinct: true,
+    col: 'userId'
+  });
+  
+  // Count anonymous visitors (sessions without userId)
+  const anonymousVisitors = await ActiveSession.count({
+    where: {
+      userId: null
+    }
+  });
+  
+  return {
+    onlineUsers,
+    anonymousVisitors
+  };
+};
+
 const buildUserStats = async () => {
   const totalUsers = await User.count();
+  const activeUsers = await getActiveUserCount();
+  
   const roles = ['admin', 'moderator', 'editor', 'viewer'];
   const counts = await User.findAll({
     attributes: [
@@ -79,6 +140,7 @@ const buildUserStats = async () => {
 
   return {
     total: totalUsers,
+    active: activeUsers,
     byRole
   };
 };
@@ -89,7 +151,7 @@ const authController = {
     try {
       const { username, email, password, firstName, lastName, searchable } = req.body;
 
-      const usernameResult = normalizeRequiredString(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+      const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
       if (usernameResult.error) {
         return res.status(400).json({
           success: false,
@@ -113,7 +175,7 @@ const authController = {
         });
       }
 
-      const firstNameResult = normalizeOptionalString(firstName, 'First name', NAME_MAX_LENGTH);
+      const firstNameResult = normalizeOptionalText(firstName, 'First name', null, NAME_MAX_LENGTH);
       if (firstNameResult.error) {
         return res.status(400).json({
           success: false,
@@ -121,7 +183,7 @@ const authController = {
         });
       }
 
-      const lastNameResult = normalizeOptionalString(lastName, 'Last name', NAME_MAX_LENGTH);
+      const lastNameResult = normalizeOptionalText(lastName, 'Last name', null, NAME_MAX_LENGTH);
       if (lastNameResult.error) {
         return res.status(400).json({
           success: false,
@@ -236,6 +298,10 @@ const authController = {
         });
       }
 
+      // Update last login timestamp
+      user.lastLoginAt = new Date();
+      await user.save();
+
       // Generate JWT token
       if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET must be configured');
@@ -329,7 +395,7 @@ const authController = {
       }
 
       if (username !== undefined) {
-        const usernameResult = normalizeRequiredString(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+        const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
         if (usernameResult.error) {
           return res.status(400).json({
             success: false,
@@ -355,7 +421,7 @@ const authController = {
         }
       }
 
-      const firstNameResult = normalizeOptionalString(firstName, 'First name', NAME_MAX_LENGTH);
+      const firstNameResult = normalizeOptionalText(firstName, 'First name', null, NAME_MAX_LENGTH);
       if (firstNameResult.error) {
         return res.status(400).json({
           success: false,
@@ -366,7 +432,7 @@ const authController = {
         user.firstName = firstNameResult.value;
       }
 
-      const lastNameResult = normalizeOptionalString(lastName, 'Last name', NAME_MAX_LENGTH);
+      const lastNameResult = normalizeOptionalText(lastName, 'Last name', null, NAME_MAX_LENGTH);
       if (lastNameResult.error) {
         return res.status(400).json({
           success: false,
@@ -828,6 +894,7 @@ const authController = {
           if (githubUser.avatar_url) {
             user.avatar = githubUser.avatar_url;
           }
+          user.lastLoginAt = new Date();
           await user.save();
         } else {
           // Check if email already exists
@@ -842,6 +909,7 @@ const authController = {
             if (!existingEmailUser.avatar && githubUser.avatar_url) {
               existingEmailUser.avatar = githubUser.avatar_url;
             }
+            existingEmailUser.lastLoginAt = new Date();
             await existingEmailUser.save();
             user = existingEmailUser;
           } else {
@@ -1021,6 +1089,80 @@ const authController = {
       res.status(500).json({
         success: false,
         message: 'Error searching users.'
+      });
+    }
+  },
+
+  // Get public user statistics (total and active users)
+  getPublicUserStats: async (req, res) => {
+    try {
+      const totalUsers = await User.count();
+      const activeUsers = await getActiveUserCount();
+      const onlineStats = await getOnlineStats();
+
+      res.status(200).json({
+        success: true,
+        data: {
+          total: totalUsers,
+          active: activeUsers,
+          onlineUsers: onlineStats.onlineUsers,
+          anonymousVisitors: onlineStats.anonymousVisitors
+        }
+      });
+    } catch (error) {
+      console.error('Get public user stats error:', error);
+      // Return partial data on error to maintain service availability
+      try {
+        const totalUsers = await User.count();
+        res.status(200).json({
+          success: true,
+          data: {
+            total: totalUsers,
+            active: 0,
+            onlineUsers: 0,
+            anonymousVisitors: 0
+          }
+        });
+      } catch (fallbackError) {
+        console.error('Fallback stats error:', fallbackError);
+        res.status(500).json({
+          success: false,
+          message: 'Error fetching user statistics.'
+        });
+      }
+    }
+  },
+
+  // Update session activity (heartbeat)
+  updateSessionActivity: async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      
+      if (!sessionId || typeof sessionId !== 'string') {
+        return res.status(400).json({
+          success: false,
+          message: 'Valid session ID is required.'
+        });
+      }
+
+      const userId = req.user ? req.user.id : null;
+
+      // Upsert session (create or update)
+      await ActiveSession.upsert({
+        sessionId,
+        userId,
+        lastActivity: new Date()
+      });
+
+      res.status(200).json({
+        success: true,
+        message: 'Session activity updated.'
+      });
+    } catch (error) {
+      console.error('Update session activity error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error updating session activity.'
       });
     }
   }
