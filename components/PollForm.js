@@ -96,7 +96,9 @@ export default function PollForm({
   };
 
   const handleRemoveOption = (index) => {
-    if (options.length > 2) {
+    // Allow removing all options if user contributions are enabled
+    const minOptions = formData.allowUserContributions ? 0 : 2;
+    if (options.length > minOptions) {
       setOptions(prev => prev.filter((_, i) => i !== index));
     }
   };
@@ -107,7 +109,9 @@ export default function PollForm({
     // Filter out empty options
     const validOptions = options.filter(opt => opt.text.trim() !== '');
     
-    if (validOptions.length < 2) {
+    // Require at least 2 options unless user contributions are allowed
+    const minOptions = formData.allowUserContributions ? 0 : 2;
+    if (validOptions.length < minOptions) {
       alert('Πρέπει να προσθέσετε τουλάχιστον 2 επιλογές');
       return;
     }
@@ -278,7 +282,7 @@ export default function PollForm({
             <div key={index} className="border border-gray-300 rounded-lg p-4">
               <div className="flex items-start justify-between mb-3">
                 <h4 className="font-medium text-gray-900">Επιλογή {index + 1}</h4>
-                {options.length > 2 && (
+                {(options.length > 2 || (formData.allowUserContributions && options.length > 0)) && (
                   <button
                     type="button"
                     onClick={() => handleRemoveOption(index)}
