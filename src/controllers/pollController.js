@@ -1,4 +1,4 @@
-const { Poll, PollOption, PollVote, User, Location, sequelize } = require('../models');
+const { Poll, PollOption, PollVote, User, Location, LocationLink, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
@@ -255,6 +255,20 @@ const pollController = {
       }
 
       await transaction.commit();
+
+      // Create LocationLink if locationId is provided
+      if (locationIdValue) {
+        try {
+          await LocationLink.create({
+            location_id: locationIdValue,
+            entity_type: 'poll',
+            entity_id: poll.id
+          });
+        } catch (linkError) {
+          // Log error but don't fail the poll creation
+          console.error('Error creating location link:', linkError);
+        }
+      }
 
       // Fetch the created poll with associations
       const createdPoll = await Poll.findByPk(poll.id, {
@@ -521,7 +535,7 @@ const pollController = {
   updatePoll: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, description, deadline, status } = req.body;
+      const { title, description, deadline, status, locationId } = req.body;
 
       const poll = await Poll.findByPk(id, {
         include: [
@@ -601,8 +615,56 @@ const pollController = {
         updateData.status = statusResult.value;
       }
 
+      // Validate and update locationId
+      if (locationId !== undefined) {
+        if (locationId === null) {
+          updateData.locationId = null;
+        } else {
+          const locationIdResult = normalizeInteger(locationId, 'Location ID', 1);
+          if (locationIdResult.error) {
+            return res.status(400).json({
+              success: false,
+              message: locationIdResult.error
+            });
+          }
+          // Verify location exists
+          const location = await Location.findByPk(locationIdResult.value);
+          if (!location) {
+            return res.status(404).json({
+              success: false,
+              message: 'Location not found.'
+            });
+          }
+          updateData.locationId = locationIdResult.value;
+        }
+      }
+
       // Update the poll
       await poll.update(updateData);
+
+      // Update LocationLink if locationId changed
+      if (locationId !== undefined) {
+        // Remove existing location link
+        await LocationLink.destroy({
+          where: {
+            entity_type: 'poll',
+            entity_id: id
+          }
+        });
+
+        // Create new location link if locationId is provided
+        if (updateData.locationId) {
+          try {
+            await LocationLink.create({
+              location_id: updateData.locationId,
+              entity_type: 'poll',
+              entity_id: id
+            });
+          } catch (linkError) {
+            console.error('Error creating location link:', linkError);
+          }
+        }
+      }
 
       // Fetch updated poll with associations
       const updatedPoll = await Poll.findByPk(id, {
