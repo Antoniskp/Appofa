@@ -71,6 +71,20 @@ describe('Security Configuration Tests', () => {
       expect(response.body.message).toContain('Invalid limit parameter');
     });
   });
+
+  describe('Trust Proxy Configuration', () => {
+    it('should set trust proxy to 1 (only first proxy)', () => {
+      // Verify that trust proxy is set to 1 to prevent IP spoofing attacks
+      // This ensures rate limiting works correctly and securely
+      // See: https://express-rate-limit.github.io/ERR_ERL_PERMISSIVE_TRUST_PROXY/
+      expect(app.get('trust proxy')).toBe(1);
+    });
+
+    it('should not trust all proxies (insecure)', () => {
+      // Verify that trust proxy is NOT set to true (which would be insecure)
+      expect(app.get('trust proxy')).not.toBe(true);
+    });
+  });
 });
 
 
