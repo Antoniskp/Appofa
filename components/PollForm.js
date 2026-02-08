@@ -103,7 +103,22 @@ export default function PollForm({
     const minOptions = formData.allowUserContributions ? 0 : 2;
     if (options.length > minOptions) {
       setOptions(prev => prev.filter((_, i) => i !== index));
-      clearImageError(index);
+      // Reindex error states after removal
+      setImageErrors(prev => {
+        const newErrors = {};
+        Object.keys(prev).forEach(key => {
+          const keyIndex = parseInt(key);
+          if (keyIndex < index) {
+            // Keep errors for options before the removed one
+            newErrors[keyIndex] = prev[keyIndex];
+          } else if (keyIndex > index) {
+            // Shift down errors for options after the removed one
+            newErrors[keyIndex - 1] = prev[keyIndex];
+          }
+          // Skip the removed index
+        });
+        return newErrors;
+      });
     }
   };
 
