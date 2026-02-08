@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PlusIcon, TrashIcon, InformationCircleIcon } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import { PlusIcon, TrashIcon, InformationCircleIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import AlertMessage from '@/components/AlertMessage';
 import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
@@ -41,6 +42,8 @@ export default function PollForm({
     { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
     { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
   ]);
+
+  const [imageErrors, setImageErrors] = useState({});
 
   // Initialize form data from poll prop (edit mode)
   useEffect(() => {
@@ -100,7 +103,39 @@ export default function PollForm({
     const minOptions = formData.allowUserContributions ? 0 : 2;
     if (options.length > minOptions) {
       setOptions(prev => prev.filter((_, i) => i !== index));
+      // Reindex error states after removal
+      setImageErrors(prev => {
+        const newErrors = {};
+        Object.keys(prev).forEach(key => {
+          const keyIndex = parseInt(key);
+          if (keyIndex < index) {
+            // Keep errors for options before the removed one
+            newErrors[keyIndex] = prev[keyIndex];
+          } else if (keyIndex > index) {
+            // Shift down errors for options after the removed one
+            newErrors[keyIndex - 1] = prev[keyIndex];
+          }
+          // Skip the removed index
+        });
+        return newErrors;
+      });
     }
+  };
+
+  const clearImageError = (index) => {
+    setImageErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors[index];
+      return newErrors;
+    });
+  };
+
+  const handleImageError = (index) => {
+    setImageErrors(prev => ({ ...prev, [index]: true }));
+  };
+
+  const handleImageLoad = (index) => {
+    clearImageError(index);
   };
 
   const handleSubmit = async (e) => {
@@ -319,13 +354,48 @@ export default function PollForm({
                     placeholder="Πρόσθετες πληροφορίες"
                   />
 
-                  <FormInput
-                    name={`option-photoUrl-${index}`}
-                    label="URL Εικόνας (Προαιρετικό)"
-                    value={option.photoUrl}
-                    onChange={(e) => handleOptionChange(index, 'photoUrl', e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      URL Εικόνας (Προαιρετικό)
+                    </label>
+                    <div className="flex items-start gap-3">
+                      {/* Image preview thumbnail */}
+                      <div className="flex-shrink-0 w-20 h-20 bg-gray-100 border border-gray-300 rounded-md overflow-hidden flex items-center justify-center">
+                        {option.photoUrl && !imageErrors[index] ? (
+                          <Image
+                            src={option.photoUrl}
+                            alt={`Preview ${index + 1}`}
+                            width={80}
+                            height={80}
+                            className="object-cover w-full h-full"
+                            onError={() => handleImageError(index)}
+                            onLoad={() => handleImageLoad(index)}
+                          />
+                        ) : option.photoUrl && imageErrors[index] ? (
+                          <PhotoIcon className="h-8 w-8 text-gray-400" />
+                        ) : (
+                          <PhotoIcon className="h-8 w-8 text-gray-300" />
+                        )}
+                      </div>
+                      
+                      {/* URL input */}
+                      <div className="flex-1">
+                        <input
+                          type="url"
+                          name={`option-photoUrl-${index}`}
+                          value={option.photoUrl}
+                          onChange={(e) => handleOptionChange(index, 'photoUrl', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="https://example.com/image.jpg"
+                        />
+                        {option.photoUrl && imageErrors[index] && (
+                          <p className="mt-1 text-xs text-red-600">
+                            Δεν ήταν δυνατή η φόρτωση της εικόνας
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
                   <FormInput
                     name={`option-linkUrl-${index}`}
