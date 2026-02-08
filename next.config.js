@@ -35,6 +35,16 @@ const nextConfig = {
         protocol: 'https',
         hostname: '**.imagekit.io',
       },
+      // Toppng - PNG images
+      {
+        protocol: 'https',
+        hostname: 'toppng.com',
+      },
+      // Pinterest images
+      {
+        protocol: 'https',
+        hostname: 'i.pinimg.com',
+      },
     ],
     formats: ['image/avif', 'image/webp'],
   },
