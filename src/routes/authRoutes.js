@@ -28,4 +28,7 @@ router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkR
 // Public search route
 router.get('/users/search', apiLimiter, authController.searchUsers);
 
+// Public stats route
+router.get('/users/public-stats', apiLimiter, authController.getPublicUserStats);
+
 module.exports = router;

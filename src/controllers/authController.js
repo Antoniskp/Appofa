@@ -236,6 +236,10 @@ const authController = {
         });
       }
 
+      // Update last login timestamp
+      user.lastLoginAt = new Date();
+      await user.save();
+
       // Generate JWT token
       if (!process.env.JWT_SECRET) {
         throw new Error('JWT_SECRET must be configured');
@@ -828,6 +832,7 @@ const authController = {
           if (githubUser.avatar_url) {
             user.avatar = githubUser.avatar_url;
           }
+          user.lastLoginAt = new Date();
           await user.save();
         } else {
           // Check if email already exists
@@ -1021,6 +1026,40 @@ const authController = {
       res.status(500).json({
         success: false,
         message: 'Error searching users.'
+      });
+    }
+  },
+
+  // Get public user statistics (no authentication required)
+  getPublicUserStats: async (req, res) => {
+    try {
+      // Total number of users
+      const totalUsers = await User.count();
+
+      // Active users (logged in within the last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const activeUsers = await User.count({
+        where: {
+          lastLoginAt: {
+            [Op.gte]: thirtyDaysAgo
+          }
+        }
+      });
+
+      res.status(200).json({
+        success: true,
+        data: {
+          totalUsers,
+          activeUsers
+        }
+      });
+    } catch (error) {
+      console.error('Get public user stats error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching user statistics.'
       });
     }
   }
