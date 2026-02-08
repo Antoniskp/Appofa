@@ -323,35 +323,24 @@ export default function LocationsPage() {
   const hasActiveFilters = selectedCountry || selectedPrefecture || selectedMunicipality;
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Header Section */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center gap-3 mb-4">
-            <MapPinIcon className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">Explore Locations</h1>
-          </div>
-          <p className="text-gray-600 max-w-3xl">
-            Browse locations hierarchically or use the search to quickly find what you're looking for.
-            Select a location to view its details, related articles, and users.
-          </p>
-        </div>
-      </div>
-
+    <div className="bg-gray-50 min-h-screen py-8">
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Search Bar */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="card p-6 mb-6">
           <div className="relative">
+            <label htmlFor="location-search" className="block text-sm font-medium text-gray-700 mb-1">
+              Αναζήτηση
+            </label>
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
+                id="location-search"
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => searchTerm && setShowSearchDropdown(true)}
                 placeholder="Search locations by name..."
-                className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full h-10 px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
               />
               {isSearching && (
                 <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
@@ -397,7 +386,7 @@ export default function LocationsPage() {
         </div>
 
         {/* Hierarchical Dropdowns */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="card p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter by Hierarchy</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -505,7 +494,7 @@ export default function LocationsPage() {
         )}
 
         {/* Results Section */}
-        <div className="bg-white rounded-lg shadow-sm">
+        <div className="card">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900">
               {searchTerm ? 'Search Results' : breadcrumbs.length > 0 ? `Locations in ${breadcrumbs[breadcrumbs.length - 1].name}` : 'All Countries'}

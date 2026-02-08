@@ -5,11 +5,10 @@ import { useAuth } from '@/lib/auth-context';
 import UserCard from '@/components/UserCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
-import { StatsCard } from '@/components/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
-import { MagnifyingGlassIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import FilterBar from '@/components/FilterBar';
 import Link from 'next/link';
 
 export default function UsersPage() {
@@ -58,43 +57,9 @@ export default function UsersPage() {
     }
   );
 
-  // Fetch user statistics (public endpoint)
-  const { data: stats, loading: statsLoading } = useAsyncData(
-    async () => {
-      const response = await authAPI.getPublicUserStats();
-      if (response.success) {
-        return response.data;
-      }
-      return { totalUsers: 0 };
-    },
-    [],
-    {
-      initialData: { totalUsers: 0 }
-    }
-  );
-
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Users</h1>
-          <p className="text-gray-600">Find and connect with other users</p>
-        </div>
-
-        {/* User Statistics */}
-        <div className="mb-8">
-          {statsLoading ? (
-            <SkeletonLoader type="card" count={1} />
-          ) : (
-            <StatsCard
-              title="Total Registered Users"
-              value={stats.totalUsers}
-              icon={UserGroupIcon}
-              variant="default"
-            />
-          )}
-        </div>
-
         {/* Login/Register links for non-authenticated users */}
         {!authLoading && !isAuthenticated && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">
@@ -121,21 +86,20 @@ export default function UsersPage() {
         {/* Show user cards only for authenticated users */}
         {isAuthenticated && (
           <>
-            {/* Search Bar */}
-            <div className="mb-8 bg-white rounded-lg shadow-md p-6">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder="Search users by username..."
-                  value={filters.search}
-                  onChange={(e) => updateFilter('search', e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
-              </div>
-            </div>
+            {/* Search using FilterBar */}
+            <FilterBar
+              filters={filters}
+              onChange={(e) => updateFilter(e.target.name, e.target.value)}
+              filterConfig={[
+                {
+                  name: 'search',
+                  label: 'Αναζήτηση',
+                  type: 'text',
+                  placeholder: 'Search users by username...',
+                },
+              ]}
+              className="mb-8"
+            />
 
             {/* Loading State */}
             {loading && (
