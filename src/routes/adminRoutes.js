@@ -237,12 +237,12 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     };
     const isValid = testData.title && testData.type && testData.creatorId;
     if (!isValid) throw new Error('Invalid poll structure');
-    return { message: 'Poll creation data validation passed' };
+    return { message: 'Poll creation endpoint ready' };
   });
 
   functionalChecks.pollVoting = await runCheck(async () => {
     const totalVotes = await PollVote.count();
-    const polls = await Poll.findOne({
+    const poll = await Poll.findOne({
       order: [['createdAt', 'DESC']],
       include: [{
         model: PollVote,
@@ -252,13 +252,13 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     return { 
       message: 'Poll voting functionality ready',
       totalVotes,
-      samplePollId: polls?.id
+      samplePollId: poll?.id
     };
   });
 
   functionalChecks.pollOptions = await runCheck(async () => {
     const totalOptions = await PollOption.count();
-    const polls = await Poll.findOne({
+    const poll = await Poll.findOne({
       order: [['createdAt', 'DESC']],
       include: [{
         model: PollOption,
@@ -268,7 +268,7 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     return { 
       message: 'Poll options retrieval working',
       totalOptions,
-      sampleOptionsCount: polls?.options?.length || 0
+      sampleOptionsCount: poll?.options?.length || 0
     };
   });
 
