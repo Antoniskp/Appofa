@@ -175,9 +175,11 @@ const pollController = {
       const minOptionsRequired = allowUserContributionsResult.value ? 0 : 2;
       if (!Array.isArray(options) || options.length < minOptionsRequired) {
         await transaction.rollback();
+        // When minOptionsRequired is 0, the only failure is invalid array type
+        // When minOptionsRequired is 2, we need at least 2 options
         const errorMessage = minOptionsRequired === 0 
           ? 'Options must be an array.'
-          : 'At least 2 options are required.'; // minOptionsRequired is always 2 here
+          : 'At least 2 options are required.';
         return res.status(400).json({
           success: false,
           message: errorMessage
