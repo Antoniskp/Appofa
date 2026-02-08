@@ -175,9 +175,12 @@ const pollController = {
       const minOptionsRequired = allowUserContributionsResult.value ? 0 : 2;
       if (!Array.isArray(options) || options.length < minOptionsRequired) {
         await transaction.rollback();
+        const errorMessage = minOptionsRequired === 0 
+          ? 'Options array is invalid.'
+          : `At least ${minOptionsRequired} option${minOptionsRequired === 1 ? ' is' : 's are'} required.`;
         return res.status(400).json({
           success: false,
-          message: `At least ${minOptionsRequired} option${minOptionsRequired === 1 ? ' is' : 's are'} required.`
+          message: errorMessage
         });
       }
 
