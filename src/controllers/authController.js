@@ -89,7 +89,7 @@ const authController = {
     try {
       const { username, email, password, firstName, lastName, searchable } = req.body;
 
-      const usernameResult = normalizeRequiredString(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+      const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
       if (usernameResult.error) {
         return res.status(400).json({
           success: false,
@@ -105,7 +105,7 @@ const authController = {
         });
       }
 
-      const passwordResult = normalizePassword(password, 'Password');
+      const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
       if (passwordResult.error) {
         return res.status(400).json({
           success: false,
@@ -113,7 +113,7 @@ const authController = {
         });
       }
 
-      const firstNameResult = normalizeOptionalString(firstName, 'First name', NAME_MAX_LENGTH);
+      const firstNameResult = normalizeOptionalText(firstName, 'First name', undefined, NAME_MAX_LENGTH);
       if (firstNameResult.error) {
         return res.status(400).json({
           success: false,
@@ -121,7 +121,7 @@ const authController = {
         });
       }
 
-      const lastNameResult = normalizeOptionalString(lastName, 'Last name', NAME_MAX_LENGTH);
+      const lastNameResult = normalizeOptionalText(lastName, 'Last name', undefined, NAME_MAX_LENGTH);
       if (lastNameResult.error) {
         return res.status(400).json({
           success: false,
@@ -329,7 +329,7 @@ const authController = {
       }
 
       if (username !== undefined) {
-        const usernameResult = normalizeRequiredString(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+        const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
         if (usernameResult.error) {
           return res.status(400).json({
             success: false,
@@ -355,7 +355,7 @@ const authController = {
         }
       }
 
-      const firstNameResult = normalizeOptionalString(firstName, 'First name', NAME_MAX_LENGTH);
+      const firstNameResult = normalizeOptionalText(firstName, 'First name', undefined, NAME_MAX_LENGTH);
       if (firstNameResult.error) {
         return res.status(400).json({
           success: false,
@@ -366,7 +366,7 @@ const authController = {
         user.firstName = firstNameResult.value;
       }
 
-      const lastNameResult = normalizeOptionalString(lastName, 'Last name', NAME_MAX_LENGTH);
+      const lastNameResult = normalizeOptionalText(lastName, 'Last name', undefined, NAME_MAX_LENGTH);
       if (lastNameResult.error) {
         return res.status(400).json({
           success: false,
