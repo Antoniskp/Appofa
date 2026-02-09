@@ -5,35 +5,25 @@ const nextConfig = {
   
   images: {
     remotePatterns: [
-      // Google Images (gstatic.com) - commonly used for polls
+      // Allow images from any HTTPS source
+      // Note: This is intentionally permissive to support user-provided image URLs
+      // from various CDNs and image hosting services. While this creates a wider
+      // attack surface for potential SSRF attacks, it enables the core functionality
+      // of allowing users to add images from any source to poll options.
+      // Consider implementing rate limiting and URL validation at the application
+      // level, or restricting to specific trusted domains if security concerns arise.
       {
         protocol: 'https',
-        hostname: '**.gstatic.com',
+        hostname: '**',
       },
-      // Unsplash - popular free image service
+      // Allow HTTP images from localhost only (for local development)
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
+        protocol: 'http',
+        hostname: 'localhost',
       },
-      // Imgur - popular image hosting
       {
-        protocol: 'https',
-        hostname: '**.imgur.com',
-      },
-      // Wikimedia Commons
-      {
-        protocol: 'https',
-        hostname: 'upload.wikimedia.org',
-      },
-      // Cloudinary - popular CDN
-      {
-        protocol: 'https',
-        hostname: '**.cloudinary.com',
-      },
-      // ImageKit - popular CDN
-      {
-        protocol: 'https',
-        hostname: '**.imagekit.io',
+        protocol: 'http',
+        hostname: '127.0.0.1',
       },
     ],
     formats: ['image/avif', 'image/webp'],
