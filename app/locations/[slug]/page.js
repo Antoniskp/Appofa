@@ -398,12 +398,22 @@ export default function LocationDetailPage() {
                     )}
                   </div>
                 )}
-                {location.population && !isEditing && (
+                {(!isEditing && (location.population || entities.users.length > 0)) && (
                   <div>
-                    <span className="font-medium text-gray-700">Population:</span>
-                    <span className="ml-2 text-gray-900 font-semibold">
-                      {formatPopulation(location.population)}
-                    </span>
+                    {location.population && (
+                      <div>
+                        <span className="font-medium text-gray-700">Population:</span>
+                        <span className="ml-2 text-gray-900 font-semibold">
+                          {formatPopulation(location.population)}
+                        </span>
+                      </div>
+                    )}
+                    <div className={location.population ? 'mt-2' : ''}>
+                      <span className="font-medium text-gray-700">Registered users:</span>
+                      <span className="ml-2 text-gray-900 font-semibold">
+                        {entities.users.length}
+                      </span>
+                    </div>
                   </div>
                 )}
                 {(isEditing || location.wikipedia_url) && (
