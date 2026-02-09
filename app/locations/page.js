@@ -329,7 +329,7 @@ export default function LocationsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Search + Filters */}
         <div className="card p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
             <div className="relative">
               <SearchInput
                 id="location-search"
@@ -379,14 +379,14 @@ export default function LocationsPage() {
 
             {/* Country Dropdown */}
             <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
                 Country
               </label>
               <select
                 id="country"
                 value={selectedCountry}
                 onChange={handleCountryChange}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                className="w-full h-10 px-4 py-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 border-gray-300 transition-colors"
               >
                 <option value="">All Countries</option>
                 {countries.map((country) => (
@@ -401,7 +401,7 @@ export default function LocationsPage() {
             {/* Prefecture Dropdown */}
             {selectedCountry && (
               <div>
-                <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 mb-1">
                   Prefecture / Region
                 </label>
                 <select
@@ -409,7 +409,7 @@ export default function LocationsPage() {
                   value={selectedPrefecture}
                   onChange={handlePrefectureChange}
                   disabled={prefectures.length === 0}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                  className="w-full h-10 px-4 py-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
                 >
                   <option value="">All Prefectures</option>
                   {prefectures.map((prefecture) => (
@@ -425,7 +425,7 @@ export default function LocationsPage() {
             {/* Municipality Dropdown */}
             {selectedPrefecture && (
               <div>
-                <label htmlFor="municipality" className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="municipality" className="block text-sm font-medium text-gray-700 mb-1">
                   City / Municipality
                 </label>
                 <select
@@ -433,7 +433,7 @@ export default function LocationsPage() {
                   value={selectedMunicipality}
                   onChange={handleMunicipalityChange}
                   disabled={municipalities.length === 0}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                  className="w-full h-10 px-4 py-2 border rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 border-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
                 >
                   <option value="">All Municipalities</option>
                   {municipalities.map((municipality) => (

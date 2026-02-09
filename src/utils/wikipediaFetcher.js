@@ -16,10 +16,21 @@ function extractPopulation(wikitext) {
 
   // Regex patterns to match various population formats in infoboxes
   const patterns = [
+    /\|\s*pop_municipality\s*=\s*([^\n|]+)/i,
+    /\|\s*population_municipality\s*=\s*([^\n|]+)/i,
+    /\|\s*pop_municunit\s*=\s*([^\n|]+)/i,
+    /\|\s*population_municunit\s*=\s*([^\n|]+)/i,
+    /\|\s*pop_community\s*=\s*([^\n|]+)/i,
+    /\|\s*population_community\s*=\s*([^\n|]+)/i,
     /\|\s*population[_\s]*total\s*=\s*([^\n|]+)/i,
+    /\|\s*population_total\s*=\s*([^\n|]+)/i,
     /\|\s*population_estimate\s*=\s*([^\n|]+)/i,
     /\|\s*population_census\s*=\s*([^\n|]+)/i,
+    /\|\s*population_urban\s*=\s*([^\n|]+)/i,
+    /\|\s*population_metro\s*=\s*([^\n|]+)/i,
     /\|\s*population\s*=\s*([^\n|]+)/i,
+    /\|\s*pop_total\s*=\s*([^\n|]+)/i,
+    /\|\s*pop_est\s*=\s*([^\n|]+)/i,
     /\|\s*pop\s*=\s*([^\n|]+)/i,
     /\{\{pop\|([^}]+)\}\}/i
   ];

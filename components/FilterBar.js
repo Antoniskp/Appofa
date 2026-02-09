@@ -22,11 +22,22 @@ export default function FilterBar({
 
   return (
     <div className={`card p-6 ${className}`}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
         {filterConfig.map((config) => {
           const { name, label, type = 'select', options = [], placeholder } = config;
 
           if (type === 'select') {
+            const emptyOption = options.find((option) => (
+              typeof option === 'object' ? option.value === '' : option === ''
+            ));
+            const filteredOptions = emptyOption
+              ? options.filter((option) => (
+                  typeof option === 'object' ? option.value !== '' : option !== ''
+                ))
+              : options;
+            const resolvedPlaceholder = placeholder
+              || (emptyOption ? (emptyOption.label || emptyOption) : `All ${label.toLowerCase()}`);
+
             return (
               <FormSelect
                 key={name}
@@ -34,8 +45,8 @@ export default function FilterBar({
                 label={label}
                 value={filters[name] || ''}
                 onChange={onChange}
-                options={options}
-                placeholder={placeholder || `All ${label.toLowerCase()}`}
+                options={filteredOptions}
+                placeholder={resolvedPlaceholder}
               />
             );
           }
