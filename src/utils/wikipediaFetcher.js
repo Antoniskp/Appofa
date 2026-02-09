@@ -3,6 +3,8 @@ const axios = require('axios');
 // Constants
 const MAX_REASONABLE_POPULATION = 10000000000; // 10 billion - maximum plausible population for any location
 const WIKIPEDIA_API_TIMEOUT_MS = 10000; // 10 seconds timeout for Wikipedia API requests
+const WIKIPEDIA_USER_AGENT = process.env.WIKIPEDIA_USER_AGENT
+  || 'Appofa/1.0 (https://github.com/Antoniskp/Appofa)';
 
 /**
  * Extract population from Wikipedia infobox wikitext
@@ -14,10 +16,12 @@ function extractPopulation(wikitext) {
 
   // Regex patterns to match various population formats in infoboxes
   const patterns = [
-    /\|\s*population[_\s]*total\s*=\s*([0-9,.\s]+)/i,
-    /\|\s*population\s*=\s*([0-9,.\s]+)/i,
-    /\|\s*pop\s*=\s*([0-9,.\s]+)/i,
-    /\{\{pop\|([0-9,.\s]+)\}\}/i
+    /\|\s*population[_\s]*total\s*=\s*([^\n|]+)/i,
+    /\|\s*population_estimate\s*=\s*([^\n|]+)/i,
+    /\|\s*population_census\s*=\s*([^\n|]+)/i,
+    /\|\s*population\s*=\s*([^\n|]+)/i,
+    /\|\s*pop\s*=\s*([^\n|]+)/i,
+    /\{\{pop\|([^}]+)\}\}/i
   ];
 
   for (const pattern of patterns) {
@@ -30,6 +34,12 @@ function extractPopulation(wikitext) {
         .replace(/\s/g, '')  // Remove spaces
         .replace(/\{\{[^}]+\}\}/g, '')  // Remove any remaining templates
         .replace(/\[\[[^\]]+\]\]/g, ''); // Remove any wiki links
+
+      cleanedString = cleanedString.replace(/[^0-9]/g, '');
+
+      if (!cleanedString) {
+        continue;
+      }
 
       const population = parseInt(cleanedString, 10);
 
@@ -62,8 +72,20 @@ async function fetchWikipediaData(wikipediaUrl) {
     const langCode = hostnameParts[0];
     
     // Extract page title from path (e.g., 'Athens' from '/wiki/Athens')
-    const pathParts = url.pathname.split('/');
-    const pageTitle = pathParts[pathParts.length - 1];
+    // Support trailing slashes and /w/index.php?title=... URLs.
+    let pageTitle = '';
+    const wikiPrefix = '/wiki/';
+
+    if (url.pathname.startsWith(wikiPrefix)) {
+      pageTitle = url.pathname.slice(wikiPrefix.length);
+    } else if (url.searchParams && url.searchParams.get('title')) {
+      pageTitle = url.searchParams.get('title');
+    } else {
+      const pathParts = url.pathname.split('/').filter(Boolean);
+      pageTitle = pathParts[pathParts.length - 1] || '';
+    }
+
+    pageTitle = pageTitle.replace(/^\/+|\/+$/g, '');
 
     if (!langCode || !pageTitle) {
       console.error('Invalid Wikipedia URL format:', wikipediaUrl);
@@ -85,6 +107,10 @@ async function fetchWikipediaData(wikipediaUrl) {
         pithumbsize: '500',
         origin: '*',
         titles: decodeURIComponent(pageTitle)
+      },
+      headers: {
+        'User-Agent': WIKIPEDIA_USER_AGENT,
+        'Accept': 'application/json'
       },
       timeout: WIKIPEDIA_API_TIMEOUT_MS
     });
