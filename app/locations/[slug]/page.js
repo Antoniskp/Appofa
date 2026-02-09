@@ -111,29 +111,49 @@ export default function LocationDetailPage() {
   const handleSave = async () => {
     if (!location) return;
 
-    // Validate coordinates
-    const lat = editedData.lat ? parseFloat(editedData.lat) : null;
-    const lng = editedData.lng ? parseFloat(editedData.lng) : null;
+    // Validate required field
+    if (!editedData.name || !editedData.name.trim()) {
+      toastError('Location name is required');
+      return;
+    }
 
-    if (editedData.lat && (isNaN(lat) || lat < -90 || lat > 90)) {
+    // Validate coordinates
+    const lat = editedData.lat !== '' ? parseFloat(editedData.lat) : null;
+    const lng = editedData.lng !== '' ? parseFloat(editedData.lng) : null;
+
+    if (editedData.lat !== '' && (isNaN(lat) || lat < -90 || lat > 90)) {
       toastError('Latitude must be a number between -90 and 90');
       return;
     }
 
-    if (editedData.lng && (isNaN(lng) || lng < -180 || lng > 180)) {
+    if (editedData.lng !== '' && (isNaN(lng) || lng < -180 || lng > 180)) {
       toastError('Longitude must be a number between -180 and 180');
       return;
+    }
+
+    // Validate Wikipedia URL if provided
+    if (editedData.wikipedia_url && editedData.wikipedia_url.trim()) {
+      try {
+        const url = new URL(editedData.wikipedia_url);
+        if (!url.hostname.endsWith('.wikipedia.org')) {
+          toastError('Wikipedia URL must be from a Wikipedia domain (e.g., en.wikipedia.org)');
+          return;
+        }
+      } catch {
+        toastError('Please enter a valid Wikipedia URL');
+        return;
+      }
     }
 
     setIsSaving(true);
     try {
       const updateData = {
-        name: editedData.name,
-        name_local: editedData.name_local || null,
-        code: editedData.code || null,
+        name: editedData.name.trim(),
+        name_local: editedData.name_local.trim() || null,
+        code: editedData.code.trim() || null,
         lat,
         lng,
-        wikipedia_url: editedData.wikipedia_url || null,
+        wikipedia_url: editedData.wikipedia_url.trim() || null,
       };
 
       const response = await locationAPI.update(location.id, updateData);
@@ -214,8 +234,8 @@ export default function LocationDetailPage() {
 
         {/* Location Header */}
         <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
                 {isEditing ? (
                   <input
@@ -224,6 +244,7 @@ export default function LocationDetailPage() {
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     className="text-3xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none px-2 py-1"
                     placeholder="Location name"
+                    required
                   />
                 ) : (
                   <h1 className="text-3xl font-bold text-gray-900">
@@ -232,24 +253,26 @@ export default function LocationDetailPage() {
                 )}
                 <Badge variant="primary" size="md">{location.type}</Badge>
               </div>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedData.name_local}
-                  onChange={(e) => handleInputChange('name_local', e.target.value)}
-                  className="text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none px-2 py-1 w-full max-w-md"
-                  placeholder="Local name (optional)"
-                />
-              ) : (
-                location.name_local && (
-                  <p className="text-xl text-gray-600 mb-4">{location.name_local}</p>
-                )
-              )}
+              <div className="mb-4">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.name_local}
+                    onChange={(e) => handleInputChange('name_local', e.target.value)}
+                    className="text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none px-2 py-1 w-full max-w-md"
+                    placeholder="Local name (optional)"
+                  />
+                ) : (
+                  location.name_local && (
+                    <p className="text-xl text-gray-600">{location.name_local}</p>
+                  )
+                )}
+              </div>
             </div>
             
             {/* Edit/Save/Cancel Buttons */}
             {canManageLocations() && (
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {isEditing ? (
                   <>
                     <button
