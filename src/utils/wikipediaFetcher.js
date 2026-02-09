@@ -1,5 +1,9 @@
 const axios = require('axios');
 
+// Constants
+const MAX_REASONABLE_POPULATION = 10000000000; // 10 billion - maximum plausible population for any location
+const WIKIPEDIA_API_TIMEOUT_MS = 10000; // 10 seconds timeout for Wikipedia API requests
+
 /**
  * Extract population from Wikipedia infobox wikitext
  * @param {string} wikitext - The wikitext content from Wikipedia
@@ -30,7 +34,7 @@ function extractPopulation(wikitext) {
       const population = parseInt(cleanedString, 10);
 
       // Validate population is reasonable
-      if (!isNaN(population) && population > 0 && population < 10000000000) {
+      if (!isNaN(population) && population > 0 && population < MAX_REASONABLE_POPULATION) {
         return population;
       }
     }
@@ -82,7 +86,7 @@ async function fetchWikipediaData(wikipediaUrl) {
         origin: '*',
         titles: decodeURIComponent(pageTitle)
       },
-      timeout: 10000 // 10 second timeout
+      timeout: WIKIPEDIA_API_TIMEOUT_MS
     });
 
     const pages = response.data?.query?.pages;

@@ -25,7 +25,7 @@ export default function LocationDetailPage() {
   // Helper function to format population with commas
   const formatPopulation = (pop) => {
     if (!pop) return null;
-    return pop.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return new Intl.NumberFormat('en-US').format(pop);
   };
 
   const { data: location, loading, error, refetch } = useAsyncData(
