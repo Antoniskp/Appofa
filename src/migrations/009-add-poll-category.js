@@ -4,8 +4,7 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     await queryInterface.addColumn('Polls', 'category', {
       type: Sequelize.STRING,
-      allowNull: true,
-      after: 'description'
+      allowNull: true
     });
   },
 
