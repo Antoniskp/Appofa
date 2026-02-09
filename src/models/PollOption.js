@@ -23,11 +23,11 @@ const PollOption = sequelize.define('PollOption', {
     // since we need to check the parent poll's type which isn't accessible in model validation
   },
   photoUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   linkUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   displayText: {

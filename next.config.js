@@ -5,35 +5,15 @@ const nextConfig = {
   
   images: {
     remotePatterns: [
-      // Google Images (gstatic.com) - commonly used for polls
+      // Allow images from any HTTPS source
       {
         protocol: 'https',
-        hostname: '**.gstatic.com',
+        hostname: '**',
       },
-      // Unsplash - popular free image service
+      // Allow images from any HTTP source (for local development)
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      // Imgur - popular image hosting
-      {
-        protocol: 'https',
-        hostname: '**.imgur.com',
-      },
-      // Wikimedia Commons
-      {
-        protocol: 'https',
-        hostname: 'upload.wikimedia.org',
-      },
-      // Cloudinary - popular CDN
-      {
-        protocol: 'https',
-        hostname: '**.cloudinary.com',
-      },
-      // ImageKit - popular CDN
-      {
-        protocol: 'https',
-        hostname: '**.imagekit.io',
+        protocol: 'http',
+        hostname: '**',
       },
     ],
     formats: ['image/avif', 'image/webp'],
