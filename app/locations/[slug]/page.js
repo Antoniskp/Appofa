@@ -111,14 +111,28 @@ export default function LocationDetailPage() {
   const handleSave = async () => {
     if (!location) return;
 
+    // Validate coordinates
+    const lat = editedData.lat ? parseFloat(editedData.lat) : null;
+    const lng = editedData.lng ? parseFloat(editedData.lng) : null;
+
+    if (editedData.lat && (isNaN(lat) || lat < -90 || lat > 90)) {
+      toastError('Latitude must be a number between -90 and 90');
+      return;
+    }
+
+    if (editedData.lng && (isNaN(lng) || lng < -180 || lng > 180)) {
+      toastError('Longitude must be a number between -180 and 180');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const updateData = {
         name: editedData.name,
         name_local: editedData.name_local || null,
         code: editedData.code || null,
-        lat: editedData.lat ? parseFloat(editedData.lat) : null,
-        lng: editedData.lng ? parseFloat(editedData.lng) : null,
+        lat,
+        lng,
         wikipedia_url: editedData.wikipedia_url || null,
       };
 
@@ -296,6 +310,8 @@ export default function LocationDetailPage() {
                     <input
                       type="number"
                       step="0.000001"
+                      min="-90"
+                      max="90"
                       value={editedData.lat}
                       onChange={(e) => handleInputChange('lat', e.target.value)}
                       className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
@@ -305,6 +321,8 @@ export default function LocationDetailPage() {
                     <input
                       type="number"
                       step="0.000001"
+                      min="-180"
+                      max="180"
                       value={editedData.lng}
                       onChange={(e) => handleInputChange('lng', e.target.value)}
                       className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
