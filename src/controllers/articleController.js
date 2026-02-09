@@ -266,6 +266,7 @@ const articleController = {
 
       const { count, rows: articles } = await Article.findAndCountAll({
         where,
+        distinct: true,
         include: [{
           model: User,
           as: 'author',

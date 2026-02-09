@@ -406,6 +406,7 @@ const pollController = {
 
       const { count, rows: polls } = await Poll.findAndCountAll({
         where,
+        distinct: true,
         include: [
           {
             model: User,
