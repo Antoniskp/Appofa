@@ -247,7 +247,7 @@ export default function LocationDetailPage() {
                 <img
                   src={location.wikipedia_image_url}
                   alt={`${location.name} - Wikipedia`}
-                  className="w-full h-64 rounded-lg object-cover shadow-sm"
+                  className="w-full h-64 rounded-lg object-contain bg-gray-50 shadow-sm"
                   onError={() => setImageError(true)}
                 />
                 <div className="text-xs text-gray-500 mt-3">
@@ -365,7 +365,7 @@ export default function LocationDetailPage() {
                   </div>
                 )}
                 {(isEditing || (location.lat && location.lng)) && (
-                  <div>
+                  <div className="md:col-start-1">
                     <span className="font-medium text-gray-700">Coordinates:</span>
                     {isEditing ? (
                       <div className="inline-flex gap-2 ml-2">
