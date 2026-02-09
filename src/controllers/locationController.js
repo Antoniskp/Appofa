@@ -19,6 +19,29 @@ const isValidWikipediaUrl = (url) => {
   }
 };
 
+// Helper to collect all descendant location IDs for a location.
+const getDescendantLocationIds = async (rootId) => {
+  const descendantIds = [];
+  let queue = [rootId];
+
+  while (queue.length > 0) {
+    const children = await Location.findAll({
+      where: { parent_id: { [Op.in]: queue } },
+      attributes: ['id']
+    });
+
+    const childIds = children.map((child) => child.id);
+    if (childIds.length === 0) {
+      break;
+    }
+
+    descendantIds.push(...childIds);
+    queue = childIds;
+  }
+
+  return descendantIds;
+};
+
 // Create a new location (admin/moderator only)
 exports.createLocation = async (req, res) => {
   try {
@@ -654,6 +677,24 @@ exports.getLocationEntities = async (req, res) => {
     const userIds = links.filter(l => l.entity_type === 'user').map(l => l.entity_id);
     const pollIds = links.filter(l => l.entity_type === 'poll').map(l => l.entity_id);
 
+    // Include users linked to descendant locations
+    let combinedUserIds = userIds;
+    if (!entity_type || entity_type === 'user') {
+      const descendantIds = await getDescendantLocationIds(id);
+      if (descendantIds.length > 0) {
+        const childUserLinks = await LocationLink.findAll({
+          where: {
+            entity_type: 'user',
+            location_id: { [Op.in]: descendantIds }
+          },
+          attributes: ['entity_id']
+        });
+
+        const childUserIds = childUserLinks.map((link) => link.entity_id);
+        combinedUserIds = Array.from(new Set([...combinedUserIds, ...childUserIds]));
+      }
+    }
+
     // Fetch all articles and users in batch queries
     const articles = articleIds.length > 0 ? await Article.findAll({
       where: { id: articleIds },
@@ -667,8 +708,8 @@ exports.getLocationEntities = async (req, res) => {
       ]
     }) : [];
 
-    const users = userIds.length > 0 ? await User.findAll({
-      where: { id: userIds },
+    const users = combinedUserIds.length > 0 ? await User.findAll({
+      where: { id: combinedUserIds },
       attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor']
     }) : [];
 
