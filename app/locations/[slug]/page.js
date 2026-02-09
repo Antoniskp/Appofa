@@ -7,15 +7,21 @@ import { locationAPI } from '@/lib/api';
 import Badge from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { usePermissions } from '@/hooks/usePermissions';
+import { PencilIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 
 export default function LocationDetailPage() {
   const params = useParams();
-  const { error: toastError } = useToast();
+  const { error: toastError, success: toastSuccess } = useToast();
+  const { canManageLocations } = usePermissions();
   const [entities, setEntities] = useState({ articles: [], users: [], polls: [] });
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editedData, setEditedData] = useState({});
 
-  const { data: location, loading, error } = useAsyncData(
+  const { data: location, loading, error, refetch } = useAsyncData(
     async () => {
       const locationResponse = await locationAPI.getById(params.slug);
       if (!locationResponse.success) {
@@ -34,6 +40,16 @@ export default function LocationDetailPage() {
           current = current.parent;
         }
         setBreadcrumb(crumbs);
+
+        // Initialize edited data
+        setEditedData({
+          name: loc.name,
+          name_local: loc.name_local || '',
+          code: loc.code || '',
+          lat: loc.lat || '',
+          lng: loc.lng || '',
+          wikipedia_url: loc.wikipedia_url || '',
+        });
 
         // Fetch entities linked to this location
         try {
@@ -65,6 +81,98 @@ export default function LocationDetailPage() {
       }
     }
   );
+
+  const handleEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Reset edited data to original values
+    if (location) {
+      setEditedData({
+        name: location.name,
+        name_local: location.name_local || '',
+        code: location.code || '',
+        lat: location.lat || '',
+        lng: location.lng || '',
+        wikipedia_url: location.wikipedia_url || '',
+      });
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSave = async () => {
+    if (!location) return;
+
+    // Validate required field
+    if (!editedData.name || !editedData.name.trim()) {
+      toastError('Location name is required');
+      return;
+    }
+
+    // Validate coordinates
+    const lat = editedData.lat !== '' ? parseFloat(editedData.lat) : null;
+    const lng = editedData.lng !== '' ? parseFloat(editedData.lng) : null;
+
+    if (editedData.lat !== '' && (isNaN(lat) || lat < -90 || lat > 90)) {
+      toastError('Latitude must be a number between -90 and 90');
+      return;
+    }
+
+    if (editedData.lng !== '' && (isNaN(lng) || lng < -180 || lng > 180)) {
+      toastError('Longitude must be a number between -180 and 180');
+      return;
+    }
+
+    // Validate Wikipedia URL if provided
+    if (editedData.wikipedia_url && editedData.wikipedia_url.trim()) {
+      try {
+        const url = new URL(editedData.wikipedia_url);
+        if (!url.hostname.endsWith('.wikipedia.org')) {
+          toastError('Wikipedia URL must be from a Wikipedia domain (e.g., en.wikipedia.org)');
+          return;
+        }
+      } catch {
+        toastError('Please enter a valid Wikipedia URL');
+        return;
+      }
+    }
+
+    setIsSaving(true);
+    try {
+      const updateData = {
+        name: editedData.name.trim(),
+        name_local: editedData.name_local.trim() || null,
+        code: editedData.code.trim() || null,
+        lat,
+        lng,
+        wikipedia_url: editedData.wikipedia_url.trim() || null,
+      };
+
+      const response = await locationAPI.update(location.id, updateData);
+      
+      if (response.success) {
+        toastSuccess('Location updated successfully');
+        setIsEditing(false);
+        // Refetch the location data
+        await refetch();
+      } else {
+        toastError(response.message || 'Failed to update location');
+      }
+    } catch (err) {
+      console.error('Failed to update location:', err);
+      toastError(err.message || 'Failed to update location');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -126,46 +234,152 @@ export default function LocationDetailPage() {
 
         {/* Location Header */}
         <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-          <div className="flex items-start justify-between">
-            <div>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">
-                  {location.name}
-                </h1>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.name}
+                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    className="text-3xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none px-2 py-1"
+                    placeholder="Location name"
+                    required
+                  />
+                ) : (
+                  <h1 className="text-3xl font-bold text-gray-900">
+                    {location.name}
+                  </h1>
+                )}
                 <Badge variant="primary" size="md">{location.type}</Badge>
               </div>
-              {location.name_local && (
-                <p className="text-xl text-gray-600 mb-4">{location.name_local}</p>
-              )}
+              <div className="mb-4">
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.name_local}
+                    onChange={(e) => handleInputChange('name_local', e.target.value)}
+                    className="text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none px-2 py-1 w-full max-w-md"
+                    placeholder="Local name (optional)"
+                  />
+                ) : (
+                  location.name_local && (
+                    <p className="text-xl text-gray-600">{location.name_local}</p>
+                  )
+                )}
+              </div>
             </div>
+            
+            {/* Edit/Save/Cancel Buttons */}
+            {canManageLocations() && (
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {isEditing ? (
+                  <>
+                    <button
+                      onClick={handleSave}
+                      disabled={isSaving}
+                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Save changes"
+                    >
+                      <CheckIcon className="h-5 w-5" />
+                      {isSaving ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={handleCancelEdit}
+                      disabled={isSaving}
+                      className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      title="Cancel editing"
+                    >
+                      <XMarkIcon className="h-5 w-5" />
+                      Cancel
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={handleEdit}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    title="Edit location"
+                  >
+                    <PencilIcon className="h-5 w-5" />
+                    Edit
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {location.code && (
+            {(isEditing || location.code) && (
               <div>
                 <span className="font-medium text-gray-700">Code:</span>
-                <span className="ml-2 text-gray-600">{location.code}</span>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedData.code}
+                    onChange={(e) => handleInputChange('code', e.target.value)}
+                    className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
+                    placeholder="Location code"
+                  />
+                ) : (
+                  <span className="ml-2 text-gray-600">{location.code}</span>
+                )}
               </div>
             )}
-            {location.lat && location.lng && (
+            {(isEditing || (location.lat && location.lng)) && (
               <div>
                 <span className="font-medium text-gray-700">Coordinates:</span>
-                <span className="ml-2 text-gray-600">
-                  {location.lat}, {location.lng}
-                </span>
+                {isEditing ? (
+                  <div className="inline-flex gap-2 ml-2">
+                    <input
+                      type="number"
+                      step="0.000001"
+                      min="-90"
+                      max="90"
+                      value={editedData.lat}
+                      onChange={(e) => handleInputChange('lat', e.target.value)}
+                      className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
+                      placeholder="Latitude"
+                    />
+                    <span className="text-gray-600">,</span>
+                    <input
+                      type="number"
+                      step="0.000001"
+                      min="-180"
+                      max="180"
+                      value={editedData.lng}
+                      onChange={(e) => handleInputChange('lng', e.target.value)}
+                      className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
+                      placeholder="Longitude"
+                    />
+                  </div>
+                ) : (
+                  <span className="ml-2 text-gray-600">
+                    {location.lat}, {location.lng}
+                  </span>
+                )}
               </div>
             )}
-            {location.wikipedia_url && (
+            {(isEditing || location.wikipedia_url) && (
               <div className="md:col-span-2">
                 <span className="font-medium text-gray-700">Wikipedia:</span>
-                <a
-                  href={location.wikipedia_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-2 text-blue-600 hover:text-blue-800 underline"
-                >
-                  View on Wikipedia →
-                </a>
+                {isEditing ? (
+                  <input
+                    type="url"
+                    value={editedData.wikipedia_url}
+                    onChange={(e) => handleInputChange('wikipedia_url', e.target.value)}
+                    className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1 w-full max-w-lg"
+                    placeholder="https://en.wikipedia.org/wiki/..."
+                  />
+                ) : (
+                  <a
+                    href={location.wikipedia_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 text-blue-600 hover:text-blue-800 underline"
+                  >
+                    View on Wikipedia →
+                  </a>
+                )}
               </div>
             )}
           </div>
