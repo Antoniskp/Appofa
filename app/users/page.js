@@ -81,15 +81,15 @@ export default function UsersPage() {
             <h2 className="text-xl font-semibold mb-4 text-gray-800">Community Statistics</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Total Users</p>
+                <p className="text-sm text-gray-600 mb-1">Registered users</p>
                 <p className="text-3xl font-bold text-blue-600">{userStats.totalUsers}</p>
               </div>
               <div className="bg-green-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Registered (Searchable)</p>
+                <p className="text-sm text-gray-600 mb-1">Visible users</p>
                 <p className="text-3xl font-bold text-green-600">{userStats.searchableUsers}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Unregistered (Non-searchable)</p>
+                <p className="text-sm text-gray-600 mb-1">Invisible users</p>
                 <p className="text-3xl font-bold text-gray-600">{userStats.nonSearchableUsers}</p>
               </div>
             </div>
