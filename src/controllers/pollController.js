@@ -47,6 +47,7 @@ const pollController = {
       const {
         title,
         description,
+        category,
         type,
         allowUserContributions,
         allowUnauthenticatedVotes,
@@ -74,6 +75,16 @@ const pollController = {
         return res.status(400).json({
           success: false,
           message: descriptionResult.error
+        });
+      }
+
+      // Validate category (optional)
+      const categoryResult = normalizeOptionalText(category, 'Category', null, 100);
+      if (categoryResult.error) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: categoryResult.error
         });
       }
 
@@ -190,6 +201,7 @@ const pollController = {
       const poll = await Poll.create({
         title: titleResult.value,
         description: descriptionResult.value,
+        category: categoryResult.value,
         type: typeResult.value,
         allowUserContributions: allowUserContributionsResult.value !== undefined ? allowUserContributionsResult.value : false,
         allowUnauthenticatedVotes: allowUnauthenticatedVotesResult.value !== undefined ? allowUnauthenticatedVotesResult.value : false,
@@ -308,6 +320,7 @@ const pollController = {
         status,
         type,
         visibility,
+        category,
         page = 1,
         limit = 10
       } = req.query;
@@ -340,6 +353,18 @@ const pollController = {
           });
         }
         where.type = typeResult.value;
+      }
+
+      // Filter by category
+      if (category) {
+        const categoryResult = normalizeOptionalText(category, 'Category', null, 100);
+        if (categoryResult.error) {
+          return res.status(400).json({
+            success: false,
+            message: categoryResult.error
+          });
+        }
+        where.category = categoryResult.value;
       }
 
       // Filter by visibility based on authentication
@@ -536,7 +561,7 @@ const pollController = {
     
     try {
       const { id } = req.params;
-      const { title, description, deadline, status, locationId } = req.body;
+      const { title, description, category, deadline, status, locationId } = req.body;
 
       const poll = await Poll.findByPk(id, {
         include: [
@@ -590,6 +615,19 @@ const pollController = {
           });
         }
         updateData.description = descriptionResult.value;
+      }
+
+      // Validate and update category
+      if (category !== undefined) {
+        const categoryResult = normalizeOptionalText(category, 'Category', null, 100);
+        if (categoryResult.error) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: categoryResult.error
+          });
+        }
+        updateData.category = categoryResult.value;
       }
 
       // Validate and update deadline

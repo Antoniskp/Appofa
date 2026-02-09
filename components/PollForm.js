@@ -8,6 +8,7 @@ import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import Tooltip from '@/components/Tooltip';
+import articleCategories from '@/config/articleCategories.json';
 
 /**
  * Unified poll form for create and edit modes
@@ -29,6 +30,7 @@ export default function PollForm({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    category: '',
     type: 'simple',
     visibility: 'public',
     resultsVisibility: 'after_vote',
@@ -51,6 +53,7 @@ export default function PollForm({
       setFormData({
         title: poll.title || '',
         description: poll.description || '',
+        category: poll.category || '',
         type: poll.type || 'simple',
         visibility: poll.visibility || 'public',
         resultsVisibility: poll.resultsVisibility || 'after_vote',
@@ -191,6 +194,15 @@ export default function PollForm({
           maxLength={1000}
           showCharCount
           placeholder="Προσθέστε μια περιγραφή (προαιρετικό)"
+        />
+
+        <FormSelect
+          name="category"
+          label="Κατηγορία (Προαιρετικό)"
+          value={formData.category}
+          onChange={handleInputChange}
+          options={articleCategories.pollCategories || []}
+          placeholder="Επιλέξτε κατηγορία..."
         />
       </div>
 

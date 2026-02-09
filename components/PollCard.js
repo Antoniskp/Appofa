@@ -52,6 +52,9 @@ export default function PollCard({ poll, variant = 'grid' }) {
       <div className="flex flex-wrap gap-2 mb-2">
         {getTypeBadge(poll.type)}
         {getStatusBadge(poll.status, isPollActive)}
+        {poll.category && (
+          <Badge variant="primary">{poll.category}</Badge>
+        )}
         {poll.visibility === 'locals_only' && (
           <Badge variant="orange">Τοπική</Badge>
         )}

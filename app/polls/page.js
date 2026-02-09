@@ -12,6 +12,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
 import FilterBar from '@/components/FilterBar';
+import articleCategories from '@/config/articleCategories.json';
 
 export default function PollsPage() {
   const { user } = useAuth();
@@ -27,6 +28,7 @@ export default function PollsPage() {
   } = useFilters({
     status: '',
     type: '',
+    category: '',
     search: '',
   });
 
@@ -85,6 +87,15 @@ export default function PollsPage() {
                 { value: '', label: 'Όλοι' },
                 { value: 'simple', label: 'Απλή' },
                 { value: 'complex', label: 'Σύνθετη' },
+              ],
+            },
+            {
+              name: 'category',
+              label: 'Κατηγορία',
+              type: 'select',
+              options: [
+                { value: '', label: 'Όλες' },
+                ...(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat })),
               ],
             },
             {
