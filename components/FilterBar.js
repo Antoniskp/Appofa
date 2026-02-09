@@ -1,6 +1,7 @@
 'use client';
 
 import FormSelect from '@/components/FormSelect';
+import SearchInput from '@/components/SearchInput';
 
 /**
  * Reusable filter bar component
@@ -41,20 +42,15 @@ export default function FilterBar({
 
           if (type === 'text') {
             return (
-              <div key={name}>
-                <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
-                  {label}
-                </label>
-                <input
-                  type="text"
-                  id={name}
-                  name={name}
-                  value={filters[name] || ''}
-                  onChange={onChange}
-                  placeholder={placeholder || `Filter by ${label.toLowerCase()}...`}
-                  className="w-full h-10 px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+              <SearchInput
+                key={name}
+                id={name}
+                name={name}
+                label={label}
+                value={filters[name] || ''}
+                onChange={onChange}
+                placeholder={placeholder || `Filter by ${label.toLowerCase()}...`}
+              />
             );
           }
 

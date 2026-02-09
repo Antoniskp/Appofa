@@ -8,6 +8,7 @@ import Badge from '@/components/Badge';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { MagnifyingGlassIcon, MapPinIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import SearchInput from '@/components/SearchInput';
 
 const LOCATION_TYPE_ORDER = ['international', 'country', 'prefecture', 'municipality'];
 const DEBOUNCE_DELAY = 300;
@@ -326,70 +327,56 @@ export default function LocationsPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Search Bar */}
+        {/* Search + Filters */}
         <div className="card p-6 mb-6">
-          <div className="relative">
-            <label htmlFor="location-search" className="block text-sm font-medium text-gray-700 mb-1">
-              Αναζήτηση
-            </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
-              <input
+              <SearchInput
                 id="location-search"
-                type="text"
+                name="location-search"
+                label="Αναζήτηση"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => searchTerm && setShowSearchDropdown(true)}
                 placeholder="Αναζήτηση τοποθεσιών..."
-                className="w-full h-10 px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
+                loading={isSearching}
               />
-              {isSearching && (
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+
+              {/* Search Autocomplete Dropdown */}
+              {showSearchDropdown && searchResults.length > 0 && (
+                <div className="absolute z-20 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
+                  {searchResults.map((location) => (
+                    <button
+                      key={location.id}
+                      onClick={() => handleSearchSelect(location)}
+                      className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors focus:outline-none focus:bg-blue-50"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900 truncate">
+                              {location.name}
+                            </span>
+                            {location.name_local && (
+                              <span className="text-sm text-gray-500 truncate">
+                                ({location.name_local})
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-600 flex items-center gap-1">
+                            <span className="truncate">{getLocationHierarchy(location)}</span>
+                          </div>
+                        </div>
+                        <Badge variant={getTypeBadgeVariant(location.type)} size="sm">
+                          {getTypeLabel(location.type)}
+                        </Badge>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* Search Autocomplete Dropdown */}
-            {showSearchDropdown && searchResults.length > 0 && (
-              <div className="absolute z-20 mt-2 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto">
-                {searchResults.map((location) => (
-                  <button
-                    key={location.id}
-                    onClick={() => handleSearchSelect(location)}
-                    className="w-full text-left px-4 py-3 hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors focus:outline-none focus:bg-blue-50"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-gray-900 truncate">
-                            {location.name}
-                          </span>
-                          {location.name_local && (
-                            <span className="text-sm text-gray-500 truncate">
-                              ({location.name_local})
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-sm text-gray-600 flex items-center gap-1">
-                          <span className="truncate">{getLocationHierarchy(location)}</span>
-                        </div>
-                      </div>
-                      <Badge variant={getTypeBadgeVariant(location.type)} size="sm">
-                        {getTypeLabel(location.type)}
-                      </Badge>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Hierarchical Dropdowns */}
-        <div className="card p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Filter by Hierarchy</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Country Dropdown */}
             <div>
               <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-2">
@@ -412,48 +399,52 @@ export default function LocationsPage() {
             </div>
 
             {/* Prefecture Dropdown */}
-            <div>
-              <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 mb-2">
-                Prefecture / Region
-              </label>
-              <select
-                id="prefecture"
-                value={selectedPrefecture}
-                onChange={handlePrefectureChange}
-                disabled={!selectedCountry || prefectures.length === 0}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
-              >
-                <option value="">All Prefectures</option>
-                {prefectures.map((prefecture) => (
-                  <option key={prefecture.id} value={prefecture.id}>
-                    {prefecture.name}
-                    {prefecture.name_local ? ` (${prefecture.name_local})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {selectedCountry && (
+              <div>
+                <label htmlFor="prefecture" className="block text-sm font-medium text-gray-700 mb-2">
+                  Prefecture / Region
+                </label>
+                <select
+                  id="prefecture"
+                  value={selectedPrefecture}
+                  onChange={handlePrefectureChange}
+                  disabled={prefectures.length === 0}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                >
+                  <option value="">All Prefectures</option>
+                  {prefectures.map((prefecture) => (
+                    <option key={prefecture.id} value={prefecture.id}>
+                      {prefecture.name}
+                      {prefecture.name_local ? ` (${prefecture.name_local})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {/* Municipality Dropdown */}
-            <div>
-              <label htmlFor="municipality" className="block text-sm font-medium text-gray-700 mb-2">
-                City / Municipality
-              </label>
-              <select
-                id="municipality"
-                value={selectedMunicipality}
-                onChange={handleMunicipalityChange}
-                disabled={!selectedPrefecture || municipalities.length === 0}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
-              >
-                <option value="">All Municipalities</option>
-                {municipalities.map((municipality) => (
-                  <option key={municipality.id} value={municipality.id}>
-                    {municipality.name}
-                    {municipality.name_local ? ` (${municipality.name_local})` : ''}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {selectedPrefecture && (
+              <div>
+                <label htmlFor="municipality" className="block text-sm font-medium text-gray-700 mb-2">
+                  City / Municipality
+                </label>
+                <select
+                  id="municipality"
+                  value={selectedMunicipality}
+                  onChange={handleMunicipalityChange}
+                  disabled={municipalities.length === 0}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors"
+                >
+                  <option value="">All Municipalities</option>
+                  {municipalities.map((municipality) => (
+                    <option key={municipality.id} value={municipality.id}>
+                      {municipality.name}
+                      {municipality.name_local ? ` (${municipality.name_local})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Clear Filters Button */}
