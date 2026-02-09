@@ -12,3 +12,8 @@ next-env.d.ts
 tmp/
 *.db
 *.sqlite
+.pgdata/
+.pglog
+.pgsocket/
+.vscode/
+scripts/

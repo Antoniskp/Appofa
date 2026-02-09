@@ -348,6 +348,12 @@ exports.updateLocation = async (req, res) => {
         updateData.population = null;
         updateData.wikipedia_data_updated_at = null;
       }
+    } else if (wikipedia_url && wikipedia_url.trim() && !location.wikipedia_image_url && !location.population) {
+      // URL unchanged but cache empty - refetch
+      const wikiData = await fetchWikipediaData(wikipedia_url);
+      updateData.wikipedia_image_url = wikiData.image_url;
+      updateData.population = wikiData.population;
+      updateData.wikipedia_data_updated_at = new Date();
     }
 
     await location.update(updateData);

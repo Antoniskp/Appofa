@@ -241,9 +241,41 @@ export default function LocationDetailPage() {
 
         {/* Location Header */}
         <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {location.wikipedia_image_url && !isEditing && !imageError && (
+              <div className="lg:w-72 flex-shrink-0">
+                <img
+                  src={location.wikipedia_image_url}
+                  alt={`${location.name} - Wikipedia`}
+                  className="w-full h-64 rounded-lg object-cover shadow-sm"
+                  onError={() => setImageError(true)}
+                />
+                <div className="text-xs text-gray-500 mt-3">
+                  Image from{' '}
+                  {location.wikipedia_url ? (
+                    <a
+                      href={location.wikipedia_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Wikipedia
+                    </a>
+                  ) : (
+                    <span>Wikipedia</span>
+                  )}
+                  {location.wikipedia_data_updated_at && (
+                    <span>
+                      {' '}- Last updated: {new Date(location.wikipedia_data_updated_at).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
                 {isEditing ? (
                   <input
                     type="text"
@@ -258,181 +290,148 @@ export default function LocationDetailPage() {
                     {location.name}
                   </h1>
                 )}
-                <Badge variant="primary" size="md">{location.type}</Badge>
-              </div>
-              <div className="mb-4">
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedData.name_local}
-                    onChange={(e) => handleInputChange('name_local', e.target.value)}
-                    className="text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none px-2 py-1 w-full max-w-md"
-                    placeholder="Local name (optional)"
-                  />
-                ) : (
-                  location.name_local && (
-                    <p className="text-xl text-gray-600">{location.name_local}</p>
-                  )
-                )}
-              </div>
-            </div>
-            
-            {/* Edit/Save/Cancel Buttons */}
-            {canManageLocations() && (
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      title="Save changes"
-                    >
-                      <CheckIcon className="h-5 w-5" />
-                      {isSaving ? 'Saving...' : 'Save'}
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      disabled={isSaving}
-                      className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      title="Cancel editing"
-                    >
-                      <XMarkIcon className="h-5 w-5" />
-                      Cancel
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={handleEdit}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    title="Edit location"
-                  >
-                    <PencilIcon className="h-5 w-5" />
-                    Edit
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {(isEditing || location.code) && (
-              <div>
-                <span className="font-medium text-gray-700">Code:</span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedData.code}
-                    onChange={(e) => handleInputChange('code', e.target.value)}
-                    className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
-                    placeholder="Location code"
-                  />
-                ) : (
-                  <span className="ml-2 text-gray-600">{location.code}</span>
-                )}
-              </div>
-            )}
-            {(isEditing || (location.lat && location.lng)) && (
-              <div>
-                <span className="font-medium text-gray-700">Coordinates:</span>
-                {isEditing ? (
-                  <div className="inline-flex gap-2 ml-2">
-                    <input
-                      type="number"
-                      step="0.000001"
-                      min="-90"
-                      max="90"
-                      value={editedData.lat}
-                      onChange={(e) => handleInputChange('lat', e.target.value)}
-                      className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
-                      placeholder="Latitude"
-                    />
-                    <span className="text-gray-600">,</span>
-                    <input
-                      type="number"
-                      step="0.000001"
-                      min="-180"
-                      max="180"
-                      value={editedData.lng}
-                      onChange={(e) => handleInputChange('lng', e.target.value)}
-                      className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
-                      placeholder="Longitude"
-                    />
+                    <Badge variant="primary" size="md">{location.type}</Badge>
                   </div>
-                ) : (
-                  <span className="ml-2 text-gray-600">
-                    {location.lat}, {location.lng}
-                  </span>
-                )}
-              </div>
-            )}
-            {(isEditing || location.wikipedia_url) && (
-              <div className="md:col-span-2">
-                <span className="font-medium text-gray-700">Wikipedia:</span>
-                {isEditing ? (
-                  <input
-                    type="url"
-                    value={editedData.wikipedia_url}
-                    onChange={(e) => handleInputChange('wikipedia_url', e.target.value)}
-                    className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1 w-full max-w-lg"
-                    placeholder="https://en.wikipedia.org/wiki/..."
-                  />
-                ) : (
-                  <a
-                    href={location.wikipedia_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="ml-2 text-blue-600 hover:text-blue-800 underline"
-                  >
-                    View on Wikipedia →
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Wikipedia Image and Population */}
-          {(location.wikipedia_image_url || location.population) && !isEditing && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              {/* Wikipedia Image */}
-              {location.wikipedia_image_url && !imageError && (
-                <div className="mb-4">
-                  <img
-                    src={location.wikipedia_image_url}
-                    alt={`${location.name} - Wikipedia`}
-                    className="w-full max-w-2xl rounded-lg shadow-sm"
-                    onError={() => setImageError(true)}
-                  />
-                  <div className="text-xs text-gray-500 mt-2">
-                    Image from{' '}
-                    <a
-                      href={location.wikipedia_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      Wikipedia
-                    </a>
-                    {location.wikipedia_data_updated_at && (
-                      <span>
-                        {' '}- Last updated: {new Date(location.wikipedia_data_updated_at).toLocaleDateString()}
-                      </span>
+                  <div className="mb-4">
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editedData.name_local}
+                        onChange={(e) => handleInputChange('name_local', e.target.value)}
+                        className="text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none px-2 py-1 w-full max-w-md"
+                        placeholder="Local name (optional)"
+                      />
+                    ) : (
+                      location.name_local && (
+                        <p className="text-xl text-gray-600">{location.name_local}</p>
+                      )
                     )}
                   </div>
                 </div>
-              )}
 
-              {/* Population */}
-              {location.population && (
-                <div className="mb-4">
-                  <span className="text-sm font-medium text-gray-700">Population: </span>
-                  <span className="text-lg font-semibold text-gray-900">
-                    {formatPopulation(location.population)}
-                  </span>
-                </div>
-              )}
+                {/* Edit/Save/Cancel Buttons */}
+                {canManageLocations() && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isEditing ? (
+                      <>
+                        <button
+                          onClick={handleSave}
+                          disabled={isSaving}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Save changes"
+                        >
+                          <CheckIcon className="h-5 w-5" />
+                          {isSaving ? 'Saving...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={isSaving}
+                          className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          title="Cancel editing"
+                        >
+                          <XMarkIcon className="h-5 w-5" />
+                          Cancel
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={handleEdit}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        title="Edit location"
+                      >
+                        <PencilIcon className="h-5 w-5" />
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                {(isEditing || location.code) && (
+                  <div>
+                    <span className="font-medium text-gray-700">Code:</span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editedData.code}
+                        onChange={(e) => handleInputChange('code', e.target.value)}
+                        className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
+                        placeholder="Location code"
+                      />
+                    ) : (
+                      <span className="ml-2 text-gray-600">{location.code}</span>
+                    )}
+                  </div>
+                )}
+                {(isEditing || (location.lat && location.lng)) && (
+                  <div>
+                    <span className="font-medium text-gray-700">Coordinates:</span>
+                    {isEditing ? (
+                      <div className="inline-flex gap-2 ml-2">
+                        <input
+                          type="number"
+                          step="0.000001"
+                          min="-90"
+                          max="90"
+                          value={editedData.lat}
+                          onChange={(e) => handleInputChange('lat', e.target.value)}
+                          className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
+                          placeholder="Latitude"
+                        />
+                        <span className="text-gray-600">,</span>
+                        <input
+                          type="number"
+                          step="0.000001"
+                          min="-180"
+                          max="180"
+                          value={editedData.lng}
+                          onChange={(e) => handleInputChange('lng', e.target.value)}
+                          className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
+                          placeholder="Longitude"
+                        />
+                      </div>
+                    ) : (
+                      <span className="ml-2 text-gray-600">
+                        {location.lat}, {location.lng}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {location.population && !isEditing && (
+                  <div>
+                    <span className="font-medium text-gray-700">Population:</span>
+                    <span className="ml-2 text-gray-900 font-semibold">
+                      {formatPopulation(location.population)}
+                    </span>
+                  </div>
+                )}
+                {(isEditing || location.wikipedia_url) && (
+                  <div className="md:col-span-2">
+                    <span className="font-medium text-gray-700">Wikipedia:</span>
+                    {isEditing ? (
+                      <input
+                        type="url"
+                        value={editedData.wikipedia_url}
+                        onChange={(e) => handleInputChange('wikipedia_url', e.target.value)}
+                        className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1 w-full max-w-lg"
+                        placeholder="https://en.wikipedia.org/wiki/..."
+                      />
+                    ) : (
+                      <a
+                        href={location.wikipedia_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ml-2 text-blue-600 hover:text-blue-800 underline"
+                      >
+                        View on Wikipedia →
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          </div>
 
           {/* Compact Sub-locations */}
           {children.length > 0 && (
