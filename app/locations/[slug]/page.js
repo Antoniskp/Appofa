@@ -20,6 +20,13 @@ export default function LocationDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({});
+  const [imageError, setImageError] = useState(false);
+
+  // Helper function to format population with commas
+  const formatPopulation = (pop) => {
+    if (!pop) return null;
+    return pop.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  };
 
   const { data: location, loading, error, refetch } = useAsyncData(
     async () => {
@@ -383,6 +390,49 @@ export default function LocationDetailPage() {
               </div>
             )}
           </div>
+
+          {/* Wikipedia Image and Population */}
+          {(location.wikipedia_image_url || location.population) && !isEditing && (
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              {/* Wikipedia Image */}
+              {location.wikipedia_image_url && !imageError && (
+                <div className="mb-4">
+                  <img
+                    src={location.wikipedia_image_url}
+                    alt={`${location.name} - Wikipedia`}
+                    className="w-full max-w-2xl rounded-lg shadow-sm"
+                    onError={() => setImageError(true)}
+                  />
+                  <div className="text-xs text-gray-500 mt-2">
+                    Image from{' '}
+                    <a
+                      href={location.wikipedia_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:text-blue-800 underline"
+                    >
+                      Wikipedia
+                    </a>
+                    {location.wikipedia_data_updated_at && (
+                      <span>
+                        {' '}- Last updated: {new Date(location.wikipedia_data_updated_at).toLocaleDateString()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Population */}
+              {location.population && (
+                <div className="mb-4">
+                  <span className="text-sm font-medium text-gray-700">Population: </span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    {formatPopulation(location.population)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Compact Sub-locations */}
           {children.length > 0 && (

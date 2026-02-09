@@ -1,5 +1,6 @@
 const { Location, LocationLink, Article, User, Poll } = require('../models');
 const { Op } = require('sequelize');
+const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 
 // Helper function to generate slug from name
 const generateSlug = (name, type) => {
@@ -85,6 +86,18 @@ exports.createLocation = async (req, res) => {
       }
     }
 
+    // Fetch Wikipedia data if URL is provided
+    let wikipedia_image_url = null;
+    let population = null;
+    let wikipedia_data_updated_at = null;
+
+    if (wikipedia_url) {
+      const wikiData = await fetchWikipediaData(wikipedia_url);
+      wikipedia_image_url = wikiData.image_url;
+      population = wikiData.population;
+      wikipedia_data_updated_at = new Date();
+    }
+
     const location = await Location.create({
       name,
       name_local,
@@ -95,7 +108,10 @@ exports.createLocation = async (req, res) => {
       lat,
       lng,
       bounding_box,
-      wikipedia_url
+      wikipedia_url,
+      wikipedia_image_url,
+      population,
+      wikipedia_data_updated_at
     });
 
     res.status(201).json({
@@ -302,7 +318,8 @@ exports.updateLocation = async (req, res) => {
       }
     }
 
-    await location.update({
+    // Handle Wikipedia data updates
+    let updateData = {
       name: name || location.name,
       name_local: name_local !== undefined ? name_local : location.name_local,
       type: type || location.type,
@@ -313,7 +330,27 @@ exports.updateLocation = async (req, res) => {
       lng: lng !== undefined ? lng : location.lng,
       bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box,
       wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url
-    });
+    };
+
+    // Detect if wikipedia_url has changed
+    const wikipediaUrlChanged = wikipedia_url !== undefined && wikipedia_url !== location.wikipedia_url;
+
+    if (wikipediaUrlChanged) {
+      if (wikipedia_url && wikipedia_url.trim()) {
+        // New URL provided - fetch Wikipedia data
+        const wikiData = await fetchWikipediaData(wikipedia_url);
+        updateData.wikipedia_image_url = wikiData.image_url;
+        updateData.population = wikiData.population;
+        updateData.wikipedia_data_updated_at = new Date();
+      } else {
+        // URL removed - clear Wikipedia cache fields
+        updateData.wikipedia_image_url = null;
+        updateData.population = null;
+        updateData.wikipedia_data_updated_at = null;
+      }
+    }
+
+    await location.update(updateData);
 
     res.json({
       success: true,

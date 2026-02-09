@@ -61,6 +61,21 @@ const Location = sequelize.define('Location', {
     type: DataTypes.STRING(500),
     allowNull: true,
     comment: 'Wikipedia URL for this location'
+  },
+  wikipedia_image_url: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    comment: 'Cached Wikipedia main image URL'
+  },
+  population: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Population count from Wikipedia'
+  },
+  wikipedia_data_updated_at: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Timestamp of last Wikipedia data fetch'
   }
 }, {
   timestamps: true,
