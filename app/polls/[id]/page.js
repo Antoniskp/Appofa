@@ -143,6 +143,9 @@ export default function PollDetailPage() {
                 <Badge variant={isPollActive ? 'success' : 'gray'}>
                   {isPollActive ? 'Ενεργή' : 'Κλειστή'}
                 </Badge>
+                {poll.category && (
+                  <Badge variant="primary">{poll.category}</Badge>
+                )}
                 {poll.visibility === 'locals_only' && (
                   <Badge variant="orange">Τοπική</Badge>
                 )}

@@ -18,6 +18,10 @@ const Poll = sequelize.define('Poll', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  category: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   type: {
     type: DataTypes.ENUM('simple', 'complex'),
     defaultValue: 'simple',
