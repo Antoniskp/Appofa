@@ -987,13 +987,13 @@ const authController = {
       // Exchange code for access token
       const tokenResponse = await axios.post(
         'https://oauth2.googleapis.com/token',
-        {
+        new URLSearchParams({
           client_id: process.env.GOOGLE_CLIENT_ID,
           client_secret: process.env.GOOGLE_CLIENT_SECRET,
           code,
           redirect_uri: process.env.GOOGLE_CALLBACK_URL,
           grant_type: 'authorization_code'
-        },
+        }),
         {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         }

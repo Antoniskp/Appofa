@@ -206,7 +206,7 @@ describe('OAuth Integration Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.success).toBe(false);
-      expect(response.body.message).toContain('not linked');
+      expect(response.body.message).toBe('Google account is not linked.');
     });
 
     test('should handle unlinking GitHub when not linked', async () => {
