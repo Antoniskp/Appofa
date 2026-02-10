@@ -31,7 +31,7 @@ export default function NewsPage() {
     async () => {
       const params = {
         page,
-        limit: 10,
+        limit: 12,
         status: 'published',
         type: 'news',
       };
@@ -84,8 +84,8 @@ export default function NewsPage() {
         />
 
         {loading && (
-          <div className="space-y-6">
-            <SkeletonLoader type="card" count={5} variant="list" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SkeletonLoader type="card" count={6} />
           </div>
         )}
 
@@ -101,6 +101,7 @@ export default function NewsPage() {
           />
         )}
 
+        {/* Empty State */}
         {!loading && !error && articles.length === 0 && (
           <EmptyState
             type="empty"
@@ -109,11 +110,14 @@ export default function NewsPage() {
           />
         )}
 
-        <div className="space-y-6">
-          {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} variant="list" />
-          ))}
-        </div>
+        {/* News Grid */}
+        {!loading && !error && articles.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((article) => (
+              <ArticleCard key={article.id} article={article} variant="grid" />
+            ))}
+          </div>
+        )}
 
         <Pagination
           currentPage={page}

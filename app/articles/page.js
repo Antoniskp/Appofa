@@ -32,7 +32,7 @@ export default function ArticlesPage() {
     async () => {
       const params = {
         page,
-        limit: 10,
+        limit: 12,
         ...filters,
         status: 'published',
       };
@@ -85,8 +85,8 @@ export default function ArticlesPage() {
 
         {/* Loading State */}
         {loading && (
-          <div className="space-y-6">
-            <SkeletonLoader type="card" count={5} variant="list" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <SkeletonLoader type="card" count={6} />
           </div>
         )}
 
@@ -103,7 +103,7 @@ export default function ArticlesPage() {
           />
         )}
 
-        {/* Articles List */}
+        {/* Empty State */}
         {!loading && !error && articles.length === 0 && (
           <EmptyState
             type="empty"
@@ -112,11 +112,14 @@ export default function ArticlesPage() {
           />
         )}
 
-        <div className="space-y-6">
-          {articles.map((article) => (
-            <ArticleCard key={article.id} article={article} variant="list" />
-          ))}
-        </div>
+        {/* Articles Grid */}
+        {!loading && !error && articles.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {articles.map((article) => (
+              <ArticleCard key={article.id} article={article} variant="grid" />
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
         <Pagination
