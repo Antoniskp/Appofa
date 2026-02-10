@@ -15,12 +15,15 @@ router.post('/login', authLimiter, authController.login);
 router.get('/oauth/config', apiLimiter, authController.getOAuthConfig);
 router.get('/github', apiLimiter, optionalAuthMiddleware, authController.initiateGithubOAuth);
 router.get('/github/callback', apiLimiter, authController.githubCallback);
+router.get('/google', apiLimiter, optionalAuthMiddleware, authController.initiateGoogleOAuth);
+router.get('/google/callback', apiLimiter, authController.googleCallback);
 
 // Protected routes with rate limiting
 router.get('/profile', apiLimiter, authMiddleware, authController.getProfile);
 router.put('/profile', apiLimiter, authMiddleware, csrfProtection, authController.updateProfile);
 router.put('/password', apiLimiter, authMiddleware, csrfProtection, authController.updatePassword);
 router.delete('/github/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGithub);
+router.delete('/google/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGoogle);
 router.post('/logout', apiLimiter, authMiddleware, csrfProtection, authController.logout);
 router.get('/users', apiLimiter, authMiddleware, checkRole('admin'), authController.getUsers);
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin'), authController.getUserStats);

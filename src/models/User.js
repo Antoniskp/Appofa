@@ -58,6 +58,15 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  googleId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
+  },
+  googleAccessToken: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   homeLocationId: {
     type: DataTypes.INTEGER,
     allowNull: true,

@@ -39,6 +39,7 @@ function ProfileContent() {
   });
   const { config: oauthConfig } = useOAuthConfig();
   const [githubLinked, setGithubLinked] = useState(false);
+  const [googleLinked, setGoogleLinked] = useState(false);
 
   // Load profile using the hook
   const { loading } = useAsyncData(
@@ -52,7 +53,7 @@ function ProfileContent() {
     [],
     {
       onSuccess: async (userData) => {
-        const { username, firstName, lastName, githubId, avatar, avatarColor, homeLocationId, searchable } = userData;
+        const { username, firstName, lastName, githubId, googleId, avatar, avatarColor, homeLocationId, searchable } = userData;
         setProfileData({
           username: username || '',
           firstName: firstName || '',
@@ -63,6 +64,7 @@ function ProfileContent() {
           searchable: searchable !== undefined ? searchable : true,
         });
         setGithubLinked(!!githubId);
+        setGoogleLinked(!!googleId);
 
         // Load home location details if set
         if (homeLocationId) {
@@ -90,13 +92,17 @@ function ProfileContent() {
     if (successParam === 'github_linked') {
       success('GitHub account linked successfully!');
       setGithubLinked(true);
+    } else if (successParam === 'google_linked') {
+      success('Google account linked successfully!');
+      setGoogleLinked(true);
     } else if (errorParam) {
       const errorMessages = {
         unauthorized: 'Unauthorized to link account',
         user_not_found: 'User not found',
-        github_already_linked: 'This GitHub account is already linked to another user'
+        github_already_linked: 'This GitHub account is already linked to another user',
+        google_already_linked: 'This Google account is already linked to another user'
       };
-      error(errorMessages[errorParam] || 'Failed to link GitHub account');
+      error(errorMessages[errorParam] || 'Failed to link account');
     }
   }, [searchParams, success, error]);
 
@@ -189,6 +195,33 @@ function ProfileContent() {
       }
     } catch (err) {
       error(err.message || 'Failed to unlink GitHub account.');
+    }
+  };
+
+  const handleLinkGoogle = async () => {
+    try {
+      const response = await authAPI.initiateGoogleOAuth('link');
+      if (response.success && response.data.authUrl) {
+        window.location.href = response.data.authUrl;
+      }
+    } catch (err) {
+      error(err.message || 'Failed to initiate Google linking');
+    }
+  };
+
+  const handleUnlinkGoogle = async () => {
+    if (!confirm('Are you sure you want to unlink your Google account?')) {
+      return;
+    }
+
+    try {
+      const response = await authAPI.unlinkGoogle();
+      if (response.success) {
+        success('Google account disconnected');
+        setGoogleLinked(false);
+      }
+    } catch (err) {
+      error(err.message || 'Failed to unlink Google account.');
     }
   };
 
@@ -416,8 +449,8 @@ function ProfileContent() {
             )}
           </div>
 
-          {/* Google Placeholder */}
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-md mb-3 opacity-50">
+          {/* Google OAuth */}
+          <div className={`flex items-center justify-between p-4 border border-gray-200 rounded-md mb-3 ${!oauthConfig.google ? 'opacity-50' : ''}`}>
             <div className="flex items-center gap-3">
               <svg className="w-8 h-8" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -427,15 +460,31 @@ function ProfileContent() {
               </svg>
               <div>
                 <p className="font-medium text-gray-900">Google</p>
-                <p className="text-sm text-gray-500">Coming soon</p>
+                <p className="text-sm text-gray-500">
+                  {googleLinked ? 'Connected' : 'Not connected'}
+                </p>
               </div>
             </div>
-            <button
-              disabled
-              className="px-4 py-2 text-sm font-medium text-gray-400 border border-gray-300 rounded cursor-not-allowed bg-gray-50"
-            >
-              Connect
-            </button>
+            {googleLinked ? (
+              <button
+                onClick={handleUnlinkGoogle}
+                className="px-4 py-2 text-sm font-medium text-red-600 border border-red-300 rounded hover:bg-red-50"
+              >
+                Disconnect
+              </button>
+            ) : (
+              <button
+                onClick={handleLinkGoogle}
+                disabled={!oauthConfig.google}
+                className={`px-4 py-2 text-sm font-medium rounded ${
+                  oauthConfig.google
+                    ? 'text-blue-600 border border-blue-300 hover:bg-blue-50'
+                    : 'text-gray-400 border border-gray-300 cursor-not-allowed bg-gray-50'
+                }`}
+              >
+                Connect
+              </button>
+            )}
           </div>
 
           {/* Facebook Placeholder */}
