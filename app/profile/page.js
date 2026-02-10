@@ -37,9 +37,22 @@ function ProfileContent() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [showHomeLocation, setShowHomeLocation] = useState(false);
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
   const { config: oauthConfig } = useOAuthConfig();
   const [githubLinked, setGithubLinked] = useState(false);
   const [googleLinked, setGoogleLinked] = useState(false);
+
+  const getHomeLocationBreadcrumb = (location) => {
+    if (!location) return 'Not set';
+    const parts = [];
+    let current = location;
+    while (current) {
+      parts.unshift(current.name);
+      current = current.parent;
+    }
+    return parts.join(' -> ');
+  };
 
   // Load profile using the hook
   const { loading } = useAsyncData(
@@ -63,6 +76,7 @@ function ProfileContent() {
           homeLocationId: homeLocationId || null,
           searchable: searchable !== undefined ? searchable : true,
         });
+        setShowHomeLocation(false);
         setGithubLinked(!!githubId);
         setGoogleLinked(!!googleId);
 
@@ -142,6 +156,15 @@ function ProfileContent() {
       currentPassword: '',
       newPassword: '',
       confirmPassword: '',
+    });
+  };
+
+  const togglePasswordSection = () => {
+    setShowPasswordFields((prev) => {
+      if (prev) {
+        resetPasswordData();
+      }
+      return !prev;
     });
   };
 
@@ -328,25 +351,61 @@ function ProfileContent() {
                 autoComplete="family-name"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Home Location
-              </label>
-              <CascadingLocationSelector
-                value={profileData.homeLocationId}
-                onChange={(locationId) => {
-                  setProfileData(prev => ({ ...prev, homeLocationId: locationId }));
-                  if (locationId && locationId !== 'international') {
-                    locationAPI.getById(locationId).then(res => {
-                      if (res.success) setHomeLocation(res.location);
-                    });
-                  } else {
-                    setHomeLocation(null);
-                  }
-                }}
-                placeholder="Select your home location"
-                allowClear={true}
-              />
+            <div
+              className={`rounded-md border border-gray-200 bg-gray-50 overflow-hidden transition-all duration-800 ease-in-out ${
+                showHomeLocation ? 'max-h-[520px]' : 'max-h-11'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setShowHomeLocation((prev) => !prev)}
+                aria-expanded={showHomeLocation}
+                aria-controls="home-location-panel"
+                className="w-full h-11 px-4 flex items-center justify-between text-sm font-medium text-gray-900"
+              >
+                <span className="min-w-0 flex items-center gap-2">
+                  <span className="shrink-0">Home location</span>
+                  <span className="text-xs font-normal text-gray-500 truncate">
+                    {getHomeLocationBreadcrumb(homeLocation)}
+                  </span>
+                </span>
+                <span className="text-xs text-gray-500">
+                  {showHomeLocation ? 'Hide' : 'Edit'}
+                </span>
+              </button>
+              <div
+                id="home-location-panel"
+                aria-hidden={!showHomeLocation}
+                className={`px-4 pb-4 pt-2 transition-opacity duration-800 ease-in-out ${
+                  showHomeLocation
+                    ? 'opacity-100'
+                    : 'opacity-0 pointer-events-none'
+                }`}
+              >
+                {homeLocation?.name && (
+                  <p className="text-xs text-gray-500 mb-2">
+                    Current: {homeLocation.name}
+                  </p>
+                )}
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Home location
+                </label>
+                <CascadingLocationSelector
+                  value={profileData.homeLocationId}
+                  onChange={(locationId) => {
+                    setProfileData(prev => ({ ...prev, homeLocationId: locationId }));
+                    if (locationId && locationId !== 'international') {
+                      locationAPI.getById(locationId).then(res => {
+                        if (res.success) setHomeLocation(res.location);
+                      });
+                    } else {
+                      setHomeLocation(null);
+                    }
+                  }}
+                  placeholder="Select your home location"
+                  allowClear={true}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <input
@@ -374,36 +433,59 @@ function ProfileContent() {
         </Card>
 
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Change password</h2>
-          <form className="space-y-4" onSubmit={handlePasswordSubmit}>
-            <FormInput
-              name="currentPassword"
-              type="password"
-              label="Current password"
-              value={passwordData.currentPassword}
-              onChange={handlePasswordChange}
-            />
-            <FormInput
-              name="newPassword"
-              type="password"
-              label="New password"
-              value={passwordData.newPassword}
-              onChange={handlePasswordChange}
-            />
-            <FormInput
-              name="confirmPassword"
-              type="password"
-              label="Confirm new password"
-              value={passwordData.confirmPassword}
-              onChange={handlePasswordChange}
-            />
+          <div>
             <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+              type="button"
+              onClick={togglePasswordSection}
+              aria-expanded={showPasswordFields}
+              aria-controls="password-panel"
+              className="w-full h-11 flex items-center justify-between text-gray-900"
             >
-              Update password
+              <span className="text-lg font-semibold">Change password</span>
+              <span className="text-xs text-gray-500">
+                {showPasswordFields ? 'Hide' : 'Edit'}
+              </span>
             </button>
-          </form>
+            <div
+              id="password-panel"
+              aria-hidden={!showPasswordFields}
+              className={`pt-2 transition-all duration-800 ease-in-out ${
+                showPasswordFields
+                  ? 'max-h-[360px] opacity-100'
+                  : 'max-h-0 opacity-0 pointer-events-none overflow-hidden'
+              }`}
+            >
+              <form className="space-y-4" onSubmit={handlePasswordSubmit}>
+                <FormInput
+                  name="currentPassword"
+                  type="password"
+                  label="Current password"
+                  value={passwordData.currentPassword}
+                  onChange={handlePasswordChange}
+                />
+                <FormInput
+                  name="newPassword"
+                  type="password"
+                  label="New password"
+                  value={passwordData.newPassword}
+                  onChange={handlePasswordChange}
+                />
+                <FormInput
+                  name="confirmPassword"
+                  type="password"
+                  label="Confirm new password"
+                  value={passwordData.confirmPassword}
+                  onChange={handlePasswordChange}
+                />
+                <button
+                  type="submit"
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+                >
+                  Update password
+                </button>
+              </form>
+            </div>
+          </div>
         </Card>
 
         {/* Connected Accounts Section */}
