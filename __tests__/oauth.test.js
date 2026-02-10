@@ -129,6 +129,40 @@ describe('OAuth Integration Tests', () => {
       }
     });
 
+    test('should initiate GitHub OAuth flow in link mode with authentication', async () => {
+      // Test with authentication token for link mode
+      const response = await request(app)
+        .get('/api/auth/github?mode=link')
+        .set('Authorization', `Bearer ${testToken}`);
+
+      // Should return either authUrl or error about not configured
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.authUrl).toBeDefined();
+        expect(response.body.data.authUrl).toContain('github.com');
+      } else {
+        expect(response.status).toBe(503);
+        expect(response.body.success).toBe(false);
+      }
+    });
+
+    test('should initiate GitHub OAuth flow in link mode without authentication', async () => {
+      // Test without authentication token for link mode - should still work due to optionalAuthMiddleware
+      const response = await request(app)
+        .get('/api/auth/github?mode=link');
+
+      // Should return either authUrl or error about not configured
+      // This should work because optionalAuthMiddleware allows unauthenticated requests
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.authUrl).toBeDefined();
+        expect(response.body.data.authUrl).toContain('github.com');
+      } else {
+        expect(response.status).toBe(503);
+        expect(response.body.success).toBe(false);
+      }
+    });
+
     test('should handle unlinking GitHub when not linked', async () => {
       const csrfToken = 'csrf-oauth-unlink';
       setCsrfToken(csrfToken, testUser.id);
