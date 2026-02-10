@@ -77,6 +77,19 @@ export default function RegisterPage() {
     }
   };
 
+  const handleGoogleSignup = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.initiateGoogleOAuth('login');
+      if (response.success && response.data.authUrl) {
+        window.location.href = response.data.authUrl;
+      }
+    } catch (err) {
+      error(err.message || 'Failed to initiate Google signup');
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -187,6 +200,7 @@ export default function RegisterPage() {
         <OAuthButtons
           config={oauthConfig}
           onGithubLogin={handleGithubSignup}
+          onGoogleLogin={handleGoogleSignup}
           disabled={loading}
         />
       </div>

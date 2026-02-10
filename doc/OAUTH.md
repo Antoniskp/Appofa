@@ -1,6 +1,6 @@
 # OAuth Integration Guide
 
-This application supports OAuth-based authentication for easy signup and login. Currently, GitHub OAuth is implemented, with support for future integration of Google and Facebook.
+This application supports OAuth-based authentication for easy signup and login. Currently, GitHub and Google OAuth are implemented, with support for future integration of Facebook.
 
 ## Features
 
@@ -11,9 +11,15 @@ This application supports OAuth-based authentication for easy signup and login. 
 - **Profile Auto-fill**: User profiles are automatically populated with GitHub data (name, avatar, email)
 - **Account Management**: Users can unlink their GitHub account from the profile page
 
+### Google OAuth
+- **Sign up with Google**: New users can create an account using their Google profile
+- **Sign in with Google**: Existing users can log in with their Google account
+- **Account Linking**: Users can link their Google account to their existing account
+- **Profile Auto-fill**: User profiles are automatically populated with Google data (name, avatar, email)
+- **Account Management**: Users can unlink their Google account from the profile page
+
 ### Future Support
 The OAuth infrastructure is designed to support additional providers:
-- Google OAuth (coming soon)
 - Facebook OAuth (coming soon)
 
 ## Setup
@@ -46,13 +52,46 @@ The OAuth infrastructure is designed to support additional providers:
 4. **Restart the Application**
    After configuring the environment variables, restart both the API server and frontend.
 
+### Google OAuth Configuration
+
+1. **Create a Google OAuth App**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Create a new project or select an existing one
+   - Enable Google+ API or Google Identity in the API Library
+   - Go to "Credentials" in the left sidebar
+   - Click "Create Credentials" → "OAuth 2.0 Client IDs"
+   - Configure the OAuth consent screen if prompted
+   - Select "Web application" as the application type
+   - Fill in the application details:
+     - Name: Your app name
+     - Authorized JavaScript origins: `http://localhost:3001` (or your frontend URL)
+     - Authorized redirect URIs: `http://localhost:3000/api/auth/google/callback`
+   - Click "Create"
+
+2. **Get Your Credentials**
+   - After creating the OAuth client, you'll see your Client ID and Client Secret
+   - Copy both values
+
+3. **Configure Environment Variables**
+   Add the following to your `.env` file:
+   ```bash
+   GOOGLE_CLIENT_ID=your-google-client-id
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+   FRONTEND_URL=http://localhost:3001
+   ```
+
+4. **Restart the Application**
+   After configuring the environment variables, restart both the API server and frontend.
+
 ### Production Deployment
 
 For production:
-1. Update the callback URL in your GitHub OAuth App settings to your production domain
+1. Update the callback URLs in your GitHub and Google OAuth App settings to your production domain
 2. Update the environment variables:
    ```bash
    GITHUB_CALLBACK_URL=https://your-domain.com/api/auth/github/callback
+   GOOGLE_CALLBACK_URL=https://your-domain.com/api/auth/google/callback
    FRONTEND_URL=https://your-frontend-domain.com
    ```
 
@@ -130,6 +169,19 @@ GET /api/auth/github/callback?code=...&state=...
 ```
 Handles the callback from GitHub after authorization.
 
+#### Initiate Google OAuth
+```
+GET /api/auth/google?mode=login
+GET /api/auth/google?mode=link
+```
+Initiates the Google OAuth flow. Mode can be `login` (for signup/login) or `link` (for linking to existing account).
+
+#### Google OAuth Callback
+```
+GET /api/auth/google/callback?code=...&state=...
+```
+Handles the callback from Google after authorization.
+
 ### Protected Endpoints
 
 #### Unlink GitHub Account
@@ -139,21 +191,30 @@ Cookie: auth_token=<token>
 ```
 Unlinks the GitHub account from the current user.
 
+#### Unlink Google Account
+```
+DELETE /api/auth/google/unlink
+Cookie: auth_token=<token>
+```
+Unlinks the Google account from the current user.
+
 ## UI Components
 
 ### Login Page
 - "Continue with GitHub" button (enabled when OAuth is configured)
-- Placeholder buttons for Google and Facebook (disabled)
+- "Continue with Google" button (enabled when OAuth is configured)
+- Placeholder button for Facebook (disabled)
 
 ### Register Page
 - "Sign up with GitHub" button (enabled when OAuth is configured)
-- Placeholder buttons for Google and Facebook (disabled)
+- "Sign up with Google" button (enabled when OAuth is configured)
+- Placeholder button for Facebook (disabled)
 
 ### Profile Page
 - Connected Accounts section showing:
-  - GitHub connection status
-  - Connect/Disconnect button
-  - Placeholders for Google and Facebook
+  - GitHub connection status with Connect/Disconnect button
+  - Google connection status with Connect/Disconnect button
+  - Placeholder for Facebook
 
 ## Database Schema
 
@@ -163,6 +224,8 @@ The User model includes the following OAuth-related fields:
 {
   githubId: STRING (unique, nullable),
   githubAccessToken: STRING (nullable),
+  googleId: STRING (unique, nullable),
+  googleAccessToken: STRING (nullable),
   avatar: STRING (nullable),
   password: STRING (nullable) // Can be null for OAuth-only users
 }
@@ -184,20 +247,24 @@ npm test
 ## Troubleshooting
 
 ### OAuth buttons are disabled
-- Check that `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET` are set in `.env`
+- Check that OAuth credentials are set in `.env`:
+  - For GitHub: `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
+  - For Google: `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
 - Restart the API server after setting environment variables
 
-### GitHub callback fails
-- Verify the callback URL in GitHub OAuth App matches `GITHUB_CALLBACK_URL` in `.env`
+### OAuth callback fails
+- Verify the callback URL in your OAuth App settings matches the URL in `.env`:
+  - GitHub: `GITHUB_CALLBACK_URL`
+  - Google: `GOOGLE_CALLBACK_URL`
 - Check that `FRONTEND_URL` is correctly set
 
-### Cannot unlink GitHub account
+### Cannot unlink OAuth account
 - Ensure you have a password set (OAuth-only users must set a password first)
-- Check that you're not removing your only authentication method
+- Check that you have at least one other authentication method (password or another OAuth provider)
+- You cannot remove your only authentication method
 
 ## Future Enhancements
 
-- Google OAuth implementation
 - Facebook OAuth implementation
 - Twitter/X OAuth support
 - LinkedIn OAuth support

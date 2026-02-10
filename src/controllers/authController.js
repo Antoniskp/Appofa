@@ -931,6 +931,230 @@ const authController = {
     }
   },
 
+  // Google OAuth initiation
+  initiateGoogleOAuth: async (req, res) => {
+    try {
+      const { generateState, isOAuthConfigured } = require('../utils/oauthHelpers');
+      
+      if (!isOAuthConfigured('google')) {
+        return res.status(503).json({
+          success: false,
+          message: 'Google OAuth is not configured.'
+        });
+      }
+
+      const mode = req.query.mode || 'login'; // 'login' or 'link'
+      const userId = mode === 'link' ? req.user?.id : null;
+
+      const state = generateState(userId, mode);
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const redirectUri = process.env.GOOGLE_CALLBACK_URL;
+      
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&response_type=code&scope=email profile`;
+
+      res.status(200).json({
+        success: true,
+        data: { authUrl: googleAuthUrl }
+      });
+    } catch (error) {
+      console.error('Google OAuth initiation error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error initiating Google OAuth.'
+      });
+    }
+  },
+
+  // Google OAuth callback
+  googleCallback: async (req, res) => {
+    try {
+      const axios = require('axios');
+      const { validateState } = require('../utils/oauthHelpers');
+      const { encryptToken } = require('../utils/encryption');
+      
+      const { code, state } = req.query;
+
+      if (!code || !state) {
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=missing_params`);
+      }
+
+      // Validate state token
+      const stateData = validateState(state);
+      if (!stateData) {
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=invalid_state`);
+      }
+
+      // Exchange code for access token
+      const tokenResponse = await axios.post(
+        'https://oauth2.googleapis.com/token',
+        new URLSearchParams({
+          client_id: process.env.GOOGLE_CLIENT_ID,
+          client_secret: process.env.GOOGLE_CLIENT_SECRET,
+          code,
+          redirect_uri: process.env.GOOGLE_CALLBACK_URL,
+          grant_type: 'authorization_code'
+        }),
+        {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }
+      );
+
+      const accessToken = tokenResponse.data.access_token;
+
+      if (!accessToken) {
+        return res.redirect(`${process.env.FRONTEND_URL}/login?error=token_exchange_failed`);
+      }
+
+      // Fetch user profile from Google
+      const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+
+      const googleUser = userResponse.data;
+
+      if (stateData.mode === 'link') {
+        // Link Google account to existing user
+        if (!stateData.userId) {
+          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=unauthorized`);
+        }
+
+        const user = await User.findByPk(stateData.userId);
+        if (!user) {
+          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=user_not_found`);
+        }
+
+        // Check if Google account is already linked to another user
+        const existingGoogleUser = await User.findOne({
+          where: { googleId: googleUser.id.toString() }
+        });
+
+        if (existingGoogleUser && existingGoogleUser.id !== user.id) {
+          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=google_already_linked`);
+        }
+
+        user.googleId = googleUser.id.toString();
+        user.googleAccessToken = encryptToken(accessToken);
+        if (!user.avatar && googleUser.picture) {
+          user.avatar = googleUser.picture;
+        }
+        await user.save();
+
+        return res.redirect(`${process.env.FRONTEND_URL}/profile?success=google_linked`);
+      } else {
+        // Login or signup with Google
+        let user = await User.findOne({
+          where: { googleId: googleUser.id.toString() }
+        });
+
+        if (user) {
+          // Update access token
+          user.googleAccessToken = encryptToken(accessToken);
+          if (googleUser.picture) {
+            user.avatar = googleUser.picture;
+          }
+          await user.save();
+        } else {
+          // Check if email already exists
+          const existingEmailUser = await User.findOne({
+            where: { email: googleUser.email }
+          });
+
+          if (existingEmailUser) {
+            // Link Google to existing account
+            existingEmailUser.googleId = googleUser.id.toString();
+            existingEmailUser.googleAccessToken = encryptToken(accessToken);
+            if (!existingEmailUser.avatar && googleUser.picture) {
+              existingEmailUser.avatar = googleUser.picture;
+            }
+            await existingEmailUser.save();
+            user = existingEmailUser;
+          } else {
+            // Create new user from Google profile
+            const username = googleUser.email.split('@')[0] || `google_${googleUser.id}`;
+            const name = googleUser.name || '';
+            const nameParts = name.split(' ');
+            
+            user = await User.create({
+              username,
+              email: googleUser.email,
+              googleId: googleUser.id.toString(),
+              googleAccessToken: encryptToken(accessToken),
+              firstName: googleUser.given_name || nameParts[0] || '',
+              lastName: googleUser.family_name || nameParts.slice(1).join(' ') || '',
+              avatar: googleUser.picture,
+              role: 'viewer'
+            });
+          }
+        }
+
+        // Generate JWT token
+        if (!process.env.JWT_SECRET) {
+          throw new Error('JWT_SECRET must be configured');
+        }
+        const token = jwt.sign(
+          { 
+            id: user.id, 
+            username: user.username, 
+            email: user.email,
+            role: user.role 
+          },
+          process.env.JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        setAuthCookies(res, token, user.id);
+        return res.redirect(`${process.env.FRONTEND_URL}/login?oauth=1`);
+      }
+    } catch (error) {
+      console.error('Google callback error:', error);
+      res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
+    }
+  },
+
+  // Unlink Google account
+  unlinkGoogle: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.user.id);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found.'
+        });
+      }
+
+      if (!user.googleId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Google account is not linked.'
+        });
+      }
+
+      // Ensure user has a password or another OAuth method before unlinking
+      if (!user.password && !user.githubId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cannot unlink Google. Please set a password or link another account first.'
+        });
+      }
+
+      user.googleId = null;
+      user.googleAccessToken = null;
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Google account unlinked successfully.'
+      });
+    } catch (error) {
+      console.error('Unlink Google error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error unlinking Google account.'
+      });
+    }
+  },
+
   // Get OAuth configuration status
   getOAuthConfig: async (req, res) => {
     try {

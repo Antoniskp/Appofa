@@ -47,7 +47,8 @@ function LoginForm() {
         missing_params: 'OAuth failed: Missing parameters',
         invalid_state: 'OAuth failed: Invalid state token',
         token_exchange_failed: 'OAuth failed: Could not exchange token',
-        oauth_failed: 'OAuth authentication failed'
+        oauth_failed: 'OAuth authentication failed',
+        google_already_linked: 'This Google account is already linked to another user'
       };
       error(errorMessages[errorParam] || 'OAuth authentication failed');
     }
@@ -90,6 +91,19 @@ function LoginForm() {
       }
     } catch (err) {
       error(err.message || 'Failed to initiate GitHub login');
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      setLoading(true);
+      const response = await authAPI.initiateGoogleOAuth('login');
+      if (response.success && response.data.authUrl) {
+        window.location.href = response.data.authUrl;
+      }
+    } catch (err) {
+      error(err.message || 'Failed to initiate Google login');
       setLoading(false);
     }
   };
@@ -145,6 +159,7 @@ function LoginForm() {
         <OAuthButtons
           config={oauthConfig}
           onGithubLogin={handleGithubLogin}
+          onGoogleLogin={handleGoogleLogin}
           disabled={loading}
         />
       </div>
