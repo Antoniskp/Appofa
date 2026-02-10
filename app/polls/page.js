@@ -108,18 +108,6 @@ export default function PollsPage() {
           className="mb-8"
         />
 
-        {user && (
-          <div className="mb-8 flex justify-end">
-            <Link
-              href="/polls/create"
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition font-medium"
-            >
-              <PlusCircleIcon className="h-5 w-5" />
-              Δημιουργία Δημοσκόπησης
-            </Link>
-          </div>
-        )}
-
         {/* Loading State */}
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
