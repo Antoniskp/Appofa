@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI } from '@/lib/api';
@@ -21,6 +21,8 @@ function ProfileContent() {
   const { user, updateProfile } = useAuth();
   const { success, error } = useToast();
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [profileData, setProfileData] = useState({
     username: '',
     firstName: '',
@@ -118,7 +120,14 @@ function ProfileContent() {
       };
       error(errorMessages[errorParam] || 'Failed to link account');
     }
-  }, [searchParams, success, error]);
+    if (successParam || errorParam) {
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.delete('success');
+      nextParams.delete('error');
+      const nextUrl = nextParams.toString() ? `${pathname}?${nextParams}` : pathname;
+      router.replace(nextUrl, { scroll: false });
+    }
+  }, [searchParams, success, error, pathname, router]);
 
   useEffect(() => {
     setAvatarLoadError(false);
