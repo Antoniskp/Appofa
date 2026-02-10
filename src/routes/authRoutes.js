@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const authMiddleware = require('../middleware/auth');
+const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
@@ -12,7 +13,7 @@ router.post('/login', authLimiter, authController.login);
 
 // OAuth routes
 router.get('/oauth/config', apiLimiter, authController.getOAuthConfig);
-router.get('/github', apiLimiter, authController.initiateGithubOAuth);
+router.get('/github', apiLimiter, optionalAuthMiddleware, authController.initiateGithubOAuth);
 router.get('/github/callback', apiLimiter, authController.githubCallback);
 
 // Protected routes with rate limiting
