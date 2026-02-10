@@ -25,17 +25,9 @@ const getClientIp = (req) => {
   return req.ip || req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress;
 };
 
-// Helper to generate or get session ID
-const getSessionId = (req) => {
-  // In production, use express-session or similar
-  // For now, use a simple implementation
-  if (!req.session) {
-    req.session = {};
-  }
-  if (!req.session.id) {
-    req.session.id = `sess_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-  }
-  return req.session.id;
+// Helper to get user agent
+const getUserAgent = (req) => {
+  return req.headers['user-agent'] || 'unknown';
 };
 
 const pollController = {
@@ -907,21 +899,25 @@ const pollController = {
           }, { transaction });
         }
       } else {
-        // Unauthenticated vote - use session
-        const sessionId = getSessionId(req);
+        // Unauthenticated vote - track by IP address + User-Agent (device fingerprint)
         const ipAddress = getClientIp(req);
+        const userAgent = getUserAgent(req);
 
-        // Check if session already voted
+        // Check if this device has already voted on this poll
         const existingVote = await PollVote.findOne({
-          where: { pollId: id, sessionId },
+          where: { 
+            pollId: id, 
+            userId: null,
+            ipAddress: ipAddress,
+            userAgent: userAgent
+          },
           transaction
         });
 
         if (existingVote) {
-          // Update existing vote
+          // Update existing vote from this device
           await existingVote.update({
-            optionId: optionIdResult.value,
-            ipAddress
+            optionId: optionIdResult.value
           }, { transaction });
           vote = existingVote;
         } else {
@@ -931,8 +927,9 @@ const pollController = {
             optionId: optionIdResult.value,
             userId: null,
             isAuthenticated: false,
-            sessionId,
-            ipAddress
+            sessionId: null,
+            ipAddress,
+            userAgent
           }, { transaction });
         }
       }

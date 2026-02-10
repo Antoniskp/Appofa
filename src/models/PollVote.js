@@ -45,6 +45,10 @@ const PollVote = sequelize.define('PollVote', {
   ipAddress: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  userAgent: {
+    type: DataTypes.STRING(500),
+    allowNull: true
   }
 }, {
   timestamps: true,
@@ -61,7 +65,14 @@ const PollVote = sequelize.define('PollVote', {
       }
     },
     {
-      fields: ['pollId', 'sessionId']
+      // Device fingerprint: prevent same device from voting multiple times on anonymous polls
+      unique: true,
+      fields: ['pollId', 'ipAddress', 'userAgent'],
+      name: 'unique_device_vote_per_poll',
+      where: {
+        userId: null,
+        isAuthenticated: false
+      }
     }
   ]
 });
