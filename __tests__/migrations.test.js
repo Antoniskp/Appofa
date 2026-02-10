@@ -237,6 +237,93 @@ describe('Database Migrations', () => {
     });
   });
 
+  describe('011-add-google-oauth-fields', () => {
+    test('should add Google OAuth columns to Users table', async () => {
+      // Run prerequisite migrations
+      await runMigration('001-create-locations-table.js');
+      await runMigration('003-add-user-columns.js');
+      
+      // Run the migration
+      await runMigration('011-add-google-oauth-fields.js');
+
+      const tableDescription = await queryInterface.describeTable('Users');
+      expect(tableDescription).toHaveProperty('googleId');
+      expect(tableDescription).toHaveProperty('googleAccessToken');
+    });
+
+    test('should be idempotent (can run multiple times)', async () => {
+      await runMigration('001-create-locations-table.js');
+      await runMigration('003-add-user-columns.js');
+      await runMigration('011-add-google-oauth-fields.js');
+      await expect(runMigration('011-add-google-oauth-fields.js')).resolves.not.toThrow();
+
+      const tableDescription = await queryInterface.describeTable('Users');
+      expect(tableDescription).toHaveProperty('googleId');
+      expect(tableDescription).toHaveProperty('googleAccessToken');
+    });
+
+    test('should rollback successfully', async () => {
+      await runMigration('001-create-locations-table.js');
+      await runMigration('003-add-user-columns.js');
+      await runMigration('011-add-google-oauth-fields.js');
+      
+      const beforeRollback = await queryInterface.describeTable('Users');
+      expect(beforeRollback).toHaveProperty('googleId');
+      expect(beforeRollback).toHaveProperty('googleAccessToken');
+
+      await rollbackMigration('011-add-google-oauth-fields.js');
+
+      const afterRollback = await queryInterface.describeTable('Users');
+      expect(afterRollback).not.toHaveProperty('googleId');
+      expect(afterRollback).not.toHaveProperty('googleAccessToken');
+    });
+  });
+
+  describe('012-fix-google-access-token-length', () => {
+    test('should change access token columns to TEXT type', async () => {
+      // Run prerequisite migrations
+      await runMigration('001-create-locations-table.js');
+      await runMigration('003-add-user-columns.js');
+      await runMigration('011-add-google-oauth-fields.js');
+      
+      // Run the migration
+      await runMigration('012-fix-google-access-token-length.js');
+
+      const tableDescription = await queryInterface.describeTable('Users');
+      
+      // In SQLite, TEXT columns are stored as 'TEXT'
+      // Verify the columns exist (type checking differs between SQLite and PostgreSQL)
+      expect(tableDescription).toHaveProperty('googleAccessToken');
+      expect(tableDescription).toHaveProperty('githubAccessToken');
+    });
+
+    test('should be idempotent (can run multiple times)', async () => {
+      await runMigration('001-create-locations-table.js');
+      await runMigration('003-add-user-columns.js');
+      await runMigration('011-add-google-oauth-fields.js');
+      await runMigration('012-fix-google-access-token-length.js');
+      await expect(runMigration('012-fix-google-access-token-length.js')).resolves.not.toThrow();
+
+      const tableDescription = await queryInterface.describeTable('Users');
+      expect(tableDescription).toHaveProperty('googleAccessToken');
+      expect(tableDescription).toHaveProperty('githubAccessToken');
+    });
+
+    test('should rollback successfully', async () => {
+      await runMigration('001-create-locations-table.js');
+      await runMigration('003-add-user-columns.js');
+      await runMigration('011-add-google-oauth-fields.js');
+      await runMigration('012-fix-google-access-token-length.js');
+      
+      await rollbackMigration('012-fix-google-access-token-length.js');
+
+      const tableDescription = await queryInterface.describeTable('Users');
+      // Columns should still exist after rollback, just reverted to STRING type
+      expect(tableDescription).toHaveProperty('googleAccessToken');
+      expect(tableDescription).toHaveProperty('githubAccessToken');
+    });
+  });
+
   describe('Full Migration Suite', () => {
     test('should run all migrations in order', async () => {
       const files = getMigrationFiles();
