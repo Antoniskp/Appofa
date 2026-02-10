@@ -29,8 +29,11 @@ router.get('/users', apiLimiter, authMiddleware, checkRole('admin'), authControl
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin'), authController.getUserStats);
 router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), authController.updateUserRole);
 
-// Public search route
-router.get('/users/search', apiLimiter, authController.searchUsers);
+// Registered users only: search visible users
+router.get('/users/search', apiLimiter, authMiddleware, authController.searchUsers);
+
+// Registered users only: public profile data for searchable users
+router.get('/users/:id/public', apiLimiter, authMiddleware, authController.getPublicUserProfile);
 
 // Public stats route
 router.get('/users/public-stats', apiLimiter, authController.getPublicUserStats);

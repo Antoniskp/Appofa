@@ -2,12 +2,13 @@ const express = require('express');
 const router = express.Router();
 const locationController = require('../controllers/locationController');
 const authMiddleware = require('../middleware/auth');
+const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
 
 // Public routes
 router.get('/', locationController.getLocations);
 router.get('/:id', locationController.getLocation);
-router.get('/:id/entities', locationController.getLocationEntities);
+router.get('/:id/entities', optionalAuthMiddleware, locationController.getLocationEntities);
 router.get('/:entity_type/:entity_id/locations', locationController.getEntityLocations);
 
 // Protected routes - require authentication

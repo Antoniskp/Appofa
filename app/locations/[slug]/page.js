@@ -17,7 +17,7 @@ export default function LocationDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const { canManageLocations } = usePermissions();
   const isAuthenticated = !authLoading && !!user;
-  const [entities, setEntities] = useState({ articles: [], users: [], polls: [] });
+  const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0 });
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -69,6 +69,7 @@ export default function LocationDetailPage() {
               articles: entitiesResponse.articles || [],
               users: entitiesResponse.users || [],
               polls: entitiesResponse.polls || [],
+              usersCount: entitiesResponse.usersCount || 0,
             });
           }
         } catch (err) {
@@ -401,7 +402,7 @@ export default function LocationDetailPage() {
                     )}
                   </div>
                 )}
-                {(!isEditing && (location.population || entities.users.length > 0)) && (
+                {(!isEditing && (location.population || entities.usersCount > 0)) && (
                   <div>
                     {location.population && (
                       <div>
@@ -414,7 +415,7 @@ export default function LocationDetailPage() {
                     <div className={location.population ? 'mt-2' : ''}>
                       <span className="font-medium text-gray-700">Registered users:</span>
                       <span className="ml-2 text-gray-900 font-semibold">
-                        {entities.users.length}
+                        {entities.usersCount}
                       </span>
                     </div>
                   </div>
@@ -538,7 +539,7 @@ export default function LocationDetailPage() {
           )}
 
           {/* Linked Users */}
-          {entities.users.length > 0 && (
+          {entities.usersCount > 0 && (
             isAuthenticated ? (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">
@@ -572,7 +573,7 @@ export default function LocationDetailPage() {
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Users from this Location</h2>
                 <p className="text-sm text-gray-600 mb-4">
-                  Sign in or register to view {entities.users.length} users from this location.
+                  Sign in or register to view {entities.usersCount} users from this location.
                 </p>
                 <div className="flex gap-3">
                   <Link

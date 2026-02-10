@@ -30,6 +30,9 @@ export default function UsersPage() {
 
   const { data: users, loading, error } = useAsyncData(
     async () => {
+      if (!isAuthenticated) {
+        return { data: { users: [], pagination: { totalPages: 1 } } };
+      }
       const params = {
         page,
         limit: 20,
@@ -47,7 +50,7 @@ export default function UsersPage() {
       }
       return { data: { users: [], pagination: { totalPages: 1 } } };
     },
-    [page, filters],
+    [page, filters, isAuthenticated],
     {
       initialData: [],
       transform: (response) => {

@@ -659,6 +659,7 @@ exports.getEntityLocations = async (req, res) => {
 // Get all entities (articles/users/polls) linked to a location
 exports.getLocationEntities = async (req, res) => {
   try {
+    const isAuthenticated = !!req.user;
     const { id } = req.params;
     const { entity_type } = req.query;
 
@@ -708,7 +709,8 @@ exports.getLocationEntities = async (req, res) => {
       ]
     }) : [];
 
-    const users = combinedUserIds.length > 0 ? await User.findAll({
+    const usersCount = combinedUserIds.length;
+    const users = isAuthenticated && combinedUserIds.length > 0 ? await User.findAll({
       where: { id: combinedUserIds },
       attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor']
     }) : [];
@@ -729,6 +731,7 @@ exports.getLocationEntities = async (req, res) => {
       success: true,
       articles,
       users,
+      usersCount,
       polls
     });
   } catch (error) {

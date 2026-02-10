@@ -1192,6 +1192,45 @@ const authController = {
     }
   },
 
+  // Get public user profile (basic data, only if searchable)
+  getPublicUserProfile: async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id, 10);
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid user id.'
+        });
+      }
+
+      const user = await User.findOne({
+        where: {
+          id: userId,
+          searchable: true
+        },
+        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt']
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found or not visible.'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: { user }
+      });
+    } catch (error) {
+      console.error('Get public user profile error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error fetching public user profile.'
+      });
+    }
+  },
+
   // Search users (public, returns only searchable users)
   searchUsers: async (req, res) => {
     try {
