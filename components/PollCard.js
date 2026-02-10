@@ -36,7 +36,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
     
     // Check visibility settings
     if (poll.resultsVisibility === 'always') return true;
-    if (poll.resultsVisibility === 'after_deadline' && poll.status === 'closed') return true;
+    if (poll.resultsVisibility === 'after_deadline' && (poll.status === 'closed' || (poll.deadline && new Date() >= new Date(poll.deadline)))) return true;
     if (poll.resultsVisibility === 'after_vote' && poll.userVote) return true;
     
     return false;

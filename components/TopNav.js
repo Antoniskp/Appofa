@@ -23,7 +23,7 @@ import Tooltip from '@/components/Tooltip';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
-  const { isAdmin, isEditor } = usePermissions();
+  const { isAdmin, isEditor, isModerator } = usePermissions();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
@@ -78,7 +78,7 @@ export default function TopNav() {
         className: isActive('/admin/status')
       }
     ] : []),
-    ...((isAdmin || isEditor) ? [
+    ...((isAdmin || isEditor || isModerator) ? [
       {
         id: 'editor',
         label: 'Τα άρθρα μου',
@@ -129,7 +129,7 @@ export default function TopNav() {
         className: `text-base font-medium ${isActive('/admin/status')}`
       }
     ] : []),
-    ...((isAdmin || isEditor) ? [
+    ...((isAdmin || isEditor || isModerator) ? [
       {
         id: 'editor',
         label: 'Τα άρθρα μου',
