@@ -55,7 +55,7 @@ const User = sequelize.define('User', {
     unique: true
   },
   githubAccessToken: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   googleId: {
@@ -64,7 +64,7 @@ const User = sequelize.define('User', {
     unique: true
   },
   googleAccessToken: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   homeLocationId: {
