@@ -163,6 +163,52 @@ describe('OAuth Integration Tests', () => {
       }
     });
 
+    test('should initiate Google OAuth flow', async () => {
+      // This will fail if Google OAuth is not configured
+      const response = await request(app)
+        .get('/api/auth/google?mode=login');
+
+      // Should return either authUrl or error about not configured
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.authUrl).toBeDefined();
+        expect(response.body.data.authUrl).toContain('google.com');
+      } else {
+        expect(response.status).toBe(503);
+        expect(response.body.success).toBe(false);
+      }
+    });
+
+    test('should initiate Google OAuth flow in link mode with authentication', async () => {
+      // Test with authentication token for link mode
+      const response = await request(app)
+        .get('/api/auth/google?mode=link')
+        .set('Authorization', `Bearer ${testToken}`);
+
+      // Should return either authUrl or error about not configured
+      if (response.status === 200) {
+        expect(response.body.success).toBe(true);
+        expect(response.body.data.authUrl).toBeDefined();
+        expect(response.body.data.authUrl).toContain('google.com');
+      } else {
+        expect(response.status).toBe(503);
+        expect(response.body.success).toBe(false);
+      }
+    });
+
+    test('should handle unlinking Google when not linked', async () => {
+      const csrfToken = 'csrf-google-unlink';
+      setCsrfToken(csrfToken, testUser.id);
+      const response = await request(app)
+        .delete('/api/auth/google/unlink')
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken));
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('not linked');
+    });
+
     test('should handle unlinking GitHub when not linked', async () => {
       const csrfToken = 'csrf-oauth-unlink';
       setCsrfToken(csrfToken, testUser.id);
@@ -259,6 +305,118 @@ describe('OAuth Integration Tests', () => {
     });
   });
 
+  describe('Google Account Linking', () => {
+    test('should link Google account to user', async () => {
+      // Simulate Google account linking
+      await testUser.update({
+        googleId: '87654321',
+        googleAccessToken: 'test-google-token',
+        avatar: 'https://lh3.googleusercontent.com/avatar.png'
+      });
+
+      await testUser.reload();
+      expect(testUser.googleId).toBe('87654321');
+      expect(testUser.avatar).toBe('https://lh3.googleusercontent.com/avatar.png');
+    });
+
+    test('should unlink Google account if password exists', async () => {
+      // Ensure user has Google linked
+      await testUser.update({
+        googleId: '87654321',
+        googleAccessToken: 'test-google-token'
+      });
+
+      const csrfToken = 'csrf-google-unlink-success';
+      setCsrfToken(csrfToken, testUser.id);
+      const response = await request(app)
+        .delete('/api/auth/google/unlink')
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken));
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      await testUser.reload();
+      expect(testUser.googleId).toBeNull();
+      expect(testUser.googleAccessToken).toBeNull();
+    });
+
+    test('should prevent unlinking Google if no password and no other OAuth', async () => {
+      // Create a user without password (Google-only)
+      const googleOnlyUser = await User.create({
+        username: 'googleonly',
+        email: 'googleonly@test.com',
+        password: null,
+        googleId: '11223344',
+        googleAccessToken: 'google-oauth-token',
+        role: 'viewer'
+      });
+
+      const jwt = require('jsonwebtoken');
+      const googleToken = jwt.sign(
+        { 
+          id: googleOnlyUser.id, 
+          username: googleOnlyUser.username, 
+          email: googleOnlyUser.email,
+          role: googleOnlyUser.role 
+        },
+        process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
+        { expiresIn: '24h' }
+      );
+
+      const csrfToken = 'csrf-google-unlink-no-password';
+      setCsrfToken(csrfToken, googleOnlyUser.id);
+      const response = await request(app)
+        .delete('/api/auth/google/unlink')
+        .set('Authorization', `Bearer ${googleToken}`)
+        .set(csrfHeaderFor(csrfToken));
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('set a password');
+    });
+
+    test('should allow unlinking Google if GitHub is linked', async () => {
+      // Create a user with both Google and GitHub linked
+      const multiOAuthUser = await User.create({
+        username: 'multioauth',
+        email: 'multioauth@test.com',
+        password: null,
+        googleId: '55667788',
+        googleAccessToken: 'google-token',
+        githubId: '99887766',
+        githubAccessToken: 'github-token',
+        role: 'viewer'
+      });
+
+      const jwt = require('jsonwebtoken');
+      const multiToken = jwt.sign(
+        { 
+          id: multiOAuthUser.id, 
+          username: multiOAuthUser.username, 
+          email: multiOAuthUser.email,
+          role: multiOAuthUser.role 
+        },
+        process.env.JWT_SECRET || 'your-secret-key-change-this-in-production',
+        { expiresIn: '24h' }
+      );
+
+      const csrfToken = 'csrf-google-unlink-multi';
+      setCsrfToken(csrfToken, multiOAuthUser.id);
+      const response = await request(app)
+        .delete('/api/auth/google/unlink')
+        .set('Authorization', `Bearer ${multiToken}`)
+        .set(csrfHeaderFor(csrfToken));
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      await multiOAuthUser.reload();
+      expect(multiOAuthUser.googleId).toBeNull();
+      expect(multiOAuthUser.githubId).toBe('99887766'); // GitHub still linked
+    });
+  });
+
   describe('User Model OAuth Fields', () => {
     test('should create user with OAuth fields', async () => {
       const githubUser = await User.create({
@@ -279,6 +437,24 @@ describe('OAuth Integration Tests', () => {
       expect(githubUser.password).toBeFalsy();
     });
 
+    test('should create user with Google OAuth fields', async () => {
+      const googleUser = await User.create({
+        username: 'googleuser',
+        email: 'google@test.com',
+        googleId: '22222222',
+        googleAccessToken: 'google-token',
+        avatar: 'https://lh3.googleusercontent.com/avatar',
+        firstName: 'Google',
+        lastName: 'User',
+        role: 'viewer'
+      });
+
+      expect(googleUser.googleId).toBe('22222222');
+      expect(googleUser.googleAccessToken).toBe('google-token');
+      expect(googleUser.avatar).toBe('https://lh3.googleusercontent.com/avatar');
+      expect(googleUser.password).toBeFalsy();
+    });
+
     test('should enforce unique githubId constraint', async () => {
       await User.create({
         username: 'user1',
@@ -293,6 +469,25 @@ describe('OAuth Integration Tests', () => {
           username: 'user2',
           email: 'user2@test.com',
           githubId: '99999999',
+          role: 'viewer'
+        })
+      ).rejects.toThrow();
+    });
+
+    test('should enforce unique googleId constraint', async () => {
+      await User.create({
+        username: 'google1',
+        email: 'google1@test.com',
+        googleId: '88888888',
+        role: 'viewer'
+      });
+
+      // Try to create another user with same googleId
+      await expect(
+        User.create({
+          username: 'google2',
+          email: 'google2@test.com',
+          googleId: '88888888',
           role: 'viewer'
         })
       ).rejects.toThrow();
