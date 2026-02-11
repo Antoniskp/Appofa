@@ -38,7 +38,7 @@ export default function CascadingLocationSelector({
 
   // Load selected location if value is provided
   useEffect(() => {
-    if (value && value !== selectedMunicipality?.id && value !== selectedPrefecture?.id && value !== selectedCountry?.id && value !== 'international') {
+    if (value && value !== selectedMunicipality?.id && value !== selectedPrefecture?.id && value !== selectedCountry?.id) {
       loadSelectedLocation(value);
     } else if (!value) {
       // Clear all selections
@@ -54,18 +54,17 @@ export default function CascadingLocationSelector({
     setLoading(true);
     setError('');
     try {
-      const response = await locationAPI.getAll({ type: 'country' });
-      if (response.success) {
-        const allCountries = response.locations || [];
-        // Add "International" as a special option
-        const internationalOption = {
-          id: 'international',
-          name: 'International',
-          type: 'international',
-          isInternational: true
-        };
-        setCountries([internationalOption, ...allCountries]);
-      }
+      // Fetch both international and country type locations
+      const [internationalResponse, countriesResponse] = await Promise.all([
+        locationAPI.getAll({ type: 'international' }),
+        locationAPI.getAll({ type: 'country' })
+      ]);
+      
+      const internationalLocations = internationalResponse.success ? (internationalResponse.locations || []) : [];
+      const allCountries = countriesResponse.success ? (countriesResponse.locations || []) : [];
+      
+      // Combine international locations with countries
+      setCountries([...internationalLocations, ...allCountries]);
     } catch (err) {
       setError(err.message || 'Failed to load countries');
     } finally {
@@ -144,7 +143,8 @@ export default function CascadingLocationSelector({
               await fetchPrefectures(country.id);
             }
           }
-        } else if (location.type === 'country') {
+        } else if (location.type === 'country' || location.type === 'international') {
+          // For both country and international types, just set the selected country
           setSelectedCountry(location);
         }
       }
@@ -166,23 +166,18 @@ export default function CascadingLocationSelector({
       return;
     }
     
-    // Handle "International" selection
-    if (countryValue === 'international') {
-      const internationalOption = countries.find(c => c.id === 'international');
-      setSelectedCountry(internationalOption);
-      setSelectedPrefecture(null);
-      setSelectedMunicipality(null);
-      setPrefectures([]);
-      setMunicipalities([]);
-      onChange('international');
-      return;
-    }
-    
     const country = countries.find(c => c.id === parseInt(countryValue));
     setSelectedCountry(country);
     setSelectedPrefecture(null);
     setSelectedMunicipality(null);
     setMunicipalities([]);
+    setPrefectures([]);
+    
+    // If it's an international location, don't try to load prefectures
+    if (country?.type === 'international') {
+      onChange(country.id);
+      return;
+    }
     
     // Load prefectures for Greece or other countries
     fetchPrefectures(country.id);
@@ -240,7 +235,7 @@ export default function CascadingLocationSelector({
     onChange(null);
   };
 
-  const isInternational = selectedCountry?.isInternational || selectedCountry?.id === 'international';
+  const isInternational = selectedCountry?.type === 'international';
 
   return (
     <div className={`space-y-3 ${className}`}>

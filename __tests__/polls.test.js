@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, Poll, PollOption, PollVote } = require('../src/models');
+const { sequelize, User, Poll, PollOption, PollVote, Location, LocationLink } = require('../src/models');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -42,6 +42,14 @@ describe('Poll API Tests', () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
     await sequelize.sync({ force: true });
+
+    // Create International location directly for tests (avoiding migration SQL compatibility issues)
+    await Location.create({
+      name: 'International',
+      type: 'international',
+      slug: 'international',
+      parent_id: null
+    });
 
     // Create admin user
     await User.create({
@@ -346,6 +354,73 @@ describe('Poll API Tests', () => {
 
       expect(response.status).toBe(400);
       expect(response.body.message).toContain('future');
+    });
+
+    test('should create poll with international location', async () => {
+      const csrfToken = 'test-csrf-token-international';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      // Fetch the international location created by migration 017
+      const internationalLocation = await Location.findOne({
+        where: { 
+          type: 'international',
+          slug: 'international'
+        }
+      });
+
+      expect(internationalLocation).not.toBeNull();
+      expect(internationalLocation.name).toBe('International');
+
+      // Create a poll with the international location ID
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'International Poll Test',
+          description: 'Testing poll creation with international location',
+          type: 'simple',
+          allowUserContributions: false,
+          allowUnauthenticatedVotes: true,
+          visibility: 'public',
+          resultsVisibility: 'always',
+          locationId: internationalLocation.id,
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' },
+            { text: 'Option 3' }
+          ]
+        });
+
+      // Verify the poll was created successfully
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toHaveProperty('id');
+      expect(response.body.data.title).toBe('International Poll Test');
+      expect(response.body.data.locationId).toBe(internationalLocation.id);
+      expect(response.body.data.options).toHaveLength(3);
+
+      const createdPollId = response.body.data.id;
+
+      // Verify the poll exists in the database with correct locationId
+      const pollInDb = await Poll.findByPk(createdPollId);
+      expect(pollInDb).not.toBeNull();
+      expect(pollInDb.locationId).toBe(internationalLocation.id);
+      expect(pollInDb.title).toBe('International Poll Test');
+
+      // Verify the LocationLink was created properly
+      const locationLink = await LocationLink.findOne({
+        where: {
+          location_id: internationalLocation.id,
+          entity_type: 'poll',
+          entity_id: createdPollId
+        }
+      });
+
+      expect(locationLink).not.toBeNull();
+      expect(locationLink.location_id).toBe(internationalLocation.id);
+      expect(locationLink.entity_type).toBe('poll');
+      expect(locationLink.entity_id).toBe(createdPollId);
     });
   });
 
