@@ -1,8 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import ContactForm from '@/components/ContactForm';
-import { useRouter } from 'next/navigation';
+
+const SUCCESS_REDIRECT_DELAY_MS = 3000;
 
 export default function BecomeModeratorPage() {
   const router = useRouter();
@@ -11,7 +13,7 @@ export default function BecomeModeratorPage() {
     // Optionally redirect after success
     setTimeout(() => {
       router.push('/');
-    }, 3000);
+    }, SUCCESS_REDIRECT_DELAY_MS);
   };
 
   return (
