@@ -2,7 +2,7 @@ import StaticPageLayout from '@/components/StaticPageLayout';
 
 export const metadata = {
   title: 'Διαφάνεια & Μεθοδολογία - Απόφαση',
-  description: 'Πώς λειτουργεί η πλατφόρμα, πώς συλλέγουμε δεδομένα και πώς διασφαλίζουμε τη διαφάνεια',
+  description: 'Πώς λειτουργούμε, πώς συλλέγουμε δεδομένα και πώς διασφαλίζουμε τη διαφάνεια',
 };
 
 export default function TransparencyPage() {
@@ -10,498 +10,416 @@ export default function TransparencyPage() {
     <StaticPageLayout title="Διαφάνεια & Μεθοδολογία" maxWidth="max-w-4xl">
       <section>
         <p className="text-xl text-gray-700 mb-6 leading-relaxed">
-          Η διαφάνεια είναι στον πυρήνα του Apofasi. Εδώ εξηγούμε λεπτομερώς πώς λειτουργεί η πλατφόρμα, 
-          πώς συλλέγουμε και επεξεργαζόμαστε δεδομένα, και πώς διασφαλίζουμε την ακεραιότητα των ψηφοφοριών.
+          Στο Apofasi, η διαφάνεια δεν είναι απλά μια αξία - είναι η θεμελιώδης αρχή που καθοδηγεί κάθε μας 
+          απόφαση. Εδώ θα βρείτε λεπτομερείς πληροφορίες για το πώς λειτουργούμε και πώς διασφαλίζουμε την 
+          ακεραιότητα των δεδομένων μας.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Συλλογή ειδήσεων</h2>
+        <h2 className="text-2xl font-semibold mb-3">Η δέσμευσή μας για διαφάνεια</h2>
+        
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6 space-y-3">
+          <p className="text-gray-700">
+            Πιστεύουμε ότι μια πλατφόρμα ενημέρωσης και πολιτικής συμμετοχής πρέπει να λειτουργεί με απόλυτη 
+            διαφάνεια. Για αυτό:
+          </p>
+          <ul className="list-disc pl-6 text-gray-700 space-y-2">
+            <li>Ο κώδικάς μας είναι <strong>ανοιχτού κώδικα (open source)</strong></li>
+            <li>Δημοσιεύουμε τις πηγές όλων των ειδήσεων που συγκεντρώνουμε</li>
+            <li>Εξηγούμε αναλυτικά τη μεθοδολογία των ψηφοφοριών μας</li>
+            <li>Δεν κρύβουμε τα όρια και τους περιορισμούς των δεδομένων μας</li>
+            <li>Λειτουργούμε χωρίς κομματικές γραμμές ή κρυφές ατζέντες</li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-3">Πώς συλλέγουμε ειδήσεις</h2>
         
         <div className="space-y-4">
           <div>
-            <h3 className="text-xl font-semibold mb-2">Πηγές</h3>
+            <h3 className="text-xl font-semibold mb-2">Πηγές ειδήσεων</h3>
             <p className="text-gray-700 mb-3">
-              Οι ειδήσεις στην πλατφόρμα προέρχονται από:
+              Συγκεντρώνουμε ειδήσεις από ποικίλες πηγές για να προσφέρουμε μια ολοκληρωμένη εικόνα:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Επίσημα μέσα ενημέρωσης:</strong> Αναγνωρισμένες εφημερίδες, ειδησεογραφικά sites 
-                και τηλεοπτικά δίκτυα
-              </li>
-              <li>
-                <strong>Ανεξάρτητα μέσα:</strong> Blogs, podcasts και εναλλακτικές πηγές ενημέρωσης
-              </li>
-              <li>
-                <strong>Διεθνή μέσα:</strong> Αξιόπιστες διεθνείς πηγές για παγκόσμια νέα
-              </li>
-              <li>
-                <strong>User-generated content:</strong> Άρθρα που δημιουργούν οι χρήστες της πλατφόρμας
-              </li>
-            </ul>
-          </div>
-
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-5">
-            <h3 className="text-xl font-semibold mb-2">Κριτήρια επιλογής πηγών</h3>
-            <p className="text-gray-700 mb-2">
-              Επιλέγουμε πηγές με βάση:
-            </p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-1">
-              <li>Αξιοπιστία και ιστορικό ακρίβειας</li>
-              <li>Διαφάνεια στη χρηματοδότηση και ιδιοκτησία</li>
-              <li>Δημοσιογραφική ηθική και standards</li>
-              <li>Ποικιλία απόψεων και πολιτικών φάσματος</li>
+              <li>Μεγάλα ελληνικά ειδησεογραφικά μέσα</li>
+              <li>Διεθνή μέσα ενημέρωσης (για ελληνικά και διεθνή θέματα)</li>
+              <li>Ανεξάρτητα ειδησεογραφικά sites</li>
+              <li>Επίσημες ανακοινώσεις κυβερνητικών οργάνων</li>
+              <li>Περιεχόμενο που δημιουργείται από τους χρήστες μας</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-2">Διαδικασία συλλογής</h3>
-            <p className="text-gray-700 mb-2">
-              Η συλλογή ειδήσεων γίνεται με:
+            <h3 className="text-xl font-semibold mb-2">Διαδικασία επιλογής</h3>
+            <p className="text-gray-700 mb-3">
+              Κάθε πηγή που χρησιμοποιούμε πρέπει να πληροί τα ακόλουθα κριτήρια:
             </p>
-            <ol className="list-decimal pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Αυτόματη συλλογή:</strong> RSS feeds και web scraping από επιλεγμένες πηγές
-              </li>
-              <li>
-                <strong>Επεξεργασία:</strong> Οι editors ελέγχουν και οργανώνουν τις ειδήσεις
-              </li>
-              <li>
-                <strong>Κατηγοριοποίηση:</strong> Οι ειδήσεις ταξινομούνται σε κατηγορίες (Πολιτική, 
-                Οικονομία, κτλ.)
-              </li>
-              <li>
-                <strong>Δημοσίευση:</strong> Με πλήρη αναφορά στην αρχική πηγή
-              </li>
-            </ol>
+            <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <li><strong>Αξιοπιστία:</strong> Ιστορικό ακριβών αναφορών</li>
+              <li><strong>Διαφάνεια:</strong> Σαφής αναφορά πηγών και συντακτών</li>
+              <li><strong>Ποικιλία:</strong> Διαφορετικές πολιτικές και ιδεολογικές απόψεις</li>
+              <li><strong>Τακτική ενημέρωση:</strong> Συνεχής παραγωγή περιεχομένου</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Κατηγοριοποίηση</h3>
+            <p className="text-gray-700">
+              Οι ειδήσεις κατηγοριοποιούνται με βάση το θέμα τους (Πολιτική, Οικονομία, Διεθνή κ.λπ.) για να 
+              διευκολύνεται η αναζήτηση. Η κατηγοριοποίηση γίνεται αυτόματα με βάση λέξεις-κλειδιά ή χειροκίνητα 
+              από editors.
+            </p>
           </div>
 
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-5">
             <h3 className="text-xl font-semibold mb-2">⚠️ Σημαντική σημείωση</h3>
             <p className="text-gray-700">
-              Η συλλογή ειδήσεων <strong>δεν συνιστά endorsement</strong>. Παρουσιάζουμε πολλαπλές οπτικές 
-              γωνίες για να βοηθήσουμε τους χρήστες να σχηματίσουν τη δική τους άποψη. Πάντα ελέγχετε τις 
-              πηγές και σκεφτείτε κριτικά.
+              Η συγκέντρωση ειδήσεων από διάφορες πηγές <strong>δεν συνιστά επικύρωση</strong> του περιεχομένου 
+              τους. Ενθαρρύνουμε τους χρήστες να διαβάζουν κριτικά και να ελέγχουν πολλαπλές πηγές.
             </p>
           </div>
         </div>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Ψηφοφορίες & Δημοσκοπήσεις</h2>
+        <h2 className="text-2xl font-semibold mb-3">Μεθοδολογία ψηφοφοριών</h2>
         
         <div className="space-y-4">
           <div>
             <h3 className="text-xl font-semibold mb-2">Πώς λειτουργούν οι ψηφοφορίες</h3>
             <p className="text-gray-700 mb-3">
-              Οι ψηφοφορίες στο Apofasi σχεδιάστηκαν για να καταγράφουν τη διάθεση της κοινότητας με διαφάνεια:
-            </p>
-            
-            <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-3">
-              <div>
-                <h4 className="font-semibold mb-1">1. Δημιουργία</h4>
-                <p className="text-gray-700">
-                  Οποιοσδήποτε εγγεγραμμένος χρήστης μπορεί να δημιουργήσει ψηφοφορία. Οι ψηφοφορίες 
-                  ελέγχονται από moderators για να διασφαλιστεί ότι δεν παραβιάζουν τους κανόνες.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-1">2. Συμμετοχή</h4>
-                <p className="text-gray-700">
-                  Κάθε εγγεγραμμένος χρήστης μπορεί να ψηφίσει μία φορά. Η ψήφος καταγράφεται στη 
-                  βάση δεδομένων με σύνδεση στο user ID για να αποτραπεί η πολλαπλή ψηφοφορία.
-                </p>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-1">3. Αποτελέσματα</h4>
-                <p className="text-gray-700">
-                  Τα αποτελέσματα εμφανίζονται σε πραγματικό χρόνο. Όλοι μπορούν να δουν τα ποσοστά 
-                  και τον αριθμό ψήφων για κάθε επιλογή.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-red-50 border border-red-200 rounded-lg p-5">
-            <h3 className="text-xl font-semibold mb-2">🚨 Σημαντικό: Όρια των ψηφοφοριών</h3>
-            <p className="text-gray-700 mb-3">
-              <strong>Τα αποτελέσματα των ψηφοφοριών ΔΕΝ είναι επιστημονικά αντιπροσωπευτικά</strong> του 
-              γενικού πληθυσμού. Υπάρχουν σημαντικοί περιορισμοί:
+              Οι ψηφοφορίες στο Apofasi έχουν σχεδιαστεί να δείχνουν τη διάθεση της κοινότητας μας:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Self-selection bias:</strong> Μόνο όσοι επιλέγουν να συμμετάσχουν ψηφίζουν
-              </li>
-              <li>
-                <strong>Demographic bias:</strong> Οι χρήστες του Apofasi μπορεί να μην αντιπροσωπεύουν 
-                το σύνολο του πληθυσμού
-              </li>
-              <li>
-                <strong>Μικρό δείγμα:</strong> Ο αριθμός ψηφοφοριών μπορεί να είναι περιορισμένος
-              </li>
-              <li>
-                <strong>Χωρίς στάθμιση:</strong> Δεν εφαρμόζουμε στατιστική στάθμιση όπως στις 
-                επαγγελματικές δημοσκοπήσεις
-              </li>
+              <li>Κάθε εγγεγραμμένος χρήστης μπορεί να ψηφίσει μία φορά ανά ψηφοφορία</li>
+              <li>Οι ψήφοι καταγράφονται αμέσως και τα αποτελέσματα ενημερώνονται σε πραγματικό χρόνο</li>
+              <li>Η ταυτότητα του ψηφοφόρου προστατεύεται (δεν εμφανίζεται ποιος ψήφισε τι)</li>
+              <li>Καταγράφεται μόνο ότι ο χρήστης ψήφισε, για να αποτραπεί η πολλαπλή ψηφοφορία</li>
             </ul>
-            <p className="text-gray-700 mt-3">
-              Τα αποτελέσματα δείχνουν <strong>μόνο τη διάθεση της κοινότητας του Apofasi</strong>, όχι 
-              της γενικής κοινής γνώμης.
-            </p>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-2">Μέτρα κατά της χειραγώγησης</h3>
-            <p className="text-gray-700 mb-2">
+            <h3 className="text-xl font-semibold mb-2">Ασφάλεια και ακεραιότητα</h3>
+            <p className="text-gray-700 mb-3">
               Για να διασφαλίσουμε την ακεραιότητα των ψηφοφοριών:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Ένας χρήστης, μία ψήφος:</strong> Η βάση δεδομένων αποτρέπει την πολλαπλή ψηφοφορία
-              </li>
-              <li>
-                <strong>Έλεγχος λογαριασμών:</strong> Παρακολουθούμε για ύποπτη δραστηριότητα και 
-                πολλαπλούς λογαριασμούς
-              </li>
-              <li>
-                <strong>Rate limiting:</strong> Όρια στον αριθμό ψηφοφοριών που μπορεί να δημιουργήσει 
-                ένας χρήστης
-              </li>
-              <li>
-                <strong>Moderation:</strong> Οι ύποπτες ψηφοφορίες ελέγχονται από την ομάδα
-              </li>
-              <li>
-                <strong>Διαφάνεια δεδομένων:</strong> Ο συνολικός αριθμός ψήφων είναι πάντα ορατός
-              </li>
+              <li>Κάθε ψήφος συνδέεται με ένα μοναδικό λογαριασμό χρήστη</li>
+              <li>Εντοπίζουμε και αποκλείουμε bot activity</li>
+              <li>Παρακολουθούμε ύποπτα μοτίβα ψηφοφορίας</li>
+              <li>Οι χρήστες που παραβιάζουν τους κανόνες αποκλείονται</li>
             </ul>
           </div>
-        </div>
-      </section>
 
-      <section>
-        <h2 className="text-2xl font-semibold mb-3">Moderation & Διαχείριση περιεχομένου</h2>
-        
-        <div className="space-y-4">
-          <div>
-            <h3 className="text-xl font-semibold mb-2">Διαδικασία moderation</h3>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-5">
+            <h3 className="text-xl font-semibold mb-2">🚨 Κρίσιμος περιορισμός</h3>
             <p className="text-gray-700 mb-3">
-              Η moderation στο Apofasi γίνεται με διαφανείς κανόνες:
+              Τα αποτελέσματα των ψηφοφοριών στο Apofasi <strong>ΔΕΝ είναι επιστημονικά αντιπροσωπευτικά</strong> 
+              της γενικής κοινής γνώμης. Δείχνουν μόνο τη διάθεση της κοινότητας που συμμετέχει στην πλατφόρμα.
             </p>
-            
-            <ol className="list-decimal pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Αυτόματος έλεγχος:</strong> Αλγόριθμοι εντοπίζουν spam και προφανώς παραβατικό 
-                περιεχόμενο
-              </li>
-              <li>
-                <strong>Αναφορές χρηστών:</strong> Οι χρήστες μπορούν να αναφέρουν προβληματικό περιεχόμενο
-              </li>
-              <li>
-                <strong>Ανθρώπινη αξιολόγηση:</strong> Moderators (editors & admins) ελέγχουν τις αναφορές
-              </li>
-              <li>
-                <strong>Δράση:</strong> Προειδοποίηση, επεξεργασία, απόκρυψη ή διαγραφή περιεχομένου
-              </li>
-              <li>
-                <strong>Ειδοποίηση:</strong> Οι χρήστες ενημερώνονται για τις ενέργειες στο περιεχόμενό τους
-              </li>
-            </ol>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <h3 className="text-xl font-semibold mb-2">Κριτήρια moderation</h3>
-            <p className="text-gray-700 mb-2">
-              Το περιεχόμενο αφαιρέθηκε όταν:
+            <p className="text-gray-700 mb-3">
+              <strong>Λόγοι για τον περιορισμό αυτό:</strong>
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-1">
-              <li>Παραβιάζει τους <a href="/rules" className="text-blue-600 underline">Κανόνες Κοινότητας</a></li>
-              <li>Περιέχει παράνομο υλικό</li>
-              <li>Είναι spam ή bot-generated</li>
-              <li>Παραπλανεί σκόπιμα (fake news)</li>
-              <li>Παραβιάζει πνευματικά δικαιώματα</li>
+              <li>Το δείγμα δεν είναι τυχαίο</li>
+              <li>Οι συμμετέχοντες επιλέγουν μόνοι τους να ψηφίσουν</li>
+              <li>Η πλατφόρμα μπορεί να έλκει συγκεκριμένα δημογραφικά</li>
+              <li>Δεν υπάρχει στάθμιση για να αντικατοπτρίζεται ο γενικός πληθυσμός</li>
             </ul>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-2">Διαφάνεια στη moderation</h3>
-            <p className="text-gray-700 mb-2">
-              Για να διατηρήσουμε τη διαφάνεια:
+            <h3 className="text-xl font-semibold mb-2">Μελλοντικές βελτιώσεις</h3>
+            <p className="text-gray-700 mb-3">
+              Εργαζόμαστε για να βελτιώσουμε τη μεθοδολογία μας:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>Όλες οι αφαιρέσεις καταγράφονται στο moderation log</li>
-              <li>Οι λόγοι αφαίρεσης είναι σαφείς και τεκμηριωμένοι</li>
-              <li>Οι χρήστες μπορούν να ζητήσουν επανεξέταση</li>
-              <li>Δημοσιεύουμε στατιστικά moderation (σύντομα)</li>
+              <li>Blockchain-based επαλήθευση ψήφων</li>
+              <li>Βελτιωμένη ανίχνευση bot και χειραγώγησης</li>
+              <li>Δημογραφικά στοιχεία συμμετεχόντων (προαιρετικά και ανώνυμα)</li>
+              <li>Σύγκριση με επίσημες δημοσκοπήσεις για διαφάνεια</li>
             </ul>
           </div>
         </div>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Ασφάλεια & Προστασία δεδομένων</h2>
+        <h2 className="text-2xl font-semibold mb-3">Διαχείριση περιεχομένου</h2>
         
         <div className="space-y-4">
           <div>
-            <h3 className="text-xl font-semibold mb-2">Μέτρα ασφαλείας</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">🔒 Κρυπτογράφηση</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• HTTPS/TLS για όλη τη μετάδοση</li>
-                  <li>• Bcrypt για κωδικούς</li>
-                  <li>• Encrypted database connections</li>
+            <h3 className="text-xl font-semibold mb-2">Ρόλοι και δικαιώματα</h3>
+            <p className="text-gray-700 mb-3">
+              Η πλατφόρμα διαθέτει τρεις ρόλους χρηστών με διαφορετικά δικαιώματα:
+            </p>
+            <div className="space-y-3">
+              <div className="bg-white border border-gray-200 rounded p-4">
+                <h4 className="font-semibold mb-2">👤 User</h4>
+                <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                  <li>Δημιουργία Personal και Articles άρθρων</li>
+                  <li>Επεξεργασία των δικών τους άρθρων</li>
+                  <li>Συμμετοχή σε ψηφοφορίες</li>
+                  <li>Σχολιασμός</li>
                 </ul>
               </div>
-
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">🛡️ Authentication</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• Session-based authentication</li>
-                  <li>• Secure cookie handling</li>
-                  <li>• CSRF protection</li>
+              <div className="bg-white border border-gray-200 rounded p-4">
+                <h4 className="font-semibold mb-2">✏️ Editor</h4>
+                <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                  <li>Όλα τα δικαιώματα του User</li>
+                  <li>Επεξεργασία όλων των Articles</li>
+                  <li>Δημιουργία News άρθρων</li>
+                  <li>Moderation σχολίων</li>
                 </ul>
               </div>
-
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">🔍 Monitoring</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• Real-time threat detection</li>
-                  <li>• Suspicious activity alerts</li>
-                  <li>• Regular security audits</li>
-                </ul>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-lg p-4">
-                <h4 className="font-semibold mb-2">💾 Backups</h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  <li>• Καθημερινά αυτόματα backups</li>
-                  <li>• Encrypted backup storage</li>
-                  <li>• Disaster recovery plan</li>
+              <div className="bg-white border border-gray-200 rounded p-4">
+                <h4 className="font-semibold mb-2">⚙️ Admin</h4>
+                <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                  <li>Όλα τα δικαιώματα του Editor</li>
+                  <li>Διαγραφή οποιουδήποτε περιεχομένου</li>
+                  <li>Διαχείριση χρηστών</li>
+                  <li>Διαχείριση πλατφόρμας</li>
                 </ul>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-2">Διαχείριση δεδομένων</h3>
-            <p className="text-gray-700 mb-2">
-              Διαχειριζόμαστε τα δεδομένα σας με υπευθυνότητα:
+            <h3 className="text-xl font-semibold mb-2">Πολιτική moderation</h3>
+            <p className="text-gray-700 mb-3">
+              Η moderation ακολουθεί συγκεκριμένες αρχές:
             </p>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Ελάχιστη συλλογή:</strong> Συλλέγουμε μόνο όσα δεδομένα χρειάζονται για τη 
-                λειτουργία της πλατφόρμας
-              </li>
-              <li>
-                <strong>Διαφάνεια:</strong> Γνωρίζετε ποια δεδομένα έχουμε (δείτε{' '}
-                <a href="/privacy" className="text-blue-600 underline">Πολιτική Απορρήτου</a>)
-              </li>
-              <li>
-                <strong>Έλεγχος:</strong> Μπορείτε να ζητήσετε εξαγωγή ή διαγραφή των δεδομένων σας
-              </li>
-              <li>
-                <strong>Ασφάλεια:</strong> Τα δεδομένα προστατεύονται με σύγχρονες τεχνολογίες
-              </li>
+              <li><strong>Ελάχιστη παρέμβαση:</strong> Επεμβαίνουμε μόνο όταν παραβιάζονται οι κανόνες</li>
+              <li><strong>Διαφάνεια:</strong> Οι λόγοι διαγραφής εξηγούνται πάντα</li>
+              <li><strong>Δίκαιη διαδικασία:</strong> Οι χρήστες μπορούν να αμφισβητήσουν αποφάσεις</li>
+              <li><strong>Συνέπεια:</strong> Οι ίδιοι κανόνες εφαρμόζονται σε όλους</li>
             </ul>
           </div>
         </div>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Χρηματοδότηση & Οικονομικά</h2>
+        <h2 className="text-2xl font-semibold mb-3">Οικονομική διαφάνεια</h2>
         
         <div className="space-y-4">
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Πώς χρηματοδοτούμαστε</h3>
+            <p className="text-gray-700 mb-3">
+              Το Apofasi είναι ένα μη κερδοσκοπικό project που λειτουργεί με:
+            </p>
+            <ul className="list-disc pl-6 text-gray-700 space-y-2">
+              <li><strong>Εθελοντική εργασία:</strong> Η ομάδα μας εργάζεται pro bono</li>
+              <li><strong>Δωρεές κοινότητας:</strong> Οικονομική στήριξη από χρήστες</li>
+              <li><strong>Ανοιχτός κώδικας:</strong> Συνεισφορές από developers</li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Κόστη λειτουργίας</h3>
+            <p className="text-gray-700 mb-3">
+              Τα βασικά κόστη της πλατφόρμας περιλαμβάνουν:
+            </p>
+            <ul className="list-disc pl-6 text-gray-700 space-y-1">
+              <li>Server hosting και infrastructure</li>
+              <li>Domain και SSL certificates</li>
+              <li>Email υπηρεσίες</li>
+              <li>Backup και ασφάλεια δεδομένων</li>
+            </ul>
+          </div>
+
           <div className="bg-green-50 border border-green-200 rounded-lg p-5">
-            <h3 className="text-xl font-semibold mb-2">Πώς χρηματοδοτείται το Apofasi</h3>
-            <p className="text-gray-700 mb-3">
-              Η πλατφόρμα λειτουργεί με πλήρη διαφάνεια στη χρηματοδότηση:
+            <h3 className="text-xl font-semibold mb-2">💚 Υποστήριξη</h3>
+            <p className="text-gray-700">
+              Αν θέλετε να υποστηρίξετε οικονομικά την πλατφόρμα, δείτε τη σελίδα{' '}
+              <a href="/contribute" className="text-blue-600 hover:text-blue-800 underline">
+                Συνεργασία
+              </a>{' '}
+              για περισσότερες πληροφορίες.
             </p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Προσωπική επένδυση:</strong> Προς το παρόν, η πλατφόρμα χρηματοδοτείται από τους 
-                ιδρυτές της
-              </li>
-              <li>
-                <strong>Εθελοντική εργασία:</strong> Η ομάδα συμβάλλει εθελοντικά
-              </li>
-              <li>
-                <strong>Δωρεές κοινότητας:</strong> Αποδεχόμαστε δωρεές από χρήστες που θέλουν να 
-                υποστηρίξουν το όραμα
-              </li>
-              <li>
-                <strong>Χωρίς διαφημίσεις:</strong> Δεν πουλάμε διαφημιστικό χώρο ούτε δεδομένα χρηστών
-              </li>
-            </ul>
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-2">Μελλοντικά μοντέλα βιωσιμότητας</h3>
-            <p className="text-gray-700 mb-2">
-              Εξετάζουμε διάφορες επιλογές για μακροπρόθεσμη βιωσιμότητα:
-            </p>
+            <h3 className="text-xl font-semibold mb-2">Τι ΔΕΝ κάνουμε</h3>
             <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>
-                <strong>Crowdfunding:</strong> Καμπάνιες από την κοινότητα για συγκεκριμένα features
-              </li>
-              <li>
-                <strong>Premium features:</strong> Προαιρετικές πληρωμένες λειτουργίες (π.χ. analytics)
-              </li>
-              <li>
-                <strong>Grants:</strong> Επιδοτήσεις από οργανισμούς που υποστηρίζουν civic tech
-              </li>
-              <li>
-                <strong>Partnerships:</strong> Συνεργασίες με ακαδημαϊκά ιδρύματα και NGOs
-              </li>
+              <li>Δεν πουλάμε διαφημιστικό χώρο</li>
+              <li>Δεν πουλάμε δεδομένα χρηστών</li>
+              <li>Δεν δεχόμαστε χρηματοδότηση από κόμματα ή πολιτικές οργανώσεις</li>
+              <li>Δεν προωθούμε συγκεκριμένες ιδεολογικές γραμμές</li>
             </ul>
-            <p className="text-gray-700 mt-3">
-              <strong>Δέσμευση:</strong> Ανεξάρτητα από το μοντέλο χρηματοδότησης, θα παραμείνουμε 
-              ανεξάρτητοι και χωρίς κομματικές γραμμές.
-            </p>
           </div>
         </div>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Ανοιχτός κώδικας & Τεχνική διαφάνεια</h2>
+        <h2 className="text-2xl font-semibold mb-3">Ανοιχτός κώδικας</h2>
         
         <div className="space-y-4">
-          <div>
-            <h3 className="text-xl font-semibold mb-2">Open Source</h3>
-            <p className="text-gray-700 mb-3">
-              Ο κώδικας της πλατφόρμας είναι διαθέσιμος στο{' '}
-              <a 
-                href="https://github.com/Antoniskp/appofasiv8" 
-                className="text-blue-600 hover:text-blue-800 underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                GitHub
-              </a>. Αυτό σημαίνει:
-            </p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-2">
-              <li>Οποιοσδήποτε μπορεί να δει πώς λειτουργεί η πλατφόρμα</li>
-              <li>Developers μπορούν να συνεισφέρουν βελτιώσεις</li>
-              <li>Security researchers μπορούν να εντοπίσουν ευπάθειες</li>
-              <li>Η κοινότητα μπορεί να επαληθεύσει ότι δεν υπάρχουν κρυφοί μηχανισμοί</li>
-            </ul>
-          </div>
+          <p className="text-gray-700">
+            Ο κώδικας της πλατφόρμας είναι πλήρως ανοιχτός και διαθέσιμος στο GitHub. Αυτό σημαίνει ότι:
+          </p>
+
+          <ul className="list-disc pl-6 text-gray-700 space-y-2">
+            <li>Οποιοσδήποτε μπορεί να δει πώς λειτουργεί η πλατφόρμα</li>
+            <li>Οι προγραμματιστές μπορούν να συνεισφέρουν βελτιώσεις</li>
+            <li>Τα security issues μπορούν να εντοπιστούν και να διορθωθούν γρήγορα</li>
+            <li>Η κοινότητα μπορεί να επαληθεύσει ότι δεν υπάρχουν backdoors ή κρυφές λειτουργίες</li>
+          </ul>
 
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
-            <h3 className="text-xl font-semibold mb-2">Τεχνική αρχιτεκτονική</h3>
+            <h3 className="text-lg font-semibold mb-2">Αποθετήριο GitHub</h3>
             <p className="text-gray-700 mb-3">
-              Η πλατφόρμα είναι χτισμένη με:
+              Ο πλήρης κώδικας βρίσκεται στο:
             </p>
-            <div className="grid md:grid-cols-2 gap-4 text-gray-700">
-              <div>
-                <p className="font-semibold mb-1">Frontend:</p>
-                <ul className="text-sm space-y-1">
-                  <li>• Next.js 14 (React)</li>
-                  <li>• Tailwind CSS</li>
-                  <li>• Server-side rendering</li>
-                </ul>
-              </div>
-              <div>
-                <p className="font-semibold mb-1">Backend:</p>
-                <ul className="text-sm space-y-1">
-                  <li>• Node.js / Express</li>
-                  <li>• PostgreSQL database</li>
-                  <li>• RESTful API</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-xl font-semibold mb-2">Συμμετοχή στην ανάπτυξη</h3>
-            <p className="text-gray-700 mb-2">
-              Μπορείτε να συμβάλετε τεχνικά με:
-            </p>
-            <ul className="list-disc pl-6 text-gray-700 space-y-1">
-              <li>Pull requests για νέα features ή bug fixes</li>
-              <li>Αναφορά bugs στο GitHub Issues</li>
-              <li>Code reviews και προτάσεις βελτίωσης</li>
-              <li>Τεκμηρίωση και documentation</li>
-            </ul>
-            <p className="text-gray-700 mt-3">
-              Δείτε περισσότερα στη σελίδα{' '}
-              <a href="/contribute" className="text-blue-600 underline">Συνεργασία</a>.
-            </p>
+            <a 
+              href="https://github.com/Antoniskp/appofasiv8" 
+              className="text-blue-600 hover:text-blue-800 underline text-lg font-mono"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              github.com/Antoniskp/appofasiv8
+            </a>
           </div>
         </div>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Μετρήσεις & Στατιστικά</h2>
+        <h2 className="text-2xl font-semibold mb-3">Προστασία δεδομένων</h2>
         
         <div className="space-y-4">
-          <p className="text-gray-700">
-            Δημοσιεύουμε τακτικά στατιστικά για τη δραστηριότητα της πλατφόρμας:
+          <p className="text-gray-700 mb-3">
+            Η ασφάλεια και η προστασία των δεδομένων σας είναι προτεραιότητα:
           </p>
 
-          <div className="grid md:grid-cols-3 gap-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-              <p className="text-3xl font-bold text-indigo-600 mb-1">--</p>
-              <p className="text-gray-700">Ενεργοί χρήστες</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div className="bg-white border border-gray-200 rounded p-4">
+              <h3 className="font-semibold mb-2">🔒 Κρυπτογράφηση</h3>
+              <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                <li>HTTPS/TLS για όλες τις συνδέσεις</li>
+                <li>Bcrypt για κωδικούς</li>
+                <li>Ασφαλής αποθήκευση στη βάση δεδομένων</li>
+              </ul>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-              <p className="text-3xl font-bold text-indigo-600 mb-1">--</p>
-              <p className="text-gray-700">Δημοσιευμένα άρθρα</p>
+
+            <div className="bg-white border border-gray-200 rounded p-4">
+              <h3 className="font-semibold mb-2">🛡️ Ασφάλεια</h3>
+              <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                <li>Τακτικά security audits</li>
+                <li>Monitoring για ύποπτη δραστηριότητα</li>
+                <li>Άμεση απόκριση σε incidents</li>
+              </ul>
             </div>
-            <div className="bg-white border border-gray-200 rounded-lg p-4 text-center">
-              <p className="text-3xl font-bold text-indigo-600 mb-1">--</p>
-              <p className="text-gray-700">Ψηφοφορίες</p>
+
+            <div className="bg-white border border-gray-200 rounded p-4">
+              <h3 className="font-semibold mb-2">💾 Backups</h3>
+              <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                <li>Καθημερινά αυτόματα backups</li>
+                <li>Ασφαλής αποθήκευση σε πολλαπλές τοποθεσίες</li>
+                <li>Δυνατότητα γρήγορης ανάκτησης</li>
+              </ul>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded p-4">
+              <h3 className="font-semibold mb-2">👁️ Ιδιωτικότητα</h3>
+              <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                <li>Ελάχιστη συλλογή δεδομένων</li>
+                <li>Δεν πουλάμε δεδομένα</li>
+                <li>Σεβασμός GDPR</li>
+              </ul>
             </div>
           </div>
 
-          <p className="text-sm text-gray-600 italic">
-            Τα στατιστικά ενημερώνονται μηνιαία. Σύντομα θα διατίθεται δημόσιο dashboard με live data.
+          <p className="text-gray-700 mt-4">
+            Για περισσότερες λεπτομέρειες, διαβάστε την{' '}
+            <a href="/privacy" className="text-blue-600 hover:text-blue-800 underline">
+              Πολιτική Απορρήτου
+            </a>.
           </p>
         </div>
       </section>
 
-      <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
-        <h2 className="text-2xl font-semibold mb-3">Ερωτήσεις & Ανατροφοδότηση</h2>
+      <section>
+        <h2 className="text-2xl font-semibold mb-3">Αναφορά προβλημάτων</h2>
         
-        <p className="text-gray-700 mb-4">
-          Έχετε ερωτήσεις σχετικά με τη μεθοδολογία μας ή προτάσεις για περισσότερη διαφάνεια;
-        </p>
-        
-        <div className="space-y-2">
+        <div className="space-y-4">
           <p className="text-gray-700">
-            💬 Επικοινωνήστε μαζί μας μέσω{' '}
-            <a 
-              href="https://discord.gg/pvJftR4T98" 
-              className="text-blue-600 hover:text-blue-800 underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Discord
-            </a>
+            Αν εντοπίσετε προβλήματα διαφάνειας, ακεραιότητας δεδομένων ή security issues, παρακαλούμε 
+            αναφέρετέ τα αμέσως:
           </p>
-          <p className="text-gray-700">
-            📧 Στείλτε μήνυμα στη{' '}
-            <a href="/contact" className="text-blue-600 hover:text-blue-800 underline">
-              σελίδα επικοινωνίας
-            </a>
-          </p>
-          <p className="text-gray-700">
-            🐛 Ανοίξτε issue στο{' '}
-            <a 
-              href="https://github.com/Antoniskp/appofasiv8/issues" 
-              className="text-blue-600 hover:text-blue-800 underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              GitHub
-            </a>
-          </p>
-        </div>
 
-        <p className="text-gray-700 mt-4 font-semibold">
-          Η διαφάνεια είναι ταξίδι, όχι προορισμός. Συνεχίζουμε να βελτιώνουμε και να προσθέτουμε περισσότερες 
-          πληροφορίες καθώς η πλατφόρμα εξελίσσεται.
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 space-y-3">
+            <div>
+              <h3 className="font-semibold mb-1">🐛 Bugs & Technical Issues</h3>
+              <p className="text-gray-700 text-sm">
+                <a 
+                  href="https://github.com/Antoniskp/appofasiv8/issues" 
+                  className="text-blue-600 hover:text-blue-800 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub Issues
+                </a>
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">🔐 Security Issues</h3>
+              <p className="text-gray-700 text-sm">
+                Επικοινωνήστε απευθείας μέσω{' '}
+                <a href="/contact" className="text-blue-600 hover:text-blue-800 underline">
+                  επικοινωνίας
+                </a>{' '}
+                (μην αναφέρετε δημόσια)
+              </p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold mb-1">💬 Γενικές ερωτήσεις</h3>
+              <p className="text-gray-700 text-sm">
+                <a 
+                  href="https://discord.gg/pvJftR4T98" 
+                  className="text-blue-600 hover:text-blue-800 underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Discord
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-indigo-600 text-white rounded-lg p-8">
+        <h2 className="text-2xl font-bold mb-3">Η δέσμευσή μας</h2>
+        <p className="text-lg mb-4 opacity-90">
+          Δεσμευόμαστε να διατηρούμε την πλατφόρμα διαφανή, ασφαλή και ανοιχτή. Αν έχετε ερωτήσεις ή 
+          προτάσεις για βελτίωση της διαφάνειάς μας, θα χαρούμε να τις ακούσουμε.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <a 
+            href="/contact" 
+            className="bg-white text-indigo-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100 transition"
+          >
+            Επικοινωνήστε μαζί μας
+          </a>
+          <a 
+            href="https://github.com/Antoniskp/appofasiv8" 
+            className="bg-indigo-700 text-white px-6 py-2 rounded-lg font-semibold hover:bg-indigo-800 transition border-2 border-white"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Δείτε τον κώδικα
+          </a>
+        </div>
+      </section>
+
+      <section className="text-sm text-gray-600 border-t pt-6">
+        <p>
+          Αυτή η σελίδα ενημερώνεται τακτικά καθώς βελτιώνουμε τις διαδικασίες και τη μεθοδολογία μας. 
+          Τελευταία ενημέρωση: <strong>Φεβρουάριος 2026</strong>
         </p>
       </section>
     </StaticPageLayout>
