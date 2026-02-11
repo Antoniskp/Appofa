@@ -7,6 +7,7 @@ const Poll = require('./Poll');
 const PollOption = require('./PollOption');
 const PollVote = require('./PollVote');
 const Bookmark = require('./Bookmark');
+const ModeratorApplication = require('./ModeratorApplication');
 
 // Define associations
 User.hasMany(Article, {
@@ -121,6 +122,32 @@ Bookmark.belongsTo(User, {
   as: 'user'
 });
 
+// ModeratorApplication associations
+ModeratorApplication.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+ModeratorApplication.belongsTo(Location, {
+  foreignKey: 'locationId',
+  as: 'location'
+});
+
+ModeratorApplication.belongsTo(User, {
+  foreignKey: 'reviewedBy',
+  as: 'reviewer'
+});
+
+User.hasMany(ModeratorApplication, {
+  foreignKey: 'userId',
+  as: 'moderatorApplications'
+});
+
+Location.hasMany(ModeratorApplication, {
+  foreignKey: 'locationId',
+  as: 'moderatorApplications'
+});
+
 module.exports = {
   sequelize,
   User,
@@ -130,5 +157,6 @@ module.exports = {
   Poll,
   PollOption,
   PollVote,
-  Bookmark
+  Bookmark,
+  ModeratorApplication
 };
