@@ -26,7 +26,83 @@ const validateBookmarkTarget = async (entityType, entityId) => {
   return { entityType: entityTypeResult.value, entityId: targetId };
 };
 
+const validateCountTarget = async (entityType, entityId, user) => {
+  const entityTypeResult = normalizeEnum(entityType, BOOKMARK_ENTITY_TYPES, 'Entity type');
+  if (entityTypeResult.error) {
+    return { error: entityTypeResult.error, status: 400 };
+  }
+
+  const entityIdResult = normalizeInteger(entityId, 'Entity ID', 1);
+  if (entityIdResult.error) {
+    return { error: entityIdResult.error, status: 400 };
+  }
+
+  const targetId = entityIdResult.value;
+  const isAdmin = user?.role === 'admin';
+
+  if (entityTypeResult.value === 'article') {
+    const article = await Article.findByPk(targetId, {
+      attributes: ['id', 'status', 'authorId']
+    });
+    if (!article) {
+      return { error: 'Article not found.', status: 404 };
+    }
+    if (article.status !== 'published' && (!user || (!isAdmin && user.id !== article.authorId))) {
+      return { error: 'Access denied.', status: 403 };
+    }
+  }
+
+  if (entityTypeResult.value === 'poll') {
+    const poll = await Poll.findByPk(targetId, {
+      attributes: ['id', 'visibility', 'creatorId']
+    });
+    if (!poll) {
+      return { error: 'Poll not found.', status: 404 };
+    }
+    if (poll.visibility === 'private' && (!user || (!isAdmin && user.id !== poll.creatorId))) {
+      return { error: 'Access denied.', status: 403 };
+    }
+    if (poll.visibility === 'locals_only' && !user) {
+      return { error: 'Authentication required.', status: 403 };
+    }
+  }
+
+  return { entityType: entityTypeResult.value, entityId: targetId };
+};
+
 const bookmarkController = {
+  count: async (req, res) => {
+    try {
+      const { entity_type: entityType, entity_id: entityId } = req.query;
+      const validation = await validateCountTarget(entityType, entityId, req.user);
+      if (validation.error) {
+        return res.status(validation.status || 400).json({
+          success: false,
+          message: validation.error
+        });
+      }
+
+      const total = await Bookmark.count({
+        where: {
+          entityType: validation.entityType,
+          entityId: validation.entityId
+        }
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          count: total
+        }
+      });
+    } catch (error) {
+      console.error('Count bookmarks error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error fetching bookmark count.'
+      });
+    }
+  },
   list: async (req, res) => {
     try {
       const { entity_type: entityType, page = 1, limit = 12 } = req.query;

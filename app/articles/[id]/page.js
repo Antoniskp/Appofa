@@ -27,6 +27,7 @@ export default function ArticleDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
 
   const isNews = article?.type === 'news' || article?.isNews;
   const breadcrumbLabel = isNews ? 'News' : 'Articles';
@@ -68,6 +69,9 @@ export default function ArticleDetailPage() {
     bookmarkAPI.toggle('article', article.id)
       .then((response) => {
         setIsBookmarked(Boolean(response.data?.bookmarked));
+        setBookmarkCount((prev) => (
+          response.data?.bookmarked ? prev + 1 : Math.max(prev - 1, 0)
+        ));
         addToast(
           response.data?.bookmarked ? 'Article bookmarked.' : 'Bookmark removed.',
           { type: 'success' }
@@ -104,6 +108,30 @@ export default function ArticleDetailPage() {
       isActive = false;
     };
   }, [user, article?.id]);
+
+  useEffect(() => {
+    if (!article?.id) {
+      setBookmarkCount(0);
+      return;
+    }
+
+    let isActive = true;
+    bookmarkAPI.getCount('article', article.id)
+      .then((response) => {
+        if (isActive) {
+          setBookmarkCount(response.data?.count || 0);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setBookmarkCount(0);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [article?.id]);
 
   if (loading) {
     return (
@@ -208,13 +236,20 @@ export default function ArticleDetailPage() {
                     tooltip="Κοινοποίηση άρθρου"
                     onClick={handleShare}
                   />
-                  <TooltipIconButton
-                    icon={isBookmarked ? BookmarkIconSolid : BookmarkIcon}
-                    tooltip={isBookmarked ? 'Αφαίρεση από τα σελιδοδείκτες' : 'Αποθήκευση'}
-                    onClick={handleBookmark}
-                    disabled={bookmarkLoading}
-                    variant={isBookmarked ? 'primary' : 'default'}
-                  />
+                  <div className="flex items-center gap-1">
+                    <TooltipIconButton
+                      icon={isBookmarked ? BookmarkIconSolid : BookmarkIcon}
+                      tooltip={isBookmarked ? 'Αφαίρεση από τα σελιδοδείκτες' : 'Αποθήκευση'}
+                      onClick={handleBookmark}
+                      disabled={bookmarkLoading}
+                      variant={isBookmarked ? 'primary' : 'default'}
+                    />
+                    {bookmarkCount > 0 && (
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                        {bookmarkCount}
+                      </span>
+                    )}
+                  </div>
                   <TooltipIconButton
                     icon={PrinterIcon}
                     tooltip="Εκτύπωση"

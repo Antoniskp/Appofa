@@ -38,6 +38,7 @@ export default function PollDetailPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
 
   const pollId = params.id;
 
@@ -96,6 +97,9 @@ export default function PollDetailPage() {
     bookmarkAPI.toggle('poll', poll.id)
       .then((response) => {
         setIsBookmarked(Boolean(response.data?.bookmarked));
+        setBookmarkCount((prev) => (
+          response.data?.bookmarked ? prev + 1 : Math.max(prev - 1, 0)
+        ));
         addToast(
           response.data?.bookmarked ? 'Poll bookmarked.' : 'Bookmark removed.',
           { type: 'success' }
@@ -153,6 +157,30 @@ export default function PollDetailPage() {
       isActive = false;
     };
   }, [user, poll?.id]);
+
+  useEffect(() => {
+    if (!poll?.id) {
+      setBookmarkCount(0);
+      return;
+    }
+
+    let isActive = true;
+    bookmarkAPI.getCount('poll', poll.id)
+      .then((response) => {
+        if (isActive) {
+          setBookmarkCount(response.data?.count || 0);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setBookmarkCount(0);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [poll?.id]);
 
   if (loading) {
     return (
@@ -233,6 +261,11 @@ export default function PollDetailPage() {
                   <BookmarkIcon className="h-4 w-4" />
                 )}
                 {isBookmarked ? 'Αποθηκευμένο' : 'Αποθήκευση'}
+                {bookmarkCount > 0 && (
+                  <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                    {bookmarkCount}
+                  </span>
+                )}
               </button>
               {canEdit && (
                 <Link
