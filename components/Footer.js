@@ -6,48 +6,84 @@ export default function Footer() {
   return (
     <footer className="bg-gray-800 text-white mt-auto">
       <div className="app-container py-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* Column 1: About */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Απόφαση</h3>
             <p className="text-gray-400 text-sm">
               Η αξιόπιστη πηγή σας για τις πιο πρόσφατες ειδήσεις και άρθρα. Απάντησε και κάνε τα αποτελέσματα εγκυρότερα.
             </p>
           </div>
+
+          {/* Column 2: Content */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">Γρήγοροι Σύνδεσμοι</h3>
+            <h3 className="text-lg font-semibold mb-4">Περιεχόμενο</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/instructions" className="text-gray-400 hover:text-white text-sm">
+                <Link href="/news" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Ειδήσεις
+                </Link>
+              </li>
+              <li>
+                <Link href="/articles" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Άρθρα
+                </Link>
+              </li>
+              <li>
+                <Link href="/polls" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Δημοσκοπήσεις
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Information */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Πληροφορίες</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/instructions" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Οδηγίες
                 </Link>
               </li>
               <li>
-                <Link href="/rules" className="text-gray-400 hover:text-white text-sm">
+                <Link href="/rules" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Κανόνες
                 </Link>
               </li>
               <li>
-                <Link href="/mission" className="text-gray-400 hover:text-white text-sm">
+                <Link href="/mission" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Αποστολή
                 </Link>
               </li>
               <li>
-                <Link href="/contribute" className="text-gray-400 hover:text-white text-sm">
+                <Link href="/contribute" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Συνεισφορά
                 </Link>
               </li>
             </ul>
           </div>
+
+          {/* Column 4: Contact */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Επικοινωνία</h3>
-            <p className="text-gray-400 text-sm">
-              <Link href="/contact" className="text-gray-400 hover:text-white">
-                Email: eimaiautospou@gmail.com
-              </Link>
-            </p>
-            <p className="text-gray-400 text-sm">
-              Τηλέφωνο: Προσεχώς
-            </p>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Επικοινωνία
+                </Link>
+              </li>
+              <li>
+                <a href="mailto:eimaiautospou@gmail.com" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Email: eimaiautospou@gmail.com
+                </a>
+              </li>
+              <li>
+                <span className="text-gray-400 text-sm">
+                  Τηλέφωνο: Προσεχώς
+                </span>
+              </li>
+            </ul>
           </div>
         </div>
         <div className="border-t border-gray-700 mt-4 pt-4 text-center">
