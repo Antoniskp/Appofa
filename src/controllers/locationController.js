@@ -709,12 +709,7 @@ exports.getLocationEntities = async (req, res) => {
       ]
     }) : [];
 
-    const usersCount = combinedUserIds.length > 0 ? await User.count({
-      where: {
-        id: combinedUserIds,
-        searchable: true
-      }
-    }) : 0;
+    const usersCount = combinedUserIds.length;
     const users = isAuthenticated && usersCount > 0 ? await User.findAll({
       where: {
         id: combinedUserIds,
