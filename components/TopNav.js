@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
+  BookmarkIcon,
   ChevronDownIcon,
   PencilSquareIcon,
   PlusCircleIcon,
@@ -62,6 +63,13 @@ export default function TopNav() {
       icon: <UserCircleIcon className="h-4 w-4" />,
       className: isActive('/profile')
     },
+    {
+      id: 'bookmarks',
+      label: 'Σελιδοδείκτες',
+      href: '/bookmarks',
+      icon: <BookmarkIcon className="h-4 w-4" />,
+      className: isActive('/bookmarks')
+    },
     ...(isAdmin ? [
       {
         id: 'admin',
@@ -112,6 +120,13 @@ export default function TopNav() {
       href: '/profile',
       icon: <UserCircleIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/profile')}`
+    },
+    {
+      id: 'bookmarks',
+      label: 'Σελιδοδείκτες',
+      href: '/bookmarks',
+      icon: <BookmarkIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/bookmarks')}`
     },
     ...(isAdmin ? [
       {

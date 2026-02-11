@@ -1,10 +1,11 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShareIcon, BookmarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
-import { articleAPI } from '@/lib/api';
+import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
+import { articleAPI, bookmarkAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
@@ -24,6 +25,8 @@ export default function ArticleDetailPage() {
   const { article, loading, error } = useFetchArticle(params.id);
   const { canEditArticle, canDeleteArticle } = usePermissions();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   const isNews = article?.type === 'news' || article?.isNews;
   const breadcrumbLabel = isNews ? 'News' : 'Articles';
@@ -54,8 +57,53 @@ export default function ArticleDetailPage() {
   };
 
   const handleBookmark = () => {
-    addToast('Bookmark feature coming soon!', { type: 'info' });
+    if (!user) {
+      addToast('Please log in to bookmark articles.', { type: 'info' });
+      return;
+    }
+
+    if (!article?.id || bookmarkLoading) return;
+
+    setBookmarkLoading(true);
+    bookmarkAPI.toggle('article', article.id)
+      .then((response) => {
+        setIsBookmarked(Boolean(response.data?.bookmarked));
+        addToast(
+          response.data?.bookmarked ? 'Article bookmarked.' : 'Bookmark removed.',
+          { type: 'success' }
+        );
+      })
+      .catch((err) => {
+        addToast(err.message || 'Failed to update bookmark.', { type: 'error' });
+      })
+      .finally(() => {
+        setBookmarkLoading(false);
+      });
   };
+
+  useEffect(() => {
+    if (!user || !article?.id) {
+      setIsBookmarked(false);
+      return;
+    }
+
+    let isActive = true;
+    bookmarkAPI.getStatus('article', article.id)
+      .then((response) => {
+        if (isActive) {
+          setIsBookmarked(Boolean(response.data?.bookmarked));
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsBookmarked(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [user, article?.id]);
 
   if (loading) {
     return (
@@ -161,9 +209,11 @@ export default function ArticleDetailPage() {
                     onClick={handleShare}
                   />
                   <TooltipIconButton
-                    icon={BookmarkIcon}
-                    tooltip="Αποθήκευση"
+                    icon={isBookmarked ? BookmarkIconSolid : BookmarkIcon}
+                    tooltip={isBookmarked ? 'Αφαίρεση από τα σελιδοδείκτες' : 'Αποθήκευση'}
                     onClick={handleBookmark}
+                    disabled={bookmarkLoading}
+                    variant={isBookmarked ? 'primary' : 'default'}
                   />
                   <TooltipIconButton
                     icon={PrinterIcon}

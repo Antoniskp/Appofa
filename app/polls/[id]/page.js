@@ -10,8 +10,10 @@ import {
   PencilSquareIcon,
   TrashIcon,
   ClockIcon,
+  BookmarkIcon,
 } from '@heroicons/react/24/outline';
-import { pollAPI } from '@/lib/api';
+import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
+import { pollAPI, bookmarkAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import PollVoting from '@/components/PollVoting';
@@ -20,18 +22,22 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import Badge from '@/components/Badge';
 import ConfirmDialog from '@/components/ConfirmDialog';
+import { useToast } from '@/components/ToastProvider';
 
 export default function PollDetailPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
   const { isAdmin } = usePermissions();
+  const { addToast } = useToast();
   
   const [poll, setPoll] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
 
   const pollId = params.id;
 
@@ -78,6 +84,31 @@ export default function PollDetailPage() {
     }
   };
 
+  const handleBookmark = () => {
+    if (!user) {
+      addToast('Please log in to bookmark polls.', { type: 'info' });
+      return;
+    }
+
+    if (!poll?.id || bookmarkLoading) return;
+
+    setBookmarkLoading(true);
+    bookmarkAPI.toggle('poll', poll.id)
+      .then((response) => {
+        setIsBookmarked(Boolean(response.data?.bookmarked));
+        addToast(
+          response.data?.bookmarked ? 'Poll bookmarked.' : 'Bookmark removed.',
+          { type: 'success' }
+        );
+      })
+      .catch((err) => {
+        addToast(err.message || 'Failed to update bookmark.', { type: 'error' });
+      })
+      .finally(() => {
+        setBookmarkLoading(false);
+      });
+  };
+
   // Check if user can view results
   const canViewResults = (poll) => {
     if (!poll) return false;
@@ -98,6 +129,30 @@ export default function PollDetailPage() {
   const canDelete = isCreator || isAdmin;
   const showResults = canViewResults(poll);
   const creatorLabel = poll?.hideCreator ? 'Ανώνυμος' : (poll?.creator?.username || 'Άγνωστος');
+
+  useEffect(() => {
+    if (!user || !poll?.id) {
+      setIsBookmarked(false);
+      return;
+    }
+
+    let isActive = true;
+    bookmarkAPI.getStatus('poll', poll.id)
+      .then((response) => {
+        if (isActive) {
+          setIsBookmarked(Boolean(response.data?.bookmarked));
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsBookmarked(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [user, poll?.id]);
 
   if (loading) {
     return (
@@ -161,8 +216,25 @@ export default function PollDetailPage() {
               )}
             </div>
             
-            {canEdit && (
-              <div className="flex gap-2 ml-4">
+            <div className="flex flex-wrap gap-2 ml-4">
+              <button
+                type="button"
+                onClick={handleBookmark}
+                disabled={bookmarkLoading}
+                className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-sm border ${
+                  isBookmarked
+                    ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+              >
+                {isBookmarked ? (
+                  <BookmarkIconSolid className="h-4 w-4" />
+                ) : (
+                  <BookmarkIcon className="h-4 w-4" />
+                )}
+                {isBookmarked ? 'Αποθηκευμένο' : 'Αποθήκευση'}
+              </button>
+              {canEdit && (
                 <Link
                   href={`/polls/${poll.id}/edit`}
                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
@@ -170,17 +242,17 @@ export default function PollDetailPage() {
                   <PencilSquareIcon className="h-4 w-4" />
                   Επεξεργασία
                 </Link>
-                {canDelete && (
-                  <button
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm"
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                    Διαγραφή
-                  </button>
-                )}
-              </div>
-            )}
+              )}
+              {canDelete && (
+                <button
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  Διαγραφή
+                </button>
+              )}
+            </div>
           </div>
           
           {/* Meta Information */}
