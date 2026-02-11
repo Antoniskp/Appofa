@@ -489,8 +489,8 @@ export default function LocationDetailPage() {
                     <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
                   )}
                   <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    {article.author && (
-                      <span>by {article.author.username}</span>
+                    {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
+                      <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
                     )}
                     {article.createdAt && (
                       <>
@@ -525,10 +525,10 @@ export default function LocationDetailPage() {
                     )}
                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                       <span>{article.type}</span>
-                      {article.author && (
+                      {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
                         <>
                           <span>•</span>
-                          <span>by {article.author.username}</span>
+                          <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
                         </>
                       )}
                     </div>
@@ -616,10 +616,10 @@ export default function LocationDetailPage() {
                     )}
                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                       <span className="capitalize">{poll.status}</span>
-                      {poll.creator && (
+                      {(poll.hideCreator ? 'Anonymous' : poll.creator?.username) && (
                         <>
                           <span>•</span>
-                          <span>by {poll.creator.username}</span>
+                          <span>by {poll.hideCreator ? 'Anonymous' : poll.creator?.username}</span>
                         </>
                       )}
                       {poll.createdAt && (

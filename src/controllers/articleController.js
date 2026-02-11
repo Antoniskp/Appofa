@@ -18,6 +18,24 @@ const CONTENT_MIN_LENGTH = 10;
 const CONTENT_MAX_LENGTH = 50000;
 const SUMMARY_MAX_LENGTH = 500;
 
+const shouldHideAuthor = (article, user) => {
+  if (!article?.hideAuthor) return false;
+  if (!user) return true;
+  if (user.role === 'admin' || user.id === article.authorId) return false;
+  return true;
+};
+
+const sanitizeArticle = (article, user) => {
+  const data = article?.toJSON ? article.toJSON() : article;
+  if (shouldHideAuthor(data, user)) {
+    return {
+      ...data,
+      author: null
+    };
+  }
+  return data;
+};
+
 // Helper functions using shared validators
 const normalizeStatus = (status) => normalizeEnum(status, ARTICLE_STATUSES, 'Status');
 const normalizeType = (type) => normalizeEnum(type, ARTICLE_TYPES, 'Article type');
@@ -28,7 +46,7 @@ const articleController = {
   // Create a new article
   createArticle: async (req, res) => {
     try {
-      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor } = req.body;
 
       const titleResult = normalizeRequiredText(title, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
       if (titleResult.error) {
@@ -102,6 +120,14 @@ const articleController = {
         });
       }
 
+      const hideAuthorResult = normalizeBoolean(hideAuthor, 'hideAuthor');
+      if (hideAuthorResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: hideAuthorResult.error
+        });
+      }
+
       // Determine article type - support both old isNews and new type field
       let articleType = typeResult.value || 'personal';
       if (isNewsResult.value && !typeResult.value) {
@@ -123,7 +149,8 @@ const articleController = {
         publishedAt: resolvedStatus === 'published' ? new Date() : null,
         type: articleType,
         isNews: articleType === 'news' || isNewsResult.value,
-        bannerImageUrl: resolvedBannerImageUrl
+        bannerImageUrl: resolvedBannerImageUrl,
+        hideAuthor: hideAuthorResult.value !== undefined ? hideAuthorResult.value : false
       });
 
       // Fetch article with author info
@@ -135,10 +162,12 @@ const articleController = {
         }]
       });
 
+      const responseArticle = sanitizeArticle(articleWithAuthor, req.user);
+
       res.status(201).json({
         success: true,
         message: 'Article created successfully.',
-        data: { article: articleWithAuthor }
+        data: { article: responseArticle }
       });
     } catch (error) {
       console.error('Create article error:', error);
@@ -243,11 +272,12 @@ const articleController = {
           );
           const count = filteredArticles.length;
           const paginatedArticles = filteredArticles.slice(offset, offset + parsedLimit);
+          const sanitizedArticles = paginatedArticles.map((article) => sanitizeArticle(article, req.user));
 
           return res.status(200).json({
             success: true,
             data: {
-              articles: paginatedArticles,
+              articles: sanitizedArticles,
               pagination: {
                 total: count,
                 page: parsedPage,
@@ -277,10 +307,12 @@ const articleController = {
         offset: parseInt(offset)
       });
 
+      const sanitizedArticles = articles.map((article) => sanitizeArticle(article, req.user));
+
       res.status(200).json({
         success: true,
         data: {
-          articles,
+          articles: sanitizedArticles,
           pagination: {
             total: count,
             page: parsedPage,
@@ -326,9 +358,11 @@ const articleController = {
         });
       }
 
+      const responseArticle = sanitizeArticle(article, req.user);
+
       res.status(200).json({
         success: true,
-        data: { article }
+        data: { article: responseArticle }
       });
     } catch (error) {
       console.error('Get article error:', error);
@@ -343,7 +377,7 @@ const articleController = {
   updateArticle: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor } = req.body;
 
       const article = await Article.findByPk(id);
 
@@ -442,6 +476,17 @@ const articleController = {
         article.bannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
       }
 
+      if (hideAuthor !== undefined) {
+        const hideAuthorResult = normalizeBoolean(hideAuthor, 'hideAuthor');
+        if (hideAuthorResult.error) {
+          return res.status(400).json({
+            success: false,
+            message: hideAuthorResult.error
+          });
+        }
+        article.hideAuthor = hideAuthorResult.value;
+      }
+
       const typeResult = normalizeType(type);
       if (typeResult.error) {
         return res.status(400).json({
@@ -493,10 +538,12 @@ const articleController = {
         }]
       });
 
+      const responseArticle = sanitizeArticle(updatedArticle, req.user);
+
       res.status(200).json({
         success: true,
         message: 'Article updated successfully.',
-        data: { article: updatedArticle }
+        data: { article: responseArticle }
       });
     } catch (error) {
       console.error('Update article error:', error);
@@ -587,10 +634,12 @@ const articleController = {
         ]
       });
 
+      const responseArticle = sanitizeArticle(updatedArticle, req.user);
+
       res.status(200).json({
         success: true,
         message: 'News approved and published successfully.',
-        data: { article: updatedArticle }
+        data: { article: responseArticle }
       });
     } catch (error) {
       console.error('Approve news error:', error);

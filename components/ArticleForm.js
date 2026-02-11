@@ -29,6 +29,7 @@ export default function ArticleForm({
     tags: '',
     status: 'draft',
     isNews: false,
+    hideAuthor: false,
   });
 
   const [linkedLocations, setLinkedLocations] = useState([]);
@@ -48,6 +49,7 @@ export default function ArticleForm({
         tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
         status: article.status || 'draft',
         isNews: Boolean(article.isNews),
+        hideAuthor: Boolean(article.hideAuthor),
       });
 
       // Load linked locations only when article.id exists (edit mode)
@@ -245,6 +247,17 @@ export default function ArticleForm({
             { value: 'archived', label: 'Archived' }
           ]}
         />
+      </div>
+
+      <div className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          name="hideAuthor"
+          checked={formData.hideAuthor}
+          onChange={handleInputChange}
+          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+        />
+        <span className="text-sm text-gray-700">Hide author name on this article</span>
       </div>
 
       {/* Locations Section - Only show in edit mode when article.id exists */}

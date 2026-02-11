@@ -20,6 +20,24 @@ const DESCRIPTION_MAX_LENGTH = 2000;
 const OPTION_TEXT_MIN_LENGTH = 1;
 const OPTION_TEXT_MAX_LENGTH = 500;
 
+const shouldHideCreator = (poll, user) => {
+  if (!poll?.hideCreator) return false;
+  if (!user) return true;
+  if (user.role === 'admin' || user.id === poll.creatorId) return false;
+  return true;
+};
+
+const sanitizePoll = (poll, user) => {
+  const data = poll?.toJSON ? poll.toJSON() : poll;
+  if (shouldHideCreator(data, user)) {
+    return {
+      ...data,
+      creator: null
+    };
+  }
+  return data;
+};
+
 // Helper to get client IP address
 const getClientIp = (req) => {
   return req.ip || req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress;
@@ -47,7 +65,8 @@ const pollController = {
         resultsVisibility,
         deadline,
         locationId,
-        options
+        options,
+        hideCreator
       } = req.body;
 
       // Validate title
@@ -173,6 +192,15 @@ const pollController = {
         });
       }
 
+      const hideCreatorResult = normalizeBoolean(hideCreator, 'hideCreator');
+      if (hideCreatorResult.error) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: hideCreatorResult.error
+        });
+      }
+
       // Validate options
       // If user contributions are allowed, poll can be created with 0 options
       const minOptionsRequired = allowUserContributionsResult.value ? 0 : 2;
@@ -202,7 +230,8 @@ const pollController = {
         deadline: deadlineValue,
         locationId: locationIdValue,
         creatorId: req.user.id,
-        status: 'active'
+        status: 'active',
+        hideCreator: hideCreatorResult.value !== undefined ? hideCreatorResult.value : false
       }, { transaction });
 
       // Create options
@@ -289,10 +318,12 @@ const pollController = {
         ]
       });
 
+      const responsePoll = sanitizePoll(createdPoll, req.user);
+
       return res.status(201).json({
         success: true,
         message: 'Poll created successfully.',
-        data: createdPoll
+        data: responsePoll
       });
     } catch (error) {
       await transaction.rollback();
@@ -432,6 +463,9 @@ const pollController = {
           votes: undefined
         }));
         pollData.totalVotes = pollData.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+        if (shouldHideCreator(pollData, req.user)) {
+          pollData.creator = null;
+        }
         return pollData;
       });
 
@@ -521,6 +555,10 @@ const pollController = {
       pollData.totalVotes = pollData.options.reduce((sum, opt) => sum + opt.voteCount, 0);
       pollData.totalAuthenticatedVotes = pollData.options.reduce((sum, opt) => sum + opt.authenticatedVotes, 0);
 
+      const responsePoll = shouldHideCreator(pollData, req.user)
+        ? { ...pollData, creator: null }
+        : pollData;
+
       // Check if user has voted
       if (req.user) {
         const userVote = await PollVote.findOne({
@@ -536,7 +574,7 @@ const pollController = {
 
       return res.status(200).json({
         success: true,
-        data: pollData
+        data: responsePoll
       });
     } catch (error) {
       console.error('Error fetching poll:', error);
@@ -554,7 +592,7 @@ const pollController = {
     
     try {
       const { id } = req.params;
-      const { title, description, category, deadline, status, locationId } = req.body;
+      const { title, description, category, deadline, status, locationId, hideCreator } = req.body;
 
       const poll = await Poll.findByPk(id, {
         include: [
@@ -679,6 +717,18 @@ const pollController = {
         }
       }
 
+      if (hideCreator !== undefined) {
+        const hideCreatorResult = normalizeBoolean(hideCreator, 'hideCreator');
+        if (hideCreatorResult.error) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: hideCreatorResult.error
+          });
+        }
+        updateData.hideCreator = hideCreatorResult.value;
+      }
+
       // Update the poll
       await poll.update(updateData, { transaction });
 
@@ -721,10 +771,12 @@ const pollController = {
         order: [[{ model: PollOption, as: 'options' }, 'order', 'ASC']]
       });
 
+      const responsePoll = sanitizePoll(updatedPoll, req.user);
+
       return res.status(200).json({
         success: true,
         message: 'Poll updated successfully.',
-        data: updatedPoll
+        data: responsePoll
       });
     } catch (error) {
       // Safely rollback transaction if it hasn't been committed
@@ -1163,6 +1215,8 @@ const pollController = {
       const totalAuthenticatedVotes = pollData.options.reduce((sum, opt) => sum + opt.authenticatedVotes, 0);
       const totalUnauthenticatedVotes = pollData.options.reduce((sum, opt) => sum + opt.unauthenticatedVotes, 0);
 
+      const responseCreator = shouldHideCreator(poll, req.user) ? null : poll.creator;
+
       return res.status(200).json({
         success: true,
         data: {
@@ -1173,7 +1227,7 @@ const pollController = {
             type: poll.type,
             status: poll.status,
             deadline: poll.deadline,
-            creator: poll.creator
+            creator: responseCreator
           },
           results: {
             options: pollData.options,

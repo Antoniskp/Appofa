@@ -97,6 +97,7 @@ export default function PollDetailPage() {
   const canEdit = isCreator || isAdmin;
   const canDelete = isCreator || isAdmin;
   const showResults = canViewResults(poll);
+  const creatorLabel = poll?.hideCreator ? 'Ανώνυμος' : (poll?.creator?.username || 'Άγνωστος');
 
   if (loading) {
     return (
@@ -187,7 +188,7 @@ export default function PollDetailPage() {
             <div className="flex items-center gap-2">
               <UserIcon className="h-4 w-4" />
               <span>
-                Δημιουργός: <strong>{poll.creator?.username || 'Άγνωστος'}</strong>
+                Δημιουργός: <strong>{creatorLabel}</strong>
               </span>
             </div>
             

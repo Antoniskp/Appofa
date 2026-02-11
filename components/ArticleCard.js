@@ -13,6 +13,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const createdAt = new Date(article.createdAt);
   const formattedDate = createdAt.toLocaleDateString();
   const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
   
   // List variant (image on left)
   if (variant === 'list') {
@@ -50,7 +51,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             
             {/* Meta */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-              <span>By {article.author?.username || 'Unknown'}</span>
+              <span>By {authorLabel}</span>
               <span>•</span>
               <span>{formattedDate} {formattedTime}</span>
               {article.status !== 'published' && (
@@ -93,7 +94,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         {article.summary || (article.content ? `${article.content.substring(0, 150)}...` : '')}
       </p>
       <div className="flex justify-between items-center text-sm text-gray-500">
-        <span>By {article.author?.username || 'Unknown'}</span>
+        <span>By {authorLabel}</span>
         <span>{formattedDate} {formattedTime}</span>
       </div>
     </ImageTopCard>

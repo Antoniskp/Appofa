@@ -257,7 +257,7 @@ function AdminDashboardContent() {
               {
                 key: 'author',
                 header: 'Author',
-                render: (article) => article.author?.username || 'Unknown'
+                render: (article) => (article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown'))
               },
               {
                 key: 'status',

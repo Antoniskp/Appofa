@@ -660,6 +660,7 @@ exports.getEntityLocations = async (req, res) => {
 exports.getLocationEntities = async (req, res) => {
   try {
     const isAuthenticated = !!req.user;
+    const isAdmin = req.user?.role === 'admin';
     const { id } = req.params;
     const { entity_type } = req.query;
 
@@ -699,7 +700,7 @@ exports.getLocationEntities = async (req, res) => {
     // Fetch all articles and users in batch queries
     const articles = articleIds.length > 0 ? await Article.findAll({
       where: { id: articleIds },
-      attributes: ['id', 'title', 'summary', 'status', 'type', 'createdAt'],
+      attributes: ['id', 'title', 'summary', 'status', 'type', 'createdAt', 'authorId', 'hideAuthor'],
       include: [
         {
           model: User,
@@ -720,7 +721,7 @@ exports.getLocationEntities = async (req, res) => {
 
     const polls = pollIds.length > 0 ? await Poll.findAll({
       where: { id: pollIds },
-      attributes: ['id', 'title', 'description', 'status', 'visibility', 'createdAt'],
+      attributes: ['id', 'title', 'description', 'status', 'visibility', 'createdAt', 'creatorId', 'hideCreator'],
       include: [
         {
           model: User,
@@ -730,12 +731,28 @@ exports.getLocationEntities = async (req, res) => {
       ]
     }) : [];
 
+    const articlesWithVisibility = articles.map((article) => {
+      const data = article.toJSON();
+      if (data.hideAuthor && (!req.user || (!isAdmin && req.user.id !== data.authorId))) {
+        data.author = null;
+      }
+      return data;
+    });
+
+    const pollsWithVisibility = polls.map((poll) => {
+      const data = poll.toJSON();
+      if (data.hideCreator && (!req.user || (!isAdmin && req.user.id !== data.creatorId))) {
+        data.creator = null;
+      }
+      return data;
+    });
+
     res.json({
       success: true,
-      articles,
+      articles: articlesWithVisibility,
       users,
       usersCount,
-      polls
+      polls: pollsWithVisibility
     });
   } catch (error) {
     console.error('Error fetching location entities:', error);

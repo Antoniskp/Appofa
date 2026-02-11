@@ -73,6 +73,11 @@ const Poll = sequelize.define('Poll', {
     type: DataTypes.ENUM('active', 'closed', 'archived'),
     defaultValue: 'active',
     allowNull: false
+  },
+  hideCreator: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 }, {
   timestamps: true,

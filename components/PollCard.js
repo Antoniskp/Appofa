@@ -23,6 +23,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const createdAt = new Date(poll.createdAt);
   const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
+  const creatorLabel = poll.hideCreator ? 'Ανώνυμος' : (poll.creator?.username || 'Άγνωστος');
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const totalVotes = poll.totalVotes || 0;
@@ -220,9 +221,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
           <ChartBarIcon className="h-4 w-4 inline mr-1" />
           {totalVotes} {totalVotes === 1 ? 'ψήφος' : 'ψήφοι'}
         </span>
-        <span>
-          {poll.creator?.username || 'Άγνωστος'}
-        </span>
+        <span>{creatorLabel}</span>
       </div>
       
       <div className="mt-3 text-xs text-gray-400">

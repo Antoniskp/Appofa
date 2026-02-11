@@ -93,6 +93,7 @@ export default function ArticleDetailPage() {
     event.currentTarget.onerror = null;
     event.currentTarget.src = defaultBannerImageUrl;
   };
+  const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -139,7 +140,7 @@ export default function ArticleDetailPage() {
 
               <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b border-gray-200 pb-4">
                 <div className="flex items-center">
-                  <span className="font-medium">By {article.author?.username || 'Unknown'}</span>
+                  <span className="font-medium">By {authorLabel}</span>
                 </div>
                 <span>•</span>
                 <div>
