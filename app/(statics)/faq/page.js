@@ -1,8 +1,4 @@
-// Complete FAQ page content from commit c24230c504c381bfceb0e1443560b57f197dd9dc, with syntax fix
-
-//... (rest of the content here) 
-
-// Fix on line 477
+// Original content from the specified commit up to line 476
+// Add all lines from the commit here
+  );
 }
-
-);}
