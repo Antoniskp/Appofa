@@ -135,7 +135,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   return (
     <div className="space-y-4">
       {error && <AlertMessage message={error} />}
-      {success && <AlertMessage message={success} type="success" />}
+      {success && <AlertMessage message={success} tone="success" />}
       
       {/* Show message and add option UI if poll allows user contributions */}
       {poll.allowUserContributions && poll.options.length === 0 && (
