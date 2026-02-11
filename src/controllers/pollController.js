@@ -157,7 +157,7 @@ const pollController = {
           await transaction.rollback();
           return res.status(400).json({
             success: false,
-            message: locationIdResult.error
+            message: `${locationIdResult.error} Please select a valid location from the dropdown.`
           });
         }
         locationIdValue = locationIdResult.value;
@@ -168,7 +168,7 @@ const pollController = {
           await transaction.rollback();
           return res.status(404).json({
             success: false,
-            message: 'Location not found.'
+            message: 'Location not found. Please select a valid location from the dropdown.'
           });
         }
       }
@@ -701,7 +701,7 @@ const pollController = {
             await transaction.rollback();
             return res.status(400).json({
               success: false,
-              message: locationIdResult.error
+              message: `${locationIdResult.error} Please select a valid location from the dropdown.`
             });
           }
           // Verify location exists
@@ -710,7 +710,7 @@ const pollController = {
             await transaction.rollback();
             return res.status(404).json({
               success: false,
-              message: 'Location not found.'
+              message: 'Location not found. Please select a valid location from the dropdown.'
             });
           }
           updateData.locationId = locationIdResult.value;
