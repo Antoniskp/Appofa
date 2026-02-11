@@ -12,6 +12,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const pollRoutes = require('./routes/pollRoutes');
 const bookmarkRoutes = require('./routes/bookmarkRoutes');
+const messageRoutes = require('./routes/messageRoutes');
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/locations', locationRoutes);
 app.use('/api/polls', pollRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/messages', messageRoutes);
 
 // 404 handler
 app.use((req, res) => {
