@@ -52,20 +52,20 @@ export default function HomeHero() {
       </div>
 
       {/* Main Content */}
-      <div className="relative app-container py-4 md:py-6">
+      <div className="relative app-container py-2 md:py-3">
         {/* Header Section */}
-        <div className="text-center mb-6 animate-fade-in">
+        <div className="text-center mb-3 animate-fade-in">
           {!authLoading && user && (
             <p className="text-lg md:text-xl mb-2 text-cyan-100">
               Καλώς ήρθες, {user.firstName || user.username}!
             </p>
           )}
           
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold mb-2 leading-tight">
             Η Πλατφόρμα της Τοπικής Κοινότητας
           </h1>
           
-          <p className="text-xl md:text-2xl mb-4 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl md:text-2xl mb-2 max-w-3xl mx-auto leading-relaxed">
             Ενημέρωση • Εκπαίδευση • Δημοκρατική Συμμετοχή
           </p>
           
@@ -76,41 +76,41 @@ export default function HomeHero() {
 
         {/* Community Stats */}
         {!loadingStats && stats && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition">
-              <MapPinIcon className="w-10 h-10 mx-auto mb-3 text-cyan-200" />
-              <div className="text-3xl font-bold mb-1">{stats.totalLocations}</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-3 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/20 hover:bg-white/20 transition">
+              <MapPinIcon className="w-6 h-6 mx-auto mb-1 text-cyan-200" />
+              <div className="text-xl font-bold mb-1">{stats.totalLocations}</div>
               <div className="text-sm text-cyan-100">Καταχωρημένες Περιοχές</div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition">
-              <UserGroupIcon className="w-10 h-10 mx-auto mb-3 text-cyan-200" />
-              <div className="text-3xl font-bold mb-1">{stats.activeUsers}</div>
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/20 hover:bg-white/20 transition">
+              <UserGroupIcon className="w-6 h-6 mx-auto mb-1 text-cyan-200" />
+              <div className="text-xl font-bold mb-1">{stats.activeUsers}</div>
               <div className="text-sm text-cyan-100">Ενεργοί Χρήστες</div>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 text-center border border-white/20 hover:bg-white/20 transition">
-              <ChartBarIcon className="w-10 h-10 mx-auto mb-3 text-cyan-200" />
-              <div className="text-3xl font-bold mb-1">{stats.areasNeedingModerators}</div>
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 text-center border border-white/20 hover:bg-white/20 transition">
+              <ChartBarIcon className="w-6 h-6 mx-auto mb-1 text-cyan-200" />
+              <div className="text-xl font-bold mb-1">{stats.areasNeedingModerators}</div>
               <div className="text-sm text-cyan-100">Περιοχές Χρειάζονται Συντονιστές</div>
             </div>
           </div>
         )}
 
         {/* Call-to-Action Buttons */}
-        <div className="flex flex-wrap gap-4 justify-center mb-8 animate-fade-in" style={{ animationDelay: '0.3s' }}>
+        <div className="flex flex-wrap gap-4 justify-center mb-3 animate-fade-in" style={{ animationDelay: '0.3s' }}>
           {!authLoading && !user && (
             <>
               <Link 
                 href="/register" 
-                className="inline-flex items-center gap-2 bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-cyan-50 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+                className="inline-flex items-center gap-2 bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-cyan-50 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1"
               >
                 Εγγραφή
                 <ArrowRightIcon className="w-5 h-5" />
               </Link>
               <Link 
                 href="/login" 
-                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 transition border border-white/30"
+                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-4 py-2 rounded-lg font-semibold hover:bg-white/20 transition border border-white/30"
               >
                 Σύνδεση
               </Link>
@@ -119,7 +119,7 @@ export default function HomeHero() {
           
           <Link 
             href="/locations" 
-            className="inline-flex items-center gap-2 bg-amber-500 text-white px-8 py-4 rounded-lg font-semibold hover:bg-amber-600 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+            className="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition shadow-lg hover:shadow-xl transform hover:-translate-y-1"
           >
             <MapPinIcon className="w-5 h-5" />
             Βρες την Περιοχή σου
@@ -127,7 +127,7 @@ export default function HomeHero() {
           
           <Link 
             href="/articles" 
-            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 transition border border-white/30"
+            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-4 py-2 rounded-lg font-semibold hover:bg-white/20 transition border border-white/30"
           >
             <NewspaperIcon className="w-5 h-5" />
             Περιήγηση Άρθρων
@@ -135,7 +135,7 @@ export default function HomeHero() {
           
           <Link 
             href="/polls" 
-            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-8 py-4 rounded-lg font-semibold hover:bg-white/20 transition border border-white/30"
+            className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-4 py-2 rounded-lg font-semibold hover:bg-white/20 transition border border-white/30"
           >
             <ChartBarIcon className="w-5 h-5" />
             Δες Ψηφοφορίες
@@ -143,49 +143,49 @@ export default function HomeHero() {
         </div>
 
         {/* Moderator Recruitment Section */}
-        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-8 md:p-12 mb-6 shadow-2xl animate-fade-in border-2 border-amber-300" style={{ animationDelay: '0.4s' }}>
+        <div className="bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl p-4 md:p-6 mb-3 shadow-2xl animate-fade-in border-2 border-amber-300" style={{ animationDelay: '0.4s' }}>
           <div className="max-w-4xl mx-auto text-center">
             <div className="bg-white/20 backdrop-blur-sm inline-block px-4 py-2 rounded-full text-sm font-semibold mb-4">
               🎯 Ευκαιρία Συμμετοχής
             </div>
             
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold mb-2">
               Γίνε Συντονιστής της Περιοχής σου!
             </h2>
             
-            <p className="text-lg md:text-xl mb-6 text-amber-50">
+            <p className="text-lg md:text-xl mb-3 text-amber-50">
               Βοήθησε να οργανώσουμε και να διαχειριστούμε το τοπικό περιεχόμενο της κοινότητάς σου
             </p>
 
-            <div className="grid md:grid-cols-3 gap-6 mb-8 text-left">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <DocumentTextIcon className="w-8 h-8 mb-2 text-amber-100" />
+            <div className="grid md:grid-cols-3 gap-3 mb-4 text-left">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+                <DocumentTextIcon className="w-5 h-5 mb-1 text-amber-100" />
                 <h3 className="font-semibold mb-2">Διαχείριση Περιεχομένου</h3>
                 <p className="text-sm text-amber-50">Έγκριση άρθρων και ψηφοφοριών για την περιοχή σου</p>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <MapPinIcon className="w-8 h-8 mb-2 text-amber-100" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+                <MapPinIcon className="w-5 h-5 mb-1 text-amber-100" />
                 <h3 className="font-semibold mb-2">Δημιουργία Τοποθεσιών</h3>
                 <p className="text-sm text-amber-50">Προσθήκη νέων περιοχών στην πλατφόρμα</p>
               </div>
               
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-                <UserGroupIcon className="w-8 h-8 mb-2 text-amber-100" />
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+                <UserGroupIcon className="w-5 h-5 mb-1 text-amber-100" />
                 <h3 className="font-semibold mb-2">Συντονισμός Κοινότητας</h3>
                 <p className="text-sm text-amber-50">Οργάνωση και υποστήριξη της τοπικής κοινότητας</p>
               </div>
             </div>
 
             {stats && stats.areasNeedingModerators > 0 && (
-              <p className="text-base mb-6 font-semibold bg-white/20 backdrop-blur-sm inline-block px-6 py-3 rounded-lg">
+              <p className="text-base mb-3 font-semibold bg-white/20 backdrop-blur-sm inline-block px-6 py-3 rounded-lg">
                 ⚡ {stats.areasNeedingModerators} περιοχές χρειάζονται συντονιστές τώρα!
               </p>
             )}
 
             <Link 
               href="/become-moderator" 
-              className="inline-flex items-center gap-2 bg-white text-orange-600 px-10 py-4 rounded-lg font-bold text-lg hover:bg-amber-50 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
+              className="inline-flex items-center gap-2 bg-white text-orange-600 px-6 py-2 rounded-lg font-bold text-lg hover:bg-amber-50 transition shadow-xl hover:shadow-2xl transform hover:-translate-y-1"
             >
               Υποβολή Αίτησης
               <ArrowRightIcon className="w-6 h-6" />
@@ -194,26 +194,26 @@ export default function HomeHero() {
         </div>
 
         {/* Feature Cards - Three Pillars */}
-        <div className="grid md:grid-cols-3 gap-8 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 hover:bg-white/15 transition transform hover:-translate-y-2 hover:shadow-2xl">
-            <NewspaperIcon className="w-12 h-12 mb-4 text-cyan-200" />
-            <h3 className="text-2xl font-bold mb-3">📰 Ενημέρωση</h3>
+        <div className="grid md:grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/15 transition transform hover:-translate-y-2 hover:shadow-2xl">
+            <NewspaperIcon className="w-8 h-8 mb-2 text-cyan-200" />
+            <h3 className="text-2xl font-bold mb-1">📰 Ενημέρωση</h3>
             <p className="text-cyan-50">
               Νέα και άρθρα από την τοπική σου κοινότητα. Μείνε ενημερωμένος για τα σημαντικά γεγονότα της περιοχής σου.
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 hover:bg-white/15 transition transform hover:-translate-y-2 hover:shadow-2xl">
-            <AcademicCapIcon className="w-12 h-12 mb-4 text-cyan-200" />
-            <h3 className="text-2xl font-bold mb-3">🎓 Εκπαίδευση</h3>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/15 transition transform hover:-translate-y-2 hover:shadow-2xl">
+            <AcademicCapIcon className="w-8 h-8 mb-2 text-cyan-200" />
+            <h3 className="text-2xl font-bold mb-1">🎓 Εκπαίδευση</h3>
             <p className="text-cyan-50">
               Εκπαιδευτικό υλικό και πόροι για να μάθεις περισσότερα για την κοινότητα, την ιστορία και τον πολιτισμό της.
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 hover:bg-white/15 transition transform hover:-translate-y-2 hover:shadow-2xl">
-            <ChartBarIcon className="w-12 h-12 mb-4 text-cyan-200" />
-            <h3 className="text-2xl font-bold mb-3">🗳️ Δημοκρατική Συμμετοχή</h3>
+          <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 border border-white/20 hover:bg-white/15 transition transform hover:-translate-y-2 hover:shadow-2xl">
+            <ChartBarIcon className="w-8 h-8 mb-2 text-cyan-200" />
+            <h3 className="text-2xl font-bold mb-1">🗳️ Δημοκρατική Συμμετοχή</h3>
             <p className="text-cyan-50">
               Συμμετέχε σε ψηφοφορίες και εκφράζε τη γνώμη σου για θέματα που αφορούν την τοπική κοινότητα.
             </p>
