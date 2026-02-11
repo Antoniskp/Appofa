@@ -34,6 +34,7 @@ export default function ArticleForm({
 
   const [linkedLocations, setLinkedLocations] = useState([]);
   const [newLocationId, setNewLocationId] = useState(null);
+  const [newLocation, setNewLocation] = useState(null);
   const [locationError, setLocationError] = useState('');
 
   // Initialize form data from article prop (edit mode)
@@ -70,6 +71,27 @@ export default function ArticleForm({
     }
   };
 
+  // Fetch location details when newLocationId changes
+  useEffect(() => {
+    const fetchLocationDetails = async () => {
+      if (newLocationId) {
+        try {
+          const response = await locationAPI.getById(newLocationId);
+          if (response.success) {
+            setNewLocation(response.location);
+          }
+        } catch (err) {
+          console.error('Failed to load location details:', err);
+          setNewLocation(null);
+        }
+      } else {
+        setNewLocation(null);
+      }
+    };
+    
+    fetchLocationDetails();
+  }, [newLocationId]);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -89,7 +111,8 @@ export default function ArticleForm({
   };
 
   const handleAddLocation = async () => {
-    if (!newLocationId || newLocationId === 'international' || !article?.id) return;
+    // Block adding international locations to articles
+    if (!newLocationId || newLocation?.type === 'international' || !article?.id) return;
 
     try {
       const response = await locationAPI.link('article', article.id, newLocationId);
@@ -310,7 +333,7 @@ export default function ArticleForm({
             <button
               type="button"
               onClick={handleAddLocation}
-              disabled={!newLocationId || newLocationId === 'international'}
+              disabled={!newLocationId || newLocation?.type === 'international'}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
               Add
