@@ -13,6 +13,10 @@ import SearchInput from '@/components/SearchInput';
 const LOCATION_TYPE_ORDER = ['international', 'country', 'prefecture', 'municipality'];
 const DEBOUNCE_DELAY = 300;
 
+// TODO: Replace with actual API data when moderator assignment feature is implemented
+// This is a placeholder for demo purposes - simulates that approximately 67% of locations need moderators
+const DEMO_MODERATOR_NEED_RATIO = 3; // Every 3rd location has a moderator (i.e., 67% need moderators)
+
 export default function LocationsPage() {
   const router = useRouter();
   
@@ -326,10 +330,9 @@ export default function LocationsPage() {
   };
 
   // Simulate moderator status - in a real app, this would come from the API
+  // TODO: Replace with actual moderator assignment data from API response
   const needsModerator = (location) => {
-    // For demo purposes, about 70% of locations need moderators
-    // In production, this should be a field from the API response
-    return location.id % 3 !== 0;
+    return location.id % DEMO_MODERATOR_NEED_RATIO !== 0;
   };
 
   const hasActiveFilters = selectedCountry || selectedPrefecture || selectedMunicipality || showNeedsModerators;

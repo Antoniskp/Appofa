@@ -22,9 +22,10 @@ exports.getCommunityStats = async (req, res) => {
     const activeUsers = activeUsersQuery[0]?.count || 0;
 
     // Count locations that need moderators
-    // For now, we'll count all locations as potentially needing moderators
-    // This can be enhanced based on actual moderator assignments in the future
-    const areasNeedingModerators = Math.max(0, totalLocations - Math.floor(totalLocations * 0.3));
+    // TODO: This should be based on actual moderator assignments once that feature is implemented
+    // Current estimate: 70% of locations need moderators (conservative estimate)
+    const MODERATOR_COVERAGE_RATIO = 0.3; // 30% of locations currently have moderators
+    const areasNeedingModerators = Math.max(0, totalLocations - Math.floor(totalLocations * MODERATOR_COVERAGE_RATIO));
 
     // Get total articles and polls count for additional stats
     const totalArticles = await Article.count();
