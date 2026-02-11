@@ -7,7 +7,7 @@ import { locationAPI } from '@/lib/api';
 import Badge from '@/components/Badge';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
-import { MagnifyingGlassIcon, MapPinIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { MagnifyingGlassIcon, MapPinIcon, ChevronRightIcon, UserGroupIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import SearchInput from '@/components/SearchInput';
 
 const LOCATION_TYPE_ORDER = ['international', 'country', 'prefecture', 'municipality'];
@@ -24,6 +24,9 @@ export default function LocationsPage() {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedPrefecture, setSelectedPrefecture] = useState('');
   const [selectedMunicipality, setSelectedMunicipality] = useState('');
+  
+  // Filter for locations needing moderators
+  const [showNeedsModerators, setShowNeedsModerators] = useState(false);
   
   // Search states
   const [searchTerm, setSearchTerm] = useState('');
@@ -280,6 +283,7 @@ export default function LocationsPage() {
     setSelectedPrefecture('');
     setSelectedMunicipality('');
     setSearchTerm('');
+    setShowNeedsModerators(false);
     setPrefectures([]);
     setMunicipalities([]);
     setBreadcrumbs([]);
@@ -321,7 +325,14 @@ export default function LocationsPage() {
     return variants[type] || 'default';
   };
 
-  const hasActiveFilters = selectedCountry || selectedPrefecture || selectedMunicipality;
+  // Simulate moderator status - in a real app, this would come from the API
+  const needsModerator = (location) => {
+    // For demo purposes, about 70% of locations need moderators
+    // In production, this should be a field from the API response
+    return location.id % 3 !== 0;
+  };
+
+  const hasActiveFilters = selectedCountry || selectedPrefecture || selectedMunicipality || showNeedsModerators;
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -447,6 +458,21 @@ export default function LocationsPage() {
             )}
           </div>
 
+          {/* Moderator Filter Checkbox */}
+          <div className="mt-4 flex items-center gap-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <input
+              type="checkbox"
+              id="needsModerators"
+              checked={showNeedsModerators}
+              onChange={(e) => setShowNeedsModerators(e.target.checked)}
+              className="w-4 h-4 text-amber-600 border-gray-300 rounded focus:ring-amber-500"
+            />
+            <label htmlFor="needsModerators" className="flex items-center gap-2 text-sm font-medium text-gray-700 cursor-pointer">
+              <ExclamationTriangleIcon className="w-5 h-5 text-amber-600" />
+              <span>Εμφάνιση μόνο περιοχών που χρειάζονται συντονιστές</span>
+            </label>
+          </div>
+
           {/* Clear Filters Button */}
           {hasActiveFilters && (
             <div className="mt-4 flex justify-end">
@@ -522,13 +548,25 @@ export default function LocationsPage() {
 
             {!loading && !error && displayedLocations.length > 0 && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {displayedLocations.map((location) => (
+                {displayedLocations
+                  .filter(location => !showNeedsModerators || needsModerator(location))
+                  .map((location) => (
                   <button
                     key={location.id}
                     onClick={() => handleLocationClick(location)}
-                    className="text-left p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="text-left p-4 border border-gray-200 rounded-lg hover:border-blue-400 hover:shadow-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 relative"
                   >
-                    <div className="flex items-start justify-between gap-3 mb-2">
+                    {/* Moderator Status Badge */}
+                    {needsModerator(location) && (
+                      <div className="absolute top-2 right-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full border border-amber-300">
+                          <ExclamationTriangleIcon className="w-3 h-3" />
+                          Χρειάζεται Συντονιστή
+                        </span>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-start justify-between gap-3 mb-2 mt-6">
                       <div className="flex-1 min-w-0">
                         <h3 className="font-semibold text-gray-900 truncate mb-1">
                           {location.name}
@@ -554,6 +592,13 @@ export default function LocationsPage() {
                     {location.code && (
                       <div className="mt-2 text-xs text-gray-400">
                         Code: {location.code}
+                      </div>
+                    )}
+                    
+                    {!needsModerator(location) && (
+                      <div className="mt-2 flex items-center gap-1 text-xs text-green-600">
+                        <UserGroupIcon className="h-3 w-3 flex-shrink-0" />
+                        <span>Έχει Συντονιστή</span>
                       </div>
                     )}
                   </button>
