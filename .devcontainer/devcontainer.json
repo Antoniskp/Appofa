@@ -23,9 +23,7 @@
     "JWT_SECRET": "dev-secret-key"
   },
 
-  "postCreateCommand": "npm install && cp .env.example .env",
-  
-  "postStartCommand": "npm run migrate && npm run seed",
+  "postCreateCommand": "npm install && cp .env.example .env && npm run migrate && npm run seed",
 
   "forwardPorts": [3000, 3001, 5432],
 
