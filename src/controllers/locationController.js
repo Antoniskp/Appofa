@@ -1,5 +1,5 @@
 const { Location, LocationLink, Article, User, Poll } = require('../models');
-const { Op } = require('sequelize');
+const { Op, fn, col, where } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 
 // Helper function to generate slug from name
@@ -46,9 +46,10 @@ const getDescendantLocationIds = async (rootId) => {
 exports.createLocation = async (req, res) => {
   try {
     const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = req.body;
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
 
     // Validation
-    if (!name || !type) {
+    if (!normalizedName || !type) {
       return res.status(400).json({
         success: false,
         message: 'Name and type are required'
@@ -72,7 +73,7 @@ exports.createLocation = async (req, res) => {
     }
 
     // Generate slug
-    const baseSlug = generateSlug(name, type);
+    const baseSlug = generateSlug(normalizedName, type);
     let slug = baseSlug;
     let counter = 1;
 
@@ -85,9 +86,11 @@ exports.createLocation = async (req, res) => {
     // Check for duplicate based on name, type, and parent
     const existing = await Location.findOne({
       where: {
-        name,
         type,
-        parent_id: parent_id || null
+        parent_id: parent_id || null,
+        [Op.and]: [
+          where(fn('LOWER', fn('TRIM', col('name'))), normalizedName.toLowerCase())
+        ]
       }
     });
 
@@ -122,7 +125,7 @@ exports.createLocation = async (req, res) => {
     }
 
     const location = await Location.create({
-      name,
+      name: normalizedName,
       name_local,
       type,
       parent_id: parent_id || null,
