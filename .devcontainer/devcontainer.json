@@ -1,12 +1,8 @@
 {
   "name": "Appofa Development Container",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  "remoteUser": "root",
   
-  "features": {
-    "ghcr.io/devcontainers/features/postgres:1": {
-      "version": "latest"
-    }
-  },
 
   // Environment variables for development - DO NOT use these values in production
   "containerEnv": {
@@ -14,8 +10,7 @@
     "DB_PORT": "5432",
     "DB_NAME": "newsapp",
     "DB_USER": "postgres",
-    "DB_PASSWORD": "postgres",
-    "NODE_ENV": "development",
+    "DB_PASSWORD": "password",
     "PORT": "3000",
     "NEXT_PUBLIC_API_URL": "http://localhost:3000",
     "API_URL": "http://localhost:3000",
@@ -23,7 +18,8 @@
     "JWT_SECRET": "dev-secret-key"
   },
 
-  "postCreateCommand": "npm install && cp .env.example .env && npm run migrate && npm run seed",
+  "postCreateCommand": "bash -lc 'set -e; apt-get update; apt-get install -y postgresql postgresql-contrib postgresql-client nginx; npm install -g pm2; service postgresql start; su - postgres -c \"psql -c \\\"ALTER USER postgres WITH PASSWORD '\''password'\'';\\\"\"; if ! su - postgres -c \"psql -tc \\\"SELECT 1 FROM pg_database WHERE datname='newsapp'\\\"\" | grep -q 1; then su - postgres -c \"psql -c \\\"CREATE DATABASE newsapp;\\\"\"; fi; npm install; if [ ! -f .env ]; then cp .env.example .env; fi'",
+  "postStartCommand": "bash .devcontainer/post-start.sh",
 
   "forwardPorts": [3000, 3001, 5432],
 
