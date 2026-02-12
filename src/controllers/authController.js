@@ -7,7 +7,8 @@ const {
   normalizeRequiredText,
   normalizeOptionalText,
   normalizeEmail,
-  normalizePassword
+  normalizePassword,
+  normalizeInteger
 } = require('../utils/validators');
 require('dotenv').config();
 
@@ -79,6 +80,48 @@ const buildUserStats = async () => {
 
   return {
     total: totalUsers,
+    byRole
+  };
+};
+
+const getDescendantLocationIds = async (rootId, includeSelf = false) => {
+  const descendantIds = includeSelf ? [rootId] : [];
+  let queue = [rootId];
+
+  while (queue.length > 0) {
+    const children = await Location.findAll({
+      where: { parent_id: { [Op.in]: queue } },
+      attributes: ['id']
+    });
+
+    const childIds = children.map((child) => child.id);
+    if (childIds.length === 0) {
+      break;
+    }
+
+    descendantIds.push(...childIds);
+    queue = childIds;
+  }
+
+  return descendantIds;
+};
+
+const buildUserStatsFromList = (users = []) => {
+  const byRole = {
+    admin: 0,
+    moderator: 0,
+    editor: 0,
+    viewer: 0
+  };
+
+  users.forEach((user) => {
+    if (byRole[user.role] !== undefined) {
+      byRole[user.role] += 1;
+    }
+  });
+
+  return {
+    total: users.length,
     byRole
   };
 };
@@ -573,11 +616,57 @@ const authController = {
   // Get all users (admin only)
   getUsers: async (req, res) => {
     try {
-      const users = await User.findAll({
-        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'createdAt'],
+      const baseQuery = {
+        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt'],
+        include: [
+          {
+            model: Location,
+            as: 'homeLocation',
+            attributes: ['id', 'name', 'type', 'slug'],
+            required: false
+          }
+        ],
         order: [['createdAt', 'DESC']]
-      });
-      const stats = await buildUserStats();
+      };
+
+      let users;
+      let stats;
+
+      if (req.user.role === 'admin') {
+        users = await User.findAll(baseQuery);
+        stats = await buildUserStats();
+      } else {
+        const actor = await User.findByPk(req.user.id, {
+          attributes: ['id', 'role', 'homeLocationId']
+        });
+
+        if (!actor || actor.role !== 'moderator') {
+          return res.status(403).json({
+            success: false,
+            message: 'Insufficient permissions.'
+          });
+        }
+
+        if (!actor.homeLocationId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Moderator must have an assigned location to manage moderators.'
+          });
+        }
+
+        const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+
+        users = manageableLocationIds.length > 0
+          ? await User.findAll({
+              ...baseQuery,
+              where: {
+                homeLocationId: { [Op.in]: manageableLocationIds }
+              }
+            })
+          : [];
+
+        stats = buildUserStatsFromList(users);
+      }
 
       res.status(200).json({
         success: true,
@@ -595,7 +684,41 @@ const authController = {
   // Get user statistics (admin only)
   getUserStats: async (req, res) => {
     try {
-      const stats = await buildUserStats();
+      let stats;
+
+      if (req.user.role === 'admin') {
+        stats = await buildUserStats();
+      } else {
+        const actor = await User.findByPk(req.user.id, {
+          attributes: ['id', 'role', 'homeLocationId']
+        });
+
+        if (!actor || actor.role !== 'moderator') {
+          return res.status(403).json({
+            success: false,
+            message: 'Insufficient permissions.'
+          });
+        }
+
+        if (!actor.homeLocationId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Moderator must have an assigned location to view scoped stats.'
+          });
+        }
+
+        const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+        const users = manageableLocationIds.length > 0
+          ? await User.findAll({
+              where: {
+                homeLocationId: { [Op.in]: manageableLocationIds }
+              },
+              attributes: ['id', 'role']
+            })
+          : [];
+
+        stats = buildUserStatsFromList(users);
+      }
 
       res.status(200).json({
         success: true,
@@ -614,7 +737,7 @@ const authController = {
   updateUserRole: async (req, res) => {
     try {
       const { id } = req.params;
-      const { role } = req.body;
+      const { role, locationId } = req.body;
 
       const allowedRoles = ['admin', 'moderator', 'editor', 'viewer'];
       if (!allowedRoles.includes(role)) {
@@ -626,6 +749,66 @@ const authController = {
 
       let updatedUser = null;
       let roleAlreadySet = false;
+      let validatedModeratorLocationId = null;
+
+      if (role === 'moderator') {
+        const locationValidation = normalizeInteger(locationId, 'Location ID', 1);
+        if (locationValidation.error) {
+          return res.status(400).json({
+            success: false,
+            message: 'Location ID is required when assigning moderator role.'
+          });
+        }
+
+        const location = await Location.findByPk(locationValidation.value, {
+          attributes: ['id']
+        });
+        if (!location) {
+          return res.status(404).json({
+            success: false,
+            message: 'Location not found.'
+          });
+        }
+
+        validatedModeratorLocationId = locationValidation.value;
+      }
+
+      const actingUser = await User.findByPk(req.user.id, {
+        attributes: ['id', 'role', 'homeLocationId']
+      });
+
+      if (!actingUser) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required.'
+        });
+      }
+
+      let moderatorManageableLocationIds = [];
+      if (actingUser.role === 'moderator') {
+        if (!actingUser.homeLocationId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Moderator must have an assigned location to manage moderators.'
+          });
+        }
+
+        moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.homeLocationId, false);
+
+        if (moderatorManageableLocationIds.length === 0) {
+          return res.status(403).json({
+            success: false,
+            message: 'No child locations available for moderator management.'
+          });
+        }
+
+        if (role === 'admin') {
+          return res.status(403).json({
+            success: false,
+            message: 'Moderators cannot assign admin role.'
+          });
+        }
+      }
 
       await sequelize.transaction(async (transaction) => {
         const user = await User.findByPk(id, {
@@ -638,7 +821,27 @@ const authController = {
           throw notFoundError;
         }
 
-        if (user.role === role) {
+        if (actingUser.role === 'moderator') {
+          const targetManagedLocationId = role === 'moderator' ? validatedModeratorLocationId : user.homeLocationId;
+
+          if (!targetManagedLocationId || !moderatorManageableLocationIds.includes(targetManagedLocationId)) {
+            const scopeError = new Error('OUT_OF_SCOPE');
+            scopeError.status = 403;
+            throw scopeError;
+          }
+
+          const roleTransitionAllowed = role === 'moderator' || user.role === 'moderator';
+          if (!roleTransitionAllowed) {
+            const scopeError = new Error('INVALID_MODERATOR_TRANSITION');
+            scopeError.status = 403;
+            throw scopeError;
+          }
+        }
+
+        const isSameRole = user.role === role;
+        const isSameModeratorLocation = role !== 'moderator' || user.homeLocationId === validatedModeratorLocationId;
+
+        if (isSameRole && isSameModeratorLocation) {
           roleAlreadySet = true;
           updatedUser = user;
           return;
@@ -658,11 +861,28 @@ const authController = {
         }
 
         user.role = role;
+        if (role === 'moderator') {
+          user.homeLocationId = validatedModeratorLocationId;
+        }
         await user.save({ transaction });
-        updatedUser = user;
+
+        updatedUser = await User.findByPk(user.id, {
+          transaction,
+          attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt'],
+          include: [
+            {
+              model: Location,
+              as: 'homeLocation',
+              attributes: ['id', 'name', 'type', 'slug'],
+              required: false
+            }
+          ]
+        });
       });
 
-      const stats = await buildUserStats();
+      const stats = req.user.role === 'admin'
+        ? await buildUserStats()
+        : await authController.getUserStatsForModeratorScope(req.user.id);
 
       res.status(200).json({
         success: true,
@@ -675,6 +895,8 @@ const authController = {
             role: updatedUser.role,
             firstName: updatedUser.firstName,
             lastName: updatedUser.lastName,
+            homeLocationId: updatedUser.homeLocationId,
+            homeLocation: updatedUser.homeLocation,
             createdAt: updatedUser.createdAt
           },
           stats
@@ -693,12 +915,71 @@ const authController = {
           message: 'At least one admin must remain.'
         });
       }
+      if (error.status === 403) {
+        if (error.message === 'OUT_OF_SCOPE') {
+          return res.status(403).json({
+            success: false,
+            message: 'Moderators can only manage moderator assignments in child locations.'
+          });
+        }
+        if (error.message === 'INVALID_MODERATOR_TRANSITION') {
+          return res.status(403).json({
+            success: false,
+            message: 'Moderators can only assign or revoke moderator roles in child locations.'
+          });
+        }
+
+        return res.status(403).json({
+          success: false,
+          message: 'Insufficient permissions.'
+        });
+      }
       console.error('Update user role error:', error);
       res.status(500).json({
         success: false,
         message: 'Error updating user role.'
       });
     }
+  },
+
+  getUserStatsForModeratorScope: async (moderatorUserId) => {
+    const actor = await User.findByPk(moderatorUserId, {
+      attributes: ['id', 'role', 'homeLocationId']
+    });
+
+    if (!actor || actor.role !== 'moderator' || !actor.homeLocationId) {
+      return {
+        total: 0,
+        byRole: {
+          admin: 0,
+          moderator: 0,
+          editor: 0,
+          viewer: 0
+        }
+      };
+    }
+
+    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+    if (manageableLocationIds.length === 0) {
+      return {
+        total: 0,
+        byRole: {
+          admin: 0,
+          moderator: 0,
+          editor: 0,
+          viewer: 0
+        }
+      };
+    }
+
+    const users = await User.findAll({
+      where: {
+        homeLocationId: { [Op.in]: manageableLocationIds }
+      },
+      attributes: ['id', 'role']
+    });
+
+    return buildUserStatsFromList(users);
   },
 
   // GitHub OAuth initiation

@@ -25,9 +25,9 @@ router.put('/password', apiLimiter, authMiddleware, csrfProtection, authControll
 router.delete('/github/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGithub);
 router.delete('/google/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGoogle);
 router.post('/logout', apiLimiter, authMiddleware, csrfProtection, authController.logout);
-router.get('/users', apiLimiter, authMiddleware, checkRole('admin'), authController.getUsers);
-router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin'), authController.getUserStats);
-router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), authController.updateUserRole);
+router.get('/users', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUsers);
+router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUserStats);
+router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.updateUserRole);
 
 // Registered users only: search visible users
 router.get('/users/search', apiLimiter, authMiddleware, authController.searchUsers);

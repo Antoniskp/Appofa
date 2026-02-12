@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { articleAPI, authAPI } from '@/lib/api';
+import { articleAPI, authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Card, { StatsCard } from '@/components/Card';
 import Badge, { StatusBadge } from '@/components/Badge';
@@ -39,6 +39,7 @@ function AdminDashboardContent() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
+  const [moderatorLocationOverrides, setModeratorLocationOverrides] = useState({});
 
   const { data: articles, loading, refetch } = useAsyncData(
     async () => {
@@ -92,6 +93,23 @@ function AdminDashboardContent() {
     }
   );
 
+  const { data: locations } = useAsyncData(
+    async () => {
+      const response = await locationAPI.getAll({ limit: 500 });
+      if (response.success) {
+        return response.locations || [];
+      }
+      return [];
+    },
+    [],
+    {
+      initialData: [],
+      onError: (error) => {
+        console.error('Failed to fetch locations:', error);
+      }
+    }
+  );
+
   const handleDelete = async () => {
     if (!selectedArticle) return;
     
@@ -118,9 +136,31 @@ function AdminDashboardContent() {
     }
   };
 
-  const handleRoleChange = async (userId, newRole) => {
+  const handleRoleChange = async (targetUser, newRole) => {
+    let locationId;
+
+    if (newRole === 'moderator') {
+      const defaultLocation = targetUser.homeLocationId || '';
+      const input = window.prompt(
+        'Enter Location ID for this moderator (must be a valid location you can manage):',
+        String(defaultLocation)
+      );
+
+      if (input === null) {
+        return;
+      }
+
+      const parsed = Number.parseInt(input, 10);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        addToast('Valid location ID is required for moderator role.', { type: 'error' });
+        return;
+      }
+
+      locationId = parsed;
+    }
+
     try {
-      const response = await authAPI.updateUserRole(userId, newRole);
+      const response = await authAPI.updateUserRole(targetUser.id, newRole, locationId);
       if (response.success) {
         // Refetch users to get the updated list
         await refetchUsers();
@@ -129,6 +169,66 @@ function AdminDashboardContent() {
     } catch (error) {
       addToast(`Failed to update user role: ${error.message}`, { type: 'error' });
     }
+  };
+
+  const handleModeratorLocationChange = async (targetUser, nextLocationId) => {
+    const parsed = Number.parseInt(nextLocationId, 10);
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      addToast('Please select a valid location.', { type: 'error' });
+      return;
+    }
+
+    try {
+      const response = await authAPI.updateUserRole(targetUser.id, 'moderator', parsed);
+      if (response.success) {
+        setModeratorLocationOverrides((previous) => ({
+          ...previous,
+          [targetUser.id]: parsed
+        }));
+        await refetchUsers();
+        addToast('Moderator location updated successfully!', { type: 'success' });
+      }
+    } catch (error) {
+      addToast(`Failed to update moderator location: ${error.message}`, { type: 'error' });
+    }
+  };
+
+  const getModeratorLocationOptions = (targetUser) => {
+    const baseLocations = Array.isArray(locations) ? locations : [];
+    const overriddenLocationId = moderatorLocationOverrides[targetUser?.id];
+    const effectiveHomeLocationId = overriddenLocationId || targetUser?.homeLocationId;
+
+    if (!effectiveHomeLocationId) {
+      return baseLocations;
+    }
+
+    const hasCurrentLocation = baseLocations.some(
+      (location) => Number(location.id) === Number(effectiveHomeLocationId)
+    );
+
+    if (hasCurrentLocation) {
+      return baseLocations;
+    }
+
+    if (!overriddenLocationId && targetUser.homeLocation?.id && targetUser.homeLocation?.name) {
+      return [
+        {
+          id: targetUser.homeLocation.id,
+          name: targetUser.homeLocation.name,
+          type: targetUser.homeLocation.type,
+          slug: targetUser.homeLocation.slug
+        },
+        ...baseLocations
+      ];
+    }
+
+    return [
+      {
+        id: effectiveHomeLocationId,
+        name: `Location #${effectiveHomeLocationId}`
+      },
+      ...baseLocations
+    ];
   };
 
   return (
@@ -367,7 +467,7 @@ function AdminDashboardContent() {
                   <Tooltip content="Αλλαγή ρόλου χρήστη" position="top">
                     <select
                       value={user.role}
-                      onChange={(event) => handleRoleChange(user.id, event.target.value)}
+                      onChange={(event) => handleRoleChange(user, event.target.value)}
                       className="border border-gray-300 rounded px-2 py-1 text-sm"
                     >
                       <option value="viewer">Viewer</option>
@@ -377,6 +477,33 @@ function AdminDashboardContent() {
                     </select>
                   </Tooltip>
                 )
+              },
+              {
+                key: 'moderationLocation',
+                header: 'Moderator Location',
+                render: (user) => {
+                  if (user.role !== 'moderator') {
+                    return '-';
+                  }
+
+                  const locationOptions = getModeratorLocationOptions(user);
+                  const selectedLocationId = moderatorLocationOverrides[user.id] || user.homeLocationId;
+
+                  return (
+                    <select
+                      value={selectedLocationId ? String(selectedLocationId) : ''}
+                      onChange={(event) => handleModeratorLocationChange(user, event.target.value)}
+                      className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[220px]"
+                    >
+                      <option value="">Select location</option>
+                      {locationOptions.map((location) => (
+                        <option key={location.id} value={String(location.id)}>
+                          {location.name} (#{location.id})
+                        </option>
+                      ))}
+                    </select>
+                  );
+                }
               },
               {
                 key: 'createdAt',
