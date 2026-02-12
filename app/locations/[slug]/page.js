@@ -217,6 +217,12 @@ export default function LocationDetailPage() {
     { newsArticles: [], regularArticles: [] }
   );
 
+  const locationNeedsModerator = !location.hasModerator;
+  const moderatorDisplayName = [location?.moderatorPreview?.firstName, location?.moderatorPreview?.lastName]
+    .filter(Boolean)
+    .join(' ')
+    .trim() || location?.moderatorPreview?.username || '';
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -418,6 +424,36 @@ export default function LocationDetailPage() {
                         {entities.usersCount}
                       </span>
                     </div>
+                  </div>
+                )}
+                {!isEditing && (
+                  <div>
+                    <span className="font-medium text-gray-700">Συντονιστής:</span>
+                    {locationNeedsModerator && (
+                      <span className="ml-2 font-semibold text-amber-700">
+                        Χρειάζεται Συντονιστή
+                      </span>
+                    )}
+                    {!locationNeedsModerator && location.moderatorPreview && (
+                      <div className="mt-2 inline-flex items-center gap-2">
+                        <div
+                          className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-xs font-semibold text-white border border-green-200 bg-slate-500"
+                          style={{ backgroundColor: location.moderatorPreview.avatarColor || '#64748b' }}
+                          aria-label="Moderator avatar"
+                        >
+                          {location.moderatorPreview.avatar ? (
+                            <img
+                              src={location.moderatorPreview.avatar}
+                              alt={moderatorDisplayName || 'Moderator'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            (location.moderatorPreview.username?.[0] || '?').toUpperCase()
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800">{moderatorDisplayName}</span>
+                      </div>
+                    )}
                   </div>
                 )}
                 {(isEditing || location.wikipedia_url) && (

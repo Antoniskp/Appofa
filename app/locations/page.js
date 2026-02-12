@@ -13,10 +13,6 @@ import SearchInput from '@/components/SearchInput';
 const LOCATION_TYPE_ORDER = ['international', 'country', 'prefecture', 'municipality'];
 const DEBOUNCE_DELAY = 300;
 
-// TODO: Replace with actual API data when moderator assignment feature is implemented
-// This is a placeholder for demo purposes - simulates that approximately 67% of locations need moderators
-const DEMO_MODERATOR_NEED_RATIO = 3; // Every 3rd location has a moderator (i.e., 67% need moderators)
-
 export default function LocationsPage() {
   const router = useRouter();
   
@@ -329,10 +325,18 @@ export default function LocationsPage() {
     return variants[type] || 'default';
   };
 
-  // Simulate moderator status - in a real app, this would come from the API
-  // TODO: Replace with actual moderator assignment data from API response
   const needsModerator = (location) => {
-    return location.id % DEMO_MODERATOR_NEED_RATIO !== 0;
+    return !location.hasModerator;
+  };
+
+  const getModeratorDisplayName = (location) => {
+    const moderator = location?.moderatorPreview;
+    if (!moderator) {
+      return '';
+    }
+
+    const fullName = [moderator.firstName, moderator.lastName].filter(Boolean).join(' ').trim();
+    return fullName || moderator.username || '';
   };
 
   const hasActiveFilters = selectedCountry || selectedPrefecture || selectedMunicipality || showNeedsModerators;
@@ -599,9 +603,31 @@ export default function LocationsPage() {
                     )}
                     
                     {!needsModerator(location) && (
-                      <div className="mt-2 flex items-center gap-1 text-xs text-green-600">
+                      <div className="mt-2 flex items-center gap-2 text-xs text-green-700">
                         <UserGroupIcon className="h-3 w-3 flex-shrink-0" />
                         <span>Έχει Συντονιστή</span>
+                        {location.moderatorPreview && (
+                          <div className="ml-1 inline-flex items-center gap-2 min-w-0">
+                            <div
+                              className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-[10px] font-semibold text-white border border-green-200 bg-slate-500 flex-shrink-0"
+                              style={{ backgroundColor: location.moderatorPreview.avatarColor || '#64748b' }}
+                              aria-label="Moderator avatar"
+                            >
+                              {location.moderatorPreview.avatar ? (
+                                <img
+                                  src={location.moderatorPreview.avatar}
+                                  alt={getModeratorDisplayName(location) || 'Moderator'}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                (location.moderatorPreview.username?.[0] || '?').toUpperCase()
+                              )}
+                            </div>
+                            <span className="truncate text-gray-700 font-medium max-w-[140px]">
+                              {getModeratorDisplayName(location)}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </button>

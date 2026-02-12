@@ -191,11 +191,54 @@ exports.getLocations = async (req, res) => {
       ]
     });
 
+    const locationIds = locations.map((location) => location.id);
+    const moderatorLocationIds = new Set();
+    const moderatorPreviewByLocationId = new Map();
+
+    if (locationIds.length > 0) {
+      const moderatorAssignments = await User.findAll({
+        where: {
+          role: 'moderator',
+          homeLocationId: { [Op.in]: locationIds }
+        },
+        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'homeLocationId'],
+        order: [['createdAt', 'ASC'], ['id', 'ASC']],
+        raw: true
+      });
+
+      moderatorAssignments.forEach((assignment) => {
+        const homeLocationId = Number(assignment.homeLocationId);
+        if (Number.isInteger(homeLocationId)) {
+          moderatorLocationIds.add(homeLocationId);
+
+          if (!moderatorPreviewByLocationId.has(homeLocationId)) {
+            moderatorPreviewByLocationId.set(homeLocationId, {
+              id: assignment.id,
+              username: assignment.username,
+              firstName: assignment.firstName,
+              lastName: assignment.lastName,
+              avatar: assignment.avatar,
+              avatarColor: assignment.avatarColor
+            });
+          }
+        }
+      });
+    }
+
+    const locationsWithModeratorStatus = locations.map((location) => {
+      const serializedLocation = location.toJSON();
+      return {
+        ...serializedLocation,
+        hasModerator: moderatorLocationIds.has(Number(location.id)),
+        moderatorPreview: moderatorPreviewByLocationId.get(Number(location.id)) || null
+      };
+    });
+
     const total = await Location.count({ where });
 
     res.json({
       success: true,
-      locations,
+      locations: locationsWithModeratorStatus,
       pagination: {
         total,
         limit: parseInt(limit),
@@ -266,9 +309,22 @@ exports.getLocation = async (req, res) => {
       }
     });
 
+    const moderator = await User.findOne({
+      where: {
+        role: 'moderator',
+        homeLocationId: id
+      },
+      attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor'],
+      order: [['createdAt', 'ASC'], ['id', 'ASC']]
+    });
+
+    const locationData = location.toJSON();
+    locationData.hasModerator = !!moderator;
+    locationData.moderatorPreview = moderator ? moderator.toJSON() : null;
+
     res.json({
       success: true,
-      location,
+      location: locationData,
       stats: {
         articleCount,
         userCount,
