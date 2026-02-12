@@ -11,6 +11,7 @@ import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
+import RichArticleContent from '@/components/RichArticleContent';
 import Button from '@/components/Button';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { ConfirmDialog } from '@/components/Modal';
@@ -270,9 +271,7 @@ export default function ArticleDetailPage() {
 
             {/* Article Content */}
             <div className="prose max-w-none mb-8">
-              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                {article.content}
-              </div>
+              <RichArticleContent content={article.content} />
             </div>
 
             {/* Action Buttons */}

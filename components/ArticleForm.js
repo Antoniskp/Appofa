@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
 import Badge from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
@@ -19,6 +19,8 @@ export default function ArticleForm({
   isSubmitting = false,
   submitError = ''
 }) {
+  const contentInputRef = useRef(null);
+  const [contentSelection, setContentSelection] = useState({ start: 0, end: 0 });
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -156,6 +158,207 @@ export default function ArticleForm({
     onSubmit(payload);
   };
 
+  const updateContent = (nextContent) => {
+    setFormData((prev) => ({
+      ...prev,
+      content: nextContent,
+    }));
+  };
+
+  const updateSelectionFromTextarea = () => {
+    const textarea = contentInputRef.current;
+    if (!textarea) return;
+
+    setContentSelection({
+      start: textarea.selectionStart ?? 0,
+      end: textarea.selectionEnd ?? 0,
+    });
+  };
+
+  const insertAtCursor = (insertText) => {
+    const textarea = contentInputRef.current;
+    if (!textarea) {
+      updateContent(`${formData.content}${insertText}`);
+      return;
+    }
+
+    const isFocused = document.activeElement === textarea;
+    const start = isFocused ? (textarea.selectionStart ?? formData.content.length) : contentSelection.start;
+    const end = isFocused ? (textarea.selectionEnd ?? formData.content.length) : contentSelection.end;
+    const before = formData.content.slice(0, start);
+    const after = formData.content.slice(end);
+    const nextValue = `${before}${insertText}${after}`;
+    const scrollTop = textarea.scrollTop;
+
+    updateContent(nextValue);
+
+    requestAnimationFrame(() => {
+      const nextPosition = start + insertText.length;
+      textarea.focus({ preventScroll: true });
+      textarea.setSelectionRange(nextPosition, nextPosition);
+      textarea.scrollTop = scrollTop;
+      setContentSelection({ start: nextPosition, end: nextPosition });
+    });
+  };
+
+  const wrapSelection = (prefix, suffix, fallbackText = 'text') => {
+    const textarea = contentInputRef.current;
+    if (!textarea) {
+      insertAtCursor(`${prefix}${fallbackText}${suffix}`);
+      return;
+    }
+
+    const isFocused = document.activeElement === textarea;
+    const start = isFocused ? (textarea.selectionStart ?? formData.content.length) : contentSelection.start;
+    const end = isFocused ? (textarea.selectionEnd ?? formData.content.length) : contentSelection.end;
+    const selectedText = formData.content.slice(start, end) || fallbackText;
+    const before = formData.content.slice(0, start);
+    const after = formData.content.slice(end);
+    const insertion = `${prefix}${selectedText}${suffix}`;
+    const nextValue = `${before}${insertion}${after}`;
+    const scrollTop = textarea.scrollTop;
+
+    updateContent(nextValue);
+
+    requestAnimationFrame(() => {
+      textarea.focus({ preventScroll: true });
+      const selectionStart = start + prefix.length;
+      const selectionEnd = selectionStart + selectedText.length;
+      textarea.setSelectionRange(selectionStart, selectionEnd);
+      textarea.scrollTop = scrollTop;
+      setContentSelection({ start: selectionStart, end: selectionEnd });
+    });
+  };
+
+  const insertHeading = (level) => {
+    const prefix = `${'#'.repeat(level)} `;
+    insertAtCursor(`\n${prefix}`);
+  };
+
+  const handleInsertBulletList = () => {
+    insertAtCursor('\n- Item 1\n- Item 2\n');
+  };
+
+  const handleInsertNumberedList = () => {
+    insertAtCursor('\n1. First item\n2. Second item\n');
+  };
+
+  const handleInsertQuote = () => {
+    insertAtCursor('\n> Quoted text\n');
+  };
+
+  const handleInsertCodeBlock = () => {
+    insertAtCursor('\n```\ncode here\n```\n');
+  };
+
+  const isSafeMediaUrl = (url) => {
+    if (!url || typeof url !== 'string') return false;
+
+    const trimmed = url.trim();
+    if (!trimmed) return false;
+
+    try {
+      const parsed = new URL(trimmed);
+      return ['http:', 'https:'].includes(parsed.protocol);
+    } catch {
+      return false;
+    }
+  };
+
+  const isImageUrl = (url) => /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i.test(url);
+
+  const toYouTubeEmbedUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+
+      if (parsed.hostname.includes('youtu.be')) {
+        const id = parsed.pathname.replace('/', '').trim();
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+      }
+
+      if (parsed.hostname.includes('youtube.com')) {
+        const pathParts = parsed.pathname.split('/').filter(Boolean);
+        const id = parsed.searchParams.get('v')
+          || (pathParts[0] === 'shorts' ? pathParts[1] : null)
+          || (pathParts[0] === 'embed' ? pathParts[1] : null);
+        return id ? `https://www.youtube.com/embed/${id}` : null;
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const toVimeoEmbedUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      if (!parsed.hostname.includes('vimeo.com')) return null;
+      const parts = parsed.pathname.split('/').filter(Boolean);
+      const id = parts[parts.length - 1];
+      return id ? `https://player.vimeo.com/video/${id}` : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const extractMediaUrls = () => {
+    const lines = String(formData.content || '').split('\n');
+    const medias = [];
+
+    lines.forEach((rawLine) => {
+      const line = rawLine.trim();
+      const imageMatch = line.match(/^!\[(.*?)\]\((.+?)\)$/);
+      if (imageMatch) {
+        const src = imageMatch[2].trim();
+        if (isSafeMediaUrl(src)) {
+          medias.push({ type: 'image', src, alt: imageMatch[1] || 'Image' });
+        }
+      }
+
+      const videoMatch = line.match(/^\[video\]\((.+?)\)$/i);
+      if (videoMatch) {
+        const src = videoMatch[1].trim();
+        if (isSafeMediaUrl(src)) {
+          medias.push({ type: 'video', src });
+        }
+      }
+    });
+
+    return medias.slice(0, 3);
+  };
+
+  const mediaPreviews = extractMediaUrls();
+
+  const handleInsertLink = () => {
+    const textarea = contentInputRef.current;
+    const start = textarea?.selectionStart ?? 0;
+    const end = textarea?.selectionEnd ?? 0;
+    const selectedText = formData.content.slice(start, end).trim();
+    const linkText = selectedText || window.prompt('Link text:', 'Read more');
+    if (!linkText) return;
+
+    const url = window.prompt('Link URL (https://...):', 'https://');
+    if (!url) return;
+
+    insertAtCursor(`[${linkText}](${url.trim()})`);
+  };
+
+  const handleInsertImage = () => {
+    const url = window.prompt('Image URL (https://...):', 'https://');
+    if (!url) return;
+
+    const alt = window.prompt('Image caption/alt text:', 'Image') || 'Image';
+    insertAtCursor(`\n![${alt}](${url.trim()})\n`);
+  };
+
+  const handleInsertVideo = () => {
+    const url = window.prompt('Video URL (YouTube, Vimeo or direct .mp4):', 'https://');
+    if (!url) return;
+
+    insertAtCursor(`\n[video](${url.trim()})\n`);
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <AlertMessage className="mb-6" message={submitError} />
@@ -203,11 +406,151 @@ export default function ArticleForm({
         rows={10}
         value={formData.content}
         onChange={handleInputChange}
+        onSelect={updateSelectionFromTextarea}
+        onKeyUp={updateSelectionFromTextarea}
+        onClick={updateSelectionFromTextarea}
+        ref={contentInputRef}
         required
         maxLength={50000}
         showCharCount
         placeholder="Write your article content here..."
+        helpText="Use toolbar buttons for headings, bold/italic text, links, images and videos."
       />
+
+      <div className="-mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Quick formatting</p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => insertHeading(2)}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          >
+            H2
+          </button>
+          <button
+            type="button"
+            onClick={() => insertHeading(3)}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+          >
+            H3
+          </button>
+          <button
+            type="button"
+            onClick={() => wrapSelection('**', '**', 'bold text')}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+          >
+            Bold
+          </button>
+          <button
+            type="button"
+            onClick={() => wrapSelection('*', '*', 'italic text')}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm italic text-gray-700 hover:bg-gray-100"
+          >
+            Italic
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertLink}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Link
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertImage}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Image
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertVideo}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Video
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertBulletList}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Bullet List
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertNumberedList}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Numbered List
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertQuote}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Quote
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertCodeBlock}
+            className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+          >
+            Code
+          </button>
+        </div>
+      </div>
+
+      {mediaPreviews.length > 0 && (
+        <div className="rounded-md border border-gray-200 bg-white p-3">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Media preview</p>
+          <div className="space-y-3">
+            {mediaPreviews.map((media, index) => {
+              if (media.type === 'image' && isImageUrl(media.src)) {
+                return (
+                  <img
+                    key={`${media.src}-${index}`}
+                    src={media.src}
+                    alt={media.alt}
+                    className="w-full max-h-48 object-cover rounded border border-gray-200"
+                  />
+                );
+              }
+
+              if (media.type === 'video') {
+                const youtubeEmbed = toYouTubeEmbedUrl(media.src);
+                const vimeoEmbed = toVimeoEmbedUrl(media.src);
+                const embed = youtubeEmbed || vimeoEmbed;
+
+                if (embed) {
+                  return (
+                    <div key={`${media.src}-${index}`} className="relative w-full overflow-hidden rounded-lg" style={{ paddingTop: '56.25%' }}>
+                      <iframe
+                        src={embed}
+                        title="Video preview"
+                        className="absolute left-0 top-0 h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <video key={`${media.src}-${index}`} controls className="w-full rounded border border-gray-200">
+                    <source src={media.src} />
+                  </video>
+                );
+              }
+
+              return (
+                <p key={`${media.src}-${index}`} className="text-sm text-gray-600 break-all">
+                  Media URL: {media.src}
+                </p>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
