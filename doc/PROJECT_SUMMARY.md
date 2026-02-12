@@ -107,12 +107,14 @@ The application is ready for deployment with:
 ## 📝 Documentation Files
 
 1. **README.md** - Main documentation with setup instructions
-2. **doc/API_TESTING.md** - API testing examples
-3. **doc/DEPLOYMENT.md** - Deployment guides for various platforms
-4. **doc/SECURITY.md** - Security features and best practices
-5. **doc/VPS_DEPLOYMENT.md** - VPS deployment guide
-6. **doc/ARCHITECTURE.md** - Architecture overview
-5. **postman_collection.json** - Postman API collection
+2. **doc/README.md** - Complete documentation index organized by category
+3. **doc/testing/** - Testing guides and reports (API, polls, messages, etc.)
+4. **doc/features/** - Feature documentation (OAuth, polls, analytics, etc.)
+5. **doc/deployment/** - Deployment guides for various platforms and VPS
+6. **doc/development/** - Development guides and AI agent configuration
+7. **doc/ARCHITECTURE.md** - Architecture overview
+8. **doc/SECURITY.md** - Security features and best practices
+9. **postman_collection.json** - Postman API collection
 
 ## 🧪 Testing
 

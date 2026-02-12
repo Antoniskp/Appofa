@@ -14,30 +14,33 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 
 ## Documentation
 
+📚 **[Complete Documentation Index](doc/README.md)** - Browse all documentation by category
+
 ### Core Documentation
 - [Project Summary](doc/PROJECT_SUMMARY.md) - Holistic project overview
 - [Architecture](doc/ARCHITECTURE.md) - System architecture and middleware
 - [Security](doc/SECURITY.md) - Security best practices and considerations
-
-### Features
-- [Poll & Statistics System](doc/POLL_FEATURE.md) - Complete poll system with voting, results, and Chart.js visualizations
-- [Locations Model](doc/LOCATION_MODEL.md) - Hierarchical locations system
-- [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
-- [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
-- [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
-
-### Deployment & Operations
-- [VPS Setup Guide](doc/VPS_SETUP.md) - **Complete VPS deployment guide** (Ubuntu/Debian)
-- [Deployment Guide](doc/DEPLOYMENT_GUIDE.md) - Local, Docker, and cloud platform deployments
-- [Upgrade Guide](doc/UPGRADE_GUIDE.md) - Migration and upgrade instructions
-- [Migrations](doc/MIGRATIONS.md) - Database migration guide
-- [Node Upgrade Guide](doc/NODE_UPGRADE_VPS.md) - Node.js upgrade instructions for VPS
 - [Troubleshooting](doc/TROUBLESHOOTING.md) - Common issues and solutions
 
+### Features
+- [Poll & Statistics System](doc/features/POLL_FEATURE.md) - Complete poll system with voting, results, and Chart.js visualizations
+- [Message System](doc/features/MESSAGE_SYSTEM_IMPLEMENTATION.md) - Messaging system implementation
+- [Locations Model](doc/features/LOCATION_MODEL.md) - Hierarchical locations system
+- [OAuth Integration](doc/features/OAUTH.md) - GitHub OAuth setup and usage
+- [Google Analytics](doc/features/GOOGLE_ANALYTICS.md) - Analytics integration guide
+
+### Deployment & Operations
+- [VPS Setup Guide](doc/deployment/VPS_SETUP.md) - **Complete VPS deployment guide** (Ubuntu/Debian)
+- [Deployment Guide](doc/deployment/DEPLOYMENT_GUIDE.md) - Local, Docker, and cloud platform deployments
+- [Upgrade Guide](doc/deployment/UPGRADE_GUIDE.md) - Migration and upgrade instructions
+- [Migrations](doc/deployment/MIGRATIONS.md) - Database migration guide
+- [Node Upgrade Guide](doc/deployment/NODE_UPGRADE_VPS.md) - Node.js upgrade instructions for VPS
+
 ### Development & Testing
-- [API Testing Examples](doc/API_TESTING.md) - API usage and testing
-- [Poll Testing](doc/POLL_TESTING.md) - Poll system testing checklist
-- [Copilot Agents](doc/COPILOT_AGENTS.md) - AI agent configuration
+- [API Testing Examples](doc/testing/API_TESTING.md) - API usage and testing
+- [Poll Testing](doc/testing/POLL_TESTING.md) - Poll system testing checklist
+- [Article Types Testing](doc/testing/ARTICLE_TYPES_TESTING.md) - Article type system testing
+- [Copilot Agents](doc/development/COPILOT_AGENTS.md) - AI agent configuration
 - [Postman Collection](postman_collection.json) - API testing collection
 
 ## Prerequisites
