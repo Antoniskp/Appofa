@@ -1,0 +1,55 @@
+{
+  "name": "Appofa Development Container",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+  
+  "features": {
+    "ghcr.io/devcontainers/features/postgres:1": {
+      "version": "latest"
+    }
+  },
+
+  // Environment variables for development - DO NOT use these values in production
+  "containerEnv": {
+    "DB_HOST": "localhost",
+    "DB_PORT": "5432",
+    "DB_NAME": "newsapp",
+    "DB_USER": "postgres",
+    "DB_PASSWORD": "postgres",
+    "NODE_ENV": "development",
+    "PORT": "3000",
+    "NEXT_PUBLIC_API_URL": "http://localhost:3000",
+    "API_URL": "http://localhost:3000",
+    "FRONTEND_URL": "http://localhost:3001",
+    "JWT_SECRET": "dev-secret-key"
+  },
+
+  "postCreateCommand": "npm install && cp .env.example .env",
+  
+  "postStartCommand": "npm run migrate && npm run seed",
+
+  "forwardPorts": [3000, 3001, 5432],
+
+  "portsAttributes": {
+    "3000": {
+      "label": "Backend API",
+      "onAutoForward": "notify"
+    },
+    "3001": {
+      "label": "Frontend",
+      "onAutoForward": "openPreview"
+    },
+    "5432": {
+      "label": "PostgreSQL",
+      "onAutoForward": "ignore"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}
