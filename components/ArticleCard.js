@@ -3,6 +3,57 @@ import Badge, { TypeBadge } from '@/components/Badge';
 import { TruncatedTextTooltip } from '@/components/Tooltip';
 
 /**
+ * Helper function to strip markdown syntax from text
+ * @param {string} text - Text with markdown syntax
+ * @returns {string} Clean text without markdown
+ */
+function stripMarkdown(text) {
+  if (!text || typeof text !== 'string') return '';
+  
+  let result = text;
+  
+  // Remove code blocks and replace with [code block]
+  result = result.replace(/```[\s\S]*?```/g, '[code block]');
+  
+  // Remove inline code backticks
+  result = result.replace(/`([^`]+)`/g, '$1');
+  
+  // Remove bold formatting (**text** or __text__)
+  result = result.replace(/\*\*([^*]+)\*\*/g, '$1');
+  result = result.replace(/__([^_]+)__/g, '$1');
+  
+  // Remove italic formatting (*text* or _text_)
+  result = result.replace(/\*([^*]+)\*/g, '$1');
+  result = result.replace(/_([^_]+)_/g, '$1');
+  
+  // Remove header markers (# ## ###)
+  result = result.replace(/^#{1,6}\s+/gm, '');
+  
+  // Remove link syntax but keep link text [text](url)
+  result = result.replace(/\[([^\]]+)\]\([^)]+\)/g, '$1');
+  
+  // Remove image syntax ![alt](url)
+  result = result.replace(/!\[([^\]]*)\]\([^)]+\)/g, '');
+  
+  // Remove video syntax [video](url)
+  result = result.replace(/\[video\]\([^)]+\)/gi, '[video]');
+  
+  // Remove unordered list markers (- or *)
+  result = result.replace(/^[\s]*[-*]\s+/gm, '');
+  
+  // Remove ordered list markers (1. 2. etc)
+  result = result.replace(/^[\s]*\d+\.\s+/gm, '');
+  
+  // Remove blockquote markers (>)
+  result = result.replace(/^[\s]*>\s+/gm, '');
+  
+  // Clean up extra whitespace
+  result = result.replace(/\n\s*\n/g, ' ').trim();
+  
+  return result;
+}
+
+/**
  * Reusable article card component
  * @param {Object} article - Article object with title, category, summary, content, author, createdAt
  * @param {string} variant - 'grid' for grid layout (compact) or 'list' for list layout (detailed)
@@ -46,7 +97,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             
             {/* Summary */}
             <p className="body-copy mb-4">
-              {article.summary || (article.content ? `${article.content.substring(0, 200)}...` : '')}
+              {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 200)}...` : ''))}
             </p>
             
             {/* Meta */}
@@ -91,7 +142,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         </TruncatedTextTooltip>
       </h3>
       <p className="body-copy mb-4 line-clamp-3">
-        {article.summary || (article.content ? `${article.content.substring(0, 150)}...` : '')}
+        {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 150)}...` : ''))}
       </p>
       <div className="flex justify-between items-center text-sm text-gray-500">
         <span>By {authorLabel}</span>
