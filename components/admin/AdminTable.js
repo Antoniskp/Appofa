@@ -94,7 +94,7 @@ export default function AdminTable({
                 {columns.map((column) => (
                   <td
                     key={column.key}
-                    className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                    className={`px-6 py-4 text-sm text-gray-900 ${column.allowWrap ? '' : 'whitespace-nowrap'}`}
                   >
                     {column.render ? column.render(item) : item[column.key]}
                   </td>
