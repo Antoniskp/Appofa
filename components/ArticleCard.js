@@ -7,7 +7,7 @@ import { TruncatedTextTooltip } from '@/components/Tooltip';
  * @param {string} text - Text with markdown syntax
  * @returns {string} Clean text without markdown
  */
-function stripMarkdown(text) {
+export function stripMarkdown(text) {
   if (!text || typeof text !== 'string') return '';
   
   let result = text;
@@ -16,7 +16,7 @@ function stripMarkdown(text) {
   result = result.replace(/```[\s\S]*?```/g, '[code block]');
   
   // Remove inline code backticks
-  result = result.replace(/`([^`]+)`/g, '$1');
+  result = result.replace(/`(.*?)`/g, '$1');
   
   // Remove bold formatting (**text** or __text__)
   result = result.replace(/\*\*([^*]+)\*\*/g, '$1');
