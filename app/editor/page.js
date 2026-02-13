@@ -35,9 +35,11 @@ function EditorDashboardContent() {
       if (!user?.id) {
         return [];
       }
+      // Fetch only articles owned by the current user
       const response = await articleAPI.getAll({ authorId: user?.id, limit: 50 });
       if (response.success) {
-        return response.data.articles || [];
+        // Filter to ensure only user's articles (in case API returns more)
+        return (response.data.articles || []).filter(a => a.authorId === user.id);
       }
       return [];
     },
@@ -120,7 +122,7 @@ function EditorDashboardContent() {
         {/* Articles List */}
         <Card 
           className="overflow-hidden"
-          header={<h2 className="text-xl font-semibold">Recent Articles</h2>}
+          header={<h2 className="text-xl font-semibold">My Articles</h2>}
         >
 
           {loading ? (
@@ -163,7 +165,7 @@ function EditorDashboardContent() {
                           {Array.isArray(article.tags) && article.tags.length > 0 && (
                             <Badge variant="purple">{article.tags.join(', ')}</Badge>
                           )}
-                          <span>By {article.User?.username || 'Unknown'}</span>
+                          <span>By {article.User?.username || user?.username || 'Unknown'}</span>
                           <span>•</span>
                           <span>{new Date(article.createdAt).toLocaleDateString()}</span>
                         </div>
