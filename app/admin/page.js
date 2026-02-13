@@ -136,6 +136,18 @@ function AdminDashboardContent() {
       }
     }
   );
+          // Fetch polls for biggest polls section
+          const { data: polls = [], loading: pollsLoading } = useAsyncData(
+            async () => {
+              const response = await pollAPI.getAll({});
+              if (response.success && response.data && Array.isArray(response.data.polls)) {
+                return response.data.polls;
+              }
+              return [];
+            },
+            [],
+            { initialData: [] }
+          );
 
   const handleDelete = async () => {
     if (!selectedArticle) return;
@@ -202,7 +214,7 @@ function AdminDashboardContent() {
     const parsed = Number.parseInt(nextLocationId, 10);
     if (!Number.isInteger(parsed) || parsed < 1) {
       addToast('Please select a valid location.', { type: 'error' });
-      return;
+                      data={polls.sort((a, b) => (b.votes || 0) - (a.votes || 0)).slice(0, 3)}
     }
 
     try {
@@ -278,89 +290,69 @@ function AdminDashboardContent() {
         {/* Welcome Message */}
         <Card className="mb-8">
           <h2 className="text-xl font-semibold mb-2">Welcome, {user?.username}!</h2>
-          <p className="text-gray-600">
-            You have {user?.role} access. You can {user?.role === 'admin' ? 'create, edit, and delete all articles' : 'approve news submissions and manage content'}.
-          </p>
-        </Card>
+          {/* Latest News Section */}
+          <Card className="overflow-hidden mb-8">
+            <h2 className="text-xl font-semibold mb-4">Τελευταίες ειδήσεις</h2>
+            <AdminTable
+              columns={[
+                {
+                  key: 'title',
+                  header: 'Title',
+                  render: (article) => (
+                    <Link href={`/articles/${article.id}`} className="text-blue-600 hover:text-blue-800">
+                      {article.title}
+                    </Link>
+                  )
+                },
+                {
+                  key: 'author',
+                  header: 'Author',
+                  render: (article) => article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown')
+                },
+                {
+                  key: 'createdAt',
+                  header: 'Created',
+                  render: (article) => new Date(article.createdAt).toLocaleDateString()
+                }
+              ]}
+              data={articles.filter(a => a.isNews && a.newsApprovedAt).sort((a, b) => new Date(b.newsApprovedAt) - new Date(a.newsApprovedAt)).slice(0, 9)}
+              loading={loading}
+              emptyMessage="Δεν υπάρχουν εγκεκριμένες ειδήσεις."
+              actions={false}
+            />
+          </Card>
 
-        {/* Article Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <StatsCard
-            title="Total Articles"
-            value={stats.total}
-            icon={DocumentTextIcon}
-          />
-          <StatsCard
-            title="Published"
-            value={stats.published}
-            icon={CheckIcon}
-          />
-          <StatsCard
-            title="Drafts"
-            value={stats.draft}
-            icon={PencilIcon}
-          />
-          <StatsCard
-            title="Archived"
-            value={stats.archived}
-            icon={ArchiveBoxIcon}
-          />
-          <StatsCard
-            title="Pending News"
-            value={stats.pendingNews}
-            icon={NewspaperIcon}
-            variant="elevated"
-          />
-        </div>
-
-        {/* User Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-          <StatsCard
-            title="Total Users"
-            value={userStats.total}
-            icon={UserGroupIcon}
-          />
-          <StatsCard
-            title="Admins"
-            value={userStats.byRole.admin}
-            icon={ShieldCheckIcon}
-          />
-          <StatsCard
-            title="Moderators"
-            value={userStats.byRole.moderator}
-            icon={UserIcon}
-          />
-          <StatsCard
-            title="Editors"
-            value={userStats.byRole.editor}
-            icon={UserIcon}
-          />
-          <StatsCard
-            title="Viewers"
-            value={userStats.byRole.viewer}
-            icon={UserIcon}
-          />
-        </div>
-
-        {/* Quick Actions */}
-        <Card className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/editor"
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Create New Article
-            </Link>
-            <Link
-              href="/articles"
-              className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 transition"
-            >
-              View All Articles
-            </Link>
-            <Link
-              href="/admin/locations"
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
+          {/* Biggest Polls Section */}
+          <Card className="overflow-hidden mb-8">
+            <h2 className="text-xl font-semibold mb-4">Μεγαλύτερες ψηφοφορίες</h2>
+            <AdminTable
+              columns={[
+                {
+                  key: 'title',
+                  header: 'Title',
+                  render: (poll) => (
+                    <Link href={`/polls/${poll.id}`} className="text-blue-600 hover:text-blue-800">
+                      {poll.title}
+                    </Link>
+                  )
+                },
+                {
+                  key: 'votes',
+                  header: 'Votes',
+                  render: (poll) => poll.votes
+                },
+                {
+                  key: 'createdAt',
+                  header: 'Created',
+                  render: (poll) => new Date(poll.createdAt).toLocaleDateString()
+                }
+              ]}
+              data={Array.isArray(articles) ? articles.filter(a => a.isPoll).sort((a, b) => (b.votes || 0) - (a.votes || 0)).slice(0, 3) : []}
+              loading={loading}
+              emptyMessage="Δεν υπάρχουν ψηφοφορίες."
+              actions={false}
+            />
+          </Card>
             >
               Manage Locations
             </Link>
