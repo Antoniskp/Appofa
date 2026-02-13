@@ -486,11 +486,11 @@ function AdminDashboardContent() {
               {
                 key: 'title',
                 header: 'Title',
-                allowWrap: true,
+                className: 'whitespace-normal',
                 render: (article) => (
                   <Link
                     href={`/articles/${article.id}`}
-                    className="text-blue-600 hover:text-blue-800 line-clamp-2 max-w-md block"
+                    className="text-blue-600 hover:text-blue-800 line-clamp-2 block"
                     title={article.title}
                   >
                     {article.title}
