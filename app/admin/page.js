@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
@@ -48,6 +48,7 @@ function AdminDashboardContent() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const articlesTableRef = useRef(null);
 
   const { data: articles, loading, refetch } = useAsyncData(
     async () => {
@@ -263,6 +264,13 @@ function AdminDashboardContent() {
     ...articleCategories.articleTypes.news.categories
   ])];
 
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    // Scroll to top of table after state update
+    setTimeout(() => {
+      articlesTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  };
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -374,11 +382,42 @@ function AdminDashboardContent() {
 
         {/* Recent Articles Table */}
         <Card 
+          ref={articlesTableRef}
           className="overflow-hidden"
           header={
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="text-xl font-semibold">All Articles</h2>
-              <div className="flex gap-2 items-center">
+              <div className="flex flex-wrap gap-2 items-center">
+                <select
+                  id="statusFilter"
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Statuses</option>
+                  <option value="published">Published</option>
+                  <option value="draft">Draft</option>
+                  <option value="archived">Archived</option>
+                </select>
+                
+                <select
+                  id="categoryFilter"
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                  value={categoryFilter}
+                  onChange={(e) => {
+                    setCategoryFilter(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">All Categories</option>
+                  {allCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                
                 <label htmlFor="sortBy" className="text-sm mr-1">Sort by:</label>
                 <select
                   id="sortBy"
@@ -408,54 +447,13 @@ function AdminDashboardContent() {
             </div>
           }
         >
-          <div className="flex gap-4 mb-4 px-6 pt-4">
-            <div>
-              <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">
-                Status
-              </label>
-              <select
-                id="statusFilter"
-                className="border border-gray-300 rounded px-3 py-1.5 text-sm"
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">All Statuses</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-                <option value="archived">Archived</option>
-              </select>
-            </div>
-            
-            <div>
-              <label htmlFor="categoryFilter" className="block text-sm font-medium text-gray-700 mb-1">
-                Category
-              </label>
-              <select
-                id="categoryFilter"
-                className="border border-gray-300 rounded px-3 py-1.5 text-sm"
-                value={categoryFilter}
-                onChange={(e) => {
-                  setCategoryFilter(e.target.value);
-                  setPage(1);
-                }}
-              >
-                <option value="">All Categories</option>
-                {allCategories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
-          </div>
           
           <AdminTable
             columns={[
               {
                 key: 'actions',
                 header: 'Actions',
-                width: 'w-32',
+                width: 'w-24',
                 render: (article) => (
                   <div className="flex gap-2 items-center justify-end">
                     <TooltipIconButton
@@ -489,10 +487,12 @@ function AdminDashboardContent() {
               {
                 key: 'title',
                 header: 'Title',
+                allowWrap: true,
                 render: (article) => (
                   <Link
                     href={`/articles/${article.id}`}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 line-clamp-2 max-w-md block"
+                    title={article.title}
                   >
                     {article.title}
                   </Link>
@@ -552,9 +552,9 @@ function AdminDashboardContent() {
           <Pagination
             currentPage={page}
             totalPages={totalPages}
-            onPageChange={setPage}
-            onPrevious={() => setPage(p => Math.max(1, p - 1))}
-            onNext={() => setPage(p => Math.min(totalPages, p + 1))}
+            onPageChange={handlePageChange}
+            onPrevious={() => handlePageChange(Math.max(1, page - 1))}
+            onNext={() => handlePageChange(Math.min(totalPages, page + 1))}
           />
         </Card>
 

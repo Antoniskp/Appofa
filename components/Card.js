@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import Link from 'next/link';
 
 /**
@@ -20,7 +20,7 @@ import Link from 'next/link';
  * @param {string} padding - Padding size (none, sm, md, lg)
  * @param {string} className - Additional CSS classes
  */
-export default function Card({ 
+const Card = forwardRef(function Card({ 
   children,
   header,
   footer,
@@ -31,7 +31,7 @@ export default function Card({
   onClick,
   padding = 'md',
   className = ''
-}) {
+}, ref) {
   const variants = {
     default: 'bg-white rounded-lg shadow-md',
     outlined: 'bg-white rounded-lg border border-gray-200',
@@ -102,11 +102,13 @@ export default function Card({
   
   // Regular card
   return (
-    <div className={baseClasses}>
+    <div ref={ref} className={baseClasses}>
       {cardContent}
     </div>
   );
-}
+});
+
+export default Card;
 
 /**
  * Card with image on the left (for article lists, etc.)
