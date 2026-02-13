@@ -258,10 +258,10 @@ function AdminDashboardContent() {
   };
 
   // Combine article and news categories from config
-  const allCategories = [
+  const allCategories = [...new Set([
     ...articleCategories.articleTypes.articles.categories,
     ...articleCategories.articleTypes.news.categories
-  ];
+  ])];
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -384,7 +384,10 @@ function AdminDashboardContent() {
                   id="sortBy"
                   className="border rounded px-2 py-1 text-sm"
                   value={sortBy}
-                  onChange={e => setSortBy(e.target.value)}
+                  onChange={e => {
+                    setSortBy(e.target.value);
+                    setPage(1);
+                  }}
                 >
                   <option value="lastModified">Last Modified</option>
                   <option value="createdAt">Created Date</option>
@@ -393,7 +396,10 @@ function AdminDashboardContent() {
                 <button
                   className="ml-1 px-2 py-1 border rounded text-sm"
                   title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  onClick={() => {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    setPage(1);
+                  }}
                   aria-label="Toggle sort order"
                 >
                   {sortOrder === 'asc' ? '↑' : '↓'}
