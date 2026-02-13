@@ -15,6 +15,8 @@ import AdminTable from '@/components/admin/AdminTable';
 import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
 import Tooltip from '@/components/Tooltip';
+import Pagination from '@/components/Pagination';
+import articleCategories from '@/config/articleCategories.json';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
@@ -40,16 +42,40 @@ function AdminDashboardContent() {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [moderatorLocationOverrides, setModeratorLocationOverrides] = useState({});
+  const [sortBy, setSortBy] = useState('lastModified'); // 'lastModified' | 'title' | 'createdAt'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
+  const [statusFilter, setStatusFilter] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const { data: articles, loading, refetch } = useAsyncData(
     async () => {
-      const response = await articleAPI.getAll({ limit: 100 });
+      let orderBy = 'updatedAt';
+      if (sortBy === 'title') orderBy = 'title';
+      else if (sortBy === 'createdAt') orderBy = 'createdAt';
+      
+      const params = {
+        page,
+        limit: 20,
+        orderBy,
+        order: sortOrder
+      };
+      
+      if (statusFilter) params.status = statusFilter;
+      if (categoryFilter) params.category = categoryFilter;
+      
+      const response = await articleAPI.getAll(params);
       if (response.success) {
+        // Update total pages for pagination
+        if (response.data.pagination) {
+          setTotalPages(response.data.pagination.totalPages);
+        }
         return response.data.articles || [];
       }
       return [];
     },
-    [],
+    [sortBy, sortOrder, statusFilter, categoryFilter, page],
     {
       initialData: [],
       transform: (allArticles) => {
@@ -231,6 +257,12 @@ function AdminDashboardContent() {
     ];
   };
 
+  // Combine article and news categories from config
+  const allCategories = [...new Set([
+    ...articleCategories.articleTypes.articles.categories,
+    ...articleCategories.articleTypes.news.categories
+  ])];
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -343,64 +375,87 @@ function AdminDashboardContent() {
         {/* Recent Articles Table */}
         <Card 
           className="overflow-hidden"
-          header={<h2 className="text-xl font-semibold">All Articles</h2>}
+          header={
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-xl font-semibold">All Articles</h2>
+              <div className="flex gap-2 items-center">
+                <label htmlFor="sortBy" className="text-sm mr-1">Sort by:</label>
+                <select
+                  id="sortBy"
+                  className="border rounded px-2 py-1 text-sm"
+                  value={sortBy}
+                  onChange={e => {
+                    setSortBy(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="lastModified">Last Modified</option>
+                  <option value="createdAt">Created Date</option>
+                  <option value="title">Alphabetical</option>
+                </select>
+                <button
+                  className="ml-1 px-2 py-1 border rounded text-sm"
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  onClick={() => {
+                    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                    setPage(1);
+                  }}
+                  aria-label="Toggle sort order"
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
+            </div>
+          }
         >
+          <div className="flex gap-4 mb-4 px-6 pt-4">
+            <div>
+              <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">
+                Status
+              </label>
+              <select
+                id="statusFilter"
+                className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">All Statuses</option>
+                <option value="published">Published</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+            
+            <div>
+              <label htmlFor="categoryFilter" className="block text-sm font-medium text-gray-700 mb-1">
+                Category
+              </label>
+              <select
+                id="categoryFilter"
+                className="border border-gray-300 rounded px-3 py-1.5 text-sm"
+                value={categoryFilter}
+                onChange={(e) => {
+                  setCategoryFilter(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">All Categories</option>
+                {allCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+          </div>
           
           <AdminTable
             columns={[
               {
-                key: 'title',
-                header: 'Title',
-                render: (article) => (
-                  <Link
-                    href={`/articles/${article.id}`}
-                    className="text-blue-600 hover:text-blue-800"
-                  >
-                    {article.title}
-                  </Link>
-                )
-              },
-              {
-                key: 'author',
-                header: 'Author',
-                render: (article) => (article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown'))
-              },
-              {
-                key: 'status',
-                header: 'Status',
-                render: (article) => <StatusBadge status={article.status} />
-              },
-              {
-                key: 'newsStatus',
-                header: 'News Status',
-                render: (article) => (
-                  article.isNews ? (
-                    <Badge variant={article.newsApprovedAt ? 'success' : 'warning'}>
-                      {article.newsApprovedAt ? '✓ Approved' : '⏳ Pending'}
-                    </Badge>
-                  ) : (
-                    <span className="text-gray-400 text-xs">-</span>
-                  )
-                )
-              },
-              {
-                key: 'category',
-                header: 'Category',
-                render: (article) => article.category || '-'
-              },
-              {
-                key: 'tags',
-                header: 'Tags',
-                render: (article) => Array.isArray(article.tags) && article.tags.length > 0 ? article.tags.join(', ') : '-'
-              },
-              {
-                key: 'createdAt',
-                header: 'Created',
-                render: (article) => new Date(article.createdAt).toLocaleDateString()
-              },
-              {
                 key: 'actions',
                 header: 'Actions',
+                width: 'w-32',
                 render: (article) => (
                   <div className="flex gap-2 items-center justify-end">
                     <TooltipIconButton
@@ -430,12 +485,76 @@ function AdminDashboardContent() {
                     />
                   </div>
                 )
+              },
+              {
+                key: 'title',
+                header: 'Title',
+                render: (article) => (
+                  <Link
+                    href={`/articles/${article.id}`}
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    {article.title}
+                  </Link>
+                )
+              },
+              {
+                key: 'author',
+                header: 'Author',
+                width: 'w-28',
+                render: (article) => (article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown'))
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                width: 'w-24',
+                render: (article) => <StatusBadge status={article.status} />
+              },
+              {
+                key: 'newsStatus',
+                header: 'News Status',
+                width: 'w-28',
+                render: (article) => (
+                  article.isNews ? (
+                    <Badge variant={article.newsApprovedAt ? 'success' : 'warning'}>
+                      {article.newsApprovedAt ? '✓ Approved' : '⏳ Pending'}
+                    </Badge>
+                  ) : (
+                    <span className="text-gray-400 text-xs">-</span>
+                  )
+                )
+              },
+              {
+                key: 'category',
+                header: 'Category',
+                width: 'w-32',
+                render: (article) => article.category || '-'
+              },
+              {
+                key: 'tags',
+                header: 'Tags',
+                width: 'w-40',
+                render: (article) => Array.isArray(article.tags) && article.tags.length > 0 ? article.tags.join(', ') : '-'
+              },
+              {
+                key: 'createdAt',
+                header: 'Created',
+                width: 'w-28',
+                render: (article) => new Date(article.createdAt).toLocaleDateString()
               }
             ]}
             data={articles}
             loading={loading}
             emptyMessage="No articles found."
             actions={false}
+          />
+
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            onPrevious={() => setPage(p => Math.max(1, p - 1))}
+            onNext={() => setPage(p => Math.min(totalPages, p + 1))}
           />
         </Card>
 
