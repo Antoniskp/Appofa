@@ -181,7 +181,7 @@ const articleController = {
   // Get all articles
   getAllArticles: async (req, res) => {
     try {
-      const { status, category, page = 1, limit = 10, authorId, type, tag } = req.query;
+      const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order } = req.query;
       
       // Validate pagination parameters
       const parsedPage = Number(page);
@@ -294,6 +294,14 @@ const articleController = {
         }
       }
 
+      // Determine sort field and direction
+      let sortField = 'updatedAt';
+      if (orderBy === 'title') sortField = 'title';
+      else if (orderBy === 'createdAt') sortField = 'createdAt';
+      else if (orderBy === 'updatedAt') sortField = 'updatedAt';
+      let sortDirection = 'DESC';
+      if (order && String(order).toLowerCase() === 'asc') sortDirection = 'ASC';
+
       const { count, rows: articles } = await Article.findAndCountAll({
         where,
         distinct: true,
@@ -302,7 +310,7 @@ const articleController = {
           as: 'author',
           attributes: ['id', 'username', 'firstName', 'lastName']
         }],
-        order: [['createdAt', 'DESC']],
+        order: [[sortField, sortDirection]],
         limit: parsedLimit,
         offset: parseInt(offset)
       });

@@ -29,21 +29,26 @@ function EditorDashboardContent() {
   const { canEditArticle, canDeleteArticle } = usePermissions();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [articleToDelete, setArticleToDelete] = useState(null);
+  const [sortBy, setSortBy] = useState('lastModified'); // 'lastModified' or 'title'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
 
   const { data: articles, loading, refetch } = useAsyncData(
     async () => {
       if (!user?.id) {
         return [];
       }
+      // Map sortBy to backend fields
+      let orderBy = 'updatedAt';
+      if (sortBy === 'title') orderBy = 'title';
       // Fetch only articles owned by the current user
-      const response = await articleAPI.getAll({ authorId: user?.id, limit: 50 });
+      const response = await articleAPI.getAll({ authorId: user?.id, limit: 50, orderBy, order: sortOrder });
       if (response.success) {
         // Filter to ensure only user's articles (in case API returns more)
         return (response.data.articles || []).filter(a => a.authorId === user.id);
       }
       return [];
     },
-    [user?.id],
+    [user?.id, sortBy, sortOrder],
     {
       initialData: [],
       onError: (error) => {
@@ -122,7 +127,31 @@ function EditorDashboardContent() {
         {/* Articles List */}
         <Card 
           className="overflow-hidden"
-          header={<h2 className="text-xl font-semibold">My Articles</h2>}
+          header={
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-xl font-semibold">My Articles</h2>
+              <div className="flex gap-2 items-center">
+                <label htmlFor="sortBy" className="text-sm mr-1">Sort by:</label>
+                <select
+                  id="sortBy"
+                  className="border rounded px-2 py-1 text-sm"
+                  value={sortBy}
+                  onChange={e => setSortBy(e.target.value)}
+                >
+                  <option value="lastModified">Last Modified</option>
+                  <option value="title">Alphabetical</option>
+                </select>
+                <button
+                  className="ml-1 px-2 py-1 border rounded text-sm"
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                  aria-label="Toggle sort order"
+                >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+                </button>
+              </div>
+            </div>
+          }
         >
 
           {loading ? (
