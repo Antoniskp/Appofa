@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
@@ -264,13 +264,12 @@ function AdminDashboardContent() {
     ...articleCategories.articleTypes.news.categories
   ])];
 
-  const handlePageChange = (newPage) => {
-    setPage(newPage);
-    // Scroll to top of table after state update
-    setTimeout(() => {
-      articlesTableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
-  };
+  // Scroll to top of table when page changes
+  useEffect(() => {
+    if (articlesTableRef.current) {
+      articlesTableRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [page]);
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -552,9 +551,9 @@ function AdminDashboardContent() {
           <Pagination
             currentPage={page}
             totalPages={totalPages}
-            onPageChange={handlePageChange}
-            onPrevious={() => handlePageChange(Math.max(1, page - 1))}
-            onNext={() => handlePageChange(Math.min(totalPages, page + 1))}
+            onPageChange={setPage}
+            onPrevious={() => setPage(p => Math.max(1, p - 1))}
+            onNext={() => setPage(p => Math.min(totalPages, p + 1))}
           />
         </Card>
 
