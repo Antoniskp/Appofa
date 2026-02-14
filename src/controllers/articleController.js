@@ -181,7 +181,7 @@ const articleController = {
   // Get all articles
   getAllArticles: async (req, res) => {
     try {
-      const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order, isNews, newsApproved } = req.query;
+      const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order, isNews, newsApproved, search } = req.query;
       
       // Validate pagination parameters
       const parsedPage = Number(page);
@@ -263,47 +263,24 @@ const articleController = {
 
       const offset = (parsedPage - 1) * parsedLimit;
 
-      // Filter by tag (dialect-aware fallback for non-Postgres databases)
-      if (tag) {
-        const trimmedTag = String(tag).trim();
-        const dialect = sequelize.getDialect();
-
-        if (trimmedTag && dialect !== 'postgres') {
-          // Non-Postgres fallback uses in-memory filtering (intended for small datasets/testing).
-          const allArticles = await Article.findAll({
-            where,
-            include: [{
-              model: User,
-              as: 'author',
-              attributes: ['id', 'username', 'firstName', 'lastName']
-            }],
-            order: [['createdAt', 'DESC']]
-          });
-
-          const filteredArticles = allArticles.filter(
-            (article) => Array.isArray(article.tags) && article.tags.includes(trimmedTag)
-          );
-          const count = filteredArticles.length;
-          const paginatedArticles = filteredArticles.slice(offset, offset + parsedLimit);
-          const sanitizedArticles = paginatedArticles.map((article) => sanitizeArticle(article, req.user));
-
-          return res.status(200).json({
-            success: true,
-            data: {
-              articles: sanitizedArticles,
-              pagination: {
-                total: count,
-                page: parsedPage,
-                limit: parsedLimit,
-                totalPages: Math.ceil(count / parsedLimit)
-              }
-            }
-          });
-        }
-
-        if (trimmedTag && dialect === 'postgres') {
-          // Exact tag match for Postgres arrays.
-          where.tags = { [Op.contains]: [trimmedTag] };
+      // Full-text search (title, summary, content)
+      if (search) {
+        const trimmedSearch = String(search).trim();
+        if (trimmedSearch) {
+          const dialect = sequelize.getDialect();
+          if (dialect === 'postgres') {
+            where[Op.or] = [
+              { title: { [Op.iLike]: `%${trimmedSearch}%` } },
+              { summary: { [Op.iLike]: `%${trimmedSearch}%` } },
+              { content: { [Op.iLike]: `%${trimmedSearch}%` } }
+            ];
+          } else {
+            where[Op.or] = [
+              { title: { [Op.like]: `%${trimmedSearch}%` } },
+              { summary: { [Op.like]: `%${trimmedSearch}%` } },
+              { content: { [Op.like]: `%${trimmedSearch}%` } }
+            ];
+          }
         }
       }
 

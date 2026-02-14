@@ -8,7 +8,8 @@ import EmptyState from '@/components/EmptyState';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
-import FilterBar from '@/components/FilterBar';
+import SearchInput from '@/components/SearchInput';
+import CategoryPills from '@/components/CategoryPills';
 
 export default function ArticlesPage() {
   const {
@@ -20,13 +21,27 @@ export default function ArticlesPage() {
     nextPage,
     prevPage,
     goToPage,
+    updateFilter,
   } = useFilters({
     category: '',
     type: 'articles',
-    tag: '',
+    search: '',
   });
 
-  const articleCategoryOptions = articleCategories.articleTypes?.articles?.categories ?? [];
+  // For search input
+  const handleSearchChange = (e) => {
+    updateFilter('search', e.target.value);
+  };
+  // For category pills
+  const handleCategorySelect = (cat) => {
+    // Use updateFilter to set category directly
+    updateFilter('category', cat);
+  };
+
+  // Convert categories to array of { value, label }
+  const articleCategoryOptions = (articleCategories.articleTypes?.articles?.categories ?? []).map(cat =>
+    typeof cat === 'string' ? { value: cat, label: cat } : cat
+  );
 
   const { data: articles, loading, error } = useAsyncData(
     async () => {
@@ -36,12 +51,12 @@ export default function ArticlesPage() {
         ...filters,
         status: 'published',
       };
-      
       // Remove empty filters
       Object.keys(params).forEach(key => {
         if (!params[key]) delete params[key];
       });
-
+      // Remove tag param if present
+      if (params.tag) delete params.tag;
       const response = await articleAPI.getAll(params);
       if (response.success) {
         return response;
@@ -61,27 +76,21 @@ export default function ArticlesPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        {/* Filters */}
-        <FilterBar
-          filters={filters}
-          onChange={handleFilterChange}
-          filterConfig={[
-            {
-              name: 'category',
-              label: 'Category',
-              type: 'select',
-              options: articleCategoryOptions,
-              placeholder: 'All categories',
-            },
-            {
-              name: 'tag',
-              label: 'Tag',
-              type: 'text',
-              placeholder: 'Filter by tag...',
-            },
-          ]}
-          className="mb-8"
-        />
+        {/* Search and Category Pills */}
+        <div className="flex flex-col gap-4 mb-8">
+          <SearchInput
+            name="search"
+            placeholder="Search articles..."
+            value={filters.search}
+            onChange={handleSearchChange}
+            className="max-w-md"
+          />
+          <CategoryPills
+            categories={articleCategoryOptions}
+            selected={filters.category}
+            onSelect={handleCategorySelect}
+          />
+        </div>
 
         {/* Loading State */}
         {loading && (
