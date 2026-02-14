@@ -274,12 +274,12 @@ export default function TransparencyPage() {
               Ο πλήρης κώδικας βρίσκεται στο:
             </p>
             <a 
-              href="https://github.com/Antoniskp/appofasiv8" 
+              href="https://github.com/Antoniskp/Appofa" 
               className="text-blue-600 hover:text-blue-800 underline text-lg font-mono"
               target="_blank"
               rel="noopener noreferrer"
             >
-              github.com/Antoniskp/appofasiv8
+              github.com/Antoniskp/Appofa
             </a>
           </div>
         </div>
@@ -354,7 +354,7 @@ export default function TransparencyPage() {
               <h3 className="font-semibold mb-1">🐛 Bugs & Technical Issues</h3>
               <p className="text-gray-700 text-sm">
                 <a 
-                  href="https://github.com/Antoniskp/appofasiv8/issues" 
+                  href="https://github.com/Antoniskp/Appofa/issues" 
                   className="text-blue-600 hover:text-blue-800 underline"
                   target="_blank"
                   rel="noopener noreferrer"
