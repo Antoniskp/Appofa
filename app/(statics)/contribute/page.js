@@ -115,7 +115,7 @@ export default function ContributePage() {
           <li>
             Αναφέρετε bugs ή ιδέες στο{' '}
             <a
-              href="https://github.com/Antoniskp/appofasiv8/issues"
+              href="https://github.com/Antoniskp/Appofa/issues"
               className="text-blue-600 hover:text-blue-800"
               target="_blank"
               rel="noopener noreferrer"
@@ -128,7 +128,7 @@ export default function ContributePage() {
           <li>
             Κάντε contribution κώδικα μέσω του{' '}
             <a
-              href="https://github.com/Antoniskp/appofasiv8"
+              href="https://github.com/Antoniskp/Appofa"
               className="text-blue-600 hover:text-blue-800"
               target="_blank"
               rel="noopener noreferrer"
