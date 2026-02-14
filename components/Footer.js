@@ -15,7 +15,7 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Column 2: Content */}
+          {/* Column 2: Content & Static Pages */}
           <div>
             <h3 className="text-lg font-semibold mb-4">Περιεχόμενο</h3>
             <ul className="space-y-2">
@@ -34,21 +34,19 @@ export default function Footer() {
                   Δημοσκοπήσεις
                 </Link>
               </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Information */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Πληροφορίες</h3>
-            <ul className="space-y-2">
               <li>
-                <Link href="/instructions" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Οδηγίες
+                <Link href="/faq" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Συχνές Ερωτήσεις
                 </Link>
               </li>
               <li>
-                <Link href="/rules" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Κανόνες
+                <Link href="/about" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Σχετικά με εμάς
+                </Link>
+              </li>
+              <li>
+                <Link href="/transparency" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Διαφάνεια
                 </Link>
               </li>
               <li>
@@ -59,6 +57,38 @@ export default function Footer() {
               <li>
                 <Link href="/contribute" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Συνεισφορά
+                </Link>
+              </li>
+              <li>
+                <Link href="/become-moderator" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Γίνε Moderator
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Πληροφορίες & Πολιτικές */}
+          <div>
+            <h3 className="text-lg font-semibold mb-4">Πληροφορίες</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/instructions" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Οδηγίες Χρήσης
+                </Link>
+              </li>
+              <li>
+                <Link href="/rules" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Κανόνες
+                </Link>
+              </li>
+              <li>
+                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Πολιτική Απορρήτου
+                </Link>
+              </li>
+              <li>
+                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Όροι Χρήσης
                 </Link>
               </li>
             </ul>
