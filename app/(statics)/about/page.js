@@ -205,7 +205,7 @@ export default function AboutPage() {
           <p className="text-gray-700 mt-4">
             Ο κώδικας είναι διαθέσιμος στο{' '}
             <a 
-              href="https://github.com/Antoniskp/appofasiv8" 
+              href="https://github.com/Antoniskp/Appofa" 
               className="text-blue-600 hover:text-blue-800 underline"
               target="_blank"
               rel="noopener noreferrer"
