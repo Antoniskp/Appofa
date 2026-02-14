@@ -40,21 +40,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Σχετικά με εμάς
-                </Link>
-              </li>
-              <li>
-                <Link href="/transparency" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Διαφάνεια
-                </Link>
-              </li>
-              <li>
-                <Link href="/mission" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Αποστολή
-                </Link>
-              </li>
-              <li>
                 <Link href="/contribute" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Συνεισφορά
                 </Link>
@@ -112,6 +97,21 @@ export default function Footer() {
                 <span className="text-gray-400 text-sm">
                   Τηλέφωνο: Προσεχώς
                 </span>
+              </li>
+              <li>
+                <Link href="/about" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Σχετικά με εμάς
+                </Link>
+              </li>
+              <li>
+                <Link href="/transparency" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Διαφάνεια
+                </Link>
+              </li>
+              <li>
+                <Link href="/mission" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Αποστολή
+                </Link>
               </li>
             </ul>
           </div>
