@@ -22,8 +22,10 @@ export default function HomePage() {
       try {
         const response = await articleAPI.getAll({ 
           status: 'published', 
-          isNews: true,
+          type: 'news',
           newsApproved: true,
+          orderBy: 'newsApprovedAt',
+          order: 'desc',
           limit: 9,
           page: 1 
         });

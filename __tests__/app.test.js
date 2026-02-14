@@ -851,6 +851,41 @@ describe('News Application Integration Tests', () => {
       expect(newsArticles.every(article => article.newsApprovedAt)).toBe(true);
     });
 
+    test('should support homepage latest approved news query params', async () => {
+      const csrfToken = 'csrf-viewer-second-news';
+      setCsrfToken(csrfToken, viewerUserId);
+      const createSecondNewsResponse = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          title: 'Second Approved News',
+          content: 'This is another news item that will be approved later.',
+          summary: 'Second approved news summary',
+          status: 'draft',
+          isNews: true
+        });
+
+      const secondNewsId = createSecondNewsResponse.body.data.article.id;
+
+      const csrfTokenApprove = 'csrf-moderator-second-approve';
+      setCsrfToken(csrfTokenApprove, moderatorUserId);
+      await request(app)
+        .post(`/api/articles/${secondNewsId}/approve-news`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfTokenApprove));
+
+      const response = await request(app)
+        .get('/api/articles?status=published&isNews=true&newsApproved=true&orderBy=newsApprovedAt&order=desc&limit=2');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      const newsArticles = response.body.data.articles || [];
+      expect(newsArticles.length).toBeGreaterThan(0);
+      expect(newsArticles[0].id).toBe(secondNewsId);
+      expect(newsArticles.every(article => article.newsApprovedAt)).toBe(true);
+    });
+
     test('should not approve already approved news', async () => {
       const csrfToken = 'csrf-moderator-approve-repeat';
       setCsrfToken(csrfToken, moderatorUserId);

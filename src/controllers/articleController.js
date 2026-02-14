@@ -181,7 +181,7 @@ const articleController = {
   // Get all articles
   getAllArticles: async (req, res) => {
     try {
-      const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order } = req.query;
+      const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order, isNews, newsApproved } = req.query;
       
       // Validate pagination parameters
       const parsedPage = Number(page);
@@ -223,6 +223,19 @@ const articleController = {
             [Op.ne]: null
           };
         }
+      }
+
+      // Backward-compatible filter aliases for frontend callers
+      const normalizedIsNews = typeof isNews === 'string' ? isNews.toLowerCase() : isNews;
+      if (!type && (normalizedIsNews === true || normalizedIsNews === 'true' || normalizedIsNews === '1')) {
+        where.type = 'news';
+      }
+
+      const normalizedNewsApproved = typeof newsApproved === 'string' ? newsApproved.toLowerCase() : newsApproved;
+      if (normalizedNewsApproved === true || normalizedNewsApproved === 'true' || normalizedNewsApproved === '1') {
+        where.newsApprovedAt = {
+          [Op.ne]: null
+        };
       }
 
       if (authorId !== undefined) {
@@ -299,6 +312,7 @@ const articleController = {
       if (orderBy === 'title') sortField = 'title';
       else if (orderBy === 'createdAt') sortField = 'createdAt';
       else if (orderBy === 'updatedAt') sortField = 'updatedAt';
+      else if (orderBy === 'newsApprovedAt') sortField = 'newsApprovedAt';
       let sortDirection = 'DESC';
       if (order && String(order).toLowerCase() === 'asc') sortDirection = 'ASC';
 
