@@ -14,31 +14,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 
 ## Documentation
 
-### Core Documentation
-- [Project Summary](doc/PROJECT_SUMMARY.md) - Holistic project overview
-- [Architecture](doc/ARCHITECTURE.md) - System architecture and middleware
-- [Security](doc/SECURITY.md) - Security best practices and considerations
-
-### Features
-- [Poll & Statistics System](doc/POLL_FEATURE.md) - Complete poll system with voting, results, and Chart.js visualizations
-- [Locations Model](doc/LOCATION_MODEL.md) - Hierarchical locations system
-- [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
-- [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
-- [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
-
-### Deployment & Operations
-- [VPS Setup Guide](doc/VPS_SETUP.md) - **Complete VPS deployment guide** (Ubuntu/Debian)
-- [Deployment Guide](doc/DEPLOYMENT_GUIDE.md) - Local, Docker, and cloud platform deployments
-- [Upgrade Guide](doc/UPGRADE_GUIDE.md) - Migration and upgrade instructions
-- [Migrations](doc/MIGRATIONS.md) - Database migration guide
-- [Node Upgrade Guide](doc/NODE_UPGRADE_VPS.md) - Node.js upgrade instructions for VPS
-- [Troubleshooting](doc/TROUBLESHOOTING.md) - Common issues and solutions
-
-### Development & Testing
-- [API Testing Examples](doc/API_TESTING.md) - API usage and testing
-- [Poll Testing](doc/POLL_TESTING.md) - Poll system testing checklist
-- [Copilot Agents](doc/COPILOT_AGENTS.md) - AI agent configuration
-- [Postman Collection](postman_collection.json) - API testing collection
+See the **[doc/](doc/)** directory for comprehensive documentation organized by category (features, deployment, testing, development).
 
 ## Prerequisites
 - Node.js 18+

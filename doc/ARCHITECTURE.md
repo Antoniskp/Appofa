@@ -315,12 +315,14 @@ appofasiv8/
 │   └── app.test.js              # Integration tests
 │
 ├── doc/                         # Project docs
-│   ├── API_TESTING.md           # API testing guide
-│   ├── DEPLOYMENT.md            # Deployment guide
-│   ├── SECURITY.md              # Security documentation
+│   ├── README.md                # Documentation index
+│   ├── ARCHITECTURE.md          # This file
 │   ├── PROJECT_SUMMARY.md       # Project overview
-│   ├── VPS_DEPLOYMENT.md        # VPS deployment guide
-│   └── ARCHITECTURE.md          # This file
+│   ├── SECURITY.md              # Security documentation
+│   ├── testing/                 # Testing guides and reports
+│   ├── features/                # Feature documentation
+│   ├── deployment/              # Deployment guides
+│   └── development/             # Development guides
 │
 ├── Configuration/                # Config files
 │   ├── .env.example             # Environment template
