@@ -218,33 +218,31 @@ export default function PollDetailPage() {
       <div className="app-container max-w-4xl">
         {/* Header */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex flex-wrap gap-2 mb-3">
-                <Badge variant={poll.type === 'simple' ? 'primary' : 'purple'}>
-                  {poll.type === 'simple' ? 'Απλή' : 'Σύνθετη'}
-                </Badge>
-                <Badge variant={isPollActive ? 'success' : 'gray'}>
-                  {isPollActive ? 'Ενεργή' : 'Κλειστή'}
-                </Badge>
-                {poll.category && (
-                  <Badge variant="primary">{poll.category}</Badge>
-                )}
-                {poll.visibility === 'locals_only' && (
-                  <Badge variant="orange">Τοπική</Badge>
-                )}
-              </div>
-              
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{poll.title}</h1>
-              
-              {poll.description && (
-                <p className="text-gray-700 text-lg mb-4 whitespace-pre-wrap">
-                  {poll.description}
-                </p>
+          <div className="flex flex-col mb-4">
+            <div className="flex flex-wrap gap-2 mb-3">
+              <Badge variant={poll.type === 'simple' ? 'primary' : 'purple'}>
+                {poll.type === 'simple' ? 'Απλή' : 'Σύνθετη'}
+              </Badge>
+              <Badge variant={isPollActive ? 'success' : 'gray'}>
+                {isPollActive ? 'Ενεργή' : 'Κλειστή'}
+              </Badge>
+              {poll.category && (
+                <Badge variant="primary">{poll.category}</Badge>
+              )}
+              {poll.visibility === 'locals_only' && (
+                <Badge variant="orange">Τοπική</Badge>
               )}
             </div>
             
-            <div className="flex flex-wrap gap-2 ml-4">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{poll.title}</h1>
+            
+            {poll.description && (
+              <p className="text-gray-700 text-lg mb-4 whitespace-pre-wrap">
+                {poll.description}
+              </p>
+            )}
+            
+            <div className="flex flex-wrap gap-2 mt-2">
               <button
                 type="button"
                 onClick={handleBookmark}
