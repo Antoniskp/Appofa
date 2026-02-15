@@ -217,6 +217,9 @@ export default function LocationDetailPage() {
     { newsArticles: [], regularArticles: [] }
   );
 
+  // Filter out archived polls (single iteration)
+  const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
+
   const locationNeedsModerator = !location.hasModerator;
   const moderatorDisplayName = [location?.moderatorPreview?.firstName, location?.moderatorPreview?.lastName]
     .filter(Boolean)
@@ -634,13 +637,13 @@ export default function LocationDetailPage() {
           )}
 
           {/* Linked Polls */}
-          {entities.polls.filter(poll => poll.status !== 'archived').length > 0 && (
+          {activePolls.length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Polls ({entities.polls.filter(poll => poll.status !== 'archived').length})
+                Polls ({activePolls.length})
               </h2>
               <div className="space-y-3">
-                {entities.polls.filter(poll => poll.status !== 'archived').map(poll => (
+                {activePolls.map(poll => (
                   <Link
                     key={poll.id}
                     href={`/polls/${poll.id}`}
