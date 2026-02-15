@@ -5,7 +5,8 @@ const {
   normalizeOptionalText,
   normalizeBoolean,
   normalizeEnum,
-  normalizeInteger
+  normalizeInteger,
+  normalizeStringArray
 } = require('../utils/validators');
 
 const POLL_TYPES = ['simple', 'complex'];
@@ -58,6 +59,7 @@ const pollController = {
         title,
         description,
         category,
+        tags,
         type,
         allowUserContributions,
         allowUnauthenticatedVotes,
@@ -96,6 +98,16 @@ const pollController = {
         return res.status(400).json({
           success: false,
           message: categoryResult.error
+        });
+      }
+
+      // Validate tags (optional)
+      const tagsResult = normalizeStringArray(tags, 'Tags');
+      if (tagsResult.error) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: tagsResult.error
         });
       }
 
@@ -222,6 +234,7 @@ const pollController = {
         title: titleResult.value,
         description: descriptionResult.value,
         category: categoryResult.value,
+        tags: tagsResult.value ?? [],
         type: typeResult.value,
         allowUserContributions: allowUserContributionsResult.value !== undefined ? allowUserContributionsResult.value : false,
         allowUnauthenticatedVotes: allowUnauthenticatedVotesResult.value !== undefined ? allowUnauthenticatedVotesResult.value : false,
@@ -344,6 +357,7 @@ const pollController = {
         type,
         visibility,
         category,
+        tag,
         page = 1,
         limit = 10
       } = req.query;
@@ -388,6 +402,14 @@ const pollController = {
           });
         }
         where.category = categoryResult.value;
+      }
+
+      // Filter by tag
+      if (tag) {
+        // Support filtering by tag - PostgreSQL JSON contains operator
+        where.tags = {
+          [Op.contains]: [tag]
+        };
       }
 
       // Filter by visibility based on authentication
@@ -592,7 +614,7 @@ const pollController = {
     
     try {
       const { id } = req.params;
-      const { title, description, category, deadline, status, locationId, hideCreator } = req.body;
+      const { title, description, category, tags, deadline, status, locationId, hideCreator } = req.body;
 
       const poll = await Poll.findByPk(id, {
         include: [
@@ -659,6 +681,19 @@ const pollController = {
           });
         }
         updateData.category = categoryResult.value;
+      }
+
+      // Validate and update tags
+      if (tags !== undefined) {
+        const tagsResult = normalizeStringArray(tags, 'Tags');
+        if (tagsResult.error) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: tagsResult.error
+          });
+        }
+        updateData.tags = tagsResult.value ?? [];
       }
 
       // Validate and update deadline

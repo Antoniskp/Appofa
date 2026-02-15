@@ -1230,4 +1230,204 @@ describe('Poll API Tests', () => {
       expect(response.status).toBe(403);
     });
   });
+
+  describe('Poll Tags Support', () => {
+    test('should create a poll with tags', async () => {
+      const csrfToken = 'test-csrf-token-tags';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Best Programming Language',
+          description: 'Choose your favorite programming language',
+          category: 'Education',
+          tags: ['programming', 'education', 'beginners'],
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'JavaScript' },
+            { text: 'Python' },
+            { text: 'Java' }
+          ]
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.tags).toEqual(['programming', 'education', 'beginners']);
+      expect(response.body.data.category).toBe('Education');
+    });
+
+    test('should create a poll without tags (backward compatibility)', async () => {
+      const csrfToken = 'test-csrf-token-no-tags';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Favorite Color Without Tags',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Red' },
+            { text: 'Blue' }
+          ]
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.tags).toEqual([]);
+    });
+
+    test('should fail with invalid tags (not an array)', async () => {
+      const csrfToken = 'test-csrf-token-invalid-tags';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Invalid Tags Test',
+          type: 'simple',
+          tags: 'programming,education',  // Should be an array, not a string
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Tags');
+    });
+
+    test('should trim and normalize tags', async () => {
+      const csrfToken = 'test-csrf-token-normalize-tags';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Tag Normalization Test',
+          type: 'simple',
+          tags: ['  programming  ', 'education', '', '  web  '],
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.tags).toEqual(['programming', 'education', 'web']);
+    });
+
+    test('should update poll tags', async () => {
+      // First create a poll
+      const csrfTokenCreate = 'test-csrf-token-create-for-update';
+      const headersCreate = csrfHeaderFor(csrfTokenCreate, adminUserId);
+
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headersCreate.Cookie])
+        .set('x-csrf-token', csrfTokenCreate)
+        .send({
+          title: 'Poll to Update Tags',
+          type: 'simple',
+          tags: ['old-tag'],
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      expect(createResponse.status).toBe(201);
+      const pollId = createResponse.body.data.id;
+
+      // Now update the tags
+      const csrfTokenUpdate = 'test-csrf-token-update-tags';
+      const headersUpdate = csrfHeaderFor(csrfTokenUpdate, adminUserId);
+
+      const updateResponse = await request(app)
+        .put(`/api/polls/${pollId}`)
+        .set('Cookie', [`auth_token=${adminToken}`, ...headersUpdate.Cookie])
+        .set('x-csrf-token', csrfTokenUpdate)
+        .send({
+          tags: ['new-tag', 'another-tag']
+        });
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.success).toBe(true);
+      expect(updateResponse.body.data.tags).toEqual(['new-tag', 'another-tag']);
+    });
+
+    test('should filter polls by tag', async () => {
+      // Create polls with specific tags
+      const csrfToken1 = 'test-csrf-token-filter-1';
+      const headers1 = csrfHeaderFor(csrfToken1, adminUserId);
+
+      await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers1.Cookie])
+        .set('x-csrf-token', csrfToken1)
+        .send({
+          title: 'Programming Poll',
+          type: 'simple',
+          tags: ['programming', 'tech'],
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      const csrfToken2 = 'test-csrf-token-filter-2';
+      const headers2 = csrfHeaderFor(csrfToken2, adminUserId);
+
+      await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers2.Cookie])
+        .set('x-csrf-token', csrfToken2)
+        .send({
+          title: 'Cooking Poll',
+          type: 'simple',
+          tags: ['cooking', 'food'],
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      // Filter by programming tag
+      const response = await request(app)
+        .get('/api/polls?tag=programming')
+        .set('Cookie', `auth_token=${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      // Check that at least one poll with 'programming' tag is returned
+      const programmingPolls = response.body.data.filter(poll => 
+        poll.tags && poll.tags.includes('programming')
+      );
+      expect(programmingPolls.length).toBeGreaterThan(0);
+    });
+  });
 });
