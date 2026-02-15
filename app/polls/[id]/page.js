@@ -94,7 +94,11 @@ export default function PollDetailPage() {
         title: poll?.title,
         text: poll?.description || '',
         url: window.location.href
-      }).catch(err => console.log('Error sharing:', err));
+      }).catch(err => {
+        if (err.name !== 'AbortError') {
+          addToast('Αποτυχία κοινοποίησης', { type: 'error' });
+        }
+      });
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
