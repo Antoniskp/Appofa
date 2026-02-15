@@ -11,6 +11,8 @@ import {
   TrashIcon,
   ClockIcon,
   BookmarkIcon,
+  ShareIcon,
+  PrinterIcon,
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { pollAPI, bookmarkAPI } from '@/lib/api';
@@ -23,6 +25,7 @@ import EmptyState from '@/components/EmptyState';
 import Badge from '@/components/Badge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useToast } from '@/components/ToastProvider';
+import { TooltipIconButton } from '@/components/Tooltip';
 
 export default function PollDetailPage() {
   const params = useParams();
@@ -82,6 +85,29 @@ export default function PollDetailPage() {
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
+    }
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: poll?.title,
+        text: poll?.description || '',
+        url: window.location.href
+      }).catch(err => {
+        if (err.name !== 'AbortError') {
+          addToast('Αποτυχία κοινοποίησης', { type: 'error' });
+        }
+      });
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+          addToast('Ο σύνδεσμος αντιγράφηκε στο πρόχειρο!', { type: 'success' });
+        })
+        .catch(() => {
+          addToast('Αποτυχία αντιγραφής συνδέσμου', { type: 'error' });
+        });
     }
   };
 
@@ -218,55 +244,88 @@ export default function PollDetailPage() {
       <div className="app-container max-w-4xl">
         {/* Header */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex-1">
-              <div className="flex flex-wrap gap-2 mb-3">
-                <Badge variant={poll.type === 'simple' ? 'primary' : 'purple'}>
-                  {poll.type === 'simple' ? 'Απλή' : 'Σύνθετη'}
-                </Badge>
-                <Badge variant={isPollActive ? 'success' : 'gray'}>
-                  {isPollActive ? 'Ενεργή' : 'Κλειστή'}
-                </Badge>
-                {poll.category && (
-                  <Badge variant="primary">{poll.category}</Badge>
-                )}
-                {poll.visibility === 'locals_only' && (
-                  <Badge variant="orange">Τοπική</Badge>
-                )}
-              </div>
-              
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{poll.title}</h1>
-              
-              {poll.description && (
-                <p className="text-gray-700 text-lg mb-4 whitespace-pre-wrap">
-                  {poll.description}
-                </p>
+          <div className="mb-8">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant={poll.type === 'simple' ? 'primary' : 'purple'}>
+                {poll.type === 'simple' ? 'Απλή' : 'Σύνθετη'}
+              </Badge>
+              <Badge variant={isPollActive ? 'success' : 'gray'}>
+                {isPollActive ? 'Ενεργή' : 'Κλειστή'}
+              </Badge>
+              {poll.category && (
+                <Badge variant="primary">{poll.category}</Badge>
+              )}
+              {poll.visibility === 'locals_only' && (
+                <Badge variant="orange">Τοπική</Badge>
               )}
             </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{poll.title}</h1>
             
-            <div className="flex flex-wrap gap-2 ml-4">
-              <button
-                type="button"
-                onClick={handleBookmark}
-                disabled={bookmarkLoading}
-                className={`flex items-center gap-2 px-4 py-2 rounded-md transition text-sm border ${
-                  isBookmarked
-                    ? 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-              >
-                {isBookmarked ? (
-                  <BookmarkIconSolid className="h-4 w-4" />
-                ) : (
-                  <BookmarkIcon className="h-4 w-4" />
-                )}
-                {isBookmarked ? 'Αποθηκευμένο' : 'Αποθήκευση'}
-                {bookmarkCount > 0 && (
-                  <span className="ml-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
-                    {bookmarkCount}
-                  </span>
-                )}
-              </button>
+            {poll.description && (
+              <p className="text-gray-700 text-lg mb-4 whitespace-pre-wrap">
+                {poll.description}
+              </p>
+            )}
+            
+            {/* Meta Information with Share/Bookmark/Print */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 border-t border-gray-200 pt-4">
+              <div className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                <span>Δημιουργός: <strong>{creatorLabel}</strong></span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                <span>Δημιουργήθηκε: {new Date(poll.createdAt).toLocaleDateString('el-GR')}</span>
+              </div>
+              {poll.deadline && (
+                <>
+                  <span>•</span>
+                  <div className="flex items-center gap-2">
+                    <ClockIcon className="h-4 w-4" />
+                    <span>Λήγει: {new Date(poll.deadline).toLocaleDateString('el-GR')} {new Date(poll.deadline).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </>
+              )}
+              <span>•</span>
+              <div className="flex items-center gap-2">
+                <EyeIcon className="h-4 w-4" />
+                <span>Ορατότητα: <strong>{poll.visibility === 'public' ? 'Δημόσια' : poll.visibility === 'locals_only' ? 'Τοπική' : 'Μόνο Συνδεδεμένοι'}</strong></span>
+              </div>
+              
+              {/* Share, Bookmark, Print buttons on the right */}
+              <div className="ml-auto flex gap-2">
+                <TooltipIconButton
+                  icon={ShareIcon}
+                  tooltip="Κοινοποίηση δημοσκόπησης"
+                  onClick={handleShare}
+                />
+                <div className="flex items-center gap-1">
+                  <TooltipIconButton
+                    icon={isBookmarked ? BookmarkIconSolid : BookmarkIcon}
+                    tooltip={isBookmarked ? 'Αφαίρεση από τα σελιδοδείκτες' : 'Αποθήκευση'}
+                    onClick={handleBookmark}
+                    disabled={bookmarkLoading}
+                    variant={isBookmarked ? 'primary' : 'default'}
+                  />
+                  {bookmarkCount > 0 && (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                      {bookmarkCount}
+                    </span>
+                  )}
+                </div>
+                <TooltipIconButton
+                  icon={PrinterIcon}
+                  tooltip="Εκτύπωση"
+                  onClick={() => window.print()}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Edit/Delete Action Buttons */}
+          {(canEdit || canDelete) && (
+            <div className="flex gap-2 mt-4">
               {canEdit && (
                 <Link
                   href={`/polls/${poll.id}/edit`}
@@ -286,44 +345,7 @@ export default function PollDetailPage() {
                 </button>
               )}
             </div>
-          </div>
-          
-          {/* Meta Information */}
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600 border-t border-gray-200 pt-4">
-            <div className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4" />
-              <span>
-                Δημιουργός: <strong>{creatorLabel}</strong>
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <CalendarIcon className="h-4 w-4" />
-              <span>
-                Δημιουργήθηκε: {new Date(poll.createdAt).toLocaleDateString('el-GR')}
-              </span>
-            </div>
-            
-            {poll.deadline && (
-              <div className="flex items-center gap-2">
-                <ClockIcon className="h-4 w-4" />
-                <span>
-                  Λήγει: {new Date(poll.deadline).toLocaleDateString('el-GR')} {new Date(poll.deadline).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            )}
-            
-            <div className="flex items-center gap-2">
-              <EyeIcon className="h-4 w-4" />
-              <span>
-                Ορατότητα: <strong>
-                  {poll.visibility === 'public' ? 'Δημόσια' : 
-                   poll.visibility === 'locals_only' ? 'Τοπική' : 
-                   'Μόνο Συνδεδεμένοι'}
-                </strong>
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Voting Section */}
