@@ -185,7 +185,7 @@ export default function RichArticleContent({ content = '' }) {
   }
 
   return (
-    <div className="space-y-3 text-gray-800 leading-relaxed">
+    <div className="space-y-2 text-gray-800 leading-relaxed">
       {blocks.map((block, index) => {
         if (block.type === 'code') {
           return (
