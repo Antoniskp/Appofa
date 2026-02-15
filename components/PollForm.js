@@ -344,17 +344,7 @@ export default function PollForm({
 
       {/* Poll Options */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Επιλογές Δημοσκόπησης</h3>
-          <button
-            type="button"
-            onClick={handleAddOption}
-            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
-          >
-            <PlusIcon className="h-4 w-4" />
-            Προσθήκη Επιλογής
-          </button>
-        </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Επιλογές Δημοσκόπησης</h3>
 
         <div className="space-y-4">
           {options.map((option, index) => {
@@ -454,6 +444,17 @@ export default function PollForm({
             </div>
           );
           })}
+        </div>
+
+        <div className="mt-4 flex justify-end">
+          <button
+            type="button"
+            onClick={handleAddOption}
+            className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
+          >
+            <PlusIcon className="h-4 w-4" />
+            Προσθήκη Επιλογής
+          </button>
         </div>
       </div>
 

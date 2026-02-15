@@ -137,13 +137,70 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       {error && <AlertMessage message={error} />}
       {success && <AlertMessage message={success} tone="success" />}
       
-      {/* Show message and add option UI if poll allows user contributions */}
+      {/* Show message if poll allows user contributions but has no options */}
       {poll.allowUserContributions && poll.options.length === 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4" role="status">
           <p className="text-blue-800 mb-2">
             Αυτή η δημοσκόπηση επιτρέπει σε χρήστες να προσθέσουν επιλογές. Προσθέστε την πρώτη επιλογή για να ξεκινήσετε!
           </p>
         </div>
+      )}
+      
+      {/* Show options and voting button only if there are options */}
+      {poll.options.length > 0 && (
+        <>
+          {poll.type === 'simple' ? (
+            // Simple poll - radio buttons
+            <div className="space-y-3">
+              {poll.options.map((option) => (
+                <label
+                  key={option.id}
+                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                    selectedOptionId === option.id
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="poll-option"
+                    value={option.id}
+                    checked={selectedOptionId === option.id}
+                    onChange={() => setSelectedOptionId(option.id)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-3 text-gray-900 font-medium">{option.text}</span>
+                  {selectedOptionId === option.id && (
+                    <CheckCircleIcon className="h-5 w-5 text-blue-600 ml-auto" />
+                  )}
+                </label>
+              ))}
+            </div>
+          ) : (
+            // Complex poll - cards with images/links
+            <ComplexPollOptions 
+              options={poll.options}
+              selectedOptionId={selectedOptionId}
+              setSelectedOptionId={setSelectedOptionId}
+            />
+          )}
+          
+          <div className="flex items-center gap-4 pt-4">
+            <button
+              onClick={handleSubmitVote}
+              disabled={isSubmitting || !selectedOptionId}
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              {isSubmitting ? 'Υποβολή...' : hasVoted ? 'Ενημέρωση Ψήφου' : 'Υποβολή Ψήφου'}
+            </button>
+            
+            {hasVoted && (
+              <p className="text-sm text-gray-600">
+                Έχετε ήδη ψηφίσει. Μπορείτε να αλλάξετε την ψήφο σας.
+              </p>
+            )}
+          </div>
+        </>
       )}
       
       {/* Add Option Form */}
@@ -266,63 +323,6 @@ export default function PollVoting({ poll, onVoteSuccess }) {
             </div>
           )}
         </div>
-      )}
-      
-      {/* Show options and voting button only if there are options */}
-      {poll.options.length > 0 && (
-        <>
-          {poll.type === 'simple' ? (
-            // Simple poll - radio buttons
-            <div className="space-y-3">
-              {poll.options.map((option) => (
-                <label
-                  key={option.id}
-                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
-                    selectedOptionId === option.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="poll-option"
-                    value={option.id}
-                    checked={selectedOptionId === option.id}
-                    onChange={() => setSelectedOptionId(option.id)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-900 font-medium">{option.text}</span>
-                  {selectedOptionId === option.id && (
-                    <CheckCircleIcon className="h-5 w-5 text-blue-600 ml-auto" />
-                  )}
-                </label>
-              ))}
-            </div>
-          ) : (
-            // Complex poll - cards with images/links
-            <ComplexPollOptions 
-              options={poll.options}
-              selectedOptionId={selectedOptionId}
-              setSelectedOptionId={setSelectedOptionId}
-            />
-          )}
-          
-          <div className="flex items-center gap-4 pt-4">
-            <button
-              onClick={handleSubmitVote}
-              disabled={isSubmitting || !selectedOptionId}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-            >
-              {isSubmitting ? 'Υποβολή...' : hasVoted ? 'Ενημέρωση Ψήφου' : 'Υποβολή Ψήφου'}
-            </button>
-            
-            {hasVoted && (
-              <p className="text-sm text-gray-600">
-                Έχετε ήδη ψηφίσει. Μπορείτε να αλλάξετε την ψήφο σας.
-              </p>
-            )}
-          </div>
-        </>
       )}
     </div>
   );
