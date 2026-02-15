@@ -39,7 +39,6 @@ export default function Footer() {
         { href: '/contact', label: 'Επικοινωνία', type: 'internal' },
         { href: 'mailto:eimaiautospou@gmail.com', label: 'Email: eimaiautospou@gmail.com', type: 'external' },
         { label: 'Τηλέφωνο: Προσεχώς', type: 'static' },
-        { href: '/about', label: 'Σχετικά με εμάς', type: 'internal' },
       ],
     },
   ];
@@ -58,7 +57,7 @@ export default function Footer() {
               )}
               <ul className="space-y-2">
                 {column.links.map((link, index) => (
-                  <li key={link.href || index}>
+                  <li key={link.href || `${column.title}-${index}`}>
                     {link.type === 'external' ? (
                       <a href={link.href} className="text-gray-400 hover:text-white transition-colors text-sm">
                         {link.label}
