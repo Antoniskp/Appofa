@@ -2,9 +2,40 @@ import Link from 'next/link';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const footerColumns = [
+    {
+      title: 'Περιεχόμενο',
+      links: [
+        { href: '/news', label: 'Ειδήσεις' },
+        { href: '/articles', label: 'Άρθρα' },
+        { href: '/polls', label: 'Δημοσκοπήσεις' },
+        { href: '/locations', label: 'Τοποθεσίες' },
+      ],
+    },
+    {
+      title: 'Βοήθεια',
+      links: [
+        { href: '/faq', label: 'Συχνές Ερωτήσεις' },
+        { href: '/instructions', label: 'Οδηγίες Χρήσης' },
+        { href: '/rules', label: 'Κανόνες' },
+        { href: '/contribute', label: 'Συνεισφορά' },
+        { href: '/become-moderator', label: 'Γίνε Moderator' },
+      ],
+    },
+    {
+      title: 'Πληροφορίες',
+      links: [
+        { href: '/about', label: 'Σχετικά με εμάς' },
+        { href: '/mission', label: 'Αποστολή' },
+        { href: '/transparency', label: 'Διαφάνεια' },
+        { href: '/privacy', label: 'Πολιτική Απορρήτου' },
+        { href: '/terms', label: 'Όροι Χρήσης' },
+      ],
+    },
+  ];
 
   return (
-    <footer className="bg-gray-800 text-white mt-auto">
+    <footer className="bg-gray-800 text-white mt-auto" aria-label="Footer menu">
       <div className="app-container py-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Column 1: About */}
@@ -15,69 +46,20 @@ export default function Footer() {
             </p>
           </div>
 
-          {/* Column 2: Content & Static Pages */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Περιεχόμενο</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/news" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Ειδήσεις
-                </Link>
-              </li>
-              <li>
-                <Link href="/articles" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Άρθρα
-                </Link>
-              </li>
-              <li>
-                <Link href="/polls" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Δημοσκοπήσεις
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Συχνές Ερωτήσεις
-                </Link>
-              </li>
-              <li>
-                <Link href="/contribute" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Συνεισφορά
-                </Link>
-              </li>
-              <li>
-                <Link href="/become-moderator" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Γίνε Moderator
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Column 3: Πληροφορίες & Πολιτικές */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Πληροφορίες</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/instructions" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Οδηγίες Χρήσης
-                </Link>
-              </li>
-              <li>
-                <Link href="/rules" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Κανόνες
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Πολιτική Απορρήτου
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Όροι Χρήσης
-                </Link>
-              </li>
-            </ul>
-          </div>
+          {footerColumns.map((column) => (
+            <div key={column.title}>
+              <h3 className="text-lg font-semibold mb-4">{column.title}</h3>
+              <ul className="space-y-2">
+                {column.links.map((link) => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="text-gray-400 hover:text-white transition-colors text-sm">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
 
           {/* Column 4: Contact */}
           <div>
@@ -101,16 +83,6 @@ export default function Footer() {
               <li>
                 <Link href="/about" className="text-gray-400 hover:text-white transition-colors text-sm">
                   Σχετικά με εμάς
-                </Link>
-              </li>
-              <li>
-                <Link href="/transparency" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Διαφάνεια
-                </Link>
-              </li>
-              <li>
-                <Link href="/mission" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Αποστολή
                 </Link>
               </li>
             </ul>
