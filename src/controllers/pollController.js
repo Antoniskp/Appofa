@@ -835,6 +835,15 @@ const pollController = {
       }
 
       // Hard delete if no votes
+      // First, delete the LocationLink
+      await LocationLink.destroy({
+        where: {
+          entity_type: 'poll',
+          entity_id: id
+        }
+      });
+
+      // Then delete the poll
       await poll.destroy();
 
       return res.status(200).json({

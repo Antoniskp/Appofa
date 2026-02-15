@@ -634,13 +634,13 @@ export default function LocationDetailPage() {
           )}
 
           {/* Linked Polls */}
-          {entities.polls.length > 0 && (
+          {entities.polls.filter(poll => poll.status !== 'archived').length > 0 && (
             <div className="bg-white rounded-lg shadow-md p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Polls ({entities.polls.length})
+                Polls ({entities.polls.filter(poll => poll.status !== 'archived').length})
               </h2>
               <div className="space-y-3">
-                {entities.polls.map(poll => (
+                {entities.polls.filter(poll => poll.status !== 'archived').map(poll => (
                   <Link
                     key={poll.id}
                     href={`/polls/${poll.id}`}
