@@ -471,6 +471,26 @@ describe('Poll API Tests', () => {
         expect(response.body.data[0].options[0]).toHaveProperty('voteCount');
       }
     });
+
+    test('should filter polls by search text', async () => {
+      const response = await request(app)
+        .get('/api/polls')
+        .query({ search: 'favorite color' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.length).toBeGreaterThan(0);
+
+      const matchesSearch = response.body.data.every((poll) => {
+        const searchable = [poll.title, poll.description, poll.category]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        return searchable.includes('favorite color');
+      });
+
+      expect(matchesSearch).toBe(true);
+    });
   });
 
   describe('GET /api/polls/:id - Get Poll by ID', () => {
@@ -1428,6 +1448,20 @@ describe('Poll API Tests', () => {
         poll.tags && poll.tags.includes('programming')
       );
       expect(programmingPolls.length).toBeGreaterThan(0);
+    });
+
+    test('should filter polls by tag case-insensitively and with partial text', async () => {
+      const response = await request(app)
+        .get('/api/polls?tag=ProGRa')
+        .set('Cookie', `auth_token=${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.length).toBeGreaterThan(0);
+      expect(response.body.data.every((poll) => (
+        Array.isArray(poll.tags)
+        && poll.tags.some((pollTag) => pollTag.toLowerCase().includes('progra'))
+      ))).toBe(true);
     });
   });
 });
