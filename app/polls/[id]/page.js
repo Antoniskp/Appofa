@@ -101,8 +101,13 @@ export default function PollDetailPage() {
       });
     } else {
       // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      addToast('Ο σύνδεσμος αντιγράφηκε στο πρόχειρο!', { type: 'success' });
+      navigator.clipboard.writeText(window.location.href)
+        .then(() => {
+          addToast('Ο σύνδεσμος αντιγράφηκε στο πρόχειρο!', { type: 'success' });
+        })
+        .catch(() => {
+          addToast('Αποτυχία αντιγραφής συνδέσμου', { type: 'error' });
+        });
     }
   };
 
