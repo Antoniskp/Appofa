@@ -1,9 +1,14 @@
 const rateLimit = require('express-rate-limit');
 
-// General API rate limiter - 100 requests per 15 minutes
+// Helper to check if we're in production
+const isProduction = () => process.env.NODE_ENV === 'production';
+
+// General API rate limiter
+// Production: 100 requests per 15 minutes
+// Development: 1000 requests per 15 minutes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: isProduction() ? 100 : 1000,
   skip: () => process.env.NODE_ENV === 'test',
   message: {
     success: false,
@@ -13,10 +18,12 @@ const apiLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-// Stricter rate limiter for authentication routes - 5 requests per 15 minutes
+// Stricter rate limiter for authentication routes
+// Production: 5 requests per 15 minutes
+// Development: 100 requests per 15 minutes
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login/register requests per windowMs
+  max: isProduction() ? 5 : 100,
   skip: () => process.env.NODE_ENV === 'test',
   message: {
     success: false,
@@ -27,10 +34,12 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
-// Create operation rate limiter - 20 requests per 15 minutes
+// Create operation rate limiter
+// Production: 20 requests per 15 minutes
+// Development: 200 requests per 15 minutes
 const createLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit each IP to 20 create operations per windowMs
+  max: isProduction() ? 20 : 200,
   skip: () => process.env.NODE_ENV === 'test',
   message: {
     success: false,
