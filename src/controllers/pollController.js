@@ -454,6 +454,9 @@ const pollController = {
 
       const offset = (pageNum - 1) * limitNum;
 
+      // For SQLite with tag filtering, we need to fetch all and filter in memory
+      const isSQLiteWithTag = tag && sequelize.getDialect() !== 'postgres';
+      
       const { count, rows: polls } = await Poll.findAndCountAll({
         where,
         distinct: true,
@@ -476,8 +479,9 @@ const pollController = {
             ]
           }
         ],
-        limit: limitNum,
-        offset,
+        // Skip limit/offset for SQLite with tag filtering - we'll apply after filtering
+        limit: isSQLiteWithTag ? undefined : limitNum,
+        offset: isSQLiteWithTag ? undefined : offset,
         order: [['createdAt', 'DESC'], [{ model: PollOption, as: 'options' }, 'order', 'ASC']]
       });
 
@@ -496,25 +500,34 @@ const pollController = {
         return pollData;
       });
 
-      // For SQLite, filter by tag in memory (since SQLite doesn't support JSON contains well)
-      if (tag && sequelize.getDialect() !== 'postgres') {
+      // For SQLite, filter by tag in memory and then apply pagination
+      if (isSQLiteWithTag) {
         pollsWithCounts = pollsWithCounts.filter(poll => 
           Array.isArray(poll.tags) && poll.tags.includes(tag)
         );
+        // Apply pagination after filtering
+        const totalFiltered = pollsWithCounts.length;
+        pollsWithCounts = pollsWithCounts.slice(offset, offset + limitNum);
+        
+        return res.status(200).json({
+          success: true,
+          data: pollsWithCounts,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalFiltered / limitNum),
+            totalItems: totalFiltered,
+            itemsPerPage: limitNum
+          }
+        });
       }
-
-      // Adjust count for SQLite tag filtering
-      const adjustedCount = (tag && sequelize.getDialect() !== 'postgres') 
-        ? pollsWithCounts.length 
-        : count;
 
       return res.status(200).json({
         success: true,
         data: pollsWithCounts,
         pagination: {
           currentPage: pageNum,
-          totalPages: Math.ceil(adjustedCount / limitNum),
-          totalItems: adjustedCount,
+          totalPages: Math.ceil(count / limitNum),
+          totalItems: count,
           itemsPerPage: limitNum
         }
       });
