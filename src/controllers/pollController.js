@@ -406,10 +406,15 @@ const pollController = {
 
       // Filter by tag
       if (tag) {
-        // Support filtering by tag - PostgreSQL JSON contains operator
-        where.tags = {
-          [Op.contains]: [tag]
-        };
+        // For PostgreSQL, use JSON contains operator
+        // For SQLite, we'll filter after query (since SQLite JSON support is limited)
+        const isPostgres = sequelize.getDialect() === 'postgres';
+        if (isPostgres) {
+          where.tags = {
+            [Op.contains]: [tag]
+          };
+        }
+        // For SQLite, we'll handle tag filtering after the query
       }
 
       // Filter by visibility based on authentication
@@ -477,7 +482,7 @@ const pollController = {
       });
 
       // Add vote counts to each option
-      const pollsWithCounts = polls.map(poll => {
+      let pollsWithCounts = polls.map(poll => {
         const pollData = poll.toJSON();
         pollData.options = pollData.options.map(option => ({
           ...option,
@@ -491,13 +496,25 @@ const pollController = {
         return pollData;
       });
 
+      // For SQLite, filter by tag in memory (since SQLite doesn't support JSON contains well)
+      if (tag && sequelize.getDialect() !== 'postgres') {
+        pollsWithCounts = pollsWithCounts.filter(poll => 
+          Array.isArray(poll.tags) && poll.tags.includes(tag)
+        );
+      }
+
+      // Adjust count for SQLite tag filtering
+      const adjustedCount = (tag && sequelize.getDialect() !== 'postgres') 
+        ? pollsWithCounts.length 
+        : count;
+
       return res.status(200).json({
         success: true,
         data: pollsWithCounts,
         pagination: {
           currentPage: pageNum,
-          totalPages: Math.ceil(count / limitNum),
-          totalItems: count,
+          totalPages: Math.ceil(adjustedCount / limitNum),
+          totalItems: adjustedCount,
           itemsPerPage: limitNum
         }
       });
