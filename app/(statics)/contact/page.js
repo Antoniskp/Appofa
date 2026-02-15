@@ -7,7 +7,7 @@ export default function ContactPage() {
   return (
     <StaticPageLayout title="Επικοινωνία" maxWidth="max-w-2xl">
       <p className="text-gray-700 mb-6">
-        Συμπληρώστε την παρακάτω φόρμα για να επικοινωνήσετε μαζί μας. Θα απαντήσουμε το συντομότερο δυνατό.
+        Συμπληρώστε τη φόρμα και η ομάδα μας θα σας απαντήσει όσο το δυνατόν πιο σύντομα.
       </p>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
@@ -17,7 +17,7 @@ export default function ContactPage() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-semibold text-blue-900 mb-2">Ή επικοινωνήστε μέσω Discord</h3>
         <p className="text-blue-800 text-sm mb-3">
-          Μπορείτε επίσης να μας βρείτε στο Discord για άμεση επικοινωνία.
+          Εναλλακτικά, μπορείτε να μπείτε στην κοινότητά μας στο Discord για πιο άμεση επικοινωνία.
         </p>
         <a
           href="https://discord.gg/pvJftR4T98"
