@@ -798,6 +798,8 @@ const pollController = {
 
   // Delete a poll
   deletePoll: async (req, res) => {
+    const transaction = await sequelize.transaction();
+    
     try {
       const { id } = req.params;
 
@@ -807,10 +809,12 @@ const pollController = {
             model: PollVote,
             as: 'votes'
           }
-        ]
+        ],
+        transaction
       });
 
       if (!poll) {
+        await transaction.rollback();
         return res.status(404).json({
           success: false,
           message: 'Poll not found.'
@@ -819,6 +823,7 @@ const pollController = {
 
       // Check permissions - must be creator or admin
       if (poll.creatorId !== req.user.id && req.user.role !== 'admin') {
+        await transaction.rollback();
         return res.status(403).json({
           success: false,
           message: 'Access denied. Only the poll creator or admin can delete this poll.'
@@ -827,7 +832,8 @@ const pollController = {
 
       // If poll has votes, soft delete (archive)
       if (poll.votes && poll.votes.length > 0) {
-        await poll.update({ status: 'archived' });
+        await poll.update({ status: 'archived' }, { transaction });
+        await transaction.commit();
         return res.status(200).json({
           success: true,
           message: 'Poll archived successfully (poll had votes).'
@@ -835,13 +841,26 @@ const pollController = {
       }
 
       // Hard delete if no votes
-      await poll.destroy();
+      // First, delete the LocationLink
+      await LocationLink.destroy({
+        where: {
+          entity_type: 'poll',
+          entity_id: id
+        },
+        transaction
+      });
+
+      // Then delete the poll
+      await poll.destroy({ transaction });
+
+      await transaction.commit();
 
       return res.status(200).json({
         success: true,
         message: 'Poll deleted successfully.'
       });
     } catch (error) {
+      await transaction.rollback();
       console.error('Error deleting poll:', error);
       return res.status(500).json({
         success: false,

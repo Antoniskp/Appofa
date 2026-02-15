@@ -1006,7 +1006,15 @@ describe('Poll API Tests', () => {
     });
 
     test('should hard delete poll without votes', async () => {
-      // Create poll
+      // Create location for this test
+      const testLocation = await Location.create({
+        name: 'Test Delete Location',
+        type: 'city',
+        slug: 'test-delete-location',
+        parentId: 1 // International
+      });
+
+      // Create poll with location
       const csrfToken = 'test-csrf-token-hard-delete';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
 
@@ -1019,6 +1027,7 @@ describe('Poll API Tests', () => {
           type: 'simple',
           visibility: 'public',
           resultsVisibility: 'always',
+          locationId: testLocation.id,
           options: [
             { text: 'Option 1' },
             { text: 'Option 2' }
@@ -1026,6 +1035,15 @@ describe('Poll API Tests', () => {
         });
 
       const pollId = createResponse.body.data.id;
+
+      // Verify LocationLink was created
+      const locationLinkBefore = await LocationLink.findOne({
+        where: {
+          entity_type: 'poll',
+          entity_id: pollId
+        }
+      });
+      expect(locationLinkBefore).not.toBeNull();
 
       // Delete it
       const deleteResponse = await request(app)
@@ -1036,9 +1054,18 @@ describe('Poll API Tests', () => {
       expect(deleteResponse.status).toBe(200);
       expect(deleteResponse.body.message).toContain('deleted');
 
-      // Verify it's gone
+      // Verify poll is gone
       const poll = await Poll.findByPk(pollId);
       expect(poll).toBeNull();
+
+      // Verify LocationLink is also removed
+      const locationLinkAfter = await LocationLink.findOne({
+        where: {
+          entity_type: 'poll',
+          entity_id: pollId
+        }
+      });
+      expect(locationLinkAfter).toBeNull();
     });
 
     test('should deny non-creator from deleting', async () => {
