@@ -111,6 +111,8 @@ The poll system uses three main database models with proper associations and con
 | `id` | INTEGER | Yes (PK) | Auto | Primary key |
 | `title` | STRING | Yes | - | Poll title (5-200 chars) |
 | `description` | TEXT | No | - | Optional poll description |
+| `category` | STRING | No | - | Optional poll category |
+| `tags` | JSON | No | Empty array | Optional array of tags (similar to Article tags) |
 | `type` | ENUM | Yes | 'simple' | Poll type: 'simple' or 'complex' |
 | `allowUserContributions` | BOOLEAN | Yes | false | Allow users to add options |
 | `allowUnauthenticatedVotes` | BOOLEAN | Yes | false | Allow unauthenticated voting |
@@ -143,6 +145,19 @@ const poll = await Poll.create({
   creatorId: userId,
   visibility: 'public',
   resultsVisibility: 'always',
+  status: 'active'
+});
+
+// Create a poll with tags (works similarly to Article tags)
+const pollWithTags = await Poll.create({
+  title: 'Best Local Restaurant 2024',
+  description: 'Vote for your favorite local restaurant',
+  category: 'food',
+  tags: ['restaurants', 'local-business', 'community'],
+  type: 'complex',
+  creatorId: userId,
+  visibility: 'public',
+  resultsVisibility: 'after_vote',
   status: 'active'
 });
 
@@ -300,6 +315,7 @@ All poll endpoints are available at `/api/polls`
 - `status` (optional): Filter by status (active, closed, archived). Default: active
 - `type` (optional): Filter by type (simple, complex)
 - `visibility` (optional): Filter by visibility (public, private, locals_only)
+- `tag` (optional): Filter by tag (e.g., ?tag=restaurants)
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (1-100, default: 10)
 
@@ -312,6 +328,8 @@ All poll endpoints are available at `/api/polls`
       "id": 1,
       "title": "What is your favorite color?",
       "description": "Choose your favorite color",
+      "category": null,
+      "tags": [],
       "type": "simple",
       "visibility": "public",
       "resultsVisibility": "always",
@@ -361,6 +379,8 @@ All poll endpoints are available at `/api/polls`
     "id": 1,
     "title": "What is your favorite color?",
     "description": "Choose your favorite color",
+    "category": null,
+    "tags": [],
     "type": "simple",
     "allowUserContributions": false,
     "allowUnauthenticatedVotes": true,
@@ -412,6 +432,8 @@ All poll endpoints are available at `/api/polls`
 {
   "title": "What is your favorite color?",
   "description": "Choose your favorite color from the options below",
+  "category": "preferences",
+  "tags": ["colors", "preferences", "community"],
   "type": "simple",
   "allowUserContributions": false,
   "allowUnauthenticatedVotes": true,
@@ -432,6 +454,8 @@ All poll endpoints are available at `/api/polls`
 {
   "title": "Best Restaurant",
   "description": "Vote for the best restaurant",
+  "category": "food",
+  "tags": ["restaurants", "local-business", "dining"],
   "type": "complex",
   "allowUserContributions": true,
   "allowUnauthenticatedVotes": false,
@@ -460,7 +484,16 @@ All poll endpoints are available at `/api/polls`
 - `type`: "simple" (text-based) or "complex" (rich options with photos/links)
 - `visibility`: "public" (anyone can see), "private" (only authenticated), "locals_only" (location-based)
 - `resultsVisibility`: "always", "after_vote", "after_deadline"
+- `category`: Optional category for organizing polls
+- `tags`: Optional array of strings for categorization (works like Article tags, backward compatible)
 - `answerType` (complex polls): "person", "article", "custom"
+
+**Tags Field:**
+- Tags are optional and work similarly to Article tags
+- Provide as an array of strings: `["tag1", "tag2", "tag3"]`
+- Tags enable filtering polls by topic (e.g., `/api/polls?tag=restaurants`)
+- Backward compatible: existing polls without tags will continue to work
+- Empty array `[]` is the default when no tags are provided
 
 #### 4. Update Poll
 
@@ -474,10 +507,14 @@ All poll endpoints are available at `/api/polls`
 {
   "title": "Updated Poll Title",
   "description": "Updated description",
+  "category": "updated-category",
+  "tags": ["updated-tag1", "updated-tag2"],
   "deadline": "2024-12-31T23:59:59.000Z",
   "status": "closed"
 }
 ```
+
+**Note:** Tags can be updated independently and work the same way as during creation.
 
 #### 5. Delete Poll
 
@@ -1357,7 +1394,7 @@ The poll system is production-ready with:
 - [ ] Time-series chart for vote trends
 - [ ] Real-time updates with WebSockets
 - [ ] Poll comments/discussion
-- [ ] Poll categories/tags
+- [x] Poll categories/tags
 - [ ] Social media sharing
 
 ### Maintenance Notes
