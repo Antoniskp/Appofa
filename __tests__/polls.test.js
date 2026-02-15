@@ -14,7 +14,7 @@ const pollRoutes = require('../src/routes/pollRoutes');
 
 // Create test app
 const app = express();
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 app.use(helmet(helmetConfig));
 app.use(cors(corsOptions));
 app.use(express.json());
