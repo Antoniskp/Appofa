@@ -358,9 +358,13 @@ const pollController = {
         visibility,
         category,
         tag,
+        search,
         page = 1,
         limit = 10
       } = req.query;
+
+      const normalizedTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
+      const normalizedSearch = typeof search === 'string' ? search.trim() : '';
 
       // Build where clause
       const where = {};
@@ -404,17 +408,14 @@ const pollController = {
         where.category = categoryResult.value;
       }
 
-      // Filter by tag
-      if (tag) {
-        // For PostgreSQL, use JSON contains operator
-        // For SQLite, we'll filter after query (since SQLite JSON support is limited)
-        const isPostgres = sequelize.getDialect() === 'postgres';
-        if (isPostgres) {
-          where.tags = {
-            [Op.contains]: [tag]
-          };
-        }
-        // For SQLite, we'll handle tag filtering after the query
+      // Filter by search text
+      if (normalizedSearch) {
+        const searchOperator = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
+        where[Op.or] = [
+          { title: { [searchOperator]: `%${normalizedSearch}%` } },
+          { description: { [searchOperator]: `%${normalizedSearch}%` } },
+          { category: { [searchOperator]: `%${normalizedSearch}%` } }
+        ];
       }
 
       // Filter by visibility based on authentication
@@ -454,8 +455,8 @@ const pollController = {
 
       const offset = (pageNum - 1) * limitNum;
 
-      // For SQLite with tag filtering, we need to fetch all and filter in memory
-      const isSQLiteWithTag = tag && sequelize.getDialect() !== 'postgres';
+      // Tag filtering is applied in memory for consistent case-insensitive partial matching.
+      const isTagFiltering = Boolean(normalizedTag);
       
       const { count, rows: polls } = await Poll.findAndCountAll({
         where,
@@ -479,9 +480,9 @@ const pollController = {
             ]
           }
         ],
-        // Skip limit/offset for SQLite with tag filtering - we'll apply after filtering
-        limit: isSQLiteWithTag ? undefined : limitNum,
-        offset: isSQLiteWithTag ? undefined : offset,
+        // Skip limit/offset while filtering tags in memory - we'll apply after filtering.
+        limit: isTagFiltering ? undefined : limitNum,
+        offset: isTagFiltering ? undefined : offset,
         order: [['createdAt', 'DESC'], [{ model: PollOption, as: 'options' }, 'order', 'ASC']]
       });
 
@@ -500,10 +501,14 @@ const pollController = {
         return pollData;
       });
 
-      // For SQLite, filter by tag in memory and then apply pagination
-      if (isSQLiteWithTag) {
+      // Filter by tag in memory and then apply pagination.
+      if (isTagFiltering) {
         pollsWithCounts = pollsWithCounts.filter(poll => 
-          Array.isArray(poll.tags) && poll.tags.includes(tag)
+          Array.isArray(poll.tags)
+            && poll.tags.some(existingTag => (
+              typeof existingTag === 'string'
+              && existingTag.toLowerCase().includes(normalizedTag)
+            ))
         );
         // Apply pagination after filtering
         const totalFiltered = pollsWithCounts.length;
