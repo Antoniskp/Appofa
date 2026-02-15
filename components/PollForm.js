@@ -31,6 +31,7 @@ export default function PollForm({
     title: '',
     description: '',
     category: '',
+    tags: '',
     type: 'simple',
     visibility: 'public',
     resultsVisibility: 'after_vote',
@@ -55,6 +56,7 @@ export default function PollForm({
         title: poll.title || '',
         description: poll.description || '',
         category: poll.category || '',
+        tags: Array.isArray(poll.tags) ? poll.tags.join(', ') : '',
         type: poll.type || 'simple',
         visibility: poll.visibility || 'public',
         resultsVisibility: poll.resultsVisibility || 'after_vote',
@@ -157,8 +159,13 @@ export default function PollForm({
       return;
     }
     
+    // Parse tags from comma-separated string to array
     const payload = {
       ...formData,
+      tags: formData.tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
       options: validOptions,
       deadline: formData.deadline || null,
     };
@@ -205,6 +212,14 @@ export default function PollForm({
           onChange={handleInputChange}
           options={articleCategories.pollCategories || []}
           placeholder="Επιλέξτε κατηγορία..."
+        />
+
+        <FormInput
+          name="tags"
+          label="Tags (comma-separated)"
+          value={formData.tags}
+          onChange={handleInputChange}
+          placeholder="e.g. programming, education"
         />
       </div>
 
