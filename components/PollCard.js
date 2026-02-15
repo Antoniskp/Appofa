@@ -197,6 +197,9 @@ export default function PollCard({ poll, variant = 'grid' }) {
       {poll.category && (
         <Badge variant="primary">{poll.category}</Badge>
       )}
+      {Array.isArray(poll.tags) && poll.tags.length > 0 && (
+        <Badge variant="purple">{poll.tags.join(', ')}</Badge>
+      )}
       {poll.visibility === 'locals_only' && (
         <Badge variant="orange">Τοπική</Badge>
       )}

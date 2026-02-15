@@ -29,6 +29,7 @@ export default function PollsPage() {
     status: '',
     type: '',
     category: '',
+    tag: '',
     search: '',
   });
 
@@ -97,6 +98,12 @@ export default function PollsPage() {
                 { value: '', label: 'Όλες' },
                 ...(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat })),
               ],
+            },
+            {
+              name: 'tag',
+              label: 'Tag',
+              type: 'text',
+              placeholder: 'Filter by tag',
             },
             {
               name: 'search',

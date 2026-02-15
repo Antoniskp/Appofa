@@ -5,7 +5,8 @@ const {
   normalizeOptionalText,
   normalizeBoolean,
   normalizeEnum,
-  normalizeInteger
+  normalizeInteger,
+  normalizeStringArray
 } = require('../utils/validators');
 
 const POLL_TYPES = ['simple', 'complex'];
@@ -58,6 +59,7 @@ const pollController = {
         title,
         description,
         category,
+        tags,
         type,
         allowUserContributions,
         allowUnauthenticatedVotes,
@@ -96,6 +98,16 @@ const pollController = {
         return res.status(400).json({
           success: false,
           message: categoryResult.error
+        });
+      }
+
+      // Validate tags (optional)
+      const tagsResult = normalizeStringArray(tags, 'Tags');
+      if (tagsResult.error) {
+        await transaction.rollback();
+        return res.status(400).json({
+          success: false,
+          message: tagsResult.error
         });
       }
 
@@ -222,6 +234,7 @@ const pollController = {
         title: titleResult.value,
         description: descriptionResult.value,
         category: categoryResult.value,
+        tags: tagsResult.value ?? [],
         type: typeResult.value,
         allowUserContributions: allowUserContributionsResult.value !== undefined ? allowUserContributionsResult.value : false,
         allowUnauthenticatedVotes: allowUnauthenticatedVotesResult.value !== undefined ? allowUnauthenticatedVotesResult.value : false,
@@ -344,6 +357,7 @@ const pollController = {
         type,
         visibility,
         category,
+        tag,
         page = 1,
         limit = 10
       } = req.query;
@@ -390,6 +404,19 @@ const pollController = {
         where.category = categoryResult.value;
       }
 
+      // Filter by tag
+      if (tag) {
+        // For PostgreSQL, use JSON contains operator
+        // For SQLite, we'll filter after query (since SQLite JSON support is limited)
+        const isPostgres = sequelize.getDialect() === 'postgres';
+        if (isPostgres) {
+          where.tags = {
+            [Op.contains]: [tag]
+          };
+        }
+        // For SQLite, we'll handle tag filtering after the query
+      }
+
       // Filter by visibility based on authentication
       if (visibility) {
         const visibilityResult = normalizeEnum(visibility, POLL_VISIBILITIES, 'Visibility');
@@ -427,6 +454,9 @@ const pollController = {
 
       const offset = (pageNum - 1) * limitNum;
 
+      // For SQLite with tag filtering, we need to fetch all and filter in memory
+      const isSQLiteWithTag = tag && sequelize.getDialect() !== 'postgres';
+      
       const { count, rows: polls } = await Poll.findAndCountAll({
         where,
         distinct: true,
@@ -449,13 +479,14 @@ const pollController = {
             ]
           }
         ],
-        limit: limitNum,
-        offset,
+        // Skip limit/offset for SQLite with tag filtering - we'll apply after filtering
+        limit: isSQLiteWithTag ? undefined : limitNum,
+        offset: isSQLiteWithTag ? undefined : offset,
         order: [['createdAt', 'DESC'], [{ model: PollOption, as: 'options' }, 'order', 'ASC']]
       });
 
       // Add vote counts to each option
-      const pollsWithCounts = polls.map(poll => {
+      let pollsWithCounts = polls.map(poll => {
         const pollData = poll.toJSON();
         pollData.options = pollData.options.map(option => ({
           ...option,
@@ -468,6 +499,27 @@ const pollController = {
         }
         return pollData;
       });
+
+      // For SQLite, filter by tag in memory and then apply pagination
+      if (isSQLiteWithTag) {
+        pollsWithCounts = pollsWithCounts.filter(poll => 
+          Array.isArray(poll.tags) && poll.tags.includes(tag)
+        );
+        // Apply pagination after filtering
+        const totalFiltered = pollsWithCounts.length;
+        pollsWithCounts = pollsWithCounts.slice(offset, offset + limitNum);
+        
+        return res.status(200).json({
+          success: true,
+          data: pollsWithCounts,
+          pagination: {
+            currentPage: pageNum,
+            totalPages: Math.ceil(totalFiltered / limitNum),
+            totalItems: totalFiltered,
+            itemsPerPage: limitNum
+          }
+        });
+      }
 
       return res.status(200).json({
         success: true,
@@ -592,7 +644,7 @@ const pollController = {
     
     try {
       const { id } = req.params;
-      const { title, description, category, deadline, status, locationId, hideCreator } = req.body;
+      const { title, description, category, tags, deadline, status, locationId, hideCreator } = req.body;
 
       const poll = await Poll.findByPk(id, {
         include: [
@@ -659,6 +711,19 @@ const pollController = {
           });
         }
         updateData.category = categoryResult.value;
+      }
+
+      // Validate and update tags
+      if (tags !== undefined) {
+        const tagsResult = normalizeStringArray(tags, 'Tags');
+        if (tagsResult.error) {
+          await transaction.rollback();
+          return res.status(400).json({
+            success: false,
+            message: tagsResult.error
+          });
+        }
+        updateData.tags = tagsResult.value ?? [];
       }
 
       // Validate and update deadline
