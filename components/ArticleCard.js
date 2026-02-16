@@ -65,6 +65,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const formattedDate = createdAt.toLocaleDateString();
   const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
+  const articleHref = article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`;
   
   // List variant (image on left)
   if (variant === 'list') {
@@ -73,7 +74,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         image={bannerImageUrl}
         imageAlt={`${article.title} banner`}
         imageFallback={defaultBannerImageUrl}
-        href={`/articles/${article.id}`}
+        href={articleHref}
         hoverable
         className="overflow-hidden"
       >
@@ -125,7 +126,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
       imageAlt={`${article.title} banner`}
       imageFallback={defaultBannerImageUrl}
       imageClassName="h-32"
-      href={`/articles/${article.id}`}
+      href={articleHref}
       hoverable
       className="overflow-hidden"
     >
