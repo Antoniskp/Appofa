@@ -56,7 +56,7 @@ export default function NewsDetailPage() {
 
   const handleBookmark = () => {
     if (!user) {
-      addToast('Please log in to bookmark articles.', { type: 'info' });
+      addToast('Please log in to bookmark news.', { type: 'info' });
       return;
     }
 
