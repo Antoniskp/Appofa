@@ -230,7 +230,7 @@ export default function NewsDetailPage() {
                 <div className="ml-auto flex gap-2">
                   <TooltipIconButton
                     icon={ShareIcon}
-                    tooltip="Κοινοποίηση άρθρου"
+                    tooltip="Κοινοποίηση είδησης"
                     onClick={handleShare}
                   />
                   <div className="flex items-center gap-1">
