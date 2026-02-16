@@ -170,7 +170,7 @@ function EditorDashboardContent() {
                     <div className="flex justify-between items-start">
                       <div className="flex-grow">
                         <h3 className="text-lg font-semibold mb-1">
-                          <Link href={`/articles/${article.id}`} className="hover:text-blue-600">
+                          <Link href={article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`} className="hover:text-blue-600">
                             {article.title}
                           </Link>
                         </h3>
@@ -203,7 +203,7 @@ function EditorDashboardContent() {
                         <TooltipIconButton
                           icon={EyeIcon}
                           tooltip="Προβολή άρθρου"
-                          onClick={() => router.push(`/articles/${article.id}`)}
+                          onClick={() => router.push(article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`)}
                         />
                         {canEditArticle(article) && (
                           <TooltipIconButton
