@@ -1,151 +1,66 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface) {
-    await queryInterface.sequelize.query(`
-      DROP INDEX IF EXISTS "unique_location_name_per_parent";
-    `);
+  async up(queryInterface, Sequelize) {
+    const describeOrNull = async (tableName) => {
+      try {
+        await queryInterface.describeTable(tableName);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    };
 
-    await queryInterface.sequelize.query(`
-      WITH ranked AS (
-        SELECT
-          id,
-          FIRST_VALUE(id) OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS keep_id,
-          ROW_NUMBER() OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS row_num
-        FROM "Locations"
-      ),
-      duplicates AS (
-        SELECT id AS duplicate_id, keep_id
-        FROM ranked
-        WHERE row_num > 1
-      )
-      UPDATE "Locations" l
-      SET parent_id = d.keep_id
-      FROM duplicates d
-      WHERE l.parent_id = d.duplicate_id;
-    `);
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS "unique_location_name_per_parent";');
 
-    await queryInterface.sequelize.query(`
-      WITH ranked AS (
-        SELECT
-          id,
-          FIRST_VALUE(id) OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS keep_id,
-          ROW_NUMBER() OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS row_num
-        FROM "Locations"
-      ),
-      duplicates AS (
-        SELECT id AS duplicate_id, keep_id
-        FROM ranked
-        WHERE row_num > 1
-      )
-      UPDATE "LocationLinks" ll
-      SET location_id = d.keep_id
-      FROM duplicates d
-      WHERE ll.location_id = d.duplicate_id;
-    `);
+    const locations = await queryInterface.sequelize.query(
+      'SELECT id, type, name, parent_id FROM "Locations" ORDER BY id ASC;',
+      { type: Sequelize.QueryTypes.SELECT }
+    );
 
-    await queryInterface.sequelize.query(`
-      WITH ranked AS (
-        SELECT
-          id,
-          FIRST_VALUE(id) OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS keep_id,
-          ROW_NUMBER() OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS row_num
-        FROM "Locations"
-      ),
-      duplicates AS (
-        SELECT id AS duplicate_id, keep_id
-        FROM ranked
-        WHERE row_num > 1
-      )
-      UPDATE "Messages" m
-      SET "locationId" = d.keep_id
-      FROM duplicates d
-      WHERE m."locationId" = d.duplicate_id;
-    `);
+    const keepIdByKey = new Map();
+    const duplicateToKeepId = new Map();
 
-    await queryInterface.sequelize.query(`
-      WITH ranked AS (
-        SELECT
-          id,
-          FIRST_VALUE(id) OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS keep_id,
-          ROW_NUMBER() OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS row_num
-        FROM "Locations"
-      ),
-      duplicates AS (
-        SELECT id AS duplicate_id, keep_id
-        FROM ranked
-        WHERE row_num > 1
-      )
-      UPDATE "Polls" p
-      SET "locationId" = d.keep_id
-      FROM duplicates d
-      WHERE p."locationId" = d.duplicate_id;
-    `);
+    for (const location of locations) {
+      const normalizedName = String(location.name || '').trim().toLowerCase();
+      const parentId = location.parent_id ?? -1;
+      const key = `${location.type}::${normalizedName}::${parentId}`;
 
-    await queryInterface.sequelize.query(`
-      WITH ranked AS (
-        SELECT
-          id,
-          FIRST_VALUE(id) OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS keep_id,
-          ROW_NUMBER() OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS row_num
-        FROM "Locations"
-      ),
-      duplicates AS (
-        SELECT id AS duplicate_id, keep_id
-        FROM ranked
-        WHERE row_num > 1
-      )
-      UPDATE "Users" u
-      SET "homeLocationId" = d.keep_id
-      FROM duplicates d
-      WHERE u."homeLocationId" = d.duplicate_id;
-    `);
+      if (!keepIdByKey.has(key)) {
+        keepIdByKey.set(key, location.id);
+        continue;
+      }
 
-    await queryInterface.sequelize.query(`
-      WITH ranked AS (
-        SELECT
-          id,
-          ROW_NUMBER() OVER (
-            PARTITION BY type, LOWER(TRIM(name)), COALESCE(parent_id, -1)
-            ORDER BY id
-          ) AS row_num
-        FROM "Locations"
-      )
-      DELETE FROM "Locations" l
-      USING ranked r
-      WHERE l.id = r.id
-        AND r.row_num > 1;
-    `);
+      duplicateToKeepId.set(location.id, keepIdByKey.get(key));
+    }
+
+    const duplicateIds = Array.from(duplicateToKeepId.keys());
+
+    if (duplicateIds.length > 0) {
+      const maybeUpdateReferenceTable = async (tableName, columnName) => {
+        if (!(await describeOrNull(tableName))) {
+          return;
+        }
+
+        for (const [duplicateId, keepId] of duplicateToKeepId.entries()) {
+          await queryInterface.bulkUpdate(
+            tableName,
+            { [columnName]: keepId },
+            { [columnName]: duplicateId }
+          );
+        }
+      };
+
+      await maybeUpdateReferenceTable('Locations', 'parent_id');
+      await maybeUpdateReferenceTable('LocationLinks', 'location_id');
+      await maybeUpdateReferenceTable('Messages', 'locationId');
+      await maybeUpdateReferenceTable('Polls', 'locationId');
+      await maybeUpdateReferenceTable('Users', 'homeLocationId');
+
+      await queryInterface.bulkDelete('Locations', {
+        id: duplicateIds
+      });
+    }
 
     await queryInterface.sequelize.query(`
       CREATE UNIQUE INDEX "unique_location_name_per_parent"
@@ -154,9 +69,7 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    await queryInterface.sequelize.query(`
-      DROP INDEX IF EXISTS "unique_location_name_per_parent";
-    `);
+    await queryInterface.sequelize.query('DROP INDEX IF EXISTS "unique_location_name_per_parent";');
 
     await queryInterface.addIndex('Locations', ['type', 'name', 'parent_id'], {
       unique: true,

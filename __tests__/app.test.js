@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User } = require('../src/models');
+const { sequelize, User, Location } = require('../src/models');
 
 // Create a test app instance
 const express = require('express');
@@ -29,6 +29,7 @@ describe('News Application Integration Tests', () => {
   let moderatorUserId;
   let viewerUserId;
   let adminUserId;
+  let moderatorLocationId;
 
   const csrfHeaderFor = (token) => ({
     Cookie: [`csrf_token=${token}`],
@@ -44,6 +45,13 @@ describe('News Application Integration Tests', () => {
     // Connect to test database and sync models
     await sequelize.authenticate();
     await sequelize.sync({ force: true }); // Reset database for tests
+
+    const moderatorLocation = await Location.create({
+      name: 'Test Moderator Location',
+      type: 'municipality',
+      slug: 'test-moderator-location'
+    });
+    moderatorLocationId = moderatorLocation.id;
 
     await User.create({
       username: 'testadmin',
@@ -199,7 +207,7 @@ describe('News Application Integration Tests', () => {
         .put(`/api/auth/users/${moderatorUserId}/role`)
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeaderFor(csrfToken))
-        .send({ role: 'moderator' });
+        .send({ role: 'moderator', locationId: moderatorLocationId });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);

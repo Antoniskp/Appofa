@@ -29,12 +29,12 @@ module.exports = {
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('NOW')
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       },
       updatedAt: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('NOW')
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     });
 
@@ -47,6 +47,9 @@ module.exports = {
   async down(queryInterface) {
     await queryInterface.removeIndex('Bookmarks', 'bookmarks_user_entity_unique');
     await queryInterface.dropTable('Bookmarks');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Bookmarks_entityType";');
+
+    if (queryInterface.sequelize.getDialect() === 'postgres') {
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Bookmarks_entityType";');
+    }
   }
 };

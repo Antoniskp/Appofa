@@ -38,8 +38,15 @@ function extractPopulation(wikitext) {
   for (const pattern of patterns) {
     const match = wikitext.match(pattern);
     if (match && match[1]) {
+      const rawValue = String(match[1]).trim();
+
+      // Reject explicit negative populations before stripping separators/markup.
+      if (/^\s*-/.test(rawValue)) {
+        continue;
+      }
+
       // Clean the matched string: remove commas, periods (when used as thousands separator), spaces
-      let cleanedString = match[1]
+      let cleanedString = rawValue
         .replace(/,/g, '')  // Remove commas
         .replace(/\./g, '')  // Remove periods (thousands separator in some locales)
         .replace(/\s/g, '')  // Remove spaces
