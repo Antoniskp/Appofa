@@ -94,7 +94,7 @@ export default function HomePage() {
         </div>
         {latestNews.length > 0 && (
           <div className="text-center mt-12">
-            <Link href="/articles" className="btn-primary">
+            <Link href="/news" className="btn-primary">
               Όλες οι ειδήσεις
             </Link>
           </div>

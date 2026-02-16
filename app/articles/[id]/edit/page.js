@@ -43,7 +43,8 @@ function EditArticlePageContent() {
       const response = await articleAPI.update(params.id, formData);
       if (response.success) {
         success('Article updated successfully!');
-        router.push(`/articles/${params.id}`);
+        const redirectPath = article.type === 'news' ? `/news/${params.id}` : `/articles/${params.id}`;
+        router.push(redirectPath);
       } else {
         setSubmitError(response.message || 'Failed to update article. Please try again.');
       }
@@ -73,11 +74,14 @@ function EditArticlePageContent() {
     );
   }
 
+  const isNews = article.type === 'news';
+  const articleDetailPath = isNews ? `/news/${article.id}` : `/articles/${article.id}`;
+
   if (!canEditArticle(article)) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <p className="text-red-600 mb-4">You do not have permission to edit this article.</p>
-        <Link href={`/articles/${article.id}`} className="inline-block mt-4 text-blue-600 hover:text-blue-800">
+        <Link href={articleDetailPath} className="inline-block mt-4 text-blue-600 hover:text-blue-800">
           ← Back to Article
         </Link>
       </div>
@@ -87,7 +91,7 @@ function EditArticlePageContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link href={`/articles/${article.id}`} className="inline-block mb-6 text-blue-600 hover:text-blue-800">
+        <Link href={articleDetailPath} className="inline-block mb-6 text-blue-600 hover:text-blue-800">
           ← Back to Article
         </Link>
 
@@ -97,7 +101,7 @@ function EditArticlePageContent() {
           <ArticleForm
             article={article}
             onSubmit={handleSubmit}
-            onCancel={() => router.push(`/articles/${article.id}`)}
+            onCancel={() => router.push(articleDetailPath)}
             isSubmitting={submitting}
             submitError={submitError}
           />

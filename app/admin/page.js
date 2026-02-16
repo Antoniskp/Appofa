@@ -458,7 +458,7 @@ function AdminDashboardContent() {
                     <TooltipIconButton
                       icon={EyeIcon}
                       tooltip="Προβολή άρθρου"
-                      onClick={() => router.push(`/articles/${article.id}`)}
+                      onClick={() => router.push(article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`)}
                     />
                     {article.isNews && !article.newsApprovedAt && (
                       <TooltipIconButton
@@ -495,7 +495,7 @@ function AdminDashboardContent() {
                   }
                   return (
                     <Link
-                      href={`/articles/${article.id}`}
+                      href={article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`}
                       className="text-blue-600 hover:text-blue-800 line-clamp-2 block max-h-[3.2em] overflow-hidden"
                       title={article.title}
                     >

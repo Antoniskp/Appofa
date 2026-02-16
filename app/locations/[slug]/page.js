@@ -520,7 +520,7 @@ export default function LocationDetailPage() {
               {newsArticles.map(article => (
                 <Link
                   key={article.id}
-                  href={`/articles/${article.id}`}
+                  href={`/news/${article.id}`}
                   className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
                 >
                   <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
