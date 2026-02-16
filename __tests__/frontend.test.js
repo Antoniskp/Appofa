@@ -175,8 +175,8 @@ describe('Frontend smoke tests', () => {
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Welcome to News App');
-    expect(container.textContent).toContain('Latest News');
+    expect(container.textContent).toContain('Η πλατφόρμα της τοπικής κοινότητας');
+    expect(container.textContent).toContain('Τελευταίες ειδήσεις');
 
     await act(async () => {
       root.unmount();
@@ -188,8 +188,8 @@ describe('Frontend smoke tests', () => {
     const ArticlesPage = require('../app/articles/page').default;
     const { container, root } = await renderPage(ArticlesPage);
 
-    expect(container.textContent).toContain('Category');
-    expect(container.textContent).toContain('Tag');
+    expect(container.textContent).toContain('All');
+    expect(container.textContent).toContain('No Articles Found');
 
     await act(async () => {
       root.unmount();
@@ -201,7 +201,7 @@ describe('Frontend smoke tests', () => {
     const NewsPage = require('../app/news/page').default;
     const { container, root } = await renderPage(NewsPage);
 
-    expect(container.textContent).toContain('Category');
+    expect(container.textContent).toContain('All');
     expect(container.textContent).toContain('No News Available');
 
     await act(async () => {

@@ -439,7 +439,8 @@ describe('Location API Tests', () => {
         .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
         .set('x-csrf-token', viewerCsrfToken)
         .send({
-          homeLocationId: testLocationForSync.id
+          homeLocationId: testLocationForSync.id,
+          searchable: true
         })
         .expect(200);
 
@@ -462,6 +463,7 @@ describe('Location API Tests', () => {
       // Get location entities
       const response = await request(app)
         .get(`/api/locations/${testLocationForSync.id}/entities`)
+        .set('Cookie', `auth_token=${viewerToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -511,6 +513,7 @@ describe('Location API Tests', () => {
       // User should appear on new location
       const newLocationResponse = await request(app)
         .get(`/api/locations/${anotherTestLocation.id}/entities`)
+        .set('Cookie', `auth_token=${viewerToken}`)
         .expect(200);
 
       expect(newLocationResponse.body.success).toBe(true);
@@ -520,6 +523,7 @@ describe('Location API Tests', () => {
       // User should NOT appear on old location
       const oldLocationResponse = await request(app)
         .get(`/api/locations/${testLocationForSync.id}/entities`)
+        .set('Cookie', `auth_token=${viewerToken}`)
         .expect(200);
 
       expect(oldLocationResponse.body.success).toBe(true);
@@ -553,6 +557,7 @@ describe('Location API Tests', () => {
       // User should NOT appear on the location anymore
       const response = await request(app)
         .get(`/api/locations/${anotherTestLocation.id}/entities`)
+        .set('Cookie', `auth_token=${viewerToken}`)
         .expect(200);
 
       expect(response.body.success).toBe(true);
@@ -567,7 +572,8 @@ describe('Location API Tests', () => {
         .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
         .set('x-csrf-token', viewerCsrfToken)
         .send({
-          homeLocationId: testLocationForSync.id
+          homeLocationId: testLocationForSync.id,
+          searchable: true
         })
         .expect(200);
 
@@ -577,7 +583,8 @@ describe('Location API Tests', () => {
         .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
         .set('x-csrf-token', viewerCsrfToken)
         .send({
-          homeLocationId: testLocationForSync.id
+          homeLocationId: testLocationForSync.id,
+          searchable: true
         })
         .expect(200);
 
@@ -631,7 +638,8 @@ describe('Location API Tests', () => {
         .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${viewerCsrfToken}`])
         .set('x-csrf-token', viewerCsrfToken)
         .send({
-          homeLocationId: testLocationForSync.id
+          homeLocationId: testLocationForSync.id,
+          searchable: true
         })
         .expect(200);
 

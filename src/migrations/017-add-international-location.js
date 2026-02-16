@@ -2,17 +2,26 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
-    // Check if International location already exists
-    const [results] = await queryInterface.sequelize.query(
-      `SELECT id FROM "Locations" WHERE type = 'international' AND slug = 'international' LIMIT 1;`
+    const tableName = 'Locations';
+
+    const existing = await queryInterface.sequelize.query(
+      'SELECT id FROM "Locations" WHERE type = :type AND slug = :slug LIMIT 1;',
+      {
+        replacements: { type: 'international', slug: 'international' },
+        type: Sequelize.QueryTypes.SELECT
+      }
     );
 
-    if (results.length === 0) {
-      // Insert International location
-      await queryInterface.sequelize.query(`
-        INSERT INTO "Locations" (name, type, slug, parent_id, "createdAt", "updatedAt")
-        VALUES ('International', 'international', 'international', NULL, NOW(), NOW());
-      `);
+    if (existing.length === 0) {
+      const now = new Date();
+      await queryInterface.bulkInsert(tableName, [{
+        name: 'International',
+        type: 'international',
+        slug: 'international',
+        parent_id: null,
+        createdAt: now,
+        updatedAt: now
+      }]);
       console.log('International location added successfully');
     } else {
       console.log('International location already exists');
@@ -20,8 +29,9 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    await queryInterface.sequelize.query(`
-      DELETE FROM "Locations" WHERE type = 'international' AND slug = 'international';
-    `);
+    await queryInterface.bulkDelete('Locations', {
+      type: 'international',
+      slug: 'international'
+    });
   }
 };
