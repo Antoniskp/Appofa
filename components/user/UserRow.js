@@ -17,7 +17,7 @@ export default function UserRow({ user }) {
     : user.firstName || user.lastName || '';
 
   return (
-    <Link href={`/users/${user.id}`} className="block hover:bg-gray-50 transition-colors rounded-lg">
+    <Link href={`/users/${user.username}`} className="block hover:bg-gray-50 transition-colors rounded-lg">
       <div className="flex items-center gap-4 px-4 py-3">
         <div
           className="h-10 w-10 rounded-full border border-gray-200 flex items-center justify-center text-white text-sm font-semibold flex-shrink-0"

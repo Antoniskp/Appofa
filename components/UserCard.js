@@ -14,7 +14,7 @@ export default function UserCard({ user }) {
     : user.firstName || user.lastName || '';
 
   return (
-    <Card hoverable href={`/users/${user.id}`}>
+    <Card hoverable href={`/users/${user.username}`}>
       <div className="flex items-center gap-4">
         {/* Avatar */}
         <div

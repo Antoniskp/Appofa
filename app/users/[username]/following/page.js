@@ -14,11 +14,23 @@ import UserRow from '@/components/user/UserRow';
 
 export default function FollowingPage() {
   const params = useParams();
-  const userId = params?.id;
+  const username = params?.username;
   const { user: authUser, loading: authLoading } = useAuth();
   const isAuthenticated = !authLoading && !!authUser;
 
   const [page, setPage] = useState(1);
+
+  // First resolve the user by username to get their numeric ID
+  const { data: profileUser, loading: profileLoading, error: profileError } = useAsyncData(
+    async () => {
+      if (!username || !isAuthenticated) return null;
+      return authAPI.getPublicUserProfileByUsername(username);
+    },
+    [username, isAuthenticated],
+    { initialData: null }
+  );
+
+  const userId = profileUser?.data?.user?.id ?? null;
 
   const { data, loading, error } = useAsyncData(
     async () => {
@@ -32,11 +44,13 @@ export default function FollowingPage() {
   const users = data?.data?.users ?? [];
   const pagination = data?.data?.pagination ?? null;
 
+  const isLoading = authLoading || profileLoading || loading;
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="mb-6">
-          <Link className="text-sm text-blue-600 hover:underline" href={`/users/${userId}`}>
+          <Link className="text-sm text-blue-600 hover:underline" href={`/users/${username}`}>
             ← Back to profile
           </Link>
         </div>
@@ -44,7 +58,7 @@ export default function FollowingPage() {
         <div className="max-w-2xl mx-auto">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Following</h1>
 
-          {(authLoading || loading) && <SkeletonLoader type="list" count={5} />}
+          {isLoading && <SkeletonLoader type="list" count={5} />}
 
           {!authLoading && !isAuthenticated && (
             <EmptyState
@@ -55,25 +69,25 @@ export default function FollowingPage() {
             />
           )}
 
-          {!authLoading && isAuthenticated && !loading && error && (
+          {!authLoading && isAuthenticated && !isLoading && (profileError || error) && (
             <EmptyState
               type="error"
               title="Error"
-              description={error}
-              action={{ text: 'Back', href: `/users/${userId}` }}
+              description={profileError || error}
+              action={{ text: 'Back', href: `/users/${username}` }}
             />
           )}
 
-          {!authLoading && isAuthenticated && !loading && !error && users.length === 0 && (
+          {!authLoading && isAuthenticated && !isLoading && !profileError && !error && users.length === 0 && (
             <EmptyState
               type="empty"
               title="Not following anyone"
               description="This user is not following anyone yet."
-              action={{ text: 'Back to profile', href: `/users/${userId}` }}
+              action={{ text: 'Back to profile', href: `/users/${username}` }}
             />
           )}
 
-          {!authLoading && isAuthenticated && !loading && !error && users.length > 0 && (
+          {!authLoading && isAuthenticated && !isLoading && !profileError && !error && users.length > 0 && (
             <Card>
               <div className="divide-y divide-gray-100">
                 {users.map((user) => (
