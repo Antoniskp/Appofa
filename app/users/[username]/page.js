@@ -3,16 +3,25 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { authAPI } from '@/lib/api';
+import { authAPI, pollAPI, articleAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Card from '@/components/Card';
 import Badge from '@/components/Badge';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import Pagination from '@/components/Pagination';
+import PollCard from '@/components/PollCard';
+import ArticleCard from '@/components/ArticleCard';
 import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
+
+const TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'polls', label: 'Polls' },
+  { id: 'articles', label: 'Articles' },
+];
 
 function UserAvatar({ user }) {
   const [avatarLoadError, setAvatarLoadError] = useState(false);
@@ -40,7 +49,7 @@ function UserAvatar({ user }) {
   );
 }
 
-function FollowCounts({ userId }) {
+function FollowCounts({ userId, username }) {
   const [counts, setCounts] = useState(null);
 
   const fetchCounts = useCallback(() => {
@@ -60,14 +69,14 @@ function FollowCounts({ userId }) {
   return (
     <div className="flex gap-4 mt-2 text-sm text-gray-600">
       <Link
-        href={`/users/${userId}/followers`}
+        href={`/users/${username}/followers`}
         className="hover:text-blue-600 hover:underline"
       >
         <span className="font-semibold text-gray-900">{counts.followersCount}</span>{' '}
         {counts.followersCount === 1 ? 'Follower' : 'Followers'}
       </Link>
       <Link
-        href={`/users/${userId}/following`}
+        href={`/users/${username}/following`}
         className="hover:text-blue-600 hover:underline"
       >
         <span className="font-semibold text-gray-900">{counts.followingCount}</span>{' '}
@@ -77,24 +86,114 @@ function FollowCounts({ userId }) {
   );
 }
 
+function PollsTab({ userId }) {
+  const [page, setPage] = useState(1);
+  const limit = 9;
+
+  const { data, loading, error } = useAsyncData(
+    async () => {
+      if (!userId) return null;
+      return pollAPI.getAll({ creatorId: userId, page, limit });
+    },
+    [userId, page],
+    { initialData: null }
+  );
+
+  const polls = data?.data ?? [];
+  const totalPages = data?.pagination?.totalPages ?? 1;
+
+  if (loading) return <SkeletonLoader type="card" count={3} />;
+  if (error) return (
+    <EmptyState type="error" title="Error loading polls" description={error} />
+  );
+  if (!polls.length) return (
+    <EmptyState type="empty" title="No polls yet" description="This user has not created any polls." />
+  );
+
+  return (
+    <div>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {polls.map((poll) => (
+          <PollCard key={poll.id} poll={poll} variant="grid" />
+        ))}
+      </div>
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPrevious={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
+      )}
+    </div>
+  );
+}
+
+function ArticlesTab({ userId }) {
+  const [page, setPage] = useState(1);
+  const limit = 10;
+
+  const { data, loading, error } = useAsyncData(
+    async () => {
+      if (!userId) return null;
+      return articleAPI.getAll({ authorId: userId, status: 'published', page, limit });
+    },
+    [userId, page],
+    { initialData: null }
+  );
+
+  const articles = Array.isArray(data?.data?.articles) ? data.data.articles : [];
+  const totalPages = data?.data?.pagination?.totalPages ?? 1;
+
+  if (loading) return <SkeletonLoader type="list" count={3} />;
+  if (error) return (
+    <EmptyState type="error" title="Error loading articles" description={error} />
+  );
+  if (!articles.length) return (
+    <EmptyState type="empty" title="No articles yet" description="This user has not published any articles." />
+  );
+
+  return (
+    <div>
+      <div className="space-y-4">
+        {articles.map((article) => (
+          <ArticleCard key={article.id} article={article} variant="list" />
+        ))}
+      </div>
+      {totalPages > 1 && (
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          onPrevious={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function PublicUserProfilePage() {
   const params = useParams();
-  const userId = params?.id;
+  const username = params?.username;
   const { user: authUser, loading: authLoading } = useAuth();
   const isAuthenticated = !authLoading && !!authUser;
 
+  const [activeTab, setActiveTab] = useState('overview');
+
   const { data: user, loading, error } = useAsyncData(
     async () => {
-      if (!userId || !isAuthenticated) {
+      if (!username || !isAuthenticated) {
         return { data: { user: null } };
       }
-      const response = await authAPI.getPublicUserProfile(userId);
+      const response = await authAPI.getPublicUserProfileByUsername(username);
       if (response.success) {
         return response;
       }
       return { data: { user: null } };
     },
-    [userId, isAuthenticated],
+    [username, isAuthenticated],
     {
       initialData: null,
       transform: (response) => response.data.user || null
@@ -175,7 +274,7 @@ export default function PublicUserProfilePage() {
         )}
 
         {!authLoading && isAuthenticated && !loading && !error && user && (
-          <div className="max-w-2xl mx-auto space-y-6">
+          <div className="max-w-4xl mx-auto space-y-6">
             <Card>
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
                 <UserAvatar user={user} />
@@ -200,7 +299,7 @@ export default function PublicUserProfilePage() {
                   <p className="text-xs text-gray-500 mt-2">
                     Member since {new Date(user.createdAt).toLocaleDateString()}
                   </p>
-                  <FollowCounts key={countsKey} userId={user.id} />
+                  <FollowCounts key={countsKey} userId={user.id} username={user.username} />
                 </div>
               </div>
             </Card>
@@ -213,10 +312,40 @@ export default function PublicUserProfilePage() {
                 </p>
               </Card>
             )}
+
+            {/* Activity Tabs */}
+            <div>
+              <div className="flex border-b border-gray-200 mb-6">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-blue-600 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {activeTab === 'overview' && (
+                <Card>
+                  <p className="text-sm text-gray-600">
+                    Select a tab above to view this user&apos;s polls or articles.
+                  </p>
+                </Card>
+              )}
+
+              {activeTab === 'polls' && <PollsTab userId={user.id} />}
+
+              {activeTab === 'articles' && <ArticlesTab userId={user.id} />}
+            </div>
           </div>
         )}
       </div>
     </div>
   );
 }
-

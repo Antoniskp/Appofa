@@ -34,6 +34,7 @@ router.get('/users/search', apiLimiter, authMiddleware, authController.searchUse
 
 // Registered users only: public profile data for searchable users
 router.get('/users/:id/public', apiLimiter, authMiddleware, authController.getPublicUserProfile);
+router.get('/users/username/:username/public', apiLimiter, authMiddleware, authController.getPublicUserProfileByUsername);
 
 // Public stats route
 router.get('/users/public-stats', apiLimiter, authController.getPublicUserStats);
