@@ -271,11 +271,11 @@ export default function LocationsPage() {
   };
 
   const handleSearchSelect = (location) => {
-    router.push(`/locations/${location.id}`);
+    router.push(`/locations/${location.slug || location.id}`);
   };
 
   const handleLocationClick = (location) => {
-    router.push(`/locations/${location.id}`);
+    router.push(`/locations/${location.slug || location.id}`);
   };
 
   const handleClearAll = () => {

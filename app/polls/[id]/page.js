@@ -26,6 +26,7 @@ import Badge from '@/components/Badge';
 import ConfirmDialog from '@/components/ConfirmDialog';
 import { useToast } from '@/components/ToastProvider';
 import { TooltipIconButton } from '@/components/Tooltip';
+import { idSlug } from '@/lib/utils/slugify';
 
 export default function PollDetailPage() {
   const params = useParams();
@@ -43,7 +44,8 @@ export default function PollDetailPage() {
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
 
-  const pollId = params.id;
+  // Support both numeric IDs and slug-prefixed IDs like "42-my-poll-title"
+  const pollId = parseInt(params.id, 10);
 
   const fetchPoll = async () => {
     setLoading(true);
@@ -66,6 +68,15 @@ export default function PollDetailPage() {
       fetchPoll();
     }
   }, [pollId]);
+
+  // Redirect old numeric-only URLs to canonical slug URLs
+  useEffect(() => {
+    if (!poll) return;
+    const canonical = idSlug(poll.id, poll.title);
+    if (params.id !== canonical) {
+      router.replace(`/polls/${canonical}`);
+    }
+  }, [poll, params.id, router]);
 
   const handleVoteSuccess = () => {
     // Refresh poll data after voting

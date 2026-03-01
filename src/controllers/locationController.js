@@ -233,12 +233,14 @@ exports.getLocations = async (req, res) => {
   }
 };
 
-// Get a single location by ID with children and linked entities
+// Get a single location by ID or slug with children and linked entities
 exports.getLocation = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const location = await Location.findByPk(id, {
+    // Support both numeric IDs and slug-based lookup
+    const isNumericId = /^\d+$/.test(id);
+    const findOptions = {
       include: [
         {
           model: Location,
@@ -256,7 +258,11 @@ exports.getLocation = async (req, res) => {
           attributes: ['id', 'entity_type', 'entity_id']
         }
       ]
-    });
+    };
+
+    const location = isNumericId
+      ? await Location.findByPk(id, findOptions)
+      : await Location.findOne({ where: { slug: id }, ...findOptions });
 
     if (!location) {
       return res.status(404).json({
@@ -265,24 +271,25 @@ exports.getLocation = async (req, res) => {
       });
     }
 
-    // Get counts of linked entities
+    // Get counts of linked entities using the resolved numeric location ID
+    const locationId = location.id;
     const articleCount = await LocationLink.count({
       where: {
-        location_id: id,
+        location_id: locationId,
         entity_type: 'article'
       }
     });
 
     const userCount = await LocationLink.count({
       where: {
-        location_id: id,
+        location_id: locationId,
         entity_type: 'user'
       }
     });
 
     const pollCount = await LocationLink.count({
       where: {
-        location_id: id,
+        location_id: locationId,
         entity_type: 'poll'
       }
     });
@@ -290,7 +297,7 @@ exports.getLocation = async (req, res) => {
     const moderator = await User.findOne({
       where: {
         role: 'moderator',
-        homeLocationId: id
+        homeLocationId: locationId
       },
       attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor'],
       order: [['createdAt', 'ASC'], ['id', 'ASC']]
