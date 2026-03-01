@@ -45,7 +45,7 @@ exports.getCommunityStats = async (req, res) => {
     console.error('Error fetching community stats:', error);
     res.status(500).json({
       success: false,
-      message: 'Σφάλμα κατά την ανάκτηση στατιστικών'
+      message: 'Error fetching community stats.'
     });
   }
 };
@@ -58,7 +58,7 @@ exports.getUserHomeLocation = async (req, res) => {
     if (!req.user) {
       return res.status(401).json({
         success: false,
-        message: 'Μη εξουσιοδοτημένος χρήστης'
+        message: 'Authentication required.'
       });
     }
 
@@ -74,7 +74,7 @@ exports.getUserHomeLocation = async (req, res) => {
     console.error('Error fetching user home location:', error);
     res.status(500).json({
       success: false,
-      message: 'Σφάλμα κατά την ανάκτηση τοποθεσίας'
+      message: 'Error fetching user home location.'
     });
   }
 };

@@ -104,6 +104,7 @@ npm run frontend             # Next.js dev server (port 3001)
 npm run frontend:build       # Next.js production build
 npm run frontend:start       # Next.js production server
 npm test                     # Jest tests
+npm run lint                 # ESLint static analysis
 npm run seed                 # Seed database with sample data
 npm run migrate:article-types # Migrate existing articles to new type field
 ```

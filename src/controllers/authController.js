@@ -10,6 +10,7 @@ const {
   normalizePassword,
   normalizeInteger
 } = require('../utils/validators');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
 require('dotenv').config();
 
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
@@ -82,28 +83,6 @@ const buildUserStats = async () => {
     total: totalUsers,
     byRole
   };
-};
-
-const getDescendantLocationIds = async (rootId, includeSelf = false) => {
-  const descendantIds = includeSelf ? [rootId] : [];
-  let queue = [rootId];
-
-  while (queue.length > 0) {
-    const children = await Location.findAll({
-      where: { parent_id: { [Op.in]: queue } },
-      attributes: ['id']
-    });
-
-    const childIds = children.map((child) => child.id);
-    if (childIds.length === 0) {
-      break;
-    }
-
-    descendantIds.push(...childIds);
-    queue = childIds;
-  }
-
-  return descendantIds;
 };
 
 const buildUserStatsFromList = (users = []) => {
