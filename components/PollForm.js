@@ -7,7 +7,9 @@ import AlertMessage from '@/components/AlertMessage';
 import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import TagInput from '@/components/TagInput';
 import Tooltip from '@/components/Tooltip';
+import { tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 
 /**
@@ -31,7 +33,7 @@ export default function PollForm({
     title: '',
     description: '',
     category: '',
-    tags: '',
+    tags: [],
     type: 'simple',
     visibility: 'public',
     resultsVisibility: 'after_vote',
@@ -48,6 +50,7 @@ export default function PollForm({
   ]);
 
   const [imageErrors, setImageErrors] = useState({});
+  const [tagSuggestions, setTagSuggestions] = useState([]);
 
   // Initialize form data from poll prop (edit mode)
   useEffect(() => {
@@ -56,7 +59,7 @@ export default function PollForm({
         title: poll.title || '',
         description: poll.description || '',
         category: poll.category || '',
-        tags: Array.isArray(poll.tags) ? poll.tags.join(', ') : '',
+        tags: Array.isArray(poll.tags) ? poll.tags : [],
         type: poll.type || 'simple',
         visibility: poll.visibility || 'public',
         resultsVisibility: poll.resultsVisibility || 'after_vote',
@@ -78,6 +81,15 @@ export default function PollForm({
       }
     }
   }, [poll]);
+
+  // Fetch existing tag suggestions for autocomplete
+  useEffect(() => {
+    tagAPI.getSuggestions()
+      .then((data) => {
+        if (data?.tags) setTagSuggestions(data.tags);
+      })
+      .catch(() => {});
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -162,10 +174,6 @@ export default function PollForm({
     // Parse tags from comma-separated string to array
     const payload = {
       ...formData,
-      tags: formData.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
       options: validOptions,
       deadline: formData.deadline || null,
     };
@@ -214,11 +222,11 @@ export default function PollForm({
           placeholder="Επιλέξτε κατηγορία..."
         />
 
-        <FormInput
-          name="tags"
-          label="Tags (comma-separated)"
+        <TagInput
+          label="Tags"
           value={formData.tags}
-          onChange={handleInputChange}
+          onChange={(tags) => setFormData((prev) => ({ ...prev, tags }))}
+          suggestions={tagSuggestions}
           placeholder="e.g. programming, education"
         />
       </div>

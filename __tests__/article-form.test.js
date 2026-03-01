@@ -44,7 +44,10 @@ const mockLocationAPI = {
 };
 
 jest.mock('@/lib/api', () => ({
-  locationAPI: mockLocationAPI
+  locationAPI: mockLocationAPI,
+  tagAPI: {
+    getSuggestions: jest.fn(() => Promise.resolve({ tags: [] })),
+  },
 }));
 
 const flushPromises = async () => {
