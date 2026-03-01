@@ -41,7 +41,7 @@ const sanitizePoll = (poll, user) => {
 
 // Helper to get client IP address
 const getClientIp = (req) => {
-  return req.ip || req.headers['x-forwarded-for']?.split(',')[0] || req.connection.remoteAddress;
+  return req.ip || (req.ips && req.ips[0]) || req.socket?.remoteAddress;
 };
 
 // Helper to get user agent

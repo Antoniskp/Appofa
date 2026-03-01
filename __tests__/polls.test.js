@@ -1464,4 +1464,97 @@ describe('Poll API Tests', () => {
       ))).toBe(true);
     });
   });
+
+  describe('Client IP Extraction (getClientIp helper)', () => {
+    let ipTestPollId;
+    let ipTestOptionId;
+
+    beforeAll(async () => {
+      const csrfToken = 'test-csrf-token-ip-poll-create';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'IP Extraction Test Poll',
+          type: 'simple',
+          allowUnauthenticatedVotes: true,
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [{ text: 'Option A' }, { text: 'Option B' }]
+        });
+
+      ipTestPollId = response.body.data.id;
+      ipTestOptionId = response.body.data.options[0].id;
+    });
+
+    test('should record req.ip (socket address) when no forwarded header is set', async () => {
+      const csrfToken = 'test-csrf-token-ip-socket';
+      const { storeCsrfToken } = require('../src/utils/csrf');
+      storeCsrfToken(csrfToken, null);
+
+      const response = await request(app)
+        .post(`/api/polls/${ipTestPollId}/vote`)
+        .set('Cookie', [`csrf_token=${csrfToken}`])
+        .set('x-csrf-token', csrfToken)
+        .send({ optionId: ipTestOptionId });
+
+      expect(response.status).toBe(200);
+
+      const vote = await PollVote.findOne({
+        where: { pollId: ipTestPollId, userId: null }
+      });
+      expect(vote).not.toBeNull();
+      expect(vote.ipAddress).toBeTruthy();
+    });
+
+    test('should use forwarded IP (req.ip via trust proxy) when X-Forwarded-For is set', async () => {
+      const csrfToken = 'test-csrf-token-ip-forwarded';
+      const { storeCsrfToken } = require('../src/utils/csrf');
+      storeCsrfToken(csrfToken, null);
+
+      const forwardedIp = '203.0.113.42';
+
+      const response = await request(app)
+        .post(`/api/polls/${ipTestPollId}/vote`)
+        .set('Cookie', [`csrf_token=${csrfToken}`])
+        .set('x-csrf-token', csrfToken)
+        .set('X-Forwarded-For', forwardedIp)
+        .send({ optionId: ipTestOptionId });
+
+      expect(response.status).toBe(200);
+
+      const vote = await PollVote.findOne({
+        where: { pollId: ipTestPollId, userId: null, ipAddress: forwardedIp }
+      });
+      expect(vote).not.toBeNull();
+      expect(vote.ipAddress).toBe(forwardedIp);
+    });
+
+    test('should use first IP from X-Forwarded-For chain (req.ips via trust proxy)', async () => {
+      const csrfToken = 'test-csrf-token-ip-chain';
+      const { storeCsrfToken } = require('../src/utils/csrf');
+      storeCsrfToken(csrfToken, null);
+
+      const clientIp = '203.0.113.99';
+      const proxyIp = '10.0.0.1';
+
+      const response = await request(app)
+        .post(`/api/polls/${ipTestPollId}/vote`)
+        .set('Cookie', [`csrf_token=${csrfToken}`])
+        .set('x-csrf-token', csrfToken)
+        .set('X-Forwarded-For', `${clientIp}, ${proxyIp}`)
+        .send({ optionId: ipTestOptionId });
+
+      expect(response.status).toBe(200);
+
+      const vote = await PollVote.findOne({
+        where: { pollId: ipTestPollId, userId: null, ipAddress: clientIp }
+      });
+      expect(vote).not.toBeNull();
+      expect(vote.ipAddress).toBe(clientIp);
+    });
+  });
 });
