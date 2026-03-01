@@ -1,6 +1,7 @@
 import { ImageCard, ImageTopCard } from '@/components/Card';
 import Badge, { TypeBadge } from '@/components/Badge';
 import { TruncatedTextTooltip } from '@/components/Tooltip';
+import { idSlug } from '@/lib/utils/slugify';
 
 /**
  * Helper function to strip markdown syntax from text
@@ -65,7 +66,9 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const formattedDate = createdAt.toLocaleDateString();
   const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
-  const articleHref = article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`;
+  const articleHref = article.type === 'news'
+    ? `/news/${idSlug(article.id, article.title)}`
+    : `/articles/${idSlug(article.id, article.title)}`;
   
   // List variant (image on left)
   if (variant === 'list') {

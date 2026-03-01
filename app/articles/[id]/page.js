@@ -16,6 +16,7 @@ import Button from '@/components/Button';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
+import { idSlug } from '@/lib/utils/slugify';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -36,7 +37,7 @@ export default function ArticleDetailPage() {
 
   const handleDelete = async () => {
     try {
-      await articleAPI.delete(params.id);
+      await articleAPI.delete(article.id);
       addToast('Article deleted successfully', { type: 'success' });
       router.push('/articles');
     } catch (err) {
@@ -133,6 +134,16 @@ export default function ArticleDetailPage() {
       isActive = false;
     };
   }, [article?.id]);
+
+  // Redirect old numeric-only URLs to canonical slug URLs
+  useEffect(() => {
+    if (!article) return;
+    const basePath = article.type === 'news' ? '/news' : '/articles';
+    const canonical = idSlug(article.id, article.title);
+    if (params.id !== canonical) {
+      router.replace(`${basePath}/${canonical}`);
+    }
+  }, [article, params.id, router]);
 
   if (loading) {
     return (

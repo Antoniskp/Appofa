@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -10,9 +10,11 @@ import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PencilIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { idSlug } from '@/lib/utils/slugify';
 
 export default function LocationDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { error: toastError, success: toastSuccess } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { canManageLocations } = usePermissions();
@@ -61,9 +63,12 @@ export default function LocationDetailPage() {
           wikipedia_url: loc.wikipedia_url || '',
         });
 
+        // Use the resolved numeric ID for subsequent queries
+        const locId = loc.id;
+
         // Fetch entities linked to this location
         try {
-          const entitiesResponse = await locationAPI.getLocationEntities(params.slug);
+          const entitiesResponse = await locationAPI.getLocationEntities(locId);
           if (entitiesResponse.success) {
             setEntities({
               articles: entitiesResponse.articles || [],
@@ -78,7 +83,7 @@ export default function LocationDetailPage() {
 
         // Fetch child locations
         try {
-          const childrenResponse = await locationAPI.getAll({ parent_id: params.slug });
+          const childrenResponse = await locationAPI.getAll({ parent_id: locId });
           if (childrenResponse.success) {
             setChildren(childrenResponse.locations || []);
           }
@@ -92,6 +97,14 @@ export default function LocationDetailPage() {
       }
     }
   );
+
+  // Redirect numeric-ID URLs to canonical slug URLs
+  useEffect(() => {
+    if (!location?.slug) return;
+    if (/^\d+$/.test(params.slug) && location.slug !== params.slug) {
+      router.replace(`/locations/${location.slug}`);
+    }
+  }, [location, params.slug, router]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -240,7 +253,7 @@ export default function LocationDetailPage() {
                     <span className="text-gray-900 font-medium">{crumb.name}</span>
                   ) : (
                     <Link
-                      href={`/locations/${crumb.id}`}
+                      href={`/locations/${crumb.slug}`}
                       className="text-blue-600 hover:text-blue-800"
                     >
                       {crumb.name}
@@ -496,7 +509,7 @@ export default function LocationDetailPage() {
                 {children.map(child => (
                   <Link
                     key={child.id}
-                    href={`/locations/${child.id}`}
+                    href={`/locations/${child.slug}`}
                     className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 border border-blue-200 transition-colors text-sm"
                   >
                     <span className="font-medium">{child.name}</span>
@@ -520,7 +533,7 @@ export default function LocationDetailPage() {
               {newsArticles.map(article => (
                 <Link
                   key={article.id}
-                  href={`/news/${article.id}`}
+                  href={`/news/${idSlug(article.id, article.title)}`}
                   className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
                 >
                   <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
@@ -555,7 +568,7 @@ export default function LocationDetailPage() {
                 {regularArticles.map(article => (
                   <Link
                     key={article.id}
-                    href={`/articles/${article.id}`}
+                    href={`/articles/${idSlug(article.id, article.title)}`}
                     className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
                   >
                     <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
@@ -646,7 +659,7 @@ export default function LocationDetailPage() {
                 {activePolls.map(poll => (
                   <Link
                     key={poll.id}
-                    href={`/polls/${poll.id}`}
+                    href={`/polls/${idSlug(poll.id, poll.title)}`}
                     className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
                   >
                     <h3 className="font-medium text-gray-900 mb-1">{poll.title}</h3>

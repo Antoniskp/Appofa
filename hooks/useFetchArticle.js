@@ -20,8 +20,14 @@ export function useFetchArticle(articleId) {
       if (!articleId) {
         throw new Error('Article ID is required');
       }
+
+      // Support both numeric IDs and slug-prefixed IDs like "42-my-article-title"
+      const numericId = parseInt(articleId, 10);
+      if (!numericId || isNaN(numericId)) {
+        throw new Error('Article ID is required');
+      }
       
-      const response = await articleAPI.getById(articleId);
+      const response = await articleAPI.getById(numericId);
       
       if (!response.success) {
         throw new Error(response.message || 'Article not found');

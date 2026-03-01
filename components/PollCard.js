@@ -8,6 +8,7 @@ import { TruncatedTextTooltip } from '@/components/Tooltip';
 import { ChartBarIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
+import { idSlug } from '@/lib/utils/slugify';
 
 /**
  * Reusable poll card component
@@ -186,6 +187,8 @@ export default function PollCard({ poll, variant = 'grid' }) {
     );
   };
 
+  const pollHref = `/polls/${idSlug(poll.id, poll.title)}`;
+  
   // Show results if user can view them
   const showResults = canViewResults();
   
@@ -234,14 +237,14 @@ export default function PollCard({ poll, variant = 'grid' }) {
       <div className="mt-4">
         {isPollActive ? (
           <Link
-            href={`/polls/${poll.id}`}
+            href={pollHref}
             className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
           >
             Ψηφοφορία Τώρα
           </Link>
         ) : (
           <Link
-            href={`/polls/${poll.id}`}
+            href={pollHref}
             className="inline-block bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition text-sm font-medium"
           >
             Προβολή Αποτελεσμάτων
@@ -254,7 +257,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   // Render with results bars instead of image
   if (showResults) {
     return (
-      <Link href={`/polls/${poll.id}`} className="block">
+      <Link href={pollHref} className="block">
         <Card hoverable className="overflow-hidden h-full">
           {renderDonutChart()}
           <div className="p-6">
@@ -273,7 +276,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
       imageAlt={`${poll.title} banner`}
       imageFallback={defaultPollImage}
       imageClassName="h-32"
-      href={`/polls/${poll.id}`}
+      href={pollHref}
       hoverable
       className="overflow-hidden"
     >
