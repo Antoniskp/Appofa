@@ -109,6 +109,11 @@ npm run seed                 # Seed database with sample data
 npm run migrate:article-types # Migrate existing articles to new type field
 ```
 
+## Dependency Management
+
+See [docs/dependency-updates.md](docs/dependency-updates.md) for guidance on updating dependencies,
+running security audits (`npm audit`), and the history of significant dependency upgrades.
+
 ## License
 
 Copyright (c) 2026 Antoniskp. All Rights Reserved.
