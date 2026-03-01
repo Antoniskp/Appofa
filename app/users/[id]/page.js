@@ -6,18 +6,44 @@ import { useParams } from 'next/navigation';
 import { authAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Card from '@/components/Card';
+import Badge from '@/components/Badge';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { useAuth } from '@/lib/auth-context';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
+function UserAvatar({ user }) {
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [user?.avatar]);
+
+  return (
+    <div
+      className="h-24 w-24 rounded-full border border-gray-200 flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0"
+      style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
+    >
+      {user.avatar && !avatarLoadError ? (
+        <img
+          src={user.avatar}
+          alt={user.username}
+          className="h-full w-full rounded-full object-cover"
+          onError={() => setAvatarLoadError(true)}
+        />
+      ) : (
+        <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
+      )}
+    </div>
+  );
+}
+
 export default function PublicUserProfilePage() {
   const params = useParams();
   const userId = params?.id;
   const { user: authUser, loading: authLoading } = useAuth();
   const isAuthenticated = !authLoading && !!authUser;
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   const { data: user, loading, error } = useAsyncData(
     async () => {
@@ -37,26 +63,31 @@ export default function PublicUserProfilePage() {
     }
   );
 
-  useEffect(() => {
-    setAvatarLoadError(false);
-  }, [user?.avatar]);
-
   const displayName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
     : user?.firstName || user?.lastName || '';
+
+  const getLocationBreadcrumb = (location) => {
+    if (!location) return null;
+    const parts = [];
+    let current = location;
+    while (current) {
+      parts.unshift(current.name);
+      current = current.parent;
+    }
+    return parts.join(' → ');
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="mb-6">
           <Link className="text-sm text-blue-600 hover:underline" href="/users">
-            Back to users
+            ← Back to users
           </Link>
         </div>
 
-        {authLoading && (
-          <SkeletonLoader type="list" count={1} />
-        )}
+        {authLoading && <SkeletonLoader type="list" count={1} />}
 
         {!authLoading && !isAuthenticated && (
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
@@ -90,10 +121,7 @@ export default function PublicUserProfilePage() {
             type="error"
             title="User Not Found"
             description={error}
-            action={{
-              text: 'View Users',
-              href: '/users'
-            }}
+            action={{ text: 'View Users', href: '/users' }}
           />
         )}
 
@@ -102,45 +130,45 @@ export default function PublicUserProfilePage() {
             type="empty"
             title="Profile Not Available"
             description="This user profile is not visible right now."
-            action={{
-              text: 'View Users',
-              href: '/users'
-            }}
+            action={{ text: 'View Users', href: '/users' }}
           />
         )}
 
         {!authLoading && isAuthenticated && !loading && !error && user && (
-          <Card>
-            <div className="flex flex-col gap-6 md:flex-row md:items-center">
-              <div
-                className="h-24 w-24 rounded-full border border-gray-200 flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0"
-                style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
-              >
-                {user.avatar && !avatarLoadError ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.username}
-                    className="h-full w-full rounded-full object-cover"
-                    onError={() => setAvatarLoadError(true)}
-                  />
-                ) : (
-                  <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
-                )}
+          <div className="max-w-2xl mx-auto space-y-6">
+            <Card>
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                <UserAvatar user={user} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <h1 className="text-2xl font-bold text-gray-900 truncate">
+                      {user.username}
+                    </h1>
+                    {user.role && (
+                      <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
+                        {user.role}
+                      </Badge>
+                    )}
+                  </div>
+                  {displayName && (
+                    <p className="text-sm text-gray-600 mt-1 truncate">{displayName}</p>
+                  )}
+                  <p className="text-xs text-gray-500 mt-2">
+                    Member since {new Date(user.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
+            </Card>
 
-              <div className="flex-1 min-w-0">
-                <h1 className="text-2xl font-bold text-gray-900 truncate">
-                  {user.username}
-                </h1>
-                {displayName && (
-                  <p className="text-sm text-gray-600 mt-1 truncate">{displayName}</p>
-                )}
-                <p className="text-xs text-gray-500 mt-2">
-                  Member since {new Date(user.createdAt).toLocaleDateString()}
+            {user.homeLocation && (
+              <Card>
+                <h2 className="text-sm font-semibold text-gray-700 mb-1">Home location</h2>
+                <p className="text-sm text-gray-600">
+                  {getLocationBreadcrumb(user.homeLocation)}
                 </p>
-              </div>
-            </div>
-          </Card>
+              </Card>
+            )}
+          </div>
         )}
       </div>
     </div>
