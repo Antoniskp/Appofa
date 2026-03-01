@@ -1249,10 +1249,13 @@ const pollController = {
               where: { pollId: id, userId: req.user.id }
             }).then(vote => !!vote);
           } else {
-            // Check session vote for unauthenticated users
-            const sessionId = getSessionId(req);
+            // Check vote for unauthenticated users by IP address + User-Agent.
+            // userId is always null for unauthenticated votes (see vote creation logic),
+            // so including it ensures we never match an authenticated user's vote.
+            const ipAddress = getClientIp(req);
+            const userAgent = getUserAgent(req);
             return PollVote.findOne({
-              where: { pollId: id, sessionId }
+              where: { pollId: id, userId: null, ipAddress, userAgent }
             }).then(vote => !!vote);
           }
         }

@@ -1,6 +1,7 @@
 const { Location, LocationLink, Article, User, Poll } = require('../models');
 const { Op, fn, col, where } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
 
 // Helper function to generate slug from name
 const generateSlug = (name, type) => {
@@ -17,29 +18,6 @@ const isValidWikipediaUrl = (url) => {
   } catch (error) {
     return false;
   }
-};
-
-// Helper to collect all descendant location IDs for a location.
-const getDescendantLocationIds = async (rootId) => {
-  const descendantIds = [];
-  let queue = [rootId];
-
-  while (queue.length > 0) {
-    const children = await Location.findAll({
-      where: { parent_id: { [Op.in]: queue } },
-      attributes: ['id']
-    });
-
-    const childIds = children.map((child) => child.id);
-    if (childIds.length === 0) {
-      break;
-    }
-
-    descendantIds.push(...childIds);
-    queue = childIds;
-  }
-
-  return descendantIds;
 };
 
 // Create a new location (admin/moderator only)
