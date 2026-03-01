@@ -123,7 +123,8 @@ const followController = {
         include: [{
           model: User,
           as: 'follower',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'role', 'searchable']
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'role', 'searchable'],
+          where: { searchable: true }
         }],
         order: [['createdAt', 'DESC']],
         limit,
@@ -132,7 +133,7 @@ const followController = {
 
       const users = rows
         .map((row) => row.follower)
-        .filter((u) => u && u.searchable)
+        .filter(Boolean)
         .map((u) => u.toJSON());
 
       return res.status(200).json({
@@ -172,7 +173,8 @@ const followController = {
         include: [{
           model: User,
           as: 'followingUser',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'role', 'searchable']
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'role', 'searchable'],
+          where: { searchable: true }
         }],
         order: [['createdAt', 'DESC']],
         limit,
@@ -181,7 +183,7 @@ const followController = {
 
       const users = rows
         .map((row) => row.followingUser)
-        .filter((u) => u && u.searchable)
+        .filter(Boolean)
         .map((u) => u.toJSON());
 
       return res.status(200).json({
