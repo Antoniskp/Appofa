@@ -7,10 +7,10 @@ import { usePathname } from 'next/navigation';
 import {
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
-  BookmarkIcon,
   ChevronDownIcon,
+  ClipboardDocumentListIcon,
+  NewspaperIcon,
   PencilSquareIcon,
-  PlusCircleIcon,
   ServerIcon,
   ShieldCheckIcon,
   UserCircleIcon,
@@ -24,7 +24,7 @@ import Tooltip from '@/components/Tooltip';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
-  const { isAdmin, isEditor, isModerator } = usePermissions();
+  const { isAdmin } = usePermissions();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
@@ -58,19 +58,41 @@ export default function TopNav() {
   const userMenuItems = [
     {
       id: 'profile',
-      label: 'Προφίλ',
+      label: 'Το προφίλ μου',
       href: '/profile',
       icon: <UserCircleIcon className="h-4 w-4" />,
       className: isActive('/profile')
     },
     {
-      id: 'bookmarks',
-      label: 'Σελιδοδείκτες',
-      href: '/bookmarks',
-      icon: <BookmarkIcon className="h-4 w-4" />,
-      className: isActive('/bookmarks')
+      id: 'my-articles',
+      label: 'Τα άρθρα μου',
+      href: '/editor',
+      icon: <PencilSquareIcon className="h-4 w-4" />,
+      className: isActive('/editor')
+    },
+    {
+      id: 'my-news',
+      label: 'Τα νέα μου',
+      href: '/my-news',
+      icon: <NewspaperIcon className="h-4 w-4" />,
+      className: isActive('/my-news')
+    },
+    {
+      id: 'my-polls',
+      label: 'Οι δημοσκοπήσεις μου',
+      href: '/my-polls',
+      icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+      className: isActive('/my-polls')
+    },
+    {
+      id: 'my-votes',
+      label: 'Οι ψήφοι μου',
+      href: '/my-votes',
+      icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+      className: isActive('/my-votes')
     },
     ...(isAdmin ? [
+      { divider: true },
       {
         id: 'admin',
         label: 'Διαχείριση',
@@ -86,26 +108,10 @@ export default function TopNav() {
         className: isActive('/admin/status')
       }
     ] : []),
-    ...((isAdmin || isEditor || isModerator) ? [
-      {
-        id: 'editor',
-        label: 'Τα άρθρα μου',
-        href: '/editor',
-        icon: <PencilSquareIcon className="h-4 w-4" />,
-        className: isActive('/editor')
-      },
-      {
-        id: 'create-poll',
-        label: 'Δημιουργία Δημοσκόπησης',
-        href: '/polls/create',
-        icon: <PlusCircleIcon className="h-4 w-4" />,
-        className: isActive('/polls/create')
-      }
-    ] : []),
     { divider: true },
     {
       id: 'logout',
-      label: 'Έξοδος',
+      label: 'Αποσύνδεση',
       icon: <ArrowRightOnRectangleIcon className="h-4 w-4" />,
       onClick: handleLogout,
       variant: 'danger'
@@ -116,19 +122,41 @@ export default function TopNav() {
   const mobileMenuItems = [
     {
       id: 'profile',
-      label: 'Προφίλ',
+      label: 'Το προφίλ μου',
       href: '/profile',
       icon: <UserCircleIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/profile')}`
     },
     {
-      id: 'bookmarks',
-      label: 'Σελιδοδείκτες',
-      href: '/bookmarks',
-      icon: <BookmarkIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/bookmarks')}`
+      id: 'my-articles',
+      label: 'Τα άρθρα μου',
+      href: '/editor',
+      icon: <PencilSquareIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/editor')}`
+    },
+    {
+      id: 'my-news',
+      label: 'Τα νέα μου',
+      href: '/my-news',
+      icon: <NewspaperIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/my-news')}`
+    },
+    {
+      id: 'my-polls',
+      label: 'Οι δημοσκοπήσεις μου',
+      href: '/my-polls',
+      icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/my-polls')}`
+    },
+    {
+      id: 'my-votes',
+      label: 'Οι ψήφοι μου',
+      href: '/my-votes',
+      icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/my-votes')}`
     },
     ...(isAdmin ? [
+      { divider: true },
       {
         id: 'admin',
         label: 'Διαχείριση',
@@ -144,26 +172,10 @@ export default function TopNav() {
         className: `text-base font-medium ${isActive('/admin/status')}`
       }
     ] : []),
-    ...((isAdmin || isEditor || isModerator) ? [
-      {
-        id: 'editor',
-        label: 'Τα άρθρα μου',
-        href: '/editor',
-        icon: <PencilSquareIcon className="h-5 w-5" />,
-        className: `text-base font-medium ${isActive('/editor')}`
-      },
-      {
-        id: 'create-poll',
-        label: 'Δημιουργία Δημοσκόπησης',
-        href: '/polls/create',
-        icon: <PlusCircleIcon className="h-5 w-5" />,
-        className: `text-base font-medium ${isActive('/polls/create')}`
-      }
-    ] : []),
     { divider: true },
     {
       id: 'logout',
-      label: 'Έξοδος',
+      label: 'Αποσύνδεση',
       icon: <ArrowRightOnRectangleIcon className="h-5 w-5" />,
       onClick: handleLogout,
       variant: 'danger',
