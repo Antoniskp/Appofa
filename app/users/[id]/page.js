@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { authAPI } from '@/lib/api';
@@ -10,6 +10,7 @@ import Badge from '@/components/Badge';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import { useAuth } from '@/lib/auth-context';
+import FollowButton from '@/components/follow/FollowButton';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -39,6 +40,43 @@ function UserAvatar({ user }) {
   );
 }
 
+function FollowCounts({ userId }) {
+  const [counts, setCounts] = useState(null);
+
+  const fetchCounts = useCallback(() => {
+    authAPI.getFollowCounts(userId)
+      .then((res) => {
+        if (res?.data) setCounts(res.data);
+      })
+      .catch(() => {});
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) fetchCounts();
+  }, [userId, fetchCounts]);
+
+  if (!counts) return null;
+
+  return (
+    <div className="flex gap-4 mt-2 text-sm text-gray-600">
+      <Link
+        href={`/users/${userId}/followers`}
+        className="hover:text-blue-600 hover:underline"
+      >
+        <span className="font-semibold text-gray-900">{counts.followersCount}</span>{' '}
+        {counts.followersCount === 1 ? 'Follower' : 'Followers'}
+      </Link>
+      <Link
+        href={`/users/${userId}/following`}
+        className="hover:text-blue-600 hover:underline"
+      >
+        <span className="font-semibold text-gray-900">{counts.followingCount}</span>{' '}
+        Following
+      </Link>
+    </div>
+  );
+}
+
 export default function PublicUserProfilePage() {
   const params = useParams();
   const userId = params?.id;
@@ -62,6 +100,8 @@ export default function PublicUserProfilePage() {
       transform: (response) => response.data.user || null
     }
   );
+
+  const [countsKey, setCountsKey] = useState(0);
 
   const displayName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
@@ -149,6 +189,10 @@ export default function PublicUserProfilePage() {
                         {user.role}
                       </Badge>
                     )}
+                    <FollowButton
+                      targetUserId={user.id}
+                      onCountChange={() => setCountsKey((k) => k + 1)}
+                    />
                   </div>
                   {displayName && (
                     <p className="text-sm text-gray-600 mt-1 truncate">{displayName}</p>
@@ -156,6 +200,7 @@ export default function PublicUserProfilePage() {
                   <p className="text-xs text-gray-500 mt-2">
                     Member since {new Date(user.createdAt).toLocaleDateString()}
                   </p>
+                  <FollowCounts key={countsKey} userId={user.id} />
                 </div>
               </div>
             </Card>
@@ -174,3 +219,4 @@ export default function PublicUserProfilePage() {
     </div>
   );
 }
+
