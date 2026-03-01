@@ -49,7 +49,8 @@ curl -X POST http://localhost:3000/api/auth/register \
 
 ### 4. Login
 ```bash
-curl -X POST http://localhost:3000/api/auth/login \
+curl -c /tmp/cookies.txt -b /tmp/cookies.txt \
+  -X POST http://localhost:3000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{
     "email": "admin@example.com",
@@ -57,12 +58,16 @@ curl -X POST http://localhost:3000/api/auth/login \
   }'
 ```
 
-Save the token from the response for subsequent requests.
+The server sets two cookies: `auth_token` (HttpOnly JWT) and `csrf_token` (readable, for CSRF protection).
+Use `-c`/`-b` with a cookie jar file to persist them across requests. Extract the CSRF token for mutation requests:
+
+```bash
+CSRF_TOKEN=$(grep 'csrf_token' /tmp/cookies.txt | awk '{print $NF}')
+```
 
 ### 5. Get User Profile
 ```bash
-curl -X GET http://localhost:3000/api/auth/profile \
-  -b "auth_token=YOUR_TOKEN_HERE"
+curl -b /tmp/cookies.txt -X GET http://localhost:3000/api/auth/profile
 ```
 
 ### 6. Admin: Update User Role
