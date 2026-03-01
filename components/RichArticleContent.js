@@ -1,5 +1,8 @@
 'use client';
 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 const isSafeUrl = (url) => {
   if (!url || typeof url !== 'string') return false;
   const trimmed = url.trim();
@@ -54,227 +57,112 @@ const toVimeoEmbedUrl = (url) => {
   }
 };
 
-const renderInlineText = (text, keyPrefix) => {
-  if (!text) return null;
-
-  const pattern = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(\[([^\]]+)\]\(([^)]+)\))/g;
-  const parts = [];
-  let lastIndex = 0;
-  let match;
-
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
+const components = {
+  h1: ({ children }) => <h1 className="text-3xl font-bold mt-6">{children}</h1>,
+  h2: ({ children }) => <h2 className="text-2xl font-bold mt-5">{children}</h2>,
+  h3: ({ children }) => <h3 className="text-xl font-semibold mt-4">{children}</h3>,
+  h4: ({ children }) => <h4 className="text-lg font-semibold mt-3">{children}</h4>,
+  h5: ({ children }) => <h5 className="text-base font-semibold mt-2">{children}</h5>,
+  h6: ({ children }) => <h6 className="text-sm font-semibold mt-2">{children}</h6>,
+  p: ({ children }) => <p className="break-words">{children}</p>,
+  strong: ({ children }) => <strong>{children}</strong>,
+  em: ({ children }) => <em>{children}</em>,
+  blockquote: ({ children }) => (
+    <blockquote className="border-l-4 border-gray-300 pl-4 italic text-gray-700">{children}</blockquote>
+  ),
+  ul: ({ children }) => <ul className="list-disc pl-6 space-y-1">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-6 space-y-1">{children}</ol>,
+  li: ({ children }) => <li>{children}</li>,
+  code: ({ inline, children }) => {
+    if (inline) {
+      return <code className="bg-gray-100 rounded px-1 text-sm font-mono">{children}</code>;
     }
+    return <code>{children}</code>;
+  },
+  pre: ({ children }) => (
+    <pre className="overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm text-gray-100">{children}</pre>
+  ),
+  a: ({ href, children }) => {
+    const safeHref = (href || '').trim();
+    const childText = Array.isArray(children)
+      ? children.filter((c) => typeof c === 'string').join('')
+      : typeof children === 'string' ? children : '';
 
-    if (match[2]) {
-      parts.push(<strong key={`${keyPrefix}-b-${match.index}`}>{match[2]}</strong>);
-    } else if (match[4]) {
-      parts.push(<em key={`${keyPrefix}-i-${match.index}`}>{match[4]}</em>);
-    } else if (match[6] && match[7]) {
-      const href = match[7].trim();
-      if (isSafeUrl(href)) {
-        parts.push(
-          <a
-            key={`${keyPrefix}-l-${match.index}`}
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 underline break-all"
-          >
-            {match[6]}
-          </a>
+    if (/^video$/i.test(childText)) {
+      if (!isSafeUrl(safeHref)) return null;
+      const youtubeEmbedUrl = toYouTubeEmbedUrl(safeHref);
+      const vimeoEmbedUrl = toVimeoEmbedUrl(safeHref);
+
+      if (youtubeEmbedUrl || vimeoEmbedUrl) {
+        return (
+          <div className="my-4">
+            <div className="relative w-full overflow-hidden rounded-lg" style={{ paddingTop: '56.25%' }}>
+              <iframe
+                src={youtubeEmbedUrl || vimeoEmbedUrl}
+                title="Embedded video"
+                className="absolute left-0 top-0 h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          </div>
         );
-      } else {
-        parts.push(match[0]);
       }
+
+      return (
+        <video controls className="my-4 w-full rounded-lg">
+          <source src={safeHref} />
+          Your browser does not support video playback.
+        </video>
+      );
     }
 
-    lastIndex = pattern.lastIndex;
-  }
+    if (!isSafeUrl(safeHref)) return <>{children}</>;
 
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
-  return parts;
-};
-
-const renderVideo = (url, key) => {
-  const safeUrl = url.trim();
-  if (!isSafeUrl(safeUrl)) {
-    return null;
-  }
-
-  const youtubeEmbedUrl = toYouTubeEmbedUrl(safeUrl);
-  const vimeoEmbedUrl = toVimeoEmbedUrl(safeUrl);
-
-  if (youtubeEmbedUrl || vimeoEmbedUrl) {
     return (
-      <div key={key} className="my-4">
-        <div className="relative w-full overflow-hidden rounded-lg" style={{ paddingTop: '56.25%' }}>
-          <iframe
-            src={youtubeEmbedUrl || vimeoEmbedUrl}
-            title="Embedded video"
-            className="absolute left-0 top-0 h-full w-full"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          />
-        </div>
-      </div>
+      <a
+        href={safeHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-600 hover:text-blue-800 underline break-all"
+      >
+        {children}
+      </a>
     );
-  }
-
-  return (
-    <video key={key} controls className="my-4 w-full rounded-lg">
-      <source src={safeUrl} />
-      Your browser does not support video playback.
-    </video>
-  );
+  },
+  img: ({ src, alt }) => {
+    const safeSrc = (src || '').trim();
+    if (!isSafeUrl(safeSrc)) return null;
+    const altText = alt || 'Article image';
+    return (
+      <figure className="my-4">
+        <img src={safeSrc} alt={altText} className="w-full rounded-lg border border-gray-200" />
+        {altText && altText !== 'Article image' && (
+          <figcaption className="mt-2 text-sm text-gray-500">{altText}</figcaption>
+        )}
+      </figure>
+    );
+  },
+  table: ({ children }) => (
+    <div className="overflow-x-auto my-4">
+      <table className="min-w-full border-collapse border border-gray-300 text-sm">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => <thead className="bg-gray-100">{children}</thead>,
+  tbody: ({ children }) => <tbody>{children}</tbody>,
+  tr: ({ children }) => <tr className="border-b border-gray-300">{children}</tr>,
+  th: ({ children }) => (
+    <th className="border border-gray-300 px-4 py-2 text-left font-semibold">{children}</th>
+  ),
+  td: ({ children }) => <td className="border border-gray-300 px-4 py-2">{children}</td>,
 };
 
 export default function RichArticleContent({ content = '' }) {
-  const lines = String(content || '').split('\n');
-  const blocks = [];
-  let index = 0;
-
-  while (index < lines.length) {
-    const rawLine = lines[index];
-    const line = rawLine.trim();
-
-    if (line.startsWith('```')) {
-      const codeLines = [];
-      index += 1;
-      while (index < lines.length && !lines[index].trim().startsWith('```')) {
-        codeLines.push(lines[index]);
-        index += 1;
-      }
-      blocks.push({ type: 'code', content: codeLines.join('\n') });
-      index += 1;
-      continue;
-    }
-
-    if (line.startsWith('- ')) {
-      const items = [];
-      while (index < lines.length && lines[index].trim().startsWith('- ')) {
-        items.push(lines[index].trim().replace(/^-\s+/, ''));
-        index += 1;
-      }
-      blocks.push({ type: 'ul', items });
-      continue;
-    }
-
-    if (/^\d+\.\s+/.test(line)) {
-      const items = [];
-      while (index < lines.length && /^\d+\.\s+/.test(lines[index].trim())) {
-        items.push(lines[index].trim().replace(/^\d+\.\s+/, ''));
-        index += 1;
-      }
-      blocks.push({ type: 'ol', items });
-      continue;
-    }
-
-    if (line.startsWith('> ')) {
-      blocks.push({ type: 'quote', content: line.replace(/^>\s+/, '') });
-      index += 1;
-      continue;
-    }
-
-    blocks.push({ type: 'line', content: rawLine });
-    index += 1;
-  }
-
   return (
     <div className="space-y-2 text-gray-800 leading-relaxed">
-      {blocks.map((block, index) => {
-        if (block.type === 'code') {
-          return (
-            <pre key={`code-${index}`} className="overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm text-gray-100">
-              <code>{block.content}</code>
-            </pre>
-          );
-        }
-
-        if (block.type === 'ul') {
-          return (
-            <ul key={`ul-${index}`} className="list-disc pl-6 space-y-1">
-              {block.items.map((item, itemIndex) => (
-                <li key={`ul-item-${index}-${itemIndex}`}>{renderInlineText(item, `ul-${index}-${itemIndex}`)}</li>
-              ))}
-            </ul>
-          );
-        }
-
-        if (block.type === 'ol') {
-          return (
-            <ol key={`ol-${index}`} className="list-decimal pl-6 space-y-1">
-              {block.items.map((item, itemIndex) => (
-                <li key={`ol-item-${index}-${itemIndex}`}>{renderInlineText(item, `ol-${index}-${itemIndex}`)}</li>
-              ))}
-            </ol>
-          );
-        }
-
-        if (block.type === 'quote') {
-          return (
-            <blockquote key={`quote-${index}`} className="border-l-4 border-gray-300 pl-4 italic text-gray-700">
-              {renderInlineText(block.content, `quote-${index}`)}
-            </blockquote>
-          );
-        }
-
-        const line = (block.content || '').trim();
-
-        if (!line) {
-          return <div key={`spacer-${index}`} className="h-2" />;
-        }
-
-        const imageMatch = line.match(/^!\[(.*?)\]\((.+?)\)$/);
-        if (imageMatch) {
-          const alt = imageMatch[1] || 'Article image';
-          const src = imageMatch[2].trim();
-
-          if (!isSafeUrl(src)) {
-            return null;
-          }
-
-          return (
-            <figure key={`img-${index}`} className="my-4">
-              <img src={src} alt={alt} className="w-full rounded-lg border border-gray-200" />
-              {alt && alt !== 'Article image' && (
-                <figcaption className="mt-2 text-sm text-gray-500">{alt}</figcaption>
-              )}
-            </figure>
-          );
-        }
-
-        const videoMatch = line.match(/^\[video\]\((.+?)\)$/i);
-        if (videoMatch) {
-          return renderVideo(videoMatch[1], `video-${index}`);
-        }
-
-        if (line.startsWith('### ')) {
-          return (
-            <h3 key={`h3-${index}`} className="text-xl font-semibold mt-4">
-              {renderInlineText(line.replace(/^###\s+/, ''), `h3-${index}`)}
-            </h3>
-          );
-        }
-
-        if (line.startsWith('## ')) {
-          return (
-            <h2 key={`h2-${index}`} className="text-2xl font-bold mt-5">
-              {renderInlineText(line.replace(/^##\s+/, ''), `h2-${index}`)}
-            </h2>
-          );
-        }
-
-        return (
-          <p key={`p-${index}`} className="break-words">
-            {renderInlineText(line, `p-${index}`)}
-          </p>
-        );
-      })}
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {String(content || '')}
+      </ReactMarkdown>
     </div>
   );
 }
