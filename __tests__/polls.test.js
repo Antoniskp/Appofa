@@ -1557,4 +1557,117 @@ describe('Poll API Tests', () => {
       expect(vote.ipAddress).toBe(clientIp);
     });
   });
+
+  describe('GET /api/polls - Filter by creatorId', () => {
+    let creatorPollId;
+
+    beforeAll(async () => {
+      const csrfToken = 'test-csrf-creator-filter';
+      const { storeCsrfToken } = require('../src/utils/csrf');
+      storeCsrfToken(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, `csrf_token=${csrfToken}`])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Creator Filter Test Poll',
+          type: 'simple',
+          options: [{ text: 'Opt A' }, { text: 'Opt B' }]
+        });
+
+      creatorPollId = response.body.data?.id;
+    });
+
+    test('should filter polls by creatorId for the authenticated creator', async () => {
+      const response = await request(app)
+        .get(`/api/polls?creatorId=${adminUserId}`)
+        .set('Cookie', [`auth_token=${adminToken}`]);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      response.body.data.forEach(poll => {
+        expect(poll.creatorId).toBe(adminUserId);
+      });
+    });
+
+    test('should return 401 when filtering by creatorId without authentication', async () => {
+      const response = await request(app)
+        .get(`/api/polls?creatorId=${adminUserId}`);
+
+      expect(response.status).toBe(401);
+    });
+
+    test('should return 403 when filtering by another user creatorId (non-admin)', async () => {
+      const response = await request(app)
+        .get(`/api/polls?creatorId=${adminUserId}`)
+        .set('Cookie', [`auth_token=${userToken}`]);
+
+      expect(response.status).toBe(403);
+    });
+  });
+
+  describe('GET /api/polls/my-voted - My Voted Polls', () => {
+    test('should return polls the user voted in', async () => {
+      const { storeCsrfToken } = require('../src/utils/csrf');
+
+      // Create a poll as admin
+      const csrfCreate = 'test-csrf-my-voted-create2';
+      storeCsrfToken(csrfCreate, adminUserId);
+
+      const createRes = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, `csrf_token=${csrfCreate}`])
+        .set('x-csrf-token', csrfCreate)
+        .send({
+          title: 'My Voted Poll Test',
+          type: 'simple',
+          options: [{ text: 'Choice X' }, { text: 'Choice Y' }]
+        });
+
+      expect(createRes.status).toBe(201);
+      const pollId = createRes.body.data?.id;
+      expect(pollId).toBeDefined();
+
+      // Get option id
+      const pollRes = await request(app)
+        .get(`/api/polls/${pollId}`)
+        .set('Cookie', [`auth_token=${adminToken}`]);
+
+      expect(pollRes.status).toBe(200);
+      const optionId = pollRes.body.data?.options?.[0]?.id;
+      expect(optionId).toBeDefined();
+
+      // Create vote directly in DB to avoid rate limiter exhaustion from earlier tests
+      await PollVote.create({
+        pollId,
+        optionId,
+        userId: adminUserId,
+        isAuthenticated: true,
+        ipAddress: '127.0.0.1'
+      });
+
+      // Get my voted polls for admin
+      const response = await request(app)
+        .get('/api/polls/my-voted')
+        .set('Cookie', [`auth_token=${adminToken}`]);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(Array.isArray(response.body.data)).toBe(true);
+      const votedEntry = response.body.data.find(item => item.poll?.id === pollId);
+      expect(votedEntry).toBeDefined();
+      expect(votedEntry.optionId).toBe(optionId);
+      expect(votedEntry.votedOption).toBeDefined();
+      expect(votedEntry.poll).toBeDefined();
+    });
+
+    test('should return 401 for unauthenticated access to my-voted', async () => {
+      const response = await request(app)
+        .get('/api/polls/my-voted');
+
+      expect(response.status).toBe(401);
+    });
+  });
 });

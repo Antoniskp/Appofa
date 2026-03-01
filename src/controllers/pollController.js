@@ -360,7 +360,8 @@ const pollController = {
         tag,
         search,
         page = 1,
-        limit = 10
+        limit = 10,
+        creatorId
       } = req.query;
 
       const normalizedTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
@@ -432,6 +433,34 @@ const pollController = {
         // Show only public polls for unauthenticated users
         if (!req.user) {
           where.visibility = 'public';
+        }
+      }
+
+      // Filter by creator (only allowed for authenticated users)
+      if (creatorId !== undefined) {
+        if (!req.user) {
+          return res.status(401).json({
+            success: false,
+            message: 'Authentication required.'
+          });
+        }
+        const parsedCreatorId = Number(creatorId);
+        if (!Number.isInteger(parsedCreatorId) || parsedCreatorId < 1) {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid creator ID.'
+          });
+        }
+        if (req.user.role !== 'admin' && req.user.id !== parsedCreatorId) {
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied.'
+          });
+        }
+        where.creatorId = parsedCreatorId;
+        // When filtering by creator, include all statuses (not just active) if not specified
+        if (!status) {
+          delete where.status;
         }
       }
 
@@ -1334,6 +1363,103 @@ const pollController = {
       return res.status(500).json({
         success: false,
         message: 'Failed to fetch poll results.',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Get polls that the authenticated user has voted in
+  getMyVotedPolls: async (req, res) => {
+    try {
+      const { page = 1, limit = 10 } = req.query;
+
+      const pageNum = parseInt(page, 10);
+      const limitNum = parseInt(limit, 10);
+
+      if (isNaN(pageNum) || pageNum < 1) {
+        return res.status(400).json({ success: false, message: 'Invalid page number.' });
+      }
+      if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+        return res.status(400).json({ success: false, message: 'Limit must be between 1 and 100.' });
+      }
+
+      const offset = (pageNum - 1) * limitNum;
+
+      // Find all votes by this user
+      const { count, rows: votes } = await PollVote.findAndCountAll({
+        where: { userId: req.user.id },
+        include: [
+          {
+            model: Poll,
+            as: 'poll',
+            include: [
+              {
+                model: User,
+                as: 'creator',
+                attributes: ['id', 'username', 'firstName', 'lastName']
+              },
+              {
+                model: PollOption,
+                as: 'options',
+                attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+                include: [
+                  {
+                    model: PollVote,
+                    as: 'votes',
+                    attributes: ['id']
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            model: PollOption,
+            as: 'option',
+            attributes: ['id', 'text']
+          }
+        ],
+        limit: limitNum,
+        offset,
+        order: [['createdAt', 'DESC']]
+      });
+
+      const data = votes.map(vote => {
+        const pollData = vote.poll ? vote.poll.toJSON() : null;
+        if (pollData) {
+          pollData.options = pollData.options.map(option => ({
+            ...option,
+            voteCount: option.votes ? option.votes.length : 0,
+            votes: undefined
+          }));
+          pollData.totalVotes = pollData.options.reduce((sum, opt) => sum + opt.voteCount, 0);
+          if (shouldHideCreator(pollData, req.user)) {
+            pollData.creator = null;
+          }
+        }
+        return {
+          voteId: vote.id,
+          optionId: vote.optionId,
+          votedOption: vote.option ? { id: vote.option.id, text: vote.option.text } : null,
+          votedAt: vote.createdAt,
+          poll: pollData
+        };
+      });
+
+      return res.status(200).json({
+        success: true,
+        data,
+        pagination: {
+          currentPage: pageNum,
+          totalPages: Math.ceil(count / limitNum),
+          totalItems: count,
+          itemsPerPage: limitNum
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching voted polls:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch voted polls.',
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }

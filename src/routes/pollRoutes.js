@@ -68,6 +68,7 @@ const optionalCsrfProtection = (req, res, next) => {
 
 // Public routes with optional authentication
 router.get('/', apiLimiter, optionalAuthMiddleware, pollController.getAllPolls);
+router.get('/my-voted', apiLimiter, authMiddleware, pollController.getMyVotedPolls);
 router.get('/:id', apiLimiter, optionalAuthMiddleware, pollController.getPollById);
 router.get('/:id/results', apiLimiter, optionalAuthMiddleware, pollController.getResults);
 
