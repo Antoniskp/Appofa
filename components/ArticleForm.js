@@ -7,7 +7,8 @@ import AlertMessage from '@/components/AlertMessage';
 import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
-import { locationAPI } from '@/lib/api';
+import TagInput from '@/components/TagInput';
+import { locationAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
 import Tooltip from '@/components/Tooltip';
@@ -21,6 +22,7 @@ export default function ArticleForm({
 }) {
   const contentInputRef = useRef(null);
   const [contentSelection, setContentSelection] = useState({ start: 0, end: 0 });
+  const [tagSuggestions, setTagSuggestions] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     content: '',
@@ -28,7 +30,7 @@ export default function ArticleForm({
     bannerImageUrl: '',
     type: 'personal',
     category: '',
-    tags: '',
+    tags: [],
     status: 'draft',
     isNews: false,
     hideAuthor: false,
@@ -49,7 +51,7 @@ export default function ArticleForm({
         bannerImageUrl: article.bannerImageUrl || '',
         type: article.type || 'personal',
         category: article.category || '',
-        tags: Array.isArray(article.tags) ? article.tags.join(', ') : '',
+        tags: Array.isArray(article.tags) ? article.tags : [],
         status: article.status || 'draft',
         isNews: Boolean(article.isNews),
         hideAuthor: Boolean(article.hideAuthor),
@@ -61,6 +63,15 @@ export default function ArticleForm({
       }
     }
   }, [article]);
+
+  // Fetch existing tag suggestions for autocomplete
+  useEffect(() => {
+    tagAPI.getSuggestions()
+      .then((data) => {
+        if (data?.tags) setTagSuggestions(data.tags);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchLinkedLocations = async (articleId) => {
     try {
@@ -145,17 +156,7 @@ export default function ArticleForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Parse tags from comma-separated string to array
-    const payload = {
-      ...formData,
-      tags: formData.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    };
-    
-    onSubmit(payload);
+    onSubmit(formData);
   };
 
   const updateContent = (nextContent) => {
@@ -391,11 +392,11 @@ export default function ArticleForm({
         placeholder="https://example.com/banner.jpg or /images/yourimage.png"
       />
 
-      <FormInput
-        name="tags"
-        label="Tags (comma-separated)"
+      <TagInput
+        label="Tags"
         value={formData.tags}
-        onChange={handleInputChange}
+        onChange={(tags) => setFormData((prev) => ({ ...prev, tags }))}
+        suggestions={tagSuggestions}
         placeholder="e.g. AI, Research"
       />
 
