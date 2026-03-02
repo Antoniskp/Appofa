@@ -323,9 +323,13 @@ const authController = {
 
       ensureUserCsrfCookie(req, res, user.id);
 
+      const userJson = user.toJSON();
+      const rawUser = await User.findByPk(req.user.id, { attributes: ['password'] });
+      userJson.hasPassword = !!(rawUser && rawUser.password);
+
       res.status(200).json({
         success: true,
-        data: { user }
+        data: { user: userJson }
       });
     } catch (error) {
       console.error('Get profile error:', error);
@@ -1627,6 +1631,109 @@ const authController = {
       res.status(500).json({
         success: false,
         message: 'Error fetching user statistics.'
+      });
+    }
+  },
+
+  // Delete or anonymize current user account
+  deleteAccount: async (req, res) => {
+    try {
+      const { password, mode } = req.body;
+
+      if (!mode || !['purge', 'anonymize'].includes(mode)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid mode. Must be "purge" or "anonymize".'
+        });
+      }
+
+      const user = await User.findByPk(req.user.id);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found.'
+        });
+      }
+
+      if (!user.password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please set a password before deleting your account.'
+        });
+      }
+
+      const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
+      if (passwordResult.error) {
+        return res.status(400).json({
+          success: false,
+          message: passwordResult.error
+        });
+      }
+
+      const isValidPassword = await user.comparePassword(passwordResult.value);
+      if (!isValidPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Incorrect password.'
+        });
+      }
+
+      const { Article, Poll, PollOption, PollVote, Bookmark, Follow } = require('../models');
+
+      if (mode === 'purge') {
+        await sequelize.transaction(async (t) => {
+          // Delete follow relationships
+          await Follow.destroy({ where: { [Op.or]: [{ followerId: user.id }, { followingId: user.id }] }, transaction: t });
+          // Delete bookmarks
+          await Bookmark.destroy({ where: { userId: user.id }, transaction: t });
+          // Delete poll votes cast by user
+          await PollVote.destroy({ where: { userId: user.id }, transaction: t });
+          // Delete articles authored by user
+          await Article.destroy({ where: { authorId: user.id }, transaction: t });
+          // Delete polls created by user (cascade deletes options and votes via DB)
+          const userPolls = await Poll.findAll({ where: { creatorId: user.id }, attributes: ['id'], transaction: t });
+          if (userPolls.length > 0) {
+            const pollIds = userPolls.map((p) => p.id);
+            await PollVote.destroy({ where: { pollId: pollIds }, transaction: t });
+            await PollOption.destroy({ where: { pollId: pollIds }, transaction: t });
+            await Poll.destroy({ where: { creatorId: user.id }, transaction: t });
+          }
+          // Delete the user record
+          await user.destroy({ transaction: t });
+        });
+      } else {
+        // Anonymize: scrub PII, disable login, keep record for FK integrity
+        const anonymousId = `deleted-user-${user.id}`;
+        await User.update({
+          username: anonymousId,
+          email: `${anonymousId}@deleted.invalid`,
+          password: null,
+          role: 'viewer',
+          firstName: null,
+          lastName: null,
+          avatar: null,
+          avatarColor: null,
+          homeLocationId: null,
+          searchable: false,
+          githubId: null,
+          githubAccessToken: null,
+          googleId: null,
+          googleAccessToken: null,
+        }, { where: { id: user.id }, individualHooks: false });
+      }
+
+      clearAuthCookies(res);
+
+      res.status(200).json({
+        success: true,
+        message: mode === 'purge' ? 'Account permanently deleted.' : 'Account anonymized and deleted.'
+      });
+    } catch (error) {
+      console.error('Delete account error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error deleting account.'
       });
     }
   }

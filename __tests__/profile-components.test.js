@@ -5,6 +5,7 @@ const ProfileBasicInfoForm = require('../components/profile/ProfileBasicInfoForm
 const ProfileHomeLocationSection = require('../components/profile/ProfileHomeLocationSection');
 const ProfilePrivacySection = require('../components/profile/ProfilePrivacySection');
 const ProfileSecuritySection = require('../components/profile/ProfileSecuritySection');
+const ProfileDangerZone = require('../components/profile/ProfileDangerZone');
 
 describe('Profile components', () => {
   it('ProfileHeader should be defined', () => {
@@ -49,6 +50,15 @@ describe('Profile components', () => {
 
   it('ProfileSecuritySection should export a function or object (React component)', () => {
     const type = typeof ProfileSecuritySection.default || typeof ProfileSecuritySection;
+    expect(['function', 'object']).toContain(type);
+  });
+
+  it('ProfileDangerZone should be defined', () => {
+    expect(ProfileDangerZone).toBeDefined();
+  });
+
+  it('ProfileDangerZone should export a function or object (React component)', () => {
+    const type = typeof ProfileDangerZone.default || typeof ProfileDangerZone;
     expect(['function', 'object']).toContain(type);
   });
 });

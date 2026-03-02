@@ -15,9 +15,10 @@ import ProfileBasicInfoForm from '@/components/profile/ProfileBasicInfoForm';
 import ProfileHomeLocationSection from '@/components/profile/ProfileHomeLocationSection';
 import ProfilePrivacySection from '@/components/profile/ProfilePrivacySection';
 import ProfileSecuritySection from '@/components/profile/ProfileSecuritySection';
+import ProfileDangerZone from '@/components/profile/ProfileDangerZone';
 
 function ProfileContent() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, deleteAccount } = useAuth();
   const { success, error } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -43,6 +44,7 @@ function ProfileContent() {
   const { config: oauthConfig } = useOAuthConfig();
   const [githubLinked, setGithubLinked] = useState(false);
   const [googleLinked, setGoogleLinked] = useState(false);
+  const [hasPassword, setHasPassword] = useState(false);
 
   // Load profile
   const { loading } = useAsyncData(
@@ -69,6 +71,7 @@ function ProfileContent() {
         setShowHomeLocation(false);
         setGithubLinked(!!githubId);
         setGoogleLinked(!!googleId);
+        setHasPassword(!!userData.hasPassword);
 
         if (homeLocationId) {
           try {
@@ -220,6 +223,11 @@ function ProfileContent() {
     }
   };
 
+  const handleDeleteAccount = async ({ password, mode }) => {
+    await deleteAccount({ password, mode });
+    router.replace('/');
+  };
+
   const handleLocationChange = (locationId) => {
     setProfileData((prev) => ({ ...prev, homeLocationId: locationId }));
     if (locationId && locationId !== 'international') {
@@ -300,6 +308,14 @@ function ProfileContent() {
             onUnlinkGithub={handleUnlinkGithub}
             onLinkGoogle={handleLinkGoogle}
             onUnlinkGoogle={handleUnlinkGoogle}
+          />
+        </Card>
+
+        {/* Danger Zone: account deletion */}
+        <Card>
+          <ProfileDangerZone
+            hasPassword={hasPassword}
+            onDeleteAccount={handleDeleteAccount}
           />
         </Card>
       </div>
