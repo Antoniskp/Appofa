@@ -25,6 +25,7 @@ router.put('/password', apiLimiter, authMiddleware, csrfProtection, authControll
 router.delete('/github/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGithub);
 router.delete('/google/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGoogle);
 router.post('/logout', apiLimiter, authMiddleware, csrfProtection, authController.logout);
+router.delete('/profile', apiLimiter, authMiddleware, csrfProtection, authController.deleteAccount);
 router.get('/users', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUsers);
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUserStats);
 router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.updateUserRole);
