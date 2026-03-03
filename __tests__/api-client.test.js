@@ -146,3 +146,82 @@ describe('apiRequest response parsing', () => {
     await expect(apiRequest('/api/test')).rejects.toThrow('Request failed (500)');
   });
 });
+
+describe('apiRequest CSRF retry logic', () => {
+  const originalFetch = global.fetch;
+  const originalWindow = global.window;
+  const originalDocument = global.document;
+
+  beforeEach(() => {
+    delete global.window;
+    delete global.document;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    if (originalWindow === undefined) {
+      delete global.window;
+    } else {
+      global.window = originalWindow;
+    }
+    if (originalDocument === undefined) {
+      delete global.document;
+    } else {
+      global.document = originalDocument;
+    }
+  });
+
+  test('retries once after CSRF 403 and succeeds', async () => {
+    const csrfResponse = { ok: true, status: 200, headers: jsonHeaders, text: () => Promise.resolve(JSON.stringify({ success: true })) };
+    const successResponse = { ok: true, status: 200, headers: jsonHeaders, text: () => Promise.resolve(JSON.stringify({ id: 1 })) };
+    const csrfFailResponse = {
+      ok: false,
+      status: 403,
+      headers: jsonHeaders,
+      text: () => Promise.resolve(JSON.stringify({ success: false, message: 'Invalid CSRF token.' })),
+    };
+
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce(csrfFailResponse)   // first attempt: 403 CSRF error
+      .mockResolvedValueOnce(csrfResponse)        // refresh CSRF call
+      .mockResolvedValueOnce(successResponse);    // retry succeeds
+
+    const result = await apiRequest('/api/articles/1', { method: 'PUT', body: '{}' });
+
+    expect(result).toEqual({ id: 1 });
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+    expect(global.fetch).toHaveBeenNthCalledWith(2, expect.stringContaining('/api/auth/csrf'), expect.objectContaining({ credentials: 'include' }));
+  });
+
+  test('does not retry on non-CSRF 403 errors', async () => {
+    const forbiddenResponse = {
+      ok: false,
+      status: 403,
+      headers: jsonHeaders,
+      text: () => Promise.resolve(JSON.stringify({ success: false, message: 'Forbidden.' })),
+    };
+
+    global.fetch = jest.fn().mockResolvedValue(forbiddenResponse);
+
+    await expect(apiRequest('/api/articles/1', { method: 'DELETE' })).rejects.toThrow('Forbidden.');
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+
+  test('does not retry a second time if refresh also fails with CSRF error', async () => {
+    const csrfFailResponse = {
+      ok: false,
+      status: 403,
+      headers: jsonHeaders,
+      text: () => Promise.resolve(JSON.stringify({ success: false, message: 'Invalid CSRF token.' })),
+    };
+    const csrfRefreshResponse = { ok: true, status: 200, headers: jsonHeaders, text: () => Promise.resolve(JSON.stringify({ success: true })) };
+
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce(csrfFailResponse)   // first attempt fails
+      .mockResolvedValueOnce(csrfRefreshResponse) // refresh CSRF
+      .mockResolvedValueOnce(csrfFailResponse);   // retry also fails
+
+    await expect(apiRequest('/api/articles/1', { method: 'PUT', body: '{}' })).rejects.toThrow('Invalid CSRF token.');
+    expect(global.fetch).toHaveBeenCalledTimes(3);
+  });
+});
