@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI, locationAPI } from '@/lib/api';
+import { authAPI, locationAPI, commentAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import Card from '@/components/Card';
@@ -31,10 +31,15 @@ function ProfileContent() {
     avatar: '',
     avatarColor: '',
     homeLocationId: null,
-    searchable: true,
   });
   const [homeLocation, setHomeLocation] = useState(null);
   const [showHomeLocation, setShowHomeLocation] = useState(false);
+  const [interactionSettings, setInteractionSettings] = useState({
+    profileCommentsEnabled: true,
+    profileCommentsLocked: false,
+    searchable: true,
+  });
+  const [savingInteraction, setSavingInteraction] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -58,7 +63,8 @@ function ProfileContent() {
     [],
     {
       onSuccess: async (userData) => {
-        const { username, firstName, lastName, githubId, googleId, avatar, avatarColor, homeLocationId, searchable } = userData;
+        const { username, firstName, lastName, githubId, googleId, avatar, avatarColor, homeLocationId,
+          profileCommentsEnabled, profileCommentsLocked, searchable } = userData;
         setProfileData({
           username: username || '',
           firstName: firstName || '',
@@ -66,6 +72,10 @@ function ProfileContent() {
           avatar: avatar || '',
           avatarColor: avatarColor || '',
           homeLocationId: homeLocationId || null,
+        });
+        setInteractionSettings({
+          profileCommentsEnabled: profileCommentsEnabled !== undefined ? profileCommentsEnabled : true,
+          profileCommentsLocked: profileCommentsLocked !== undefined ? profileCommentsLocked : false,
           searchable: searchable !== undefined ? searchable : true,
         });
         setShowHomeLocation(false);
@@ -223,6 +233,22 @@ function ProfileContent() {
     }
   };
 
+  const handleInteractionSettingsChange = (field, value) => {
+    setInteractionSettings((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleInteractionSettingsSave = async () => {
+    setSavingInteraction(true);
+    try {
+      await commentAPI.updateUserProfileCommentSettings(user.id, interactionSettings);
+      success('Settings saved successfully!');
+    } catch (err) {
+      error(err.message || 'Failed to save settings.');
+    } finally {
+      setSavingInteraction(false);
+    }
+  };
+
   const handleDeleteAccount = async ({ password, mode }) => {
     await deleteAccount({ password, mode });
     router.replace('/');
@@ -286,11 +312,19 @@ function ProfileContent() {
               onToggle={() => setShowHomeLocation((prev) => !prev)}
               onLocationChange={handleLocationChange}
             />
-            <ProfilePrivacySection
-              searchable={profileData.searchable}
-              onChange={(checked) => setProfileData((prev) => ({ ...prev, searchable: checked }))}
-            />
           </div>
+        </Card>
+
+        {/* Privacy & Interaction */}
+        <Card>
+          <ProfilePrivacySection
+            searchable={interactionSettings.searchable}
+            profileCommentsEnabled={interactionSettings.profileCommentsEnabled}
+            profileCommentsLocked={interactionSettings.profileCommentsLocked}
+            onChange={handleInteractionSettingsChange}
+            onSave={handleInteractionSettingsSave}
+            saving={savingInteraction}
+          />
         </Card>
 
         {/* Security: password + OAuth */}

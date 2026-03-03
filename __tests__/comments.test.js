@@ -702,9 +702,60 @@ describe('Comment System Tests', () => {
         .set(csrfHeaders(viewerUserId))
         .send({ profileCommentsEnabled: true, profileCommentsLocked: false });
     });
-  });
+    it('should allow user to update searchable via profile settings', async () => {
+      const res = await request(app)
+        .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ searchable: false });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.searchable).toBe(false);
 
-  // ─── Max depth enforcement ────────────────────────────────────────────────
+      // Restore searchable
+      await request(app)
+        .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ searchable: true });
+    });
+
+    it('should update all three profile settings at once', async () => {
+      const res = await request(app)
+        .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ profileCommentsEnabled: true, profileCommentsLocked: false, searchable: true });
+      expect(res.status).toBe(200);
+      expect(res.body.data.profileCommentsEnabled).toBe(true);
+      expect(res.body.data.profileCommentsLocked).toBe(false);
+      expect(res.body.data.searchable).toBe(true);
+    });
+
+    it('should exclude non-searchable users from search results', async () => {
+      // Set viewer as non-searchable
+      await request(app)
+        .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ searchable: false });
+
+      const res = await request(app)
+        .get('/api/auth/users/search')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .query({ search: 'viewer' });
+      expect(res.status).toBe(200);
+      const ids = (res.body.data?.users || []).map((u) => u.id);
+      expect(ids).not.toContain(viewerUserId);
+
+      // Restore searchable
+      await request(app)
+        .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ searchable: true });
+    });
+  });
 
   describe('Max depth enforcement (depth=5)', () => {
     it('should reject a reply that would exceed max depth', async () => {
