@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, Poll, PollOption, PollVote, Location, LocationLink } = require('../src/models');
+const { sequelize, User, Poll, PollOption, PollVote, Location, LocationLink, Comment } = require('../src/models');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -975,8 +975,16 @@ describe('Poll API Tests', () => {
   });
 
   describe('DELETE /api/polls/:id - Delete Poll', () => {
-    test('should archive poll with votes', async () => {
-      // Create poll
+    test('should hard delete poll with votes and remove all related data', async () => {
+      // Create location for this test
+      const testLocation = await Location.create({
+        name: 'Test Delete Location With Votes',
+        type: 'city',
+        slug: 'test-delete-location-votes',
+        parentId: 1
+      });
+
+      // Create poll with location
       const csrfToken = 'test-csrf-token-delete-poll';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
 
@@ -985,11 +993,12 @@ describe('Poll API Tests', () => {
         .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
         .set('x-csrf-token', csrfToken)
         .send({
-          title: 'Poll to Archive',
+          title: 'Poll to Hard Delete',
           type: 'simple',
           visibility: 'public',
           resultsVisibility: 'always',
           allowUnauthenticatedVotes: true,
+          locationId: testLocation.id,
           options: [
             { text: 'Option 1' },
             { text: 'Option 2' }
@@ -1007,9 +1016,15 @@ describe('Poll API Tests', () => {
         .post(`/api/polls/${pollId}/vote`)
         .set('Cookie', [`auth_token=${userToken}`, ...headersVote.Cookie])
         .set('x-csrf-token', csrfTokenVote)
-        .send({
-          optionId
-        });
+        .send({ optionId });
+
+      // Add a comment on the poll
+      await Comment.create({
+        entityType: 'poll',
+        entityId: pollId,
+        authorId: regularUserId,
+        body: 'Test comment on poll'
+      });
 
       // Delete it
       const deleteResponse = await request(app)
@@ -1018,11 +1033,28 @@ describe('Poll API Tests', () => {
         .set('x-csrf-token', csrfToken);
 
       expect(deleteResponse.status).toBe(200);
-      expect(deleteResponse.body.message).toContain('archived');
+      expect(deleteResponse.body.success).toBe(true);
+      expect(deleteResponse.body.message).toContain('deleted');
 
-      // Verify it's archived
+      // Verify poll is fully removed
       const poll = await Poll.findByPk(pollId);
-      expect(poll.status).toBe('archived');
+      expect(poll).toBeNull();
+
+      // Verify PollVotes are removed
+      const votes = await PollVote.findAll({ where: { pollId } });
+      expect(votes).toHaveLength(0);
+
+      // Verify PollOptions are removed
+      const options = await PollOption.findAll({ where: { pollId } });
+      expect(options).toHaveLength(0);
+
+      // Verify Comments are removed
+      const comments = await Comment.findAll({ where: { entityType: 'poll', entityId: pollId } });
+      expect(comments).toHaveLength(0);
+
+      // Verify LocationLink is removed
+      const locationLink = await LocationLink.findOne({ where: { entity_type: 'poll', entity_id: pollId } });
+      expect(locationLink).toBeNull();
     });
 
     test('should hard delete poll without votes', async () => {

@@ -1,4 +1,4 @@
-const { Poll, PollOption, PollVote, User, Location, LocationLink, sequelize } = require('../models');
+const { Poll, PollOption, PollVote, Comment, User, Location, LocationLink, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
@@ -902,15 +902,7 @@ const pollController = {
     try {
       const { id } = req.params;
 
-      const poll = await Poll.findByPk(id, {
-        include: [
-          {
-            model: PollVote,
-            as: 'votes'
-          }
-        ],
-        transaction
-      });
+      const poll = await Poll.findByPk(id, { transaction });
 
       if (!poll) {
         await transaction.rollback();
@@ -929,18 +921,16 @@ const pollController = {
         });
       }
 
-      // If poll has votes, soft delete (archive)
-      if (poll.votes && poll.votes.length > 0) {
-        await poll.update({ status: 'archived' }, { transaction });
-        await transaction.commit();
-        return res.status(200).json({
-          success: true,
-          message: 'Poll archived successfully (poll had votes).'
-        });
-      }
+      // Delete polymorphic Comments for this poll (no FK cascade, must be explicit)
+      await Comment.destroy({
+        where: {
+          entityType: 'poll',
+          entityId: id
+        },
+        transaction
+      });
 
-      // Hard delete if no votes
-      // First, delete the LocationLink
+      // Delete LocationLink rows for this poll
       await LocationLink.destroy({
         where: {
           entity_type: 'poll',
@@ -949,14 +939,14 @@ const pollController = {
         transaction
       });
 
-      // Then delete the poll
+      // Delete the poll; DB-level CASCADE handles PollVotes and PollOptions
       await poll.destroy({ transaction });
 
       await transaction.commit();
 
       return res.status(200).json({
         success: true,
-        message: 'Poll deleted successfully.'
+        message: 'Poll and all related data deleted successfully.'
       });
     } catch (error) {
       await transaction.rollback();
