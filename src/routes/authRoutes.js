@@ -7,6 +7,9 @@ const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
 
+// CSRF token refresh - allows authenticated users to get a fresh CSRF token
+router.get('/csrf', apiLimiter, authMiddleware, authController.refreshCsrf);
+
 // Public routes with rate limiting
 router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);

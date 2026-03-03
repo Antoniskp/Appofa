@@ -1736,6 +1736,19 @@ const authController = {
         message: 'Error deleting account.'
       });
     }
+  },
+
+  refreshCsrf: async (req, res) => {
+    try {
+      ensureUserCsrfCookie(req, res, req.user.id);
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('CSRF refresh error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Error refreshing CSRF token.'
+      });
+    }
   }
 };
 

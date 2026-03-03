@@ -87,6 +87,65 @@ describe('Security Configuration Tests', () => {
   });
 });
 
+describe('CSRF Refresh Endpoint Tests', () => {
+  let app;
+  let testUser;
+  let authToken;
 
+  const { sequelize, User } = require('../src/models');
+  const jwt = require('jsonwebtoken');
 
+  beforeAll(async () => {
+    process.env.JWT_SECRET = 'test-jwt-secret-key-for-testing-only';
+    app = require('../src/index');
+
+    await sequelize.authenticate();
+    await sequelize.sync({ force: false });
+
+    // Create a test user for CSRF tests
+    testUser = await User.create({
+      username: 'csrf_test_user',
+      email: 'csrftest@example.com',
+      password: 'password123',
+      role: 'viewer',
+      firstName: 'Csrf',
+      lastName: 'Test'
+    }).catch(() => User.findOne({ where: { email: 'csrftest@example.com' } }));
+
+    const loginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'csrftest@example.com', password: 'password123' });
+
+    const authCookie = (loginResponse.headers['set-cookie'] || []).find(
+      (c) => c.startsWith('auth_token=')
+    );
+    if (authCookie) {
+      authToken = authCookie.split(';')[0].replace('auth_token=', '');
+    }
+  });
+
+  afterAll(async () => {
+    if (testUser) {
+      await User.destroy({ where: { email: 'csrftest@example.com' } }).catch(() => {});
+    }
+  });
+
+  it('should return 401 when not authenticated', async () => {
+    const response = await request(app).get('/api/auth/csrf');
+    expect(response.status).toBe(401);
+  });
+
+  it('should return 200 and set a CSRF cookie when authenticated', async () => {
+    const response = await request(app)
+      .get('/api/auth/csrf')
+      .set('Cookie', [`auth_token=${authToken}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+
+    const cookies = response.headers['set-cookie'] || [];
+    const csrfCookie = cookies.find((c) => c.startsWith('csrf_token='));
+    expect(csrfCookie).toBeDefined();
+  });
+});
 
