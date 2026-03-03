@@ -9,6 +9,7 @@ const PollVote = require('./PollVote');
 const Bookmark = require('./Bookmark');
 const Message = require('./Message');
 const Follow = require('./Follow');
+const Comment = require('./Comment');
 
 // Define associations
 User.hasMany(Article, {
@@ -167,6 +168,13 @@ User.belongsToMany(User, {
 Follow.belongsTo(User, { foreignKey: 'followerId', as: 'follower' });
 Follow.belongsTo(User, { foreignKey: 'followingId', as: 'followingUser' });
 
+// Comment associations
+Comment.belongsTo(User, { as: 'author', foreignKey: 'authorId' });
+Comment.belongsTo(User, { as: 'moderator', foreignKey: 'moderatedByUserId' });
+Comment.belongsTo(Comment, { as: 'parent', foreignKey: 'parentId' });
+Comment.hasMany(Comment, { as: 'replies', foreignKey: 'parentId' });
+User.hasMany(Comment, { foreignKey: 'authorId', as: 'comments' });
+
 module.exports = {
   sequelize,
   User,
@@ -178,5 +186,6 @@ module.exports = {
   PollVote,
   Bookmark,
   Message,
-  Follow
+  Follow,
+  Comment
 };

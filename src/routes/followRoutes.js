@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const followController = require('../controllers/followController');
+const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
 const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter } = require('../middleware/rateLimiter');
@@ -12,5 +13,8 @@ router.get('/:id/follow/status', apiLimiter, authMiddleware, followController.ge
 router.get('/:id/follow/counts', apiLimiter, authMiddleware, followController.getCounts);
 router.get('/:id/followers', apiLimiter, authMiddleware, followController.getFollowers);
 router.get('/:id/following', apiLimiter, authMiddleware, followController.getFollowing);
+
+// Profile comment settings - user themselves or admin/moderator
+router.patch('/:id/profile-comment-settings', apiLimiter, authMiddleware, csrfProtection, commentController.updateUserProfileCommentSettings);
 
 module.exports = router;

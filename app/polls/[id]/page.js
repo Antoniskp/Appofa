@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { pollAPI, bookmarkAPI } from '@/lib/api';
+import CommentsThread from '@/components/comments/CommentsThread';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import PollVoting from '@/components/PollVoting';
@@ -401,6 +402,16 @@ export default function PollDetailPage() {
           >
             ← Επιστροφή στις Δημοσκοπήσεις
           </Link>
+        </div>
+
+        {/* Comments */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
+          <CommentsThread
+            entityType="poll"
+            entityId={poll.id}
+            commentsEnabled={poll.commentsEnabled !== false}
+            commentsLocked={poll.commentsLocked === true}
+          />
         </div>
       </div>
 

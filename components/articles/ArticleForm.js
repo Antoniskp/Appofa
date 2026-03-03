@@ -34,6 +34,8 @@ export default function ArticleForm({
     status: 'draft',
     isNews: false,
     hideAuthor: false,
+    commentsEnabled: true,
+    commentsLocked: false,
   });
 
   const [linkedLocations, setLinkedLocations] = useState([]);
@@ -55,6 +57,8 @@ export default function ArticleForm({
         status: article.status || 'draft',
         isNews: Boolean(article.isNews),
         hideAuthor: Boolean(article.hideAuthor),
+        commentsEnabled: article.commentsEnabled !== false,
+        commentsLocked: Boolean(article.commentsLocked),
       });
 
       // Load linked locations only when article.id exists (edit mode)
@@ -625,6 +629,30 @@ export default function ArticleForm({
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
         <span className="text-sm text-gray-700">Hide author name on this article</span>
+      </div>
+
+      <div className="border-t pt-4 space-y-3">
+        <p className="text-sm font-medium text-gray-700">Comment Settings</p>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="commentsEnabled"
+            checked={formData.commentsEnabled}
+            onChange={handleInputChange}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <span className="text-sm text-gray-700">Enable comments on this article</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="commentsLocked"
+            checked={formData.commentsLocked}
+            onChange={handleInputChange}
+            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          />
+          <span className="text-sm text-gray-700">Lock comments (no new comments allowed)</span>
+        </div>
       </div>
 
       {/* Locations Section - Only show in edit mode when article.id exists */}
