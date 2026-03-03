@@ -5,13 +5,15 @@
       "label": "Personal",
       "labelEl": "Προσωπικό",
       "description": "Only viewed by creator",
-      "categories": []
+      "categoryRequired": false,
+      "categories": ["Έγγραφα", "Ιδέες", "Σημειώσεις"]
     },
     "articles": {
       "value": "articles",
       "label": "Articles",
       "labelEl": "Άρθρα",
       "description": "Educational articles viewed publicly",
+      "categoryRequired": true,
       "categories": [
         "Γενικά",
         "Επιστήμη & Τεχνολογία",
@@ -38,6 +40,7 @@
       "label": "News",
       "labelEl": "Νέα",
       "description": "News articles viewed publicly",
+      "categoryRequired": true,
       "categories": [
         "Κόσμος",
         "Ελλάδα",
