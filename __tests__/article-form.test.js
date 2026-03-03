@@ -264,6 +264,37 @@ describe('ArticleForm Component', () => {
     });
   });
 
+  test('type and status selects do not render placeholder option', async () => {
+    const ArticleForm = require('../components/ArticleForm').default;
+    const onSubmit = jest.fn();
+    const onCancel = jest.fn();
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit,
+      onCancel,
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    const typeSelect = container.querySelector('select[name="type"]');
+    const statusSelect = container.querySelector('select[name="status"]');
+
+    // Neither select should have an empty-value placeholder option
+    const typeEmptyOption = Array.from(typeSelect.options).find(o => o.value === '');
+    const statusEmptyOption = Array.from(statusSelect.options).find(o => o.value === '');
+    expect(typeEmptyOption).toBeUndefined();
+    expect(statusEmptyOption).toBeUndefined();
+
+    // Default values should be valid (non-empty)
+    expect(typeSelect.value).toBe('personal');
+    expect(statusSelect.value).toBe('draft');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('banner image URL input accepts relative paths', async () => {
     const ArticleForm = require('../components/ArticleForm').default;
     const onSubmit = jest.fn();
