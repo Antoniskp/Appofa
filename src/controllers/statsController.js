@@ -1,46 +1,75 @@
-const { User, Location, Article, Poll } = require('../models');
+const { User, Location, Article, Poll, PollVote, Comment } = require('../models');
 const { sequelize } = require('../models');
 
+// In-memory cache for community stats (per Node instance)
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
+let statsCache = null;       // { data, expiresAt }
+let inflightPromise = null;  // concurrency guard – avoid stampede
+
+async function computeCommunityStats() {
+  // Get total locations count
+  const totalLocations = await Location.count();
+
+  // Get active users count (users who have created articles or polls)
+  const activeUsersQuery = await sequelize.query(`
+    SELECT COUNT(DISTINCT user_id) as count
+    FROM (
+      SELECT "userId" as user_id FROM "Articles" WHERE "userId" IS NOT NULL
+      UNION
+      SELECT "createdBy" as user_id FROM "Polls" WHERE "createdBy" IS NOT NULL
+    ) as active_users
+  `, { type: sequelize.QueryTypes.SELECT });
+
+  const activeUsers = activeUsersQuery[0]?.count || 0;
+
+  // Count locations that need moderators
+  const MODERATOR_COVERAGE_RATIO = 0.3;
+  const areasNeedingModerators = Math.max(0, totalLocations - Math.floor(totalLocations * MODERATOR_COVERAGE_RATIO));
+
+  const totalArticles = await Article.count();
+  const totalPolls = await Poll.count();
+  const totalUsers = await User.count();
+  const totalVotes = await PollVote.count();
+  const totalComments = await Comment.count({ where: { status: 'visible' } });
+
+  return {
+    totalLocations,
+    activeUsers: parseInt(activeUsers),
+    areasNeedingModerators,
+    totalArticles,
+    totalPolls,
+    totalUsers,
+    totalVotes,
+    totalComments,
+    updatedAt: new Date().toISOString()
+  };
+}
+
 /**
- * Get community statistics
+ * Get community statistics (cached, lazy refresh, 10-min TTL)
  */
 exports.getCommunityStats = async (req, res) => {
   try {
-    // Get total locations count
-    const totalLocations = await Location.count();
+    const now = Date.now();
 
-    // Get active users count (users who have created articles or polls)
-    const activeUsersQuery = await sequelize.query(`
-      SELECT COUNT(DISTINCT user_id) as count
-      FROM (
-        SELECT "userId" as user_id FROM "Articles" WHERE "userId" IS NOT NULL
-        UNION
-        SELECT "createdBy" as user_id FROM "Polls" WHERE "createdBy" IS NOT NULL
-      ) as active_users
-    `, { type: sequelize.QueryTypes.SELECT });
-    
-    const activeUsers = activeUsersQuery[0]?.count || 0;
+    if (statsCache && statsCache.expiresAt > now) {
+      return res.json({ success: true, data: statsCache.data });
+    }
 
-    // Count locations that need moderators
-    // TODO: This should be based on actual moderator assignments once that feature is implemented
-    // Current estimate: 70% of locations need moderators (conservative estimate)
-    const MODERATOR_COVERAGE_RATIO = 0.3; // 30% of locations currently have moderators
-    const areasNeedingModerators = Math.max(0, totalLocations - Math.floor(totalLocations * MODERATOR_COVERAGE_RATIO));
+    // Avoid stampede: reuse an existing in-flight computation
+    if (!inflightPromise) {
+      inflightPromise = computeCommunityStats().then((data) => {
+        statsCache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
+        inflightPromise = null;
+        return data;
+      }).catch((err) => {
+        inflightPromise = null;
+        throw err;
+      });
+    }
 
-    // Get total articles and polls count for additional stats
-    const totalArticles = await Article.count();
-    const totalPolls = await Poll.count();
-
-    res.json({
-      success: true,
-      data: {
-        totalLocations,
-        activeUsers: parseInt(activeUsers),
-        areasNeedingModerators,
-        totalArticles,
-        totalPolls
-      }
-    });
+    const data = await inflightPromise;
+    res.json({ success: true, data });
   } catch (error) {
     console.error('Error fetching community stats:', error);
     res.status(500).json({

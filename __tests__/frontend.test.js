@@ -71,6 +71,22 @@ jest.mock('@/lib/api', () => ({
       data: { articles: [], pagination: { totalPages: 1 } }
     }))
   },
+  statsAPI: {
+    getCommunityStats: jest.fn(() => Promise.resolve({
+      success: true,
+      data: {
+        totalLocations: 10,
+        activeUsers: 5,
+        areasNeedingModerators: 7,
+        totalArticles: 20,
+        totalPolls: 8,
+        totalUsers: 42,
+        totalVotes: 130,
+        totalComments: 55,
+        updatedAt: '2024-01-01T12:00:00.000Z'
+      }
+    }))
+  },
   adminAPI: {
     getHealthStatus: jest.fn(() => Promise.resolve({
       success: true,
