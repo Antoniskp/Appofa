@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ShareIcon, BookmarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { articleAPI, bookmarkAPI } from '@/lib/api';
+import CommentsThread from '@/components/comments/CommentsThread';
 import { useAuth } from '@/lib/auth-context';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
@@ -30,6 +31,10 @@ export default function ArticleDetailPage() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [commentSettings, setCommentSettings] = useState({
+    commentsEnabled: true,
+    commentsLocked: false,
+  });
 
   const isNews = article?.type === 'news' || article?.isNews;
   const breadcrumbLabel = isNews ? 'News' : 'Articles';
@@ -138,6 +143,10 @@ export default function ArticleDetailPage() {
   // Redirect old numeric-only URLs to canonical slug URLs
   useEffect(() => {
     if (!article) return;
+    setCommentSettings({
+      commentsEnabled: article.commentsEnabled !== false,
+      commentsLocked: article.commentsLocked === true,
+    });
     const basePath = article.type === 'news' ? '/news' : '/articles';
     const canonical = idSlug(article.id, article.title);
     if (params.id !== canonical) {
@@ -305,6 +314,13 @@ export default function ArticleDetailPage() {
                 )}
               </div>
             )}
+
+            <CommentsThread
+              entityType="article"
+              entityId={article.id}
+              commentsEnabled={commentSettings.commentsEnabled}
+              commentsLocked={commentSettings.commentsLocked}
+            />
           </div>
         </div>
       </article>

@@ -42,6 +42,8 @@ export default function PollForm({
     deadline: '',
     locationId: null,
     hideCreator: false,
+    commentsEnabled: true,
+    commentsLocked: false,
   });
 
   const [options, setOptions] = useState([
@@ -68,6 +70,8 @@ export default function PollForm({
         deadline: poll.deadline ? new Date(poll.deadline).toISOString().slice(0, 16) : '',
         locationId: poll.locationId || null,
         hideCreator: Boolean(poll.hideCreator),
+        commentsEnabled: poll.commentsEnabled !== false,
+        commentsLocked: Boolean(poll.commentsLocked),
       });
 
       if (poll.options && poll.options.length > 0) {
@@ -330,6 +334,32 @@ export default function PollForm({
             />
             <span className="ml-2 text-sm text-gray-700">
               Απόκρυψη δημιουργού
+            </span>
+          </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="commentsEnabled"
+              checked={formData.commentsEnabled}
+              onChange={handleInputChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Ενεργοποίηση σχολίων
+            </span>
+          </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="commentsLocked"
+              checked={formData.commentsLocked}
+              onChange={handleInputChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Κλείδωμα σχολίων (δεν επιτρέπονται νέα σχόλια)
             </span>
           </label>
         </div>

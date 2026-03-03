@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { authAPI, pollAPI, articleAPI } from '@/lib/api';
+import CommentsThread from '@/components/comments/CommentsThread';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Card from '@/components/Card';
 import Badge from '@/components/Badge';
@@ -343,6 +344,14 @@ export default function PublicUserProfilePage() {
 
               {activeTab === 'articles' && <ArticlesTab userId={user.id} />}
             </div>
+
+            {/* Profile Comments */}
+            <CommentsThread
+              entityType="user_profile"
+              entityId={user.id}
+              commentsEnabled={user.profileCommentsEnabled !== false}
+              commentsLocked={user.profileCommentsLocked === true}
+            />
           </div>
         )}
       </div>

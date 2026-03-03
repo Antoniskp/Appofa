@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pollController = require('../controllers/pollController');
+const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
@@ -80,5 +81,8 @@ router.post('/', createLimiter, authMiddleware, csrfProtection, pollController.c
 router.put('/:id', apiLimiter, authMiddleware, csrfProtection, pollController.updatePoll);
 router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, pollController.deletePoll);
 router.post('/:id/options', apiLimiter, authMiddleware, csrfProtection, pollController.addPollOption);
+
+// Comment settings - poll creator or admin/moderator
+router.patch('/:id/comment-settings', apiLimiter, authMiddleware, csrfProtection, commentController.updatePollCommentSettings);
 
 module.exports = router;

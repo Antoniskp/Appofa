@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const articleController = require('../controllers/articleController');
+const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
 const csrfProtection = require('../middleware/csrfProtection');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
@@ -22,5 +23,8 @@ router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, articleControl
 
 // Approve news - moderator/admin only
 router.post('/:id/approve-news', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), articleController.approveNews);
+
+// Comment settings - article author, editor, or admin
+router.patch('/:id/comment-settings', apiLimiter, authMiddleware, csrfProtection, commentController.updateArticleCommentSettings);
 
 module.exports = router;
