@@ -1,5 +1,5 @@
+const { fn, col } = require('sequelize');
 const { User, Location, Article, Poll, PollVote, Comment } = require('../models');
-const { sequelize } = require('../models');
 
 // In-memory cache for community stats (per Node instance)
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -10,17 +10,23 @@ async function computeCommunityStats() {
   // Get total locations count
   const totalLocations = await Location.count();
 
-  // Get active users count (users who have created articles or polls)
-  const activeUsersQuery = await sequelize.query(`
-    SELECT COUNT(DISTINCT user_id) as count
-    FROM (
-      SELECT "userId" as user_id FROM "Articles" WHERE "userId" IS NOT NULL
-      UNION
-      SELECT "createdBy" as user_id FROM "Polls" WHERE "createdBy" IS NOT NULL
-    ) as active_users
-  `, { type: sequelize.QueryTypes.SELECT });
+  // Get active users count (distinct users who created articles OR polls)
+  const [articleAuthors, pollCreators] = await Promise.all([
+    Article.findAll({
+      attributes: [[fn('DISTINCT', col('authorId')), 'authorId']],
+      raw: true
+    }),
+    Poll.findAll({
+      attributes: [[fn('DISTINCT', col('creatorId')), 'creatorId']],
+      raw: true
+    })
+  ]);
 
-  const activeUsers = activeUsersQuery[0]?.count || 0;
+  const activeUserIds = new Set([
+    ...articleAuthors.map(a => a.authorId).filter(Boolean),
+    ...pollCreators.map(p => p.creatorId).filter(Boolean)
+  ]);
+  const activeUsers = activeUserIds.size;
 
   // Count locations that need moderators
   const MODERATOR_COVERAGE_RATIO = 0.3;
