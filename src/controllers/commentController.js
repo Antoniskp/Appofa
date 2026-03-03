@@ -351,12 +351,17 @@ const commentController = {
       const updates = {};
       if (typeof req.body.profileCommentsEnabled === 'boolean') updates.profileCommentsEnabled = req.body.profileCommentsEnabled;
       if (typeof req.body.profileCommentsLocked === 'boolean') updates.profileCommentsLocked = req.body.profileCommentsLocked;
+      if (typeof req.body.searchable === 'boolean') updates.searchable = req.body.searchable;
 
       await user.update(updates);
       return res.json({
         success: true,
-        message: 'Profile comment settings updated.',
-        data: { profileCommentsEnabled: user.profileCommentsEnabled, profileCommentsLocked: user.profileCommentsLocked }
+        message: 'Profile settings updated.',
+        data: {
+          profileCommentsEnabled: user.profileCommentsEnabled,
+          profileCommentsLocked: user.profileCommentsLocked,
+          searchable: user.searchable
+        }
       });
     } catch (error) {
       console.error('Update user profile comment settings error:', error);
