@@ -9,6 +9,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   ClipboardDocumentListIcon,
+  MapPinIcon,
   NewspaperIcon,
   PencilSquareIcon,
   ServerIcon,
@@ -54,6 +55,10 @@ export default function TopNav() {
     window.location.href = '/';
   };
 
+  const myLocationHref = user?.homeLocation?.slug
+    ? `/locations/${user.homeLocation.slug}`
+    : '/profile';
+
   // Build user menu items for DropdownMenu (desktop - smaller icons)
   const userMenuItems = [
     {
@@ -90,6 +95,13 @@ export default function TopNav() {
       href: '/my-votes',
       icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
       className: isActive('/my-votes')
+    },
+    {
+      id: 'my-location',
+      label: 'Η τοποθεσία μου',
+      href: myLocationHref,
+      icon: <MapPinIcon className="h-4 w-4" />,
+      className: isActive(myLocationHref)
     },
     ...(isAdmin ? [
       { divider: true },
@@ -154,6 +166,13 @@ export default function TopNav() {
       href: '/my-votes',
       icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/my-votes')}`
+    },
+    {
+      id: 'my-location',
+      label: 'Η τοποθεσία μου',
+      href: myLocationHref,
+      icon: <MapPinIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive(myLocationHref)}`
     },
     ...(isAdmin ? [
       { divider: true },
