@@ -14,6 +14,7 @@ import { useId } from 'react';
  * @param {boolean} required - Whether field is required
  * @param {boolean} disabled - Disabled state
  * @param {string} placeholder - Placeholder text for empty option
+ * @param {boolean} showPlaceholder - Whether to render the placeholder option (default true)
  * @param {string} helpText - Help text to display below select
  * @param {string} className - Additional CSS classes for container
  */
@@ -27,6 +28,7 @@ export default function FormSelect({
   required = false,
   disabled = false,
   placeholder = 'Select an option',
+  showPlaceholder = true,
   helpText,
   className = '',
   ...rest
@@ -61,7 +63,7 @@ export default function FormSelect({
         aria-describedby={hasError ? errorId : (helpText ? helpId : undefined)}
         {...rest}
       >
-        <option value="">{placeholder}</option>
+        {showPlaceholder && <option value="">{placeholder}</option>}
         {options.map((option, index) => (
           <option 
             key={option.value || `${option}-${index}`} 
