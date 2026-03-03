@@ -13,7 +13,7 @@
       "label": "Articles",
       "labelEl": "Άρθρα",
       "description": "Educational articles viewed publicly",
-      "categoryRequired": true,
+      "categoryRequired": false,
       "categories": [
         "Γενικά",
         "Επιστήμη & Τεχνολογία",
@@ -40,7 +40,7 @@
       "label": "News",
       "labelEl": "Νέα",
       "description": "News articles viewed publicly",
-      "categoryRequired": true,
+      "categoryRequired": false,
       "categories": [
         "Κόσμος",
         "Ελλάδα",

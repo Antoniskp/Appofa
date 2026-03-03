@@ -571,7 +571,6 @@ export default function ArticleForm({
             name="type"
             value={formData.type}
             onChange={handleInputChange}
-            required
             options={Object.values(articleCategories.articleTypes).map((articleType) => ({
               value: articleType.value,
               label: `${articleType.labelEl} (${articleType.label})`
@@ -611,7 +610,6 @@ export default function ArticleForm({
           label="Status"
           value={formData.status}
           onChange={handleInputChange}
-          required
           options={[
             { value: 'draft', label: 'Draft' },
             { value: 'published', label: 'Published' },
