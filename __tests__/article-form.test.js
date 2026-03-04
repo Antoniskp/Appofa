@@ -50,6 +50,13 @@ jest.mock('@/lib/api', () => ({
   },
 }));
 
+// Mock auth-context - default to unauthenticated viewer
+const mockUseAuth = jest.fn(() => ({ user: null }));
+
+jest.mock('@/lib/auth-context', () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
 const flushPromises = async () => {
   await Promise.resolve();
   while (immediateTimers.length) {
@@ -77,6 +84,7 @@ describe('ArticleForm Component', () => {
   afterEach(() => {
     document.body.innerHTML = '';
     jest.clearAllMocks();
+    mockUseAuth.mockReturnValue({ user: null });
   });
 
   test('renders form in create mode (article=null)', async () => {
@@ -320,5 +328,122 @@ describe('ArticleForm Component', () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  test('approved checkbox is NOT shown for regular viewers', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 1, role: 'viewer' } });
+    const ArticleForm = require('../components/ArticleForm').default;
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    expect(container.querySelector('input[name="approved"]')).toBeNull();
+
+    await act(async () => { root.unmount(); });
+  });
+
+  test('approved checkbox is shown for admin users', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 1, role: 'admin' } });
+    const ArticleForm = require('../components/ArticleForm').default;
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    const approvedCheckbox = container.querySelector('input[name="approved"]');
+    expect(approvedCheckbox).toBeTruthy();
+    expect(approvedCheckbox.type).toBe('checkbox');
+    expect(container.textContent).toContain('Approved');
+
+    await act(async () => { root.unmount(); });
+  });
+
+  test('approved checkbox is shown for moderator users', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 2, role: 'moderator' } });
+    const ArticleForm = require('../components/ArticleForm').default;
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    const approvedCheckbox = container.querySelector('input[name="approved"]');
+    expect(approvedCheckbox).toBeTruthy();
+    expect(approvedCheckbox.type).toBe('checkbox');
+
+    await act(async () => { root.unmount(); });
+  });
+
+  test('approved checkbox is pre-checked when article is already approved', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 1, role: 'admin' } });
+    const ArticleForm = require('../components/ArticleForm').default;
+
+    const article = {
+      id: 5,
+      title: 'Approved Article',
+      content: 'Some content',
+      summary: '',
+      type: 'news',
+      status: 'published',
+      tags: [],
+      newsApprovedAt: '2024-01-01T00:00:00.000Z',
+      newsApprovedBy: 1,
+    };
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    const approvedCheckbox = container.querySelector('input[name="approved"]');
+    expect(approvedCheckbox).toBeTruthy();
+    expect(approvedCheckbox.checked).toBe(true);
+
+    await act(async () => { root.unmount(); });
+  });
+
+  test('approved checkbox is unchecked when article is not approved', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 1, role: 'admin' } });
+    const ArticleForm = require('../components/ArticleForm').default;
+
+    const article = {
+      id: 6,
+      title: 'Unapproved Article',
+      content: 'Some content',
+      summary: '',
+      type: 'news',
+      status: 'draft',
+      tags: [],
+      newsApprovedAt: null,
+    };
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    const approvedCheckbox = container.querySelector('input[name="approved"]');
+    expect(approvedCheckbox).toBeTruthy();
+    expect(approvedCheckbox.checked).toBe(false);
+
+    await act(async () => { root.unmount(); });
   });
 });

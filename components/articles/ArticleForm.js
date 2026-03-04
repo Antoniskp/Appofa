@@ -12,6 +12,7 @@ import { locationAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
 import Tooltip from '@/components/Tooltip';
+import { useAuth } from '@/lib/auth-context';
 
 export default function ArticleForm({
   article = null,
@@ -20,6 +21,8 @@ export default function ArticleForm({
   isSubmitting = false,
   submitError = ''
 }) {
+  const { user } = useAuth();
+  const isAdminOrModerator = user?.role === 'admin' || user?.role === 'moderator';
   const contentInputRef = useRef(null);
   const [contentSelection, setContentSelection] = useState({ start: 0, end: 0 });
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -36,6 +39,7 @@ export default function ArticleForm({
     hideAuthor: false,
     commentsEnabled: true,
     commentsLocked: false,
+    approved: false,
   });
 
   const [linkedLocations, setLinkedLocations] = useState([]);
@@ -59,6 +63,7 @@ export default function ArticleForm({
         hideAuthor: Boolean(article.hideAuthor),
         commentsEnabled: article.commentsEnabled !== false,
         commentsLocked: Boolean(article.commentsLocked),
+        approved: Boolean(article.newsApprovedAt),
       });
 
       // Load linked locations only when article.id exists (edit mode)
@@ -654,6 +659,22 @@ export default function ArticleForm({
           <span className="text-sm text-gray-700">Lock comments (no new comments allowed)</span>
         </div>
       </div>
+
+      {isAdminOrModerator && (
+        <div className="border-t pt-4 space-y-3">
+          <p className="text-sm font-medium text-red-700">Approval Settings</p>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="approved"
+              checked={formData.approved}
+              onChange={handleInputChange}
+              className="h-4 w-4 accent-red-600 border-red-300 rounded focus:ring-red-500"
+            />
+            <span className="text-sm font-medium text-red-700">Εγκεκριμένο (Approved)</span>
+          </div>
+        </div>
+      )}
 
       {/* Locations Section - Only show in edit mode when article.id exists */}
       {article?.id ? (
