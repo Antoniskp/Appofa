@@ -264,6 +264,29 @@ function AdminDashboardContent() {
     ...articleCategories.articleTypes.news.categories
   ])];
 
+  const handleVerifyUser = async (targetUser, isVerified) => {
+    try {
+      const response = await authAPI.verifyUser(targetUser.id, isVerified);
+      if (response.success) {
+        await refetchUsers();
+        addToast(isVerified ? 'User verified successfully!' : 'User unverified successfully!', { type: 'success' });
+      }
+    } catch (error) {
+      addToast(`Failed to update verification: ${error.message}`, { type: 'error' });
+    }
+  };
+
+  // Determine if the current user can verify a target user
+  const canVerifyUser = (targetUser) => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (user.role === 'moderator' && user.homeLocationId && targetUser.homeLocationId) {
+      // Optimistic: show button; server will enforce scope
+      return true;
+    }
+    return false;
+  };
+
   // Scroll to top of table when page changes
   useEffect(() => {
     if (articlesTableRef.current) {
@@ -634,6 +657,27 @@ function AdminDashboardContent() {
                 key: 'createdAt',
                 header: 'Created',
                 render: (user) => new Date(user.createdAt).toLocaleDateString()
+              },
+              {
+                key: 'verified',
+                header: 'Verified',
+                render: (targetUser) => {
+                  if (!canVerifyUser(targetUser)) {
+                    return targetUser.isVerified ? '✓' : '-';
+                  }
+                  return (
+                    <button
+                      onClick={() => handleVerifyUser(targetUser, !targetUser.isVerified)}
+                      className={`px-2 py-1 text-xs rounded border transition ${
+                        targetUser.isVerified
+                          ? 'border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100'
+                          : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {targetUser.isVerified ? '✓ Verified' : 'Verify'}
+                    </button>
+                  );
+                }
               }
             ]}
             data={users}

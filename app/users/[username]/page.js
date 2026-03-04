@@ -8,6 +8,7 @@ import CommentsThread from '@/components/comments/CommentsThread';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Card from '@/components/Card';
 import Badge from '@/components/Badge';
+import VerifiedBadge from '@/components/VerifiedBadge';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import Pagination from '@/components/Pagination';
@@ -284,6 +285,7 @@ export default function PublicUserProfilePage() {
                     <h1 className="text-2xl font-bold text-gray-900 truncate">
                       {user.username}
                     </h1>
+                    {user.isVerified && <VerifiedBadge />}
                     {user.role && (
                       <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
                         {user.role}
@@ -311,6 +313,37 @@ export default function PublicUserProfilePage() {
                 <p className="text-sm text-gray-600">
                   {getLocationBreadcrumb(user.homeLocation)}
                 </p>
+              </Card>
+            )}
+
+            {(user.bio || (user.socialLinks && Object.keys(user.socialLinks).length > 0)) && (
+              <Card>
+                {user.bio && (
+                  <div className="mb-3">
+                    <h2 className="text-sm font-semibold text-gray-700 mb-1">Bio</h2>
+                    <p className="text-sm text-gray-600 whitespace-pre-line">{user.bio}</p>
+                  </div>
+                )}
+                {user.socialLinks && Object.keys(user.socialLinks).length > 0 && (
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-700 mb-2">Links</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(user.socialLinks).map(([key, url]) =>
+                        url ? (
+                          <a
+                            key={key}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-blue-600 hover:underline capitalize"
+                          >
+                            {key}
+                          </a>
+                        ) : null
+                      )}
+                    </div>
+                  </div>
+                )}
               </Card>
             )}
 

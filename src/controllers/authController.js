@@ -343,7 +343,7 @@ const authController = {
   // Update current user profile (excluding email)
   updateProfile: async (req, res) => {
     try {
-      const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable } = req.body;
+      const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks } = req.body;
 
       const user = await User.findByPk(req.user.id);
 
@@ -520,6 +520,73 @@ const authController = {
           });
         }
         user.searchable = searchable;
+      }
+
+      // Handle mobileTel update
+      const MOBILE_TEL_MAX_LENGTH = 30;
+      if (mobileTel !== undefined) {
+        if (mobileTel === null || mobileTel === '') {
+          user.mobileTel = null;
+        } else if (typeof mobileTel !== 'string') {
+          return res.status(400).json({ success: false, message: 'Mobile phone must be a string.' });
+        } else {
+          const trimmed = mobileTel.trim();
+          if (trimmed.length > MOBILE_TEL_MAX_LENGTH) {
+            return res.status(400).json({ success: false, message: `Mobile phone must be at most ${MOBILE_TEL_MAX_LENGTH} characters.` });
+          }
+          user.mobileTel = trimmed || null;
+        }
+      }
+
+      // Handle bio update
+      const BIO_MAX_LENGTH = 280;
+      if (bio !== undefined) {
+        if (bio === null || bio === '') {
+          user.bio = null;
+        } else if (typeof bio !== 'string') {
+          return res.status(400).json({ success: false, message: 'Bio must be a string.' });
+        } else {
+          const trimmed = bio.trim();
+          if (trimmed.length > BIO_MAX_LENGTH) {
+            return res.status(400).json({ success: false, message: `Bio must be at most ${BIO_MAX_LENGTH} characters.` });
+          }
+          user.bio = trimmed || null;
+        }
+      }
+
+      // Handle socialLinks update
+      const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
+      if (socialLinks !== undefined) {
+        if (socialLinks === null) {
+          user.socialLinks = null;
+        } else if (typeof socialLinks !== 'object' || Array.isArray(socialLinks)) {
+          return res.status(400).json({ success: false, message: 'Social links must be an object.' });
+        } else {
+          const sanitized = {};
+          for (const [key, val] of Object.entries(socialLinks)) {
+            if (!ALLOWED_SOCIAL_KEYS.has(key)) {
+              return res.status(400).json({ success: false, message: `Unknown social link key: ${key}.` });
+            }
+            if (val === null || val === '') {
+              // allow clearing a key
+              continue;
+            }
+            if (typeof val !== 'string') {
+              return res.status(400).json({ success: false, message: `Social link value for "${key}" must be a string.` });
+            }
+            let parsedUrl;
+            try {
+              parsedUrl = new URL(val.trim());
+            } catch {
+              return res.status(400).json({ success: false, message: `Social link "${key}" is not a valid URL.` });
+            }
+            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+              return res.status(400).json({ success: false, message: `Social link "${key}" must use HTTP or HTTPS.` });
+            }
+            sanitized[key] = val.trim();
+          }
+          user.socialLinks = Object.keys(sanitized).length > 0 ? sanitized : null;
+        }
       }
 
       await user.save();
@@ -1472,7 +1539,7 @@ const authController = {
           id: userId,
           searchable: true
         },
-        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt']
+        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
       });
 
       if (!user) {
@@ -1511,7 +1578,7 @@ const authController = {
           username: username.trim(),
           searchable: true
         },
-        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt']
+        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
       });
 
       if (!user) {
@@ -1748,6 +1815,69 @@ const authController = {
         success: false,
         message: 'Error refreshing CSRF token.'
       });
+    }
+  },
+
+  // Verify or unverify a user (admin: anyone; moderator: only within scope)
+  verifyUser: async (req, res) => {
+    try {
+      const targetId = parseInt(req.params.id, 10);
+      if (!targetId) {
+        return res.status(400).json({ success: false, message: 'Invalid user id.' });
+      }
+
+      const { isVerified } = req.body;
+      if (typeof isVerified !== 'boolean') {
+        return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
+      }
+
+      const actor = await User.findByPk(req.user.id, { attributes: ['id', 'role', 'homeLocationId'] });
+      if (!actor) {
+        return res.status(403).json({ success: false, message: 'Insufficient permissions.' });
+      }
+
+      const target = await User.findByPk(targetId);
+      if (!target) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      if (actor.role === 'moderator') {
+        if (!actor.homeLocationId) {
+          return res.status(403).json({ success: false, message: 'Moderator must have an assigned location.' });
+        }
+        if (!target.homeLocationId) {
+          return res.status(403).json({ success: false, message: 'Target user is not within your manageable scope.' });
+        }
+        const manageableIds = await getDescendantLocationIds(actor.homeLocationId, false);
+        if (!manageableIds.includes(target.homeLocationId)) {
+          return res.status(403).json({ success: false, message: 'Target user is not within your manageable scope.' });
+        }
+      }
+
+      if (isVerified) {
+        target.isVerified = true;
+        target.verifiedAt = new Date();
+        target.verifiedByUserId = actor.id;
+        target.verifiedScopeLocationId = actor.role === 'admin' ? null : actor.homeLocationId;
+      } else {
+        target.isVerified = false;
+        target.verifiedAt = null;
+        target.verifiedByUserId = null;
+        target.verifiedScopeLocationId = null;
+      }
+
+      await target.save();
+
+      const updatedUser = await User.findByPk(target.id, { attributes: { exclude: ['password'] } });
+
+      return res.status(200).json({
+        success: true,
+        message: isVerified ? 'User verified successfully.' : 'User unverified successfully.',
+        data: { user: updatedUser }
+      });
+    } catch (error) {
+      console.error('Verify user error:', error);
+      return res.status(500).json({ success: false, message: 'Error updating verification status.' });
     }
   }
 };

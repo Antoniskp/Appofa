@@ -32,6 +32,7 @@ router.delete('/profile', apiLimiter, authMiddleware, csrfProtection, authContro
 router.get('/users', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUsers);
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUserStats);
 router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.updateUserRole);
+router.put('/users/:id/verify', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.verifyUser);
 
 // Registered users only: search visible users
 router.get('/users/search', apiLimiter, authMiddleware, authController.searchUsers);
