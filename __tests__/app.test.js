@@ -583,14 +583,79 @@ describe('News Application Integration Tests', () => {
       expect(response.body.message).toBe('Invalid author ID.');
     });
 
-    test('should prevent non-admins from filtering other authors', async () => {
+    test('non-admins can view other users published articles by authorId (for public profile)', async () => {
       const response = await request(app)
         .get(`/api/articles?authorId=${adminUserId}`)
         .set('Authorization', `Bearer ${viewerToken}`);
 
-      expect(response.status).toBe(403);
-      expect(response.body.success).toBe(false);
-      expect(response.body.message).toBe('Access denied.');
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      // Only published articles should be visible to a non-admin viewing another user's articles
+      const articles = response.body.data.articles;
+      expect(Array.isArray(articles)).toBe(true);
+      articles.forEach((article) => {
+        expect(article.status).toBe('published');
+      });
+    });
+
+    test('personal draft article should not be visible to admin in general listing', async () => {
+      // Create a personal draft article as the viewer user
+      const csrfToken = 'csrf-viewer-personal-draft';
+      setCsrfToken(csrfToken, viewerUserId);
+      const createResp = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          title: 'My Private Draft',
+          content: 'This is a personal draft article that only the creator should see.',
+          status: 'draft',
+          type: 'personal'
+        });
+      expect(createResp.status).toBe(201);
+      const personalDraftId = createResp.body.data.article.id;
+
+      // Admin should NOT see this personal draft in the general listing
+      const adminListResp = await request(app)
+        .get('/api/articles')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(adminListResp.status).toBe(200);
+      const adminArticleIds = adminListResp.body.data.articles.map((a) => a.id);
+      expect(adminArticleIds).not.toContain(personalDraftId);
+
+      // The creator (viewer) CAN see it in their own articles
+      const viewerListResp = await request(app)
+        .get(`/api/articles?authorId=${viewerUserId}`)
+        .set('Authorization', `Bearer ${viewerToken}`);
+      expect(viewerListResp.status).toBe(200);
+      const viewerArticleIds = viewerListResp.body.data.articles.map((a) => a.id);
+      expect(viewerArticleIds).toContain(personalDraftId);
+
+      // Admin accessing the article directly should also be denied
+      const adminGetResp = await request(app)
+        .get(`/api/articles/${personalDraftId}`)
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(adminGetResp.status).toBe(403);
+
+      // Clean up
+      const csrfTokenDelete = 'csrf-viewer-personal-draft-delete';
+      setCsrfToken(csrfTokenDelete, viewerUserId);
+      await request(app)
+        .delete(`/api/articles/${personalDraftId}`)
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaderFor(csrfTokenDelete));
+    });
+
+    test('personal published article should be visible via authorId filter by non-owner', async () => {
+      // testArticleId is the admin's published personal article (type defaults to 'personal')
+      const response = await request(app)
+        .get(`/api/articles?authorId=${adminUserId}&status=published`)
+        .set('Authorization', `Bearer ${viewerToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      const articleIds = response.body.data.articles.map((a) => a.id);
+      expect(articleIds).toContain(testArticleId);
     });
 
     test('should get single article by ID', async () => {

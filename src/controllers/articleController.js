@@ -272,13 +272,23 @@ const articleController = {
             message: 'Invalid author ID.'
           });
         }
+        // Non-admin users viewing another user's articles may only see published articles
         if (req.user.role !== 'admin' && req.user.id !== parsedAuthorId) {
-          return res.status(403).json({
-            success: false,
-            message: 'Access denied.'
-          });
+          where.status = 'published';
         }
         where.authorId = parsedAuthorId;
+      }
+
+      // Exclude personal articles in non-published state for everyone except their author.
+      // This applies to all authenticated users, including admins and moderators.
+      if (req.user) {
+        where[Op.and] = (where[Op.and] || []).concat([{
+          [Op.or]: [
+            { type: { [Op.ne]: 'personal' } },
+            { status: 'published' },
+            { authorId: req.user.id }
+          ]
+        }]);
       }
 
       const offset = (parsedPage - 1) * parsedLimit;
@@ -370,11 +380,23 @@ const articleController = {
       }
 
       // Check if user has permission to view unpublished articles
-      if (article.status !== 'published' && (!req.user || (req.user.id !== article.authorId && req.user.role !== 'admin'))) {
-        return res.status(403).json({
-          success: false,
-          message: 'Access denied.'
-        });
+      if (article.status !== 'published') {
+        const isCreator = req.user && req.user.id === article.authorId;
+        if (article.type === 'personal') {
+          // Personal non-published articles: only the creator can view (not even admin)
+          if (!isCreator) {
+            return res.status(403).json({
+              success: false,
+              message: 'Access denied.'
+            });
+          }
+        } else if (!isCreator && (!req.user || req.user.role !== 'admin')) {
+          // Non-personal unpublished articles: creator or admin can view
+          return res.status(403).json({
+            success: false,
+            message: 'Access denied.'
+          });
+        }
       }
 
       const responseArticle = sanitizeArticle(article, req.user);
