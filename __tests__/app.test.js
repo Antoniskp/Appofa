@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, Location } = require('../src/models');
+const { sequelize, User, Location, LocationLink } = require('../src/models');
 
 // Create a test app instance
 const express = require('express');
@@ -746,6 +746,171 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
+    });
+  });
+
+  describe('Moderator Article Permissions Tests', () => {
+    let inScopeArticleId;
+    let outOfScopeArticleId;
+    let childLocationId;
+    let otherLocationId;
+
+    beforeAll(async () => {
+      // Create a child location under moderatorLocationId
+      const childLocation = await Location.create({
+        name: 'Child Location',
+        type: 'municipality',
+        slug: 'child-location',
+        parent_id: moderatorLocationId
+      });
+      childLocationId = childLocation.id;
+
+      // Create an unrelated location outside moderator scope
+      const otherLocation = await Location.create({
+        name: 'Other Location',
+        type: 'municipality',
+        slug: 'other-location'
+      });
+      otherLocationId = otherLocation.id;
+    });
+
+    test('admin creates article linked to moderator home location (in scope)', async () => {
+      const csrfToken = 'csrf-admin-create-inscope';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          title: 'In-Scope Article',
+          content: 'This article is linked to the moderator home location.',
+          status: 'draft'
+        });
+
+      expect(response.status).toBe(201);
+      inScopeArticleId = response.body.data.article.id;
+
+      // Link the article to the moderator's home location
+      await LocationLink.create({
+        location_id: moderatorLocationId,
+        entity_type: 'article',
+        entity_id: inScopeArticleId
+      });
+    });
+
+    test('admin creates article linked only to out-of-scope location', async () => {
+      const csrfToken = 'csrf-admin-create-outofscope';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          title: 'Out-of-Scope Article',
+          content: 'This article is linked to an unrelated location.',
+          status: 'draft'
+        });
+
+      expect(response.status).toBe(201);
+      outOfScopeArticleId = response.body.data.article.id;
+
+      // Link the article to an unrelated location
+      await LocationLink.create({
+        location_id: otherLocationId,
+        entity_type: 'article',
+        entity_id: outOfScopeArticleId
+      });
+    });
+
+    test('moderator can update article linked to their home location', async () => {
+      const csrfToken = 'csrf-moderator-update-inscope';
+      setCsrfToken(csrfToken, moderatorUserId);
+      const response = await request(app)
+        .put(`/api/articles/${inScopeArticleId}`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ title: 'Moderator Updated In-Scope Article' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    test('moderator cannot update article linked only to out-of-scope location', async () => {
+      const csrfToken = 'csrf-moderator-update-outofscope';
+      setCsrfToken(csrfToken, moderatorUserId);
+      const response = await request(app)
+        .put(`/api/articles/${outOfScopeArticleId}`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ title: 'Should Not Update' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('moderator can update article linked to a descendant location', async () => {
+      // Create an article linked to the child location (descendant of moderator scope)
+      const csrfToken = 'csrf-admin-create-child';
+      setCsrfToken(csrfToken, adminUserId);
+      const createResp = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          title: 'Child Location Article',
+          content: 'This article is linked to a descendant location.',
+          status: 'draft'
+        });
+
+      expect(createResp.status).toBe(201);
+      const childArticleId = createResp.body.data.article.id;
+
+      await LocationLink.create({
+        location_id: childLocationId,
+        entity_type: 'article',
+        entity_id: childArticleId
+      });
+
+      const csrfToken2 = 'csrf-moderator-update-child';
+      setCsrfToken(csrfToken2, moderatorUserId);
+      const response = await request(app)
+        .put(`/api/articles/${childArticleId}`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken2))
+        .send({ title: 'Moderator Updated Child Article' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      // Clean up
+      await request(app)
+        .delete(`/api/articles/${childArticleId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor('csrf-admin-delete-child'));
+    });
+
+    test('moderator can delete article linked to their home location', async () => {
+      const csrfToken = 'csrf-moderator-delete-inscope';
+      setCsrfToken(csrfToken, moderatorUserId);
+      const response = await request(app)
+        .delete(`/api/articles/${inScopeArticleId}`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken));
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    test('moderator cannot delete article linked only to out-of-scope location', async () => {
+      const csrfToken = 'csrf-moderator-delete-outofscope';
+      setCsrfToken(csrfToken, moderatorUserId);
+      const response = await request(app)
+        .delete(`/api/articles/${outOfScopeArticleId}`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrfToken));
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
     });
   });
 

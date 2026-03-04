@@ -25,7 +25,7 @@ import Tooltip from '@/components/Tooltip';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
-  const { isAdmin } = usePermissions();
+  const { isAdmin, canAccessAdmin } = usePermissions();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
@@ -103,7 +103,7 @@ export default function TopNav() {
       icon: <MapPinIcon className="h-4 w-4" />,
       className: isActive(myLocationHref)
     },
-    ...(isAdmin ? [
+    ...(canAccessAdmin() ? [
       { divider: true },
       {
         id: 'admin',
@@ -112,13 +112,13 @@ export default function TopNav() {
         icon: <ShieldCheckIcon className="h-4 w-4" />,
         className: isActive('/admin')
       },
-      {
+      ...(isAdmin ? [{
         id: 'admin-status',
         label: 'Διαγνωστικά',
         href: '/admin/status',
         icon: <ServerIcon className="h-4 w-4" />,
         className: isActive('/admin/status')
-      }
+      }] : [])
     ] : []),
     { divider: true },
     {
@@ -174,7 +174,7 @@ export default function TopNav() {
       icon: <MapPinIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive(myLocationHref)}`
     },
-    ...(isAdmin ? [
+    ...(canAccessAdmin() ? [
       { divider: true },
       {
         id: 'admin',
@@ -183,13 +183,13 @@ export default function TopNav() {
         icon: <ShieldCheckIcon className="h-5 w-5" />,
         className: `text-base font-medium ${isActive('/admin')}`
       },
-      {
+      ...(isAdmin ? [{
         id: 'admin-status',
         label: 'Διαγνωστικά',
         href: '/admin/status',
         icon: <ServerIcon className="h-5 w-5" />,
         className: `text-base font-medium ${isActive('/admin/status')}`
-      }
+      }] : [])
     ] : []),
     { divider: true },
     {

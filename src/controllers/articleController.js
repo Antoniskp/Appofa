@@ -1,6 +1,7 @@
-const { Article, User, sequelize } = require('../models');
+const { Article, User, LocationLink, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -41,6 +42,25 @@ const normalizeStatus = (status) => normalizeEnum(status, ARTICLE_STATUSES, 'Sta
 const normalizeType = (type) => normalizeEnum(type, ARTICLE_TYPES, 'Article type');
 const normalizeTags = (tags) => normalizeStringArray(tags, 'Tags');
 const normalizeBannerImageUrl = (value) => normalizeUrl(value, 'Banner image URL', true);
+
+/**
+ * Check if a moderator can manage (update/delete) a given article.
+ * A moderator can manage an article if it is linked to at least one location
+ * within their manageable scope (home location + all descendants).
+ */
+const canModeratorManageArticle = async (articleId, homeLocationId) => {
+  if (!homeLocationId) return false;
+  const manageableIds = await getDescendantLocationIds(homeLocationId, true);
+  if (manageableIds.length === 0) return false;
+  const link = await LocationLink.findOne({
+    where: {
+      entity_type: 'article',
+      entity_id: articleId,
+      location_id: { [Op.in]: manageableIds }
+    }
+  });
+  return !!link;
+};
 
 const articleController = {
   // Create a new article
@@ -387,8 +407,15 @@ const articleController = {
         });
       }
 
-      // Check permissions: author can edit their own, admin and editor can edit all
-      if (article.authorId !== req.user.id && !['admin', 'editor'].includes(req.user.role)) {
+      // Check permissions: author can edit their own, admin and editor can edit all,
+      // moderator can edit articles linked to their manageable locations
+      const isModerator = req.user.role === 'moderator';
+      let moderatorAllowed = false;
+      if (isModerator) {
+        const moderatorUser = await User.findByPk(req.user.id, { attributes: ['homeLocationId'] });
+        moderatorAllowed = await canModeratorManageArticle(id, moderatorUser?.homeLocationId);
+      }
+      if (article.authorId !== req.user.id && !['admin', 'editor'].includes(req.user.role) && !moderatorAllowed) {
         return res.status(403).json({
           success: false,
           message: 'You do not have permission to update this article.'
@@ -567,8 +594,15 @@ const articleController = {
         });
       }
 
-      // Check permissions: author can delete their own, admin can delete all
-      if (article.authorId !== req.user.id && req.user.role !== 'admin') {
+      // Check permissions: author can delete their own, admin can delete all,
+      // moderator can delete articles linked to their manageable locations
+      const isModerator = req.user.role === 'moderator';
+      let moderatorAllowed = false;
+      if (isModerator) {
+        const moderatorUser = await User.findByPk(req.user.id, { attributes: ['homeLocationId'] });
+        moderatorAllowed = await canModeratorManageArticle(id, moderatorUser?.homeLocationId);
+      }
+      if (article.authorId !== req.user.id && req.user.role !== 'admin' && !moderatorAllowed) {
         return res.status(403).json({
           success: false,
           message: 'You do not have permission to delete this article.'
