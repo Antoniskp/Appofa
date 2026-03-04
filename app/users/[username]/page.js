@@ -8,7 +8,7 @@ import CommentsThread from '@/components/comments/CommentsThread';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Card from '@/components/Card';
 import Badge from '@/components/Badge';
-import VerifiedBadge from '@/components/VerifiedBadge';
+import UserAvatar from '@/components/user/UserAvatar';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import Pagination from '@/components/Pagination';
@@ -17,39 +17,11 @@ import ArticleCard from '@/components/ArticleCard';
 import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
 
-const DEFAULT_AVATAR_COLOR = '#64748b';
-
 const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'polls', label: 'Polls' },
   { id: 'articles', label: 'Articles' },
 ];
-
-function UserAvatar({ user }) {
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
-
-  useEffect(() => {
-    setAvatarLoadError(false);
-  }, [user?.avatar]);
-
-  return (
-    <div
-      className="h-24 w-24 rounded-full border border-gray-200 flex items-center justify-center text-white text-2xl font-semibold flex-shrink-0"
-      style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
-    >
-      {user.avatar && !avatarLoadError ? (
-        <img
-          src={user.avatar}
-          alt={user.username}
-          className="h-full w-full rounded-full object-cover"
-          onError={() => setAvatarLoadError(true)}
-        />
-      ) : (
-        <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
-      )}
-    </div>
-  );
-}
 
 function FollowCounts({ userId, username }) {
   const [counts, setCounts] = useState(null);
@@ -279,13 +251,12 @@ export default function PublicUserProfilePage() {
           <div className="max-w-4xl mx-auto space-y-6">
             <Card>
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                <UserAvatar user={user} />
+                <UserAvatar user={user} size="h-24 w-24" textSize="text-2xl" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <h1 className="text-2xl font-bold text-gray-900 truncate">
                       {user.username}
                     </h1>
-                    {user.isVerified && <VerifiedBadge />}
                     {user.role && (
                       <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
                         {user.role}

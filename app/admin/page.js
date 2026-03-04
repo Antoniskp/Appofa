@@ -42,6 +42,7 @@ function AdminDashboardContent() {
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [moderatorLocationOverrides, setModeratorLocationOverrides] = useState({});
+  const [verifyingUserId, setVerifyingUserId] = useState(null);
   const [sortBy, setSortBy] = useState('lastModified'); // 'lastModified' | 'title' | 'createdAt'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
   const [statusFilter, setStatusFilter] = useState('');
@@ -265,6 +266,7 @@ function AdminDashboardContent() {
   ])];
 
   const handleVerifyUser = async (targetUser, isVerified) => {
+    setVerifyingUserId(targetUser.id);
     try {
       const response = await authAPI.verifyUser(targetUser.id, isVerified);
       if (response.success) {
@@ -273,6 +275,8 @@ function AdminDashboardContent() {
       }
     } catch (error) {
       addToast(`Failed to update verification: ${error.message}`, { type: 'error' });
+    } finally {
+      setVerifyingUserId(null);
     }
   };
 
@@ -668,13 +672,16 @@ function AdminDashboardContent() {
                   return (
                     <button
                       onClick={() => handleVerifyUser(targetUser, !targetUser.isVerified)}
+                      disabled={verifyingUserId === targetUser.id}
                       className={`px-2 py-1 text-xs rounded border transition ${
                         targetUser.isVerified
                           ? 'border-blue-300 bg-blue-50 text-blue-700 hover:bg-blue-100'
                           : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                      }`}
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
-                      {targetUser.isVerified ? '✓ Verified' : 'Verify'}
+                      {verifyingUserId === targetUser.id
+                        ? '...'
+                        : targetUser.isVerified ? '✓ Verified' : 'Verify'}
                     </button>
                   );
                 }

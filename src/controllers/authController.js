@@ -667,7 +667,7 @@ const authController = {
   getUsers: async (req, res) => {
     try {
       const baseQuery = {
-        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt'],
+        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt', 'isVerified'],
         include: [
           {
             model: Location,
