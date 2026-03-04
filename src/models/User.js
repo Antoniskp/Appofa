@@ -90,6 +90,46 @@ const User = sequelize.define('User', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     allowNull: false
+  },
+  mobileTel: {
+    type: DataTypes.STRING(30),
+    allowNull: true
+  },
+  bio: {
+    type: DataTypes.STRING(280),
+    allowNull: true
+  },
+  socialLinks: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('socialLinks');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch (err) {
+        console.error('Failed to parse socialLinks JSON:', err.message);
+        return null;
+      }
+    },
+    set(val) {
+      this.setDataValue('socialLinks', val ? JSON.stringify(val) : null);
+    }
+  },
+  isVerified: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  verifiedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  verifiedByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
+  },
+  verifiedScopeLocationId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   }
 }, {
   timestamps: true,

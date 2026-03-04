@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Badge from '@/components/Badge';
+import VerifiedBadge from '@/components/VerifiedBadge';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -37,6 +38,7 @@ export default function UserRow({ user }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-medium text-gray-900 truncate">{user.username}</span>
+            {user.isVerified && <VerifiedBadge />}
             {user.role && (
               <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
                 {user.role}
