@@ -63,20 +63,20 @@ export default function HomeHero() {
             )}
 
             <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight">
-              Η πλατφόρμα της τοπικής κοινότητας
+              Αποφάσεις που ξεκινούν από εσένα.
             </h1>
 
             <p className="text-base text-cyan-50/90 mb-5">
-              Νέα, άρθρα και ψηφοφορίες για την περιοχή σου.
+              Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.
             </p>
 
             <div className="flex flex-wrap gap-3" style={{ animationDelay: '0.2s' }}>
               <Link 
-                href="/locations" 
+                href={!authLoading && user?.homeLocation ? `/locations/${user.homeLocation.slug}` : '/locations'} 
                 className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
               >
                 <MapPinIcon className="w-4 h-4" />
-                Βρες την Περιοχή σου
+                {!authLoading && user?.homeLocation ? 'Δες την Περιοχή σου' : 'Βρες την Περιοχή σου'}
                 <ArrowRightIcon className="w-4 h-4" />
               </Link>
 
@@ -89,13 +89,23 @@ export default function HomeHero() {
               </Link>
 
               {!authLoading && user && (
-                <Link 
-                  href="/become-moderator" 
-                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                >
-                  <ShieldCheckIcon className="w-4 h-4" />
-                  Γίνε Moderator
-                </Link>
+                (user.role === 'admin' || user.role === 'moderator') ? (
+                  <Link 
+                    href="/admin" 
+                    className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                  >
+                    <ShieldCheckIcon className="w-4 h-4" />
+                    Admin / Moderator
+                  </Link>
+                ) : (
+                  <Link 
+                    href="/become-moderator" 
+                    className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                  >
+                    <ShieldCheckIcon className="w-4 h-4" />
+                    Γίνε Moderator
+                  </Link>
+                )
               )}
 
               {!authLoading && !user && (
