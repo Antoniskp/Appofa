@@ -66,7 +66,7 @@ const articleController = {
   // Create a new article
   createArticle: async (req, res) => {
     try {
-      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved } = req.body;
 
       const titleResult = normalizeRequiredText(title, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
       if (titleResult.error) {
@@ -157,6 +157,11 @@ const articleController = {
       const resolvedBannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
       const resolvedStatus = statusResult.value || 'draft';
 
+      // Determine if admin/moderator is pre-approving the article
+      const canApprove = ['admin', 'moderator'].includes(req.user.role);
+      const newsApprovedResult = normalizeBoolean(newsApproved, 'newsApproved');
+      const isPreApproved = canApprove && newsApprovedResult.value === true;
+
       // Create article
       const article = await Article.create({
         title: titleResult.value,
@@ -170,7 +175,9 @@ const articleController = {
         type: articleType,
         isNews: articleType === 'news' || isNewsResult.value,
         bannerImageUrl: resolvedBannerImageUrl,
-        hideAuthor: hideAuthorResult.value !== undefined ? hideAuthorResult.value : false
+        hideAuthor: hideAuthorResult.value !== undefined ? hideAuthorResult.value : false,
+        newsApprovedAt: isPreApproved ? new Date() : null,
+        newsApprovedBy: isPreApproved ? req.user.id : null
       });
 
       // Fetch article with author info
@@ -418,7 +425,7 @@ const articleController = {
   updateArticle: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved } = req.body;
 
       const article = await Article.findByPk(id);
 
@@ -570,6 +577,25 @@ const articleController = {
         article.type = isNewsResult.value ? 'news' : 'personal';
         // Clear approval if user unflags as news
         if (!isNewsResult.value) {
+          article.newsApprovedAt = null;
+          article.newsApprovedBy = null;
+        }
+      }
+
+      // Handle approval flag for admin/moderator
+      if (['admin', 'moderator'].includes(req.user.role) && newsApproved !== undefined) {
+        const newsApprovedResult = normalizeBoolean(newsApproved, 'newsApproved');
+        if (newsApprovedResult.error) {
+          return res.status(400).json({
+            success: false,
+            message: newsApprovedResult.error
+          });
+        }
+        if (newsApprovedResult.value === true) {
+          // Preserve the original approval timestamp and approver; only set if not already approved
+          article.newsApprovedAt = article.newsApprovedAt ?? new Date();
+          article.newsApprovedBy = article.newsApprovedBy ?? req.user.id;
+        } else if (newsApprovedResult.value === false) {
           article.newsApprovedAt = null;
           article.newsApprovedBy = null;
         }
