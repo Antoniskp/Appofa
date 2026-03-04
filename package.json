@@ -55,7 +55,8 @@
   "overrides": {
     "tar": "^7.5.8",
     "glob": "^13.0.0",
-    "rimraf": "^6.0.1"
+    "rimraf": "^6.0.1",
+    "underscore": ">=1.13.8"
   },
   "devDependencies": {
     "eslint": "^9.39.3",

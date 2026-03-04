@@ -57,7 +57,8 @@ dependencies to address known vulnerabilities:
 "overrides": {
   "tar": "^7.5.8",
   "glob": "^13.0.0",
-  "rimraf": "^6.0.1"
+  "rimraf": "^6.0.1",
+  "underscore": ">=1.13.8"
 }
 ```
 
@@ -80,6 +81,30 @@ npm run lint
 ```
 
 ## History of Significant Updates
+
+### 2026-03 — Additional Security Fix (underscore)
+
+**Vulnerability resolved (1 high):**
+
+| Package       | Severity | Advisory                     | Fix                                                          |
+|---------------|----------|------------------------------|--------------------------------------------------------------|
+| `underscore`  | high     | GHSA-qpx9-hpmf-5gmw          | Forced to `>=1.13.8` via `overrides` in `package.json` |
+
+`underscore` is a transitive dependency of `pg-hstore`. Since `pg-hstore` pins `underscore: "^1.13.1"`,
+the override forces npm to install `1.13.8` (the patched release) instead of `1.13.7`.
+
+**Deprecation warnings (npm tooling – cannot be addressed by this project):**
+
+| Deprecated Package          | Notes                                                       |
+|-----------------------------|-------------------------------------------------------------|
+| `@npmcli/move-file@1.1.2`   | Transitive dep of npm tooling; not addressable by the app  |
+| `are-we-there-yet@3.0.1`   | Transitive dep of npm tooling; not addressable by the app  |
+| `gauge@4.0.4`               | Transitive dep of npm tooling; not addressable by the app  |
+| `npmlog@6.0.2`              | Transitive dep of npm tooling; not addressable by the app  |
+| `whatwg-encoding@3.1.1`    | Transitive dep of npm tooling; not addressable by the app  |
+
+These warnings appear during `npm install` and originate from npm's own internal tooling. They do
+not affect runtime behaviour and cannot be resolved without an npm CLI upgrade.
 
 ### 2026-03 — Security & Deprecation Fixes
 
