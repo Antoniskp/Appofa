@@ -299,4 +299,46 @@ describe('Enhanced User Profiles and Verification', () => {
       expect(res.body.success).toBe(false);
     });
   });
+
+  describe('GET /api/auth/users includes isVerified', () => {
+    test('admin GET /users returns isVerified for each user', async () => {
+      const res = await request(app)
+        .get('/api/auth/users')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const users = res.body.data.users;
+      expect(Array.isArray(users)).toBe(true);
+      expect(users.length).toBeGreaterThan(0);
+      users.forEach((u) => {
+        expect(u).toHaveProperty('isVerified');
+      });
+    });
+
+    test('admin GET /users does not include password or tokens', async () => {
+      const res = await request(app)
+        .get('/api/auth/users')
+        .set('Authorization', `Bearer ${adminToken}`);
+      expect(res.status).toBe(200);
+      const users = res.body.data.users;
+      users.forEach((u) => {
+        expect(u.password).toBeUndefined();
+        expect(u.resetPasswordToken).toBeUndefined();
+        expect(u.emailVerificationToken).toBeUndefined();
+      });
+    });
+
+    test('moderator GET /users returns isVerified for in-scope users', async () => {
+      const res = await request(app)
+        .get('/api/auth/users')
+        .set('Authorization', `Bearer ${moderatorToken}`);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const users = res.body.data.users;
+      expect(Array.isArray(users)).toBe(true);
+      users.forEach((u) => {
+        expect(u).toHaveProperty('isVerified');
+      });
+    });
+  });
 });
