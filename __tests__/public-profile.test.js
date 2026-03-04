@@ -36,6 +36,7 @@ describe('getPublicUserProfileByUsername endpoint construction', () => {
                   avatar: null,
                   avatarColor: '#64748b',
                   createdAt: new Date().toISOString(),
+                  isVerified: true,
                 },
               },
             })
@@ -73,6 +74,18 @@ describe('getPublicUserProfileByUsername endpoint construction', () => {
     const result = await authAPI.getPublicUserProfileByUsername('testuser');
     expect(result.success).toBe(true);
     expect(result.data.user.username).toBe('testuser');
+  });
+
+  it('response includes isVerified field', async () => {
+    const result = await authAPI.getPublicUserProfileByUsername('testuser');
+    expect(result.success).toBe(true);
+    expect(result.data.user).toHaveProperty('isVerified');
+    expect(result.data.user.isVerified).toBe(true);
+  });
+
+  it('response does not include password field', async () => {
+    const result = await authAPI.getPublicUserProfileByUsername('testuser');
+    expect(result.data.user).not.toHaveProperty('password');
   });
 });
 
