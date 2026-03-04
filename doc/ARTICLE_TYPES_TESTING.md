@@ -1,15 +1,26 @@
 # Article Types and Categories Feature - Testing Guide
 
 ## Overview
-This guide helps you test the new article types and categories feature that has been implemented.
+This guide helps you test the article types and categories feature.
 
 ## Changes Summary
 
 ### 1. Article Types
-Articles now have three distinct types:
-- **Personal (Προσωπικό)**: Only visible to the creator (default)
-- **Articles (Άρθρα)**: Educational articles visible publicly
-- **News (Νέα)**: News articles visible publicly
+Articles have three distinct types:
+- **Personal (Προσωπικό)**: Content visible only to the creator while in draft/archived state; visible on the creator's public profile once published.
+- **Articles (Άρθρα)**: Educational articles visible publicly.
+- **News (Νέα)**: News articles visible publicly.
+
+### 2. Article Visibility Rules
+
+| Article Type | Status | Who Can See It |
+|---|---|---|
+| Personal | Draft / Archived | **Creator only** – not visible to admins, moderators, editors, or other users |
+| Personal | Published | Creator + any authenticated user (also shown on the creator's public profile page) |
+| Articles / News | Draft / Archived | Creator + admins (existing behaviour) |
+| Articles / News | Published | Everyone (public) |
+
+> **Key rule**: A personal article that is not published is completely private to its creator, regardless of admin or moderator role. This is enforced by both the list endpoint (`GET /api/articles`) and the detail endpoint (`GET /api/articles/:id`).
 
 ### 2. Categories by Type
 
@@ -174,11 +185,18 @@ New field: `type` (optional)
 ```
 
 ### Get Articles Endpoint: `GET /api/articles`
-New query parameter: `type` (optional)
+Query parameters: `type` (optional), `authorId` (optional), `status` (optional)
 ```
 GET /api/articles?type=news
 GET /api/articles?type=articles&category=Μαθηματικά
+GET /api/articles?authorId=42&status=published   # view a user's published articles (public profile)
 ```
+
+**Visibility rules enforced by this endpoint:**
+- Unauthenticated requests: only `published` articles are returned (existing behaviour).
+- Authenticated requests with `authorId` set to **another user's ID**: only that user's `published` articles are returned; personal draft/archived articles are always excluded.
+- Authenticated requests with `authorId` set to **the caller's own ID**: all own articles are returned (including personal drafts).
+- Any authenticated request **without** `authorId`: personal draft/archived articles authored by other users are always excluded, regardless of the caller's role (admin/moderator included).
 
 ## Configuration
 
@@ -194,7 +212,7 @@ To add or modify categories:
 
 ### Backend:
 - `src/models/Article.js` - Added `type` field
-- `src/controllers/articleController.js` - Updated to handle type field
+- `src/controllers/articleController.js` - Updated to handle type field and enforce personal article privacy
 - `src/constants/articleTypes.js` - Article type constants
 - `config/articleCategories.json` - Categories configuration
 
