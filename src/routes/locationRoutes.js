@@ -7,13 +7,19 @@ const checkRole = require('../middleware/checkRole');
 
 // Public routes
 router.get('/', locationController.getLocations);
-router.get('/:id', locationController.getLocation);
-router.get('/:id/entities', optionalAuthMiddleware, locationController.getLocationEntities);
-router.get('/:entity_type/:entity_id/locations', locationController.getEntityLocations);
+
+// Country request routes (must be before /:id to avoid 'requests' being treated as an ID)
+router.post('/requests', authMiddleware, locationController.createLocationRequest);
+router.get('/requests', authMiddleware, checkRole('admin', 'moderator'), locationController.getLocationRequests);
+router.put('/requests/:id', authMiddleware, checkRole('admin', 'moderator'), locationController.updateLocationRequest);
 
 // Protected routes - require authentication
 router.post('/link', authMiddleware, locationController.linkLocation);
 router.post('/unlink', authMiddleware, locationController.unlinkLocation);
+
+router.get('/:id', locationController.getLocation);
+router.get('/:id/entities', optionalAuthMiddleware, locationController.getLocationEntities);
+router.get('/:entity_type/:entity_id/locations', locationController.getEntityLocations);
 
 // Admin/Moderator only routes
 router.post('/', authMiddleware, checkRole('admin', 'moderator'), locationController.createLocation);

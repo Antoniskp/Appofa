@@ -3,6 +3,7 @@ const User = require('./User');
 const Article = require('./Article');
 const Location = require('./Location');
 const LocationLink = require('./LocationLink');
+const LocationRequest = require('./LocationRequest');
 const Poll = require('./Poll');
 const PollOption = require('./PollOption');
 const PollVote = require('./PollVote');
@@ -175,12 +176,18 @@ Comment.belongsTo(Comment, { as: 'parent', foreignKey: 'parentId' });
 Comment.hasMany(Comment, { as: 'replies', foreignKey: 'parentId' });
 User.hasMany(Comment, { foreignKey: 'authorId', as: 'comments' });
 
+// LocationRequest associations
+LocationRequest.belongsTo(User, { foreignKey: 'requestedByUserId', as: 'requestedBy' });
+LocationRequest.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'reviewedBy' });
+User.hasMany(LocationRequest, { foreignKey: 'requestedByUserId', as: 'locationRequests' });
+
 module.exports = {
   sequelize,
   User,
   Article,
   Location,
   LocationLink,
+  LocationRequest,
   Poll,
   PollOption,
   PollVote,
