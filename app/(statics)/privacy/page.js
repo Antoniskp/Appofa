@@ -10,7 +10,7 @@ export default function PrivacyPage() {
     <StaticPageLayout title="Πολιτική Απορρήτου" maxWidth="max-w-4xl">
       <section>
         <p className="text-gray-700 mb-4">
-          <strong>Τελευταία ενημέρωση:</strong> Φεβρουάριος 2026
+          <strong>Τελευταία ενημέρωση:</strong> Μάρτιος 2026
         </p>
         <p className="text-gray-700 mb-4">
           Στο Apofasi, σεβόμαστε την ιδιωτικότητά σας και δεσμευόμαστε να προστατεύουμε τα προσωπικά σας δεδομένα. 
@@ -28,8 +28,8 @@ export default function PrivacyPage() {
             <ul className="list-disc pl-6 text-gray-700 space-y-1">
               <li>Όνομα χρήστη</li>
               <li>Διεύθυνση email</li>
-              <li>Κρυπτογραφημένο κωδικό πρόσβασης</li>
-              <li>Ρόλο χρήστη (user, editor, admin)</li>
+              <li>Κρυπτογραφημένο κωδικό πρόσβασης (bcrypt)</li>
+              <li>Ρόλο χρήστη (viewer, editor, moderator, admin)</li>
               <li>Ημερομηνία δημιουργίας λογαριασμού</li>
             </ul>
           </div>
@@ -43,18 +43,33 @@ export default function PrivacyPage() {
               <li>Ψηφοφορίες που δημιουργείτε</li>
               <li>Συμμετοχή σε ψηφοφορίες</li>
             </ul>
+            <p className="text-gray-700 mt-2">
+              Το περιεχόμενο που δημοσιεύετε είναι <strong>δημόσιο</strong> και ορατό από όλους. Το όνομα χρήστη σας συνδέεται με το περιεχόμενο που δημιουργείτε.
+            </p>
           </div>
 
           <div>
             <h3 className="text-xl font-semibold mb-2">Δεδομένα χρήσης</h3>
             <p className="text-gray-700 mb-2">Συλλέγουμε αυτόματα:</p>
             <ul className="list-disc pl-6 text-gray-700 space-y-1">
-              <li>Διεύθυνση IP</li>
+              <li>Διεύθυνση IP (χρησιμοποιείται για rate limiting και καταγραφή αιτημάτων)</li>
               <li>Τύπος browser και λειτουργικό σύστημα</li>
               <li>Σελίδες που επισκέπτεστε</li>
               <li>Ημερομηνία και ώρα πρόσβασης</li>
               <li>Cookies και παρόμοιες τεχνολογίες</li>
             </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xl font-semibold mb-2">Google Analytics (προαιρετικό)</h3>
+            <p className="text-gray-700">
+              Εάν έχει ενεργοποιηθεί το Google Analytics στην ανάπτυξη της πλατφόρμας (μέσω της μεταβλητής περιβάλλοντος{' '}
+              <code className="bg-gray-100 px-1 rounded text-sm">NEXT_PUBLIC_GA_MEASUREMENT_ID</code>), τότε η Google
+              συλλέγει δεδομένα επισκεψιμότητας σύμφωνα με τη δική της{' '}
+              <a href="https://policies.google.com/privacy" className="text-blue-600 hover:text-blue-800 underline" target="_blank" rel="noopener noreferrer">
+                Πολιτική Απορρήτου
+              </a>. Αυτή η λειτουργία είναι <strong>προαιρετική</strong> και ενδέχεται να μην είναι ενεργή σε κάθε παράδοση της πλατφόρμας.
+            </p>
           </div>
         </div>
       </section>
@@ -142,7 +157,7 @@ export default function PrivacyPage() {
           <div>
             <h3 className="text-xl font-semibold mb-2">Απαραίτητα cookies</h3>
             <p className="text-gray-700">
-              Απαιτούνται για τη λειτουργία της πλατφόρμας (π.χ. διατήρηση σύνδεσης, ρυθμίσεις ασφάλειας).
+              Απαιτούνται για τη λειτουργία της πλατφόρμας (π.χ. διατήρηση σύνδεσης, προστασία CSRF).
             </p>
           </div>
 
@@ -154,9 +169,10 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h3 className="text-xl font-semibold mb-2">Cookies ανάλυσης</h3>
+            <h3 className="text-xl font-semibold mb-2">Cookies ανάλυσης (προαιρετικά)</h3>
             <p className="text-gray-700">
-              Μας βοηθούν να καταλάβουμε πώς χρησιμοποιείτε την πλατφόρμα για να τη βελτιώσουμε.
+              Εάν έχει ενεργοποιηθεί το Google Analytics στη συγκεκριμένη παράδοση της πλατφόρμας, χρησιμοποιούνται
+              cookies της Google για ανάλυση επισκεψιμότητας. Δείτε την ενότητα «Google Analytics» παραπάνω για λεπτομέρειες.
             </p>
           </div>
         </div>
@@ -171,26 +187,44 @@ export default function PrivacyPage() {
         <h2 className="text-2xl font-semibold mb-3">5. Ασφάλεια δεδομένων</h2>
         
         <p className="text-gray-700 mb-4">
-          Λαμβάνουμε σοβαρά μέτρα για την προστασία των δεδομένων σας:
+          Λαμβάνουμε τα ακόλουθα τεχνικά μέτρα για την προστασία των δεδομένων σας:
         </p>
         
         <ul className="list-disc pl-6 text-gray-700 space-y-2">
-          <li>Κρυπτογράφηση δεδομένων κατά τη μετάδοση (HTTPS/TLS)</li>
-          <li>Ασφαλής αποθήκευση κωδικών με bcrypt hashing</li>
-          <li>Τακτικά security audits και ενημερώσεις</li>
-          <li>Περιορισμένη πρόσβαση στα δεδομένα μόνο από εξουσιοδοτημένο προσωπικό</li>
-          <li>Monitoring για ανίχνευση ύποπτης δραστηριότητας</li>
-          <li>Τακτικά backups για αποφυγή απώλειας δεδομένων</li>
+          <li><strong>HTTPS/TLS:</strong> Κρυπτογράφηση όλης της επικοινωνίας μεταξύ browser και server</li>
+          <li><strong>Bcrypt hashing:</strong> Οι κωδικοί αποθηκεύονται μόνο ως κατακερματισμένες τιμές — ποτέ σε καθαρό κείμενο</li>
+          <li><strong>CSRF protection:</strong> Τα αιτήματα που αλλάζουν κατάσταση (π.χ. σύνδεση, αλλαγή ρόλου) προστατεύονται από CSRF tokens</li>
+          <li><strong>Rate limiting:</strong> Περιορισμός αριθμού αιτημάτων ανά IP για πρόληψη brute-force και κατάχρησης</li>
+          <li><strong>Helmet / Security Headers:</strong> HTTP security headers (CSP, X-Frame-Options κ.ά.) μέσω του middleware Helmet</li>
+          <li><strong>Κρυπτογράφηση OAuth tokens:</strong> Τα access tokens που αποθηκεύονται για OAuth συνδέσεις κρυπτογραφούνται με AES-256-GCM πριν από την αποθήκευση</li>
+          <li><strong>Αρχή ελάχιστων προνομίων:</strong> Κάθε ενέργεια ελέγχεται βάσει ρόλου (viewer/editor/moderator/admin) τόσο στο frontend όσο και στο backend</li>
+          <li><strong>Input validation:</strong> Επαλήθευση και καθαρισμός εισόδου χρήστη — χρήση Sequelize ORM για προστασία από SQL injection</li>
         </ul>
 
         <p className="text-gray-700 mt-4">
           Παρόλα αυτά, καμία μέθοδος μετάδοσης στο διαδίκτυο δεν είναι 100% ασφαλής. Δεσμευόμαστε να 
-          χρησιμοποιούμε εμπορικά αποδεκτά μέσα προστασίας, αλλά δεν μπορούμε να εγγυηθούμε απόλυτη ασφάλεια.
+          χρησιμοποιούμε αποδεκτά τεχνικά μέσα προστασίας, αλλά δεν μπορούμε να εγγυηθούμε απόλυτη ασφάλεια.
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">6. Τα δικαιώματά σας</h2>
+        <h2 className="text-2xl font-semibold mb-3">6. Καταγραφές (Logs) και παρακολούθηση</h2>
+        
+        <p className="text-gray-700 mb-4">
+          Η πλατφόρμα παράγει λειτουργικά logs σε επίπεδο server (π.χ. μέσω PM2 ή Docker), τα οποία περιλαμβάνουν
+          αιτήματα HTTP, σφάλματα εφαρμογής και πληροφορίες χρόνου εκτέλεσης. Αυτά τα logs χρησιμοποιούνται για
+          την αντιμετώπιση τεχνικών προβλημάτων και τη διασφάλιση της διαθεσιμότητας της υπηρεσίας.
+        </p>
+        
+        <p className="text-gray-700 mb-4">
+          <strong>Τι ΔΕΝ υπάρχει:</strong> Η πλατφόρμα δεν διαθέτει επίσημο σύστημα audit log ανά ενέργεια χρήστη 
+          (δηλ. δεν τηρείται δημόσιο ιστορικό «ποιος έκανε τι και πότε»). Τα λειτουργικά logs είναι διαθέσιμα 
+          μόνο στη διαχειριστική ομάδα.
+        </p>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-3">7. Τα δικαιώματά σας</h2>
         
         <p className="text-gray-700 mb-4">
           Έχετε τα ακόλουθα δικαιώματα σχετικά με τα προσωπικά σας δεδομένα:
@@ -250,7 +284,7 @@ export default function PrivacyPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">7. Διατήρηση δεδομένων</h2>
+        <h2 className="text-2xl font-semibold mb-3">8. Διατήρηση δεδομένων</h2>
         
         <p className="text-gray-700 mb-4">
           Διατηρούμε τα προσωπικά σας δεδομένα όσο διάστημα είναι απαραίτητο για:
@@ -270,7 +304,7 @@ export default function PrivacyPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">8. Παιδιά</h2>
+        <h2 className="text-2xl font-semibold mb-3">9. Παιδιά</h2>
         
         <p className="text-gray-700">
           Οι υπηρεσίες μας δεν απευθύνονται σε άτομα κάτω των 16 ετών. Δεν συλλέγουμε εν γνώσει μας προσωπικά 
@@ -280,7 +314,7 @@ export default function PrivacyPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">9. Διεθνείς μεταφορές δεδομένων</h2>
+        <h2 className="text-2xl font-semibold mb-3">10. Διεθνείς μεταφορές δεδομένων</h2>
         
         <p className="text-gray-700">
           Τα δεδομένα σας μπορεί να αποθηκευτούν και να υποβληθούν σε επεξεργασία σε servers που βρίσκονται εκτός 
@@ -290,7 +324,7 @@ export default function PrivacyPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">10. Αλλαγές σε αυτή την πολιτική</h2>
+        <h2 className="text-2xl font-semibold mb-3">11. Αλλαγές σε αυτή την πολιτική</h2>
         
         <p className="text-gray-700 mb-4">
           Μπορεί να ενημερώσουμε την πολιτική απορρήτου μας περιστασιακά. Θα σας ειδοποιήσουμε για τυχόν αλλαγές 
@@ -304,7 +338,7 @@ export default function PrivacyPage() {
       </section>
 
       <section className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        <h2 className="text-2xl font-semibold mb-3">11. Επικοινωνία</h2>
+        <h2 className="text-2xl font-semibold mb-3">12. Επικοινωνία</h2>
         
         <p className="text-gray-700 mb-4">
           Για ερωτήσεις ή ανησυχίες σχετικά με αυτή την πολιτική απορρήτου ή την επεξεργασία των δεδομένων σας, 
