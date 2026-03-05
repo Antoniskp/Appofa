@@ -1,4 +1,4 @@
-const { Location, LocationLink, Article, User, Poll } = require('../models');
+const { Location, LocationLink, Article, User, Poll, LocationRequest } = require('../models');
 const { Op, fn, col, where } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
@@ -803,6 +803,124 @@ exports.getLocationEntities = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch location entities',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Create a new country request (any authenticated user)
+exports.createLocationRequest = async (req, res) => {
+  try {
+    const { countryName, countryNameLocal, notes } = req.body;
+
+    if (!countryName || !countryName.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Country name in English is required'
+      });
+    }
+
+    const request = await LocationRequest.create({
+      countryName: countryName.trim(),
+      countryNameLocal: countryNameLocal ? countryNameLocal.trim() : null,
+      notes: notes ? notes.trim() : null,
+      requestedByUserId: req.user ? req.user.id : null,
+      status: 'pending'
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Country request submitted successfully',
+      request
+    });
+  } catch (error) {
+    console.error('Error creating location request:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to submit country request',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// List location requests (admin/moderator only)
+exports.getLocationRequests = async (req, res) => {
+  try {
+    const { status, page = 1, limit = 20 } = req.query;
+    const offset = (parseInt(page) - 1) * parseInt(limit);
+
+    const where = {};
+    if (status) {
+      where.status = status;
+    }
+
+    const { count, rows } = await LocationRequest.findAndCountAll({
+      where,
+      include: [
+        { model: User, as: 'requestedBy', attributes: ['id', 'username', 'firstName', 'lastName'] },
+        { model: User, as: 'reviewedBy', attributes: ['id', 'username', 'firstName', 'lastName'] }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: parseInt(limit),
+      offset
+    });
+
+    res.json({
+      success: true,
+      requests: rows,
+      total: count,
+      page: parseInt(page),
+      totalPages: Math.ceil(count / parseInt(limit))
+    });
+  } catch (error) {
+    console.error('Error fetching location requests:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch location requests',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
+// Update location request status (admin/moderator only)
+exports.updateLocationRequest = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, reviewNotes } = req.body;
+
+    const validStatuses = ['pending', 'approved', 'rejected'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be pending, approved, or rejected'
+      });
+    }
+
+    const request = await LocationRequest.findByPk(id);
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        message: 'Location request not found'
+      });
+    }
+
+    await request.update({
+      status,
+      reviewNotes: reviewNotes ? reviewNotes.trim() : null,
+      reviewedByUserId: req.user.id,
+      reviewedAt: new Date()
+    });
+
+    res.json({
+      success: true,
+      message: 'Location request updated successfully',
+      request
+    });
+  } catch (error) {
+    console.error('Error updating location request:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update location request',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

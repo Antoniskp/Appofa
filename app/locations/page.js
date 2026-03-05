@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import Link from 'next/link';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { locationAPI } from '@/lib/api';
+import { locationAPI, locationRequestAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import Badge from '@/components/Badge';
 import EmptyState from '@/components/EmptyState';
 import SkeletonLoader from '@/components/SkeletonLoader';
-import { MagnifyingGlassIcon, MapPinIcon, ChevronRightIcon, UserGroupIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import Modal from '@/components/Modal';
+import { MagnifyingGlassIcon, MapPinIcon, ChevronRightIcon, UserGroupIcon, ExclamationTriangleIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
 import SearchInput from '@/components/SearchInput';
 
 const LOCATION_TYPE_ORDER = ['international', 'country', 'prefecture', 'municipality'];
@@ -15,7 +16,8 @@ const DEBOUNCE_DELAY = 300;
 
 export default function LocationsPage() {
   const router = useRouter();
-  
+  const { user } = useAuth();
+
   // Dropdown states
   const [countries, setCountries] = useState([]);
   const [prefectures, setPrefectures] = useState([]);
@@ -24,6 +26,9 @@ export default function LocationsPage() {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [selectedPrefecture, setSelectedPrefecture] = useState('');
   const [selectedMunicipality, setSelectedMunicipality] = useState('');
+
+  // Track whether the user has explicitly chosen a country (prevents default from overriding)
+  const userHasSelectedCountry = useRef(false);
   
   // Filter for locations needing moderators
   const [showNeedsModerators, setShowNeedsModerators] = useState(false);
@@ -42,6 +47,13 @@ export default function LocationsPage() {
   // Breadcrumb state
   const [breadcrumbs, setBreadcrumbs] = useState([]);
 
+  // Country request modal state
+  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [requestForm, setRequestForm] = useState({ countryName: '', countryNameLocal: '', notes: '' });
+  const [requestSubmitting, setRequestSubmitting] = useState(false);
+  const [requestError, setRequestError] = useState('');
+  const [requestSuccess, setRequestSuccess] = useState(false);
+
   // Load countries on mount
   useEffect(() => {
     fetchCountries();
@@ -59,8 +71,10 @@ export default function LocationsPage() {
         );
         setCountries(sortedCountries);
         
-        // If no selections, show countries by default
-        if (!selectedCountry && !searchTerm) {
+        // Apply default country selection if user hasn't explicitly chosen one
+        if (!userHasSelectedCountry.current && !searchTerm) {
+          await applyDefaultCountry(sortedCountries);
+        } else if (!selectedCountry && !searchTerm) {
           setDisplayedLocations(sortedCountries);
         }
       }
@@ -69,6 +83,57 @@ export default function LocationsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Determine and apply the default country:
+  // 1. If authenticated user has homeLocationId, resolve to country
+  // 2. Otherwise default to Greece
+  const applyDefaultCountry = async (countryList) => {
+    // Don't override if user already picked something
+    if (userHasSelectedCountry.current) return;
+
+    if (user && user.homeLocationId) {
+      try {
+        const res = await locationAPI.getById(user.homeLocationId);
+        if (res.success && res.location) {
+          // Walk up the parent chain to find the country
+          let loc = res.location;
+          while (loc && loc.type !== 'country') {
+            if (loc.parent) {
+              loc = loc.parent;
+            } else if (loc.parent_id) {
+              const parentRes = await locationAPI.getById(loc.parent_id);
+              loc = parentRes.success ? parentRes.location : null;
+            } else {
+              loc = null;
+            }
+          }
+          if (loc && loc.type === 'country') {
+            const match = countryList.find(c => c.id === loc.id);
+            if (match && !userHasSelectedCountry.current) {
+              setSelectedCountry(String(match.id));
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        // Fall through to Greece default
+      }
+    }
+
+    // Default to Greece (try code 'GR' first, then name match)
+    if (!userHasSelectedCountry.current) {
+      const greece =
+        countryList.find(c => c.code && c.code.toUpperCase() === 'GR') ||
+        countryList.find(c => c.name.toLowerCase() === 'greece');
+      if (greece) {
+        setSelectedCountry(String(greece.id));
+        return;
+      }
+    }
+
+    // No default found – show all countries
+    setDisplayedLocations(countryList);
   };
 
   const fetchPrefectures = async (countryId) => {
@@ -251,9 +316,21 @@ export default function LocationsPage() {
 
   const handleCountryChange = (e) => {
     const value = e.target.value;
+    userHasSelectedCountry.current = true;
     setSelectedCountry(value);
     setSelectedPrefecture('');
     setSelectedMunicipality('');
+    setSearchTerm('');
+  };
+
+  const handleClearCountry = () => {
+    userHasSelectedCountry.current = true;
+    setSelectedCountry('');
+    setSelectedPrefecture('');
+    setSelectedMunicipality('');
+    setPrefectures([]);
+    setMunicipalities([]);
+    setBreadcrumbs([]);
     setSearchTerm('');
   };
 
@@ -279,6 +356,7 @@ export default function LocationsPage() {
   };
 
   const handleClearAll = () => {
+    userHasSelectedCountry.current = true;
     setSelectedCountry('');
     setSelectedPrefecture('');
     setSelectedMunicipality('');
@@ -341,6 +419,53 @@ export default function LocationsPage() {
 
   const hasActiveFilters = selectedCountry || selectedPrefecture || selectedMunicipality || showNeedsModerators;
 
+  const selectedCountryName = selectedCountry
+    ? (countries.find(c => c.id === parseInt(selectedCountry))?.name || '')
+    : '';
+
+  const getResultsHeading = () => {
+    if (searchTerm) return 'Search Results';
+    if (breadcrumbs.length > 0) return `Locations in ${breadcrumbs[breadcrumbs.length - 1].name}`;
+    if (selectedCountryName) return `Locations in ${selectedCountryName}`;
+    return 'All Countries';
+  };
+
+  const handleRequestFormChange = (e) => {
+    const { name, value } = e.target;
+    setRequestForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleRequestSubmit = async (e) => {
+    e.preventDefault();
+    if (!requestForm.countryName.trim()) return;
+    setRequestSubmitting(true);
+    setRequestError('');
+    try {
+      const res = await locationRequestAPI.create({
+        countryName: requestForm.countryName.trim(),
+        countryNameLocal: requestForm.countryNameLocal.trim() || undefined,
+        notes: requestForm.notes.trim() || undefined,
+      });
+      if (res.success) {
+        setRequestSuccess(true);
+        setRequestForm({ countryName: '', countryNameLocal: '', notes: '' });
+      } else {
+        setRequestError(res.message || 'Failed to submit request');
+      }
+    } catch (err) {
+      setRequestError(err.message || 'Failed to submit request');
+    } finally {
+      setRequestSubmitting(false);
+    }
+  };
+
+  const handleCloseRequestModal = () => {
+    setShowRequestModal(false);
+    setRequestSuccess(false);
+    setRequestError('');
+    setRequestForm({ countryName: '', countryNameLocal: '', notes: '' });
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       {/* Main Content */}
@@ -397,9 +522,21 @@ export default function LocationsPage() {
 
             {/* Country Dropdown */}
             <div>
-              <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
-                Country
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="country" className="block text-sm font-medium text-gray-700">
+                  Country
+                </label>
+                {selectedCountry && (
+                  <button
+                    onClick={handleClearCountry}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium transition-colors flex items-center gap-1"
+                    aria-label="Show all countries"
+                  >
+                    <GlobeAltIcon className="w-3.5 h-3.5" />
+                    All countries
+                  </button>
+                )}
+              </div>
               <select
                 id="country"
                 value={selectedCountry}
@@ -519,13 +656,22 @@ export default function LocationsPage() {
 
         {/* Results Section */}
         <div className="card">
-          <div className="px-6 py-4 border-b border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
             <h2 className="text-lg font-semibold text-gray-900">
-              {searchTerm ? 'Search Results' : breadcrumbs.length > 0 ? `Locations in ${breadcrumbs[breadcrumbs.length - 1].name}` : 'All Countries'}
+              {getResultsHeading()}
               <span className="ml-2 text-sm font-normal text-gray-500">
                 ({displayedLocations.length} {displayedLocations.length === 1 ? 'location' : 'locations'})
               </span>
             </h2>
+            {!selectedCountry && !searchTerm && (
+              <button
+                onClick={() => setShowRequestModal(true)}
+                className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
+              >
+                <GlobeAltIcon className="w-4 h-4" />
+                <span>Can&apos;t find your country? <span className="underline">Request it</span></span>
+              </button>
+            )}
           </div>
 
           <div className="p-6">
@@ -546,11 +692,24 @@ export default function LocationsPage() {
             )}
 
             {!loading && !error && displayedLocations.length === 0 && (
-              <EmptyState
-                type="empty"
-                title="No Locations Found"
-                description={searchTerm ? "Try adjusting your search term" : "No locations available at this level"}
-              />
+              <div>
+                <EmptyState
+                  type="empty"
+                  title="No Locations Found"
+                  description={searchTerm ? "Try adjusting your search term" : "No locations available at this level"}
+                />
+                {!selectedCountry && (
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => setShowRequestModal(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-md border border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100 text-sm font-medium transition-colors"
+                    >
+                      <GlobeAltIcon className="w-4 h-4" />
+                      Request your country
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
             {!loading && !error && displayedLocations.length > 0 && (
@@ -634,9 +793,125 @@ export default function LocationsPage() {
                 ))}
               </div>
             )}
+
+            {/* Subtle CTA below results when in All Countries view */}
+            {!loading && !error && !selectedCountry && !searchTerm && displayedLocations.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-gray-100 text-center">
+                <button
+                  onClick={() => setShowRequestModal(true)}
+                  className="text-sm text-gray-500 hover:text-blue-600 transition-colors underline"
+                >
+                  Don&apos;t see your country? Request it to be added.
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Request Country Modal */}
+      <Modal
+        isOpen={showRequestModal}
+        onClose={handleCloseRequestModal}
+        title="Request a Country"
+        size="md"
+      >
+        {requestSuccess ? (
+          <div className="text-center py-4">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <GlobeAltIcon className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1">Request submitted!</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Thank you! Our team will review your request and add the country if approved.
+            </p>
+            <button
+              onClick={handleCloseRequestModal}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+            >
+              Close
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleRequestSubmit} className="space-y-4">
+            <p className="text-sm text-gray-600">
+              If your country is not listed, you can request it to be added. Our moderators will review your request.
+            </p>
+
+            {requestError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+                {requestError}
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="req-countryName" className="block text-sm font-medium text-gray-700 mb-1">
+                Country name in English <span className="text-red-500">*</span>
+              </label>
+              <input
+                id="req-countryName"
+                name="countryName"
+                type="text"
+                value={requestForm.countryName}
+                onChange={handleRequestFormChange}
+                required
+                maxLength={100}
+                placeholder="e.g. Albania"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="req-countryNameLocal" className="block text-sm font-medium text-gray-700 mb-1">
+                Local name <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <input
+                id="req-countryNameLocal"
+                name="countryNameLocal"
+                type="text"
+                value={requestForm.countryNameLocal}
+                onChange={handleRequestFormChange}
+                maxLength={100}
+                placeholder="e.g. Shqipëria"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="req-notes" className="block text-sm font-medium text-gray-700 mb-1">
+                Additional notes <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <textarea
+                id="req-notes"
+                name="notes"
+                value={requestForm.notes}
+                onChange={handleRequestFormChange}
+                maxLength={500}
+                rows={3}
+                placeholder="Any additional context..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleCloseRequestModal}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={requestSubmitting || !requestForm.countryName.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {requestSubmitting ? 'Submitting…' : 'Submit request'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }
