@@ -79,11 +79,15 @@ const commentController = {
         order: [['createdAt', 'ASC']]
       });
 
+      const isPrivileged = req.user && isAdminOrModerator(req.user);
+
       const sanitized = comments.map(c => {
         const data = c.toJSON();
         if (data.status === 'deleted') {
           data.body = null;
           data._deleted = true;
+        } else if (data.status === 'hidden' && !isPrivileged) {
+          data.body = null;
         }
         return data;
       });
