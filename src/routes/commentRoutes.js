@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
+const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 // GET /api/comments?entityType=&entityId=
-router.get('/', apiLimiter, commentController.getComments);
+router.get('/', apiLimiter, optionalAuthMiddleware, commentController.getComments);
 
 // POST /api/comments
 router.post('/', createLimiter, authMiddleware, csrfProtection, commentController.createComment);

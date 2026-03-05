@@ -17,6 +17,7 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
+import CommentsThread from '@/components/comments/CommentsThread';
 
 export default function NewsDetailPage() {
   const params = useParams();
@@ -303,6 +304,15 @@ export default function NewsDetailPage() {
           </div>
         </div>
       </article>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <CommentsThread
+          entityType="article"
+          entityId={article.id}
+          commentsEnabled={article.commentsEnabled !== false}
+          commentsLocked={article.commentsLocked === true}
+        />
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
