@@ -48,9 +48,9 @@ const isAdminOrModerator = (user) => ['admin', 'moderator'].includes(user.role);
 const commentController = {
   /**
    * GET /api/comments?entityType=&entityId=
-   * Returns all non-deleted comments for an entity (flat list; frontend builds tree).
-   * Hidden comments are returned with their body intact for moderators;
-   * deleted comments have body replaced with null.
+   * Returns all comments for an entity (flat list; frontend builds tree).
+   * Hidden comments are returned with their body intact for moderators
+   * and with body replaced with null for regular users.
    */
   getComments: async (req, res) => {
     try {
@@ -83,10 +83,7 @@ const commentController = {
 
       const sanitized = comments.map(c => {
         const data = c.toJSON();
-        if (data.status === 'deleted') {
-          data.body = null;
-          data._deleted = true;
-        } else if (data.status === 'hidden' && !isPrivileged) {
+        if (data.status === 'hidden' && !isPrivileged) {
           data.body = null;
         }
         return data;
@@ -188,9 +185,6 @@ const commentController = {
       const { id } = req.params;
       const comment = await Comment.findByPk(id);
       if (!comment) return res.status(404).json({ success: false, message: 'Comment not found.' });
-      if (comment.status === 'deleted') {
-        return res.status(400).json({ success: false, message: 'Cannot modify a deleted comment.' });
-      }
 
       if (!isAdminOrModerator(req.user)) {
         const settings = await getEntitySettings(comment.entityType, comment.entityId);
@@ -216,9 +210,6 @@ const commentController = {
       const { id } = req.params;
       const comment = await Comment.findByPk(id);
       if (!comment) return res.status(404).json({ success: false, message: 'Comment not found.' });
-      if (comment.status === 'deleted') {
-        return res.status(400).json({ success: false, message: 'Cannot modify a deleted comment.' });
-      }
 
       if (!isAdminOrModerator(req.user)) {
         const settings = await getEntitySettings(comment.entityType, comment.entityId);
@@ -237,17 +228,14 @@ const commentController = {
 
   /**
    * DELETE /api/comments/:id
-   * Soft-delete a comment (author, admin/moderator, or entity owner).
-   * Sets status to 'deleted'; body is preserved in DB but hidden from clients.
+   * Hard-delete a comment (author, admin/moderator, or entity owner).
+   * Permanently removes the comment record from the database.
    */
   deleteComment: async (req, res) => {
     try {
       const { id } = req.params;
       const comment = await Comment.findByPk(id);
       if (!comment) return res.status(404).json({ success: false, message: 'Comment not found.' });
-      if (comment.status === 'deleted') {
-        return res.status(400).json({ success: false, message: 'Comment already deleted.' });
-      }
 
       const isAuthor = comment.authorId === req.user.id;
       const isMod = isAdminOrModerator(req.user);
@@ -259,7 +247,7 @@ const commentController = {
         }
       }
 
-      await comment.update({ status: 'deleted', moderatedByUserId: req.user.id, moderatedAt: new Date() });
+      await comment.destroy();
       return res.json({ success: true, message: 'Comment deleted.' });
     } catch (error) {
       console.error('Delete comment error:', error);

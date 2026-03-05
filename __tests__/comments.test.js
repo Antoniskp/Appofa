@@ -365,17 +365,18 @@ describe('Comment System Tests', () => {
       expect(res.status).toBe(404);
     });
 
-    it('should not allow hiding a deleted comment', async () => {
-      // Delete the comment first
-      const cmt = await Comment.findByPk(targetCommentId);
-      await cmt.update({ status: 'deleted' });
+    it('should return 404 when trying to hide a non-existent (deleted) comment', async () => {
+      // Hard-delete the comment first via the API
+      await request(app)
+        .delete(`/api/comments/${targetCommentId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaders(adminUserId));
 
       const res = await request(app)
         .patch(`/api/comments/${targetCommentId}/hide`)
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeaders(adminUserId));
-      expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/deleted/i);
+      expect(res.status).toBe(404);
     });
   });
 
@@ -446,10 +447,9 @@ describe('Comment System Tests', () => {
       expect(res.body.message).toMatch(/deleted/i);
     });
 
-    it('should soft-delete (status=deleted, body preserved in DB)', async () => {
+    it('should hard-delete (comment is permanently removed from DB)', async () => {
       const deleted = await Comment.findByPk(commentToDelete);
-      expect(deleted.status).toBe('deleted');
-      expect(deleted.body).toBe('To be deleted by author'); // body preserved in DB
+      expect(deleted).toBeNull();
     });
 
     it('should deny delete to non-author non-privileged user', async () => {
@@ -482,13 +482,13 @@ describe('Comment System Tests', () => {
       expect(res.status).toBe(200);
     });
 
-    it('should return 400 when trying to delete an already deleted comment', async () => {
+    it('should return 404 when trying to delete an already deleted comment', async () => {
       const res = await request(app)
         .delete(`/api/comments/${commentToDelete}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeaders(adminUserId));
-      expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/already deleted/i);
+      expect(res.status).toBe(404);
+      expect(res.body.message).toMatch(/not found/i);
     });
 
     it('should return 404 for non-existent comment', async () => {
@@ -500,10 +500,10 @@ describe('Comment System Tests', () => {
     });
   });
 
-  // ─── Deleted comment body masking in GET ──────────────────────────────────
+  // ─── Deleted comment is absent from GET ──────────────────────────────────
 
-  describe('Deleted comment body masking', () => {
-    it('should return null body for deleted comments in GET', async () => {
+  describe('Deleted comment is absent from GET', () => {
+    it('should not return a deleted comment in GET results', async () => {
       const createRes = await request(app)
         .post('/api/comments')
         .set('Authorization', `Bearer ${viewerToken}`)
@@ -519,10 +519,8 @@ describe('Comment System Tests', () => {
       const getRes = await request(app)
         .get(`/api/comments?entityType=article&entityId=${testArticleId}`)
         .set('Authorization', `Bearer ${viewerToken}`);
-      const deleted = getRes.body.data.comments.find(c => c.id === cmtId);
-      expect(deleted).toBeDefined();
-      expect(deleted.body).toBeNull();
-      expect(deleted._deleted).toBe(true);
+      const found = getRes.body.data.comments.find(c => c.id === cmtId);
+      expect(found).toBeUndefined();
     });
   });
 
