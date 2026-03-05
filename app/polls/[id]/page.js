@@ -377,7 +377,7 @@ export default function PollDetailPage() {
         {showResults && (
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Αποτελέσματα</h2>
-            <PollResults poll={poll} canView={showResults} />
+            <PollResults poll={poll} canView={showResults} canEdit={canEdit} />
           </div>
         )}
 

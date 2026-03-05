@@ -72,6 +72,7 @@ router.get('/', apiLimiter, optionalAuthMiddleware, pollController.getAllPolls);
 router.get('/my-voted', apiLimiter, authMiddleware, pollController.getMyVotedPolls);
 router.get('/:id', apiLimiter, optionalAuthMiddleware, pollController.getPollById);
 router.get('/:id/results', apiLimiter, optionalAuthMiddleware, pollController.getResults);
+router.get('/:id/export', apiLimiter, authMiddleware, pollController.exportPoll);
 
 // Voting route - public or authenticated based on poll settings
 router.post('/:id/vote', voteLimiter, optionalAuthMiddleware, optionalCsrfProtection, pollController.votePoll);
