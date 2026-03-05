@@ -152,34 +152,41 @@ export default function TransparencyPage() {
           <div>
             <h3 className="text-xl font-semibold mb-2">Ρόλοι και δικαιώματα</h3>
             <p className="text-gray-700 mb-3">
-              Η πλατφόρμα διαθέτει τρεις ρόλους χρηστών με διαφορετικά δικαιώματα:
+              Η πλατφόρμα διαθέτει τέσσερις ρόλους χρηστών με διαφορετικά δικαιώματα:
             </p>
             <div className="space-y-3">
               <div className="bg-white border border-gray-200 rounded p-4">
-                <h4 className="font-semibold mb-2">👤 User</h4>
+                <h4 className="font-semibold mb-2">👁️ Viewer</h4>
                 <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
-                  <li>Δημιουργία Personal και Articles άρθρων</li>
-                  <li>Επεξεργασία των δικών τους άρθρων</li>
+                  <li>Ανάγνωση περιεχομένου</li>
                   <li>Συμμετοχή σε ψηφοφορίες</li>
-                  <li>Σχολιασμός</li>
+                  <li>Σχολιασμός (όπου επιτρέπεται)</li>
                 </ul>
               </div>
               <div className="bg-white border border-gray-200 rounded p-4">
                 <h4 className="font-semibold mb-2">✏️ Editor</h4>
                 <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
-                  <li>Όλα τα δικαιώματα του User</li>
+                  <li>Δημιουργία και επεξεργασία άρθρων (personal, articles)</li>
                   <li>Επεξεργασία όλων των Articles</li>
-                  <li>Δημιουργία News άρθρων</li>
-                  <li>Moderation σχολίων</li>
+                  <li>Δημοσίευση περιεχομένου</li>
+                </ul>
+              </div>
+              <div className="bg-white border border-gray-200 rounded p-4">
+                <h4 className="font-semibold mb-2">🛡️ Moderator</h4>
+                <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
+                  <li>Έγκριση news άρθρων (<code className="bg-gray-100 px-1 rounded">canApproveNews</code>)</li>
+                  <li>Διαχείριση τοποθεσιών (<code className="bg-gray-100 px-1 rounded">canManageLocations</code>)</li>
+                  <li>Πρόσβαση στον πίνακα διαχείρισης</li>
+                  <li>Ενημέρωση/επαλήθευση ρόλων χρηστών (μαζί με admin)</li>
                 </ul>
               </div>
               <div className="bg-white border border-gray-200 rounded p-4">
                 <h4 className="font-semibold mb-2">⚙️ Admin</h4>
                 <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
-                  <li>Όλα τα δικαιώματα του Editor</li>
-                  <li>Διαγραφή οποιουδήποτε περιεχομένου</li>
-                  <li>Διαχείριση χρηστών</li>
-                  <li>Διαχείριση πλατφόρμας</li>
+                  <li>Όλα τα δικαιώματα των παραπάνω ρόλων</li>
+                  <li>Διαγραφή οποιουδήποτε περιεχομένου (<code className="bg-gray-100 px-1 rounded">canDeleteArticle</code>)</li>
+                  <li>Πλήρης διαχείριση χρηστών (<code className="bg-gray-100 px-1 rounded">canManageUsers</code>)</li>
+                  <li>Ανάθεση και αλλαγή ρόλων</li>
                 </ul>
               </div>
             </div>
@@ -285,57 +292,78 @@ export default function TransparencyPage() {
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Προστασία δεδομένων</h2>
+        <h2 className="text-2xl font-semibold mb-3">Ασφάλεια &amp; Ιδιωτικότητα</h2>
         
         <div className="space-y-4">
           <p className="text-gray-700 mb-3">
-            Η ασφάλεια και η προστασία των δεδομένων σας είναι προτεραιότητα:
+            Η ασφάλεια των δεδομένων σας υλοποιείται μέσω συγκεκριμένων τεχνικών ελέγχων:
           </p>
 
           <div className="grid md:grid-cols-2 gap-4">
             <div className="bg-white border border-gray-200 rounded p-4">
-              <h3 className="font-semibold mb-2">🔒 Κρυπτογράφηση</h3>
+              <h3 className="font-semibold mb-2">🔒 Κρυπτογράφηση &amp; Hashing</h3>
               <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
                 <li>HTTPS/TLS για όλες τις συνδέσεις</li>
-                <li>Bcrypt για κωδικούς</li>
-                <li>Ασφαλής αποθήκευση στη βάση δεδομένων</li>
+                <li>Bcrypt για κωδικούς (ποτέ σε καθαρό κείμενο)</li>
+                <li>AES-256-GCM κρυπτογράφηση αποθηκευμένων OAuth access tokens</li>
               </ul>
             </div>
 
             <div className="bg-white border border-gray-200 rounded p-4">
-              <h3 className="font-semibold mb-2">🛡️ Ασφάλεια</h3>
+              <h3 className="font-semibold mb-2">🛡️ Προστασία αιτημάτων</h3>
               <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
-                <li>Τακτικά security audits</li>
-                <li>Monitoring για ύποπτη δραστηριότητα</li>
-                <li>Άμεση απόκριση σε incidents</li>
+                <li>CSRF protection στα state-changing endpoints</li>
+                <li>Rate limiting ανά IP (brute-force protection)</li>
+                <li>Helmet middleware για HTTP security headers</li>
+                <li>Input validation &amp; Sequelize ORM (SQL injection protection)</li>
               </ul>
             </div>
 
             <div className="bg-white border border-gray-200 rounded p-4">
-              <h3 className="font-semibold mb-2">💾 Backups</h3>
+              <h3 className="font-semibold mb-2">👥 Έλεγχος πρόσβασης</h3>
               <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
-                <li>Καθημερινά αυτόματα backups</li>
-                <li>Ασφαλής αποθήκευση σε πολλαπλές τοποθεσίες</li>
-                <li>Δυνατότητα γρήγορης ανάκτησης</li>
+                <li>Αρχή ελάχιστων προνομίων (viewer/editor/moderator/admin)</li>
+                <li>Server-side role middleware σε κάθε προστατευμένο endpoint</li>
+                <li>Client-side permission checks για UI συνέπεια</li>
               </ul>
             </div>
 
             <div className="bg-white border border-gray-200 rounded p-4">
-              <h3 className="font-semibold mb-2">👁️ Ιδιωτικότητα</h3>
+              <h3 className="font-semibold mb-2">💾 Backups &amp; Διαθεσιμότητα</h3>
               <ul className="list-disc pl-6 text-gray-700 text-sm space-y-1">
-                <li>Ελάχιστη συλλογή δεδομένων</li>
-                <li>Δεν πουλάμε δεδομένα</li>
-                <li>Σεβασμός GDPR</li>
+                <li>Τακτικά backups δεδομένων</li>
+                <li>Δυνατότητα ανάκτησης σε περίπτωση αποτυχίας</li>
               </ul>
             </div>
           </div>
 
           <p className="text-gray-700 mt-4">
-            Για περισσότερες λεπτομέρειες, διαβάστε την{' '}
+            Για πλήρεις λεπτομέρειες σχετικά με τα δεδομένα που συλλέγουμε και τα δικαιώματά σας, διαβάστε την{' '}
             <a href="/privacy" className="text-blue-600 hover:text-blue-800 underline">
               Πολιτική Απορρήτου
             </a>.
           </p>
+        </div>
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-semibold mb-3">Audit / Logs</h2>
+        
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            <strong>Τι καταγράφεται:</strong> Η πλατφόρμα παράγει λειτουργικά logs σε επίπεδο server (μέσω PM2 ή Docker).
+            Αυτά περιλαμβάνουν αιτήματα HTTP, σφάλματα εφαρμογής και πληροφορίες εκτέλεσης.
+            Τα logs αυτά είναι διαθέσιμα μόνο στη διαχειριστική ομάδα και χρησιμοποιούνται για
+            διάγνωση τεχνικών προβλημάτων και παρακολούθηση της υγείας της υπηρεσίας.
+          </p>
+
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-5">
+            <p className="text-gray-700">
+              <strong>⚠️ Τι ΔΕΝ υπάρχει:</strong> Η πλατφόρμα δεν διαθέτει επίσημο σύστημα audit log
+              ανά ενέργεια χρήστη. Δεν δημοσιεύεται κάποια περιοδική έκθεση διαφάνειας με στατιστικά
+              moderation ή νομικών αιτημάτων. Δεν τηρείται δημόσιο ιστορικό «ποιος έκανε τι και πότε».
+            </p>
+          </div>
         </div>
       </section>
 
@@ -418,7 +446,7 @@ export default function TransparencyPage() {
       <section className="text-sm text-gray-600 border-t pt-6">
         <p>
           Αυτή η σελίδα ενημερώνεται τακτικά καθώς βελτιώνουμε τις διαδικασίες και τη μεθοδολογία μας. 
-          Τελευταία ενημέρωση: <strong>Φεβρουάριος 2026</strong>
+          Τελευταία ενημέρωση: <strong>Μάρτιος 2026</strong>
         </p>
       </section>
     </StaticPageLayout>
