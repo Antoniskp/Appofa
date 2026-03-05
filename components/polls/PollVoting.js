@@ -329,7 +329,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
 }
 
 /**
- * Complex poll option component with image handling
+ * Complex poll option component with image handling.
+ * Renders options as a vertical list with a small thumbnail and text in a row.
  */
 function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId }) {
   const [imageErrors, setImageErrors] = useState({});
@@ -339,61 +340,62 @@ function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId }) 
   };
   
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="flex flex-col gap-3">
       {options.map((option) => (
         <div
           key={option.id}
           onClick={() => setSelectedOptionId(option.id)}
-          className={`border rounded-lg overflow-hidden cursor-pointer transition ${
+          className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition ${
             selectedOptionId === option.id
-              ? 'border-blue-600 ring-2 ring-blue-600'
-              : 'border-gray-300 hover:border-blue-400'
+              ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50'
+              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
           }`}
         >
-          {option.photoUrl && !imageErrors[option.id] ? (
-            <div className="relative h-48 bg-gray-100">
-              <Image
-                src={option.photoUrl}
-                alt={option.text}
-                fill
-                className="object-cover"
-                onError={() => handleImageError(option.id)}
-              />
-            </div>
-          ) : option.photoUrl ? (
-            <div className="flex items-center justify-center h-48 bg-gray-100">
-              <PhotoIcon className="h-12 w-12 text-gray-400" />
-            </div>
-          ) : null}
-          
-          <div className="p-4">
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-2">{option.text}</h4>
-                
-                {option.displayText && (
-                  <p className="text-sm text-gray-600 mb-2">{option.displayText}</p>
-                )}
-                
-                {option.linkUrl && (
-                  <a
-                    href={option.linkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <LinkIcon className="h-4 w-4" />
-                    Περισσότερες πληροφορίες
-                  </a>
-                )}
+          {/* Thumbnail */}
+          {option.photoUrl ? (
+            !imageErrors[option.id] ? (
+              <div className="relative flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
+                <Image
+                  src={option.photoUrl}
+                  alt={option.text}
+                  fill
+                  className="object-cover"
+                  onError={() => handleImageError(option.id)}
+                />
               </div>
-              
-              {selectedOptionId === option.id && (
-                <CheckCircleIcon className="h-6 w-6 text-blue-600 flex-shrink-0" />
-              )}
-            </div>
+            ) : (
+              <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
+                <PhotoIcon className="h-7 w-7 text-gray-400" />
+              </div>
+            )
+          ) : null}
+
+          {/* Text content */}
+          <div className="flex-1 min-w-0">
+            <h4 className="font-semibold text-gray-900 truncate">{option.text}</h4>
+
+            {option.displayText && (
+              <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{option.displayText}</p>
+            )}
+
+            {option.linkUrl && (
+              <a
+                href={option.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <LinkIcon className="h-4 w-4 flex-shrink-0" />
+                Περισσότερες πληροφορίες
+              </a>
+            )}
           </div>
+
+          {/* Selection indicator */}
+          {selectedOptionId === option.id && (
+            <CheckCircleIcon className="h-6 w-6 text-blue-600 flex-shrink-0" />
+          )}
         </div>
       ))}
     </div>

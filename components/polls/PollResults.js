@@ -12,7 +12,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
+import { ArrowDownTrayIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
+import { pollAPI } from '@/lib/api';
 
 // Register ChartJS components
 ChartJS.register(
@@ -29,9 +30,12 @@ ChartJS.register(
  * Poll results visualization component with Chart.js
  * @param {Object} poll - Poll object with options and vote counts
  * @param {boolean} canView - Whether user can view results
+ * @param {boolean} canEdit - Whether user has edit rights (can access auditable export)
  */
-export default function PollResults({ poll, canView = true }) {
+export default function PollResults({ poll, canView = true, canEdit = false }) {
   const [chartType, setChartType] = useState('bar'); // 'bar', 'pie', 'doughnut'
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
+  const [isExportingJson, setIsExportingJson] = useState(false);
   
   if (!canView) {
     return (
@@ -163,6 +167,29 @@ export default function PollResults({ poll, canView = true }) {
       link.href = url;
       link.click();
     }
+    setExportMenuOpen(false);
+  };
+
+  const handleExportJson = async () => {
+    setIsExportingJson(true);
+    setExportMenuOpen(false);
+    try {
+      const response = await pollAPI.exportData(poll.id);
+      if (response.success) {
+        const json = JSON.stringify(response.data, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = `poll-${poll.id}-audit.json`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error('Failed to export poll data:', err);
+    } finally {
+      setIsExportingJson(false);
+    }
   };
   
   return (
@@ -202,13 +229,44 @@ export default function PollResults({ poll, canView = true }) {
           </button>
         </div>
         
-        <button
-          onClick={handleExportChart}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm font-medium"
-        >
-          <ArrowDownTrayIcon className="h-4 w-4" />
-          Εξαγωγή
-        </button>
+        {/* Export controls */}
+        {canEdit ? (
+          <div className="relative">
+            <button
+              onClick={() => setExportMenuOpen(prev => !prev)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm font-medium"
+            >
+              <ArrowDownTrayIcon className="h-4 w-4" />
+              Εξαγωγή
+              <ChevronDownIcon className="h-3 w-3" />
+            </button>
+            {exportMenuOpen && (
+              <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                <button
+                  onClick={handleExportChart}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-md"
+                >
+                  Εξαγωγή ως PNG
+                </button>
+                <button
+                  onClick={handleExportJson}
+                  disabled={isExportingJson}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isExportingJson ? 'Γίνεται λήψη...' : 'Εξαγωγή δεδομένων (JSON)'}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={handleExportChart}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm font-medium"
+          >
+            <ArrowDownTrayIcon className="h-4 w-4" />
+            Εξαγωγή
+          </button>
+        )}
       </div>
       
       {/* Chart Display */}

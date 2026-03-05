@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { Poll, PollOption, PollVote, Comment, User, Location, LocationLink, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
@@ -8,6 +9,25 @@ const {
   normalizeInteger,
   normalizeStringArray
 } = require('../utils/validators');
+
+/**
+ * Generate a privacy-preserving, per-poll pseudonymous voter reference.
+ * Uses HMAC-SHA256 keyed with POLL_EXPORT_HMAC_SECRET so that:
+ *  - The real userId is never exposed.
+ *  - The ref is stable for the same (pollId, userId) pair.
+ *  - The ref cannot be correlated across polls (pollId is part of the HMAC message).
+ *
+ * @param {number|string} pollId
+ * @param {number|string} userId
+ * @returns {string} hex HMAC digest
+ */
+const computeVoterRef = (pollId, userId) => {
+  const secret = process.env.POLL_EXPORT_HMAC_SECRET;
+  if (!secret) {
+    throw new Error('POLL_EXPORT_HMAC_SECRET environment variable is not set.');
+  }
+  return crypto.createHmac('sha256', secret).update(`${pollId}:${userId}`).digest('hex');
+};
 
 const POLL_TYPES = ['simple', 'complex'];
 const POLL_VISIBILITIES = ['public', 'private', 'locals_only'];
@@ -1450,6 +1470,105 @@ const pollController = {
       return res.status(500).json({
         success: false,
         message: 'Failed to fetch voted polls.',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      });
+    }
+  },
+
+  // Export auditable poll data (creator / admin only)
+  exportPoll: async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      const poll = await Poll.findByPk(id, {
+        include: [
+          {
+            model: PollOption,
+            as: 'options',
+            attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+            include: [
+              {
+                model: PollVote,
+                as: 'votes',
+                attributes: ['id', 'userId', 'isAuthenticated', 'createdAt', 'updatedAt']
+              }
+            ]
+          }
+        ],
+        order: [[{ model: PollOption, as: 'options' }, 'order', 'ASC']]
+      });
+
+      if (!poll) {
+        return res.status(404).json({
+          success: false,
+          message: 'Poll not found.'
+        });
+      }
+
+      // Access control: creator or admin only (same as edit rights)
+      if (poll.creatorId !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. Only the poll creator or admin can export poll data.'
+        });
+      }
+
+      const pollData = poll.toJSON();
+
+      const options = pollData.options.map(option => {
+        const votes = (option.votes || []).map(vote => {
+          const entry = {
+            vote_id: vote.id,
+            voter_ref: vote.userId
+              ? computeVoterRef(poll.id, vote.userId)
+              : null,
+            is_authenticated: vote.isAuthenticated,
+            voted_at: vote.updatedAt || vote.createdAt
+          };
+          return entry;
+        });
+
+        return {
+          id: option.id,
+          text: option.text,
+          photoUrl: option.photoUrl || null,
+          linkUrl: option.linkUrl || null,
+          displayText: option.displayText || null,
+          answerType: option.answerType || null,
+          order: option.order,
+          vote_count: votes.length,
+          votes
+        };
+      });
+
+      const totalVotes = options.reduce((sum, opt) => sum + opt.vote_count, 0);
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          exported_at: new Date().toISOString(),
+          poll: {
+            id: poll.id,
+            title: poll.title,
+            description: poll.description,
+            type: poll.type,
+            status: poll.status,
+            deadline: poll.deadline,
+            createdAt: poll.createdAt,
+            updatedAt: poll.updatedAt
+          },
+          summary: {
+            totalVotes,
+            totalOptions: options.length
+          },
+          options
+        }
+      });
+    } catch (error) {
+      console.error('Error exporting poll data:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to export poll data.',
         error: process.env.NODE_ENV === 'development' ? error.message : undefined
       });
     }

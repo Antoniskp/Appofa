@@ -1702,4 +1702,111 @@ describe('Poll API Tests', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('GET /api/polls/:id/export - Export Poll Data', () => {
+    let exportPollId;
+    let exportOptionId;
+
+    beforeAll(async () => {
+      // Set HMAC secret for tests
+      process.env.POLL_EXPORT_HMAC_SECRET = 'test-hmac-secret-for-polls';
+
+      const csrfToken = 'test-csrf-export-poll';
+      const { storeCsrfToken } = require('../src/utils/csrf');
+      storeCsrfToken(csrfToken, adminUserId);
+
+      // Create a poll owned by admin
+      const createResp = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, `csrf_token=${csrfToken}`])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Export test poll',
+          type: 'simple',
+          allowUserContributions: false,
+          allowUnauthenticatedVotes: false,
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [{ text: 'Option A' }, { text: 'Option B' }]
+        });
+
+      exportPollId = createResp.body.data.id;
+      exportOptionId = createResp.body.data.options[0].id;
+
+      // Insert vote directly in DB (avoids CSRF complexity in setup)
+      await PollVote.create({
+        pollId: exportPollId,
+        optionId: exportOptionId,
+        userId: adminUserId,
+        isAuthenticated: true,
+        ipAddress: '127.0.0.1'
+      });
+    });
+
+    test('should allow creator to export poll data', async () => {
+      const response = await request(app)
+        .get(`/api/polls/${exportPollId}/export`)
+        .set('Cookie', [`auth_token=${adminToken}`]);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      const { data } = response.body;
+      expect(data.poll.id).toBe(exportPollId);
+      expect(data.poll.title).toBe('Export test poll');
+      expect(Array.isArray(data.options)).toBe(true);
+      expect(data.summary.totalVotes).toBeGreaterThanOrEqual(1);
+
+      // Find the voted option
+      const votedOption = data.options.find(o => o.id === exportOptionId);
+      expect(votedOption).toBeDefined();
+      expect(votedOption.votes).toHaveLength(1);
+
+      const vote = votedOption.votes[0];
+      expect(vote).toHaveProperty('voter_ref');
+      expect(vote).toHaveProperty('voted_at');
+      // voter_ref should be a hex HMAC string (64 hex chars for SHA-256)
+      expect(vote.voter_ref).toMatch(/^[0-9a-f]{64}$/);
+      // Raw userId must NOT be present
+      expect(vote).not.toHaveProperty('userId');
+    });
+
+    test('should deny non-creator non-admin from exporting', async () => {
+      const response = await request(app)
+        .get(`/api/polls/${exportPollId}/export`)
+        .set('Cookie', [`auth_token=${userToken}`]);
+
+      expect(response.status).toBe(403);
+    });
+
+    test('should deny unauthenticated access to export', async () => {
+      const response = await request(app)
+        .get(`/api/polls/${exportPollId}/export`);
+
+      expect(response.status).toBe(401);
+    });
+
+    test('should return 404 for non-existent poll export', async () => {
+      const response = await request(app)
+        .get('/api/polls/999999/export')
+        .set('Cookie', [`auth_token=${adminToken}`]);
+
+      expect(response.status).toBe(404);
+    });
+
+    test('voter_ref should be stable for same pollId and userId', async () => {
+      const resp1 = await request(app)
+        .get(`/api/polls/${exportPollId}/export`)
+        .set('Cookie', [`auth_token=${adminToken}`]);
+
+      const resp2 = await request(app)
+        .get(`/api/polls/${exportPollId}/export`)
+        .set('Cookie', [`auth_token=${adminToken}`]);
+
+      const option1 = resp1.body.data.options.find(o => o.votes.length > 0);
+      const option2 = resp2.body.data.options.find(o => o.votes.length > 0);
+
+      expect(option1.votes[0].voter_ref).toBe(option2.votes[0].voter_ref);
+    });
+  });
 });
