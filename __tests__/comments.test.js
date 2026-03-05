@@ -108,9 +108,10 @@ describe('Comment System Tests', () => {
   // ─── GET /api/comments ────────────────────────────────────────────────────
 
   describe('GET /api/comments', () => {
-    it('should require authentication', async () => {
+    it('should allow unauthenticated access (comments are publicly readable)', async () => {
       const res = await request(app).get(`/api/comments?entityType=article&entityId=${testArticleId}`);
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
     });
 
     it('should return 400 when entityType is missing', async () => {

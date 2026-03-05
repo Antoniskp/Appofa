@@ -224,12 +224,6 @@ export default function CommentsThread({
   const [error, setError] = useState(null);
 
   const fetchComments = useCallback(async () => {
-    if (!user) {
-      setComments([]);
-      setTotalCount(0);
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     try {
       const result = await commentAPI.getComments(entityType, entityId);
@@ -241,7 +235,7 @@ export default function CommentsThread({
     } finally {
       setLoading(false);
     }
-  }, [entityType, entityId, user]);
+  }, [entityType, entityId]);
 
   useEffect(() => {
     fetchComments();
@@ -265,21 +259,6 @@ export default function CommentsThread({
       return updateInTree(prev);
     });
   }, []);
-
-  if (!user) {
-    return (
-      <div className="mt-8 border-t border-gray-200 pt-6">
-        <h2 className="text-lg font-semibold mb-4">Comments</h2>
-        <p className="text-sm text-gray-500 italic">
-          Please{' '}
-          <a href="/login" className="text-blue-600 hover:underline">
-            log in
-          </a>{' '}
-          to view and post comments.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="mt-8 border-t border-gray-200 pt-6">
@@ -325,11 +304,21 @@ export default function CommentsThread({
       ) : (
         <>
           <div className="mb-6">
-            <CommentForm
-              entityType={entityType}
-              entityId={entityId}
-              onSuccess={handleCommentAdded}
-            />
+            {user ? (
+              <CommentForm
+                entityType={entityType}
+                entityId={entityId}
+                onSuccess={handleCommentAdded}
+              />
+            ) : (
+              <p className="text-sm text-gray-500 italic">
+                Please{' '}
+                <a href="/login" className="text-blue-600 hover:underline">
+                  log in
+                </a>{' '}
+                to post a comment.
+              </p>
+            )}
           </div>
           {loading ? (
             <p className="text-sm text-gray-400">Loading comments...</p>
@@ -337,7 +326,7 @@ export default function CommentsThread({
             <p className="text-sm text-red-500">{error}</p>
           ) : comments.length === 0 ? (
             <p className="text-sm text-gray-400">
-              No comments yet. Be the first to comment!
+              {user ? 'No comments yet. Be the first to comment!' : 'No comments yet.'}
             </p>
           ) : (
             <div className="space-y-4">
