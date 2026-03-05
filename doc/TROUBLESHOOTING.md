@@ -40,3 +40,41 @@ For other issues, please check:
 - [Project Summary](PROJECT_SUMMARY.md)
 - [Architecture Documentation](ARCHITECTURE.md)
 - [Security Guidelines](SECURITY.md)
+
+## npm Install Warnings
+
+### Deprecated Package Warnings During `npm install`
+
+**Warnings:**
+```
+npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+npm warn deprecated npmlog@6.0.2: This package is no longer supported.
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant...
+npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
+npm warn deprecated gauge@4.0.4: This package is no longer supported.
+```
+
+**Cause:**
+These warnings come from transitive dependencies of the `sqlite3` **dev dependency**, which is used only for local testing. The packages (`npmlog`, `gauge`, `are-we-there-yet`, `@npmcli/move-file`) are pulled in by `node-gyp` (the native module builder used by `sqlite3`). They do **not** affect the production application.
+
+**Status:** These are upstream warnings that will be resolved when `sqlite3` updates its `node-gyp` dependency. No action is required on the application side.
+
+**To suppress these warnings** (suppresses all deprecation warnings during install):
+```bash
+npm install --no-warnings
+```
+
+### npm Audit Vulnerabilities (Post-Install)
+
+After `npm install` you may see:
+```
+5 vulnerabilities (5 low)
+```
+
+These 5 low-severity vulnerabilities all reside within the `sqlite3` dev-dependency chain and are **not present in production**. To confirm zero production vulnerabilities, run:
+
+```bash
+npm audit --omit=dev
+```
+
+The high-severity `tar` vulnerability that affected earlier versions has been resolved by the `tar>=7.5.10` override in `package.json`. See [Security Guidelines](SECURITY.md) for full details.

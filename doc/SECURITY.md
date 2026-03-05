@@ -45,6 +45,31 @@ All CodeQL security alerts have been resolved:
 
 **Final CodeQL Scan**: 0 security alerts
 
+### npm Dependency Audit (2026-03-05)
+
+#### Fixed: `tar` Hardlink Path Traversal (High Severity)
+- **CVE/Advisory**: [GHSA-qffp-2rhf-9h96](https://github.com/advisories/GHSA-qffp-2rhf-9h96)
+- **Severity**: High
+- **Affected versions**: `tar <=7.5.9`
+- **Resolution**: ✅ Updated the `tar` override in `package.json` from `^7.5.8` to `>=7.5.10`, ensuring the patched version is installed.
+
+#### Known: Low-Severity Vulnerabilities in `sqlite3` Dev Dependency
+The following low-severity vulnerabilities exist in the transitive dependency tree of the `sqlite3` **development** package (used only for local testing):
+
+| Package | Vulnerability | Severity | Advisory |
+|---------|--------------|----------|---------|
+| `@tootallnate/once <3.0.1` | Incorrect Control Flow Scoping | Low | [GHSA-vpq2-c234-7xj6](https://github.com/advisories/GHSA-vpq2-c234-7xj6) |
+| `http-proxy-agent 4.0.1–5.0.0` | Depends on vulnerable `@tootallnate/once` | Low | — |
+| `make-fetch-happen 8.0.2–11.1.1` | Depends on vulnerable chain | Low | — |
+| `node-gyp 8.0.0–9.4.1` | Depends on vulnerable chain | Low | — |
+| `cacache 14.0.0–18.0.4` | Depends on vulnerable chain | Low | — |
+
+**Impact**: These packages are only used during `npm install` of native addons (in the `sqlite3` dev dependency). They are **not present in the production bundle** and do not affect the running application.
+
+**Upstream fix**: The only available automated fix (`npm audit fix --force`) would downgrade `sqlite3` to `5.0.2`, which is a **breaking major version change** that may break existing tests. Monitor the `sqlite3` repository for a non-breaking release that updates its `node-gyp` dependency.
+
+**Workaround**: Run `npm audit --omit=dev` to confirm zero vulnerabilities in production dependencies.
+
 ## Security Best Practices Applied
 
 1. ✅ Passwords never stored in plain text
@@ -98,6 +123,8 @@ In case of a security incident:
 
 ---
 
-**Last Updated**: 2026-01-25  
+**Last Updated**: 2026-03-05  
 **Security Review Status**: ✅ Passed  
-**CodeQL Alerts**: 0
+**CodeQL Alerts**: 0  
+**npm Audit (production deps)**: 0 vulnerabilities (`npm audit --omit=dev`)  
+**npm Audit (all deps)**: 5 low (dev-only, in `sqlite3` test dependency — see above)
