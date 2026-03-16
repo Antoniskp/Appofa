@@ -1,7 +1,7 @@
 # Project Summary: News Application
 
 ## Overview
-A complete, production-ready news application built with Node.js, Express, PostgreSQL, and JWT authentication. Features a robust role-based access control system and comprehensive security measures.
+A complete, production-ready news application built with Node.js, Express, PostgreSQL, Next.js, and JWT authentication. Features a robust role-based access control system, comprehensive security measures, and a rich set of community features including polls, messaging, and location-based content.
 
 ## ✅ Completed Features
 
@@ -9,27 +9,45 @@ A complete, production-ready news application built with Node.js, Express, Postg
 - **Framework**: Express.js 5.x
 - **Database**: PostgreSQL with Sequelize ORM
 - **Authentication**: JWT-based token authentication
-- **Security**: Rate limiting, password hashing, input validation
+- **Security**: Rate limiting, password hashing, CSRF protection, input validation
 
 ### 2. User Management
 - **Registration & Login**: Secure user registration and authentication
+- **Social Login**: GitHub OAuth integration (account linking supported)
 - **Password Security**: bcrypt hashing with salt (10 rounds)
 - **User Roles**: 
   - **Admin**: Full access to all operations
+  - **Moderator**: Content moderation capabilities
   - **Editor**: Can create and edit all articles
   - **Viewer**: Can create articles and view published content
 
 ### 3. Article Management
 - **CRUD Operations**: Complete Create, Read, Update, Delete functionality
 - **Article Status**: Draft, Published, Archived
-- **Categories**: Customizable article categories
+- **Article Types**: Personal, Articles, News with dependent category dropdowns
 - **Pagination**: Built-in pagination for article listings
 - **Author Attribution**: Articles linked to their authors
 
-### 4. Security Features
+### 4. Poll & Statistics System
+- **Simple and Complex Polls**: Multiple answer types supported
+- **Voting**: Authenticated and anonymous voting
+- **Chart.js Visualizations**: Interactive results charts
+- **Audit Export**: Privacy-preserving JSON export of poll votes
+
+### 5. Hierarchical Location System
+- **Levels**: International → Country → Prefecture → Municipality
+- **Location-Based Content**: Articles and polls can be associated with locations
+- **Seeding**: Built-in location data seeding
+
+### 6. Message System
+- **User-to-User Messaging**: Direct messaging between users
+- **Inbox/Outbox**: Message management interface
+
+### 7. Security Features
 - ✅ JWT token authentication with expiration
 - ✅ Password hashing using bcrypt
 - ✅ Rate limiting on all endpoints
+- ✅ CSRF protection
 - ✅ Input validation and sanitization
 - ✅ Role-based authorization
 - ✅ Environment variable configuration
@@ -37,12 +55,14 @@ A complete, production-ready news application built with Node.js, Express, Postg
 - ✅ CORS configuration
 - ✅ **0 CodeQL security alerts**
 
-### 5. API Endpoints
+### 8. API Endpoints
 
 #### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
 - `GET /api/auth/profile` - Get user profile (authenticated)
+- `GET /api/auth/github` - Initiate GitHub OAuth flow
+- `GET /api/auth/github/callback` - GitHub OAuth callback
 
 #### Articles
 - `GET /api/articles` - Get all articles (public, with filters)
@@ -51,32 +71,49 @@ A complete, production-ready news application built with Node.js, Express, Postg
 - `PUT /api/articles/:id` - Update article (authenticated, role-based)
 - `DELETE /api/articles/:id` - Delete article (authenticated, role-based)
 
-### 6. Documentation
+#### Polls
+- `GET /api/polls` - Get all polls
+- `GET /api/polls/:id` - Get single poll
+- `POST /api/polls` - Create poll (authenticated)
+- `POST /api/polls/:id/vote` - Vote on a poll
+- `GET /api/polls/:id/results` - Get poll results
+- `GET /api/polls/:id/export` - Export poll audit data (creator or admin)
+
+#### Locations
+- `GET /api/locations` - Get location hierarchy
+- `GET /api/locations/:id` - Get single location
+
+### 9. Documentation
 - ✅ Comprehensive README with setup instructions
 - ✅ API testing guide with curl examples
-- ✅ Deployment guide (VPS, Docker, Heroku, AWS)
+- ✅ Deployment guides (VPS, Docker, Heroku, AWS)
 - ✅ Security documentation
 - ✅ Postman collection for API testing
+- ✅ Contributing guide
 
-### 7. Testing
+### 10. Testing
 - ✅ Jest testing framework configured
 - ✅ Integration tests for all endpoints
 - ✅ Authentication flow tests
 - ✅ Role-based access control tests
 - ✅ CRUD operation tests
+- ✅ Poll system tests (41 tests, 66–89% coverage)
 
-### 8. Deployment Support
+### 11. Deployment Support
 - ✅ Docker support with docker-compose
 - ✅ Environment configuration templates
-- ✅ Database setup scripts
+- ✅ Database setup and migration scripts
 - ✅ Production-ready configuration
-- ✅ Multi-platform deployment guides
+- ✅ Multi-platform deployment guides (VPS, Heroku, AWS)
 
 ## 📊 Project Statistics
 
-- **Total Files**: 30+
-- **Lines of Code**: ~3,000+
-- **Test Coverage**: Comprehensive integration tests
+- **Total Files**: 60+
+- **Lines of Code**: ~3,000+ (backend core)
+- **Frontend Pages**: 15+
+- **API Endpoints**: 30+
+- **Database Models**: 8+
+- **Test Coverage**: 66–89% (polls feature)
 - **Security Alerts**: 0 (CodeQL verified)
 - **Dependencies**: Production-ready packages only
 
@@ -94,6 +131,7 @@ A complete, production-ready news application built with Node.js, Express, Postg
 4. Input validation on all user inputs
 5. SQL injection protection via Sequelize
 6. Environment-based configuration
+7. CSRF protection on state-changing operations
 
 ## 🚀 Deployment Ready
 
@@ -106,13 +144,18 @@ The application is ready for deployment with:
 
 ## 📝 Documentation Files
 
-1. **README.md** - Main documentation with setup instructions
-2. **doc/API_TESTING.md** - API testing examples
-3. **doc/DEPLOYMENT.md** - Deployment guides for various platforms
-4. **doc/SECURITY.md** - Security features and best practices
-5. **doc/VPS_DEPLOYMENT.md** - VPS deployment guide
-6. **doc/ARCHITECTURE.md** - Architecture overview
-5. **postman_collection.json** - Postman API collection
+All documentation lives in the [`doc/`](.) directory. See [INDEX.md](INDEX.md) for the full list.
+
+Key files:
+1. **../README.md** - Main documentation with setup instructions
+2. **API_TESTING.md** - API testing examples with curl
+3. **DEPLOYMENT_GUIDE.md** - Deployment guides for various platforms
+4. **SECURITY.md** - Security features and best practices
+5. **VPS_SETUP.md** - VPS deployment guide
+6. **ARCHITECTURE.md** - Architecture overview
+7. **POLL_FEATURE.md** - Poll system documentation
+8. **MIGRATION_GUIDE.md** - Google OAuth migration guide
+9. **CONTRIBUTING.md** - Contribution guidelines
 
 ## 🧪 Testing
 
@@ -127,30 +170,37 @@ Test coverage includes:
 - Role-based access control
 - Article CRUD operations
 - Permission validation
+- Poll creation, voting, and results
+- Location associations
 
 ## 📦 Technology Stack
 
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: PostgreSQL
-- **ORM**: Sequelize
-- **Authentication**: JWT (jsonwebtoken)
-- **Password**: bcrypt
-- **Rate Limiting**: express-rate-limit
-- **Testing**: Jest + Supertest
-- **Containerization**: Docker
+| Layer | Technology |
+|-------|-----------|
+| Runtime | Node.js 22+ |
+| Backend Framework | Express.js 5.x |
+| Database | PostgreSQL 12+ |
+| ORM | Sequelize 6.x |
+| Authentication | JWT (jsonwebtoken) + bcrypt |
+| Frontend | Next.js 16 (App Router) |
+| Styling | Tailwind CSS |
+| Charts | Chart.js |
+| Rate Limiting | express-rate-limit |
+| Testing | Jest + Supertest |
+| Containerization | Docker |
 
 ## 🎯 Role-Based Access Matrix
 
-| Operation | Viewer | Editor | Admin |
-|-----------|--------|--------|-------|
-| View Published Articles | ✅ | ✅ | ✅ |
-| View All Articles | ❌ | ✅ | ✅ |
-| Create Article | ✅ | ✅ | ✅ |
-| Edit Own Article | ✅ | ✅ | ✅ |
-| Edit Any Article | ❌ | ✅ | ✅ |
-| Delete Own Article | ✅ | ✅ | ✅ |
-| Delete Any Article | ❌ | ❌ | ✅ |
+| Operation | Viewer | Editor | Moderator | Admin |
+|-----------|--------|--------|-----------|-------|
+| View Published Articles | ✅ | ✅ | ✅ | ✅ |
+| View All Articles | ❌ | ✅ | ✅ | ✅ |
+| Create Article | ✅ | ✅ | ✅ | ✅ |
+| Edit Own Article | ✅ | ✅ | ✅ | ✅ |
+| Edit Any Article | ❌ | ✅ | ✅ | ✅ |
+| Delete Own Article | ✅ | ✅ | ✅ | ✅ |
+| Delete Any Article | ❌ | ❌ | ✅ | ✅ |
+| Manage Users | ❌ | ❌ | ❌ | ✅ |
 
 ## 🌟 Key Highlights
 
@@ -171,22 +221,14 @@ Test coverage includes:
 - Real-time notifications
 - API versioning
 - Swagger/OpenAPI documentation
-- GraphQL support
 - Caching layer (Redis)
-- Microservices architecture
 
 ## 🎉 Project Status
 
 **Status**: ✅ Complete and Production Ready
 
-All requirements from the problem statement have been successfully implemented:
-- ✅ Application for news
-- ✅ Professional authentication (JWT)
-- ✅ PostgreSQL database
-- ✅ User roles (Admin, Moderator, Editor, Viewer)
-
 ---
 
-**Repository**: https://github.com/Antoniskp/appofasiv8  
-**License**: ISC  
+**Repository**: https://github.com/Antoniskp/Appofa  
+**License**: All Rights Reserved (see LICENSE)  
 **Created**: 2026-01-25
