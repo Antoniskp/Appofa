@@ -53,22 +53,45 @@ All CodeQL security alerts have been resolved:
 - **Affected versions**: `tar <=7.5.9`
 - **Resolution**: ✅ Updated the `tar` override in `package.json` from `^7.5.8` to `>=7.5.10`, ensuring the patched version is installed.
 
-#### Known: Low-Severity Vulnerabilities in `sqlite3` Dev Dependency
-The following low-severity vulnerabilities exist in the transitive dependency tree of the `sqlite3` **development** package (used only for local testing):
+### npm Dependency Audit (2026-03-16)
 
-| Package | Vulnerability | Severity | Advisory |
-|---------|--------------|----------|---------|
-| `@tootallnate/once <3.0.1` | Incorrect Control Flow Scoping | Low | [GHSA-vpq2-c234-7xj6](https://github.com/advisories/GHSA-vpq2-c234-7xj6) |
-| `http-proxy-agent 4.0.1–5.0.0` | Depends on vulnerable `@tootallnate/once` | Low | — |
-| `make-fetch-happen 8.0.2–11.1.1` | Depends on vulnerable chain | Low | — |
-| `node-gyp 8.0.0–9.4.1` | Depends on vulnerable chain | Low | — |
-| `cacache 14.0.0–18.0.4` | Depends on vulnerable chain | Low | — |
+Eight high-severity vulnerabilities were reported against the existing lockfile (new advisories published, no code changes). All have been resolved via `npm audit fix` and override updates.
 
-**Impact**: These packages are only used during `npm install` of native addons (in the `sqlite3` dev dependency). They are **not present in the production bundle** and do not affect the running application.
+#### Why new vulnerabilities appear without code changes
 
-**Upstream fix**: The only available automated fix (`npm audit fix --force`) would downgrade `sqlite3` to `5.0.2`, which is a **breaking major version change** that may break existing tests. Monitor the `sqlite3` repository for a non-breaking release that updates its `node-gyp` dependency.
+The npm advisory database is continuously updated. A package already installed can become flagged as vulnerable the moment a new CVE is published against it—even if your code hasn't changed in weeks. This is expected behavior; the fix is regular dependency maintenance, not a rewrite.
 
-**Workaround**: Run `npm audit --omit=dev` to confirm zero vulnerabilities in production dependencies.
+#### Fixed: express-rate-limit IPv4-mapped IPv6 bypass (High)
+- **Advisory**: [GHSA-46wh-pxpv-q5gq](https://github.com/advisories/GHSA-46wh-pxpv-q5gq)
+- **Affected versions**: `express-rate-limit 8.2.0 – 8.2.1`
+- **Resolution**: ✅ Updated lockfile to `express-rate-limit@8.3.1`; bumped `package.json` minimum to `^8.3.1`.
+
+#### Fixed: Sequelize SQL Injection via JSON Column Cast Type (High)
+- **Advisory**: [GHSA-6457-6jrx-69cr](https://github.com/advisories/GHSA-6457-6jrx-69cr)
+- **Affected versions**: `sequelize 6.0.0-beta.1 – 6.37.7`
+- **Resolution**: ✅ Updated lockfile to `sequelize@6.37.8`; bumped `package.json` minimum to `^6.37.8`.
+
+#### Fixed: flatted unbounded recursion DoS in parse() (High)
+- **Advisory**: [GHSA-25h7-pfq9-p65f](https://github.com/advisories/GHSA-25h7-pfq9-p65f)
+- **Affected versions**: `flatted <3.4.0`
+- **Resolution**: ✅ Updated lockfile to `flatted@3.4.1` (transitive dependency, no direct reference in `package.json` required).
+
+#### Fixed: node-tar Symlink Path Traversal (High)
+- **Advisory**: [GHSA-9ppj-qmqm-q256](https://github.com/advisories/GHSA-9ppj-qmqm-q256)
+- **Affected versions**: `tar <=7.5.10` (transitive via `sqlite3 → node-gyp → make-fetch-happen → cacache → tar`)
+- **Resolution**: ✅ Updated lockfile to `tar@7.5.11`; tightened `package.json` override to `>=7.5.11`.
+
+#### Current audit status (2026-03-16)
+| Scope | High | Medium | Low |
+|-------|------|--------|-----|
+| `npm audit --omit=dev` (production) | **0** | 0 | 0 |
+| `npm audit` (all deps incl. dev) | **0** | 0 | 0 |
+
+#### Recommended maintenance workflow
+1. **Weekly**: run `npm audit` — fix highs/criticals promptly via `npm audit fix`.
+2. **Before every deploy**: the CI workflow (`.github/workflows/security-audit.yml`) blocks on `npm audit --omit=dev --audit-level=high`.
+3. **Monthly / on Dependabot alerts**: review and merge non-breaking patch/minor bumps.
+4. **Avoid `npm audit fix --force`** unless you have tested the breaking changes; major version bumps can break the app.
 
 ## Security Best Practices Applied
 
@@ -123,8 +146,8 @@ In case of a security incident:
 
 ---
 
-**Last Updated**: 2026-03-05  
+**Last Updated**: 2026-03-16  
 **Security Review Status**: ✅ Passed  
 **CodeQL Alerts**: 0  
 **npm Audit (production deps)**: 0 vulnerabilities (`npm audit --omit=dev`)  
-**npm Audit (all deps)**: 5 low (dev-only, in `sqlite3` test dependency — see above)
+**npm Audit (all deps)**: 0 vulnerabilities
