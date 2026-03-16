@@ -6,49 +6,60 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - JWT-based authentication with role-based access control (Admin, Moderator, Editor, Viewer)
 - **GitHub OAuth integration** for easy signup/login and account linking
 - **Google Analytics integration** for tracking page views and custom events
-- **Poll and Statistics System** with flexible answer types, voting, and Chart.js visualizations
+- **Poll and Statistics System** with flexible answer types, voting, Chart.js visualizations, and auditable JSON export
+- **Message system** for user-to-user communication
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
 - Article types and categories with dependent dropdowns (Personal, Articles, News)
+- Hierarchical location system (International, Country, Prefecture, Municipality)
 - Next.js App Router frontend with Tailwind CSS styling
 
 ## Documentation
+
+See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 
 ### Core Documentation
 - [Project Summary](doc/PROJECT_SUMMARY.md) - Holistic project overview
 - [Architecture](doc/ARCHITECTURE.md) - System architecture and middleware
 - [Security](doc/SECURITY.md) - Security best practices and considerations
+- [Contributing](doc/CONTRIBUTING.md) - How to contribute to the project
 
 ### Features
 - [Poll & Statistics System](doc/POLL_FEATURE.md) - Complete poll system with voting, results, and Chart.js visualizations
+- [Poll Audit Export](doc/POLL_EXPORT_AUDIT.md) - Privacy-preserving poll data export
 - [Locations Model](doc/LOCATION_MODEL.md) - Hierarchical locations system
 - [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
 - [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
 - [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
+- [Message System](doc/MESSAGE_SYSTEM_IMPLEMENTATION.md) - User messaging feature
 
 ### Deployment & Operations
 - [VPS Setup Guide](doc/VPS_SETUP.md) - **Complete VPS deployment guide** (Ubuntu/Debian)
 - [Deployment Guide](doc/DEPLOYMENT_GUIDE.md) - Local, Docker, and cloud platform deployments
 - [Upgrade Guide](doc/UPGRADE_GUIDE.md) - Migration and upgrade instructions
-- [Migrations](doc/MIGRATIONS.md) - Database migration guide
+- [Migration Guide](doc/MIGRATION_GUIDE.md) - Google OAuth migration guide
+- [Migrations](doc/MIGRATIONS.md) - Database migration reference
 - [Node Upgrade Guide](doc/NODE_UPGRADE_VPS.md) - Node.js upgrade instructions for VPS
 - [Troubleshooting](doc/TROUBLESHOOTING.md) - Common issues and solutions
 
 ### Development & Testing
-- [API Testing Examples](doc/API_TESTING.md) - API usage and testing
+- [API Testing Examples](doc/API_TESTING.md) - API usage and testing with curl
 - [Poll Testing](doc/POLL_TESTING.md) - Poll system testing checklist
+- [Message System Testing](doc/MESSAGE_SYSTEM_TESTING.md) - Message system testing guide
+- [Article Types Testing](doc/ARTICLE_TYPES_TESTING.md) - Article type system testing
+- [Dependency Updates](doc/DEPENDENCY_UPDATES.md) - Dependency management and security audits
 - [Copilot Agents](doc/COPILOT_AGENTS.md) - AI agent configuration
 - [Postman Collection](postman_collection.json) - API testing collection
 
 ## Prerequisites
-- Node.js 18+
+- Node.js 22+
 - PostgreSQL 12+
-- npm
+- npm 10+
 
 ## Quick Start
 ```bash
-git clone https://github.com/Antoniskp/appofasiv8.git
-cd appofasiv8
+git clone https://github.com/Antoniskp/Appofa.git
+cd Appofa
 npm install
 cp .env.example .env
 ```
@@ -162,20 +173,25 @@ npm run seed
 
 ## Scripts
 ```bash
-npm run dev                  # API server (development)
-npm start                    # API server (production)
-npm run frontend             # Next.js dev server (port 3001)
-npm run frontend:build       # Next.js production build
-npm run frontend:start       # Next.js production server
-npm test                     # Jest tests
-npm run lint                 # ESLint static analysis
-npm run seed                 # Seed database with sample data
-npm run migrate:article-types # Migrate existing articles to new type field
+npm run dev                   # API server (development, with auto-reload)
+npm start                     # API server (production)
+npm run frontend              # Next.js dev server (port 3001)
+npm run frontend:build        # Next.js production build
+npm run frontend:start        # Next.js production server
+npm test                      # Jest tests with coverage
+npm run lint                  # ESLint static analysis
+npm run seed                  # Seed database with sample data
+npm run seed:locations        # Seed database with location hierarchy
+npm run migrate               # Run all pending migrations
+npm run migrate:up            # Apply next pending migration
+npm run migrate:down          # Rollback last migration
+npm run migrate:status        # Show migration status
+npm run migrate:article-types # Migrate existing articles to the new type field
 ```
 
 ## Dependency Management
 
-See [docs/dependency-updates.md](docs/dependency-updates.md) for guidance on updating dependencies,
+See [doc/DEPENDENCY_UPDATES.md](doc/DEPENDENCY_UPDATES.md) for guidance on updating dependencies,
 running security audits (`npm audit`), and the history of significant dependency upgrades.
 
 ## License

@@ -899,7 +899,7 @@ SELECT count(*) FROM pg_stat_activity;
 - [Node.js VPS Upgrade Guide](./NODE_UPGRADE_VPS.md) - Step-by-step Node.js upgrade instructions
 - [Upgrade Guide](./UPGRADE_GUIDE.md) - Application upgrade procedures
 - [Contributing Guide](./CONTRIBUTING.md) - How to contribute to the project
-- [API Documentation](./API.md) - API endpoints and usage
+- [API Documentation](./API_TESTING.md) - API endpoints and usage
 - [Express.js Behind Proxies](https://expressjs.com/en/guide/behind-proxies.html) - Trust proxy documentation
 - [Let's Encrypt Documentation](https://letsencrypt.org/docs/) - SSL certificate management
 - [PM2 Documentation](https://pm2.keymetrics.io/docs/) - Process management
