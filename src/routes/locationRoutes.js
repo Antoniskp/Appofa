@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const locationController = require('../controllers/locationController');
+const locationSectionController = require('../controllers/locationSectionController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
@@ -21,6 +22,15 @@ router.post('/unlink', apiLimiter, authMiddleware, locationController.unlinkLoca
 router.get('/:id', locationController.getLocation);
 router.get('/:id/entities', apiLimiter, optionalAuthMiddleware, locationController.getLocationEntities);
 router.get('/:entity_type/:entity_id/locations', locationController.getEntityLocations);
+
+// Location sections routes
+// Public: list published sections (optionalAuth so moderators can also see drafts)
+router.get('/:locationId/sections', apiLimiter, optionalAuthMiddleware, locationSectionController.getSections);
+// Moderator/Admin: create, update, delete, reorder
+router.post('/:locationId/sections', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationSectionController.createSection);
+router.put('/:locationId/sections/reorder', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationSectionController.reorderSections);
+router.put('/:locationId/sections/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationSectionController.updateSection);
+router.delete('/:locationId/sections/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationSectionController.deleteSection);
 
 // Admin/Moderator only routes
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationController.createLocation);

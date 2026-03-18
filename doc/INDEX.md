@@ -22,6 +22,7 @@ Welcome to the Appofa News Application documentation. All documentation files li
 | [POLL_FEATURE.md](POLL_FEATURE.md) | Poll system: simple/complex polls, voting, Chart.js visualizations |
 | [POLL_EXPORT_AUDIT.md](POLL_EXPORT_AUDIT.md) | Privacy-preserving poll data export endpoint |
 | [LOCATION_MODEL.md](LOCATION_MODEL.md) | Hierarchical location system (International → Municipality) |
+| [LOCATION_SECTIONS.md](LOCATION_SECTIONS.md) | Location Sections: section types, JSON shapes, moderator management, and extending |
 | [OAUTH.md](OAUTH.md) | GitHub OAuth setup, account linking, and usage |
 | [GOOGLE_ANALYTICS.md](GOOGLE_ANALYTICS.md) | Google Analytics GA4 integration guide |
 | [MESSAGE_SYSTEM_IMPLEMENTATION.md](MESSAGE_SYSTEM_IMPLEMENTATION.md) | User-to-user messaging feature implementation |
