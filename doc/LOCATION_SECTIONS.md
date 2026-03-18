@@ -205,13 +205,17 @@ Moderators and admins can manage sections directly on the public location page.
 
 ## Public Rendering
 
-Sections are rendered on the public location page (`/locations/<slug>`) between the location header and the linked articles/users/polls.
+Sections are rendered on the public location page (`/locations/<slug>`) between the compact location header and the tabbed content area (Polls / News / Articles / Users).
 
 - Only **published** sections are rendered.
 - Sections appear in ascending `sortOrder`.
 - Each type uses a dedicated display component with appropriate styling.
 - **Announcements** with a past `endsAt` are automatically hidden, regardless of `isPublished`.
 - No raw HTML is ever rendered; all user-supplied values are text-interpolated through React to prevent XSS.
+
+### Moderator access
+
+The section manager is accessible through the single **Edit** button on the location header. When a moderator or admin clicks **Edit**, both the location detail fields (name, code, coordinates, Wikipedia URL) and the section manager appear in the same edit panel. There is no separate "Manage Sections" button — everything is consolidated into one edit flow.
 
 ---
 

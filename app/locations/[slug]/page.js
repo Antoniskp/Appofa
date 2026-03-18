@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI, locationSectionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -14,9 +14,13 @@ import { idSlug } from '@/lib/utils/slugify';
 import LocationSections from '@/components/LocationSections';
 import LocationSectionManager from '@/components/LocationSectionManager';
 
+const VALID_TABS = ['polls', 'news', 'articles', 'users'];
+const DEFAULT_TAB = 'polls';
+
 export default function LocationDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { error: toastError, success: toastSuccess } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { canManageLocations } = usePermissions();
@@ -29,7 +33,16 @@ export default function LocationDetailPage() {
   const [editedData, setEditedData] = useState({});
   const [imageError, setImageError] = useState(false);
   const [sections, setSections] = useState([]);
-  const [showSectionManager, setShowSectionManager] = useState(false);
+
+  // Derive active tab from URL query param
+  const rawTab = searchParams.get('tab');
+  const activeTab = VALID_TABS.includes(rawTab) ? rawTab : DEFAULT_TAB;
+
+  const handleTabChange = (tab) => {
+    const next = new URLSearchParams(searchParams.toString());
+    next.set('tab', tab);
+    router.replace(`?${next.toString()}`, { scroll: false });
+  };
 
   // Helper function to format population with commas
   const formatPopulation = (pop) => {
@@ -253,12 +266,19 @@ export default function LocationDetailPage() {
     .join(' ')
     .trim() || location?.moderatorPreview?.username || '';
 
+  const TAB_LABELS = {
+    polls: `Polls${activePolls.length ? ` (${activePolls.length})` : ''}`,
+    news: `News${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
+    articles: `Articles${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
+    users: `Users${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
         {breadcrumb.length > 1 && (
-          <nav className="mb-6">
+          <nav className="mb-4">
             <ol className="flex items-center space-x-2 text-sm text-gray-500">
               {breadcrumb.map((crumb, index) => (
                 <li key={crumb.id} className="flex items-center">
@@ -279,195 +299,183 @@ export default function LocationDetailPage() {
           </nav>
         )}
 
-        {/* Location Header */}
-        <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-          <div className="flex flex-col lg:flex-row gap-8">
-            {location.wikipedia_image_url && !isEditing && !imageError && (
-              <div className="lg:w-72 flex-shrink-0">
-                <img
-                  src={location.wikipedia_image_url}
-                  alt={`${location.name} - Wikipedia`}
-                  className="w-full h-64 rounded-lg object-contain bg-gray-50 shadow-sm"
-                  onError={() => setImageError(true)}
-                />
-                <div className="text-xs text-gray-500 mt-3">
-                  Image from{' '}
-                  {location.wikipedia_url ? (
-                    <a
-                      href={location.wikipedia_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      Wikipedia
-                    </a>
-                  ) : (
-                    <span>Wikipedia</span>
-                  )}
-                  {location.wikipedia_data_updated_at && (
-                    <span>
-                      {' '}- Last updated: {new Date(location.wikipedia_data_updated_at).toLocaleDateString()}
-                    </span>
-                  )}
+        {/* Compact Location Header */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          {isEditing ? (
+            /* ── Edit Mode ─────────────────────────────────────────── */
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-gray-900">Edit Location</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <CheckIcon className="h-5 w-5" />
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <XMarkIcon className="h-5 w-5" />
+                    Cancel
+                  </button>
                 </div>
               </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                {isEditing ? (
+
+              {/* Location detail fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Name <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     value={editedData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className="text-3xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none px-2 py-1"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Location name"
                     required
                   />
-                ) : (
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    {location.name}
-                  </h1>
-                )}
-                    <Badge variant="primary" size="md">{location.type}</Badge>
-                  </div>
-                  <div className="mb-4">
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedData.name_local}
-                        onChange={(e) => handleInputChange('name_local', e.target.value)}
-                        className="text-xl text-gray-600 border-b-2 border-blue-500 focus:outline-none px-2 py-1 w-full max-w-md"
-                        placeholder="Local name (optional)"
-                      />
-                    ) : (
-                      location.name_local && (
-                        <p className="text-xl text-gray-600">{location.name_local}</p>
-                      )
-                    )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Local name</label>
+                  <input
+                    type="text"
+                    value={editedData.name_local}
+                    onChange={(e) => handleInputChange('name_local', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Local name (optional)"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Code</label>
+                  <input
+                    type="text"
+                    value={editedData.code}
+                    onChange={(e) => handleInputChange('code', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Location code"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Coordinates (lat, lng)</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      step="0.000001"
+                      min="-90"
+                      max="90"
+                      value={editedData.lat}
+                      onChange={(e) => handleInputChange('lat', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Latitude"
+                    />
+                    <input
+                      type="number"
+                      step="0.000001"
+                      min="-180"
+                      max="180"
+                      value={editedData.lng}
+                      onChange={(e) => handleInputChange('lng', e.target.value)}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Longitude"
+                    />
                   </div>
                 </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Wikipedia URL</label>
+                  <input
+                    type="url"
+                    value={editedData.wikipedia_url}
+                    onChange={(e) => handleInputChange('wikipedia_url', e.target.value)}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="https://en.wikipedia.org/wiki/..."
+                  />
+                </div>
+              </div>
 
-                {/* Edit/Save/Cancel Buttons */}
-                {canManageLocations() && (
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    {isEditing ? (
-                      <>
-                        <button
-                          onClick={handleSave}
-                          disabled={isSaving}
-                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          title="Save changes"
-                        >
-                          <CheckIcon className="h-5 w-5" />
-                          {isSaving ? 'Saving...' : 'Save'}
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={isSaving}
-                          className="flex items-center gap-2 px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          title="Cancel editing"
-                        >
-                          <XMarkIcon className="h-5 w-5" />
-                          Cancel
-                        </button>
-                      </>
-                    ) : (
+              {/* Section manager — part of the same edit flow */}
+              <div className="border-t border-gray-200 pt-4">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">Manage Sections</h3>
+                <LocationSectionManager locationId={location.id} />
+              </div>
+            </div>
+          ) : (
+            /* ── View Mode ─────────────────────────────────────────── */
+            <>
+              <div className="flex items-start gap-4">
+                {/* Optional Wikipedia image thumbnail */}
+                {location.wikipedia_image_url && !imageError && (
+                  <div className="hidden sm:block flex-shrink-0">
+                    <img
+                      src={location.wikipedia_image_url}
+                      alt={`${location.name} - Wikipedia`}
+                      className="w-20 h-20 rounded-lg object-cover bg-gray-50 shadow-sm"
+                      onError={() => setImageError(true)}
+                    />
+                  </div>
+                )}
+
+                <div className="flex-1 min-w-0">
+                  {/* Title row */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h1 className="text-2xl font-bold text-gray-900 truncate">{location.name}</h1>
+                        <Badge variant="primary" size="sm">{location.type}</Badge>
+                      </div>
+                      {location.name_local && (
+                        <p className="text-base text-gray-500 mt-0.5">{location.name_local}</p>
+                      )}
+                    </div>
+
+                    {/* Single edit entry point */}
+                    {canManageLocations() && (
                       <button
                         onClick={handleEdit}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                         title="Edit location"
                       >
-                        <PencilIcon className="h-5 w-5" />
+                        <PencilIcon className="h-4 w-4" />
                         Edit
                       </button>
                     )}
                   </div>
-                )}
-              </div>
 
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                {(isEditing || location.code) && (
-                  <div>
-                    <span className="font-medium text-gray-700">Code:</span>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={editedData.code}
-                        onChange={(e) => handleInputChange('code', e.target.value)}
-                        className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
-                        placeholder="Location code"
-                      />
-                    ) : (
-                      <span className="ml-2 text-gray-600">{location.code}</span>
+                  {/* Compact metadata row */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
+                    {location.code && (
+                      <span><span className="font-medium text-gray-700">Code:</span> {location.code}</span>
                     )}
-                  </div>
-                )}
-                {(isEditing || (location.lat && location.lng)) && (
-                  <div className="md:col-start-1">
-                    <span className="font-medium text-gray-700">Coordinates:</span>
-                    {isEditing ? (
-                      <div className="inline-flex gap-2 ml-2">
-                        <input
-                          type="number"
-                          step="0.000001"
-                          min="-90"
-                          max="90"
-                          value={editedData.lat}
-                          onChange={(e) => handleInputChange('lat', e.target.value)}
-                          className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
-                          placeholder="Latitude"
-                        />
-                        <span className="text-gray-600">,</span>
-                        <input
-                          type="number"
-                          step="0.000001"
-                          min="-180"
-                          max="180"
-                          value={editedData.lng}
-                          onChange={(e) => handleInputChange('lng', e.target.value)}
-                          className="w-32 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1"
-                          placeholder="Longitude"
-                        />
-                      </div>
-                    ) : (
-                      <span className="ml-2 text-gray-600">
-                        {location.lat}, {location.lng}
-                      </span>
+                    {location.lat && location.lng && (
+                      <span><span className="font-medium text-gray-700">Coords:</span> {location.lat}, {location.lng}</span>
                     )}
-                  </div>
-                )}
-                {(!isEditing && (location.population || entities.usersCount > 0)) && (
-                  <div>
                     {location.population && (
-                      <div>
-                        <span className="font-medium text-gray-700">Population:</span>
-                        <span className="ml-2 text-gray-900 font-semibold">
-                          {formatPopulation(location.population)}
-                        </span>
-                      </div>
+                      <span><span className="font-medium text-gray-700">Pop:</span> {formatPopulation(location.population)}</span>
                     )}
-                    <div className={location.population ? 'mt-2' : ''}>
-                      <span className="font-medium text-gray-700">Registered users:</span>
-                      <span className="ml-2 text-gray-900 font-semibold">
-                        {entities.usersCount}
-                      </span>
-                    </div>
+                    {location.wikipedia_url && (
+                      <a
+                        href={location.wikipedia_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline font-medium"
+                      >
+                        Wikipedia ↗
+                      </a>
+                    )}
                   </div>
-                )}
-                {!isEditing && (
-                  <div>
+
+                  {/* Moderator row */}
+                  <div className="flex items-center gap-2 mt-2 text-sm">
                     <span className="font-medium text-gray-700">Συντονιστής:</span>
-                    {locationNeedsModerator && (
-                      <span className="ml-2 font-semibold text-amber-700">
-                        Χρειάζεται Συντονιστή
-                      </span>
-                    )}
-                    {!locationNeedsModerator && location.moderatorPreview && (
-                      <div className="mt-2 inline-flex items-center gap-2">
+                    {locationNeedsModerator ? (
+                      <span className="font-semibold text-amber-700">Χρειάζεται Συντονιστή</span>
+                    ) : location.moderatorPreview ? (
+                      <div className="inline-flex items-center gap-1.5">
                         <div
-                          className="w-7 h-7 rounded-full overflow-hidden flex items-center justify-center text-xs font-semibold text-white border border-green-200 bg-slate-500"
+                          className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center text-xs font-semibold text-white border border-green-200"
                           style={{ backgroundColor: location.moderatorPreview.avatarColor || '#64748b' }}
                           aria-label="Moderator avatar"
                         >
@@ -481,260 +489,292 @@ export default function LocationDetailPage() {
                             (location.moderatorPreview.username?.[0] || '?').toUpperCase()
                           )}
                         </div>
-                        <span className="text-sm font-medium text-gray-800">{moderatorDisplayName}</span>
+                        <span className="text-gray-800">{moderatorDisplayName}</span>
                       </div>
-                    )}
+                    ) : null}
                   </div>
-                )}
-                {(isEditing || location.wikipedia_url) && (
-                  <div className="md:col-span-2">
-                    <span className="font-medium text-gray-700">Wikipedia:</span>
-                    {isEditing ? (
-                      <input
-                        type="url"
-                        value={editedData.wikipedia_url}
-                        onChange={(e) => handleInputChange('wikipedia_url', e.target.value)}
-                        className="ml-2 text-gray-600 border-b border-blue-500 focus:outline-none px-2 py-1 w-full max-w-lg"
-                        placeholder="https://en.wikipedia.org/wiki/..."
-                      />
-                    ) : (
-                      <a
-                        href={location.wikipedia_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 text-blue-600 hover:text-blue-800 underline"
-                      >
-                        View on Wikipedia →
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Compact Sub-locations */}
-          {children.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                Sub-locations ({children.length})
-              </h2>
-              <div className="flex flex-wrap gap-2">
-                {children.map(child => (
-                  <Link
-                    key={child.id}
-                    href={`/locations/${child.slug}`}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 border border-blue-200 transition-colors text-sm"
-                  >
-                    <span className="font-medium">{child.name}</span>
-                    {child.name_local && (
-                      <span className="text-blue-600">({child.name_local})</span>
-                    )}
-                  </Link>
-                ))}
+                  {/* Stats chips */}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-medium">
+                      Polls: {activePolls.length}
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-xs font-medium">
+                      News: {newsArticles.length}
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
+                      Articles: {regularArticles.length}
+                    </span>
+                    <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-full text-xs font-medium">
+                      Users: {entities.usersCount}
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
+
+              {/* Wikipedia image caption (mobile — shown below header) */}
+              {location.wikipedia_image_url && !imageError && location.wikipedia_url && (
+                <p className="sm:hidden text-xs text-gray-400 mt-2">
+                  Image:{' '}
+                  <a href={location.wikipedia_url} target="_blank" rel="noopener noreferrer" className="underline">
+                    Wikipedia
+                  </a>
+                </p>
+              )}
+
+              {/* Sub-locations chips */}
+              {children.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <p className="text-xs font-medium text-gray-500 mb-2">Sub-locations ({children.length})</p>
+                  <div className="flex flex-wrap gap-2">
+                    {children.map(child => (
+                      <Link
+                        key={child.id}
+                        href={`/locations/${child.slug}`}
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 border border-blue-200 transition-colors text-sm"
+                      >
+                        <span className="font-medium">{child.name}</span>
+                        {child.name_local && (
+                          <span className="text-blue-500 text-xs">({child.name_local})</span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Location Sections (published) */}
-        {sections.filter(s => s.isPublished).length > 0 && (
+        {/* Location Sections (published) — shown between header and tabs */}
+        {!isEditing && sections.filter(s => s.isPublished).length > 0 && (
           <div className="mb-6">
             <LocationSections sections={sections} />
           </div>
         )}
 
-        {/* Moderator: Manage Sections */}
-        {canManageLocations() && location && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">Manage Sections</h2>
-              <button
-                onClick={() => setShowSectionManager(v => !v)}
-                className="text-sm text-blue-600 hover:text-blue-800"
-              >
-                {showSectionManager ? 'Hide manager' : 'Show manager'}
-              </button>
-            </div>
-            {showSectionManager && (
-              <LocationSectionManager locationId={location.id} />
-            )}
-          </div>
-        )}
-
-        {/* News Articles */}
-        {newsArticles.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              News ({newsArticles.length})
-            </h2>
-            <div className="space-y-3">
-              {newsArticles.map(article => (
-                <Link
-                  key={article.id}
-                  href={`/news/${idSlug(article.id, article.title)}`}
-                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+        {/* Tabbed content — only shown when not editing */}
+        {!isEditing && (
+          <div className="bg-white rounded-lg shadow-md">
+            {/* Tab bar */}
+            <div
+              className="flex border-b border-gray-200 overflow-x-auto"
+              role="tablist"
+              aria-label="Location content tabs"
+            >
+              {VALID_TABS.map((tab) => (
+                <button
+                  key={tab}
+                  role="tab"
+                  aria-selected={activeTab === tab}
+                  aria-controls={`tabpanel-${tab}`}
+                  id={`tab-${tab}`}
+                  onClick={() => handleTabChange(tab)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      handleTabChange(tab);
+                    }
+                    if (e.key === 'ArrowRight') {
+                      const next = VALID_TABS[(VALID_TABS.indexOf(tab) + 1) % VALID_TABS.length];
+                      handleTabChange(next);
+                    }
+                    if (e.key === 'ArrowLeft') {
+                      const prev = VALID_TABS[(VALID_TABS.indexOf(tab) - 1 + VALID_TABS.length) % VALID_TABS.length];
+                      handleTabChange(prev);
+                    }
+                  }}
+                  className={`flex-shrink-0 px-5 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    activeTab === tab
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
                 >
-                  <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
-                  {article.summary && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
-                      <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
-                    )}
-                    {article.createdAt && (
-                      <>
-                        <span>•</span>
-                        <span>{new Date(article.createdAt).toLocaleDateString()}</span>
-                      </>
-                    )}
-                  </div>
-                </Link>
+                  {TAB_LABELS[tab]}
+                </button>
               ))}
             </div>
-          </div>
-        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Regular Articles */}
-          {regularArticles.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Articles ({regularArticles.length})
-              </h2>
-              <div className="space-y-3">
-                {regularArticles.map(article => (
-                  <Link
-                    key={article.id}
-                    href={`/articles/${idSlug(article.id, article.title)}`}
-                    className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                  >
-                    <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
-                    {article.summary && (
-                      <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                      <span>{article.type}</span>
-                      {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
-                        <>
-                          <span>•</span>
-                          <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
-                        </>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Linked Users */}
-          {entities.usersCount > 0 && (
-            isAuthenticated ? (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">
-                  Users from this Location ({entities.users.length})
-                </h2>
-                {entities.users.length > 0 ? (
-                  <div className="space-y-2">
-                    {entities.users.map(user => (
-                      <div
-                        key={user.id}
-                        className="flex items-center gap-3 p-3 border border-gray-200 rounded-md"
+            {/* Tab panels */}
+            <div className="p-6">
+              {/* Polls tab */}
+              <div
+                id="tabpanel-polls"
+                role="tabpanel"
+                aria-labelledby="tab-polls"
+                hidden={activeTab !== 'polls'}
+              >
+                {activePolls.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No polls linked to this location yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {activePolls.map(poll => (
+                      <Link
+                        key={poll.id}
+                        href={`/polls/${idSlug(poll.id, poll.title)}`}
+                        className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
                       >
-                        <div
-                          className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                          style={{ backgroundColor: user.avatarColor || '#64748b' }}
-                        >
-                          {user.username?.[0]?.toUpperCase() || '?'}
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900">{user.username}</div>
-                          {(user.firstName || user.lastName) && (
-                            <div className="text-sm text-gray-500">
-                              {user.firstName} {user.lastName}
-                            </div>
+                        <h3 className="font-medium text-gray-900 mb-1">{poll.title}</h3>
+                        {poll.description && (
+                          <p className="text-sm text-gray-600 line-clamp-2">{poll.description}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                          <span className="capitalize">{poll.status}</span>
+                          {(poll.hideCreator ? 'Anonymous' : poll.creator?.username) && (
+                            <>
+                              <span>•</span>
+                              <span>by {poll.hideCreator ? 'Anonymous' : poll.creator?.username}</span>
+                            </>
+                          )}
+                          {poll.createdAt && (
+                            <>
+                              <span>•</span>
+                              <span>{new Date(poll.createdAt).toLocaleDateString()}</span>
+                            </>
                           )}
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
-                ) : (
-                  <p className="text-sm text-gray-600">No visible users to display.</p>
                 )}
               </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-md p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-2">Users from this Location</h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  Sign in or register to view {entities.usersCount} users from this location.
-                </p>
-                <div className="flex gap-3">
-                  <Link
-                    href="/login"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                  >
-                    Log In
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-                  >
-                    Register
-                  </Link>
-                </div>
-              </div>
-            )
-          )}
 
-          {/* Linked Polls */}
-          {activePolls.length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Polls ({activePolls.length})
-              </h2>
-              <div className="space-y-3">
-                {activePolls.map(poll => (
-                  <Link
-                    key={poll.id}
-                    href={`/polls/${idSlug(poll.id, poll.title)}`}
-                    className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                  >
-                    <h3 className="font-medium text-gray-900 mb-1">{poll.title}</h3>
-                    {poll.description && (
-                      <p className="text-sm text-gray-600 line-clamp-2">{poll.description}</p>
-                    )}
-                    <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                      <span className="capitalize">{poll.status}</span>
-                      {(poll.hideCreator ? 'Anonymous' : poll.creator?.username) && (
-                        <>
-                          <span>•</span>
-                          <span>by {poll.hideCreator ? 'Anonymous' : poll.creator?.username}</span>
-                        </>
-                      )}
-                      {poll.createdAt && (
-                        <>
-                          <span>•</span>
-                          <span>{new Date(poll.createdAt).toLocaleDateString()}</span>
-                        </>
-                      )}
+              {/* News tab */}
+              <div
+                id="tabpanel-news"
+                role="tabpanel"
+                aria-labelledby="tab-news"
+                hidden={activeTab !== 'news'}
+              >
+                {newsArticles.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No news linked to this location yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {newsArticles.map(article => (
+                      <Link
+                        key={article.id}
+                        href={`/news/${idSlug(article.id, article.title)}`}
+                        className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      >
+                        <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
+                        {article.summary && (
+                          <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                          {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
+                            <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
+                          )}
+                          {article.createdAt && (
+                            <>
+                              <span>•</span>
+                              <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                            </>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Articles tab */}
+              <div
+                id="tabpanel-articles"
+                role="tabpanel"
+                aria-labelledby="tab-articles"
+                hidden={activeTab !== 'articles'}
+              >
+                {regularArticles.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No articles linked to this location yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {regularArticles.map(article => (
+                      <Link
+                        key={article.id}
+                        href={`/articles/${idSlug(article.id, article.title)}`}
+                        className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      >
+                        <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
+                        {article.summary && (
+                          <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                          <span>{article.type}</span>
+                          {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
+                            <>
+                              <span>•</span>
+                              <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
+                            </>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Users tab */}
+              <div
+                id="tabpanel-users"
+                role="tabpanel"
+                aria-labelledby="tab-users"
+                hidden={activeTab !== 'users'}
+              >
+                {entities.usersCount === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No users linked to this location yet.</p>
+                ) : isAuthenticated ? (
+                  entities.users.length > 0 ? (
+                    <div className="space-y-2">
+                      {entities.users.map(u => (
+                        <div
+                          key={u.id}
+                          className="flex items-center gap-3 p-3 border border-gray-200 rounded-md"
+                        >
+                          <div
+                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                            style={{ backgroundColor: u.avatarColor || '#64748b' }}
+                          >
+                            {u.username?.[0]?.toUpperCase() || '?'}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{u.username}</div>
+                            {(u.firstName || u.lastName) && (
+                              <div className="text-sm text-gray-500">
+                                {u.firstName} {u.lastName}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  </Link>
-                ))}
+                  ) : (
+                    <p className="text-sm text-gray-600">No visible users to display.</p>
+                  )
+                ) : (
+                  <div className="py-4">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Sign in or register to view {entities.usersCount} users from this location.
+                    </p>
+                    <div className="flex gap-3">
+                      <Link
+                        href="/login"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      >
+                        Log In
+                      </Link>
+                      <Link
+                        href="/register"
+                        className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                      >
+                        Register
+                      </Link>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          )}
-
-          {/* Empty State */}
-          {entities.articles.length === 0 && entities.users.length === 0 && entities.polls.length === 0 && children.length === 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6 lg:col-span-2">
-              <p className="text-center text-gray-500">
-                No articles, users, polls, or sub-locations linked to this location yet.
-              </p>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
