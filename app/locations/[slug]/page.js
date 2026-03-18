@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
@@ -11,6 +11,8 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PencilIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { idSlug } from '@/lib/utils/slugify';
+import LocationSections from '@/components/LocationSections';
+import LocationSectionManager from '@/components/LocationSectionManager';
 
 export default function LocationDetailPage() {
   const params = useParams();
@@ -26,6 +28,8 @@ export default function LocationDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({});
   const [imageError, setImageError] = useState(false);
+  const [sections, setSections] = useState([]);
+  const [showSectionManager, setShowSectionManager] = useState(false);
 
   // Helper function to format population with commas
   const formatPopulation = (pop) => {
@@ -89,6 +93,16 @@ export default function LocationDetailPage() {
           }
         } catch (err) {
           console.error('Failed to load child locations:', err);
+        }
+
+        // Fetch location sections (public: only published; moderators see drafts too)
+        try {
+          const sectionsResponse = await locationSectionAPI.getSections(locId);
+          if (sectionsResponse.success) {
+            setSections(sectionsResponse.sections || []);
+          }
+        } catch (err) {
+          console.error('Failed to load sections:', err);
         }
       },
       onError: (err) => {
@@ -522,6 +536,31 @@ export default function LocationDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Location Sections (published) */}
+        {sections.filter(s => s.isPublished).length > 0 && (
+          <div className="mb-6">
+            <LocationSections sections={sections} />
+          </div>
+        )}
+
+        {/* Moderator: Manage Sections */}
+        {canManageLocations() && location && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">Manage Sections</h2>
+              <button
+                onClick={() => setShowSectionManager(v => !v)}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                {showSectionManager ? 'Hide manager' : 'Show manager'}
+              </button>
+            </div>
+            {showSectionManager && (
+              <LocationSectionManager locationId={location.id} />
+            )}
+          </div>
+        )}
 
         {/* News Articles */}
         {newsArticles.length > 0 && (
