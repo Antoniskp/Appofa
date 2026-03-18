@@ -149,11 +149,12 @@ A reusable hierarchical dropdown component used throughout the application:
 - **Path**: `/locations/[slug]`
 - **Access**: Public
 - **Features**:
-  - Display location information
-  - Show parent breadcrumb
-  - List child locations
-  - Show linked articles and users
-  - Map display (if coordinates available)
+  - Compact header: location name, type badge, local name, code, coordinates, population, Wikipedia link, moderator info, and stats chips (Polls / News / Articles / Users counts)
+  - Parent breadcrumb navigation
+  - Sub-location chips (inline, collapsible row)
+  - Published location sections between the header and the tabbed content
+  - **Tabbed content** (order: Polls → News → Articles → Users); active tab driven by `?tab=` query param (defaults to `polls`)
+  - Single **Edit** entry point for moderators/admins — location detail fields *and* the section manager are presented together in one edit panel
 
 ### Article Editor Integration
 
