@@ -573,10 +573,7 @@ export default function LocationDetailPage() {
                             <div className="space-y-4">
                               {headerSections.map(section => (
                                 <div key={section.id}>
-                                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                                    {section.title || (section.type === 'official_links' ? 'Official Links' : 'Contacts')}
-                                  </h4>
-                                  <LocationSections sections={[section]} />
+                                  <LocationSections sections={[section]} compact />
                                 </div>
                               ))}
                             </div>
