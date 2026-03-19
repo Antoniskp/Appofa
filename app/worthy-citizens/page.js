@@ -18,6 +18,8 @@ const TOPICS = [
   'Technology',
 ];
 
+const PAGE_SIZE = 20;
+
 const TOPIC_LABELS = {
   Education: 'Παιδεία',
   Economy: 'Οικονομία',
@@ -168,7 +170,7 @@ export default function WorthyCitizensPage() {
               <UserLeaderboardCard
                 key={user.id}
                 user={user}
-                rank={(page - 1) * 20 + index + 1}
+                rank={(page - 1) * PAGE_SIZE + index + 1}
               />
             ))}
           </div>
