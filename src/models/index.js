@@ -12,6 +12,7 @@ const Bookmark = require('./Bookmark');
 const Message = require('./Message');
 const Follow = require('./Follow');
 const Comment = require('./Comment');
+const Endorsement = require('./Endorsement');
 
 // Define associations
 User.hasMany(Article, {
@@ -188,6 +189,12 @@ LocationSection.belongsTo(Location, { foreignKey: 'locationId', as: 'location' }
 LocationSection.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 LocationSection.belongsTo(User, { foreignKey: 'updatedByUserId', as: 'updatedBy' });
 
+// Endorsement associations
+Endorsement.belongsTo(User, { foreignKey: 'endorserId', as: 'endorser' });
+Endorsement.belongsTo(User, { foreignKey: 'endorsedId', as: 'endorsed' });
+User.hasMany(Endorsement, { foreignKey: 'endorserId', as: 'givenEndorsements' });
+User.hasMany(Endorsement, { foreignKey: 'endorsedId', as: 'receivedEndorsements' });
+
 module.exports = {
   sequelize,
   User,
@@ -202,5 +209,6 @@ module.exports = {
   Bookmark,
   Message,
   Follow,
-  Comment
+  Comment,
+  Endorsement
 };

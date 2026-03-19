@@ -17,6 +17,7 @@ const statsRoutes = require('./routes/statsRoutes');
 const followRoutes = require('./routes/followRoutes');
 const tagRoutes = require('./routes/tagRoutes');
 const commentRoutes = require('./routes/commentRoutes');
+const endorsementRoutes = require('./routes/endorsementRoutes');
 
 const app = express();
 
@@ -60,6 +61,7 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/users', followRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/comments', commentRoutes);
+app.use('/api/endorsements', endorsementRoutes);
 
 // 404 handler
 app.use((req, res) => {

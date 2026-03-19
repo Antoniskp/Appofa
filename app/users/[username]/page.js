@@ -16,6 +16,7 @@ import PollCard from '@/components/PollCard';
 import ArticleCard from '@/components/ArticleCard';
 import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
+import EndorsementPanel from '@/components/EndorsementPanel';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -317,6 +318,9 @@ export default function PublicUserProfilePage() {
                 )}
               </Card>
             )}
+
+            {/* Endorsements */}
+            <EndorsementPanel targetUserId={user.id} />
 
             {/* Activity Tabs */}
             <div>
