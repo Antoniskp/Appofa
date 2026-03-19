@@ -1,6 +1,6 @@
 'use client';
 
-import { authAPI } from '@/lib/api';
+import { authAPI, endorsementAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import UserCard from '@/components/UserCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -9,7 +9,59 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
 import FilterBar from '@/components/FilterBar';
+import Badge from '@/components/Badge';
 import Link from 'next/link';
+
+const DEFAULT_AVATAR_COLOR = '#64748b';
+
+const TOP_RATED_COUNT = 5;
+
+function TopRatedCard({ user, rank }) {
+  const displayName =
+    user.firstName && user.lastName
+      ? `${user.firstName} ${user.lastName}`
+      : user.firstName || user.lastName || '';
+
+  return (
+    <Link
+      href={`/users/${user.username}`}
+      className="flex items-center gap-4 bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow"
+    >
+      <span className="text-2xl font-bold text-amber-400 w-8 text-center">{rank}</span>
+      <div
+        className="h-12 w-12 rounded-full flex-shrink-0 flex items-center justify-center text-white font-semibold"
+        style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
+      >
+        {user.avatar ? (
+          <img
+            src={user.avatar}
+            alt={user.username}
+            className="h-full w-full rounded-full object-cover"
+          />
+        ) : (
+          <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-gray-900">{user.username}</span>
+          {user.role && user.role !== 'viewer' && (
+            <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
+              {user.role}
+            </Badge>
+          )}
+        </div>
+        {displayName && (
+          <p className="text-sm text-gray-500 truncate">{displayName}</p>
+        )}
+      </div>
+      <div className="text-right flex-shrink-0">
+        <p className="text-2xl font-bold text-blue-600">{user.endorsementCount}</p>
+        <p className="text-xs text-gray-500">εγκρίσεις</p>
+      </div>
+    </Link>
+  );
+}
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -75,9 +127,51 @@ export default function UsersPage() {
     }
   );
 
+  // Fetch top rated users (by endorsements)
+  const { data: topRatedUsers, loading: topRatedLoading } = useAsyncData(
+    async () => {
+      const response = await endorsementAPI.getLeaderboard({ page: 1 });
+      if (response.success) {
+        return response.data.users.slice(0, TOP_RATED_COUNT);
+      }
+      return [];
+    },
+    [],
+    { initialData: [] }
+  );
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        {/* Top Rated Users - shown to everyone */}
+        <div className="mb-8 bg-white rounded-lg shadow-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-semibold text-gray-800">🏆 Κορυφαίοι Πολίτες</h2>
+              <p className="text-sm text-gray-500 mt-1">Πολίτες αναγνωρισμένοι από την κοινότητα για τη γνώση και την εμπειρία τους.</p>
+            </div>
+            <Link
+              href="/worthy-citizens"
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium whitespace-nowrap"
+            >
+              Δείτε όλους →
+            </Link>
+          </div>
+          {topRatedLoading ? (
+            <div className="space-y-3">
+              <SkeletonLoader type="card" count={3} />
+            </div>
+          ) : topRatedUsers.length === 0 ? (
+            <p className="text-sm text-gray-500">Δεν υπάρχουν ακόμα εγκρίσεις.</p>
+          ) : (
+            <div className="space-y-3">
+              {topRatedUsers.map((u, index) => (
+                <TopRatedCard key={u.id} user={u} rank={index + 1} />
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* User Statistics - shown to everyone */}
         {!statsLoading && userStats && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">

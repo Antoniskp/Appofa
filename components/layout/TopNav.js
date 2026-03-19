@@ -248,12 +248,6 @@ export default function TopNav() {
               >
                 Χρήστες
               </Link>
-              <Link
-                href="/worthy-citizens"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/worthy-citizens')}`}
-              >
-                Άξιοι Πολίτες
-              </Link>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-4 ml-auto">
@@ -343,12 +337,6 @@ export default function TopNav() {
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/users')}`}
           >
             Χρήστες
-          </Link>
-          <Link
-            href="/worthy-citizens"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/worthy-citizens')}`}
-          >
-            Άξιοι Πολίτες
           </Link>
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
