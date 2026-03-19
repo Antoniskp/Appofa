@@ -258,11 +258,23 @@ function SectionContent({ type, content }) {
 // ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
-export default function LocationSections({ sections }) {
+export default function LocationSections({ sections, compact = false }) {
   if (!sections || sections.length === 0) return null;
 
   const published = sections.filter(s => s.isPublished);
   if (published.length === 0) return null;
+
+  if (compact) {
+    return (
+      <div className="space-y-4">
+        {published.map((section) => (
+          <div key={section.id}>
+            <SectionContent type={section.type} content={section.content} />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
