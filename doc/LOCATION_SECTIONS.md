@@ -205,7 +205,22 @@ Moderators and admins can manage sections directly on the public location page.
 
 ## Public Rendering
 
-Sections are rendered on the public location page (`/locations/<slug>`) between the compact location header and the tabbed content area (Polls / News / Articles / Users).
+Sections are rendered in two areas of the public location page (`/locations/<slug>`):
+
+### Info box (right column)
+
+The `official_links`, `contacts`, and `webcams` section types are shown **inside the "Πληροφορίες" information box** in the compact header area. These types are rendered in a compact, single-line format:
+
+- **official_links / contacts** — rendered as compact lists (globe / phone icons + labels)
+- **webcams** — rendered as a compact list of links, one per camera: `[camera icon] <label>` linking to the camera URL. No embed (iframe/image) is used in this view.
+
+### Body area
+
+All remaining section types (`people`, `announcements`) are rendered as full-width cards between the location header and the tabbed content area.
+
+---
+
+General rendering rules:
 
 - Only **published** sections are rendered.
 - Sections appear in ascending `sortOrder`.

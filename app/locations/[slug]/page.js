@@ -16,7 +16,7 @@ import LocationSectionManager from '@/components/LocationSectionManager';
 
 const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions'];
 const DEFAULT_TAB = 'polls';
-const HEADER_SECTION_TYPES = ['official_links', 'contacts'];
+const HEADER_SECTION_TYPES = ['official_links', 'contacts', 'webcams'];
 
 export default function LocationDetailPage() {
   const params = useParams();
