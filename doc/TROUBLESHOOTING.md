@@ -1,5 +1,40 @@
 # Troubleshooting Guide
 
+## 502 Bad Gateway — Entire Site Unavailable
+
+**Symptoms:** Every page returns a 502 error (not just API calls).
+
+**Cause:** nginx cannot reach the Next.js frontend on port 3001. The most common trigger is an update that either:
+- Left the `.next` build stale or missing after a Next.js version change, or
+- Missed running `npm run migrate`, causing the backend (and in turn the frontend SSR) to crash.
+
+**Quick fix:**
+
+```bash
+cd /var/www/Appofa
+
+# 1. Rebuild the frontend from scratch
+pm2 stop newsapp-frontend
+rm -rf .next
+NODE_ENV=production npm run frontend:build
+pm2 restart newsapp-frontend
+
+# 2. Run any pending migrations and restart the backend
+npm run migrate
+pm2 restart newsapp-backend
+
+pm2 save
+```
+
+Check PM2 status after:
+```bash
+pm2 status   # both processes must show "online"
+```
+
+For full diagnostic steps and additional fix scenarios, see [VPS Setup — Troubleshooting: 502 Bad Gateway](VPS_SETUP.md#troubleshooting-502-bad-gateway).
+
+---
+
 ## Common Browser Console Errors
 
 ### `webpage_content_reporter.js` SyntaxError

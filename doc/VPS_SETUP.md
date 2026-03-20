@@ -18,6 +18,7 @@ A comprehensive guide for deploying the Appofa News Application on a Virtual Pri
   - [Clean Update Workflow](#clean-update-workflow)
   - [Upgrading from Old Single-Process Deployment](#upgrading-from-old-single-process-deployment)
   - [Fix Duplicate PM2 Processes](#fix-duplicate-pm2-processes)
+- [Troubleshooting: 502 Bad Gateway](#troubleshooting-502-bad-gateway)
 
 ---
 
@@ -544,13 +545,27 @@ git pull origin main
 # Install/update dependencies
 npm ci
 
+# Run database migrations (always run — safe to run multiple times)
+npm run migrate
+
 # Update environment variables if needed
 nano .env
+
+# Rebuild the frontend (required after any code or dependency changes)
+rm -rf .next
+NODE_ENV=production npm run frontend:build
 
 # Restart services
 pm2 restart newsapp-backend newsapp-frontend
 pm2 save
 ```
+
+> **⚠️ Why migrations and a rebuild are always required:**
+>
+> - **Migrations** create or alter database tables introduced by new pull requests. Skipping them leaves the backend without tables it expects, causing database errors or crashes.
+> - **Frontend rebuild** (`rm -rf .next` then `npm run frontend:build`) is required whenever code, components, or dependencies change — especially when the Next.js version is bumped. Serving a stale `.next` build after a version upgrade causes the frontend process to fail, which makes nginx return 502 for every page.
+>
+> Use `deploy.sh` (which covers all these steps automatically) for a reliable one-command update.
 
 ### Clean Update Workflow
 
@@ -711,6 +726,126 @@ pm2 kill
 pm2 startup
 pm2 save
 ```
+
+---
+
+## Troubleshooting: 502 Bad Gateway
+
+A 502 error means nginx cannot reach one of the upstream services. The most common cause after a pull or update is that the **Next.js frontend process is not running**, which affects every page served through nginx.
+
+### Quick diagnosis
+
+```bash
+# 1. Check whether both PM2 processes are online
+pm2 status
+# Both newsapp-backend and newsapp-frontend must show "online"
+
+# 2. Check the frontend logs for crash details
+pm2 logs newsapp-frontend --lines 50 --err
+
+# 3. Check the backend logs
+pm2 logs newsapp-backend --lines 50 --err
+
+# 4. Check nginx error log
+sudo tail -50 /var/log/nginx/error.log
+```
+
+### Fix 1 — Stale or missing `.next` build (most common after an update)
+
+This is the most frequent cause after pulling a new version. If the frontend was never built, or if the Next.js package version changed since the last build, `next start` will fail immediately and nginx returns 502 for every page.
+
+```bash
+cd /var/www/Appofa
+
+# Stop the frontend process
+pm2 stop newsapp-frontend
+
+# Remove the stale build and rebuild from scratch
+rm -rf .next
+NODE_ENV=production npm run frontend:build
+
+# Restart both services
+pm2 restart newsapp-backend newsapp-frontend
+pm2 save
+```
+
+### Fix 2 — Missing database migrations
+
+New pull requests that add features (e.g. the Suggestions module) include migrations that create new database tables. If migrations were not run, the backend may crash or return errors when those tables are queried.
+
+```bash
+cd /var/www/Appofa
+
+# Run any pending migrations
+npm run migrate
+
+# Restart the backend
+pm2 restart newsapp-backend
+pm2 save
+```
+
+### Fix 3 — Backend process is down
+
+```bash
+# Restart the backend
+pm2 restart newsapp-backend
+
+# If it keeps crashing, check logs for the error
+pm2 logs newsapp-backend --lines 100 --err
+```
+
+Common backend crash causes:
+- Database credentials wrong in `.env` (`DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`)
+- `JWT_SECRET` missing from `.env`
+- PostgreSQL service is stopped — restart with: `sudo systemctl start postgresql`
+
+### Fix 4 — Frontend process is down
+
+```bash
+# Check if the process exists and restart
+pm2 restart newsapp-frontend
+
+# If it does not exist, re-create it
+pm2 start npm --name newsapp-frontend -- run frontend:start
+pm2 save
+```
+
+### Fix 5 — Full clean redeploy
+
+When in doubt, run the complete clean update sequence (mirrors what `deploy.sh` does):
+
+```bash
+cd /var/www/Appofa
+
+pm2 stop newsapp-backend newsapp-frontend
+
+git fetch --all
+git checkout main
+git pull origin main
+
+npm ci
+npm run migrate
+rm -rf .next
+NODE_ENV=production npm run frontend:build
+
+pm2 restart newsapp-backend newsapp-frontend
+pm2 save
+```
+
+### Still getting 502?
+
+```bash
+# Confirm the backend is listening on port 3000
+curl -s http://localhost:3000 | head -c 200
+
+# Confirm the frontend is listening on port 3001
+curl -s http://localhost:3001 | head -c 200
+
+# Test nginx config and reload
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+If both ports respond but nginx still returns 502, verify the upstream addresses in `/etc/nginx/sites-available/newsapp` match the ports above.
 
 ---
 
