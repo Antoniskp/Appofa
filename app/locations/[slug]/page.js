@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI, locationSectionAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI, suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
@@ -14,7 +14,7 @@ import { idSlug } from '@/lib/utils/slugify';
 import LocationSections from '@/components/LocationSections';
 import LocationSectionManager from '@/components/LocationSectionManager';
 
-const VALID_TABS = ['polls', 'news', 'articles', 'users'];
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions'];
 const DEFAULT_TAB = 'polls';
 const HEADER_SECTION_TYPES = ['official_links', 'contacts'];
 
@@ -27,6 +27,7 @@ export default function LocationDetailPage() {
   const { canManageLocations } = usePermissions();
   const isAuthenticated = !authLoading && !!user;
   const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0 });
+  const [suggestions, setSuggestions] = useState([]);
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -117,6 +118,16 @@ export default function LocationDetailPage() {
           }
         } catch (err) {
           console.error('Failed to load sections:', err);
+        }
+
+        // Fetch suggestions linked to this location
+        try {
+          const suggestionsResponse = await suggestionAPI.getAll({ locationId: locId, limit: 50 });
+          if (suggestionsResponse.success) {
+            setSuggestions(suggestionsResponse.data || []);
+          }
+        } catch (err) {
+          console.error('Failed to load suggestions:', err);
         }
       },
       onError: (err) => {
@@ -272,6 +283,7 @@ export default function LocationDetailPage() {
     news: `News${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
     articles: `Articles${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
     users: `Users${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
+    suggestions: `Suggestions${suggestions.length ? ` (${suggestions.length})` : ''}`,
   };
 
   return (
@@ -814,6 +826,50 @@ export default function LocationDetailPage() {
                         Register
                       </Link>
                     </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Suggestions tab */}
+              <div
+                id="tabpanel-suggestions"
+                role="tabpanel"
+                aria-labelledby="tab-suggestions"
+                hidden={activeTab !== 'suggestions'}
+              >
+                {suggestions.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">No suggestions linked to this location yet.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {suggestions.map(suggestion => (
+                      <Link
+                        key={suggestion.id}
+                        href={`/suggestions/${suggestion.id}`}
+                        className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      >
+                        <h3 className="font-medium text-gray-900 mb-1">{suggestion.title}</h3>
+                        {suggestion.body && (
+                          <p className="text-sm text-gray-600 line-clamp-2">{suggestion.body}</p>
+                        )}
+                        <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                          <span className="capitalize">{suggestion.type?.replace('_', ' ')}</span>
+                          <span>•</span>
+                          <span className="capitalize">{suggestion.status?.replace('_', ' ')}</span>
+                          {suggestion.author?.username && (
+                            <>
+                              <span>•</span>
+                              <span>by {suggestion.author.username}</span>
+                            </>
+                          )}
+                          {suggestion.createdAt && (
+                            <>
+                              <span>•</span>
+                              <span>{new Date(suggestion.createdAt).toLocaleDateString()}</span>
+                            </>
+                          )}
+                        </div>
+                      </Link>
+                    ))}
                   </div>
                 )}
               </div>
