@@ -66,15 +66,12 @@ npm install --no-warnings
 
 ### npm Audit Vulnerabilities (Post-Install)
 
-After `npm install` you may see:
-```
-5 vulnerabilities (5 low)
-```
+After `npm install` you may see deprecation warnings from transitive dependencies of `sqlite3` (dev-only). These do **not** affect production.
 
-These 5 low-severity vulnerabilities all reside within the `sqlite3` dev-dependency chain and are **not present in production**. To confirm zero production vulnerabilities, run:
+To confirm zero production vulnerabilities, run:
 
 ```bash
 npm audit --omit=dev
 ```
 
-The high-severity `tar` vulnerability that affected earlier versions has been resolved by the `tar>=7.5.10` override in `package.json`. See [Security Guidelines](SECURITY.md) for full details.
+All known high- and moderate-severity vulnerabilities have been resolved. See [Security Guidelines](SECURITY.md) for full details.
