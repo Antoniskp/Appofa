@@ -10,7 +10,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
-import LocationSelector from '@/components/LocationSelector';
+import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 
 const SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
@@ -236,10 +236,9 @@ export default function EditSuggestionPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
                 Τοποθεσία <span className="text-gray-400 font-normal">(προαιρετικό)</span>
               </label>
-              <LocationSelector
+              <CascadingLocationSelector
                 value={form.locationId}
                 onChange={handleLocationChange}
-                placeholder="Επιλέξτε τοποθεσία..."
                 allowClear
               />
             </div>

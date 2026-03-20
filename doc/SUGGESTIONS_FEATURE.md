@@ -159,7 +159,7 @@ Suggestions can optionally be linked to a location via `locationId`. When a sugg
 
 - It appears in the **Suggestions** tab on the location detail page (`/locations/:slug?tab=suggestions`).
 - The location name is shown as a badge on the suggestion detail page.
-- The location can be selected or changed from the new/edit suggestion forms using the location picker.
+- The location can be selected or changed from the new/edit suggestion forms using the hierarchical `CascadingLocationSelector` (country → prefecture → municipality).
 
 ---
 
