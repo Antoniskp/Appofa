@@ -87,6 +87,28 @@ The npm advisory database is continuously updated. A package already installed c
 | `npm audit --omit=dev` (production) | **0** | 0 | 0 |
 | `npm audit` (all deps incl. dev) | **0** | 0 | 0 |
 
+### npm Dependency Audit (2026-03-20)
+
+Two new advisories were published against the existing lockfile. Both have been resolved via `npm audit fix` and package.json updates.
+
+#### Fixed: flatted Prototype Pollution via parse() (High)
+- **Advisory**: [GHSA-rf6f-7fwh-wjgh](https://github.com/advisories/GHSA-rf6f-7fwh-wjgh)
+- **Severity**: High
+- **Affected versions**: `flatted <=3.4.1`
+- **Resolution**: ✅ Updated lockfile to `flatted@3.4.2`; added `flatted >=3.4.2` override to `package.json`.
+
+#### Fixed: Next.js Multiple CVEs (Moderate)
+- **Advisories**: [GHSA-ggv3-7p47-pfv8](https://github.com/advisories/GHSA-ggv3-7p47-pfv8) (HTTP request smuggling in rewrites), [GHSA-3x4c-7xq6-9pq8](https://github.com/advisories/GHSA-3x4c-7xq6-9pq8) (unbounded next/image disk cache), [GHSA-h27x-g6w4-24gq](https://github.com/advisories/GHSA-h27x-g6w4-24gq) (unbounded postponed resume buffering), [GHSA-mq59-m269-xvcx](https://github.com/advisories/GHSA-mq59-m269-xvcx) (null origin CSRF bypass in Server Actions), [GHSA-jcc7-9wpm-mj36](https://github.com/advisories/GHSA-jcc7-9wpm-mj36) (null origin CSRF bypass in dev HMR websocket)
+- **Severity**: Moderate
+- **Affected versions**: `next 16.0.0-beta.0 – 16.1.6`
+- **Resolution**: ✅ Updated lockfile to `next@16.2.0`; bumped `package.json` minimum to `^16.2.0`.
+
+#### Current audit status (2026-03-20)
+| Scope | High | Medium | Low |
+|-------|------|--------|-----|
+| `npm audit --omit=dev` (production) | **0** | 0 | 0 |
+| `npm audit` (all deps incl. dev) | **0** | 0 | 0 |
+
 #### Recommended maintenance workflow
 1. **Weekly**: run `npm audit` — fix highs/criticals promptly via `npm audit fix`.
 2. **Before every deploy**: the CI workflow (`.github/workflows/security-audit.yml`) blocks on `npm audit --omit=dev --audit-level=high`.
@@ -146,7 +168,7 @@ In case of a security incident:
 
 ---
 
-**Last Updated**: 2026-03-16  
+**Last Updated**: 2026-03-20  
 **Security Review Status**: ✅ Passed  
 **CodeQL Alerts**: 0  
 **npm Audit (production deps)**: 0 vulnerabilities (`npm audit --omit=dev`)  
