@@ -125,9 +125,30 @@ function PeopleSection({ content }) {
   );
 }
 
-function WebcamsSection({ content }) {
+function WebcamsSection({ content, compact = false }) {
   const webcams = content?.webcams || [];
   if (webcams.length === 0) return <p className="text-gray-500 text-sm">No webcams available.</p>;
+
+  if (compact) {
+    return (
+      <ul className="space-y-1">
+        {webcams.map((cam, i) => (
+          <li key={i} className="flex items-center gap-2">
+            <VideoCameraIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <a
+              href={cam.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 hover:underline text-sm truncate"
+            >
+              {cam.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {webcams.map((cam, i) => {
@@ -244,12 +265,12 @@ function AnnouncementsSection({ content }) {
 // ---------------------------------------------------------------------------
 // Section renderer (dispatches by type)
 // ---------------------------------------------------------------------------
-function SectionContent({ type, content }) {
+function SectionContent({ type, content, compact = false }) {
   switch (type) {
     case 'official_links': return <OfficialLinksSection content={content} />;
     case 'contacts': return <ContactsSection content={content} />;
     case 'people': return <PeopleSection content={content} />;
-    case 'webcams': return <WebcamsSection content={content} />;
+    case 'webcams': return <WebcamsSection content={content} compact={compact} />;
     case 'announcements': return <AnnouncementsSection content={content} />;
     default: return <p className="text-gray-500 text-sm">Unknown section type.</p>;
   }
@@ -269,7 +290,7 @@ export default function LocationSections({ sections, compact = false }) {
       <div className="space-y-4">
         {published.map((section) => (
           <div key={section.id}>
-            <SectionContent type={section.type} content={section.content} />
+            <SectionContent type={section.type} content={section.content} compact />
           </div>
         ))}
       </div>
