@@ -9,6 +9,7 @@ import {
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
   ClipboardDocumentListIcon,
+  LightBulbIcon,
   MapPinIcon,
   NewspaperIcon,
   PencilSquareIcon,
@@ -103,6 +104,13 @@ export default function TopNav() {
       icon: <MapPinIcon className="h-4 w-4" />,
       className: isActive(myLocationHref)
     },
+    {
+      id: 'suggest',
+      label: 'Υποβολή Πρότασης',
+      href: '/suggestions/new',
+      icon: <LightBulbIcon className="h-4 w-4" />,
+      className: isActive('/suggestions/new')
+    },
     ...(canAccessAdmin() ? [
       { divider: true },
       {
@@ -173,6 +181,13 @@ export default function TopNav() {
       href: myLocationHref,
       icon: <MapPinIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive(myLocationHref)}`
+    },
+    {
+      id: 'suggest',
+      label: 'Υποβολή Πρότασης',
+      href: '/suggestions/new',
+      icon: <LightBulbIcon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/suggestions/new')}`
     },
     ...(canAccessAdmin() ? [
       { divider: true },
