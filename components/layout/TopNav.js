@@ -106,10 +106,10 @@ export default function TopNav() {
     },
     {
       id: 'suggest',
-      label: 'Υποβολή Πρότασης',
-      href: '/suggestions/new',
+      label: 'Οι προτάσεις μου',
+      href: '/suggestions',
       icon: <LightBulbIcon className="h-4 w-4" />,
-      className: isActive('/suggestions/new')
+      className: isActive('/suggestions')
     },
     ...(canAccessAdmin() ? [
       { divider: true },
@@ -184,10 +184,10 @@ export default function TopNav() {
     },
     {
       id: 'suggest',
-      label: 'Υποβολή Πρότασης',
-      href: '/suggestions/new',
+      label: 'Οι προτάσεις μου',
+      href: '/suggestions',
       icon: <LightBulbIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/suggestions/new')}`
+      className: `text-base font-medium ${isActive('/suggestions')}`
     },
     ...(canAccessAdmin() ? [
       { divider: true },
