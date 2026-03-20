@@ -387,6 +387,34 @@ const suggestionController = {
   },
 
   /**
+   * DELETE /api/suggestions/:id
+   * Delete a suggestion (owner or admin only).
+   */
+  deleteSuggestion: async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) return res.status(400).json({ success: false, message: 'Invalid suggestion ID.' });
+
+      const suggestion = await Suggestion.findByPk(id);
+      if (!suggestion) return res.status(404).json({ success: false, message: 'Suggestion not found.' });
+
+      const isOwner = suggestion.authorId === req.user.id;
+      const isPrivileged = ['admin', 'moderator'].includes(req.user.role);
+
+      if (!isOwner && !isPrivileged) {
+        return res.status(403).json({ success: false, message: 'Forbidden.' });
+      }
+
+      await suggestion.destroy();
+
+      return res.json({ success: true, message: 'Suggestion deleted.' });
+    } catch (error) {
+      console.error('Delete suggestion error:', error);
+      return res.status(500).json({ success: false, message: 'Error deleting suggestion.' });
+    }
+  },
+
+  /**
    * POST /api/solutions/:id/vote
    * Upvote or downvote a solution (auth required).
    */
