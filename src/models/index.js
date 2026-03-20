@@ -13,6 +13,9 @@ const Message = require('./Message');
 const Follow = require('./Follow');
 const Comment = require('./Comment');
 const Endorsement = require('./Endorsement');
+const Suggestion = require('./Suggestion');
+const Solution = require('./Solution');
+const SuggestionVote = require('./SuggestionVote');
 
 // Define associations
 User.hasMany(Article, {
@@ -195,6 +198,21 @@ Endorsement.belongsTo(User, { foreignKey: 'endorsedId', as: 'endorsed' });
 User.hasMany(Endorsement, { foreignKey: 'endorserId', as: 'givenEndorsements' });
 User.hasMany(Endorsement, { foreignKey: 'endorsedId', as: 'receivedEndorsements' });
 
+// Suggestion associations
+Suggestion.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
+Suggestion.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+Suggestion.hasMany(Solution, { foreignKey: 'suggestionId', as: 'solutions' });
+User.hasMany(Suggestion, { foreignKey: 'authorId', as: 'suggestions' });
+
+// Solution associations
+Solution.belongsTo(Suggestion, { foreignKey: 'suggestionId', as: 'suggestion' });
+Solution.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
+User.hasMany(Solution, { foreignKey: 'authorId', as: 'solutions' });
+
+// SuggestionVote associations
+SuggestionVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
+User.hasMany(SuggestionVote, { foreignKey: 'userId', as: 'suggestionVotes' });
+
 module.exports = {
   sequelize,
   User,
@@ -210,5 +228,8 @@ module.exports = {
   Message,
   Follow,
   Comment,
-  Endorsement
+  Endorsement,
+  Suggestion,
+  Solution,
+  SuggestionVote
 };

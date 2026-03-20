@@ -7,6 +7,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - **GitHub OAuth integration** for easy signup/login and account linking
 - **Google Analytics integration** for tracking page views and custom events
 - **Poll and Statistics System** with flexible answer types, voting, Chart.js visualizations, and auditable JSON export
+- **Suggestions & Solutions System** – post ideas/problems for locations, propose solutions, upvote/downvote both
 - **Message system** for user-to-user communication
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
@@ -27,6 +28,7 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 ### Features
 - [Poll & Statistics System](doc/POLL_FEATURE.md) - Complete poll system with voting, results, and Chart.js visualizations
 - [Poll Audit Export](doc/POLL_EXPORT_AUDIT.md) - Privacy-preserving poll data export
+- [Suggestions & Solutions](doc/SUGGESTIONS_FEATURE.md) - Idea/problem submission with upvote/downvote voting
 - [Locations Model](doc/LOCATION_MODEL.md) - Hierarchical locations system
 - [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
 - [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
