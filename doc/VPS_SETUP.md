@@ -754,6 +754,17 @@ sudo tail -50 /var/log/nginx/error.log
 
 This is the most frequent cause after pulling a new version. If the frontend was never built, or if the Next.js package version changed since the last build, `next start` will fail immediately and nginx returns 502 for every page.
 
+**Since the `frontend:start` script now detects and fixes this automatically**, simply restarting the frontend is often enough:
+
+```bash
+pm2 restart newsapp-frontend
+pm2 save
+```
+
+The startup script (`start-frontend.js`) compares the mtime of the installed `next` package against the last build. If the build is absent or stale it runs `npm run frontend:build` automatically before starting the server.
+
+If the automatic rebuild also fails (e.g. due to a syntax error in new code), restart manually:
+
 ```bash
 cd /var/www/Appofa
 
