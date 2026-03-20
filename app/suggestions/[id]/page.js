@@ -288,6 +288,7 @@ export default function SuggestionDetailPage() {
     user && suggestion.status !== 'implemented' && suggestion.status !== 'rejected';
 
   return (
+    <>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-3xl">
         {/* Back */}
@@ -450,5 +451,6 @@ export default function SuggestionDetailPage() {
       destructive
       loading={isDeleting}
     />
+    </>
   );
 }
