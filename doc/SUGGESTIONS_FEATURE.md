@@ -50,6 +50,7 @@ All endpoints are mounted under `/api/suggestions` and `/api/solutions`.
 | `GET` | `/api/suggestions/:id` | optional | Get suggestion detail with solutions sorted by score |
 | `POST` | `/api/suggestions` | ✅ required | Create a new suggestion |
 | `PATCH` | `/api/suggestions/:id` | ✅ owner/admin | Update title, body, type, locationId, or status |
+| `DELETE` | `/api/suggestions/:id` | ✅ owner/admin | Delete a suggestion and its solutions |
 | `GET` | `/api/suggestions/:id/solutions` | optional | List solutions sorted by score desc |
 | `POST` | `/api/suggestions/:id/solutions` | ✅ required | Add a solution under a suggestion |
 | `POST` | `/api/suggestions/:id/vote` | ✅ required | Vote on a suggestion (+1 / -1) |
@@ -149,7 +150,7 @@ Solutions in the suggestion detail response (`GET /api/suggestions/:id`) are sor
 |---|---|
 | `/suggestions` | List page with type/status/sort filters and pagination |
 | `/suggestions/new` | Create new suggestion form (auth required); optional location picker |
-| `/suggestions/:id` | Detail page with vote controls, solution list sorted by score, solution submission form |
+| `/suggestions/:id` | Detail page with vote controls, solution list sorted by score, solution submission form, and delete button for owners/admins |
 | `/suggestions/:id/edit` | Edit suggestion form (owner or admin/moderator required); allows updating title, body, type, location, and status (status editable by admin/moderator only) |
 
 ### Location Integration

@@ -11,6 +11,7 @@ import {
   LightBulbIcon,
   ExclamationTriangleIcon,
   PencilSquareIcon,
+  TrashIcon,
 } from '@heroicons/react/24/outline';
 import {
   HandThumbUpIcon as HandThumbUpSolid,
@@ -22,6 +23,7 @@ import { useToast } from '@/components/ToastProvider';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import Badge from '@/components/Badge';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { useAsyncData } from '@/hooks/useAsyncData';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -139,6 +141,8 @@ export default function SuggestionDetailPage() {
   const [solutionBody, setSolutionBody] = useState('');
   const [submittingSolution, setSubmittingSolution] = useState(false);
   const [solutionError, setSolutionError] = useState('');
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchSuggestion = useCallback(async () => {
     const res = await suggestionAPI.getById(suggestionId);
@@ -233,6 +237,25 @@ export default function SuggestionDetailPage() {
     }
   };
 
+  // ── Delete suggestion ──────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await suggestionAPI.delete(suggestionId);
+      if (res.success) {
+        addToast('Η πρόταση διαγράφηκε.', { type: 'success' });
+        router.push('/suggestions');
+      } else {
+        addToast(res.message || 'Σφάλμα κατά τη διαγραφή.', { type: 'error' });
+      }
+    } catch (err) {
+      addToast(err.message || 'Σφάλμα κατά τη διαγραφή.', { type: 'error' });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteDialog(false);
+    }
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (loading) {
@@ -312,6 +335,15 @@ export default function SuggestionDetailPage() {
                   <PencilSquareIcon className="h-3.5 w-3.5" />
                   Επεξεργασία
                 </Link>
+              )}
+              {(isOwner || isPrivileged) && (
+                <button
+                  onClick={() => setShowDeleteDialog(true)}
+                  className="inline-flex items-center gap-1 text-red-400 hover:text-red-600"
+                >
+                  <TrashIcon className="h-3.5 w-3.5" />
+                  Διαγραφή
+                </button>
               )}
             </div>
 
@@ -406,5 +438,17 @@ export default function SuggestionDetailPage() {
         </div>
       </div>
     </div>
+
+    <ConfirmDialog
+      isOpen={showDeleteDialog}
+      onCancel={() => setShowDeleteDialog(false)}
+      onConfirm={handleDelete}
+      title="Διαγραφή Πρότασης"
+      message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την πρόταση; Η ενέργεια δεν μπορεί να αναιρεθεί."
+      confirmText={isDeleting ? 'Διαγράφεται...' : 'Διαγραφή'}
+      cancelText="Άκυρο"
+      destructive
+      loading={isDeleting}
+    />
   );
 }

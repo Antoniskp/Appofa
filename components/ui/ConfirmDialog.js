@@ -10,6 +10,7 @@
  * @param {function} onConfirm - Confirm handler
  * @param {function} onCancel - Cancel handler
  * @param {boolean} destructive - Whether action is destructive (red button)
+ * @param {boolean} loading - Whether the confirm action is in progress (disables buttons)
  */
 export default function ConfirmDialog({
   isOpen,
@@ -20,6 +21,7 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
   destructive = false,
+  loading = false,
 }) {
   if (!isOpen) return null;
 
@@ -52,13 +54,15 @@ export default function ConfirmDialog({
           <div className="flex gap-3 justify-end">
             <button
               onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+              disabled={loading}
+              className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
-              className={`px-4 py-2 rounded-md transition-colors ${
+              disabled={loading}
+              className={`px-4 py-2 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                 destructive
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-blue-600 text-white hover:bg-blue-700'

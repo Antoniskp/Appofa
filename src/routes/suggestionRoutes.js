@@ -14,6 +14,7 @@ router.get('/:id/solutions', apiLimiter, optionalAuthMiddleware, suggestionContr
 // Protected routes – auth required
 router.post('/', createLimiter, authMiddleware, csrfProtection, suggestionController.createSuggestion);
 router.patch('/:id', apiLimiter, authMiddleware, csrfProtection, suggestionController.updateSuggestion);
+router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, suggestionController.deleteSuggestion);
 router.post('/:id/solutions', createLimiter, authMiddleware, csrfProtection, suggestionController.createSolution);
 router.post('/:id/vote', apiLimiter, authMiddleware, csrfProtection, suggestionController.voteSuggestion);
 
