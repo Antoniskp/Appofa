@@ -244,15 +244,45 @@ const suggestionController = {
         updates.body = r.value;
       }
 
+      if (req.body.type !== undefined) {
+        const r = normalizeEnum(req.body.type, SUGGESTION_TYPES, 'Type');
+        if (r.error) return res.status(400).json({ success: false, message: r.error });
+        updates.type = r.value;
+      }
+
       if (req.body.status !== undefined) {
         const r = normalizeEnum(req.body.status, SUGGESTION_STATUSES, 'Status');
         if (r.error) return res.status(400).json({ success: false, message: r.error });
         updates.status = r.value;
       }
 
+      if (req.body.locationId !== undefined) {
+        const locId = req.body.locationId;
+        if (locId === null || locId === '') {
+          updates.locationId = null;
+        } else {
+          const parsedLocId = parseInt(locId, 10);
+          if (isNaN(parsedLocId)) {
+            return res.status(400).json({ success: false, message: 'Invalid locationId.' });
+          }
+          const loc = await Location.findByPk(parsedLocId);
+          if (!loc) {
+            return res.status(400).json({ success: false, message: 'Location not found.' });
+          }
+          updates.locationId = parsedLocId;
+        }
+      }
+
       await suggestion.update(updates);
 
-      return res.json({ success: true, data: suggestion, message: 'Suggestion updated.' });
+      const updated = await Suggestion.findByPk(suggestion.id, {
+        include: [
+          { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
+          { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'type'] }
+        ]
+      });
+
+      return res.json({ success: true, data: updated, message: 'Suggestion updated.' });
     } catch (error) {
       console.error('Update suggestion error:', error);
       return res.status(500).json({ success: false, message: 'Error updating suggestion.' });
