@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poll Testing – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html" class="active">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Poll Testing</div>
+    <article class="md"><h1>Poll Frontend Testing Checklist</h1>
+<h2>Pre-Testing Setup</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Backend server running (<code>npm start</code>)</li>
+<li><input disabled="" type="checkbox"> Frontend server running (<code>npm run frontend</code>)</li>
+<li><input disabled="" type="checkbox"> Database populated with test data</li>
+<li><input disabled="" type="checkbox"> At least one admin user account</li>
+<li><input disabled="" type="checkbox"> At least one regular user account</li>
+</ul>
+<h2>1. Navigation &amp; Access</h2>
+<h3>TopNav Integration</h3>
+<ul>
+<li><input disabled="" type="checkbox"> &quot;Δημοσκοπήσεις&quot; link appears in main navigation (desktop)</li>
+<li><input disabled="" type="checkbox"> &quot;Δημοσκοπήσεις&quot; link appears in mobile menu</li>
+<li><input disabled="" type="checkbox"> &quot;Δημιουργία Δημοσκόπησης&quot; appears in user dropdown (authenticated)</li>
+<li><input disabled="" type="checkbox"> Links navigate to correct pages</li>
+</ul>
+<h2>2. Polls List Page (/polls)</h2>
+<h3>Display</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Page loads without errors</li>
+<li><input disabled="" type="checkbox"> Poll cards display with correct information</li>
+<li><input disabled="" type="checkbox"> Poll type badges show correctly (Απλή/Σύνθετη)</li>
+<li><input disabled="" type="checkbox"> Status badges show correctly (Ενεργή/Κλειστή)</li>
+<li><input disabled="" type="checkbox"> Vote counts display correctly</li>
+<li><input disabled="" type="checkbox"> Creator names display correctly</li>
+<li><input disabled="" type="checkbox"> Default image shows when no banner image</li>
+</ul>
+<h3>Filtering</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Status filter works (All/Active/Closed)</li>
+<li><input disabled="" type="checkbox"> Type filter works (All/Simple/Complex)</li>
+<li><input disabled="" type="checkbox"> Search filter works (searches title/description)</li>
+<li><input disabled="" type="checkbox"> Filters can be combined</li>
+<li><input disabled="" type="checkbox"> Clearing filters resets to all polls</li>
+</ul>
+<h3>Pagination</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Pagination controls appear when needed</li>
+<li><input disabled="" type="checkbox"> Next/Previous buttons work</li>
+<li><input disabled="" type="checkbox"> Page numbers are clickable</li>
+<li><input disabled="" type="checkbox"> Current page is highlighted</li>
+<li><input disabled="" type="checkbox"> Pagination updates URL</li>
+</ul>
+<h3>Responsive Design</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Grid layout on desktop (3 columns)</li>
+<li><input disabled="" type="checkbox"> Grid layout on tablet (2 columns)</li>
+<li><input disabled="" type="checkbox"> Grid layout on mobile (1 column)</li>
+<li><input disabled="" type="checkbox"> Cards are properly sized and readable</li>
+</ul>
+<h3>Empty States</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Shows message when no polls found</li>
+<li><input disabled="" type="checkbox"> Shows &quot;Create Poll&quot; button for authenticated users</li>
+<li><input disabled="" type="checkbox"> Shows helpful message for filtered results with no matches</li>
+</ul>
+<h2>3. Create Poll Page (/polls/create)</h2>
+<h3>Access Control</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Redirects to login if not authenticated</li>
+<li><input disabled="" type="checkbox"> Authenticated users can access the page</li>
+</ul>
+<h3>Form - Basic Information</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Title field accepts input (max 200 chars)</li>
+<li><input disabled="" type="checkbox"> Character count displays for title</li>
+<li><input disabled="" type="checkbox"> Description textarea accepts input (max 1000 chars)</li>
+<li><input disabled="" type="checkbox"> Character count displays for description</li>
+<li><input disabled="" type="checkbox"> Required field validation works</li>
+</ul>
+<h3>Form - Settings</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Poll type dropdown works (Simple/Complex)</li>
+<li><input disabled="" type="checkbox"> Visibility dropdown works (Public/Private/Locals Only)</li>
+<li><input disabled="" type="checkbox"> Results visibility dropdown works</li>
+<li><input disabled="" type="checkbox"> Deadline datetime picker works</li>
+<li><input disabled="" type="checkbox"> &quot;Allow user contributions&quot; checkbox toggles</li>
+<li><input disabled="" type="checkbox"> &quot;Allow unauthenticated votes&quot; checkbox toggles</li>
+</ul>
+<h3>Form - Location (Locals Only)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Location selector appears when visibility = &quot;Locals Only&quot;</li>
+<li><input disabled="" type="checkbox"> Location selector populated with locations</li>
+<li><input disabled="" type="checkbox"> Can select a location</li>
+<li><input disabled="" type="checkbox"> Location selector hidden for other visibility types</li>
+</ul>
+<h3>Form - Options (Simple Poll)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> At least 2 option fields shown by default</li>
+<li><input disabled="" type="checkbox"> Can add more options with &quot;+&quot; button</li>
+<li><input disabled="" type="checkbox"> Can remove options (keeping minimum 2)</li>
+<li><input disabled="" type="checkbox"> Option text inputs accept input</li>
+<li><input disabled="" type="checkbox"> Required validation on option text</li>
+</ul>
+<h3>Form - Options (Complex Poll)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Additional fields appear (photo URL, link URL, display text)</li>
+<li><input disabled="" type="checkbox"> All fields accept input</li>
+<li><input disabled="" type="checkbox"> Photo URL field accepts valid URLs</li>
+<li><input disabled="" type="checkbox"> Link URL field accepts valid URLs</li>
+</ul>
+<h3>Form Submission</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Validation errors display for missing required fields</li>
+<li><input disabled="" type="checkbox"> Submit button disabled while submitting</li>
+<li><input disabled="" type="checkbox"> Success: Redirects to poll detail page</li>
+<li><input disabled="" type="checkbox"> Error: Shows error message and stays on form</li>
+<li><input disabled="" type="checkbox"> Cancel button returns to polls list</li>
+</ul>
+<h2>4. Poll Detail Page (/polls/:id)</h2>
+<h3>Display</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Poll title displays</li>
+<li><input disabled="" type="checkbox"> Poll description displays</li>
+<li><input disabled="" type="checkbox"> Type badge displays correctly</li>
+<li><input disabled="" type="checkbox"> Status badge displays correctly</li>
+<li><input disabled="" type="checkbox"> Visibility badge displays (if locals_only)</li>
+<li><input disabled="" type="checkbox"> Creator name displays</li>
+<li><input disabled="" type="checkbox"> Creation date displays</li>
+<li><input disabled="" type="checkbox"> Deadline displays (if set)</li>
+</ul>
+<h3>Voting Section - Simple Poll</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Radio buttons display for each option</li>
+<li><input disabled="" type="checkbox"> Can select an option</li>
+<li><input disabled="" type="checkbox"> Selected option is highlighted</li>
+<li><input disabled="" type="checkbox"> Submit button enabled when option selected</li>
+<li><input disabled="" type="checkbox"> Submit button disabled when no selection</li>
+</ul>
+<h3>Voting Section - Complex Poll</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Option cards display with images</li>
+<li><input disabled="" type="checkbox"> Images load correctly</li>
+<li><input disabled="" type="checkbox"> Fallback icon shows for broken images</li>
+<li><input disabled="" type="checkbox"> Display text shows below option text</li>
+<li><input disabled="" type="checkbox"> Link shows and opens in new tab</li>
+<li><input disabled="" type="checkbox"> Click on card selects the option</li>
+<li><input disabled="" type="checkbox"> Selected card is highlighted</li>
+</ul>
+<h3>Vote Submission</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Vote submission works</li>
+<li><input disabled="" type="checkbox"> Success message displays</li>
+<li><input disabled="" type="checkbox"> Page refreshes to show updated results</li>
+<li><input disabled="" type="checkbox"> Can change vote</li>
+<li><input disabled="" type="checkbox"> &quot;Already voted&quot; message shows</li>
+</ul>
+<h3>Voting - Unauthenticated</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Can vote if allowUnauthenticatedVotes = true</li>
+<li><input disabled="" type="checkbox"> Cannot vote if allowUnauthenticatedVotes = false</li>
+<li><input disabled="" type="checkbox"> Shows login prompt if voting not allowed</li>
+</ul>
+<h3>Voting - Closed Polls</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Cannot vote on closed polls</li>
+<li><input disabled="" type="checkbox"> Shows &quot;poll closed&quot; message</li>
+<li><input disabled="" type="checkbox"> Voting section not shown</li>
+</ul>
+<h3>Results Section</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Results display when allowed</li>
+<li><input disabled="" type="checkbox"> Chart type toggle works (Bar/Pie/Doughnut)</li>
+<li><input disabled="" type="checkbox"> Charts render correctly</li>
+<li><input disabled="" type="checkbox"> Chart tooltips show on hover</li>
+<li><input disabled="" type="checkbox"> Detailed results table displays</li>
+<li><input disabled="" type="checkbox"> Progress bars show correct percentages</li>
+<li><input disabled="" type="checkbox"> Vote counts are correct</li>
+<li><input disabled="" type="checkbox"> Total votes summary displays</li>
+<li><input disabled="" type="checkbox"> Authenticated/unauthenticated breakdown shows</li>
+</ul>
+<h3>Results - Export</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Export button appears</li>
+<li><input disabled="" type="checkbox"> Clicking export downloads PNG image</li>
+<li><input disabled="" type="checkbox"> Image contains the chart</li>
+<li><input disabled="" type="checkbox"> Filename includes poll ID</li>
+</ul>
+<h3>Results Visibility Rules</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Always: Results always visible</li>
+<li><input disabled="" type="checkbox"> After Vote: Results visible after voting</li>
+<li><input disabled="" type="checkbox"> After Deadline: Results visible after poll closes</li>
+<li><input disabled="" type="checkbox"> Creator: Can always see results</li>
+<li><input disabled="" type="checkbox"> Admin: Can always see results</li>
+<li><input disabled="" type="checkbox"> Other users: See results based on rules</li>
+</ul>
+<h3>Edit/Delete Buttons</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Edit button shows for creator</li>
+<li><input disabled="" type="checkbox"> Edit button shows for admin</li>
+<li><input disabled="" type="checkbox"> Edit button doesn&#39;t show for other users</li>
+<li><input disabled="" type="checkbox"> Delete button shows for creator</li>
+<li><input disabled="" type="checkbox"> Delete button shows for admin</li>
+<li><input disabled="" type="checkbox"> Delete button doesn&#39;t show for other users</li>
+</ul>
+<h3>Delete Confirmation</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Delete button opens confirmation dialog</li>
+<li><input disabled="" type="checkbox"> Confirmation shows warning message</li>
+<li><input disabled="" type="checkbox"> Cancel button closes dialog without deleting</li>
+<li><input disabled="" type="checkbox"> Confirm button deletes poll</li>
+<li><input disabled="" type="checkbox"> Redirects to polls list after deletion</li>
+</ul>
+<h3>Responsive Design</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Layout works on mobile</li>
+<li><input disabled="" type="checkbox"> Layout works on tablet</li>
+<li><input disabled="" type="checkbox"> Layout works on desktop</li>
+<li><input disabled="" type="checkbox"> Charts resize appropriately</li>
+<li><input disabled="" type="checkbox"> Option cards stack on mobile</li>
+</ul>
+<h2>5. Edit Poll Page (/polls/:id/edit)</h2>
+<h3>Access Control</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Redirects to login if not authenticated</li>
+<li><input disabled="" type="checkbox"> Shows error if user is not creator/admin</li>
+<li><input disabled="" type="checkbox"> Creator can access</li>
+<li><input disabled="" type="checkbox"> Admin can access</li>
+</ul>
+<h3>Form Pre-population</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Title pre-filled with existing value</li>
+<li><input disabled="" type="checkbox"> Description pre-filled</li>
+<li><input disabled="" type="checkbox"> Type pre-selected</li>
+<li><input disabled="" type="checkbox"> Visibility pre-selected</li>
+<li><input disabled="" type="checkbox"> Results visibility pre-selected</li>
+<li><input disabled="" type="checkbox"> Deadline pre-filled (if set)</li>
+<li><input disabled="" type="checkbox"> Location pre-selected (if locals_only)</li>
+<li><input disabled="" type="checkbox"> Options pre-filled with existing options</li>
+<li><input disabled="" type="checkbox"> Checkboxes reflect existing settings</li>
+</ul>
+<h3>Form Editing</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Can modify title</li>
+<li><input disabled="" type="checkbox"> Can modify description</li>
+<li><input disabled="" type="checkbox"> Can modify settings</li>
+<li><input disabled="" type="checkbox"> Can add new options</li>
+<li><input disabled="" type="checkbox"> Can remove options (keeping minimum 2)</li>
+<li><input disabled="" type="checkbox"> Can modify existing option text</li>
+</ul>
+<h3>Form Submission</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Submit saves changes</li>
+<li><input disabled="" type="checkbox"> Redirects to poll detail page</li>
+<li><input disabled="" type="checkbox"> Changes are reflected on detail page</li>
+<li><input disabled="" type="checkbox"> Error handling works</li>
+<li><input disabled="" type="checkbox"> Cancel returns to detail page</li>
+</ul>
+<h2>6. Error Handling</h2>
+<h3>Network Errors</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Shows error message on API failure</li>
+<li><input disabled="" type="checkbox"> Retry button appears</li>
+<li><input disabled="" type="checkbox"> Error doesn&#39;t crash the page</li>
+</ul>
+<h3>Loading States</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Skeleton loaders show while loading</li>
+<li><input disabled="" type="checkbox"> Loading indicators on buttons</li>
+<li><input disabled="" type="checkbox"> Disabled state on forms while submitting</li>
+</ul>
+<h3>Validation Errors</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Form validation errors display clearly</li>
+<li><input disabled="" type="checkbox"> Inline error messages</li>
+<li><input disabled="" type="checkbox"> Focus on first error field</li>
+</ul>
+<h3>404 Errors</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Shows &quot;Poll not found&quot; for invalid ID</li>
+<li><input disabled="" type="checkbox"> Back button to return to list</li>
+</ul>
+<h2>7. Cross-Browser Testing</h2>
+<h3>Chrome</h3>
+<ul>
+<li><input disabled="" type="checkbox"> All features work</li>
+<li><input disabled="" type="checkbox"> Charts render correctly</li>
+<li><input disabled="" type="checkbox"> Images load properly</li>
+</ul>
+<h3>Firefox</h3>
+<ul>
+<li><input disabled="" type="checkbox"> All features work</li>
+<li><input disabled="" type="checkbox"> Charts render correctly</li>
+<li><input disabled="" type="checkbox"> Images load properly</li>
+</ul>
+<h3>Safari (if available)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> All features work</li>
+<li><input disabled="" type="checkbox"> Charts render correctly</li>
+<li><input disabled="" type="checkbox"> Images load properly</li>
+</ul>
+<h3>Mobile Browsers</h3>
+<ul>
+<li><input disabled="" type="checkbox"> All features work on mobile Chrome</li>
+<li><input disabled="" type="checkbox"> All features work on mobile Safari</li>
+<li><input disabled="" type="checkbox"> Touch interactions work</li>
+</ul>
+<h2>8. Accessibility</h2>
+<h3>Keyboard Navigation</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Can tab through all interactive elements</li>
+<li><input disabled="" type="checkbox"> Can select options with keyboard</li>
+<li><input disabled="" type="checkbox"> Can submit forms with keyboard</li>
+<li><input disabled="" type="checkbox"> Focus indicators are visible</li>
+</ul>
+<h3>Screen Reader</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Headings are properly structured</li>
+<li><input disabled="" type="checkbox"> Buttons have descriptive labels</li>
+<li><input disabled="" type="checkbox"> Form fields have labels</li>
+<li><input disabled="" type="checkbox"> Images have alt text</li>
+</ul>
+<h3>Color Contrast</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Text is readable on backgrounds</li>
+<li><input disabled="" type="checkbox"> Status badges have sufficient contrast</li>
+<li><input disabled="" type="checkbox"> Links are distinguishable</li>
+</ul>
+<h2>9. Performance</h2>
+<h3>Page Load</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Polls list loads in &lt; 2 seconds</li>
+<li><input disabled="" type="checkbox"> Poll detail loads in &lt; 2 seconds</li>
+<li><input disabled="" type="checkbox"> Charts render quickly</li>
+</ul>
+<h3>Interactions</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Form inputs are responsive</li>
+<li><input disabled="" type="checkbox"> Vote submission is quick</li>
+<li><input disabled="" type="checkbox"> Chart type toggle is instant</li>
+</ul>
+<h2>10. Integration</h2>
+<h3>With Existing Features</h3>
+<ul>
+<li><input disabled="" type="checkbox"> TopNav integration doesn&#39;t break existing navigation</li>
+<li><input disabled="" type="checkbox"> Styling matches existing components</li>
+<li><input disabled="" type="checkbox"> Uses existing auth context correctly</li>
+<li><input disabled="" type="checkbox"> Uses existing API client correctly</li>
+</ul>
+<h3>Data Consistency</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Vote counts update correctly</li>
+<li><input disabled="" type="checkbox"> Poll status reflects deadline</li>
+<li><input disabled="" type="checkbox"> Creator information is accurate</li>
+<li><input disabled="" type="checkbox"> Timestamps are correct</li>
+</ul>
+<h2>Test Results Summary</h2>
+<p><strong>Date Tested:</strong> _________________</p>
+<p><strong>Tested By:</strong> _________________</p>
+<p><strong>Browser/Device:</strong> _________________</p>
+<p><strong>Issues Found:</strong> _________________</p>
+<p><strong>Status:</strong> [ ] Pass [ ] Fail [ ] Needs Review</p>
+<h2>Notes</h2>
+<hr>
+<hr>
+<hr>
+</article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Suggestions Feature – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html" class="active">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Suggestions Feature</div>
+    <article class="md"><h1>Suggestions &amp; Solutions Feature</h1>
+<p>Users can post ideas, problems, or location suggestions. Others can propose solutions and both suggestions and solutions can be upvoted or downvoted.</p>
+<hr>
+<h2>Data Models</h2>
+<h3>Suggestion</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td>INTEGER PK</td>
+<td>Auto-increment</td>
+</tr>
+<tr>
+<td><code>title</code></td>
+<td>STRING</td>
+<td>5–200 chars</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td>TEXT</td>
+<td>10–10 000 chars</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>ENUM</td>
+<td><code>idea</code>, <code>problem</code>, <code>location_suggestion</code></td>
+</tr>
+<tr>
+<td><code>locationId</code></td>
+<td>INTEGER FK → Locations</td>
+<td>optional</td>
+</tr>
+<tr>
+<td><code>authorId</code></td>
+<td>INTEGER FK → Users</td>
+<td>cascade delete</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td>ENUM</td>
+<td><code>open</code>, <code>under_review</code>, <code>implemented</code>, <code>rejected</code></td>
+</tr>
+</tbody></table>
+<h3>Solution</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td>INTEGER PK</td>
+<td>Auto-increment</td>
+</tr>
+<tr>
+<td><code>suggestionId</code></td>
+<td>INTEGER FK → Suggestions</td>
+<td>cascade delete</td>
+</tr>
+<tr>
+<td><code>body</code></td>
+<td>TEXT</td>
+<td>10–5 000 chars</td>
+</tr>
+<tr>
+<td><code>authorId</code></td>
+<td>INTEGER FK → Users</td>
+<td>cascade delete</td>
+</tr>
+</tbody></table>
+<h3>SuggestionVote</h3>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td>INTEGER PK</td>
+<td>Auto-increment</td>
+</tr>
+<tr>
+<td><code>userId</code></td>
+<td>INTEGER FK → Users</td>
+<td>cascade delete</td>
+</tr>
+<tr>
+<td><code>targetType</code></td>
+<td>ENUM</td>
+<td><code>suggestion</code> or <code>solution</code></td>
+</tr>
+<tr>
+<td><code>targetId</code></td>
+<td>INTEGER</td>
+<td>ID of the target</td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>SMALLINT</td>
+<td><code>+1</code> (upvote) or <code>-1</code> (downvote)</td>
+</tr>
+</tbody></table>
+<p><strong>Unique constraint:</strong> <code>(userId, targetType, targetId)</code> — one vote per user per target.</p>
+<hr>
+<h2>API Endpoints</h2>
+<p>All endpoints are mounted under <code>/api/suggestions</code> and <code>/api/solutions</code>.</p>
+<h3>Suggestions</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET</code></td>
+<td><code>/api/suggestions</code></td>
+<td>optional</td>
+<td>List suggestions (filters + pagination)</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/suggestions/:id</code></td>
+<td>optional</td>
+<td>Get suggestion detail with solutions sorted by score</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/suggestions</code></td>
+<td>✅ required</td>
+<td>Create a new suggestion</td>
+</tr>
+<tr>
+<td><code>PATCH</code></td>
+<td><code>/api/suggestions/:id</code></td>
+<td>✅ owner/admin</td>
+<td>Update title, body, type, locationId, or status</td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/api/suggestions/:id</code></td>
+<td>✅ owner/admin</td>
+<td>Delete a suggestion and its solutions</td>
+</tr>
+<tr>
+<td><code>GET</code></td>
+<td><code>/api/suggestions/:id/solutions</code></td>
+<td>optional</td>
+<td>List solutions sorted by score desc</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/suggestions/:id/solutions</code></td>
+<td>✅ required</td>
+<td>Add a solution under a suggestion</td>
+</tr>
+<tr>
+<td><code>POST</code></td>
+<td><code>/api/suggestions/:id/vote</code></td>
+<td>✅ required</td>
+<td>Vote on a suggestion (+1 / -1)</td>
+</tr>
+</tbody></table>
+<h3>Solutions</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POST</code></td>
+<td><code>/api/solutions/:id/vote</code></td>
+<td>✅ required</td>
+<td>Vote on a solution (+1 / -1)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Query Parameters for <code>GET /api/suggestions</code></h2>
+<table>
+<thead>
+<tr>
+<th>Param</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>type</code></td>
+<td><code>idea</code>, <code>problem</code>, <code>location_suggestion</code></td>
+<td>all</td>
+<td>Filter by type</td>
+</tr>
+<tr>
+<td><code>status</code></td>
+<td><code>open</code>, <code>under_review</code>, <code>implemented</code>, <code>rejected</code></td>
+<td>all</td>
+<td>Filter by status</td>
+</tr>
+<tr>
+<td><code>locationId</code></td>
+<td>integer</td>
+<td>—</td>
+<td>Filter by location</td>
+</tr>
+<tr>
+<td><code>sort</code></td>
+<td><code>newest</code>, <code>top</code></td>
+<td><code>newest</code></td>
+<td>Sort order</td>
+</tr>
+<tr>
+<td><code>page</code></td>
+<td>integer</td>
+<td><code>1</code></td>
+<td>Page number</td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>integer (max 50)</td>
+<td><code>12</code></td>
+<td>Results per page</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Vote Behaviour (Upsert/Toggle)</h2>
+<p>Sending <code>POST /api/suggestions/:id/vote</code> with <code>{ &quot;value&quot;: 1 }</code>:</p>
+<ul>
+<li><strong>No existing vote</strong> → creates a <code>+1</code> vote.</li>
+<li><strong>Existing vote with different value</strong> → updates the vote (e.g. <code>+1</code> → <code>-1</code>).</li>
+<li><strong>Existing vote with same value</strong> → removes the vote (toggle off, score returns to 0).</li>
+</ul>
+<p>The response always includes:</p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;score&quot;: 3,
+    &quot;myVote&quot;: 1
+  }
+}
+</code></pre>
+<p><code>myVote</code> is <code>null</code> when the caller has no active vote.</p>
+<hr>
+<h2>Score Computation</h2>
+<p>Score is computed as the <strong>SUM of all vote values</strong> for a target:</p>
+<pre><code class="language-sql">SELECT SUM(value) FROM SuggestionVotes
+WHERE targetType = &#39;suggestion&#39; AND targetId = :id
+</code></pre>
+<p>Solutions in the suggestion detail response (<code>GET /api/suggestions/:id</code>) are sorted by <code>score DESC</code>, then <code>createdAt ASC</code>.</p>
+<hr>
+<h2>Response Example</h2>
+<p><code>GET /api/suggestions/42</code>:</p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;id&quot;: 42,
+    &quot;title&quot;: &quot;Add a park on Main St&quot;,
+    &quot;body&quot;: &quot;We need more green space...&quot;,
+    &quot;type&quot;: &quot;idea&quot;,
+    &quot;status&quot;: &quot;open&quot;,
+    &quot;score&quot;: 12,
+    &quot;myVote&quot;: 1,
+    &quot;author&quot;: { &quot;id&quot;: 7, &quot;username&quot;: &quot;alice&quot;, &quot;avatar&quot;: null },
+    &quot;location&quot;: { &quot;id&quot;: 3, &quot;name&quot;: &quot;Central Municipality&quot;, &quot;slug&quot;: &quot;central&quot; },
+    &quot;solutions&quot;: [
+      {
+        &quot;id&quot;: 5,
+        &quot;body&quot;: &quot;Convert the empty lot at No.12 into a pocket park.&quot;,
+        &quot;score&quot;: 8,
+        &quot;myVote&quot;: null,
+        &quot;author&quot;: { &quot;id&quot;: 9, &quot;username&quot;: &quot;bob&quot; }
+      }
+    ]
+  }
+}
+</code></pre>
+<hr>
+<h2>Frontend Pages</h2>
+<table>
+<thead>
+<tr>
+<th>Route</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/suggestions</code></td>
+<td>List page with type/status/sort filters and pagination</td>
+</tr>
+<tr>
+<td><code>/suggestions/new</code></td>
+<td>Create new suggestion form (auth required); optional location picker</td>
+</tr>
+<tr>
+<td><code>/suggestions/:id</code></td>
+<td>Detail page with vote controls, solution list sorted by score, solution submission form, and delete button for owners/admins</td>
+</tr>
+<tr>
+<td><code>/suggestions/:id/edit</code></td>
+<td>Edit suggestion form (owner or admin/moderator required); allows updating title, body, type, location, and status (status editable by admin/moderator only)</td>
+</tr>
+</tbody></table>
+<h3>Location Integration</h3>
+<p>Suggestions can optionally be linked to a location via <code>locationId</code>. When a suggestion is linked to a location:</p>
+<ul>
+<li>It appears in the <strong>Suggestions</strong> tab on the location detail page (<code>/locations/:slug?tab=suggestions</code>).</li>
+<li>The location name is shown as a badge on the suggestion detail page.</li>
+<li>The location can be selected or changed from the new/edit suggestion forms using the hierarchical <code>CascadingLocationSelector</code> (country → prefecture → municipality).</li>
+</ul>
+<hr>
+<h2>Running the Migration</h2>
+<pre><code class="language-bash">npm run migrate
+</code></pre>
+<p>Migration <code>028-create-suggestions-tables.js</code> creates <code>Suggestions</code>, <code>Solutions</code>, and <code>SuggestionVotes</code> tables with all required indexes.</p>
+</article>
+  </main>
+</body>
+</html>

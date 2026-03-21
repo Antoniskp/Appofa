@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OAuth – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html" class="active">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › OAuth</div>
+    <article class="md"><h1>OAuth Integration Guide</h1>
+<p>This application supports OAuth-based authentication for easy signup and login. Currently, GitHub and Google OAuth are implemented, with support for future integration of Facebook.</p>
+<h2>Features</h2>
+<h3>GitHub OAuth</h3>
+<ul>
+<li><strong>Sign up with GitHub</strong>: New users can create an account using their GitHub profile</li>
+<li><strong>Sign in with GitHub</strong>: Existing users can log in with their GitHub account</li>
+<li><strong>Account Linking</strong>: Users can link their GitHub account to their existing account</li>
+<li><strong>Profile Auto-fill</strong>: User profiles are automatically populated with GitHub data (name, avatar, email)</li>
+<li><strong>Account Management</strong>: Users can unlink their GitHub account from the profile page</li>
+</ul>
+<h3>Google OAuth</h3>
+<ul>
+<li><strong>Sign up with Google</strong>: New users can create an account using their Google profile</li>
+<li><strong>Sign in with Google</strong>: Existing users can log in with their Google account</li>
+<li><strong>Account Linking</strong>: Users can link their Google account to their existing account</li>
+<li><strong>Profile Auto-fill</strong>: User profiles are automatically populated with Google data (name, avatar, email)</li>
+<li><strong>Account Management</strong>: Users can unlink their Google account from the profile page</li>
+</ul>
+<h3>Future Support</h3>
+<p>The OAuth infrastructure is designed to support additional providers:</p>
+<ul>
+<li>Facebook OAuth (coming soon)</li>
+</ul>
+<h2>Setup</h2>
+<h3>GitHub OAuth Configuration</h3>
+<ol>
+<li><p><strong>Create a GitHub OAuth App</strong></p>
+<ul>
+<li>Go to <a href="https://github.com/settings/developers">GitHub Developer Settings</a></li>
+<li>Click &quot;New OAuth App&quot;</li>
+<li>Fill in the application details:<ul>
+<li>Application name: Your app name</li>
+<li>Homepage URL: <code>http://localhost:3001</code> (or your production URL)</li>
+<li>Authorization callback URL: <code>http://localhost:3000/api/auth/github/callback</code></li>
+</ul>
+</li>
+<li>Click &quot;Register application&quot;</li>
+</ul>
+</li>
+<li><p><strong>Get Your Credentials</strong></p>
+<ul>
+<li>After creating the app, you&#39;ll see your Client ID</li>
+<li>Generate a new client secret</li>
+<li>Copy both values</li>
+</ul>
+</li>
+<li><p><strong>Configure Environment Variables</strong>
+Add the following to your <code>.env</code> file:</p>
+<pre><code class="language-bash">GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+GITHUB_CALLBACK_URL=http://localhost:3000/api/auth/github/callback
+FRONTEND_URL=http://localhost:3001
+</code></pre>
+</li>
+<li><p><strong>Restart the Application</strong>
+After configuring the environment variables, restart both the API server and frontend.</p>
+</li>
+</ol>
+<h3>Google OAuth Configuration</h3>
+<ol>
+<li><p><strong>Create a Google OAuth App</strong></p>
+<ul>
+<li>Go to <a href="https://console.cloud.google.com/">Google Cloud Console</a></li>
+<li>Create a new project or select an existing one</li>
+<li>Enable Google+ API or Google Identity in the API Library</li>
+<li>Go to &quot;Credentials&quot; in the left sidebar</li>
+<li>Click &quot;Create Credentials&quot; → &quot;OAuth 2.0 Client IDs&quot;</li>
+<li>Configure the OAuth consent screen if prompted</li>
+<li>Select &quot;Web application&quot; as the application type</li>
+<li>Fill in the application details:<ul>
+<li>Name: Your app name</li>
+<li>Authorized JavaScript origins: <code>http://localhost:3001</code> (or your frontend URL)</li>
+<li>Authorized redirect URIs: <code>http://localhost:3000/api/auth/google/callback</code></li>
+</ul>
+</li>
+<li>Click &quot;Create&quot;</li>
+</ul>
+</li>
+<li><p><strong>Get Your Credentials</strong></p>
+<ul>
+<li>After creating the OAuth client, you&#39;ll see your Client ID and Client Secret</li>
+<li>Copy both values</li>
+</ul>
+</li>
+<li><p><strong>Configure Environment Variables</strong>
+Add the following to your <code>.env</code> file:</p>
+<pre><code class="language-bash">GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/auth/google/callback
+FRONTEND_URL=http://localhost:3001
+</code></pre>
+</li>
+<li><p><strong>Restart the Application</strong>
+After configuring the environment variables, restart both the API server and frontend.</p>
+</li>
+</ol>
+<h3>Production Deployment</h3>
+<p>For production:</p>
+<ol>
+<li>Update the callback URLs in your GitHub and Google OAuth App settings to your production domain</li>
+<li>Update the environment variables:<pre><code class="language-bash">GITHUB_CALLBACK_URL=https://your-domain.com/api/auth/github/callback
+GOOGLE_CALLBACK_URL=https://your-domain.com/api/auth/google/callback
+FRONTEND_URL=https://your-frontend-domain.com
+</code></pre>
+</li>
+</ol>
+<h2>User Flow</h2>
+<h3>New User Signup with GitHub</h3>
+<ol>
+<li>User clicks &quot;Sign up with GitHub&quot; on the registration page</li>
+<li>User is redirected to GitHub for authorization</li>
+<li>After authorization, GitHub redirects back with an authorization code</li>
+<li>The application exchanges the code for an access token</li>
+<li>User profile data is fetched from GitHub</li>
+<li>A new account is created with:<ul>
+<li>Username from GitHub login</li>
+<li>Email from GitHub primary email</li>
+<li>First/Last name from GitHub name field</li>
+<li>Avatar from GitHub profile picture</li>
+</ul>
+</li>
+<li>User is automatically logged in</li>
+</ol>
+<h3>Existing User Login with GitHub</h3>
+<ol>
+<li>User clicks &quot;Continue with GitHub&quot; on the login page</li>
+<li>User is redirected to GitHub for authorization</li>
+<li>After authorization, the application checks if the GitHub account is linked</li>
+<li>If linked, user is logged in</li>
+<li>If the email matches an existing account, GitHub is automatically linked</li>
+<li>User is redirected to the application</li>
+</ol>
+<h3>Linking GitHub to Existing Account</h3>
+<ol>
+<li>User goes to Profile page</li>
+<li>User clicks &quot;Connect&quot; next to GitHub in the Connected Accounts section</li>
+<li>User is redirected to GitHub for authorization</li>
+<li>After authorization, GitHub account is linked to the user&#39;s account</li>
+<li>User is redirected back to the profile page</li>
+</ol>
+<h3>Unlinking GitHub Account</h3>
+<ol>
+<li>User goes to Profile page</li>
+<li>User clicks &quot;Disconnect&quot; next to GitHub</li>
+<li>Confirmation dialog appears</li>
+<li>GitHub account is unlinked (requires password to be set)</li>
+</ol>
+<h2>Security Features</h2>
+<h3>CSRF Protection</h3>
+<ul>
+<li>State tokens are generated for each OAuth flow</li>
+<li>Tokens are validated during callback to prevent CSRF attacks</li>
+<li>Tokens expire after 10 minutes</li>
+<li>Tokens are single-use (consumed after validation)</li>
+</ul>
+<h3>Account Safety</h3>
+<ul>
+<li>Users cannot unlink their only authentication method</li>
+<li>OAuth-only users must set a password before unlinking</li>
+<li>GitHub IDs are stored securely in the database</li>
+<li><strong>Access tokens are encrypted using AES-256-GCM encryption</strong> before storage</li>
+<li>Encryption keys are derived from JWT_SECRET using PBKDF2</li>
+</ul>
+<h2>API Endpoints</h2>
+<h3>Public Endpoints</h3>
+<h4>Get OAuth Configuration</h4>
+<pre><code>GET /api/auth/oauth/config
+</code></pre>
+<p>Returns which OAuth providers are configured.</p>
+<h4>Initiate GitHub OAuth</h4>
+<pre><code>GET /api/auth/github?mode=login
+GET /api/auth/github?mode=link
+</code></pre>
+<p>Initiates the GitHub OAuth flow. Mode can be <code>login</code> (for signup/login) or <code>link</code> (for linking to existing account).</p>
+<h4>GitHub OAuth Callback</h4>
+<pre><code>GET /api/auth/github/callback?code=...&amp;state=...
+</code></pre>
+<p>Handles the callback from GitHub after authorization.</p>
+<h4>Initiate Google OAuth</h4>
+<pre><code>GET /api/auth/google?mode=login
+GET /api/auth/google?mode=link
+</code></pre>
+<p>Initiates the Google OAuth flow. Mode can be <code>login</code> (for signup/login) or <code>link</code> (for linking to existing account).</p>
+<h4>Google OAuth Callback</h4>
+<pre><code>GET /api/auth/google/callback?code=...&amp;state=...
+</code></pre>
+<p>Handles the callback from Google after authorization.</p>
+<h3>Protected Endpoints</h3>
+<h4>Unlink GitHub Account</h4>
+<pre><code>DELETE /api/auth/github/unlink
+Cookie: auth_token=&lt;token&gt;
+</code></pre>
+<p>Unlinks the GitHub account from the current user.</p>
+<h4>Unlink Google Account</h4>
+<pre><code>DELETE /api/auth/google/unlink
+Cookie: auth_token=&lt;token&gt;
+</code></pre>
+<p>Unlinks the Google account from the current user.</p>
+<h2>UI Components</h2>
+<h3>Login Page</h3>
+<ul>
+<li>&quot;Continue with GitHub&quot; button (enabled when OAuth is configured)</li>
+<li>&quot;Continue with Google&quot; button (enabled when OAuth is configured)</li>
+<li>Placeholder button for Facebook (disabled)</li>
+</ul>
+<h3>Register Page</h3>
+<ul>
+<li>&quot;Sign up with GitHub&quot; button (enabled when OAuth is configured)</li>
+<li>&quot;Sign up with Google&quot; button (enabled when OAuth is configured)</li>
+<li>Placeholder button for Facebook (disabled)</li>
+</ul>
+<h3>Profile Page</h3>
+<ul>
+<li>Connected Accounts section showing:<ul>
+<li>GitHub connection status with Connect/Disconnect button</li>
+<li>Google connection status with Connect/Disconnect button</li>
+<li>Placeholder for Facebook</li>
+</ul>
+</li>
+</ul>
+<h2>Database Schema</h2>
+<p>The User model includes the following OAuth-related fields:</p>
+<pre><code class="language-javascript">{
+  githubId: STRING (unique, nullable),
+  githubAccessToken: STRING (nullable),
+  googleId: STRING (unique, nullable),
+  googleAccessToken: STRING (nullable),
+  avatar: STRING (nullable),
+  password: STRING (nullable) // Can be null for OAuth-only users
+}
+</code></pre>
+<h2>Testing</h2>
+<p>OAuth tests are included in <code>__tests__/oauth.test.js</code>:</p>
+<ul>
+<li>State token generation and validation</li>
+<li>OAuth configuration checking</li>
+<li>Account linking/unlinking</li>
+<li>User creation with OAuth fields</li>
+</ul>
+<p>Run tests with:</p>
+<pre><code class="language-bash">npm test
+</code></pre>
+<h2>Troubleshooting</h2>
+<h3>OAuth buttons are disabled</h3>
+<ul>
+<li>Check that OAuth credentials are set in <code>.env</code>:<ul>
+<li>For GitHub: <code>GITHUB_CLIENT_ID</code> and <code>GITHUB_CLIENT_SECRET</code></li>
+<li>For Google: <code>GOOGLE_CLIENT_ID</code> and <code>GOOGLE_CLIENT_SECRET</code></li>
+</ul>
+</li>
+<li>Restart the API server after setting environment variables</li>
+</ul>
+<h3>OAuth callback fails</h3>
+<ul>
+<li>Verify the callback URL in your OAuth App settings matches the URL in <code>.env</code>:<ul>
+<li>GitHub: <code>GITHUB_CALLBACK_URL</code></li>
+<li>Google: <code>GOOGLE_CALLBACK_URL</code></li>
+</ul>
+</li>
+<li>Check that <code>FRONTEND_URL</code> is correctly set</li>
+</ul>
+<h3>Cannot unlink OAuth account</h3>
+<ul>
+<li>Ensure you have a password set (OAuth-only users must set a password first)</li>
+<li>Check that you have at least one other authentication method (password or another OAuth provider)</li>
+<li>You cannot remove your only authentication method</li>
+</ul>
+<h2>Future Enhancements</h2>
+<ul>
+<li>Facebook OAuth implementation</li>
+<li>Twitter/X OAuth support</li>
+<li>LinkedIn OAuth support</li>
+<li>Multiple OAuth accounts per user</li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VPS Setup – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html" class="active">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › VPS Setup</div>
+    <article class="md"><h1>VPS Deployment Guide</h1>
+<p>A comprehensive guide for deploying the Appofa News Application on a Virtual Private Server running Ubuntu or Debian Linux.</p>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#important-variables-to-change">Important Variables to Change</a></li>
+<li><a href="#initial-vps-setup">Initial VPS Setup</a><ul>
+<li><a href="#ssh-configuration">SSH Configuration</a></li>
+</ul>
+</li>
+<li><a href="#application-installation">Application Installation</a></li>
+<li><a href="#nginx-reverse-proxy-setup">Nginx Reverse Proxy Setup</a></li>
+<li><a href="#sslhttps-configuration">SSL/HTTPS Configuration</a></li>
+<li><a href="#post-deployment-verification">Post-Deployment Verification</a></li>
+<li><a href="#updating-the-application">Updating the Application</a><ul>
+<li><a href="#standard-update-workflow">Standard Update Workflow</a></li>
+<li><a href="#clean-update-workflow">Clean Update Workflow</a></li>
+<li><a href="#upgrading-from-old-single-process-deployment">Upgrading from Old Single-Process Deployment</a></li>
+<li><a href="#fix-duplicate-pm2-processes">Fix Duplicate PM2 Processes</a></li>
+</ul>
+</li>
+<li><a href="#troubleshooting-502-bad-gateway">Troubleshooting: 502 Bad Gateway</a></li>
+</ul>
+<hr>
+<h2>Overview</h2>
+<p>The Appofa News Application uses a split architecture:</p>
+<ul>
+<li><strong>Backend</strong>: Express.js API server (Node.js) on port 3000</li>
+<li><strong>Frontend</strong>: Next.js application on port 3001</li>
+<li><strong>Database</strong>: PostgreSQL</li>
+</ul>
+<p>Both components must be running for the application to function correctly.</p>
+<hr>
+<h2>Prerequisites</h2>
+<h3>System Requirements</h3>
+<ul>
+<li>Ubuntu/Debian Linux server (Ubuntu 20.04+ or Debian 11+ recommended)</li>
+<li>Root or sudo access</li>
+<li>At least 2GB RAM (4GB recommended)</li>
+<li>At least 20GB disk space</li>
+<li>Domain name (optional but recommended for HTTPS)</li>
+</ul>
+<h3>Software Requirements</h3>
+<ul>
+<li>PostgreSQL v12 or higher</li>
+<li>Node.js v22 or higher (required for Next.js 16.x)</li>
+<li>npm v10.x or higher</li>
+<li>Git</li>
+<li>PM2 for process management</li>
+<li>Nginx for reverse proxy</li>
+<li>Certbot (for SSL/HTTPS)</li>
+</ul>
+<hr>
+<h2>Important Variables to Change</h2>
+<p>Before deployment, prepare these values:</p>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Location</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Database password</td>
+<td><code>/var/www/Appofa/.env</code></td>
+<td><code>strong_password_123</code></td>
+</tr>
+<tr>
+<td>Database user</td>
+<td><code>/var/www/Appofa/.env</code></td>
+<td><code>newsapp_user</code></td>
+</tr>
+<tr>
+<td>API URL</td>
+<td><code>/var/www/Appofa/.env</code></td>
+<td><code>http://185.92.192.81</code> or <code>https://your-domain.com</code></td>
+</tr>
+<tr>
+<td>Server name</td>
+<td><code>/etc/nginx/sites-available/newsapp</code></td>
+<td><code>your-domain.com</code></td>
+</tr>
+<tr>
+<td>Server IP</td>
+<td><code>/etc/nginx/sites-available/newsapp</code></td>
+<td><code>185.92.192.81</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>Initial VPS Setup</h2>
+<h3>SSH Configuration</h3>
+<h4>1. Fix SSH Runtime Directory</h4>
+<p>The SSH daemon requires a runtime directory for proper operation:</p>
+<pre><code class="language-bash"># Create SSH runtime directory
+sudo mkdir -p /run/sshd
+
+# Set proper permissions
+sudo chmod 755 /run/sshd
+
+# Create systemd tmpfiles configuration to persist across reboots
+sudo tee /etc/tmpfiles.d/sshd.conf &gt; /dev/null &lt;&lt; &#39;EOF&#39;
+d /run/sshd 0755 root root -
+EOF
+
+# Apply the tmpfiles configuration
+sudo systemd-tmpfiles --create
+
+# Restart SSH service
+sudo systemctl restart ssh
+</code></pre>
+<p><strong>Why this is needed:</strong></p>
+<ul>
+<li><code>/run/sshd</code> is required by the SSH daemon for privilege separation</li>
+<li>The directory is typically on a tmpfs filesystem that gets cleared on reboot</li>
+<li>The tmpfiles.d configuration ensures it&#39;s recreated automatically on boot</li>
+</ul>
+<h4>2. Configure SSH Keepalive</h4>
+<p>Maintain stable SSH connections:</p>
+<pre><code class="language-bash"># Append keepalive settings to SSH daemon configuration
+sudo tee -a /etc/ssh/sshd_config &gt; /dev/null &lt;&lt; &#39;EOF&#39;
+
+# Keepalive settings
+ClientAliveInterval 300
+ClientAliveCountMax 5
+TCPKeepAlive yes
+EOF
+
+# Restart SSH service to apply changes
+sudo systemctl restart ssh
+</code></pre>
+<p><strong>What these settings do:</strong></p>
+<ul>
+<li><code>ClientAliveInterval 300</code>: Server sends keepalive message every 300 seconds (5 minutes)</li>
+<li><code>ClientAliveCountMax 5</code>: Server disconnects after 5 unanswered keepalive messages (25 minutes total)</li>
+<li><code>TCPKeepAlive yes</code>: Enables TCP-level keepalive probes to detect dead connections</li>
+</ul>
+<hr>
+<h2>Application Installation</h2>
+<h3>1. Install System Dependencies</h3>
+<pre><code class="language-bash"># Disable Virtuozzo/OpenVZ repo if present (avoids harmless Translation-en 404s)
+grep -RIn &quot;repo.virtuozzo.com/ctpreset&quot; /etc/apt/sources.list /etc/apt/sources.list.d || true
+sudo sh -c &#39;grep -RIl &quot;repo.virtuozzo.com/ctpreset&quot; /etc/apt/sources.list /etc/apt/sources.list.d | while read -r f; do mv &quot;$f&quot; &quot;$f.disabled&quot;; done&#39; || true
+
+# Update system
+sudo apt update &amp;&amp; sudo apt upgrade -y
+
+# Install prerequisites
+sudo apt install -y curl ca-certificates gnupg nano git
+
+# Install Node.js 22 LTS via NodeSource
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verify installation
+node -v  # Should show v22.x.x
+npm -v   # Should show v10.x.x or higher
+
+# Install PostgreSQL
+sudo apt install -y postgresql postgresql-contrib
+
+# Install PM2 for process management
+sudo npm install -g pm2
+</code></pre>
+<p><strong>Upgrading from Node 20?</strong> See <code>doc/NODE_UPGRADE_VPS.md</code> for step-by-step instructions.</p>
+<h3>2. Set Up PostgreSQL</h3>
+<pre><code class="language-bash">sudo -u postgres psql
+</code></pre>
+<pre><code class="language-sql">CREATE DATABASE newsapp;
+CREATE USER newsapp_user WITH PASSWORD &#39;strong_password&#39;;
+GRANT ALL PRIVILEGES ON DATABASE newsapp TO newsapp_user;
+\q
+</code></pre>
+<h3>3. Clone and Configure Application</h3>
+<pre><code class="language-bash"># Create application directory
+cd /var/www
+
+# Clone repository
+git clone https://github.com/Antoniskp/Appofa.git
+cd Appofa
+
+# Install all dependencies
+npm ci
+</code></pre>
+<p><strong>Note:</strong> The project uses npm overrides to force newer versions:</p>
+<ul>
+<li><code>glob@11.0.0</code> (requires Node 22+)</li>
+<li><code>rimraf@6.0.1</code> (requires Node 22+)</li>
+<li><code>tar@7.5.7</code> (security updates)</li>
+</ul>
+<h3>4. Configure Environment Variables</h3>
+<pre><code class="language-bash">cp .env.example .env
+nano .env
+</code></pre>
+<p>Edit with your production credentials:</p>
+<pre><code class="language-env"># Database Configuration
+DB_NAME=newsapp
+DB_USER=newsapp_user
+DB_PASSWORD=strong_password  # CHANGE THIS!
+DB_HOST=localhost
+DB_PORT=5432
+
+# API Configuration (use your domain or server IP)
+NEXT_PUBLIC_API_URL=http://185.92.192.81
+
+# JWT Secret (generate with: openssl rand -base64 32)
+JWT_SECRET=your_generated_secret  # CHANGE THIS!
+
+# Environment
+NODE_ENV=production
+</code></pre>
+<p><strong>Generate a secure JWT secret:</strong></p>
+<pre><code class="language-bash">openssl rand -base64 32
+</code></pre>
+<h3>5. Build the Frontend</h3>
+<pre><code class="language-bash">npm run frontend:build
+</code></pre>
+<p>This creates optimized production assets in the <code>.next</code> directory.</p>
+<h3>6. Start with PM2</h3>
+<p>The application requires <strong>two separate PM2 processes</strong>:</p>
+<pre><code class="language-bash"># Start Express backend (API server) on port 3000
+pm2 start src/index.js --name newsapp-backend
+
+# Start Next.js frontend on port 3001
+pm2 start npm --name newsapp-frontend -- run frontend:start
+
+# Save PM2 process list
+pm2 save
+
+# Enable PM2 to start on system boot
+pm2 startup
+# Follow the instructions shown by PM2 (usually requires sudo)
+</code></pre>
+<p><strong>Important:</strong> Both processes must be running for the application to work properly.</p>
+<p><strong>Verify processes are running:</strong></p>
+<pre><code class="language-bash">pm2 status
+# Both newsapp-backend and newsapp-frontend should show &quot;online&quot;
+</code></pre>
+<hr>
+<h2>Nginx Reverse Proxy Setup</h2>
+<h3>1. Install Nginx</h3>
+<pre><code class="language-bash"># Install nginx
+sudo apt install -y nginx
+
+# Remove default nginx site to avoid server_name conflicts
+sudo rm -f /etc/nginx/sites-enabled/default
+</code></pre>
+<h3>2. Create Nginx Configuration</h3>
+<pre><code class="language-bash">sudo nano /etc/nginx/sites-available/newsapp
+</code></pre>
+<p>Add the following configuration (replace <code>your-domain.com</code> and <code>YOUR_SERVER_IP</code>):</p>
+<pre><code class="language-nginx">server {
+    listen 80;
+    # Include both domain and IP to handle requests to either
+    # Only ONE server block should claim the IP to avoid conflicts
+    server_name your-domain.com YOUR_SERVER_IP;
+
+    # Route API requests to Express backend on port 3000
+    location /api/ {
+        proxy_pass http://localhost:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection &#39;upgrade&#39;;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Route Next.js static assets to frontend on port 3001
+    # This includes JavaScript chunks, CSS, images, and other static files
+    location /_next/ {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection &#39;upgrade&#39;;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Route all other requests (pages, etc.) to Next.js frontend on port 3001
+    location / {
+        proxy_pass http://localhost:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection &#39;upgrade&#39;;
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+</code></pre>
+<p><strong>Why This Routing is Critical:</strong></p>
+<p>This nginx configuration is designed for a <strong>split frontend/backend deployment</strong> where:</p>
+<ul>
+<li>Express backend runs on <code>localhost:3000</code> (handles <code>/api/*</code>)</li>
+<li>Next.js frontend runs on <code>localhost:3001</code> (handles <code>/_next/*</code> and all other routes)</li>
+</ul>
+<p><strong>⚠️ Common Issue: 404 Errors for <code>/_next/static</code> Chunks</strong></p>
+<p>If nginx routing is incorrect, you&#39;ll see 404 errors for Next.js static assets:</p>
+<ul>
+<li><code>/_next/static/chunks/*.js</code> - JavaScript bundles</li>
+<li><code>/_next/static/css/*.css</code> - Stylesheets  </li>
+<li><code>/_next/static/media/*</code> - Images and fonts</li>
+</ul>
+<p>These 404 errors break signup/sign-in pages because the browser cannot load required JavaScript and CSS files.</p>
+<p><strong>What this configuration ensures:</strong></p>
+<ol>
+<li>API calls (<code>/api/*</code>) route to Express backend</li>
+<li>Next.js static assets (<code>/_next/*</code>) route to frontend server</li>
+<li>All other paths (pages like <code>/</code>, <code>/login</code>, <code>/register</code>) route to Next.js for server-side rendering</li>
+</ol>
+<h3>3. Enable the Nginx Configuration</h3>
+<pre><code class="language-bash"># Check if symlink already exists and remove it to avoid &quot;File exists&quot; error
+if [ -L /etc/nginx/sites-enabled/newsapp ]; then
+    sudo rm /etc/nginx/sites-enabled/newsapp
+fi
+
+# Create symlink to enable the site
+sudo ln -s /etc/nginx/sites-available/newsapp /etc/nginx/sites-enabled/
+
+# Test nginx configuration for syntax errors
+sudo nginx -t
+
+# Restart nginx to apply changes
+sudo systemctl restart nginx
+</code></pre>
+<h3>4. DNS Configuration (for domain access)</h3>
+<p>Before accessing via domain, ensure DNS is configured:</p>
+<p><strong>DNS Checklist:</strong></p>
+<ul>
+<li>Create an <code>A</code> record for <code>your-domain.com</code> pointing to <code>YOUR_SERVER_IP</code></li>
+<li>(Optional) Create a <code>CNAME</code> record for <code>www</code> pointing to <code>your-domain.com</code></li>
+<li>DNS propagation can take time (up to 48 hours, usually much faster)</li>
+</ul>
+<p><strong>Verify DNS resolution from VPS:</strong></p>
+<pre><code class="language-bash"># Install DNS tools if missing
+sudo apt install -y dnsutils
+
+# Verify DNS resolves to your VPS IP
+dig +short your-domain.com
+dig +short www.your-domain.com
+# Should return YOUR_SERVER_IP
+</code></pre>
+<p><strong>Quick HTTP validation (before HTTPS):</strong></p>
+<pre><code class="language-bash"># Confirm the domain works over HTTP
+curl -I http://your-domain.com
+curl -I http://www.your-domain.com
+</code></pre>
+<h3>5. Troubleshooting: Apache Welcome Page Still Showing</h3>
+<p>If you see the Apache welcome page instead of your application:</p>
+<pre><code class="language-bash"># Check what is listening on port 80
+sudo ss -tulpn | grep :80
+
+# Stop and disable Apache
+sudo systemctl stop apache2
+sudo systemctl disable apache2
+
+# Start and enable Nginx
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# Verify port 80 is now owned by Nginx
+sudo ss -tulpn | grep :80
+# Should show &quot;nginx&quot; in the output, not &quot;apache2&quot;
+</code></pre>
+<hr>
+<h2>SSL/HTTPS Configuration</h2>
+<p>Use Let&#39;s Encrypt for free SSL certificates. <strong>Run this only after DNS resolves correctly and HTTP works.</strong></p>
+<h3>1. Install Certbot</h3>
+<pre><code class="language-bash"># Install certbot with nginx plugin
+sudo apt install -y certbot python3-certbot-nginx
+</code></pre>
+<h3>2. Request SSL Certificate</h3>
+<pre><code class="language-bash"># Request certificates for both apex domain and www
+sudo certbot --nginx -d your-domain.com -d www.your-domain.com
+</code></pre>
+<p>Certbot will:</p>
+<ul>
+<li>Automatically obtain SSL certificates</li>
+<li>Modify your nginx configuration to enable HTTPS</li>
+<li>Set up automatic renewal</li>
+</ul>
+<h3>3. Verify HTTPS is Working</h3>
+<pre><code class="language-bash">curl -I https://your-domain.com
+</code></pre>
+<p><strong>If HTTPS fails but HTTP works:</strong></p>
+<ul>
+<li>Double-check that DNS resolves to your VPS IP</li>
+<li>Ensure the <code>server_name</code> in nginx config contains your domain(s)</li>
+<li>Re-run <code>sudo nginx -t</code> and <code>sudo systemctl reload nginx</code> after edits</li>
+</ul>
+<h3>4. Test Automatic Renewal</h3>
+<pre><code class="language-bash"># Dry-run renewal test
+sudo certbot renew --dry-run
+</code></pre>
+<p>Certbot automatically sets up a systemd timer for renewals. Check status:</p>
+<pre><code class="language-bash">sudo systemctl status certbot.timer
+</code></pre>
+<hr>
+<h2>Post-Deployment Verification</h2>
+<p>After deployment, verify everything is working correctly.</p>
+<h3>1. Check Node Version</h3>
+<pre><code class="language-bash">node -v  # Should be v22.x.x
+npm -v   # Should be v10.x.x or higher
+</code></pre>
+<h3>2. Check PM2 Status</h3>
+<pre><code class="language-bash">pm2 status
+# Both newsapp-backend and newsapp-frontend should show &quot;online&quot;
+</code></pre>
+<h3>3. Check for Errors</h3>
+<pre><code class="language-bash"># Check for any errors in the logs
+pm2 logs --err --lines 50
+
+# Should NOT see:
+# - ValidationError: trust proxy
+# - Module not found errors
+# - Database connection errors
+</code></pre>
+<h3>4. Test Endpoints</h3>
+<pre><code class="language-bash"># Test backend (API health check)
+curl http://localhost:3000/api/health || curl http://localhost:3000
+
+# Test frontend
+curl http://localhost:3001
+
+# Test from external IP (replace with your IP)
+curl http://YOUR_SERVER_IP:3000
+curl http://YOUR_SERVER_IP:3001
+
+# Test via domain (if configured)
+curl http://your-domain.com
+curl https://your-domain.com
+</code></pre>
+<h3>5. Check npm audit</h3>
+<pre><code class="language-bash">cd /var/www/Appofa
+npm audit
+# Should show 0 vulnerabilities
+</code></pre>
+<h3>6. Express Trust Proxy Configuration</h3>
+<p>The application uses <code>app.set(&#39;trust proxy&#39;, 1)</code> to properly handle rate limiting behind nginx.</p>
+<p><strong>What this means:</strong></p>
+<ul>
+<li>Express trusts the first proxy (nginx) to set the <code>X-Forwarded-For</code> header</li>
+<li>Rate limiting works correctly based on real client IPs</li>
+<li>Security is maintained - only nginx can set the forwarded IP</li>
+</ul>
+<p><strong>⚠️ DO NOT</strong> change this to <code>true</code> as it creates a security vulnerability where attackers can bypass rate limiting.</p>
+<p>See: <a href="https://expressjs.com/en/guide/behind-proxies.html">https://expressjs.com/en/guide/behind-proxies.html</a></p>
+<hr>
+<h2>Updating the Application</h2>
+<h3>Standard Update Workflow</h3>
+<p>For regular updates after pulling changes from GitHub:</p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# Fetch and pull latest changes
+git fetch --all
+git checkout main
+git pull origin main
+
+# Install/update dependencies
+npm ci
+
+# Run database migrations (always run — safe to run multiple times)
+npm run migrate
+
+# Update environment variables if needed
+nano .env
+
+# Rebuild the frontend (required after any code or dependency changes)
+rm -rf .next
+NODE_ENV=production npm run frontend:build
+
+# Restart services
+pm2 restart newsapp-backend newsapp-frontend
+pm2 save
+</code></pre>
+<blockquote>
+<p><strong>⚠️ Why migrations and a rebuild are always required:</strong></p>
+<ul>
+<li><strong>Migrations</strong> create or alter database tables introduced by new pull requests. Skipping them leaves the backend without tables it expects, causing database errors or crashes.</li>
+<li><strong>Frontend rebuild</strong> (<code>rm -rf .next</code> then <code>npm run frontend:build</code>) is required whenever code, components, or dependencies change — especially when the Next.js version is bumped. Serving a stale <code>.next</code> build after a version upgrade causes the frontend process to fail, which makes nginx return 502 for every page.</li>
+</ul>
+<p>Use <code>deploy.sh</code> (which covers all these steps automatically) for a reliable one-command update.</p>
+</blockquote>
+<h3>Clean Update Workflow</h3>
+<p>For major updates, dependency changes, or when troubleshooting issues:</p>
+<p><strong>Step 1: Stop running services</strong></p>
+<pre><code class="language-bash">cd /var/www/Appofa
+pm2 stop newsapp-backend newsapp-frontend
+</code></pre>
+<p><strong>Step 2: Fetch and pull latest changes</strong></p>
+<pre><code class="language-bash">git fetch --all
+git checkout main
+git pull origin main
+</code></pre>
+<p><strong>Step 3: Run database migrations</strong></p>
+<pre><code class="language-bash">npm run migrate
+</code></pre>
+<p><strong>Step 4: Remove build artifacts</strong></p>
+<pre><code class="language-bash"># Remove Next.js build output for a fresh build
+rm -rf .next
+</code></pre>
+<p><strong>Step 5: Clean dependency reinstallation</strong></p>
+<pre><code class="language-bash"># Clean install all dependencies
+npm ci
+</code></pre>
+<p><strong>Step 6: Build the frontend</strong></p>
+<pre><code class="language-bash">npm run frontend:build
+</code></pre>
+<p><strong>Step 7: Restart services</strong></p>
+<pre><code class="language-bash">pm2 restart newsapp-backend newsapp-frontend
+pm2 save
+</code></pre>
+<p><strong>Step 8: Reload nginx (if configuration changed)</strong></p>
+<pre><code class="language-bash"># Test nginx configuration
+sudo nginx -t
+
+# Reload nginx if config is valid
+sudo systemctl reload nginx
+</code></pre>
+<h4>Complete Clean Update Script</h4>
+<p>For copy-paste convenience:</p>
+<pre><code class="language-bash"># Navigate to application directory
+cd /var/www/Appofa
+
+# Stop running services
+pm2 stop newsapp-backend newsapp-frontend
+
+# Fetch and pull latest changes
+git fetch --all
+git checkout main
+git pull origin main
+
+# Run migrations
+npm run migrate
+
+# Remove build artifacts
+rm -rf .next
+
+# Clean install dependencies
+npm ci
+
+# Build frontend
+npm run frontend:build
+
+# Restart services
+pm2 restart newsapp-backend newsapp-frontend
+pm2 save
+
+# Reload nginx (only if config changed)
+# sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+</code></pre>
+<h4>When to Use Clean Update Workflow</h4>
+<p>Use the clean update workflow when:</p>
+<ul>
+<li>Major version updates have been made</li>
+<li>Dependencies have been added, removed, or updated</li>
+<li>You&#39;re experiencing issues with stale build artifacts</li>
+<li>You want to ensure a completely fresh deployment</li>
+<li>Troubleshooting deployment issues</li>
+</ul>
+<p>For simple code changes without dependency or configuration updates, the standard update workflow is sufficient.</p>
+<h3>Upgrading from Old Single-Process Deployment</h3>
+<p>If you&#39;re upgrading from an old deployment that used a single PM2 process:</p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# Stop and delete old single process
+pm2 stop newsapp
+pm2 delete newsapp
+
+# Fetch and pull latest changes
+git fetch --all
+git checkout main
+git pull origin main
+
+# Remove build artifacts
+rm -rf .next
+
+# Clean install dependencies
+npm ci
+
+# Build frontend
+npm run frontend:build
+
+# Start both new processes
+pm2 start src/index.js --name newsapp-backend
+pm2 start npm --name newsapp-frontend -- run frontend:start
+pm2 save
+
+# Update nginx configuration with split routing (see Nginx section above)
+# sudo nano /etc/nginx/sites-available/newsapp
+# sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+</code></pre>
+<h3>Fix Duplicate PM2 Processes</h3>
+<p>If you encounter duplicate PM2 processes:</p>
+<pre><code class="language-bash"># Stop all running &#39;newsapp-frontend&#39; processes
+pm2 stop newsapp-frontend
+
+# Delete all &#39;newsapp-frontend&#39; processes
+pm2 delete newsapp-frontend
+
+# Restart the frontend with a clean configuration
+pm2 start npm --name newsapp-frontend -- run frontend:start
+
+# Check status
+pm2 status
+
+# Clean stale PM2 state (if issues persist)
+pm2 unstartup
+pm2 kill
+pm2 startup
+pm2 save
+</code></pre>
+<hr>
+<h2>Troubleshooting: 502 Bad Gateway</h2>
+<p>A 502 error means nginx cannot reach one of the upstream services. The most common cause after a pull or update is that the <strong>Next.js frontend process is not running</strong>, which affects every page served through nginx.</p>
+<h3>Quick diagnosis</h3>
+<pre><code class="language-bash"># 1. Check whether both PM2 processes are online
+pm2 status
+# Both newsapp-backend and newsapp-frontend must show &quot;online&quot;
+
+# 2. Check the frontend logs for crash details
+pm2 logs newsapp-frontend --lines 50 --err
+
+# 3. Check the backend logs
+pm2 logs newsapp-backend --lines 50 --err
+
+# 4. Check nginx error log
+sudo tail -50 /var/log/nginx/error.log
+</code></pre>
+<h3>Fix 1 — Stale or missing <code>.next</code> build (most common after an update)</h3>
+<p>This is the most frequent cause after pulling a new version. If the frontend was never built, or if the Next.js package version changed since the last build, <code>next start</code> will fail immediately and nginx returns 502 for every page.</p>
+<p><strong>Since the <code>frontend:start</code> script now detects and fixes this automatically</strong>, simply restarting the frontend is often enough:</p>
+<pre><code class="language-bash">pm2 restart newsapp-frontend
+pm2 save
+</code></pre>
+<p>The startup script (<code>start-frontend.js</code>) compares the mtime of the installed <code>next</code> package against the last build. If the build is absent or stale it runs <code>npm run frontend:build</code> automatically before starting the server.</p>
+<p>If the automatic rebuild also fails (e.g. due to a syntax error in new code), restart manually:</p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# Stop the frontend process
+pm2 stop newsapp-frontend
+
+# Remove the stale build and rebuild from scratch
+rm -rf .next
+NODE_ENV=production npm run frontend:build
+
+# Restart both services
+pm2 restart newsapp-backend newsapp-frontend
+pm2 save
+</code></pre>
+<h3>Fix 2 — Missing database migrations</h3>
+<p>New pull requests that add features (e.g. the Suggestions module) include migrations that create new database tables. If migrations were not run, the backend may crash or return errors when those tables are queried.</p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# Run any pending migrations
+npm run migrate
+
+# Restart the backend
+pm2 restart newsapp-backend
+pm2 save
+</code></pre>
+<h3>Fix 3 — Backend process is down</h3>
+<pre><code class="language-bash"># Restart the backend
+pm2 restart newsapp-backend
+
+# If it keeps crashing, check logs for the error
+pm2 logs newsapp-backend --lines 100 --err
+</code></pre>
+<p>Common backend crash causes:</p>
+<ul>
+<li>Database credentials wrong in <code>.env</code> (<code>DB_HOST</code>, <code>DB_PORT</code>, <code>DB_USER</code>, <code>DB_PASSWORD</code>, <code>DB_NAME</code>)</li>
+<li><code>JWT_SECRET</code> missing from <code>.env</code></li>
+<li>PostgreSQL service is stopped — restart with: <code>sudo systemctl start postgresql</code></li>
+</ul>
+<h3>Fix 4 — Frontend process is down</h3>
+<pre><code class="language-bash"># Check if the process exists and restart
+pm2 restart newsapp-frontend
+
+# If it does not exist, re-create it
+pm2 start npm --name newsapp-frontend -- run frontend:start
+pm2 save
+</code></pre>
+<h3>Fix 5 — Full clean redeploy</h3>
+<p>When in doubt, run the complete clean update sequence (mirrors what <code>deploy.sh</code> does):</p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+pm2 stop newsapp-backend newsapp-frontend
+
+git fetch --all
+git checkout main
+git pull origin main
+
+npm ci
+npm run migrate
+rm -rf .next
+NODE_ENV=production npm run frontend:build
+
+pm2 restart newsapp-backend newsapp-frontend
+pm2 save
+</code></pre>
+<h3>Still getting 502?</h3>
+<pre><code class="language-bash"># Confirm the backend is listening on port 3000
+curl -s http://localhost:3000 | head -c 200
+
+# Confirm the frontend is listening on port 3001
+curl -s http://localhost:3001 | head -c 200
+
+# Test nginx config and reload
+sudo nginx -t &amp;&amp; sudo systemctl reload nginx
+</code></pre>
+<p>If both ports respond but nginx still returns 502, verify the upstream addresses in <code>/etc/nginx/sites-available/newsapp</code> match the ports above.</p>
+<hr>
+<h2>Additional Resources</h2>
+<ul>
+<li><a href="deployment-guide.html">Main Deployment Guide</a> - Overview of all deployment options</li>
+<li><a href="node-upgrade-vps.html">Node.js Upgrade Guide</a> - Upgrading from Node 20 to Node 22</li>
+<li><a href="deployment-guide.html#troubleshooting">Troubleshooting Guide</a> - Common issues and solutions</li>
+</ul>
+<h2>Support</h2>
+<p>For issues or questions:</p>
+<ul>
+<li>Check the <a href="deployment-guide.html#troubleshooting">Troubleshooting section</a></li>
+<li>Review PM2 logs: <code>pm2 logs</code></li>
+<li>Review Nginx logs: <code>sudo tail -f /var/log/nginx/error.log</code></li>
+<li>Open an issue on <a href="https://github.com/Antoniskp/Appofa/issues">GitHub</a></li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migration Guide – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html" class="active">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Migration Guide</div>
+    <article class="md"><h1>Google OAuth Migration Guide</h1>
+<h2>Overview</h2>
+<p>This guide explains how to apply the Google OAuth migration to add <code>googleId</code> and <code>googleAccessToken</code> fields to the Users table in production.</p>
+<h2>Migration File</h2>
+<p><strong>Location:</strong> <code>src/migrations/011-add-google-oauth-fields.js</code></p>
+<p><strong>Status:</strong> ✅ Ready for production deployment</p>
+<h2>What the Migration Does</h2>
+<h3>Up Migration (Forward)</h3>
+<ol>
+<li><p><strong>Adds <code>googleId</code> column:</strong></p>
+<ul>
+<li>Type: <code>STRING</code> (VARCHAR 255)</li>
+<li>Nullable: <code>true</code></li>
+<li>Unique: <code>true</code> (via unique index)</li>
+<li>Purpose: Store Google user ID for OAuth authentication</li>
+</ul>
+</li>
+<li><p><strong>Adds <code>googleAccessToken</code> column:</strong></p>
+<ul>
+<li>Type: <code>STRING</code></li>
+<li>Nullable: <code>true</code></li>
+<li>Purpose: Store Google access token for API calls</li>
+</ul>
+</li>
+<li><p><strong>Creates unique index:</strong></p>
+<ul>
+<li>Index name: <code>users_google_id_unique</code></li>
+<li>Column: <code>googleId</code></li>
+<li>Prevents duplicate Google account linkages</li>
+</ul>
+</li>
+</ol>
+<h3>Down Migration (Rollback)</h3>
+<ol>
+<li>Removes <code>googleAccessToken</code> column</li>
+<li>Removes unique index <code>users_google_id_unique</code></li>
+<li>Removes <code>googleId</code> column</li>
+</ol>
+<h2>Features</h2>
+<ul>
+<li>✅ <strong>Idempotent</strong>: Safe to run multiple times (won&#39;t fail if columns already exist)</li>
+<li>✅ <strong>Reversible</strong>: Complete down migration for rollback</li>
+<li>✅ <strong>Cross-database</strong>: Works with both PostgreSQL (production) and SQLite (dev/test)</li>
+<li>✅ <strong>Error handling</strong>: Gracefully handles duplicate index errors</li>
+<li>✅ <strong>Logging</strong>: Informative console messages for debugging</li>
+</ul>
+<h2>Production Deployment</h2>
+<h3>Prerequisites</h3>
+<ol>
+<li>Ensure you have SSH access to the production server</li>
+<li>Ensure the application is running in production mode</li>
+<li>Back up the database before running migrations (recommended)</li>
+</ol>
+<h3>Step 1: Backup Database (Recommended)</h3>
+<pre><code class="language-bash"># Connect to production server
+ssh your-server
+
+# Create database backup
+pg_dump -U postgres newsapp &gt; /backup/newsapp_backup_$(date +%Y%m%d_%H%M%S).sql
+</code></pre>
+<h3>Step 2: Run Migration</h3>
+<pre><code class="language-bash"># Navigate to application directory
+cd /var/www/Appofa
+
+# Pull latest code (if not already deployed)
+git pull origin main
+
+# Install dependencies (if needed)
+npm install
+
+# Check migration status (see what migrations are pending)
+npm run migrate:status
+
+# Run pending migrations
+npm run migrate:up
+
+# Verify migration was applied
+npm run migrate:status
+</code></pre>
+<h3>Step 3: Restart Application</h3>
+<pre><code class="language-bash"># Restart the backend server with PM2
+pm2 restart newsapp-backend
+
+# Check application logs for any errors
+pm2 logs newsapp-backend --lines 50
+</code></pre>
+<h3>Step 4: Verify Database Schema</h3>
+<pre><code class="language-bash"># Connect to PostgreSQL
+psql -U postgres -d newsapp
+
+# Check Users table schema
+\d &quot;Users&quot;
+
+# Look for these columns in the output:
+# - googleId         | character varying(255)
+# - googleAccessToken| character varying(255)
+
+# Check indexes
+\di
+
+# Look for: users_google_id_unique
+
+# Exit psql
+\q
+</code></pre>
+<h3>Step 5: Test Google OAuth</h3>
+<ol>
+<li>Open your application in a web browser</li>
+<li>Navigate to the login page</li>
+<li>Click &quot;Sign in with Google&quot;</li>
+<li>Complete the OAuth flow</li>
+<li>Verify user is logged in successfully</li>
+<li>Check database to confirm <code>googleId</code> and <code>googleAccessToken</code> are populated</li>
+</ol>
+<h2>Rollback (If Needed)</h2>
+<p>If you need to revert the migration:</p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# Rollback the last migration
+npm run migrate:down
+
+# Restart application
+pm2 restart newsapp-backend
+</code></pre>
+<p><strong>Note:</strong> Rollback will remove the Google OAuth columns and any data stored in them. Users who signed up with Google OAuth will not be able to log in until the migration is re-applied.</p>
+<h2>Troubleshooting</h2>
+<h3>Migration Fails: &quot;column already exists&quot;</h3>
+<p>This is normal if the migration has already been run. The migration is idempotent and will skip adding columns that already exist.</p>
+<h3>Migration Fails: &quot;relation &#39;Users&#39; does not exist&quot;</h3>
+<p>Ensure base migrations have been run first:</p>
+<pre><code class="language-bash">npm run migrate:up
+</code></pre>
+<p>This will run all pending migrations in order.</p>
+<h3>Application Still Shows Error After Migration</h3>
+<ol>
+<li>Verify migration was applied: <code>npm run migrate:status</code></li>
+<li>Check application is using correct database credentials</li>
+<li>Restart the application: <code>pm2 restart newsapp-backend</code></li>
+<li>Check application logs: <code>pm2 logs newsapp-backend</code></li>
+</ol>
+<h3>Index Creation Fails</h3>
+<p>If the unique index creation fails but columns are created, you can manually create the index:</p>
+<pre><code class="language-sql">CREATE UNIQUE INDEX users_google_id_unique ON &quot;Users&quot; (googleId);
+</code></pre>
+<h2>Testing in Development</h2>
+<p>Before deploying to production, test the migration locally:</p>
+<pre><code class="language-bash"># Use SQLite for local testing
+DB_DIALECT=sqlite DB_STORAGE=./test.db npm run migrate:up
+
+# Verify it worked
+DB_DIALECT=sqlite DB_STORAGE=./test.db sqlite3 test.db &quot;.schema Users&quot;
+
+# Test rollback
+DB_DIALECT=sqlite DB_STORAGE=./test.db npm run migrate:down
+
+# Clean up
+rm test.db
+</code></pre>
+<h2>Support</h2>
+<p>If you encounter issues:</p>
+<ol>
+<li>Check application logs: <code>pm2 logs newsapp-backend</code></li>
+<li>Check database logs</li>
+<li>Verify environment variables are set correctly</li>
+<li>Ensure database user has permission to ALTER tables</li>
+</ol>
+<h2>Migration History</h2>
+<ul>
+<li>Created in PR #186 (Implement Google OAuth authentication)</li>
+<li>Tested with SQLite and PostgreSQL</li>
+<li>Compatible with Sequelize 6.x</li>
+<li>Migration number: 011</li>
+</ul>
+<h2>Related Files</h2>
+<ul>
+<li>User Model: <code>src/models/User.js</code></li>
+<li>Database Config: <code>src/config/database.js</code></li>
+<li>Migration Runner: <code>src/run-migrations.js</code></li>
+<li>OAuth Routes: <code>src/routes/auth.js</code></li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

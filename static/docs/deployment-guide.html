@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deployment Guide – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html" class="active">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Deployment Guide</div>
+    <article class="md"><h1>Deployment Guide</h1>
+<p>A comprehensive guide for deploying the Appofa News Application across different environments.</p>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#prerequisites">Prerequisites</a></li>
+<li><a href="#local-development">Local Development</a></li>
+<li><a href="#docker-deployment">Docker Deployment</a></li>
+<li><a href="#vps-deployment">VPS Deployment</a></li>
+<li><a href="#cloud-platform-deployments">Cloud Platform Deployments</a><ul>
+<li><a href="#heroku">Heroku</a></li>
+<li><a href="#aws-ec2--rds">AWS (EC2 + RDS)</a></li>
+</ul>
+</li>
+<li><a href="#monitoring-and-maintenance">Monitoring and Maintenance</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+<li><a href="#security-best-practices">Security Best Practices</a></li>
+<li><a href="#performance-optimization">Performance Optimization</a></li>
+</ul>
+<hr>
+<h2>Overview</h2>
+<p>The Appofa News Application uses a split architecture:</p>
+<ul>
+<li><strong>Backend</strong>: Express.js API server (Node.js) on port 3000</li>
+<li><strong>Frontend</strong>: Next.js application on port 3001</li>
+<li><strong>Database</strong>: PostgreSQL</li>
+</ul>
+<p>Both components must be running for the application to function correctly.</p>
+<hr>
+<h2>Prerequisites</h2>
+<h3>All Deployments</h3>
+<ul>
+<li>PostgreSQL v12 or higher</li>
+<li>Git</li>
+</ul>
+<h3>Local Development</h3>
+<ul>
+<li>Node.js v22 or higher (required for Next.js 16.x)</li>
+<li>npm v10.x or higher</li>
+</ul>
+<h3>Docker Deployment</h3>
+<ul>
+<li>Docker</li>
+<li>Docker Compose</li>
+</ul>
+<h3>VPS Deployment</h3>
+<ul>
+<li>Ubuntu/Debian Linux server</li>
+<li>Root or sudo access</li>
+<li>Domain name (optional but recommended for HTTPS)</li>
+</ul>
+<hr>
+<h2>Local Development</h2>
+<h3>Steps</h3>
+<ol>
+<li><p><strong>Clone the repository</strong></p>
+<pre><code class="language-bash">git clone https://github.com/Antoniskp/Appofa.git
+cd Appofa
+</code></pre>
+</li>
+<li><p><strong>Install Node.js 22 LTS</strong></p>
+<p>The project requires Node.js 22+ for:</p>
+<ul>
+<li>Next.js 16.x compatibility (requires &gt;=20.9.0)</li>
+<li>npm overrides for <code>glob@11</code> and <code>rimraf@6</code></li>
+<li>Long-term support until April 2027</li>
+</ul>
+<p><strong>macOS (using Homebrew):</strong></p>
+<pre><code class="language-bash">brew install node@22
+</code></pre>
+<p><strong>Ubuntu/Debian:</strong></p>
+<pre><code class="language-bash">curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+</code></pre>
+<p><strong>Windows:</strong>
+Download from <a href="https://nodejs.org/">nodejs.org</a></p>
+<p><strong>Verify installation:</strong></p>
+<pre><code class="language-bash">node -v  # Should show v22.x.x
+npm -v   # Should show v10.x.x or higher
+</code></pre>
+</li>
+<li><p><strong>Install dependencies</strong></p>
+<pre><code class="language-bash">npm install
+</code></pre>
+</li>
+<li><p><strong>Set up PostgreSQL database</strong></p>
+<p><strong>Option A: Using the setup script</strong></p>
+<pre><code class="language-bash">./setup-db.sh
+</code></pre>
+<p><strong>Option B: Manual setup</strong></p>
+<pre><code class="language-bash"># Create database
+createdb newsapp
+
+# Or using psql
+psql -U postgres
+CREATE DATABASE newsapp;
+\q
+</code></pre>
+</li>
+<li><p><strong>Configure environment variables</strong></p>
+<pre><code class="language-bash">cp .env.example .env
+# Edit .env with your database credentials
+</code></pre>
+<p>Example <code>.env</code> for local development:</p>
+<pre><code class="language-env"># Database Configuration
+DB_NAME=newsapp
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_HOST=localhost
+DB_PORT=5432
+
+# API Configuration
+NEXT_PUBLIC_API_URL=http://localhost:3000
+
+# JWT Secret (generate with: openssl rand -base64 32)
+JWT_SECRET=your_jwt_secret
+
+# Environment
+NODE_ENV=development
+</code></pre>
+</li>
+<li><p><strong>Run the application</strong></p>
+<pre><code class="language-bash"># Development mode (with auto-reload)
+npm run dev
+
+# Or run backend and frontend separately
+npm run backend          # Starts Express API on port 3000
+npm run frontend         # Starts Next.js dev server on port 3001
+</code></pre>
+</li>
+<li><p><strong>Access the application</strong></p>
+<ul>
+<li>Frontend: <a href="http://localhost:3001">http://localhost:3001</a></li>
+<li>Backend API: <a href="http://localhost:3000">http://localhost:3000</a></li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2>Docker Deployment</h2>
+<p>Docker provides a containerized environment with all dependencies included.</p>
+<h3>Steps</h3>
+<ol>
+<li><p><strong>Clone the repository</strong></p>
+<pre><code class="language-bash">git clone https://github.com/Antoniskp/Appofa.git
+cd Appofa
+</code></pre>
+</li>
+<li><p><strong>Configure environment variables</strong></p>
+<p>Edit <code>docker-compose.yml</code> to customize:</p>
+<pre><code class="language-yaml">environment:
+  - DB_NAME=newsapp
+  - DB_USER=newsapp_user
+  - DB_PASSWORD=your_strong_password  # CHANGE IN PRODUCTION!
+  - JWT_SECRET=your_jwt_secret        # CHANGE IN PRODUCTION!
+  - PORT=3000
+  - NEXT_PUBLIC_API_URL=http://localhost:3000
+</code></pre>
+</li>
+<li><p><strong>Build and start containers</strong></p>
+<pre><code class="language-bash">docker-compose up -d
+</code></pre>
+<p>This will:</p>
+<ul>
+<li>Create a PostgreSQL database container</li>
+<li>Build and start the application container</li>
+<li>Set up networking between containers</li>
+<li>Expose the API on port 3000</li>
+</ul>
+</li>
+<li><p><strong>Check logs</strong></p>
+<pre><code class="language-bash"># View all logs
+docker-compose logs -f
+
+# View app logs only
+docker-compose logs -f app
+</code></pre>
+</li>
+<li><p><strong>Stop the application</strong></p>
+<pre><code class="language-bash"># Stop containers (preserves data)
+docker-compose down
+
+# Stop and remove all data
+docker-compose down -v
+</code></pre>
+</li>
+</ol>
+<h3>Docker Commands Reference</h3>
+<pre><code class="language-bash"># Rebuild containers after code changes
+docker-compose up -d --build
+
+# Access database container
+docker exec -it newsapp-db psql -U newsapp_user newsapp
+
+# View running containers
+docker-compose ps
+
+# Restart specific service
+docker-compose restart app
+</code></pre>
+<hr>
+<h2>VPS Deployment</h2>
+<p>For detailed instructions on deploying to a Virtual Private Server (Ubuntu/Debian), see the <strong><a href="vps-setup.html">VPS Setup Guide</a></strong>.</p>
+<p>The VPS Setup Guide is a comprehensive standalone document that covers:</p>
+<ul>
+<li><strong>Initial VPS Setup</strong>: SSH configuration and server preparation</li>
+<li><strong>Application Installation</strong>: Node.js, PostgreSQL, PM2 setup</li>
+<li><strong>Nginx Configuration</strong>: Reverse proxy setup with proper routing for split frontend/backend</li>
+<li><strong>SSL/HTTPS</strong>: Let&#39;s Encrypt certificate installation</li>
+<li><strong>Post-Deployment Verification</strong>: Testing and validation steps</li>
+<li><strong>Update Workflows</strong>: Standard and clean update procedures</li>
+</ul>
+<p>This guide has been separated from the main deployment documentation for easier reference and maintenance. It provides step-by-step instructions specifically tailored for VPS deployments.</p>
+<hr>
+<h2>Cloud Platform Deployments</h2>
+<h3>Heroku</h3>
+<p><strong>1. Install Heroku CLI</strong></p>
+<pre><code class="language-bash">npm install -g heroku
+</code></pre>
+<p><strong>2. Login and create app</strong></p>
+<pre><code class="language-bash">heroku login
+heroku create your-app-name
+</code></pre>
+<p><strong>3. Add PostgreSQL addon</strong></p>
+<pre><code class="language-bash">heroku addons:create heroku-postgresql:hobby-dev
+</code></pre>
+<p><strong>4. Set environment variables</strong></p>
+<pre><code class="language-bash">heroku config:set JWT_SECRET=$(openssl rand -base64 32)
+heroku config:set NODE_ENV=production
+</code></pre>
+<p><strong>5. Deploy</strong></p>
+<pre><code class="language-bash">git push heroku main
+</code></pre>
+<p><strong>6. Open application</strong></p>
+<pre><code class="language-bash">heroku open
+</code></pre>
+<hr>
+<h3>AWS (EC2 + RDS)</h3>
+<p><strong>1. Create RDS PostgreSQL instance</strong></p>
+<ul>
+<li>Navigate to AWS RDS</li>
+<li>Create PostgreSQL database</li>
+<li>Note the endpoint and credentials</li>
+</ul>
+<p><strong>2. Launch EC2 instance</strong></p>
+<ul>
+<li>Use Ubuntu/Amazon Linux AMI</li>
+<li>Configure security groups (allow ports 22, 80, 443)</li>
+</ul>
+<p><strong>3. Connect and set up application</strong></p>
+<pre><code class="language-bash">ssh -i your-key.pem ubuntu@your-ec2-ip
+
+# Install Node.js and dependencies
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs git
+
+# Clone and configure
+git clone https://github.com/Antoniskp/Appofa.git
+cd Appofa
+npm install --production
+
+# Configure .env with RDS credentials
+cp .env.example .env
+nano .env
+</code></pre>
+<p><strong>4. Set up PM2 and nginx</strong></p>
+<p>Follow the same PM2 and nginx configuration steps as in the <a href="#vps-deployment-ubuntudebian">VPS Deployment</a> section above.</p>
+<hr>
+<h2>Monitoring and Maintenance</h2>
+<h3>View Application Logs</h3>
+<pre><code class="language-bash"># PM2 logs
+pm2 logs newsapp-backend
+pm2 logs newsapp-frontend
+pm2 logs --err  # Show only errors
+
+# Docker logs
+docker-compose logs -f app
+
+# System logs
+sudo journalctl -u nginx -f
+</code></pre>
+<h3>Database Backup</h3>
+<p><strong>Local PostgreSQL:</strong></p>
+<pre><code class="language-bash"># Backup
+pg_dump -U postgres newsapp &gt; backup.sql
+
+# Restore
+psql -U postgres newsapp &lt; backup.sql
+</code></pre>
+<p><strong>VPS PostgreSQL:</strong></p>
+<pre><code class="language-bash"># Backup
+sudo -u postgres pg_dump newsapp &gt; backup_$(date +%Y%m%d).sql
+
+# Restore
+sudo -u postgres psql newsapp &lt; backup_20240101.sql
+</code></pre>
+<p><strong>Docker:</strong></p>
+<pre><code class="language-bash"># Backup
+docker exec newsapp-db pg_dump -U newsapp_user newsapp &gt; backup.sql
+
+# Restore
+docker exec -i newsapp-db psql -U newsapp_user newsapp &lt; backup.sql
+</code></pre>
+<h3>Monitor System Resources</h3>
+<pre><code class="language-bash"># PM2 monitoring
+pm2 monit
+
+# System resources
+htop
+# Or
+top
+
+# Disk usage
+df -h
+
+# Memory usage
+free -h
+
+# Check process resource usage
+pm2 status
+</code></pre>
+<h3>Automated Backups</h3>
+<p>Create a backup script:</p>
+<pre><code class="language-bash">sudo nano /usr/local/bin/backup-newsapp.sh
+</code></pre>
+<pre><code class="language-bash">#!/bin/bash
+BACKUP_DIR=&quot;/var/backups/newsapp&quot;
+DATE=$(date +%Y%m%d_%H%M%S)
+
+mkdir -p $BACKUP_DIR
+
+# Backup database
+sudo -u postgres pg_dump newsapp &gt; $BACKUP_DIR/newsapp_$DATE.sql
+
+# Keep only last 7 days of backups
+find $BACKUP_DIR -name &quot;newsapp_*.sql&quot; -mtime +7 -delete
+
+echo &quot;Backup completed: $BACKUP_DIR/newsapp_$DATE.sql&quot;
+</code></pre>
+<p>Make it executable and add to cron:</p>
+<pre><code class="language-bash">sudo chmod +x /usr/local/bin/backup-newsapp.sh
+
+# Add to crontab (daily backup at 2 AM)
+sudo crontab -e
+# Add line: 0 2 * * * /usr/local/bin/backup-newsapp.sh &gt;&gt; /var/log/newsapp-backup.log 2&gt;&amp;1
+</code></pre>
+<hr>
+<h2>Troubleshooting</h2>
+<h3>Database Connection Issues</h3>
+<p><strong>Symptoms:</strong></p>
+<ul>
+<li>Application fails to start</li>
+<li>Error: &quot;Connection refused&quot; or &quot;Authentication failed&quot;</li>
+</ul>
+<p><strong>Solutions:</strong></p>
+<ol>
+<li><p><strong>Verify PostgreSQL is running</strong></p>
+<pre><code class="language-bash"># Check PostgreSQL status
+sudo systemctl status postgresql
+
+# Start if not running
+sudo systemctl start postgresql
+</code></pre>
+</li>
+<li><p><strong>Check database credentials in <code>.env</code></strong></p>
+<pre><code class="language-bash">nano .env
+# Verify DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT
+</code></pre>
+</li>
+<li><p><strong>Ensure database exists</strong></p>
+<pre><code class="language-bash">sudo -u postgres psql -l | grep newsapp
+</code></pre>
+</li>
+<li><p><strong>Check firewall rules</strong></p>
+<pre><code class="language-bash">sudo ufw status
+# Allow PostgreSQL if needed
+sudo ufw allow 5432/tcp
+</code></pre>
+</li>
+</ol>
+<hr>
+<h3>Error: <code>sh: 1: next: not found</code></h3>
+<p><strong>Symptoms:</strong>
+When running <code>npm run frontend</code>, <code>npm run frontend:build</code>, or <code>npm run frontend:start</code>:</p>
+<pre><code>sh: 1: next: not found
+</code></pre>
+<p><strong>Root Causes:</strong></p>
+<ol>
+<li>Incomplete dependency installation</li>
+<li>Using <code>--omit=dev</code> flag (affects binary linking)</li>
+<li>Corrupted <code>node_modules</code></li>
+</ol>
+<p><strong>Solution:</strong></p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# Remove existing node_modules and lock file
+rm -rf node_modules package-lock.json
+
+# Clean npm cache (optional but recommended)
+npm cache clean --force
+
+# Fresh install with locked dependencies
+npm ci
+
+# Verify Next.js installation
+ls -la node_modules/.bin/next
+./node_modules/.bin/next --version
+
+# Test frontend scripts
+npm run frontend:build
+npm run frontend:start
+</code></pre>
+<p><strong>Production Deployment Notes:</strong></p>
+<ul>
+<li><strong>Always use <code>npm ci</code></strong> instead of <code>npm install</code> for reproducible builds</li>
+<li><strong>Do NOT use <code>--omit=dev</code></strong> for this project - all frontend dependencies are in <code>dependencies</code></li>
+<li>The <code>next</code> package is required at runtime for both building and serving</li>
+</ul>
+<hr>
+<h3>Error: Node.js Version Requirement</h3>
+<p><strong>Symptoms:</strong></p>
+<pre><code>You are using Node.js 18.x.x. For Next.js, Node.js version &quot;&gt;=20.9.0&quot; is required.
+</code></pre>
+<p><strong>Solution: Upgrade to Node.js 22 LTS</strong></p>
+<pre><code class="language-bash"># Remove old Node.js version
+sudo apt remove -y nodejs
+sudo apt autoremove -y
+
+# Install Node.js 22 LTS
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+sudo apt install -y nodejs
+
+# Verify installation
+node --version  # Should be v22.x.x
+npm --version
+
+# Reinstall dependencies with new Node.js version
+cd /var/www/Appofa
+rm -rf node_modules package-lock.json
+npm ci
+
+# Test frontend scripts
+npm run frontend:build
+npm run frontend:start
+</code></pre>
+<p><strong>Why Node.js 22 is required:</strong></p>
+<ul>
+<li>Next.js 16.x requires Node.js &gt;=20.9.0</li>
+<li>npm overrides for <code>glob@11</code> and <code>rimraf@6</code> require Node 22+</li>
+<li>Initial deployment guide uses Node.js 22 LTS</li>
+</ul>
+<hr>
+<h3>Backend Shows &quot;ValidationError: trust proxy&quot;</h3>
+<p><strong>Cause:</strong> express-rate-limit update requires proper trust proxy configuration</p>
+<p><strong>Solution:</strong>
+Ensure <code>src/index.js</code> has <code>app.set(&#39;trust proxy&#39;, 1);</code> not <code>true</code></p>
+<p><strong>Reference:</strong> PR #153</p>
+<hr>
+<h3>Frontend Shows &quot;Could not find production build&quot;</h3>
+<p><strong>Cause:</strong> Missing <code>.next</code> build directory</p>
+<p><strong>Solution:</strong></p>
+<pre><code class="language-bash">cd /var/www/Appofa
+npm run frontend:build
+pm2 restart newsapp-frontend
+</code></pre>
+<hr>
+<h3>Port Already in Use</h3>
+<p><strong>Symptoms:</strong></p>
+<ul>
+<li>Error: &quot;EADDRINUSE: address already in use&quot;</li>
+<li>Application fails to start</li>
+</ul>
+<p><strong>Solution:</strong></p>
+<pre><code class="language-bash"># Find process using port 3000
+lsof -i :3000
+# Or
+netstat -tulpn | grep 3000
+
+# Kill specific process by PID
+kill -9 &lt;PID&gt;
+
+# For port 3001 (frontend)
+lsof -i :3001
+kill -9 &lt;PID&gt;
+</code></pre>
+<hr>
+<h3>Application Won&#39;t Start</h3>
+<p><strong>Checklist:</strong></p>
+<ol>
+<li><p><strong>Check logs for errors</strong></p>
+<pre><code class="language-bash">pm2 logs --err --lines 50
+</code></pre>
+</li>
+<li><p><strong>Verify all environment variables are set</strong></p>
+<pre><code class="language-bash">cat .env
+# Ensure JWT_SECRET, DB credentials, etc. are set
+</code></pre>
+</li>
+<li><p><strong>Ensure database is accessible</strong></p>
+<pre><code class="language-bash">psql -U newsapp_user -d newsapp -h localhost
+</code></pre>
+</li>
+<li><p><strong>Check Node.js version compatibility</strong></p>
+<pre><code class="language-bash">node -v  # Should be v22.x.x
+</code></pre>
+</li>
+<li><p><strong>Verify both PM2 processes are running</strong></p>
+<pre><code class="language-bash">pm2 status
+# Both newsapp-backend and newsapp-frontend should show &quot;online&quot;
+</code></pre>
+</li>
+</ol>
+<hr>
+<h3>404 Errors for Static Assets</h3>
+<p><strong>Symptoms:</strong></p>
+<ul>
+<li>Browser shows 404 errors for <code>/_next/static/chunks/*.js</code></li>
+<li>Pages appear broken or don&#39;t function properly</li>
+<li>Sign-up/sign-in pages not working</li>
+</ul>
+<p><strong>Cause:</strong> Incorrect nginx routing</p>
+<p><strong>Solution:</strong></p>
+<ol>
+<li><p><strong>Verify nginx configuration</strong> includes <code>/_next/</code> location block (see <a href="#nginx-reverse-proxy-setup">Nginx Reverse Proxy Setup</a>)</p>
+</li>
+<li><p><strong>Ensure frontend PM2 process is running</strong></p>
+<pre><code class="language-bash">pm2 status
+# newsapp-frontend should show &quot;online&quot;
+</code></pre>
+</li>
+<li><p><strong>Test nginx configuration and reload</strong></p>
+<pre><code class="language-bash">sudo nginx -t
+sudo systemctl reload nginx
+</code></pre>
+</li>
+</ol>
+<hr>
+<h3>SSL Certificate Issues</h3>
+<p><strong>Certificate not auto-renewing:</strong></p>
+<pre><code class="language-bash"># Test renewal
+sudo certbot renew --dry-run
+
+# Check certbot timer
+sudo systemctl status certbot.timer
+
+# Enable if disabled
+sudo systemctl enable certbot.timer
+sudo systemctl start certbot.timer
+</code></pre>
+<p><strong>Certificate expired:</strong></p>
+<pre><code class="language-bash"># Force renewal
+sudo certbot renew --force-renewal
+
+# Reload nginx
+sudo systemctl reload nginx
+</code></pre>
+<hr>
+<h2>Security Best Practices</h2>
+<h3>Before Production Deployment</h3>
+<p><strong>1. Change Sensitive Credentials</strong></p>
+<ul>
+<li>Generate a strong JWT secret:<pre><code class="language-bash">openssl rand -base64 32
+</code></pre>
+</li>
+<li>Use a strong database password (at least 16 characters, mixed case, numbers, symbols)</li>
+<li>Never commit <code>.env</code> file to version control</li>
+</ul>
+<p><strong>2. Update Environment Variables</strong></p>
+<pre><code class="language-env">NODE_ENV=production
+JWT_SECRET=&lt;strong-random-secret&gt;
+DB_PASSWORD=&lt;strong-password&gt;
+</code></pre>
+<p><strong>3. Enable HTTPS</strong></p>
+<ul>
+<li>Use a reverse proxy (nginx recommended)</li>
+<li>Obtain SSL certificate from Let&#39;s Encrypt (free)</li>
+<li>Force HTTPS redirects in nginx:</li>
+</ul>
+<pre><code class="language-nginx">server {
+    listen 80;
+    server_name your-domain.com;
+    return 301 https://$server_name$request_uri;
+}
+</code></pre>
+<p><strong>4. Configure Firewall</strong></p>
+<pre><code class="language-bash"># Enable UFW firewall
+sudo ufw enable
+
+# Allow only necessary ports
+sudo ufw allow 22/tcp    # SSH
+sudo ufw allow 80/tcp    # HTTP
+sudo ufw allow 443/tcp   # HTTPS
+
+# Deny direct access to application ports
+sudo ufw deny 3000/tcp
+sudo ufw deny 3001/tcp
+
+# Check firewall status
+sudo ufw status
+</code></pre>
+<p><strong>5. Secure PostgreSQL</strong></p>
+<pre><code class="language-bash"># Edit PostgreSQL config
+sudo nano /etc/postgresql/*/main/postgresql.conf
+
+# Ensure it only listens on localhost
+listen_addresses = &#39;localhost&#39;
+
+# Restart PostgreSQL
+sudo systemctl restart postgresql
+</code></pre>
+<p><strong>6. Set Up Monitoring</strong></p>
+<ul>
+<li>Application logs: Use PM2 or centralized logging</li>
+<li>Database monitoring: PostgreSQL logs</li>
+<li>Error tracking: Consider services like Sentry</li>
+<li>Uptime monitoring: Consider services like UptimeRobot</li>
+</ul>
+<p><strong>7. Regular Security Updates</strong></p>
+<pre><code class="language-bash"># Keep dependencies updated
+npm audit fix
+
+# Update system packages
+sudo apt update &amp;&amp; sudo apt upgrade -y
+
+# Check for security vulnerabilities
+npm audit
+</code></pre>
+<p><strong>8. Rate Limiting</strong></p>
+<p>The application has rate limiting configured. Verify in <code>src/index.js</code>:</p>
+<ul>
+<li>Trust proxy is set to <code>1</code> (not <code>true</code>)</li>
+<li>Rate limit middleware is enabled</li>
+</ul>
+<p><strong>9. Implement Proper Session Management</strong></p>
+<ul>
+<li>Use secure, httpOnly cookies</li>
+<li>Implement session timeout</li>
+<li>Rotate JWT tokens regularly</li>
+</ul>
+<p><strong>10. Input Validation</strong></p>
+<ul>
+<li>Validate all user inputs</li>
+<li>Sanitize data before database queries</li>
+<li>Use parameterized queries (already implemented with Sequelize)</li>
+</ul>
+<hr>
+<h2>Performance Optimization</h2>
+<h3>Application Level</h3>
+<p><strong>1. Enable Connection Pooling</strong>
+Already configured in Sequelize. Verify pool settings in database config:</p>
+<pre><code class="language-javascript">pool: {
+  max: 5,
+  min: 0,
+  acquire: 30000,
+  idle: 10000
+}
+</code></pre>
+<p><strong>2. Use Caching</strong>
+Consider implementing Redis for:</p>
+<ul>
+<li>Session storage</li>
+<li>Token caching</li>
+<li>Frequently accessed data</li>
+</ul>
+<p><strong>3. Enable Compression</strong>
+Already enabled in Express. Verify in <code>src/index.js</code>:</p>
+<pre><code class="language-javascript">app.use(compression());
+</code></pre>
+<p><strong>4. Database Indexing</strong>
+Add indexes for frequently queried fields:</p>
+<pre><code class="language-sql">CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_articles_created_at ON articles(created_at);
+</code></pre>
+<h3>Infrastructure Level</h3>
+<p><strong>1. Use a CDN</strong>
+For static assets, consider:</p>
+<ul>
+<li>Cloudflare (free tier available)</li>
+<li>AWS CloudFront</li>
+<li>Vercel Edge Network</li>
+</ul>
+<p><strong>2. Optimize Nginx</strong></p>
+<pre><code class="language-nginx"># Enable gzip compression
+gzip on;
+gzip_vary on;
+gzip_min_length 1024;
+gzip_types text/plain text/css text/xml text/javascript application/javascript application/json;
+
+# Enable caching for static assets
+location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+    expires 1y;
+    add_header Cache-Control &quot;public, immutable&quot;;
+}
+</code></pre>
+<p><strong>3. PM2 Cluster Mode</strong></p>
+<p>For production environments with multiple CPU cores:</p>
+<pre><code class="language-bash"># Stop existing processes
+pm2 stop newsapp-backend
+
+# Start in cluster mode (uses all CPU cores)
+pm2 start src/index.js --name newsapp-backend -i max
+
+# Save configuration
+pm2 save
+</code></pre>
+<p><strong>4. Load Balancing</strong></p>
+<p>For high traffic, consider:</p>
+<ul>
+<li>Multiple application servers behind a load balancer</li>
+<li>Database read replicas</li>
+<li>Separate static asset server</li>
+</ul>
+<p><strong>5. Monitor Performance</strong></p>
+<pre><code class="language-bash"># PM2 monitoring
+pm2 monit
+
+# Check slow queries in PostgreSQL
+sudo -u postgres psql newsapp
+SELECT * FROM pg_stat_statements ORDER BY mean_time DESC LIMIT 10;
+</code></pre>
+<h3>Database Optimization</h3>
+<p><strong>1. Regular VACUUM</strong></p>
+<pre><code class="language-bash"># Auto-vacuum is enabled by default
+# Manual vacuum if needed
+sudo -u postgres vacuumdb --analyze newsapp
+</code></pre>
+<p><strong>2. Monitor Connection Pool</strong></p>
+<pre><code class="language-bash"># Check active connections
+sudo -u postgres psql newsapp
+SELECT count(*) FROM pg_stat_activity;
+</code></pre>
+<p><strong>3. Optimize Queries</strong></p>
+<ul>
+<li>Use EXPLAIN ANALYZE to identify slow queries</li>
+<li>Add appropriate indexes</li>
+<li>Avoid N+1 query problems</li>
+</ul>
+<hr>
+<h2>Additional Resources</h2>
+<ul>
+<li><a href="node-upgrade-vps.html">Node.js VPS Upgrade Guide</a> - Step-by-step Node.js upgrade instructions</li>
+<li><a href="upgrade-guide.html">Upgrade Guide</a> - Application upgrade procedures</li>
+<li><a href="contributing.html">Contributing Guide</a> - How to contribute to the project</li>
+<li><a href="api-testing.html">API Documentation</a> - API endpoints and usage</li>
+<li><a href="https://expressjs.com/en/guide/behind-proxies.html">Express.js Behind Proxies</a> - Trust proxy documentation</li>
+<li><a href="https://letsencrypt.org/docs/">Let&#39;s Encrypt Documentation</a> - SSL certificate management</li>
+<li><a href="https://pm2.keymetrics.io/docs/">PM2 Documentation</a> - Process management</li>
+<li><a href="https://nginx.org/en/docs/">Nginx Documentation</a> - Web server configuration</li>
+</ul>
+<hr>
+<h2>Support</h2>
+<p>If you encounter issues not covered in this guide:</p>
+<ol>
+<li>Check existing <a href="https://github.com/Antoniskp/Appofa/issues">GitHub Issues</a></li>
+<li>Review <a href="https://github.com/Antoniskp/Appofa/pulls">PR history</a> for recent changes</li>
+<li>Create a new issue with:<ul>
+<li>Detailed description of the problem</li>
+<li>Steps to reproduce</li>
+<li>Relevant log outputs</li>
+<li>Environment details (Node version, OS, etc.)</li>
+</ul>
+</li>
+</ol>
+<hr>
+<p><strong>Last Updated:</strong> Based on VPS deployment procedures and Node.js 22 requirements</p>
+<p><strong>Version:</strong> 1.0.0 (Consolidated from DEPLOYMENT.md and VPS_DEPLOYMENT.md)</p>
+</article>
+  </main>
+</body>
+</html>

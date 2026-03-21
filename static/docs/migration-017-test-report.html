@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migration 017 Test Report – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html" class="active">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Migration 017 Test Report</div>
+    <article class="md"><h1>Migration 017 Test Report: Add International Location</h1>
+<h2>Summary</h2>
+<p>✅ <strong>All tests passed successfully</strong></p>
+<h2>Migration File</h2>
+<p><code>src/migrations/017-add-international-location.js</code></p>
+<h2>Test Environment</h2>
+<ul>
+<li><strong>Database</strong>: PostgreSQL 15 (via Docker)</li>
+<li><strong>Node.js</strong>: v24.13.0</li>
+<li><strong>Sequelize</strong>: 6.37.7</li>
+<li><strong>Test Date</strong>: February 11, 2026</li>
+</ul>
+<h2>Tests Performed</h2>
+<h3>1. ✅ Dependency Installation</h3>
+<pre><code class="language-bash">npm install
+</code></pre>
+<p><strong>Result</strong>: All 654 packages installed successfully with no vulnerabilities</p>
+<h3>2. ✅ Initial Migration Run</h3>
+<pre><code class="language-bash">node src/run-migrations.js up
+</code></pre>
+<p><strong>Result</strong>: All 18 migrations (000-017) ran successfully</p>
+<ul>
+<li>Migration 017 output: &quot;International location added successfully&quot;</li>
+<li>Total execution time: ~5 seconds</li>
+</ul>
+<h3>3. ✅ Data Verification</h3>
+<pre><code class="language-sql">SELECT id, name, type, slug, parent_id, pg_typeof(id) 
+FROM &quot;Locations&quot; 
+WHERE type = &#39;international&#39; AND slug = &#39;international&#39;;
+</code></pre>
+<p><strong>Result</strong>: International location created with correct attributes:</p>
+<ul>
+<li><code>id</code>: 2 (numeric, auto-incremented integer) ✓</li>
+<li><code>name</code>: &#39;International&#39; ✓</li>
+<li><code>type</code>: &#39;international&#39; ✓</li>
+<li><code>slug</code>: &#39;international&#39; ✓</li>
+<li><code>parent_id</code>: NULL ✓</li>
+<li><code>createdAt</code> and <code>updatedAt</code>: Auto-populated timestamps ✓</li>
+</ul>
+<h3>4. ✅ Idempotency Test (Migration System)</h3>
+<pre><code class="language-bash">node src/run-migrations.js up
+</code></pre>
+<p><strong>Result</strong>: Migration system correctly detected all migrations as executed</p>
+<ul>
+<li>Output: &quot;✓ No pending migrations to run&quot;</li>
+<li>No duplicate migrations attempted ✓</li>
+</ul>
+<h3>5. ✅ Idempotency Test (Direct Execution)</h3>
+<pre><code class="language-javascript">// Ran migration.up() directly while record already exists
+await migration.up(queryInterface, Sequelize);
+</code></pre>
+<p><strong>Result</strong>: Migration detected existing record and skipped insertion</p>
+<ul>
+<li>Output: &quot;International location already exists&quot;</li>
+<li>Database query: COUNT(*) = 1 (no duplicates) ✓</li>
+<li>Migration logic correctly checks for existing record ✓</li>
+</ul>
+<h3>6. ✅ Rollback Test</h3>
+<pre><code class="language-bash">node src/run-migrations.js down
+</code></pre>
+<p><strong>Result</strong>: Rollback completed successfully</p>
+<ul>
+<li>Output: &quot;✓ 017-add-international-location.js rolled back successfully&quot;</li>
+<li>International location deleted from database ✓</li>
+<li>Database query: COUNT(*) = 0 ✓</li>
+<li>Migration status correctly shows 017 as PENDING ✓</li>
+</ul>
+<h3>7. ✅ Re-run After Rollback</h3>
+<pre><code class="language-bash">node src/run-migrations.js up
+</code></pre>
+<p><strong>Result</strong>: Migration re-ran successfully after rollback</p>
+<ul>
+<li>Output: &quot;International location added successfully&quot;</li>
+<li>Record recreated with correct data ✓</li>
+<li>Migration status shows 017 as EXECUTED ✓</li>
+</ul>
+<h2>Code Quality</h2>
+<h3>Migration Structure</h3>
+<pre><code class="language-javascript">// UP migration - Idempotent check
+const [results] = await queryInterface.sequelize.query(
+  `SELECT id FROM &quot;Locations&quot; WHERE type = &#39;international&#39; AND slug = &#39;international&#39; LIMIT 1;`
+);
+
+if (results.length === 0) {
+  // Insert only if not exists
+  await queryInterface.sequelize.query(`
+    INSERT INTO &quot;Locations&quot; (name, type, slug, parent_id, &quot;createdAt&quot;, &quot;updatedAt&quot;)
+    VALUES (&#39;International&#39;, &#39;international&#39;, &#39;international&#39;, NULL, NOW(), NOW());
+  `);
+}
+
+// DOWN migration - Clean rollback
+await queryInterface.sequelize.query(`
+  DELETE FROM &quot;Locations&quot; WHERE type = &#39;international&#39; AND slug = &#39;international&#39;;
+`);
+</code></pre>
+<h3>Best Practices Observed</h3>
+<p>✅ Idempotency check prevents duplicate inserts
+✅ Console logging for debugging
+✅ Proper use of raw SQL for data insertion
+✅ Correct handling of NULL parent_id
+✅ Auto-populated timestamps (createdAt, updatedAt)
+✅ Clean rollback that removes only the specific record</p>
+<h2>Additional Notes</h2>
+<h3>Bug Fix Applied</h3>
+<p>During testing, discovered and fixed a bug in migration 014 (<code>014-increase-varchar-fields-to-text.js</code>) which attempted to modify a non-existent <code>Images</code> table. Added table existence checks to prevent failures.</p>
+<h3>Database Schema Compatibility</h3>
+<ul>
+<li>Migration uses PostgreSQL-compatible SQL</li>
+<li>Uses quoted identifiers for case-sensitive table/column names</li>
+<li>Compatible with existing Locations table schema</li>
+</ul>
+<h2>Conclusion</h2>
+<p>Migration <code>017-add-international-location.js</code> is <strong>production-ready</strong> and passes all required tests:</p>
+<ol>
+<li>✅ Runs successfully on a fresh database</li>
+<li>✅ Is idempotent (can be run multiple times safely)</li>
+<li>✅ Can be rolled back cleanly</li>
+<li>✅ Creates data with correct schema and types</li>
+<li>✅ Follows project conventions and best practices</li>
+</ol>
+<p>The International location is properly created with:</p>
+<ul>
+<li>Numeric auto-incremented ID</li>
+<li>Correct type, slug, and name values</li>
+<li>NULL parent_id as expected for a top-level location</li>
+<li>Proper timestamps</li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

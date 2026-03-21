@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Poll Export &amp; Audit – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html" class="active">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Poll Export &amp; Audit</div>
+    <article class="md"><h1>Poll Audit Export</h1>
+<p>This document describes the auditable poll data export feature, including the privacy-preserving voter reference mechanism.</p>
+<h2>Overview</h2>
+<p>Authorised users (poll creator or admin) can download a structured JSON file containing the final votes for a poll, grouped under each option, without exposing real user identities.</p>
+<h2>Endpoint</h2>
+<pre><code>GET /api/polls/:id/export
+</code></pre>
+<ul>
+<li><strong>Authentication</strong>: required (JWT cookie / bearer token)</li>
+<li><strong>Authorisation</strong>: poll creator <strong>or</strong> admin role only (same set of users that can edit the poll)</li>
+<li><strong>Rate-limited</strong> by the standard API limiter</li>
+</ul>
+<h3>Response shape</h3>
+<pre><code class="language-jsonc">{
+  &quot;success&quot;: true,
+  &quot;data&quot;: {
+    &quot;exported_at&quot;: &quot;2026-03-05T12:00:00.000Z&quot;,
+    &quot;poll&quot;: {
+      &quot;id&quot;: 42,
+      &quot;title&quot;: &quot;Best programming language?&quot;,
+      &quot;description&quot;: &quot;...&quot;,
+      &quot;type&quot;: &quot;simple&quot;,
+      &quot;status&quot;: &quot;active&quot;,
+      &quot;deadline&quot;: null,
+      &quot;createdAt&quot;: &quot;...&quot;,
+      &quot;updatedAt&quot;: &quot;...&quot;
+    },
+    &quot;summary&quot;: {
+      &quot;totalVotes&quot;: 150,
+      &quot;totalOptions&quot;: 3
+    },
+    &quot;options&quot;: [
+      {
+        &quot;id&quot;: 1,
+        &quot;text&quot;: &quot;TypeScript&quot;,
+        &quot;photoUrl&quot;: null,
+        &quot;linkUrl&quot;: null,
+        &quot;displayText&quot;: null,
+        &quot;answerType&quot;: null,
+        &quot;order&quot;: 0,
+        &quot;vote_count&quot;: 80,
+        &quot;votes&quot;: [
+          {
+            &quot;vote_id&quot;: 101,
+            &quot;voter_ref&quot;: &quot;a3f9c...&quot;,   // HMAC-SHA256 hex digest
+            &quot;is_authenticated&quot;: true,
+            &quot;voted_at&quot;: &quot;2026-03-04T10:00:00.000Z&quot;
+          }
+        ]
+      }
+    ]
+  }
+}
+</code></pre>
+<p>The export contains <strong>final votes only</strong> (one per authenticated user, enforced by the unique index in the database).  Anonymous / unauthenticated votes have <code>voter_ref: null</code> because there is no stable user ID to hash.</p>
+<h2>Environment Variable</h2>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POLL_EXPORT_HMAC_SECRET</code></td>
+<td>Long, random secret used as the HMAC key. <strong>Required</strong> at runtime when the export endpoint is called.</td>
+</tr>
+</tbody></table>
+<p>Generate a suitable value:</p>
+<pre><code class="language-bash">node -e &quot;console.log(require(&#39;crypto&#39;).randomBytes(32).toString(&#39;hex&#39;))&quot;
+</code></pre>
+<p>Add the result to your <code>.env</code> file (and never commit it to source control):</p>
+<pre><code>POLL_EXPORT_HMAC_SECRET=&lt;generated-value&gt;
+</code></pre>
+<h2>voter_ref — How It Is Generated</h2>
+<pre><code class="language-js">const crypto = require(&#39;crypto&#39;);
+
+const voterRef = crypto
+  .createHmac(&#39;sha256&#39;, process.env.POLL_EXPORT_HMAC_SECRET)
+  .update(`${pollId}:${userId}`)
+  .digest(&#39;hex&#39;);
+</code></pre>
+<h3>Privacy properties</h3>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Explanation</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>One-way</strong></td>
+<td>HMAC-SHA256 cannot be reversed; the real <code>userId</code> cannot be derived from <code>voter_ref</code>.</td>
+</tr>
+<tr>
+<td><strong>Stable within a poll</strong></td>
+<td>The same <code>(pollId, userId)</code> always produces the same <code>voter_ref</code>. Auditors can check for duplicate voter refs within a single poll export.</td>
+</tr>
+<tr>
+<td><strong>Not correlatable across polls</strong></td>
+<td><code>pollId</code> is part of the HMAC message, so the same user has a <em>different</em> <code>voter_ref</code> in every poll export.</td>
+</tr>
+<tr>
+<td><strong>Keyed</strong></td>
+<td>Without the <code>POLL_EXPORT_HMAC_SECRET</code>, the refs cannot be recomputed or verified externally.</td>
+</tr>
+</tbody></table>
+<h2>Verifying a voter_ref (Server-Side)</h2>
+<p>To confirm that a specific known user cast a specific vote in an audit, an authorised admin can run the following script <strong>server-side</strong> (never expose this mapping in the export itself):</p>
+<pre><code class="language-js">// verify-voter-ref.js
+// Usage: node verify-voter-ref.js &lt;pollId&gt; &lt;userId&gt; &lt;voter_ref_to_check&gt;
+require(&#39;dotenv&#39;).config();
+const crypto = require(&#39;crypto&#39;);
+
+const [, , pollId, userId, expectedRef] = process.argv;
+
+const computed = crypto
+  .createHmac(&#39;sha256&#39;, process.env.POLL_EXPORT_HMAC_SECRET)
+  .update(`${pollId}:${userId}`)
+  .digest(&#39;hex&#39;);
+
+if (computed === expectedRef) {
+  console.log(&#39;✓ voter_ref matches the provided userId.&#39;);
+} else {
+  console.log(&#39;✗ voter_ref does NOT match the provided userId.&#39;);
+}
+</code></pre>
+<h3>Important notes</h3>
+<ul>
+<li>This script <strong>must only be run by authorised admins</strong> on a trusted server.</li>
+<li>Never expose userId ↔ voter_ref mappings in the export file or any public-facing output.</li>
+<li>The HMAC is one-way: you cannot &quot;decode&quot; a <code>voter_ref</code> to find the userId. Identity confirmation always requires <em>recomputing</em> the HMAC for a candidate <code>userId</code>.</li>
+<li>If <code>POLL_EXPORT_HMAC_SECRET</code> is rotated, all previously exported <code>voter_ref</code> values will no longer match recomputed values. Archive exports before rotating the secret.</li>
+</ul>
+<h2>Frontend Export</h2>
+<p>In the <strong>Poll Results</strong> UI, users with edit rights see an <strong>Εξαγωγή</strong> (Export) dropdown with two actions:</p>
+<ol>
+<li><strong>Εξαγωγή ως PNG</strong> — downloads the current chart as a PNG image (existing behaviour).</li>
+<li><strong>Εξαγωγή δεδομένων (JSON)</strong> — calls <code>GET /api/polls/:id/export</code> and downloads the auditable JSON file as <code>poll-&lt;id&gt;-audit.json</code>.</li>
+</ol>
+<p>Regular viewers (without edit rights) continue to see only the PNG export button.</p>
+</article>
+  </main>
+</body>
+</html>

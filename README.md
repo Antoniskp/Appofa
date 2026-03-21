@@ -189,7 +189,20 @@ npm run migrate:up            # Apply next pending migration
 npm run migrate:down          # Rollback last migration
 npm run migrate:status        # Show migration status
 npm run migrate:article-types # Migrate existing articles to the new type field
+npm run build:docs            # Generate static docs under static/docs/
+npm run docs:serve            # Serve static docs locally (http://localhost:3000)
 ```
+
+## Documentation (Static Pages)
+
+The project documentation lives in `doc/` as Markdown source files and is published as static HTML under `static/docs/`.
+
+| Action | Command |
+|--------|---------|
+| Rebuild all static docs | `npm run build:docs` |
+| Preview docs locally | `npm run docs:serve` then open [http://localhost:3000](http://localhost:3000) |
+
+The build script (`tools/build-docs.js`) converts every relevant `doc/*.md` file to a styled HTML page using [marked](https://marked.js.org/). The landing page is `static/docs/index.html`.
 
 ## Dependency Management
 

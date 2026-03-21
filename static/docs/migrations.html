@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Migrations – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html" class="active">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Migrations</div>
+    <article class="md"><h1>Database Migrations Guide</h1>
+<p>This document explains how to manage database schema changes using Sequelize migrations in the Appofa application.</p>
+<h2>Overview</h2>
+<p>The application uses Sequelize migrations to manage database schema changes. In production environments (<code>NODE_ENV=production</code>), automatic schema synchronization is disabled for safety. Instead, migrations must be run explicitly before starting the server.</p>
+<h2>Migration System</h2>
+<h3>Migration Files</h3>
+<p>Migration files are located in <code>src/migrations/</code> directory and follow the naming convention:</p>
+<pre><code>XXX-description.js
+</code></pre>
+<p>Where <code>XXX</code> is a sequential number (001, 002, etc.) and <code>description</code> briefly explains what the migration does.</p>
+<p>Each migration file exports two functions:</p>
+<ul>
+<li><code>up(queryInterface, Sequelize)</code> - Applies the migration</li>
+<li><code>down(queryInterface, Sequelize)</code> - Reverts the migration</li>
+</ul>
+<h3>Migration Tracking</h3>
+<p>The system tracks executed migrations in the <code>SequelizeMeta</code> table. This table is automatically created when you run migrations for the first time.</p>
+<h2>Running Migrations</h2>
+<h3>Prerequisites</h3>
+<ol>
+<li>Ensure your database is running</li>
+<li>Configure database credentials in <code>.env</code> file:<pre><code>DB_NAME=newsapp
+DB_USER=postgres
+DB_PASSWORD=password
+DB_HOST=localhost
+DB_PORT=5432
+</code></pre>
+</li>
+</ol>
+<h3>Commands</h3>
+<h4>Run Pending Migrations</h4>
+<p>To apply all pending migrations:</p>
+<pre><code class="language-bash">node src/run-migrations.js
+</code></pre>
+<p>Or explicitly:</p>
+<pre><code class="language-bash">node src/run-migrations.js up
+</code></pre>
+<p>This command:</p>
+<ul>
+<li>Connects to the database</li>
+<li>Creates the <code>SequelizeMeta</code> table if it doesn&#39;t exist</li>
+<li>Checks which migrations have already been executed</li>
+<li>Runs pending migrations in sequential order</li>
+<li>Marks each migration as executed after successful completion</li>
+</ul>
+<h4>Rollback Last Migration</h4>
+<p>To rollback the most recently executed migration:</p>
+<pre><code class="language-bash">node src/run-migrations.js down
+</code></pre>
+<p>This command:</p>
+<ul>
+<li>Finds the last executed migration</li>
+<li>Runs its <code>down()</code> function</li>
+<li>Removes the migration from the tracking table</li>
+</ul>
+<h4>Check Migration Status</h4>
+<p>To see which migrations have been executed and which are pending:</p>
+<pre><code class="language-bash">node src/run-migrations.js status
+</code></pre>
+<p>This displays:</p>
+<ul>
+<li>Total number of migrations</li>
+<li>Number of executed migrations</li>
+<li>Number of pending migrations</li>
+<li>Detailed status of each migration file</li>
+</ul>
+<h2>Existing Migrations</h2>
+<h3>001-create-locations-table.js</h3>
+<p>Creates the <code>Locations</code> table for hierarchical location data with:</p>
+<ul>
+<li>Basic fields: id, name, name_local, type, code, slug</li>
+<li>Hierarchical structure: parent_id (self-referencing foreign key)</li>
+<li>Geographic data: lat, lng, bounding_box</li>
+<li>Timestamps: createdAt, updatedAt</li>
+<li>Indexes on: parent_id, code, slug</li>
+<li>Unique constraint on (type, name, parent_id)</li>
+</ul>
+<h3>002-create-location-links-table.js</h3>
+<p>Creates the <code>LocationLinks</code> table for linking locations to articles and users with:</p>
+<ul>
+<li>Fields: id, location_id, entity_type, entity_id</li>
+<li>Foreign key to Locations table</li>
+<li>Timestamps: createdAt, updatedAt</li>
+<li>Unique constraint on (location_id, entity_type, entity_id)</li>
+<li>Indexes for efficient lookups</li>
+</ul>
+<h3>003-add-user-columns.js</h3>
+<p>Adds new columns to the <code>Users</code> table:</p>
+<ul>
+<li><code>githubId</code> - GitHub OAuth user ID</li>
+<li><code>githubAccessToken</code> - GitHub OAuth access token</li>
+<li><code>avatar</code> - User avatar URL</li>
+<li><code>avatarColor</code> - Avatar background color</li>
+<li><code>homeLocationId</code> - Foreign key to Locations table</li>
+</ul>
+<h2>Production Deployment Workflow</h2>
+<h3>Initial Setup</h3>
+<ol>
+<li>Deploy your application code</li>
+<li>Run migrations before starting the server:<pre><code class="language-bash">node src/run-migrations.js
+</code></pre>
+</li>
+<li>Start the server:<pre><code class="language-bash">NODE_ENV=production node src/index.js
+</code></pre>
+</li>
+</ol>
+<h3>Updating Schema</h3>
+<p>When deploying code changes that include new migrations:</p>
+<ol>
+<li>Stop the server (if necessary for the migration)</li>
+<li>Pull the latest code</li>
+<li>Run migrations:<pre><code class="language-bash">node src/run-migrations.js
+</code></pre>
+</li>
+<li>Start the server:<pre><code class="language-bash">NODE_ENV=production node src/index.js
+</code></pre>
+</li>
+</ol>
+<h2>Migration Best Practices</h2>
+<h3>Idempotency</h3>
+<p>All migrations are designed to be idempotent, meaning they can be safely run multiple times. Each migration checks if changes have already been applied before attempting to apply them again.</p>
+<h3>Safety</h3>
+<ul>
+<li>Migrations run in a transaction when possible</li>
+<li>Each migration checks for existing tables/columns before creating them</li>
+<li>Down migrations verify existence before attempting to drop items</li>
+<li>Errors are logged with helpful messages</li>
+</ul>
+<h3>Writing New Migrations</h3>
+<p>When creating new migrations:</p>
+<ol>
+<li><p>Create a new file with the next sequential number:</p>
+<pre><code>src/migrations/00X-description.js
+</code></pre>
+</li>
+<li><p>Implement both <code>up</code> and <code>down</code> functions:</p>
+<pre><code class="language-javascript">module.exports = {
+  async up(queryInterface, Sequelize) {
+    // Apply changes
+  },
+  async down(queryInterface, Sequelize) {
+    // Revert changes
+  }
+};
+</code></pre>
+</li>
+<li><p>Make migrations idempotent by checking for existence:</p>
+<pre><code class="language-javascript">async up(queryInterface, Sequelize) {
+  const tableDescription = await queryInterface.describeTable(&#39;TableName&#39;);
+  if (!tableDescription.columnName) {
+    await queryInterface.addColumn(&#39;TableName&#39;, &#39;columnName&#39;, {
+      type: Sequelize.STRING
+    });
+  }
+}
+</code></pre>
+</li>
+<li><p>Test both up and down migrations:</p>
+<pre><code class="language-bash">node src/run-migrations.js up
+node src/run-migrations.js down
+node src/run-migrations.js up
+</code></pre>
+</li>
+</ol>
+<h2>Troubleshooting</h2>
+<h3>Migration Fails</h3>
+<p>If a migration fails:</p>
+<ol>
+<li>Check the error message for details</li>
+<li>Fix the issue (database connection, syntax error, etc.)</li>
+<li>If the migration partially completed, you may need to manually clean up</li>
+<li>Run the migration again</li>
+</ol>
+<h3>Schema Out of Sync</h3>
+<p>If your schema is out of sync with migrations:</p>
+<ol>
+<li>Check migration status: <code>node src/run-migrations.js status</code></li>
+<li>In development, you can drop and recreate the database, then run all migrations</li>
+<li>In production, create corrective migrations to bring schema into alignment</li>
+</ol>
+<h3>Rollback Issues</h3>
+<p>If rollback fails:</p>
+<ol>
+<li>Check that the down migration is correctly implemented</li>
+<li>Manually verify what changes were applied</li>
+<li>Fix the down migration or manually revert changes if necessary</li>
+</ol>
+<h2>Support</h2>
+<p>For issues or questions about migrations:</p>
+<ul>
+<li>Check existing migration files for examples</li>
+<li>Review Sequelize documentation: <a href="https://sequelize.org/docs/v6/other-topics/migrations/">https://sequelize.org/docs/v6/other-topics/migrations/</a></li>
+<li>Consult the project&#39;s issue tracker</li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

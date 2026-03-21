@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Troubleshooting – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html" class="active">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Troubleshooting</div>
+    <article class="md"><h1>Troubleshooting Guide</h1>
+<h2>502 Bad Gateway — Entire Site Unavailable</h2>
+<p><strong>Symptoms:</strong> Every page returns a 502 error (not just API calls), including <code>/</code> and <code>/favicon.ico</code>.</p>
+<p><strong>Cause:</strong> nginx cannot reach the Next.js frontend on port 3001. The most common trigger after an update is:</p>
+<ul>
+<li>A stale or missing <code>.next</code> build (e.g. after the Next.js package was updated via <code>npm ci</code>), or</li>
+<li>Missing database migrations causing the backend to crash.</li>
+</ul>
+<p><strong>Quick fix:</strong></p>
+<p>The <code>npm run frontend:start</code> script now detects a missing or stale build and rebuilds automatically. In most cases simply restarting the frontend is enough:</p>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# 1. Restart the frontend — it will auto-rebuild if the build is stale
+pm2 restart newsapp-frontend
+
+# 2. Run any pending migrations and restart the backend
+npm run migrate
+pm2 restart newsapp-backend
+
+pm2 save
+</code></pre>
+<p>Check PM2 status after:</p>
+<pre><code class="language-bash">pm2 status   # both processes must show &quot;online&quot;
+</code></pre>
+<p>If the automatic rebuild fails (check <code>pm2 logs newsapp-frontend --err</code>), force a clean rebuild:</p>
+<pre><code class="language-bash">pm2 stop newsapp-frontend
+rm -rf .next
+NODE_ENV=production npm run frontend:build
+pm2 restart newsapp-frontend newsapp-backend
+pm2 save
+</code></pre>
+<p>For full diagnostic steps and additional fix scenarios, see <a href="vps-setup.html#troubleshooting-502-bad-gateway">VPS Setup — Troubleshooting: 502 Bad Gateway</a>.</p>
+<hr>
+<h2>Common Browser Console Errors</h2>
+<h3><code>webpage_content_reporter.js</code> SyntaxError</h3>
+<p><strong>Error Message:</strong></p>
+<pre><code>webpage_content_reporter.js:1 Uncaught SyntaxError: Unexpected token &#39;export&#39;
+</code></pre>
+<p><strong>Cause:</strong>
+This error is <strong>not caused by the Appofa application code</strong>. The file <code>webpage_content_reporter.js</code> does not exist in our codebase. This error typically occurs when:</p>
+<ol>
+<li><strong>Browser Extension Injection</strong>: A browser extension (commonly ad blockers, content readers, or page analyzers) is injecting JavaScript into the page</li>
+<li><strong>Third-party Script</strong>: Some external service or tool is attempting to load a script that uses ES6 module syntax without proper configuration</li>
+</ol>
+<p><strong>Solution:</strong></p>
+<ul>
+<li><p><strong>For Users</strong>: This error does not affect the functionality of the Appofa application. You can safely ignore it, or try:</p>
+<ul>
+<li>Disable browser extensions one by one to identify which one is causing the issue</li>
+<li>Use browser incognito/private mode to test if extensions are the cause</li>
+<li>Check browser developer tools to see which extension is injecting the script</li>
+</ul>
+</li>
+<li><p><strong>For Developers</strong>: No code changes are needed in the Appofa application. This is an external issue.</p>
+</li>
+</ul>
+<h3>Missing Favicon (404 Error)</h3>
+<p><strong>Error Message:</strong></p>
+<pre><code>GET https://appofasi.gr/favicon.ico 404 (Not Found)
+</code></pre>
+<p><strong>Status:</strong> ✅ Fixed</p>
+<p>The favicon has been added to the application at <code>app/favicon.ico</code> and is properly referenced in the layout metadata. This error should no longer appear after the latest deployment.</p>
+<h2>Additional Resources</h2>
+<p>For other issues, please check:</p>
+<ul>
+<li><a href="project-summary.html">Project Summary</a></li>
+<li><a href="architecture.html">Architecture Documentation</a></li>
+<li><a href="security.html">Security Guidelines</a></li>
+</ul>
+<h2>npm Install Warnings</h2>
+<h3>Deprecated Package Warnings During <code>npm install</code></h3>
+<p><strong>Warnings:</strong></p>
+<pre><code>npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+npm warn deprecated npmlog@6.0.2: This package is no longer supported.
+npm warn deprecated whatwg-encoding@3.1.1: Use @exodus/bytes instead for a more spec-conformant...
+npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
+npm warn deprecated gauge@4.0.4: This package is no longer supported.
+</code></pre>
+<p><strong>Cause:</strong>
+These warnings come from transitive dependencies of the <code>sqlite3</code> <strong>dev dependency</strong>, which is used only for local testing. The packages (<code>npmlog</code>, <code>gauge</code>, <code>are-we-there-yet</code>, <code>@npmcli/move-file</code>) are pulled in by <code>node-gyp</code> (the native module builder used by <code>sqlite3</code>). They do <strong>not</strong> affect the production application.</p>
+<p><strong>Status:</strong> These are upstream warnings that will be resolved when <code>sqlite3</code> updates its <code>node-gyp</code> dependency. No action is required on the application side.</p>
+<p><strong>To suppress these warnings</strong> (suppresses all deprecation warnings during install):</p>
+<pre><code class="language-bash">npm install --no-warnings
+</code></pre>
+<h3>npm Audit Vulnerabilities (Post-Install)</h3>
+<p>After <code>npm install</code> you may see deprecation warnings from transitive dependencies of <code>sqlite3</code> (dev-only). These do <strong>not</strong> affect production.</p>
+<p>To confirm zero production vulnerabilities, run:</p>
+<pre><code class="language-bash">npm audit --omit=dev
+</code></pre>
+<p>All known high- and moderate-severity vulnerabilities have been resolved. See <a href="security.html">Security Guidelines</a> for full details.</p>
+</article>
+  </main>
+</body>
+</html>
