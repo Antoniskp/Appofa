@@ -1,14 +1,9 @@
 import StaticPageLayout from '@/components/StaticPageLayout';
-import CommentsThread from '@/components/comments/CommentsThread';
 
 export const metadata = {
   title: 'Εκπαίδευση - Απόφαση',
   description: 'Το εκπαιδευτικό σύστημα, προκλήσεις και προτάσεις για τη βελτίωσή του.',
 };
-
-// entityType and entityId used to scope comments to this specific page
-const COMMENTS_ENTITY_TYPE = 'page';
-const COMMENTS_ENTITY_ID = 'education';
 
 export default function EducationPage() {
   return (
@@ -105,15 +100,10 @@ export default function EducationPage() {
       <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-2">Μοιράσου την άποψή σου</h2>
         <p className="text-gray-700 text-sm">
-          Η εκπαίδευση αφορά όλους. Συμμετέχοντας στη συζήτηση παρακάτω, βοηθάς να διαμορφωθεί
+          Η εκπαίδευση αφορά όλους. Συμμετέχοντας στις ψηφοφορίες, βοηθάς να διαμορφωθεί
           μια κοινή αντίληψη για τις αλλαγές που χρειάζεται το σύστημα.
         </p>
       </section>
-
-      <CommentsThread
-        entityType={COMMENTS_ENTITY_TYPE}
-        entityId={COMMENTS_ENTITY_ID}
-      />
     </StaticPageLayout>
   );
 }

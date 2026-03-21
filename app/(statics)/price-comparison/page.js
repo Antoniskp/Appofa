@@ -1,14 +1,9 @@
 import StaticPageLayout from '@/components/StaticPageLayout';
-import CommentsThread from '@/components/comments/CommentsThread';
 
 export const metadata = {
   title: 'Σύγκριση Τιμών - Απόφαση',
   description: 'Πληροφορίες και αναλύσεις για τις τιμές καταναλωτικών αγαθών στην Ελλάδα.',
 };
-
-// entityType and entityId used to scope comments to this specific page
-const COMMENTS_ENTITY_TYPE = 'page';
-const COMMENTS_ENTITY_ID = 'price-comparison';
 
 export default function PriceComparisonPage() {
   return (
@@ -105,15 +100,10 @@ export default function PriceComparisonPage() {
       <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-2">Μοιράσου εμπειρίες & συμβουλές</h2>
         <p className="text-gray-700 text-sm">
-          Έχεις ανακαλύψει κάποιο χρήσιμο εργαλείο ή τακτική εξοικονόμησης; Μοιράσου τη στα σχόλια
-          παρακάτω και βοήθησε άλλα μέλη της κοινότητας να διαχειριστούν καλύτερα τον προϋπολογισμό τους.
+          Έχεις ανακαλύψει κάποιο χρήσιμο εργαλείο ή τακτική εξοικονόμησης; Συμμετέχοντας στις
+          ψηφοφορίες, βοήθα άλλα μέλη της κοινότητας να διαχειριστούν καλύτερα τον προϋπολογισμό τους.
         </p>
       </section>
-
-      <CommentsThread
-        entityType={COMMENTS_ENTITY_TYPE}
-        entityId={COMMENTS_ENTITY_ID}
-      />
     </StaticPageLayout>
   );
 }

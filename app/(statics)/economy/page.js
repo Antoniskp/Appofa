@@ -1,14 +1,9 @@
 import StaticPageLayout from '@/components/StaticPageLayout';
-import CommentsThread from '@/components/comments/CommentsThread';
 
 export const metadata = {
   title: 'Οικονομία - Απόφαση',
   description: 'Βασικές έννοιες, τάσεις και ανάλυση της ελληνικής και παγκόσμιας οικονομίας.',
 };
-
-// entityType and entityId used to scope comments to this specific page
-const COMMENTS_ENTITY_TYPE = 'page';
-const COMMENTS_ENTITY_ID = 'economy';
 
 export default function EconomyPage() {
   return (
@@ -104,15 +99,10 @@ export default function EconomyPage() {
       <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-2">Θέλεις να μάθεις περισσότερα;</h2>
         <p className="text-gray-700 text-sm">
-          Παρακολούθησε τις ειδήσεις για τελευταίες εξελίξεις, συμμετέχοντας στις ψηφοφορίες και
-          εκφράζοντας την άποψή σου παρακάτω στα σχόλια.
+          Παρακολούθησε τις ειδήσεις για τελευταίες εξελίξεις και συμμετέχε στις ψηφοφορίες
+          εκφράζοντας την άποψή σου.
         </p>
       </section>
-
-      <CommentsThread
-        entityType={COMMENTS_ENTITY_TYPE}
-        entityId={COMMENTS_ENTITY_ID}
-      />
     </StaticPageLayout>
   );
 }
