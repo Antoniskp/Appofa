@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Security – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html" class="active">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Security</div>
+    <article class="md"><h1>Security Summary</h1>
+<h2>Security Features Implemented</h2>
+<h3>1. Authentication &amp; Authorization</h3>
+<ul>
+<li><strong>JWT-based Authentication</strong>: Secure token-based authentication using JSON Web Tokens</li>
+<li><strong>Password Security</strong>: All passwords are hashed using bcrypt with salt (10 rounds)</li>
+<li><strong>Role-Based Access Control</strong>: Three-tier permission system (Admin, Editor, Viewer)</li>
+<li><strong>Token Expiration</strong>: JWT tokens expire after 24 hours</li>
+</ul>
+<h3>2. Rate Limiting</h3>
+<p>Implemented comprehensive rate limiting to prevent abuse:</p>
+<ul>
+<li><strong>Authentication Routes</strong>: 5 requests per 15 minutes for login/register</li>
+<li><strong>Create Operations</strong>: 20 requests per 15 minutes for article creation</li>
+<li><strong>General API Routes</strong>: 100 requests per 15 minutes for read/update/delete operations</li>
+</ul>
+<h3>3. Input Validation</h3>
+<ul>
+<li>Server-side validation for all user inputs</li>
+<li>Required field validation</li>
+<li>Length constraints on text fields</li>
+<li>Email format validation</li>
+<li>Password strength requirements can be added</li>
+</ul>
+<h3>4. Database Security</h3>
+<ul>
+<li>SQL Injection Protection via Sequelize ORM parameterized queries</li>
+<li>Database credentials stored in environment variables</li>
+<li>Production database password must be changed from default</li>
+</ul>
+<h3>5. Environment Security</h3>
+<ul>
+<li><strong>JWT_SECRET Validation</strong>: Application checks for JWT_SECRET in production and fails if not set</li>
+<li>Fallback secrets only allowed in development mode</li>
+<li>Environment variables used for all sensitive configuration</li>
+</ul>
+<h3>6. CORS Configuration</h3>
+<ul>
+<li>CORS restricted to the configured frontend origin</li>
+<li>Credentials are enabled for cross-origin requests</li>
+</ul>
+<h2>Security Vulnerabilities Fixed</h2>
+<h3>CodeQL Analysis Results</h3>
+<p>All CodeQL security alerts have been resolved:</p>
+<ul>
+<li>✅ Fixed missing rate limiting on authentication routes</li>
+<li>✅ Fixed missing rate limiting on article routes</li>
+<li>✅ Fixed missing rate limiting on profile endpoint</li>
+</ul>
+<p><strong>Final CodeQL Scan</strong>: 0 security alerts</p>
+<h3>npm Dependency Audit (2026-03-05)</h3>
+<h4>Fixed: <code>tar</code> Hardlink Path Traversal (High Severity)</h4>
+<ul>
+<li><strong>CVE/Advisory</strong>: <a href="https://github.com/advisories/GHSA-qffp-2rhf-9h96">GHSA-qffp-2rhf-9h96</a></li>
+<li><strong>Severity</strong>: High</li>
+<li><strong>Affected versions</strong>: <code>tar &lt;=7.5.9</code></li>
+<li><strong>Resolution</strong>: ✅ Updated the <code>tar</code> override in <code>package.json</code> from <code>^7.5.8</code> to <code>&gt;=7.5.10</code>, ensuring the patched version is installed.</li>
+</ul>
+<h3>npm Dependency Audit (2026-03-16)</h3>
+<p>Eight high-severity vulnerabilities were reported against the existing lockfile (new advisories published, no code changes). All have been resolved via <code>npm audit fix</code> and override updates.</p>
+<h4>Why new vulnerabilities appear without code changes</h4>
+<p>The npm advisory database is continuously updated. A package already installed can become flagged as vulnerable the moment a new CVE is published against it—even if your code hasn&#39;t changed in weeks. This is expected behavior; the fix is regular dependency maintenance, not a rewrite.</p>
+<h4>Fixed: express-rate-limit IPv4-mapped IPv6 bypass (High)</h4>
+<ul>
+<li><strong>Advisory</strong>: <a href="https://github.com/advisories/GHSA-46wh-pxpv-q5gq">GHSA-46wh-pxpv-q5gq</a></li>
+<li><strong>Affected versions</strong>: <code>express-rate-limit 8.2.0 – 8.2.1</code></li>
+<li><strong>Resolution</strong>: ✅ Updated lockfile to <code>express-rate-limit@8.3.1</code>; bumped <code>package.json</code> minimum to <code>^8.3.1</code>.</li>
+</ul>
+<h4>Fixed: Sequelize SQL Injection via JSON Column Cast Type (High)</h4>
+<ul>
+<li><strong>Advisory</strong>: <a href="https://github.com/advisories/GHSA-6457-6jrx-69cr">GHSA-6457-6jrx-69cr</a></li>
+<li><strong>Affected versions</strong>: <code>sequelize 6.0.0-beta.1 – 6.37.7</code></li>
+<li><strong>Resolution</strong>: ✅ Updated lockfile to <code>sequelize@6.37.8</code>; bumped <code>package.json</code> minimum to <code>^6.37.8</code>.</li>
+</ul>
+<h4>Fixed: flatted unbounded recursion DoS in parse() (High)</h4>
+<ul>
+<li><strong>Advisory</strong>: <a href="https://github.com/advisories/GHSA-25h7-pfq9-p65f">GHSA-25h7-pfq9-p65f</a></li>
+<li><strong>Affected versions</strong>: <code>flatted &lt;3.4.0</code></li>
+<li><strong>Resolution</strong>: ✅ Updated lockfile to <code>flatted@3.4.1</code> (transitive dependency, no direct reference in <code>package.json</code> required).</li>
+</ul>
+<h4>Fixed: node-tar Symlink Path Traversal (High)</h4>
+<ul>
+<li><strong>Advisory</strong>: <a href="https://github.com/advisories/GHSA-9ppj-qmqm-q256">GHSA-9ppj-qmqm-q256</a></li>
+<li><strong>Affected versions</strong>: <code>tar &lt;=7.5.10</code> (transitive via <code>sqlite3 → node-gyp → make-fetch-happen → cacache → tar</code>)</li>
+<li><strong>Resolution</strong>: ✅ Updated lockfile to <code>tar@7.5.11</code>; tightened <code>package.json</code> override to <code>&gt;=7.5.11</code>.</li>
+</ul>
+<h4>Current audit status (2026-03-16)</h4>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>High</th>
+<th>Medium</th>
+<th>Low</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>npm audit --omit=dev</code> (production)</td>
+<td><strong>0</strong></td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>npm audit</code> (all deps incl. dev)</td>
+<td><strong>0</strong></td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<h3>npm Dependency Audit (2026-03-20)</h3>
+<p>Two new advisories were published against the existing lockfile. Both have been resolved via <code>npm audit fix</code> and package.json updates.</p>
+<h4>Fixed: flatted Prototype Pollution via parse() (High)</h4>
+<ul>
+<li><strong>Advisory</strong>: <a href="https://github.com/advisories/GHSA-rf6f-7fwh-wjgh">GHSA-rf6f-7fwh-wjgh</a></li>
+<li><strong>Severity</strong>: High</li>
+<li><strong>Affected versions</strong>: <code>flatted &lt;=3.4.1</code></li>
+<li><strong>Resolution</strong>: ✅ Updated lockfile to <code>flatted@3.4.2</code>; added <code>flatted &gt;=3.4.2</code> override to <code>package.json</code>.</li>
+</ul>
+<h4>Fixed: Next.js Multiple CVEs (Moderate)</h4>
+<ul>
+<li><strong>Advisories</strong>: <a href="https://github.com/advisories/GHSA-ggv3-7p47-pfv8">GHSA-ggv3-7p47-pfv8</a> (HTTP request smuggling in rewrites), <a href="https://github.com/advisories/GHSA-3x4c-7xq6-9pq8">GHSA-3x4c-7xq6-9pq8</a> (unbounded next/image disk cache), <a href="https://github.com/advisories/GHSA-h27x-g6w4-24gq">GHSA-h27x-g6w4-24gq</a> (unbounded postponed resume buffering), <a href="https://github.com/advisories/GHSA-mq59-m269-xvcx">GHSA-mq59-m269-xvcx</a> (null origin CSRF bypass in Server Actions), <a href="https://github.com/advisories/GHSA-jcc7-9wpm-mj36">GHSA-jcc7-9wpm-mj36</a> (null origin CSRF bypass in dev HMR websocket)</li>
+<li><strong>Severity</strong>: Moderate</li>
+<li><strong>Affected versions</strong>: <code>next 16.0.0-beta.0 – 16.1.6</code></li>
+<li><strong>Resolution</strong>: ✅ Updated lockfile to <code>next@16.2.0</code>; bumped <code>package.json</code> minimum to <code>^16.2.0</code>.</li>
+</ul>
+<h4>Current audit status (2026-03-20)</h4>
+<table>
+<thead>
+<tr>
+<th>Scope</th>
+<th>High</th>
+<th>Medium</th>
+<th>Low</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>npm audit --omit=dev</code> (production)</td>
+<td><strong>0</strong></td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>npm audit</code> (all deps incl. dev)</td>
+<td><strong>0</strong></td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<h4>Recommended maintenance workflow</h4>
+<ol>
+<li><strong>Weekly</strong>: run <code>npm audit</code> — fix highs/criticals promptly via <code>npm audit fix</code>.</li>
+<li><strong>Before every deploy</strong>: the CI workflow (<code>.github/workflows/security-audit.yml</code>) blocks on <code>npm audit --omit=dev --audit-level=high</code>.</li>
+<li><strong>Monthly / on Dependabot alerts</strong>: review and merge non-breaking patch/minor bumps.</li>
+<li><strong>Avoid <code>npm audit fix --force</code></strong> unless you have tested the breaking changes; major version bumps can break the app.</li>
+</ol>
+<h2>Security Best Practices Applied</h2>
+<ol>
+<li>✅ Passwords never stored in plain text</li>
+<li>✅ JWT secrets not hardcoded in production</li>
+<li>✅ Rate limiting on all endpoints</li>
+<li>✅ Input validation on all user inputs</li>
+<li>✅ Environment variables for sensitive data</li>
+<li>✅ Proper error handling without exposing sensitive information</li>
+<li>✅ Database connection pooling configured</li>
+<li>✅ HTTPS recommended for production (via reverse proxy)</li>
+</ol>
+<h2>Remaining Security Recommendations</h2>
+<p>For production deployment, consider implementing:</p>
+<ol>
+<li><strong>HTTPS</strong>: Use SSL/TLS certificates (Let&#39;s Encrypt recommended)</li>
+<li><strong>Helmet.js</strong>: Security headers are enabled via Helmet in the API server.</li>
+<li><strong>CSRF Protection</strong>: CSRF tokens are required for state-changing operations and validated against HttpOnly session cookies.</li>
+<li><strong>Input Sanitization</strong>: Add additional sanitization for HTML/SQL injection prevention</li>
+<li><strong>Logging &amp; Monitoring</strong>: Implement comprehensive logging (Winston, Morgan)</li>
+<li><strong>Security Headers</strong>: CSP, X-Frame-Options, and related headers are provided by Helmet.</li>
+<li><strong>Session Management</strong>: Consider Redis for token blacklisting</li>
+<li><strong>Two-Factor Authentication</strong>: Add 2FA for enhanced security</li>
+<li><strong>API Documentation</strong>: Add Swagger/OpenAPI for API documentation</li>
+<li><strong>Automated Security Scanning</strong>: Set up regular dependency audits</li>
+</ol>
+<h2>Security Testing</h2>
+<p>All security features have been validated through:</p>
+<ul>
+<li>Manual testing of authentication flows</li>
+<li>Role-based access control verification</li>
+<li>Rate limiting verification</li>
+<li>Input validation testing</li>
+</ul>
+<h2>Compliance Notes</h2>
+<p>This application implements industry-standard security practices:</p>
+<ul>
+<li>Password hashing (OWASP recommendation)</li>
+<li>JWT authentication (OAuth 2.0 compatible)</li>
+<li>Rate limiting (OWASP API Security Top 10)</li>
+<li>Input validation (OWASP Top 10)</li>
+</ul>
+<h2>Security Incident Response</h2>
+<p>In case of a security incident:</p>
+<ol>
+<li>Rotate JWT_SECRET immediately</li>
+<li>Force all users to re-authenticate</li>
+<li>Review access logs for suspicious activity</li>
+<li>Update affected dependencies</li>
+<li>Notify affected users if data breach occurs</li>
+</ol>
+<hr>
+<p><strong>Last Updated</strong>: 2026-03-20<br><strong>Security Review Status</strong>: ✅ Passed<br><strong>CodeQL Alerts</strong>: 0<br><strong>npm Audit (production deps)</strong>: 0 vulnerabilities (<code>npm audit --omit=dev</code>)<br><strong>npm Audit (all deps)</strong>: 0 vulnerabilities</p>
+</article>
+  </main>
+</body>
+</html>

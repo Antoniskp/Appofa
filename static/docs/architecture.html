@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Architecture – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html" class="active">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Architecture</div>
+    <article class="md"><h1>Application Architecture</h1>
+<h2>System Architecture Diagram</h2>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│                          Client Layer                            │
+│  (Web Browser / Mobile App / Postman / curl)                    │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            │ HTTP/HTTPS Requests
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                     API Gateway Layer                            │
+│                                                                   │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │              Express.js Application                      │   │
+│  │                                                           │   │
+│  │  ┌──────────────────────────────────────────────────┐  │   │
+│  │  │         Middleware Stack                         │  │   │
+│  │  │  • CORS Handler                                  │  │   │
+│  │  │  • Body Parser (JSON/URL-encoded)               │  │   │
+│  │  │  • Rate Limiter (express-rate-limit)            │  │   │
+│  │  │    - Auth: 5 req/15min                          │  │   │
+│  │  │    - Create: 20 req/15min                       │  │   │
+│  │  │    - API: 100 req/15min                         │  │   │
+│  │  │  • Optional Auth Middleware                      │  │   │
+│  │  │  • Auth Middleware (JWT verification)           │  │   │
+│  │  │  • Role Check Middleware                        │  │   │
+│  │  └──────────────────────────────────────────────────┘  │   │
+│  │                                                           │   │
+│  │  ┌──────────────────────────────────────────────────┐  │   │
+│  │  │              Route Handlers                      │  │   │
+│  │  │                                                   │  │   │
+│  │  │  /api/auth/*                                     │  │   │
+│  │  │  ├─ POST /register  (Rate Limited)              │  │   │
+│  │  │  ├─ POST /login     (Rate Limited)              │  │   │
+│  │  │  └─ GET  /profile   (Protected)                 │  │   │
+│  │  │                                                   │  │   │
+│  │  │  /api/articles/*                                 │  │   │
+│  │  │  ├─ GET    /         (Public, Optional Auth)    │  │   │
+│  │  │  ├─ GET    /:id      (Public, Optional Auth)    │  │   │
+│  │  │  ├─ POST   /         (Protected, Rate Limited)  │  │   │
+│  │  │  ├─ PUT    /:id      (Protected, Role-Based)    │  │   │
+│  │  │  └─ DELETE /:id      (Protected, Role-Based)    │  │   │
+│  │  └──────────────────────────────────────────────────┘  │   │
+│  └─────────────────────────────────────────────────────────┘   │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            │ Controller Layer
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                   Business Logic Layer                           │
+│                                                                   │
+│  ┌────────────────────────┐    ┌─────────────────────────────┐ │
+│  │  Auth Controller       │    │  Article Controller         │ │
+│  │  ├─ register()        │    │  ├─ createArticle()        │ │
+│  │  ├─ login()           │    │  ├─ getAllArticles()       │ │
+│  │  └─ getProfile()      │    │  ├─ getArticleById()       │ │
+│  │                        │    │  ├─ updateArticle()        │ │
+│  │  Security:             │    │  └─ deleteArticle()        │ │
+│  │  • Password hashing    │    │                             │ │
+│  │  • JWT generation      │    │  Authorization:             │ │
+│  │  • Input validation    │    │  • Admin: All operations    │ │
+│  └────────────────────────┘    │  • Editor: Create/Edit all  │ │
+│                                 │  • Viewer: Create/Edit own  │ │
+│                                 └─────────────────────────────┘ │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            │ ORM Layer (Sequelize)
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                      Data Models Layer                           │
+│                                                                   │
+│  ┌────────────────────┐          ┌──────────────────────────┐  │
+│  │    User Model      │          │    Article Model         │  │
+│  │                    │          │                          │  │
+│  │  Fields:           │          │  Fields:                 │  │
+│  │  • id              │◄─────────┤  • id                    │  │
+│  │  • username        │  1:N     │  • title                 │  │
+│  │  • email           │  Author  │  • content               │  │
+│  │  • password        │          │  • summary               │  │
+│  │  • role            │          │  • authorId (FK)         │  │
+│  │  • firstName       │          │  • status                │  │
+│  │  • lastName        │          │  • publishedAt           │  │
+│  │  • createdAt       │          │  • category              │  │
+│  │  • updatedAt       │          │  • createdAt             │  │
+│  │                    │          │  • updatedAt             │  │
+│  │  Hooks:            │          │                          │  │
+│  │  • beforeCreate    │          │  Validations:            │  │
+│  │  • beforeUpdate    │          │  • Title length: 5-200   │  │
+│  │  (Hash password)   │          │  • Content: 10-50000     │  │
+│  └────────────────────┘          └──────────────────────────┘  │
+└───────────────────────────┬─────────────────────────────────────┘
+                            │
+                            │ Database Driver (pg)
+                            │
+┌───────────────────────────▼─────────────────────────────────────┐
+│                   PostgreSQL Database                            │
+│                                                                   │
+│  Tables:                                                         │
+│  • Users                                                         │
+│  • Articles                                                      │
+│                                                                   │
+│  Features:                                                       │
+│  • ACID Compliance                                              │
+│  • Referential Integrity                                        │
+│  • Connection Pooling (5 connections)                           │
+│  • Transaction Support                                          │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2>Data Flow</h2>
+<h3>1. User Registration Flow</h3>
+<pre><code>Client Request
+    │
+    ├─&gt; Rate Limiter (5 req/15min)
+    │
+    ├─&gt; Auth Controller.register()
+    │   ├─&gt; Validate input
+    │   ├─&gt; Check for existing user
+    │   ├─&gt; User Model (bcrypt hash password)
+    │   ├─&gt; Save to database
+    │   └─&gt; Generate JWT token
+    │
+    └─&gt; Response with token + user data
+</code></pre>
+<h3>2. Article Creation Flow (Authenticated)</h3>
+<pre><code>Client Request + JWT Token
+    │
+    ├─&gt; Rate Limiter (20 req/15min for create)
+    │
+    ├─&gt; Auth Middleware
+    │   ├─&gt; Verify JWT token
+    │   └─&gt; Attach user to request
+    │
+    ├─&gt; Article Controller.createArticle()
+    │   ├─&gt; Validate input
+    │   ├─&gt; Create article with authorId
+    │   └─&gt; Save to database
+    │
+    └─&gt; Response with article data + author info
+</code></pre>
+<h3>3. Article Update Flow (Role-Based)</h3>
+<pre><code>Client Request + JWT Token
+    │
+    ├─&gt; Rate Limiter (100 req/15min)
+    │
+    ├─&gt; Auth Middleware
+    │   ├─&gt; Verify JWT token
+    │   └─&gt; Attach user to request
+    │
+    ├─&gt; Article Controller.updateArticle()
+    │   ├─&gt; Find article by ID
+    │   ├─&gt; Check permissions:
+    │   │   • Author can edit own
+    │   │   • Admin/Editor can edit all
+    │   ├─&gt; Update article
+    │   └─&gt; Save changes
+    │
+    └─&gt; Response with updated article
+</code></pre>
+<h2>Security Layers</h2>
+<pre><code>┌─────────────────────────────────────────────────┐
+│         Layer 1: Network Security               │
+│  • CORS Configuration                           │
+│  • HTTPS (in production)                        │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│         Layer 2: Rate Limiting                  │
+│  • IP-based request throttling                  │
+│  • Different limits per endpoint type           │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│         Layer 3: Authentication                 │
+│  • JWT token verification                       │
+│  • Token expiration (24h)                       │
+│  • Secure password hashing (bcrypt)            │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│         Layer 4: Authorization                  │
+│  • Role-based access control                    │
+│  • Resource ownership verification              │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│         Layer 5: Input Validation               │
+│  • Sequelize model validation                   │
+│  • Type checking                                │
+│  • Length constraints                           │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│         Layer 6: Database Security              │
+│  • SQL injection prevention (ORM)               │
+│  • Parameterized queries                        │
+│  • Connection pooling                           │
+└─────────────────────────────────────────────────┘
+</code></pre>
+<h2>Deployment Architecture</h2>
+<h3>Docker Deployment</h3>
+<pre><code>┌────────────────────────────────────────────────┐
+│              Docker Host                        │
+│                                                 │
+│  ┌──────────────────┐   ┌──────────────────┐  │
+│  │  newsapp-api     │   │  newsapp-db      │  │
+│  │  (Node.js App)   │   │  (PostgreSQL)    │  │
+│  │                  │   │                  │  │
+│  │  Port: 3000     │◄──┤  Port: 5432     │  │
+│  │                  │   │                  │  │
+│  │  Environment:    │   │  Volume:         │  │
+│  │  • DB_HOST       │   │  • postgres_data │  │
+│  │  • JWT_SECRET    │   │                  │  │
+│  └──────────────────┘   └──────────────────┘  │
+│         │                                       │
+│         │ docker network                        │
+└─────────┼───────────────────────────────────────┘
+          │
+          │ Port Mapping (3000:3000)
+          │
+     ┌────▼────┐
+     │  Client │
+     └─────────┘
+</code></pre>
+<h2>Technology Stack Map</h2>
+<pre><code>┌─────────────────────────────────────────────────┐
+│            Frontend (Not Included)              │
+│  Suggested: React/Vue/Angular                   │
+└────────────────┬────────────────────────────────┘
+                 │ REST API
+┌────────────────▼────────────────────────────────┐
+│              Backend (Node.js)                  │
+│                                                 │
+│  Runtime:      Express Framework                │
+│  • express         Web framework                │
+│  • cors            CORS handling                │
+│  • dotenv          Environment config           │
+│                                                 │
+│  Security:     Authentication &amp; Protection      │
+│  • jsonwebtoken    JWT handling                 │
+│  • bcryptjs        Password hashing             │
+│  • express-rate-   Request throttling           │
+│    limit                                        │
+│                                                 │
+│  Database:     PostgreSQL Integration           │
+│  • sequelize       ORM                          │
+│  • pg              PostgreSQL driver            │
+│  • pg-hstore       PostgreSQL data types        │
+│                                                 │
+│  Testing:      Test Framework                   │
+│  • jest            Test runner                  │
+│  • supertest       HTTP testing                 │
+│                                                 │
+│  Development:  Dev Tools                        │
+│  • nodemon         Auto-restart                 │
+└────────────────┬────────────────────────────────┘
+                 │
+┌────────────────▼────────────────────────────────┐
+│           Database (PostgreSQL)                 │
+│  • Version: 15+                                 │
+│  • Connection Pool: 5 connections               │
+│  • Features: ACID, Foreign Keys, Indexes        │
+└─────────────────────────────────────────────────┘
+</code></pre>
+<h2>File Structure</h2>
+<pre><code>appofasiv8/
+│
+├── src/                          # Source code
+│   ├── config/                   # Configuration files
+│   │   └── database.js          # Database connection
+│   │
+│   ├── models/                   # Data models
+│   │   ├── User.js              # User model with password hashing
+│   │   ├── Article.js           # Article model
+│   │   └── index.js             # Model associations
+│   │
+│   ├── controllers/              # Business logic
+│   │   ├── authController.js    # Auth operations
+│   │   └── articleController.js # Article operations
+│   │
+│   ├── middleware/               # Custom middleware
+│   │   ├── auth.js              # JWT authentication
+│   │   ├── optionalAuth.js      # Optional authentication
+│   │   ├── checkRole.js         # Role verification
+│   │   └── rateLimiter.js       # Rate limiting configs
+│   │
+│   ├── routes/                   # Route definitions
+│   │   ├── authRoutes.js        # Auth endpoints
+│   │   └── articleRoutes.js     # Article endpoints
+│   │
+│   └── index.js                  # App entry point
+│
+├── __tests__/                    # Test files
+│   └── app.test.js              # Integration tests
+│
+├── doc/                         # Project docs
+│   ├── API_TESTING.md           # API testing guide
+│   ├── DEPLOYMENT.md            # Deployment guide
+│   ├── SECURITY.md              # Security documentation
+│   ├── PROJECT_SUMMARY.md       # Project overview
+│   ├── VPS_DEPLOYMENT.md        # VPS deployment guide
+│   └── ARCHITECTURE.md          # This file
+│
+├── Configuration/                # Config files
+│   ├── .env.example             # Environment template
+│   ├── .gitignore               # Git ignore rules
+│   ├── .dockerignore            # Docker ignore rules
+│   ├── package.json             # Dependencies
+│   ├── jest.config.js           # Test configuration
+│   ├── Dockerfile               # Docker image
+│   └── docker-compose.yml       # Docker compose
+│
+├── Scripts/                      # Helper scripts
+│   ├── setup-db.sh              # Database setup
+│   └── test-api.sh              # API testing
+│
+└── Tools/                        # Development tools
+    └── postman_collection.json  # Postman API collection
+</code></pre>
+<hr>
+<p><strong>Note</strong>: This architecture is designed to be:</p>
+<ul>
+<li><strong>Scalable</strong>: Easy to add new features or scale horizontally</li>
+<li><strong>Maintainable</strong>: Clear separation of concerns</li>
+<li><strong>Secure</strong>: Multiple security layers</li>
+<li><strong>Testable</strong>: Comprehensive test coverage</li>
+<li><strong>Deployable</strong>: Docker support and deployment guides</li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

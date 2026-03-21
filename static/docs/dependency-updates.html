@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dependency Updates – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html" class="active">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Dependency Updates</div>
+    <article class="md"><h1>Dependency Updates Guide</h1>
+<p>This document describes how to keep dependencies up to date, run security audits, and handle common upgrade tasks for this project.</p>
+<h2>Checking for Vulnerabilities</h2>
+<pre><code class="language-bash">npm audit
+</code></pre>
+<p>To automatically fix vulnerabilities that don&#39;t require breaking changes:</p>
+<pre><code class="language-bash">npm audit fix
+</code></pre>
+<p>To fix all vulnerabilities, including those that require major version bumps (review output carefully before applying):</p>
+<pre><code class="language-bash">npm audit fix --force
+</code></pre>
+<h2>Checking for Outdated Packages</h2>
+<pre><code class="language-bash">npm outdated
+</code></pre>
+<p>This lists all packages where a newer version is available compared to what is installed (and what is specified in <code>package.json</code>).</p>
+<h2>Updating Direct Dependencies</h2>
+<p>To update a specific package to its latest compatible version (respecting semver ranges in <code>package.json</code>):</p>
+<pre><code class="language-bash">npm update &lt;package-name&gt;
+</code></pre>
+<p>To update all direct dependencies to their latest compatible versions:</p>
+<pre><code class="language-bash">npm update
+</code></pre>
+<p>To upgrade a specific package beyond the current semver range (e.g., to a new major version):</p>
+<pre><code class="language-bash">npm install &lt;package-name&gt;@latest
+</code></pre>
+<h2>Package Overrides</h2>
+<p>The <code>package.json</code> contains an <code>overrides</code> section that forces specific versions of transitive
+dependencies to address known vulnerabilities:</p>
+<pre><code class="language-json">&quot;overrides&quot;: {
+  &quot;tar&quot;: &quot;^7.5.8&quot;,
+  &quot;glob&quot;: &quot;^13.0.0&quot;,
+  &quot;rimraf&quot;: &quot;^6.0.1&quot;,
+  &quot;underscore&quot;: &quot;&gt;=1.13.8&quot;
+}
+</code></pre>
+<p>These should be reviewed periodically and removed once the parent packages have updated their own
+dependency ranges.</p>
+<h2>ESLint Configuration</h2>
+<p>This project uses <strong>ESLint v9</strong> with the <a href="https://eslint.org/docs/latest/use/configure/configuration-files">flat config</a>
+format (<code>eslint.config.js</code>). The previous <code>.eslintrc.js</code> format is not used.</p>
+<p>If you need to add new ESLint plugins or rules, edit <code>eslint.config.js</code> directly.  The <code>@eslint/js</code>
+package (bundled with ESLint v9) provides <code>js.configs.recommended</code>, and the <code>globals</code> package
+provides language-specific global variables.</p>
+<p>To run the linter:</p>
+<pre><code class="language-bash">npm run lint
+</code></pre>
+<h2>History of Significant Updates</h2>
+<h3>2026-03 — Additional Security Fix (underscore)</h3>
+<p><strong>Vulnerability resolved (1 high):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Severity</th>
+<th>Advisory</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>underscore</code></td>
+<td>high</td>
+<td>GHSA-qpx9-hpmf-5gmw</td>
+<td>Forced to <code>&gt;=1.13.8</code> via <code>overrides</code> in <code>package.json</code></td>
+</tr>
+</tbody></table>
+<p><code>underscore</code> is a transitive dependency of <code>pg-hstore</code>. Since <code>pg-hstore</code> pins <code>underscore: &quot;^1.13.1&quot;</code>,
+the override forces npm to install <code>1.13.8</code> (the patched release) instead of <code>1.13.7</code>.</p>
+<p><strong>Deprecation warnings (npm tooling – cannot be addressed by this project):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Deprecated Package</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>@npmcli/move-file@1.1.2</code></td>
+<td>Transitive dep of npm tooling; not addressable by the app</td>
+</tr>
+<tr>
+<td><code>are-we-there-yet@3.0.1</code></td>
+<td>Transitive dep of npm tooling; not addressable by the app</td>
+</tr>
+<tr>
+<td><code>gauge@4.0.4</code></td>
+<td>Transitive dep of npm tooling; not addressable by the app</td>
+</tr>
+<tr>
+<td><code>npmlog@6.0.2</code></td>
+<td>Transitive dep of npm tooling; not addressable by the app</td>
+</tr>
+<tr>
+<td><code>whatwg-encoding@3.1.1</code></td>
+<td>Transitive dep of npm tooling; not addressable by the app</td>
+</tr>
+</tbody></table>
+<p>These warnings appear during <code>npm install</code> and originate from npm&#39;s own internal tooling. They do
+not affect runtime behaviour and cannot be resolved without an npm CLI upgrade.</p>
+<h3>2026-03 — Security &amp; Deprecation Fixes</h3>
+<p><strong>Vulnerabilities resolved (7 total: 1 moderate, 6 high):</strong></p>
+<table>
+<thead>
+<tr>
+<th>Package</th>
+<th>Severity</th>
+<th>Advisory</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dottie</code></td>
+<td>moderate</td>
+<td>GHSA-r5mx-6wc6-7h9w</td>
+<td>Updated to 2.0.7 via <code>npm audit fix</code></td>
+</tr>
+<tr>
+<td><code>minimatch</code></td>
+<td>high</td>
+<td>GHSA-3ppc-4f35-3m26 (× 3)</td>
+<td>Updated to safe version via <code>npm audit fix</code></td>
+</tr>
+<tr>
+<td><code>tar</code></td>
+<td>high</td>
+<td>GHSA-83g3-92jg-28cx</td>
+<td>Forced to <code>^7.5.8</code> via <code>overrides</code> in <code>package.json</code></td>
+</tr>
+</tbody></table>
+<p><strong>Commands used:</strong></p>
+<pre><code class="language-bash">npm audit fix          # resolved all 7 vulnerabilities
+</code></pre>
+<p><strong>Deprecation warnings addressed:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Deprecated Package</th>
+<th>Replacement / Action</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>eslint@8.57.1</code></td>
+<td>Upgraded to <code>eslint@^9.x</code></td>
+</tr>
+<tr>
+<td><code>@humanwhocodes/config-array@0.13.0</code></td>
+<td>Resolved by upgrading eslint (transitive dep)</td>
+</tr>
+<tr>
+<td><code>@humanwhocodes/object-schema@2.0.3</code></td>
+<td>Resolved by upgrading eslint (transitive dep)</td>
+</tr>
+<tr>
+<td><code>@npmcli/move-file@1.1.2</code></td>
+<td>Transitive dep of npm tooling; not addressable</td>
+</tr>
+<tr>
+<td><code>are-we-there-yet@3.0.1</code></td>
+<td>Transitive dep of npm tooling; not addressable</td>
+</tr>
+<tr>
+<td><code>gauge@4.0.4</code></td>
+<td>Transitive dep of npm tooling; not addressable</td>
+</tr>
+<tr>
+<td><code>npmlog@6.0.2</code></td>
+<td>Transitive dep of npm tooling; not addressable</td>
+</tr>
+<tr>
+<td><code>whatwg-encoding@3.1.1</code></td>
+<td>Transitive dep of npm tooling; not addressable</td>
+</tr>
+</tbody></table>
+<p><strong>Breaking changes from eslint v8 → v9:</strong></p>
+<ul>
+<li>Configuration format changed from <code>.eslintrc.js</code> to <code>eslint.config.js</code> (flat config).</li>
+<li><code>.eslintrc.js</code> has been removed; <code>eslint.config.js</code> is now the single source of ESLint configuration.</li>
+<li>The <code>globals</code> package (<code>^16.x</code>) was added as a dev dependency to supply environment globals
+(<code>node</code>, <code>es2021</code>, <code>jest</code>) in the new flat config format.</li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

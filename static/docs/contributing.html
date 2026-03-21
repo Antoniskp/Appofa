@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contributing – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html" class="active">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Contributing</div>
+    <article class="md"><h1>Contributing Guide</h1>
+<p>Thank you for your interest in contributing to the Appofa News Application!</p>
+<h2>Table of Contents</h2>
+<ul>
+<li><a href="#getting-started">Getting Started</a></li>
+<li><a href="#development-setup">Development Setup</a></li>
+<li><a href="#branching-strategy">Branching Strategy</a></li>
+<li><a href="#making-changes">Making Changes</a></li>
+<li><a href="#commit-messages">Commit Messages</a></li>
+<li><a href="#pull-requests">Pull Requests</a></li>
+<li><a href="#code-style">Code Style</a></li>
+<li><a href="#testing">Testing</a></li>
+<li><a href="#reporting-issues">Reporting Issues</a></li>
+</ul>
+<hr>
+<h2>Getting Started</h2>
+<ol>
+<li>Fork the repository on GitHub</li>
+<li>Clone your fork locally:<pre><code class="language-bash">git clone https://github.com/&lt;your-username&gt;/Appofa.git
+cd Appofa
+</code></pre>
+</li>
+<li>Add the upstream remote:<pre><code class="language-bash">git remote add upstream https://github.com/Antoniskp/Appofa.git
+</code></pre>
+</li>
+</ol>
+<hr>
+<h2>Development Setup</h2>
+<p>Follow the <strong>Quick Start</strong> instructions in the <a href="../README.md">README</a> to set up your local environment.</p>
+<p>Key steps:</p>
+<pre><code class="language-bash">npm install
+cp .env.example .env
+# Edit .env with your database credentials
+npm run dev        # Start API server (port 3000)
+npm run frontend   # Start Next.js frontend (port 3001)
+</code></pre>
+<hr>
+<h2>Branching Strategy</h2>
+<ul>
+<li><code>main</code> – stable production branch; all PRs target this branch</li>
+<li>Feature branches should be named descriptively: <code>feature/&lt;short-description&gt;</code></li>
+<li>Bug-fix branches: <code>fix/&lt;short-description&gt;</code></li>
+<li>Documentation branches: <code>docs/&lt;short-description&gt;</code></li>
+</ul>
+<p>Always branch off <code>main</code>:</p>
+<pre><code class="language-bash">git checkout main
+git pull upstream main
+git checkout -b feature/my-new-feature
+</code></pre>
+<hr>
+<h2>Making Changes</h2>
+<ul>
+<li>Keep changes focused. One logical change per pull request.</li>
+<li>Update or add documentation in <code>doc/</code> if your change affects functionality, configuration, or setup.</li>
+<li>Add or update tests for any new or modified behaviour (see <a href="#testing">Testing</a>).</li>
+<li>Run the linter before committing:<pre><code class="language-bash">npm run lint
+</code></pre>
+</li>
+</ul>
+<hr>
+<h2>Commit Messages</h2>
+<p>Use clear, concise commit messages in the imperative mood:</p>
+<pre><code>Add poll export endpoint
+Fix rate limiter trust-proxy configuration
+Update Node.js prerequisite to 22+
+</code></pre>
+<p>For larger changes, include a short body after a blank line explaining <em>why</em> the change was made.</p>
+<hr>
+<h2>Pull Requests</h2>
+<ol>
+<li>Push your branch to your fork:<pre><code class="language-bash">git push origin feature/my-new-feature
+</code></pre>
+</li>
+<li>Open a pull request against <code>Antoniskp/Appofa:main</code>.</li>
+<li>Fill in the PR description with:<ul>
+<li><strong>What</strong> was changed and <strong>why</strong></li>
+<li>Steps to test the change</li>
+<li>Any relevant screenshots (for UI changes)</li>
+</ul>
+</li>
+<li>Ensure all CI checks pass before requesting a review.</li>
+</ol>
+<hr>
+<h2>Code Style</h2>
+<ul>
+<li><strong>Backend (Node.js/Express)</strong>: Follow the ESLint rules defined in <code>eslint.config.js</code>.<pre><code class="language-bash">npm run lint
+</code></pre>
+</li>
+<li><strong>Frontend (Next.js/React)</strong>: Follow the same ESLint configuration; prefer functional components and hooks.</li>
+<li><strong>Database</strong>: Use Sequelize migrations for all schema changes (never modify the database directly in production).</li>
+</ul>
+<hr>
+<h2>Testing</h2>
+<p>Run the full test suite before opening a PR:</p>
+<pre><code class="language-bash">npm test
+</code></pre>
+<ul>
+<li>Tests live in <code>__tests__/</code> and use <strong>Jest</strong> + <strong>Supertest</strong>.</li>
+<li>Use an in-memory SQLite database for tests (configured automatically via <code>jest.setup.js</code>).</li>
+<li>Do not remove or skip existing tests. If a test fails because of your change, update it and explain why in the PR description.</li>
+</ul>
+<p>For a targeted run:</p>
+<pre><code class="language-bash">npm test -- __tests__/polls.test.js
+</code></pre>
+<hr>
+<h2>Reporting Issues</h2>
+<p>When opening a bug report, please include:</p>
+<ol>
+<li>A clear title and description</li>
+<li>Steps to reproduce</li>
+<li>Expected vs. actual behaviour</li>
+<li>Relevant log output (from <code>pm2 logs</code> or the terminal)</li>
+<li>Environment details: Node.js version, OS, PostgreSQL version</li>
+</ol>
+<p>Security vulnerabilities should be reported privately — do <strong>not</strong> open a public issue. Contact the maintainer directly.</p>
+<hr>
+<p><strong>Thank you for contributing!</strong></p>
+</article>
+  </main>
+</body>
+</html>

@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upgrade Guide – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html" class="active">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Upgrade Guide</div>
+    <article class="md"><h1>Upgrade Guide: Hierarchical Locations Feature</h1>
+<h2>Purpose</h2>
+<p>This guide provides step-by-step instructions for deploying the hierarchical locations feature to production without encountering 502 errors or other deployment issues.</p>
+<h2>Why This Guide Exists</h2>
+<p>Previous attempts to deploy this feature resulted in 502 errors due to:</p>
+<ol>
+<li>Database connection issues during startup</li>
+<li>Missing database schema before application start</li>
+<li>PM2 process restarts before database sync completed</li>
+<li>Frontend build failing due to new dependencies</li>
+</ol>
+<p>This guide addresses all these issues with a proven, safe deployment workflow.</p>
+<h2>Pre-Deployment Checklist</h2>
+<p>Before deploying, ensure:</p>
+<ul>
+<li><input disabled="" type="checkbox"> All tests pass locally: <code>npm test</code></li>
+<li><input disabled="" type="checkbox"> Frontend builds successfully: <code>npm run frontend:build</code></li>
+<li><input disabled="" type="checkbox"> Backend starts without errors: <code>npm start</code></li>
+<li><input disabled="" type="checkbox"> Database is accessible from the application server</li>
+<li><input disabled="" type="checkbox"> You have a database backup (see <a href="#database-backup">Backup Section</a>)</li>
+</ul>
+<h2>Database Backup (CRITICAL)</h2>
+<p><strong>Always backup your database before deploying schema changes!</strong></p>
+<h3>On VPS (PostgreSQL)</h3>
+<pre><code class="language-bash"># Navigate to backup directory
+cd /var/www/Appofa
+
+# Create backup
+PGPASSWORD=$DB_PASSWORD pg_dump -h localhost -U newsapp_user newsapp &gt; backup_before_locations_$(date +%Y%m%d_%H%M%S).sql
+
+# Verify backup was created
+ls -lh backup_*.sql
+
+# Optional: Download backup to local machine for safety
+# From your local machine:
+# scp user@your-vps-ip:/var/www/Appofa/backup_*.sql ~/backups/
+</code></pre>
+<h3>On Docker</h3>
+<pre><code class="language-bash"># Create backup
+docker exec newsapp-db pg_dump -U postgres newsapp &gt; backup_before_locations_$(date +%Y%m%d_%H%M%S).sql
+</code></pre>
+<h2>Deployment Steps</h2>
+<h3>Step 1: Stop Running Services</h3>
+<pre><code class="language-bash">cd /var/www/Appofa
+
+# Stop both backend and frontend PM2 processes
+pm2 stop newsapp-backend newsapp-frontend
+
+# Verify they&#39;re stopped
+pm2 status
+</code></pre>
+<p><strong>Why</strong>: Prevents database connection conflicts during schema updates.</p>
+<h3>Step 2: Pull Latest Code</h3>
+<pre><code class="language-bash"># Ensure you&#39;re on main branch
+git checkout main
+
+# Fetch latest changes
+git fetch --all
+
+# Pull the changes
+git pull origin main
+
+# Verify you got the location feature
+git log --oneline -5
+</code></pre>
+<h3>Step 3: Install Dependencies</h3>
+<pre><code class="language-bash"># Clean install all dependencies
+npm ci
+
+# Verify critical packages installed
+ls node_modules/sequelize
+ls node_modules/next
+</code></pre>
+<p><strong>Why</strong>: <code>npm ci</code> ensures a clean, reproducible install from package-lock.json.</p>
+<h3>Step 4: Database Schema Update (Development Mode Only)</h3>
+<p><strong>IMPORTANT</strong>: In production, we do NOT use <code>sequelize.sync()</code> automatically. Instead, we&#39;ll start the app in a controlled way to let it create the schema.</p>
+<h4>Option A: Let the App Create Schema (Recommended for First-Time)</h4>
+<p>The application will create the new tables when it starts up the first time. No manual SQL needed.</p>
+<h4>Option B: Manual Schema Creation (Advanced)</h4>
+<p>If you prefer to create the schema manually before starting the app:</p>
+<pre><code class="language-sql">-- Connect to database
+PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user newsapp
+
+-- Create Locations table
+CREATE TABLE IF NOT EXISTS &quot;Locations&quot; (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  name_local VARCHAR(255),
+  type VARCHAR(20) NOT NULL CHECK (type IN (&#39;international&#39;, &#39;country&#39;, &#39;prefecture&#39;, &#39;municipality&#39;)),
+  parent_id INTEGER REFERENCES &quot;Locations&quot;(id) ON DELETE CASCADE,
+  code VARCHAR(20),
+  slug VARCHAR(255) UNIQUE NOT NULL,
+  lat DECIMAL(10,8),
+  lng DECIMAL(11,8),
+  bounding_box JSON,
+  &quot;createdAt&quot; TIMESTAMP NOT NULL DEFAULT NOW(),
+  &quot;updatedAt&quot; TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- Create LocationLinks table
+CREATE TABLE IF NOT EXISTS &quot;LocationLinks&quot; (
+  id SERIAL PRIMARY KEY,
+  location_id INTEGER NOT NULL REFERENCES &quot;Locations&quot;(id) ON DELETE CASCADE,
+  entity_type VARCHAR(20) NOT NULL CHECK (entity_type IN (&#39;article&#39;, &#39;user&#39;)),
+  entity_id INTEGER NOT NULL,
+  &quot;createdAt&quot; TIMESTAMP NOT NULL DEFAULT NOW(),
+  &quot;updatedAt&quot; TIMESTAMP NOT NULL DEFAULT NOW(),
+  CONSTRAINT unique_location_entity_link UNIQUE (location_id, entity_type, entity_id)
+);
+
+-- Add home location to Users table
+ALTER TABLE &quot;Users&quot; ADD COLUMN IF NOT EXISTS &quot;homeLocationId&quot; INTEGER REFERENCES &quot;Locations&quot;(id) ON DELETE SET NULL;
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS location_code_index ON &quot;Locations&quot;(code);
+CREATE INDEX IF NOT EXISTS location_parent_index ON &quot;Locations&quot;(parent_id);
+CREATE INDEX IF NOT EXISTS location_slug_index ON &quot;Locations&quot;(slug);
+-- Note: COALESCE(parent_id, -1) is used in the index because PostgreSQL doesn&#39;t allow NULL in unique constraints with multiple NULL values
+-- The application code uses NULL directly, but the index treats NULL as -1 for uniqueness
+CREATE UNIQUE INDEX IF NOT EXISTS unique_location_name_per_parent ON &quot;Locations&quot;(type, name, COALESCE(parent_id, -1));
+CREATE INDEX IF NOT EXISTS entity_index ON &quot;LocationLinks&quot;(entity_type, entity_id);
+CREATE INDEX IF NOT EXISTS location_index ON &quot;LocationLinks&quot;(location_id);
+
+-- Verify tables were created
+\dt &quot;Locations&quot;
+\dt &quot;LocationLinks&quot;
+\d &quot;Users&quot;
+
+-- Exit psql
+\q
+</code></pre>
+<h3>Step 5: Build Frontend</h3>
+<pre><code class="language-bash"># Remove old build artifacts
+rm -rf .next
+
+# Build the Next.js frontend
+npm run frontend:build
+
+# Verify build succeeded
+ls -la .next
+</code></pre>
+<p><strong>Why</strong>: Fresh build ensures all new components are included.</p>
+<h3>Step 6: Start Backend (Carefully)</h3>
+<pre><code class="language-bash"># Start backend with PM2
+pm2 start src/index.js --name newsapp-backend
+
+# IMMEDIATELY check logs for errors
+pm2 logs newsapp-backend --lines 50
+
+# Watch for these messages:
+# ✅ &quot;Database connection established successfully.&quot;
+# ✅ &quot;Database models synchronized.&quot; (in non-production) OR &quot;Skipping Sequelize sync in production.&quot;
+# ✅ &quot;Server is running on port 3000&quot;
+
+# If you see errors, STOP HERE and troubleshoot
+# pm2 stop newsapp-backend
+</code></pre>
+<p><strong>Common Errors and Solutions</strong>:</p>
+<ol>
+<li><p><strong>&quot;Unable to connect to the database&quot;</strong></p>
+<ul>
+<li>Check database is running: <code>sudo systemctl status postgresql</code></li>
+<li>Verify connection settings in <code>.env</code></li>
+<li>Test connection: <code>PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user newsapp -c &quot;SELECT 1;&quot;</code></li>
+</ul>
+</li>
+<li><p><strong>&quot;relation &#39;Locations&#39; does not exist&quot;</strong></p>
+<ul>
+<li>The schema wasn&#39;t created. Use Option B above to create manually.</li>
+</ul>
+</li>
+<li><p><strong>&quot;Cannot read properties of undefined&quot;</strong></p>
+<ul>
+<li>Check that all models are exported in <code>src/models/index.js</code></li>
+<li>Verify <code>npm ci</code> completed successfully</li>
+</ul>
+</li>
+</ol>
+<h3>Step 7: Start Frontend</h3>
+<pre><code class="language-bash"># Start frontend with PM2
+pm2 start npm --name newsapp-frontend -- run frontend:start
+
+# Check logs
+pm2 logs newsapp-frontend --lines 30
+
+# Look for:
+# ✅ &quot;ready - started server on 0.0.0.0:3001&quot;
+</code></pre>
+<h3>Step 8: Save PM2 Configuration</h3>
+<pre><code class="language-bash"># Save current PM2 process list
+pm2 save
+
+# Verify both processes are running
+pm2 status
+
+# Should show:
+# newsapp-backend  | online
+# newsapp-frontend | online
+</code></pre>
+<h3>Step 9: Test the Application</h3>
+<h4>Health Check</h4>
+<pre><code class="language-bash"># Test backend health
+curl http://localhost:3000/
+
+# Should return:
+# {&quot;success&quot;:true,&quot;message&quot;:&quot;News Application API&quot;,...}
+
+# Test frontend
+curl http://localhost:3001/
+
+# Should return HTML
+</code></pre>
+<h4>Web Browser Tests</h4>
+<ol>
+<li>Open <a href="http://YOUR_SERVER_IP">http://YOUR_SERVER_IP</a> in a browser</li>
+<li>Check that the homepage loads (no 502 error!)</li>
+<li>Login as admin</li>
+<li>Navigate to <code>/admin/locations</code> - should see location management page</li>
+<li>Create a test location</li>
+<li>Edit an article and add a location</li>
+<li>View your profile and set a home location</li>
+</ol>
+<h3>Step 10: Verify Nginx</h3>
+<pre><code class="language-bash"># Test nginx configuration
+sudo nginx -t
+
+# If configuration is valid, reload
+sudo systemctl reload nginx
+
+# Check nginx status
+sudo systemctl status nginx
+</code></pre>
+<h2>Post-Deployment Verification</h2>
+<h3>1. Verify Database Schema</h3>
+<pre><code class="language-bash">PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user newsapp
+
+-- Check tables exist
+\dt
+
+-- Should see:
+-- Locations
+-- LocationLinks
+-- Users (with homeLocationId column)
+
+-- Check Location table structure
+\d &quot;Locations&quot;
+
+-- Exit
+\q
+</code></pre>
+<h3>2. Test API Endpoints</h3>
+<pre><code class="language-bash"># List locations (should return empty array initially)
+curl http://localhost:3000/api/locations
+
+# Should return:
+# {&quot;success&quot;:true,&quot;locations&quot;:[],&quot;pagination&quot;:{...}}
+
+# If you get 404, the routes aren&#39;t loaded
+# If you get 502, the backend isn&#39;t running
+</code></pre>
+<h3>3. Monitor Logs</h3>
+<pre><code class="language-bash"># Watch logs for any errors
+pm2 logs --lines 100
+
+# Look for any ERROR or warning messages
+</code></pre>
+<h3>4. Check Process Health</h3>
+<pre><code class="language-bash"># Ensure both processes are running and not restarting
+pm2 status
+
+# Both should show:
+# - status: online
+# - restart: 0 (or low number)
+
+# If restart count is high, check logs:
+pm2 logs newsapp-backend --err --lines 50
+</code></pre>
+<h2>Rollback Procedure</h2>
+<p>If anything goes wrong, you can rollback:</p>
+<h3>1. Quick Rollback (Keep Database Changes)</h3>
+<pre><code class="language-bash"># Stop new version
+pm2 stop newsapp-backend newsapp-frontend
+
+# Switch to previous git commit
+git log --oneline -10  # Find the commit before locations
+git checkout &lt;previous-commit-hash&gt;
+
+# Reinstall dependencies
+npm ci
+
+# Rebuild frontend
+rm -rf .next
+npm run frontend:build
+
+# Restart
+pm2 restart newsapp-backend newsapp-frontend
+
+# Verify it works
+curl http://localhost:3000/
+</code></pre>
+<h3>2. Full Rollback (Restore Database)</h3>
+<pre><code class="language-bash"># Stop processes
+pm2 stop newsapp-backend newsapp-frontend
+
+# Restore database backup
+PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user newsapp &lt; backup_before_locations_YYYYMMDD_HHMMSS.sql
+
+# Follow Quick Rollback steps above
+</code></pre>
+<h2>Common Issues and Solutions</h2>
+<h3>Issue: 502 Bad Gateway</h3>
+<p><strong>Symptoms</strong>: Nginx returns 502 error</p>
+<p><strong>Causes</strong>:</p>
+<ol>
+<li>Backend not running</li>
+<li>Backend crashed during startup</li>
+<li>Database connection failed</li>
+</ol>
+<p><strong>Solution</strong>:</p>
+<pre><code class="language-bash"># Check if backend is running
+pm2 status
+
+# Check backend logs
+pm2 logs newsapp-backend --err --lines 50
+
+# If crashed, check database connection:
+PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user newsapp -c &quot;SELECT 1;&quot;
+
+# Restart backend
+pm2 restart newsapp-backend
+</code></pre>
+<h3>Issue: &quot;Cannot find module &#39;./Location&#39;&quot;</h3>
+<p><strong>Symptoms</strong>: Backend fails to start, error mentions missing Location module</p>
+<p><strong>Solution</strong>:</p>
+<pre><code class="language-bash"># Verify files exist
+ls src/models/Location.js
+ls src/models/LocationLink.js
+
+# If missing, pull code again
+git pull origin main
+
+# Verify models/index.js includes new models
+cat src/models/index.js | grep Location
+</code></pre>
+<h3>Issue: Frontend Build Fails</h3>
+<p><strong>Symptoms</strong>: <code>npm run frontend:build</code> fails</p>
+<p><strong>Solution</strong>:</p>
+<pre><code class="language-bash"># Remove node_modules and reinstall
+rm -rf node_modules package-lock.json
+npm install
+
+# Clear Next.js cache
+rm -rf .next
+
+# Try build again
+npm run frontend:build
+</code></pre>
+<h3>Issue: Database Connection Timeout</h3>
+<p><strong>Symptoms</strong>: &quot;Unable to connect to the database&quot; error</p>
+<p><strong>Solution</strong>:</p>
+<pre><code class="language-bash"># Check PostgreSQL is running
+sudo systemctl status postgresql
+
+# If not running, start it
+sudo systemctl start postgresql
+
+# Check if database exists
+PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user -l | grep newsapp
+
+# Test connection
+PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user newsapp -c &quot;SELECT version();&quot;
+
+# Check .env has correct credentials
+cat .env | grep DB_
+</code></pre>
+<h2>Environment Variables</h2>
+<p>Ensure these are set in <code>/var/www/Appofa/.env</code>:</p>
+<pre><code class="language-bash"># Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=newsapp
+DB_USER=newsapp_user
+DB_PASSWORD=your_strong_password
+
+# Application
+NODE_ENV=production
+PORT=3000
+JWT_SECRET=your_jwt_secret
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://YOUR_SERVER_IP
+</code></pre>
+<h2>Success Criteria</h2>
+<p>Deployment is successful when:</p>
+<ul>
+<li><input disabled="" type="checkbox"> Both PM2 processes show status &quot;online&quot; with 0 restarts</li>
+<li><input disabled="" type="checkbox"> Homepage loads without 502 error</li>
+<li><input disabled="" type="checkbox"> Admin can access <code>/admin/locations</code></li>
+<li><input disabled="" type="checkbox"> Can create, edit, and delete locations</li>
+<li><input disabled="" type="checkbox"> Can link locations to articles</li>
+<li><input disabled="" type="checkbox"> Can set home location in profile</li>
+<li><input disabled="" type="checkbox"> No errors in PM2 logs</li>
+<li><input disabled="" type="checkbox"> Database contains new tables (Locations, LocationLinks)</li>
+</ul>
+<h2>Getting Help</h2>
+<p>If you encounter issues not covered here:</p>
+<ol>
+<li>Check PM2 logs: <code>pm2 logs --lines 200</code></li>
+<li>Check Nginx error logs: <code>sudo tail -f /var/log/nginx/error.log</code></li>
+<li>Check database connection: <code>PGPASSWORD=$DB_PASSWORD psql -h localhost -U newsapp_user newsapp</code></li>
+<li>Review the application logs for specific error messages</li>
+</ol>
+<h2>Summary</h2>
+<p>This upgrade adds hierarchical location support to the application. The key to avoiding 502 errors is:</p>
+<ol>
+<li><strong>Always backup the database first</strong></li>
+<li><strong>Stop services before updating</strong></li>
+<li><strong>Ensure database is accessible</strong></li>
+<li><strong>Start backend first and verify before starting frontend</strong></li>
+<li><strong>Monitor logs during startup</strong></li>
+<li><strong>Have a rollback plan ready</strong></li>
+</ol>
+<p>Following this guide step-by-step will ensure a smooth deployment without 502 errors.</p>
+</article>
+  </main>
+</body>
+</html>

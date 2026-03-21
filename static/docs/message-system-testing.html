@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Message System Testing – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html" class="active">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Message System Testing</div>
+    <article class="md"><h1>Testing Guide: Message/Contact Submission System</h1>
+<h2>Prerequisites</h2>
+<ol>
+<li><p>Start the PostgreSQL database:</p>
+<pre><code class="language-bash">docker-compose up -d postgres
+</code></pre>
+</li>
+<li><p>Run the migration to create the Messages table:</p>
+<pre><code class="language-bash">npm run migrate:up
+</code></pre>
+</li>
+<li><p>Start the backend API:</p>
+<pre><code class="language-bash">npm run dev
+</code></pre>
+</li>
+<li><p>Start the frontend (in a separate terminal):</p>
+<pre><code class="language-bash">npm run frontend
+</code></pre>
+</li>
+</ol>
+<h2>Test Scenarios</h2>
+<h3>1. Test Contact Form Submission (Anonymous User)</h3>
+<p><strong>URL:</strong> <a href="http://localhost:3001/contact">http://localhost:3001/contact</a></p>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Open the contact page</li>
+<li>Fill in the form:<ul>
+<li>Name: &quot;Test User&quot;</li>
+<li>Email: &quot;<a href="mailto:test@example.com">test@example.com</a>&quot;</li>
+<li>Subject: &quot;Test Contact Message&quot;</li>
+<li>Message: &quot;This is a test contact message.&quot;</li>
+</ul>
+</li>
+<li>Click &quot;Αποστολή Μηνύματος&quot;</li>
+<li>Verify success message appears</li>
+<li>Check in admin panel that the message appears</li>
+</ol>
+<p><strong>Expected Result:</strong></p>
+<ul>
+<li>Success message: &quot;✓ Το μήνυμά σας εστάλη επιτυχώς!&quot;</li>
+<li>Message saved with status &quot;pending&quot;</li>
+<li>Email and name fields populated from form</li>
+</ul>
+<h3>2. Test Contact Form Submission (Authenticated User)</h3>
+<p><strong>URL:</strong> <a href="http://localhost:3001/contact">http://localhost:3001/contact</a></p>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Login as a regular user</li>
+<li>Open the contact page</li>
+<li>Note that Name and Email fields are NOT shown (auto-filled from user profile)</li>
+<li>Fill in:<ul>
+<li>Subject: &quot;Authenticated User Message&quot;</li>
+<li>Message: &quot;This message is from a logged-in user.&quot;</li>
+</ul>
+</li>
+<li>Click &quot;Αποστολή Μηνύματος&quot;</li>
+<li>Verify success message</li>
+</ol>
+<p><strong>Expected Result:</strong></p>
+<ul>
+<li>Success message shown</li>
+<li>Message saved with userId populated</li>
+<li>Email/name taken from user profile (if available)</li>
+</ul>
+<h3>3. Test Moderator Application (Authenticated User)</h3>
+<p><strong>URL:</strong> <a href="http://localhost:3001/become-moderator">http://localhost:3001/become-moderator</a></p>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Login as a regular user</li>
+<li>Navigate to &quot;Γίνε Moderator&quot; page</li>
+<li>Read the information about moderator role</li>
+<li>Fill in the application form:<ul>
+<li>Subject: &quot;Moderator Application&quot;</li>
+<li>Select a Location (required): Choose a municipality</li>
+<li>Message: &quot;I would like to become a moderator for this area because...&quot;</li>
+</ul>
+</li>
+<li>Click &quot;Υποβολή Αίτησης&quot;</li>
+<li>Verify success message</li>
+<li>Wait 3 seconds - should redirect to home page</li>
+</ol>
+<p><strong>Expected Result:</strong></p>
+<ul>
+<li>Success message shown</li>
+<li>After 3 seconds, redirect to home page</li>
+<li>Message saved with type &quot;moderator_application&quot;</li>
+<li>locationId populated</li>
+</ul>
+<h3>4. Test Admin Messages View</h3>
+<p><strong>URL:</strong> <a href="http://localhost:3001/admin/messages">http://localhost:3001/admin/messages</a></p>
+<p><strong>Prerequisites:</strong></p>
+<ul>
+<li>Login as admin or moderator user</li>
+</ul>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Navigate to Admin Dashboard</li>
+<li>Click &quot;Manage Messages&quot; button</li>
+<li>Verify messages list displays</li>
+<li>Test filters:<ul>
+<li>Filter by Type: Select &quot;Επικοινωνία&quot;</li>
+<li>Filter by Status: Select &quot;Εκκρεμεί&quot;</li>
+</ul>
+</li>
+<li>Verify filtered results</li>
+</ol>
+<p><strong>Expected Result:</strong></p>
+<ul>
+<li>All messages displayed in list</li>
+<li>Filters work correctly</li>
+<li>Each message shows:<ul>
+<li>Subject and type badge</li>
+<li>Sender info (name/email or username)</li>
+<li>Creation date</li>
+<li>Status dropdown</li>
+<li>Message preview</li>
+<li>Location (if applicable)</li>
+</ul>
+</li>
+</ul>
+<h3>5. Test Message Status Update</h3>
+<p><strong>URL:</strong> <a href="http://localhost:3001/admin/messages">http://localhost:3001/admin/messages</a></p>
+<p><strong>Steps:</strong></p>
+<ol>
+<li>Open admin messages page</li>
+<li>Find a message with status &quot;pending&quot;</li>
+<li>Click the status dropdown</li>
+<li>Select &quot;read&quot; (Αναγνωσμένο)</li>
+<li>Verify toast notification appears</li>
+</ol>
+<p><strong>Expected Result:</strong></p>
+<ul>
+<li>Toast message: &quot;Η κατάσταση ενημερώθηκε&quot;</li>
+<li>Status updates in the UI</li>
+<li>No page refresh needed</li>
+</ul>
+<h3>6. Test Form Validation</h3>
+<p><strong>Test Missing Required Fields:</strong></p>
+<ol>
+<li>Go to contact form</li>
+<li>Leave all fields empty</li>
+<li>Click submit</li>
+<li>Verify browser validation triggers</li>
+</ol>
+<p><strong>Test Email Validation (Anonymous):</strong></p>
+<ol>
+<li>Enter invalid email: &quot;not-an-email&quot;</li>
+<li>Submit form</li>
+<li>Verify error: &quot;Email must be a valid email address.&quot;</li>
+</ol>
+<p><strong>Test Character Limits:</strong></p>
+<ol>
+<li>Try entering more than 200 characters in Subject field</li>
+<li>Verify character counter shows: &quot;X / 200&quot;</li>
+<li>Verify you cannot type more than limit</li>
+</ol>
+<p><strong>Test Moderator App Without Location:</strong></p>
+<ol>
+<li>Go to /become-moderator</li>
+<li>Fill in all fields EXCEPT location</li>
+<li>Try to submit</li>
+<li>Verify error: &quot;Location is required for moderator applications.&quot;</li>
+</ol>
+<h3>7. Test API Endpoints Directly (Optional)</h3>
+<p><strong>Create Message:</strong></p>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/messages \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;type&quot;: &quot;contact&quot;,
+    &quot;email&quot;: &quot;api@test.com&quot;,
+    &quot;name&quot;: &quot;API Tester&quot;,
+    &quot;subject&quot;: &quot;API Test&quot;,
+    &quot;message&quot;: &quot;Testing via API&quot;
+  }&#39;
+</code></pre>
+<p><strong>Get All Messages (requires auth):</strong></p>
+<pre><code class="language-bash">curl http://localhost:3000/api/messages \
+  -H &quot;Cookie: auth_token=YOUR_AUTH_TOKEN&quot;
+</code></pre>
+<p><strong>Update Status (requires admin auth):</strong></p>
+<pre><code class="language-bash">curl -X PUT http://localhost:3000/api/messages/1/status \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;Cookie: auth_token=YOUR_AUTH_TOKEN; csrf_token=YOUR_CSRF_TOKEN&quot; \
+  -H &quot;x-csrf-token: YOUR_CSRF_TOKEN&quot; \
+  -d &#39;{&quot;status&quot;: &quot;read&quot;}&#39;
+</code></pre>
+<h2>Database Verification</h2>
+<p>After testing, verify data in database:</p>
+<pre><code class="language-sql">-- View all messages
+SELECT * FROM &quot;Messages&quot; ORDER BY &quot;createdAt&quot; DESC;
+
+-- Count by type
+SELECT type, COUNT(*) FROM &quot;Messages&quot; GROUP BY type;
+
+-- Count by status
+SELECT status, COUNT(*) FROM &quot;Messages&quot; GROUP BY status;
+
+-- View moderator applications with location details
+SELECT m.id, m.subject, m.message, l.name as location_name, u.username
+FROM &quot;Messages&quot; m
+LEFT JOIN &quot;Locations&quot; l ON m.&quot;locationId&quot; = l.id
+LEFT JOIN &quot;Users&quot; u ON m.&quot;userId&quot; = u.id
+WHERE m.type = &#39;moderator_application&#39;;
+</code></pre>
+<h2>Common Issues</h2>
+<h3>Issue: Cannot submit form</h3>
+<ul>
+<li><strong>Check:</strong> Is the backend API running?</li>
+<li><strong>Check:</strong> Are there any console errors in browser dev tools?</li>
+<li><strong>Check:</strong> Is CSRF token present? (Check cookies)</li>
+</ul>
+<h3>Issue: &quot;Message not found&quot; in admin panel</h3>
+<ul>
+<li><strong>Check:</strong> Did migration run successfully?</li>
+<li><strong>Check:</strong> Are you logged in as admin/moderator?</li>
+<li><strong>Check:</strong> Check database for the message</li>
+</ul>
+<h3>Issue: Location selector not working</h3>
+<ul>
+<li><strong>Check:</strong> Are there locations in the database?</li>
+<li><strong>Check:</strong> Run: <code>npm run seed:locations</code> to populate locations</li>
+<li><strong>Check:</strong> Check network tab for API errors</li>
+</ul>
+<h2>Success Criteria</h2>
+<p>✅ Users can submit contact messages (both authenticated and anonymous)
+✅ Users can apply to become moderators with location selection
+✅ Admins can view all messages in dedicated interface
+✅ Admins can update message status
+✅ Form validation works correctly
+✅ Greek language used throughout
+✅ Mobile responsive design works
+✅ No console errors
+✅ All routes accessible</p>
+</article>
+  </main>
+</body>
+</html>

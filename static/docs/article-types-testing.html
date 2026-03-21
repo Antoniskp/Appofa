@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Article Types Testing – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html" class="active">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Article Types Testing</div>
+    <article class="md"><h1>Article Types and Categories Feature - Testing Guide</h1>
+<h2>Overview</h2>
+<p>This guide helps you test the article types and categories feature.</p>
+<h2>Changes Summary</h2>
+<h3>1. Article Types</h3>
+<p>Articles have three distinct types:</p>
+<ul>
+<li><strong>Personal (Προσωπικό)</strong>: Content visible only to the creator while in draft/archived state; visible on the creator&#39;s public profile once published.</li>
+<li><strong>Articles (Άρθρα)</strong>: Educational articles visible publicly.</li>
+<li><strong>News (Νέα)</strong>: News articles visible publicly.</li>
+</ul>
+<h3>2. Article Visibility Rules</h3>
+<table>
+<thead>
+<tr>
+<th>Article Type</th>
+<th>Status</th>
+<th>Who Can See It</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Personal</td>
+<td>Draft / Archived</td>
+<td><strong>Creator only</strong> – not visible to admins, moderators, editors, or other users</td>
+</tr>
+<tr>
+<td>Personal</td>
+<td>Published</td>
+<td>Creator + any authenticated user (also shown on the creator&#39;s public profile page)</td>
+</tr>
+<tr>
+<td>Articles / News</td>
+<td>Draft / Archived</td>
+<td>Creator + admins (existing behaviour)</td>
+</tr>
+<tr>
+<td>Articles / News</td>
+<td>Published</td>
+<td>Everyone (public)</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Key rule</strong>: A personal article that is not published is completely private to its creator, regardless of admin or moderator role. This is enforced by both the list endpoint (<code>GET /api/articles</code>) and the detail endpoint (<code>GET /api/articles/:id</code>).</p>
+</blockquote>
+<h3>2. Categories by Type</h3>
+<h4>News Categories (14 total):</h4>
+<ul>
+<li>Κόσμος</li>
+<li>Ελλάδα</li>
+<li>Οικονομία</li>
+<li>Τεχνολογία</li>
+<li>Πολιτική - Παραπολιτικά</li>
+<li>Lifestyle - Πολιτισμός</li>
+<li>Auto-moto</li>
+<li>Sports</li>
+<li>Υγεία - Sexuality</li>
+<li>Ταξίδια</li>
+<li>Απόψεις</li>
+<li>Περιβάλλον - Σεισμοί</li>
+<li>Μάρκετ</li>
+<li>Στον κόσμο τους - Αστεία</li>
+</ul>
+<h4>Articles/Educational Categories (7 total):</h4>
+<ul>
+<li>Γενικά</li>
+<li>Λογική</li>
+<li>Μαθηματικά</li>
+<li>Συνταγές</li>
+<li>Κρατικά</li>
+<li>Οικονομία</li>
+<li>Πολιτική</li>
+</ul>
+<h4>Personal Type:</h4>
+<ul>
+<li>No categories required (can be added later if needed)</li>
+</ul>
+<h2>Database Migration</h2>
+<p>If you have an existing database with articles, run the migration script:</p>
+<pre><code class="language-bash">npm run migrate:article-types
+</code></pre>
+<p>This will:</p>
+<ul>
+<li>Set existing articles&#39; type based on their <code>isNews</code> field</li>
+<li>Keep the <code>isNews</code> field for backward compatibility</li>
+</ul>
+<p>Before running the script, ensure you have applied the Sequelize migration for the <code>type</code> field in your environment.</p>
+<h2>Testing Instructions</h2>
+<h3>1. Test Creating Articles</h3>
+<h4>Create a Personal Article:</h4>
+<ol>
+<li>Log in to the application</li>
+<li>Navigate to <code>/editor</code></li>
+<li>Click &quot;Show Form&quot; to create a new article</li>
+<li>Select <strong>&quot;Προσωπικό (Personal)&quot;</strong> as the article type</li>
+<li>Notice that the Category field shows &quot;Δεν απαιτείται&quot; (Not required)</li>
+<li>Fill in title and content</li>
+<li>Click &quot;Create Article&quot;</li>
+<li>Verify the article is created with a gray badge showing &quot;Προσωπικό&quot;</li>
+</ol>
+<h4>Create an Educational Article:</h4>
+<ol>
+<li>In the editor form, select <strong>&quot;Άρθρα (Articles)&quot;</strong> as the article type</li>
+<li>Notice the Category dropdown now shows 7 educational categories</li>
+<li>Select a category (e.g., &quot;Μαθηματικά&quot;)</li>
+<li>Fill in title and content</li>
+<li>Click &quot;Create Article&quot;</li>
+<li>Verify the article is created with a purple &quot;Άρθρα&quot; badge and the selected category</li>
+</ol>
+<h4>Create a News Article:</h4>
+<ol>
+<li>In the editor form, select <strong>&quot;Νέα (News)&quot;</strong> as the article type</li>
+<li>Notice the Category dropdown now shows 14 news categories</li>
+<li>Select a category (e.g., &quot;Τεχνολογία&quot;)</li>
+<li>Fill in title and content</li>
+<li>Click &quot;Create Article&quot;</li>
+<li>Verify the article is created with a green &quot;Νέα&quot; badge and the selected category</li>
+</ol>
+<h3>2. Test Editing Articles</h3>
+<ol>
+<li>Navigate to any article detail page</li>
+<li>Click &quot;Edit Article&quot; (if you have permission)</li>
+<li>Change the article type</li>
+<li>Notice that the category dropdown updates automatically</li>
+<li>Select a new category if required</li>
+<li>Save the changes</li>
+<li>Verify the article shows the updated type and category</li>
+</ol>
+<h3>3. Test Article Display</h3>
+<h4>Article Cards:</h4>
+<ul>
+<li>Check the articles list at <code>/articles</code></li>
+<li>Each article should show:<ul>
+<li>Type badge (gray/purple/green based on type)</li>
+<li>Category badge (if applicable)</li>
+<li>All badges should be color-coded consistently</li>
+</ul>
+</li>
+</ul>
+<h4>Article Detail Page:</h4>
+<ul>
+<li>Navigate to a specific article</li>
+<li>Verify the type and category badges appear at the top</li>
+<li>Check that the colors match the type</li>
+</ul>
+<h4>Editor Dashboard:</h4>
+<ul>
+<li>Go to <code>/editor</code></li>
+<li>Your articles list should show type badges</li>
+<li>Verify the color coding is consistent</li>
+</ul>
+<h3>4. Test Category Requirements</h3>
+<ol>
+<li>Try to create a News article without selecting a category<ul>
+<li>The form should prevent submission (required field)</li>
+</ul>
+</li>
+<li>Try to create an Articles article without selecting a category<ul>
+<li>The form should prevent submission (required field)</li>
+</ul>
+</li>
+<li>Create a Personal article without a category<ul>
+<li>This should work fine (no category required)</li>
+</ul>
+</li>
+</ol>
+<h3>5. Test Backward Compatibility</h3>
+<p>The <code>isNews</code> field is kept for backward compatibility:</p>
+<ul>
+<li>Old API calls using <code>isNews: true</code> will create News type articles</li>
+<li>Old API calls using <code>isNews: false</code> will create Personal type articles</li>
+<li>The new <code>type</code> field takes precedence if both are provided</li>
+</ul>
+<h2>UI/UX Features</h2>
+<h3>Dependent Dropdowns:</h3>
+<ul>
+<li>The Category dropdown changes based on the selected Article Type</li>
+<li>Categories are disabled for Personal type</li>
+<li>Categories are required for News and Articles types</li>
+</ul>
+<h3>Visual Feedback:</h3>
+<ul>
+<li>Type badges are color-coded:<ul>
+<li>Gray: Personal</li>
+<li>Purple: Articles</li>
+<li>Green: News</li>
+</ul>
+</li>
+<li>Consistent styling across all pages</li>
+<li>Greek labels with English translations in parentheses</li>
+</ul>
+<h3>Form Validation:</h3>
+<ul>
+<li>Category is required only when the article type has categories</li>
+<li>Asterisk (*) appears next to &quot;Category&quot; label when required</li>
+<li>Form prevents submission without required category</li>
+</ul>
+<h2>API Changes</h2>
+<h3>Create Article Endpoint: <code>POST /api/articles</code></h3>
+<p>New field: <code>type</code> (optional, defaults to &#39;personal&#39;)</p>
+<pre><code class="language-json">{
+  &quot;title&quot;: &quot;My Article&quot;,
+  &quot;content&quot;: &quot;Article content...&quot;,
+  &quot;type&quot;: &quot;news&quot;,
+  &quot;category&quot;: &quot;Τεχνολογία&quot;,
+  &quot;status&quot;: &quot;draft&quot;
+}
+</code></pre>
+<h3>Update Article Endpoint: <code>PUT /api/articles/:id</code></h3>
+<p>New field: <code>type</code> (optional)</p>
+<pre><code class="language-json">{
+  &quot;type&quot;: &quot;articles&quot;,
+  &quot;category&quot;: &quot;Μαθηματικά&quot;
+}
+</code></pre>
+<h3>Get Articles Endpoint: <code>GET /api/articles</code></h3>
+<p>Query parameters: <code>type</code> (optional), <code>authorId</code> (optional), <code>status</code> (optional)</p>
+<pre><code>GET /api/articles?type=news
+GET /api/articles?type=articles&amp;category=Μαθηματικά
+GET /api/articles?authorId=42&amp;status=published   # view a user&#39;s published articles (public profile)
+</code></pre>
+<p><strong>Visibility rules enforced by this endpoint:</strong></p>
+<ul>
+<li>Unauthenticated requests: only <code>published</code> articles are returned (existing behaviour).</li>
+<li>Authenticated requests with <code>authorId</code> set to <strong>another user&#39;s ID</strong>: only that user&#39;s <code>published</code> articles are returned; personal draft/archived articles are always excluded.</li>
+<li>Authenticated requests with <code>authorId</code> set to <strong>the caller&#39;s own ID</strong>: all own articles are returned (including personal drafts).</li>
+<li>Any authenticated request <strong>without</strong> <code>authorId</code>: personal draft/archived articles authored by other users are always excluded, regardless of the caller&#39;s role (admin/moderator included).</li>
+</ul>
+<h2>Configuration</h2>
+<p>Article types and categories are defined in:
+<code>/config/articleCategories.json</code></p>
+<p>To add or modify categories:</p>
+<ol>
+<li>Edit the JSON file</li>
+<li>Restart the application</li>
+<li>Categories will be updated automatically</li>
+</ol>
+<h2>Files Modified</h2>
+<h3>Backend:</h3>
+<ul>
+<li><code>src/models/Article.js</code> - Added <code>type</code> field</li>
+<li><code>src/controllers/articleController.js</code> - Updated to handle type field and enforce personal article privacy</li>
+<li><code>src/constants/articleTypes.js</code> - Article type constants</li>
+<li><code>config/articleCategories.json</code> - Categories configuration</li>
+</ul>
+<h3>Frontend:</h3>
+<ul>
+<li><code>app/editor/page.js</code> - Create form with type/category dropdowns</li>
+<li><code>app/articles/[id]/edit/page.js</code> - Edit form with type/category dropdowns</li>
+<li><code>app/articles/[id]/page.js</code> - Detail page showing type badges</li>
+<li><code>components/ArticleCard.js</code> - Article cards showing type badges</li>
+<li><code>lib/utils/articleTypes.js</code> - Utility functions for type display</li>
+</ul>
+<h3>Migration:</h3>
+<ul>
+<li><code>src/update-article-types.js</code> - Migration script</li>
+<li><code>package.json</code> - Added migration script command</li>
+</ul>
+<h2>Troubleshooting</h2>
+<h3>Issue: Categories not showing</h3>
+<ul>
+<li>Make sure the JSON file is properly formatted</li>
+<li>Check browser console for errors</li>
+<li>Verify the article type is selected</li>
+</ul>
+<h3>Issue: Migration fails</h3>
+<ul>
+<li>Ensure database connection is configured</li>
+<li>Check that the database is running</li>
+<li>Review migration script output for errors</li>
+</ul>
+<h3>Issue: Type badges not displaying</h3>
+<ul>
+<li>Clear browser cache</li>
+<li>Rebuild frontend: <code>npm run frontend:build</code></li>
+<li>Check that article.type field exists in database</li>
+</ul>
+<h2>Next Steps</h2>
+<p>Potential future enhancements:</p>
+<ol>
+<li>Add categories for Personal type</li>
+<li>Add category management UI for admins</li>
+<li>Add category filtering on the articles page</li>
+<li>Add category-based article recommendations</li>
+</ol>
+</article>
+  </main>
+</body>
+</html>

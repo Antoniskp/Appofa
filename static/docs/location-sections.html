@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Location Sections – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html" class="active">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Location Sections</div>
+    <article class="md"><h1>Location Sections</h1>
+<p>Location Sections allow moderators and admins to add rich, structured &quot;extra information&quot; to any location page — beyond the core fields (name, coordinates, Wikipedia data, etc.).</p>
+<p>Sections are <strong>predefined by type</strong>, so they remain structured and secure while still giving moderators flexibility to describe official websites, contacts, important people, webcams, and announcements.</p>
+<hr>
+<h2>Table of Contents</h2>
+<ol>
+<li><a href="#section-types--json-shapes">Section Types &amp; JSON Shapes</a></li>
+<li><a href="#how-moderators-manage-sections">How Moderators Manage Sections</a></li>
+<li><a href="#public-rendering">Public Rendering</a></li>
+<li><a href="#api-reference">API Reference</a></li>
+<li><a href="#adding-a-new-section-type">Adding a New Section Type</a></li>
+<li><a href="#validation-rules">Validation Rules</a></li>
+</ol>
+<hr>
+<h2>Section Types &amp; JSON Shapes</h2>
+<p>Each section has a <code>type</code> (from the predefined enum) and a <code>content</code> object whose shape depends on the type.</p>
+<h3>1. <code>official_links</code> — Official Links</h3>
+<p>Links to external resources such as the official municipality website, government portal, etc.</p>
+<pre><code class="language-json">{
+  &quot;links&quot;: [
+    { &quot;label&quot;: &quot;Municipality website&quot;, &quot;url&quot;: &quot;https://www.municipality.gr&quot; },
+    { &quot;label&quot;: &quot;Official tourism portal&quot;, &quot;url&quot;: &quot;https://visit.example.com&quot; }
+  ]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>links</code></td>
+<td>array</td>
+<td>✅</td>
+<td>Array of link objects</td>
+</tr>
+<tr>
+<td><code>links[].label</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Human-readable label</td>
+</tr>
+<tr>
+<td><code>links[].url</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Must start with <code>https://</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h3>2. <code>contacts</code> — Contacts</h3>
+<p>Phone numbers and email addresses for the location (e.g., town hall, tourist office).</p>
+<pre><code class="language-json">{
+  &quot;phones&quot;: [
+    { &quot;label&quot;: &quot;Town hall&quot;, &quot;value&quot;: &quot;+30 210 000 0000&quot; },
+    { &quot;label&quot;: &quot;Tourist information&quot;, &quot;value&quot;: &quot;+30 210 111 1111&quot; }
+  ],
+  &quot;emails&quot;: [
+    { &quot;label&quot;: &quot;General enquiries&quot;, &quot;value&quot;: &quot;info@municipality.gr&quot; }
+  ]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>phones</code></td>
+<td>array</td>
+<td>✅</td>
+<td>Array of phone objects (may be empty)</td>
+</tr>
+<tr>
+<td><code>phones[].label</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Description of this number</td>
+</tr>
+<tr>
+<td><code>phones[].value</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Phone number (any format)</td>
+</tr>
+<tr>
+<td><code>emails</code></td>
+<td>array</td>
+<td>✅</td>
+<td>Array of email objects (may be empty)</td>
+</tr>
+<tr>
+<td><code>emails[].label</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Description of this address</td>
+</tr>
+<tr>
+<td><code>emails[].value</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Email address</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>3. <code>people</code> — Important People</h3>
+<p>Key figures associated with the location: mayor, prime minister, regional governor, etc.</p>
+<pre><code class="language-json">{
+  &quot;people&quot;: [
+    {
+      &quot;name&quot;: &quot;Jane Doe&quot;,
+      &quot;role&quot;: &quot;Mayor&quot;,
+      &quot;websiteUrl&quot;: &quot;https://janedoe.gr&quot;,
+      &quot;photoUrl&quot;: &quot;https://cdn.example.com/janedoe.jpg&quot;
+    },
+    {
+      &quot;name&quot;: &quot;John Smith&quot;,
+      &quot;role&quot;: &quot;Regional Governor&quot;
+    }
+  ]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>people</code></td>
+<td>array</td>
+<td>✅</td>
+<td>Array of person objects</td>
+</tr>
+<tr>
+<td><code>people[].name</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Full name</td>
+</tr>
+<tr>
+<td><code>people[].role</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Official title or role</td>
+</tr>
+<tr>
+<td><code>people[].websiteUrl</code></td>
+<td>string</td>
+<td>❌</td>
+<td>Must start with <code>https://</code> if provided</td>
+</tr>
+<tr>
+<td><code>people[].photoUrl</code></td>
+<td>string</td>
+<td>❌</td>
+<td>Must start with <code>https://</code> if provided</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>4. <code>webcams</code> — Webcams</h3>
+<p>Live camera feeds for the location. Three embed strategies are supported:</p>
+<ul>
+<li><code>&quot;link&quot;</code> — A simple link, opens in new tab (safest, always works)</li>
+<li><code>&quot;image&quot;</code> — Rendered as a <code>&lt;img&gt;</code> tag (for MJPEG stills/refreshing images)</li>
+<li><code>&quot;iframe&quot;</code> — Rendered in a sandboxed <code>&lt;iframe&gt;</code> (for interactive streams)</li>
+</ul>
+<pre><code class="language-json">{
+  &quot;webcams&quot;: [
+    {
+      &quot;label&quot;: &quot;Town square&quot;,
+      &quot;url&quot;: &quot;https://webcam.municipality.gr/live&quot;,
+      &quot;embedType&quot;: &quot;iframe&quot;
+    },
+    {
+      &quot;label&quot;: &quot;Harbour view&quot;,
+      &quot;url&quot;: &quot;https://cam.example.com/harbour.jpg&quot;,
+      &quot;embedType&quot;: &quot;image&quot;
+    },
+    {
+      &quot;label&quot;: &quot;Mountain cam&quot;,
+      &quot;url&quot;: &quot;https://cam.example.com/mountain&quot;,
+      &quot;embedType&quot;: &quot;link&quot;
+    }
+  ]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>webcams</code></td>
+<td>array</td>
+<td>✅</td>
+<td>Array of webcam objects</td>
+</tr>
+<tr>
+<td><code>webcams[].label</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Human-readable label</td>
+</tr>
+<tr>
+<td><code>webcams[].url</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Must start with <code>https://</code></td>
+</tr>
+<tr>
+<td><code>webcams[].embedType</code></td>
+<td>string</td>
+<td>❌</td>
+<td><code>&quot;link&quot;</code> (default), <code>&quot;image&quot;</code>, or <code>&quot;iframe&quot;</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Security note:</strong> <code>iframe</code> embeds use <code>sandbox=&quot;allow-scripts allow-same-origin&quot;</code> to limit risk. Arbitrary HTML is never allowed.</p>
+</blockquote>
+<hr>
+<h3>5. <code>announcements</code> — Announcements</h3>
+<p>Time-limited notices or alerts for the location. Items with an <code>endsAt</code> date in the past are automatically hidden on the public page.</p>
+<pre><code class="language-json">{
+  &quot;items&quot;: [
+    {
+      &quot;title&quot;: &quot;Road closure — Main Street&quot;,
+      &quot;body&quot;: &quot;Main Street will be closed from 08:00 to 20:00 for maintenance works.&quot;,
+      &quot;startsAt&quot;: &quot;2025-06-01&quot;,
+      &quot;endsAt&quot;: &quot;2025-06-07&quot;,
+      &quot;linkUrl&quot;: &quot;https://municipality.gr/news/road-closure&quot;,
+      &quot;priority&quot;: 5
+    },
+    {
+      &quot;title&quot;: &quot;Summer festival&quot;,
+      &quot;priority&quot;: 2
+    }
+  ]
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Type</th>
+<th>Required</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>items</code></td>
+<td>array</td>
+<td>✅</td>
+<td>Array of announcement objects</td>
+</tr>
+<tr>
+<td><code>items[].title</code></td>
+<td>string</td>
+<td>✅</td>
+<td>Short heading</td>
+</tr>
+<tr>
+<td><code>items[].body</code></td>
+<td>string</td>
+<td>❌</td>
+<td>Optional longer description</td>
+</tr>
+<tr>
+<td><code>items[].startsAt</code></td>
+<td>ISO date string</td>
+<td>❌</td>
+<td>Display start date</td>
+</tr>
+<tr>
+<td><code>items[].endsAt</code></td>
+<td>ISO date string</td>
+<td>❌</td>
+<td>Items past this date are hidden publicly</td>
+</tr>
+<tr>
+<td><code>items[].linkUrl</code></td>
+<td>string</td>
+<td>❌</td>
+<td>Must start with <code>https://</code> if provided</td>
+</tr>
+<tr>
+<td><code>items[].priority</code></td>
+<td>integer 0–10</td>
+<td>❌</td>
+<td>Higher = shown first; ≥5 displayed in red, ≥3 in yellow</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>How Moderators Manage Sections</h2>
+<p>Moderators and admins can manage sections directly on the public location page.</p>
+<h3>Steps</h3>
+<ol>
+<li>Navigate to any location page: <code>/locations/&lt;slug&gt;</code></li>
+<li>If you are logged in with <strong>admin</strong> or <strong>moderator</strong> role, you will see a <strong>&quot;Manage Sections&quot;</strong> panel below the location header.</li>
+<li>Click <strong>&quot;Show manager&quot;</strong> to expand the section manager.</li>
+</ol>
+<h3>Available actions</h3>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Add Section</strong></td>
+<td>Choose a type, fill in the content form, optionally set a title override, and save</td>
+</tr>
+<tr>
+<td><strong>Edit</strong></td>
+<td>Click the pencil icon on any section row to edit its content, title, and published status</td>
+</tr>
+<tr>
+<td><strong>Publish / Unpublish</strong></td>
+<td>Click the eye icon to toggle visibility. Draft sections are shown only to moderators/admins</td>
+</tr>
+<tr>
+<td><strong>Reorder</strong></td>
+<td>Use the ▲ / ▼ arrows on each row to change display order</td>
+</tr>
+<tr>
+<td><strong>Delete</strong></td>
+<td>Click the trash icon; a confirmation prompt will appear</td>
+</tr>
+</tbody></table>
+<h3>Draft vs Published</h3>
+<ul>
+<li><strong>Draft</strong> (<code>isPublished: false</code>): visible only to moderators/admins via the manager. Not shown on the public page.</li>
+<li><strong>Published</strong> (<code>isPublished: true</code>): shown on the public location page in <code>sortOrder</code>.</li>
+</ul>
+<hr>
+<h2>Public Rendering</h2>
+<p>Sections are rendered in two areas of the public location page (<code>/locations/&lt;slug&gt;</code>):</p>
+<h3>Info box (right column)</h3>
+<p>The <code>official_links</code>, <code>contacts</code>, and <code>webcams</code> section types are shown <strong>inside the &quot;Πληροφορίες&quot; information box</strong> in the compact header area. These types are rendered in a compact, single-line format:</p>
+<ul>
+<li><strong>official_links / contacts</strong> — rendered as compact lists (globe / phone icons + labels)</li>
+<li><strong>webcams</strong> — rendered as a compact list of links, one per camera: <code>[camera icon] &lt;label&gt;</code> linking to the camera URL. No embed (iframe/image) is used in this view.</li>
+</ul>
+<h3>Body area</h3>
+<p>All remaining section types (<code>people</code>, <code>announcements</code>) are rendered as full-width cards between the location header and the tabbed content area.</p>
+<hr>
+<p>General rendering rules:</p>
+<ul>
+<li>Only <strong>published</strong> sections are rendered.</li>
+<li>Sections appear in ascending <code>sortOrder</code>.</li>
+<li>Each type uses a dedicated display component with appropriate styling.</li>
+<li><strong>Announcements</strong> with a past <code>endsAt</code> are automatically hidden, regardless of <code>isPublished</code>.</li>
+<li>No raw HTML is ever rendered; all user-supplied values are text-interpolated through React to prevent XSS.</li>
+</ul>
+<h3>Moderator access</h3>
+<p>The section manager is accessible through the single <strong>Edit</strong> button on the location header. When a moderator or admin clicks <strong>Edit</strong>, both the location detail fields (name, code, coordinates, Wikipedia URL) and the section manager appear in the same edit panel. There is no separate &quot;Manage Sections&quot; button — everything is consolidated into one edit flow.</p>
+<hr>
+<h2>API Reference</h2>
+<p>All section routes are nested under <code>/api/locations/:locationId/sections</code>.</p>
+<h3>Public</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET</code></td>
+<td><code>/api/locations/:locationId/sections</code></td>
+<td>None</td>
+<td>Returns <strong>published</strong> sections only. Moderators/admins authenticated via cookie also see drafts.</td>
+</tr>
+</tbody></table>
+<h3>Moderator / Admin</h3>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Path</th>
+<th>Auth</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>POST</code></td>
+<td><code>/api/locations/:locationId/sections</code></td>
+<td>mod/admin</td>
+<td>Create a new section</td>
+</tr>
+<tr>
+<td><code>PUT</code></td>
+<td><code>/api/locations/:locationId/sections/:id</code></td>
+<td>mod/admin</td>
+<td>Update section (title, content, isPublished, sortOrder)</td>
+</tr>
+<tr>
+<td><code>DELETE</code></td>
+<td><code>/api/locations/:locationId/sections/:id</code></td>
+<td>mod/admin</td>
+<td>Delete section</td>
+</tr>
+<tr>
+<td><code>PUT</code></td>
+<td><code>/api/locations/:locationId/sections/reorder</code></td>
+<td>mod/admin</td>
+<td>Bulk update sortOrder; body: <code>{ order: [{ id, sortOrder }] }</code></td>
+</tr>
+</tbody></table>
+<h3>Example: Create a section</h3>
+<pre><code class="language-http">POST /api/locations/42/sections
+Cookie: auth_token=&lt;moderator_token&gt;
+Content-Type: application/json
+
+{
+  &quot;type&quot;: &quot;official_links&quot;,
+  &quot;title&quot;: &quot;Useful Links&quot;,
+  &quot;content&quot;: {
+    &quot;links&quot;: [
+      { &quot;label&quot;: &quot;Official website&quot;, &quot;url&quot;: &quot;https://www.municipality.gr&quot; }
+    ]
+  },
+  &quot;isPublished&quot;: true
+}
+</code></pre>
+<p>Response:</p>
+<pre><code class="language-json">{
+  &quot;success&quot;: true,
+  &quot;section&quot;: {
+    &quot;id&quot;: 1,
+    &quot;locationId&quot;: 42,
+    &quot;type&quot;: &quot;official_links&quot;,
+    &quot;title&quot;: &quot;Useful Links&quot;,
+    &quot;content&quot;: { &quot;links&quot;: [{ &quot;label&quot;: &quot;Official website&quot;, &quot;url&quot;: &quot;https://www.municipality.gr&quot; }] },
+    &quot;isPublished&quot;: true,
+    &quot;sortOrder&quot;: 1,
+    &quot;createdByUserId&quot;: 5,
+    &quot;updatedByUserId&quot;: 5,
+    &quot;createdAt&quot;: &quot;2025-06-01T10:00:00.000Z&quot;,
+    &quot;updatedAt&quot;: &quot;2025-06-01T10:00:00.000Z&quot;
+  }
+}
+</code></pre>
+<hr>
+<h2>Adding a New Section Type</h2>
+<p>To extend the system with a new predefined type (e.g., <code>gallery</code>, <code>events</code>):</p>
+<h3>1. Add to the enum</h3>
+<p>In <code>src/models/LocationSection.js</code>, add the new value to the <code>SECTION_TYPES</code> array:</p>
+<pre><code class="language-js">const SECTION_TYPES = [
+  &#39;official_links&#39;,
+  &#39;contacts&#39;,
+  &#39;people&#39;,
+  &#39;webcams&#39;,
+  &#39;announcements&#39;,
+  &#39;gallery&#39;, // new type
+];
+</code></pre>
+<h3>2. Add a migration</h3>
+<p>Create a new migration file (e.g., <code>src/migrations/027-add-gallery-section-type.js</code>) to update the PostgreSQL enum:</p>
+<pre><code class="language-js">module.exports = {
+  async up(queryInterface) {
+    await queryInterface.sequelize.query(`
+      ALTER TYPE &quot;enum_LocationSections_type&quot; ADD VALUE IF NOT EXISTS &#39;gallery&#39;;
+    `);
+  },
+  async down() { /* enum values cannot be removed in Postgres without recreating */ }
+};
+</code></pre>
+<h3>3. Add validation</h3>
+<p>In <code>src/controllers/locationSectionController.js</code>, add a <code>case &#39;gallery&#39;:</code> block inside <code>validateContent()</code> that validates the expected shape.</p>
+<h3>4. Add a public renderer</h3>
+<p>In <code>components/LocationSections.js</code>, add a new component (e.g., <code>GallerySection</code>) and a <code>case &#39;gallery&#39;:</code> entry in <code>SectionContent</code>.</p>
+<h3>5. Add a moderator editor</h3>
+<p>In <code>components/LocationSectionManager.js</code>, add a new editor component and a <code>case &#39;gallery&#39;:</code> entry in <code>ContentEditor</code>. Also add a default <code>EMPTY_CONTENT.gallery</code> entry.</p>
+<h3>6. Update this document</h3>
+<p>Document the new type&#39;s JSON shape in this file, following the pattern above.</p>
+<hr>
+<h2>Validation Rules</h2>
+<p>All section content is validated server-side before saving.</p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Details</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>type</code> must be predefined</td>
+<td>One of: <code>official_links</code>, <code>contacts</code>, <code>people</code>, <code>webcams</code>, <code>announcements</code></td>
+</tr>
+<tr>
+<td><code>content</code> must be an object</td>
+<td>Not null, not an array, not a string</td>
+</tr>
+<tr>
+<td>All URLs must use <code>https://</code></td>
+<td><code>http://</code> URLs are rejected to enforce security</td>
+</tr>
+<tr>
+<td>Required string fields</td>
+<td>See per-type tables above</td>
+</tr>
+<tr>
+<td><code>webcams[].embedType</code></td>
+<td>Must be <code>&quot;link&quot;</code>, <code>&quot;image&quot;</code>, or <code>&quot;iframe&quot;</code> if specified</td>
+</tr>
+<tr>
+<td>Date fields</td>
+<td><code>startsAt</code> / <code>endsAt</code> must be parseable by <code>Date.parse()</code></td>
+</tr>
+</tbody></table>
+<p>See <code>src/controllers/locationSectionController.js</code> → <code>validateContent()</code> for the authoritative implementation.</p>
+</article>
+  </main>
+</body>
+</html>

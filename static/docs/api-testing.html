@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Testing – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html" class="active">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › API Testing</div>
+    <article class="md"><h1>API Testing Examples</h1>
+<p>This file contains example requests for testing the News Application API.</p>
+<h2>Prerequisites</h2>
+<ul>
+<li>Server should be running on <a href="http://localhost:3000">http://localhost:3000</a></li>
+<li>PostgreSQL database should be set up and running</li>
+</ul>
+<h2>Authentication Examples</h2>
+<h3>1. Register a new user (Viewer)</h3>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/auth/register \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;username&quot;: &quot;viewer&quot;,
+    &quot;email&quot;: &quot;viewer@example.com&quot;,
+    &quot;password&quot;: &quot;viewer123&quot;,
+    &quot;firstName&quot;: &quot;Viewer&quot;,
+    &quot;lastName&quot;: &quot;User&quot;
+  }&#39;
+</code></pre>
+<h3>2. Register a new user (Editor Request)</h3>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/auth/register \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;username&quot;: &quot;editorcandidate&quot;,
+    &quot;email&quot;: &quot;editorcandidate@example.com&quot;,
+    &quot;password&quot;: &quot;editor123&quot;,
+    &quot;firstName&quot;: &quot;Editor&quot;,
+    &quot;lastName&quot;: &quot;User&quot;
+  }&#39;
+</code></pre>
+<h3>3. Register a new user (Moderator Request)</h3>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/auth/register \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;username&quot;: &quot;moderatorcandidate&quot;,
+    &quot;email&quot;: &quot;moderatorcandidate@example.com&quot;,
+    &quot;password&quot;: &quot;moderator123&quot;,
+    &quot;firstName&quot;: &quot;Moderator&quot;,
+    &quot;lastName&quot;: &quot;User&quot;
+  }&#39;
+</code></pre>
+<h3>4. Login</h3>
+<pre><code class="language-bash">curl -c /tmp/cookies.txt -b /tmp/cookies.txt \
+  -X POST http://localhost:3000/api/auth/login \
+  -H &quot;Content-Type: application/json&quot; \
+  -d &#39;{
+    &quot;email&quot;: &quot;admin@example.com&quot;,
+    &quot;password&quot;: &quot;admin123&quot;
+  }&#39;
+</code></pre>
+<p>The server sets two cookies: <code>auth_token</code> (HttpOnly JWT) and <code>csrf_token</code> (readable, for CSRF protection).
+Use <code>-c</code>/<code>-b</code> with a cookie jar file to persist them across requests. Extract the CSRF token for mutation requests:</p>
+<pre><code class="language-bash">CSRF_TOKEN=$(grep &#39;csrf_token&#39; /tmp/cookies.txt | awk &#39;{print $NF}&#39;)
+</code></pre>
+<h3>5. Get User Profile</h3>
+<pre><code class="language-bash">curl -b /tmp/cookies.txt -X GET http://localhost:3000/api/auth/profile
+</code></pre>
+<h3>6. Admin: Update User Role</h3>
+<pre><code class="language-bash">curl -X PUT http://localhost:3000/api/auth/users/USER_ID/role \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot; \
+  -H &quot;X-CSRF-Token: YOUR_CSRF_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;role&quot;: &quot;editor&quot;
+  }&#39;
+</code></pre>
+<h3>7. Admin: Get User Stats</h3>
+<pre><code class="language-bash">curl -X GET http://localhost:3000/api/auth/users/stats \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot;
+</code></pre>
+<h3>8. Admin: Get Users</h3>
+<pre><code class="language-bash">curl -X GET http://localhost:3000/api/auth/users \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot;
+</code></pre>
+<h2>Article Examples</h2>
+<h3>6. Create an Article (Authenticated)</h3>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/articles \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -H &quot;X-CSRF-Token: YOUR_CSRF_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;title&quot;: &quot;Breaking News: Technology Breakthrough&quot;,
+    &quot;content&quot;: &quot;Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.&quot;,
+    &quot;summary&quot;: &quot;A major technological breakthrough has been announced&quot;,
+    &quot;category&quot;: &quot;Technology&quot;,
+    &quot;status&quot;: &quot;published&quot;
+  }&#39;
+</code></pre>
+<h3>7. Get All Articles (Public)</h3>
+<pre><code class="language-bash">curl -X GET &quot;http://localhost:3000/api/articles?status=published&amp;page=1&amp;limit=10&quot;
+</code></pre>
+<h3>8. Get All Articles with Filter (Public)</h3>
+<pre><code class="language-bash">curl -X GET &quot;http://localhost:3000/api/articles?category=Technology&amp;status=published&quot;
+</code></pre>
+<h3>9. Get Single Article (Public)</h3>
+<pre><code class="language-bash">curl -X GET http://localhost:3000/api/articles/1
+</code></pre>
+<h3>10. Update Article (Authenticated)</h3>
+<pre><code class="language-bash">curl -X PUT http://localhost:3000/api/articles/1 \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -H &quot;X-CSRF-Token: YOUR_CSRF_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;title&quot;: &quot;Updated Breaking News Title&quot;,
+    &quot;content&quot;: &quot;Updated content goes here...&quot;,
+    &quot;status&quot;: &quot;published&quot;
+  }&#39;
+</code></pre>
+<h3>11. Delete Article (Authenticated - Admin or Author only)</h3>
+<pre><code class="language-bash">curl -X DELETE http://localhost:3000/api/articles/1 \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -H &quot;X-CSRF-Token: YOUR_CSRF_TOKEN_HERE&quot;
+</code></pre>
+<h2>Testing Workflow</h2>
+<ol>
+<li>Start the server: <code>npm run dev</code></li>
+<li>Register users (they start as viewers by default)</li>
+<li>Login with each user and save their auth + CSRF cookies</li>
+<li>Test article creation with authenticated users</li>
+<li>Test article retrieval (public and authenticated)</li>
+<li>Test article updates with different roles</li>
+<li>Test article deletion with different roles</li>
+<li>Verify role-based access control</li>
+</ol>
+<h2>Expected Behaviors</h2>
+<ul>
+<li><strong>Viewer</strong>: Can create articles and view published articles</li>
+<li><strong>Editor</strong>: Can create articles, edit all articles, view all articles</li>
+<li><strong>Moderator</strong>: Can edit and delete all articles, manage locations</li>
+<li><strong>Admin</strong>: Full access to all operations including deletion and user management</li>
+<li><strong>Public</strong>: Can only view published articles and locations</li>
+</ul>
+<h2>Location API Examples</h2>
+<h3>1. List All Locations (Public)</h3>
+<pre><code class="language-bash">curl -X GET &quot;http://localhost:3000/api/locations&quot;
+</code></pre>
+<h3>2. List Locations with Filtering (Public)</h3>
+<pre><code class="language-bash"># Get all countries
+curl -X GET &quot;http://localhost:3000/api/locations?type=country&quot;
+
+# Get all prefectures in Japan (assuming Japan has id 1)
+curl -X GET &quot;http://localhost:3000/api/locations?type=prefecture&amp;parent_id=1&quot;
+
+# Search for locations
+curl -X GET &quot;http://localhost:3000/api/locations?search=tokyo&quot;
+
+# Paginate results
+curl -X GET &quot;http://localhost:3000/api/locations?limit=20&amp;offset=0&quot;
+</code></pre>
+<h3>3. Get Location Details (Public)</h3>
+<pre><code class="language-bash">curl -X GET http://localhost:3000/api/locations/1
+</code></pre>
+<h3>4. Create Location (Admin/Moderator Only)</h3>
+<pre><code class="language-bash"># Create a country
+curl -X POST http://localhost:3000/api/locations \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;name&quot;: &quot;Greece&quot;,
+    &quot;name_local&quot;: &quot;Ελλάδα&quot;,
+    &quot;type&quot;: &quot;country&quot;,
+    &quot;code&quot;: &quot;GR&quot;,
+    &quot;lat&quot;: 39.0742,
+    &quot;lng&quot;: 21.8243
+  }&#39;
+
+# Create a prefecture under a country (parent_id=1)
+curl -X POST http://localhost:3000/api/locations \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;name&quot;: &quot;Attica&quot;,
+    &quot;type&quot;: &quot;prefecture&quot;,
+    &quot;parent_id&quot;: 1,
+    &quot;lat&quot;: 38.0,
+    &quot;lng&quot;: 23.7
+  }&#39;
+
+# Create a municipality under a prefecture (parent_id=2)
+curl -X POST http://localhost:3000/api/locations \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;name&quot;: &quot;Athens&quot;,
+    &quot;type&quot;: &quot;municipality&quot;,
+    &quot;parent_id&quot;: 2,
+    &quot;lat&quot;: 37.9838,
+    &quot;lng&quot;: 23.7275,
+    &quot;bounding_box&quot;: {
+      &quot;north&quot;: 38.1,
+      &quot;south&quot;: 37.8,
+      &quot;east&quot;: 23.9,
+      &quot;west&quot;: 23.5
+    }
+  }&#39;
+</code></pre>
+<h3>5. Update Location (Admin/Moderator Only)</h3>
+<pre><code class="language-bash">curl -X PUT http://localhost:3000/api/locations/1 \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;name&quot;: &quot;Hellenic Republic&quot;,
+    &quot;name_local&quot;: &quot;Ελληνική Δημοκρατία&quot;
+  }&#39;
+</code></pre>
+<h3>6. Delete Location (Admin/Moderator Only)</h3>
+<pre><code class="language-bash"># Note: Cannot delete if location has children
+curl -X DELETE http://localhost:3000/api/locations/1 \
+  -b &quot;auth_token=ADMIN_TOKEN_HERE&quot;
+</code></pre>
+<h3>7. Link Location to Article (Authenticated - Must Own Article or Be Admin/Moderator)</h3>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/locations/link \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;location_id&quot;: 3,
+    &quot;entity_type&quot;: &quot;article&quot;,
+    &quot;entity_id&quot;: 1
+  }&#39;
+</code></pre>
+<h3>8. Link Location to User (Authenticated - Must Be User or Admin)</h3>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/locations/link \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;location_id&quot;: 3,
+    &quot;entity_type&quot;: &quot;user&quot;,
+    &quot;entity_id&quot;: 1
+  }&#39;
+</code></pre>
+<h3>9. Unlink Location from Entity (Authenticated)</h3>
+<pre><code class="language-bash">curl -X POST http://localhost:3000/api/locations/unlink \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;location_id&quot;: 3,
+    &quot;entity_type&quot;: &quot;article&quot;,
+    &quot;entity_id&quot;: 1
+  }&#39;
+</code></pre>
+<h3>10. Get All Locations Linked to an Article (Public)</h3>
+<pre><code class="language-bash">curl -X GET http://localhost:3000/api/locations/article/1/locations
+</code></pre>
+<h3>11. Get All Locations Linked to a User (Public)</h3>
+<pre><code class="language-bash">curl -X GET http://localhost:3000/api/locations/user/1/locations
+</code></pre>
+<h3>12. Get All Entities (Articles/Users) Linked to a Location (Public)</h3>
+<pre><code class="language-bash"># Get all entities
+curl -X GET http://localhost:3000/api/locations/1/entities
+
+# Get only articles
+curl -X GET &quot;http://localhost:3000/api/locations/1/entities?entity_type=article&quot;
+
+# Get only users
+curl -X GET &quot;http://localhost:3000/api/locations/1/entities?entity_type=user&quot;
+</code></pre>
+<h3>13. Set User Home Location (Authenticated)</h3>
+<pre><code class="language-bash">curl -X PUT http://localhost:3000/api/auth/profile \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;homeLocationId&quot;: 3
+  }&#39;
+
+# Clear home location
+curl -X PUT http://localhost:3000/api/auth/profile \
+  -H &quot;Content-Type: application/json&quot; \
+  -b &quot;auth_token=YOUR_TOKEN_HERE&quot; \
+  -d &#39;{
+    &quot;homeLocationId&quot;: null
+  }&#39;
+</code></pre>
+<h2>Location Testing Workflow</h2>
+<ol>
+<li><p><strong>Setup</strong>: Create hierarchical locations (admin/moderator)</p>
+<ul>
+<li>Create an international region</li>
+<li>Create a country under it</li>
+<li>Create a prefecture under the country</li>
+<li>Create a municipality under the prefecture</li>
+</ul>
+</li>
+<li><p><strong>Linking</strong>: Associate locations with content</p>
+<ul>
+<li>Create an article and link it to the municipality</li>
+<li>Link the article to multiple locations (country, municipality)</li>
+<li>Set a user&#39;s home location</li>
+</ul>
+</li>
+<li><p><strong>Querying</strong>: Retrieve location data</p>
+<ul>
+<li>Get location details with children</li>
+<li>Get all locations of a specific type</li>
+<li>Get articles linked to a location</li>
+<li>Get users with a specific home location</li>
+</ul>
+</li>
+<li><p><strong>Management</strong>: Update and maintain locations (admin/moderator)</p>
+<ul>
+<li>Update location details</li>
+<li>Add/remove location coordinates</li>
+<li>Delete unused locations (without children)</li>
+</ul>
+</li>
+</ol>
+<h2>Common HTTP Status Codes</h2>
+<ul>
+<li><code>200 OK</code>: Request successful</li>
+<li><code>201 Created</code>: Resource created successfully</li>
+<li><code>400 Bad Request</code>: Invalid input</li>
+<li><code>401 Unauthorized</code>: Authentication required or invalid token</li>
+<li><code>403 Forbidden</code>: Insufficient permissions</li>
+<li><code>404 Not Found</code>: Resource not found</li>
+<li><code>409 Conflict</code>: Duplicate resource (e.g., location already exists)</li>
+<li><code>500 Internal Server Error</code>: Server error</li>
+</ul>
+</article>
+  </main>
+</body>
+</html>

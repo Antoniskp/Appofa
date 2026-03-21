@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Location Model – Appofa Docs</title>
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sidebar-w: 260px;
+    --brand: #1a56db;
+    --brand-dark: #1e429f;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --sidebar-bg: #1e293b;
+    --sidebar-text: #cbd5e1;
+    --sidebar-active: #ffffff;
+    --sidebar-hover: #334155;
+    --border: #e5e7eb;
+    --text: #111827;
+    --muted: #6b7280;
+    --code-bg: #f3f4f6;
+    --pre-bg: #1e293b;
+    --pre-text: #e2e8f0;
+  }
+
+  html { font-size: 16px; scroll-behavior: smooth; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+         background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  #sidebar-header {
+    padding: 20px 16px 16px;
+    border-bottom: 1px solid #334155;
+  }
+  #sidebar-header a {
+    text-decoration: none;
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #sidebar-header a span.logo { font-size: 1.3rem; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav .cat-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding: 12px 16px 4px;
+  }
+  #sidebar nav a {
+    display: block;
+    padding: 6px 16px 6px 20px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    font-size: 0.83rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-active); }
+  #sidebar nav a.active {
+    background: rgba(26,86,219,0.25);
+    color: var(--sidebar-active);
+    border-left-color: var(--brand);
+    font-weight: 600;
+  }
+
+  /* ── Main content ── */
+  #content {
+    flex: 1;
+    padding: 36px 48px 60px;
+    max-width: 900px;
+  }
+  #breadcrumb {
+    font-size: 0.8rem;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  #breadcrumb a { color: var(--brand); text-decoration: none; }
+  #breadcrumb a:hover { text-decoration: underline; }
+
+  /* ── Markdown typography ── */
+  .md h1, .md h2, .md h3, .md h4 { color: var(--text); font-weight: 700; line-height: 1.3; }
+  .md h1 { font-size: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.4rem; border-bottom: 2px solid var(--border); }
+  .md h2 { font-size: 1.35rem; margin-top: 2rem; margin-bottom: 0.5rem; padding-bottom: 0.2rem; border-bottom: 1px solid var(--border); }
+  .md h3 { font-size: 1.1rem; margin-top: 1.5rem; margin-bottom: 0.4rem; }
+  .md h4 { font-size: 0.95rem; margin-top: 1.2rem; margin-bottom: 0.3rem; }
+  .md p { margin-bottom: 0.9rem; line-height: 1.7; }
+  .md ul, .md ol { margin: 0 0 0.9rem 1.4rem; }
+  .md li { margin-bottom: 0.3rem; line-height: 1.6; }
+  .md a { color: var(--brand); text-decoration: none; }
+  .md a:hover { text-decoration: underline; }
+  .md strong { font-weight: 700; }
+  .md em { font-style: italic; }
+  .md hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .md blockquote {
+    border-left: 4px solid var(--brand);
+    background: #eff6ff;
+    padding: 10px 16px;
+    margin: 1rem 0;
+    border-radius: 0 6px 6px 0;
+    color: #1e40af;
+  }
+  .md code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: var(--code-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .md pre {
+    background: var(--pre-bg);
+    color: var(--pre-text);
+    padding: 16px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1rem 0 1.2rem;
+    line-height: 1.5;
+  }
+  .md pre code { background: none; padding: 0; font-size: 0.82rem; color: inherit; }
+  .md table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.88rem; }
+  .md th { background: #f1f5f9; font-weight: 700; text-align: left; }
+  .md th, .md td { border: 1px solid var(--border); padding: 8px 12px; }
+  .md tr:nth-child(even) td { background: #f9fafb; }
+  .md img { max-width: 100%; border-radius: 6px; margin: 0.5rem 0; }
+
+  /* ── Landing page cards ── */
+  .cat-section h2 { font-size: 1.1rem; font-weight: 700; color: var(--muted);
+                    letter-spacing: 0.05em; text-transform: uppercase;
+                    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    text-decoration: none;
+    color: var(--text);
+    transition: box-shadow 0.15s, border-color 0.15s;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--brand); }
+  .card .card-icon { font-size: 1.3rem; margin-top: 1px; }
+  .card .card-title { font-weight: 600; font-size: 0.88rem; line-height: 1.4; }
+
+  /* ── Hero (landing) ── */
+  .hero {
+    background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 100%);
+    color: white;
+    padding: 32px 36px;
+    border-radius: 12px;
+    margin-bottom: 36px;
+  }
+  .hero h1 { font-size: 1.9rem; font-weight: 800; margin-bottom: 8px; border: none; }
+  .hero p { font-size: 1rem; opacity: 0.9; max-width: 560px; }
+
+  /* ── Responsive ── */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #sidebar { width: 100%; min-width: unset; height: auto; position: static; }
+    #sidebar nav { display: none; }
+    #content { padding: 24px 20px 48px; }
+  }
+</style>
+</head>
+<body>
+  <aside id="sidebar">
+    <div id="sidebar-header">
+      <a href="index.html"><span class="logo">📰</span> Appofa Docs</a>
+    </div>
+    <nav><div class="cat-label">Core</div>
+<a href="project-summary.html">Project Summary</a>
+<a href="architecture.html">Architecture</a>
+<a href="security.html">Security</a>
+<a href="contributing.html">Contributing</a>
+<div class="cat-label">Features</div>
+<a href="poll-feature.html">Poll Feature</a>
+<a href="poll-export-audit.html">Poll Export &amp; Audit</a>
+<a href="suggestions-feature.html">Suggestions Feature</a>
+<a href="location-model.html" class="active">Location Model</a>
+<a href="location-sections.html">Location Sections</a>
+<a href="oauth.html">OAuth</a>
+<a href="google-analytics.html">Google Analytics</a>
+<a href="message-system-implementation.html">Message System Implementation</a>
+<div class="cat-label">Deployment &amp; Operations</div>
+<a href="deployment-guide.html">Deployment Guide</a>
+<a href="vps-setup.html">VPS Setup</a>
+<a href="upgrade-guide.html">Upgrade Guide</a>
+<a href="migration-guide.html">Migration Guide</a>
+<a href="migrations.html">Migrations</a>
+<a href="node-upgrade-vps.html">Node Upgrade (VPS)</a>
+<a href="troubleshooting.html">Troubleshooting</a>
+<a href="dependency-updates.html">Dependency Updates</a>
+<div class="cat-label">Development &amp; Testing</div>
+<a href="api-testing.html">API Testing</a>
+<a href="poll-testing.html">Poll Testing</a>
+<a href="message-system-testing.html">Message System Testing</a>
+<a href="article-types-testing.html">Article Types Testing</a>
+<div class="cat-label">Test Reports</div>
+<a href="migration-017-test-report.html">Migration 017 Test Report</a>
+<a href="international-location-test-report.html">International Location Test Report</a>
+</nav>
+  </aside>
+  <main id="content">
+    <div id="breadcrumb"><a href="index.html">Docs</a> › Location Model</div>
+    <article class="md"><h1>Location Model Architecture and Documentation</h1>
+<h2>Overview</h2>
+<p>This document describes the hierarchical locations model implementation for the Appofa news application. The system allows articles and users to be associated with locations at various hierarchical levels (international, country, prefecture, municipality).</p>
+<h2>Database Schema</h2>
+<h3>Location Table</h3>
+<p>The <code>Location</code> model represents a hierarchical location system:</p>
+<pre><code class="language-sql">CREATE TABLE &quot;Locations&quot; (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,              -- Official name
+  name_local VARCHAR(255),                 -- Local language name
+  type ENUM(&#39;international&#39;, &#39;country&#39;, &#39;prefecture&#39;, &#39;municipality&#39;) NOT NULL,
+  parent_id INTEGER REFERENCES &quot;Locations&quot;(id) ON DELETE CASCADE,
+  code VARCHAR(20),                        -- ISO/official code (e.g., ISO country code)
+  slug VARCHAR(255) UNIQUE NOT NULL,       -- URL-friendly identifier
+  lat DECIMAL(10,8),                       -- Latitude
+  lng DECIMAL(11,8),                       -- Longitude
+  bounding_box JSON,                       -- Optional: {north, south, east, west}
+  &quot;createdAt&quot; TIMESTAMP NOT NULL,
+  &quot;updatedAt&quot; TIMESTAMP NOT NULL,
+  
+  -- Constraints
+  CONSTRAINT unique_location_name_per_parent UNIQUE (type, name, parent_id)
+);
+
+-- Indexes
+CREATE INDEX location_code_index ON &quot;Locations&quot;(code);
+CREATE INDEX location_parent_index ON &quot;Locations&quot;(parent_id);
+CREATE INDEX location_slug_index ON &quot;Locations&quot;(slug);
+</code></pre>
+<h3>LocationLink Table (Polymorphic Linking)</h3>
+<p>The <code>LocationLink</code> model provides polymorphic associations between locations and other entities:</p>
+<pre><code class="language-sql">CREATE TABLE &quot;LocationLinks&quot; (
+  id SERIAL PRIMARY KEY,
+  location_id INTEGER NOT NULL REFERENCES &quot;Locations&quot;(id) ON DELETE CASCADE,
+  entity_type ENUM(&#39;article&#39;, &#39;user&#39;) NOT NULL,
+  entity_id INTEGER NOT NULL,
+  &quot;createdAt&quot; TIMESTAMP NOT NULL,
+  &quot;updatedAt&quot; TIMESTAMP NOT NULL,
+  
+  -- Constraints
+  CONSTRAINT unique_location_entity_link UNIQUE (location_id, entity_type, entity_id)
+);
+
+-- Indexes
+CREATE INDEX entity_index ON &quot;LocationLinks&quot;(entity_type, entity_id);
+CREATE INDEX location_index ON &quot;LocationLinks&quot;(location_id);
+</code></pre>
+<h3>User Table Update</h3>
+<p>The <code>User</code> model has been extended with a home location field:</p>
+<pre><code class="language-sql">ALTER TABLE &quot;Users&quot; ADD COLUMN &quot;homeLocationId&quot; INTEGER REFERENCES &quot;Locations&quot;(id) ON DELETE SET NULL;
+</code></pre>
+<h2>Hierarchical Structure</h2>
+<p>Locations follow a 4-level hierarchy:</p>
+<ol>
+<li><strong>International</strong> - Top-level regions (e.g., &quot;Europe&quot;, &quot;Asia&quot;)</li>
+<li><strong>Country</strong> - Countries (e.g., &quot;Greece&quot;, &quot;Japan&quot;)</li>
+<li><strong>Prefecture</strong> - States/provinces/prefectures (e.g., &quot;Attica&quot;, &quot;Tokyo&quot;)</li>
+<li><strong>Municipality</strong> - Cities/towns/municipalities (e.g., &quot;Athens&quot;, &quot;Kyoto&quot;)</li>
+</ol>
+<p>Each level (except international) can have a <code>parent_id</code> pointing to its parent location.</p>
+<h2>API Endpoints</h2>
+<h3>Public Endpoints</h3>
+<ul>
+<li><p><code>GET /api/locations</code> - List locations with optional filtering</p>
+<ul>
+<li>Query params: <code>type</code>, <code>parent_id</code>, <code>search</code>, <code>limit</code>, <code>offset</code></li>
+</ul>
+</li>
+<li><p><code>GET /api/locations/:id</code> - Get location details including children and links</p>
+</li>
+<li><p><code>GET /api/locations/:id/entities</code> - Get articles and users linked to a location</p>
+<ul>
+<li>Query params: <code>entity_type</code> (optional filter)</li>
+</ul>
+</li>
+<li><p><code>GET /api/locations/:entity_type/:entity_id/locations</code> - Get all locations linked to an entity</p>
+</li>
+</ul>
+<h3>Protected Endpoints (Authenticated Users)</h3>
+<ul>
+<li><p><code>POST /api/locations/link</code> - Link a location to an article or user</p>
+<ul>
+<li>Body: <code>{ location_id, entity_type, entity_id }</code></li>
+<li>Authorization: Must own the entity or be admin/moderator</li>
+</ul>
+</li>
+<li><p><code>POST /api/locations/unlink</code> - Unlink a location from an entity</p>
+<ul>
+<li>Body: <code>{ location_id, entity_type, entity_id }</code></li>
+<li>Authorization: Must own the entity or be admin/moderator</li>
+</ul>
+</li>
+</ul>
+<h3>Admin/Moderator Only Endpoints</h3>
+<ul>
+<li><p><code>POST /api/locations</code> - Create a new location</p>
+<ul>
+<li>Body: <code>{ name, name_local, type, parent_id, code, lat, lng, bounding_box }</code></li>
+</ul>
+</li>
+<li><p><code>PUT /api/locations/:id</code> - Update a location</p>
+<ul>
+<li>Body: Same fields as create (all optional)</li>
+</ul>
+</li>
+<li><p><code>DELETE /api/locations/:id</code> - Delete a location</p>
+<ul>
+<li>Fails if location has children</li>
+</ul>
+</li>
+</ul>
+<h2>Deduplication Strategy</h2>
+<p>The system prevents duplicate locations using:</p>
+<ol>
+<li><strong>Unique constraint</strong>: <code>(type, name, parent_id)</code> - ensures no duplicate location names at the same hierarchical level</li>
+<li><strong>Slug uniqueness</strong>: Each location has a unique slug generated from its name and type</li>
+<li><strong>Code validation</strong>: Optional official codes (ISO, GADM, etc.) can be used for additional verification</li>
+</ol>
+<h2>Frontend Components</h2>
+<h3>LocationSelector Component</h3>
+<p>A reusable hierarchical dropdown component used throughout the application:</p>
+<ul>
+<li><strong>Location</strong>: <code>components/LocationSelector.js</code></li>
+<li><strong>Props</strong>: <ul>
+<li><code>value</code>: Selected location ID</li>
+<li><code>onChange</code>: Callback when selection changes</li>
+<li><code>allowedTypes</code>: Array of allowed location types</li>
+<li><code>placeholder</code>: Custom placeholder text</li>
+<li><code>allowClear</code>: Allow clearing selection</li>
+</ul>
+</li>
+</ul>
+<h3>Admin Location Management</h3>
+<ul>
+<li><strong>Path</strong>: <code>/admin/locations</code></li>
+<li><strong>Access</strong>: Admin and Moderator roles only</li>
+<li><strong>Features</strong>:<ul>
+<li>List all locations with search and filtering</li>
+<li>Create new locations</li>
+<li>Edit existing locations</li>
+<li>Delete locations (with child check)</li>
+<li>View hierarchical structure</li>
+</ul>
+</li>
+</ul>
+<h3>Location Detail Page</h3>
+<ul>
+<li><strong>Path</strong>: <code>/locations/[slug]</code></li>
+<li><strong>Access</strong>: Public</li>
+<li><strong>Features</strong>:<ul>
+<li>Compact header: location name, type badge, local name, code, coordinates, population, Wikipedia link, moderator info, and stats chips (Polls / News / Articles / Users counts)</li>
+<li>Parent breadcrumb navigation</li>
+<li>Sub-location chips (inline, collapsible row)</li>
+<li>Published location sections between the header and the tabbed content</li>
+<li><strong>Tabbed content</strong> (order: Polls → News → Articles → Users); active tab driven by <code>?tab=</code> query param (defaults to <code>polls</code>)</li>
+<li>Single <strong>Edit</strong> entry point for moderators/admins — location detail fields <em>and</em> the section manager are presented together in one edit panel</li>
+</ul>
+</li>
+</ul>
+<h3>Article Editor Integration</h3>
+<ul>
+<li><strong>Path</strong>: <code>/articles/[id]/edit</code> and <code>/editor</code></li>
+<li><strong>Features</strong>:<ul>
+<li>Select multiple locations to link to article</li>
+<li>Remove location links</li>
+<li>View currently linked locations</li>
+</ul>
+</li>
+</ul>
+<h3>User Profile Integration</h3>
+<ul>
+<li><strong>Path</strong>: <code>/profile</code></li>
+<li><strong>Features</strong>:<ul>
+<li>Select home location</li>
+<li>Update or remove home location</li>
+<li>View home location in profile</li>
+</ul>
+</li>
+</ul>
+<h2>Usage Examples</h2>
+<h3>Creating a Location Hierarchy</h3>
+<pre><code class="language-javascript">// 1. Create a country
+POST /api/locations
+{
+  &quot;name&quot;: &quot;Greece&quot;,
+  &quot;type&quot;: &quot;country&quot;,
+  &quot;code&quot;: &quot;GR&quot;,
+  &quot;lat&quot;: 39.0742,
+  &quot;lng&quot;: 21.8243
+}
+// Returns: { id: 1, slug: &quot;country-greece&quot;, ... }
+
+// 2. Create a prefecture under the country
+POST /api/locations
+{
+  &quot;name&quot;: &quot;Attica&quot;,
+  &quot;type&quot;: &quot;prefecture&quot;,
+  &quot;parent_id&quot;: 1,
+  &quot;lat&quot;: 38.0,
+  &quot;lng&quot;: 23.7
+}
+// Returns: { id: 2, slug: &quot;prefecture-attica&quot;, ... }
+
+// 3. Create a municipality under the prefecture
+POST /api/locations
+{
+  &quot;name&quot;: &quot;Athens&quot;,
+  &quot;type&quot;: &quot;municipality&quot;,
+  &quot;parent_id&quot;: 2,
+  &quot;lat&quot;: 37.9838,
+  &quot;lng&quot;: 23.7275
+}
+// Returns: { id: 3, slug: &quot;municipality-athens&quot;, ... }
+</code></pre>
+<h3>Linking a Location to an Article</h3>
+<pre><code class="language-javascript">// Link article 42 to Athens
+POST /api/locations/link
+{
+  &quot;location_id&quot;: 3,
+  &quot;entity_type&quot;: &quot;article&quot;,
+  &quot;entity_id&quot;: 42
+}
+</code></pre>
+<h3>Setting a User&#39;s Home Location</h3>
+<pre><code class="language-javascript">// Update user profile with home location
+PUT /api/auth/profile
+{
+  &quot;homeLocationId&quot;: 3
+}
+</code></pre>
+<h3>Querying Locations</h3>
+<pre><code class="language-javascript">// Get all countries
+GET /api/locations?type=country
+
+// Get all prefectures in Greece (parent_id=1)
+GET /api/locations?type=prefecture&amp;parent_id=1
+
+// Search for locations
+GET /api/locations?search=athens
+
+// Get location with children and links
+GET /api/locations/3
+</code></pre>
+<h2>Map Integration (Future Enhancement)</h2>
+<p>The location model is designed to support map visualization:</p>
+<ul>
+<li><strong>Point display</strong>: Uses <code>lat</code> and <code>lng</code> for single point markers</li>
+<li><strong>Bounding box</strong>: The <code>bounding_box</code> JSON field can store polygon data</li>
+<li><strong>Future</strong>: Support for GeoJSON polygons for precise area representation</li>
+</ul>
+<p>Example bounding box structure:</p>
+<pre><code class="language-json">{
+  &quot;north&quot;: 38.1,
+  &quot;south&quot;: 37.8,
+  &quot;east&quot;: 23.9,
+  &quot;west&quot;: 23.5
+}
+</code></pre>
+<h2>Data Sources</h2>
+<p>For production deployment, consider seeding locations from official sources:</p>
+<ol>
+<li><strong>ISO 3166</strong> - Country codes</li>
+<li><strong>GADM</strong> - Global Administrative Areas Database</li>
+<li><strong>GeoNames</strong> - Geographical database</li>
+<li><strong>Natural Earth</strong> - Public domain map dataset</li>
+</ol>
+<h2>Security Considerations</h2>
+<ol>
+<li><strong>Role-based access</strong>: Only admins and moderators can create/update/delete locations</li>
+<li><strong>Entity ownership</strong>: Users can only link their own articles unless they&#39;re admin/moderator</li>
+<li><strong>Validation</strong>: All inputs are validated for type, required fields, and constraints</li>
+<li><strong>SQL injection protection</strong>: Sequelize ORM with parameterized queries</li>
+<li><strong>No sensitive data</strong>: Locations are public information</li>
+</ol>
+<h2>Performance Optimization</h2>
+<ol>
+<li><strong>Indexes</strong>: Proper indexing on <code>parent_id</code>, <code>code</code>, and <code>slug</code> for fast queries</li>
+<li><strong>Caching</strong>: Location data is relatively static and suitable for caching</li>
+<li><strong>Pagination</strong>: List endpoints support <code>limit</code> and <code>offset</code></li>
+<li><strong>Eager loading</strong>: Associations are loaded efficiently using Sequelize includes</li>
+</ol>
+<h2>Migration Notes</h2>
+<p>See <a href="upgrade-guide.html">UPGRADE_GUIDE.md</a> for detailed migration instructions.</p>
+<p>Key points:</p>
+<ul>
+<li>Database schema will auto-sync in development mode</li>
+<li>In production, ensure database is accessible before starting the app</li>
+<li>No breaking changes to existing tables</li>
+<li>New tables and columns added cleanly</li>
+</ul>
+</article>
+  </main>
+</body>
+</html>
