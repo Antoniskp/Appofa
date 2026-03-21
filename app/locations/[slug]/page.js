@@ -13,6 +13,7 @@ import { PencilIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { idSlug } from '@/lib/utils/slugify';
 import LocationSections from '@/components/LocationSections';
 import LocationSectionManager from '@/components/LocationSectionManager';
+import UserRow from '@/components/user/UserRow';
 
 const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions'];
 const DEFAULT_TAB = 'polls';
@@ -781,27 +782,9 @@ export default function LocationDetailPage() {
                   <p className="text-center text-gray-500 py-8">No users linked to this location yet.</p>
                 ) : isAuthenticated ? (
                   entities.users.length > 0 ? (
-                    <div className="space-y-2">
+                    <div className="space-y-1 border border-gray-200 rounded-md divide-y divide-gray-100">
                       {entities.users.map(u => (
-                        <div
-                          key={u.id}
-                          className="flex items-center gap-3 p-3 border border-gray-200 rounded-md"
-                        >
-                          <div
-                            className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
-                            style={{ backgroundColor: u.avatarColor || '#64748b' }}
-                          >
-                            {u.username?.[0]?.toUpperCase() || '?'}
-                          </div>
-                          <div>
-                            <div className="font-medium text-gray-900">{u.username}</div>
-                            {(u.firstName || u.lastName) && (
-                              <div className="text-sm text-gray-500">
-                                {u.firstName} {u.lastName}
-                              </div>
-                            )}
-                          </div>
-                        </div>
+                        <UserRow key={u.id} user={u} />
                       ))}
                     </div>
                   ) : (
