@@ -8,6 +8,22 @@ const STATIC_ROUTES = [
   { url: '/news', priority: 0.9, changeFrequency: 'hourly' },
   { url: '/articles', priority: 0.8, changeFrequency: 'daily' },
   { url: '/polls', priority: 0.7, changeFrequency: 'daily' },
+  // Static info pages
+  { url: '/pages', priority: 0.6, changeFrequency: 'monthly' },
+  { url: '/about', priority: 0.5, changeFrequency: 'monthly' },
+  { url: '/mission', priority: 0.5, changeFrequency: 'monthly' },
+  { url: '/transparency', priority: 0.5, changeFrequency: 'monthly' },
+  { url: '/instructions', priority: 0.5, changeFrequency: 'monthly' },
+  { url: '/faq', priority: 0.5, changeFrequency: 'monthly' },
+  { url: '/contribute', priority: 0.5, changeFrequency: 'monthly' },
+  { url: '/become-moderator', priority: 0.4, changeFrequency: 'monthly' },
+  { url: '/economy', priority: 0.6, changeFrequency: 'weekly' },
+  { url: '/education', priority: 0.6, changeFrequency: 'weekly' },
+  { url: '/price-comparison', priority: 0.6, changeFrequency: 'weekly' },
+  { url: '/terms', priority: 0.3, changeFrequency: 'yearly' },
+  { url: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
+  { url: '/rules', priority: 0.4, changeFrequency: 'monthly' },
+  { url: '/contact', priority: 0.4, changeFrequency: 'yearly' },
 ];
 
 async function fetchPublishedArticles() {
