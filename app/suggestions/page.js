@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon, MapPinIcon, LightBulbIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
@@ -104,7 +104,7 @@ function SuggestionCard({ suggestion }) {
   );
 }
 
-export default function SuggestionsPage() {
+function SuggestionsContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const mine = searchParams.get('mine') === 'true';
@@ -237,5 +237,17 @@ export default function SuggestionsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function SuggestionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-gray-50 min-h-screen py-8 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    }>
+      <SuggestionsContent />
+    </Suspense>
   );
 }
