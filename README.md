@@ -12,6 +12,7 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
 - Article types and categories with dependent dropdowns (Personal, Articles, News)
+- **Static Categories page** (`/categories`) with JSON-driven category list and GitHub-based suggestion flow
 - Hierarchical location system (International, Country, Prefecture, Municipality)
 - Next.js App Router frontend with Tailwind CSS styling
 
@@ -33,6 +34,7 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 - [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
 - [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
 - [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
+- [Categories](doc/CATEGORIES.md) - Static categories page, JSON schema, and how to suggest or submit category changes
 - [Message System](doc/MESSAGE_SYSTEM_IMPLEMENTATION.md) - User messaging feature
 
 ### Deployment & Operations
@@ -172,6 +174,15 @@ Optional: seed the database (see [Project Summary](doc/PROJECT_SUMMARY.md) for s
 ```bash
 npm run seed
 ```
+
+## Categories
+
+The `/categories` page lists all platform content categories (Articles, News, Polls), rendered statically from [`config/articleCategories.json`](config/articleCategories.json). The page is accessible from the **Pages hub** (`/pages`).
+
+**Suggest a new category** — open a pre-filled GitHub Issue:
+[https://github.com/Antoniskp/Appofa/issues/new?labels=category-suggestion](https://github.com/Antoniskp/Appofa/issues/new?labels=category-suggestion)
+
+**Submit a change directly** — fork the repo, edit `config/articleCategories.json`, and open a Pull Request. See [doc/CATEGORIES.md](doc/CATEGORIES.md) for the full schema description and contribution guide.
 
 ## Scripts
 ```bash
