@@ -8,17 +8,6 @@ export const metadata = {
 
 const categories = [
   {
-    title: 'Κατηγορίες',
-    icon: '🗂️',
-    pages: [
-      {
-        href: '/categories',
-        title: 'Κατηγορίες',
-        description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών. Προτείνετε νέες κατηγορίες μέσω GitHub.',
-      },
-    ],
-  },
-  {
     title: 'Πληροφορίες',
     icon: '📖',
     pages: [
@@ -36,6 +25,11 @@ const categories = [
         href: '/transparency',
         title: 'Διαφάνεια',
         description: 'Πώς λειτουργούμε, ποιες αρχές ακολουθούμε και πώς διαχειριζόμαστε το περιεχόμενο.',
+      },
+      {
+        href: '/categories',
+        title: 'Κατηγορίες',
+        description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών. Προτείνετε νέες κατηγορίες μέσω GitHub.',
       },
     ],
   },

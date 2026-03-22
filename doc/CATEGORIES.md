@@ -76,4 +76,4 @@ Example addition to the `articles` type:
 
 The Categories page is accessible from:
 
-- **Pages hub** (`/pages`) — Listed under the "Κατηγορίες" section
+- **Pages hub** (`/pages`) — Listed under the "Πληροφορίες" section
