@@ -264,12 +264,6 @@ export default function TopNav() {
                 Χρήστες
               </Link>
               <Link
-                href="/categories"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/categories')}`}
-              >
-                Κατηγορίες
-              </Link>
-              <Link
                 href="/pages"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/pages')}`}
               >
@@ -364,12 +358,6 @@ export default function TopNav() {
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/users')}`}
           >
             Χρήστες
-          </Link>
-          <Link
-            href="/categories"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/categories')}`}
-          >
-            Κατηγορίες
           </Link>
           <Link
             href="/pages"
