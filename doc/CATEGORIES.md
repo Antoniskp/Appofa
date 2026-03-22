@@ -1,48 +1,47 @@
 # Categories
 
-The platform provides a **static Categories page** (`/categories`) that lists all content categories for Articles, News, and Polls, sourced from a committed JSON file.
+The platform provides a **static Categories page** (`/categories`) that lists all content categories for Articles, News, and Polls, sourced from the committed JSON file `config/articleCategories.json`.
 
 ## Categories page
 
 **Route:** `/categories`
 
-The page is statically rendered at build time using Next.js App Router. It imports the JSON file at build time (no API call needed) and renders all category groups in a clean, responsive grid.
+The page is statically rendered at build time using Next.js App Router. It imports the JSON file at build time (no API call needed) and renders all category sections in a clean, responsive layout.
 
 It also includes a prominent **"Suggest a category"** button that opens a pre-filled GitHub Issue in the `Antoniskp/Appofa` repository.
+
+The page is accessible from the **Pages hub** (`/pages`) under the "Κατηγορίες" section.
 
 ## JSON file location
 
 ```
-src/data/categories.json
+config/articleCategories.json
 ```
 
 ### Schema
 
-```
+```json
 {
-  "version": "1.0",          // Schema version string
-  "description": "...",      // Human-readable schema description
-  "groups": [                // Array of category groups
-    {
-      "id": "articles",      // Unique identifier (snake_case)
-      "label": "Άρθρα",      // Display label (Greek)
-      "labelEn": "Articles", // Display label (English)
-      "description": "...",  // Short description of the group
-      "icon": "✍️",          // Emoji icon for visual identification
-      "categories": [        // Array of categories in this group
-        {
-          "id": "articles-general",  // Unique identifier (group-name format)
-          "label": "Γενικά",         // Display label
-          "description": "...",      // Optional longer description
-          "parentId": null           // Optional: ID of a parent category
-        }
+  "articleTypes": {
+    "<key>": {
+      "value": "articles",          // Internal identifier
+      "label": "Articles",          // Display label (English)
+      "labelEl": "Άρθρα",           // Display label (Greek)
+      "description": "...",         // Short description
+      "categoryRequired": false,    // Whether a category must be selected
+      "categories": [               // Array of category name strings (Greek)
+        "Γενικά",
+        "Επιστήμη & Τεχνολογία"
       ]
     }
+  },
+  "pollCategories": [               // Array of category name strings for polls
+    "Πολιτική & Κοινωνία"
   ]
 }
 ```
 
-Current groups: `articles`, `news`, `polls`.
+Current `articleTypes` keys: `personal` (hidden from public page), `articles`, `news`.
 
 ## Suggesting a category
 
@@ -58,29 +57,23 @@ The pre-filled issue template prompts for:
 - **Description / justification**
 - **Links / sources** (optional)
 
-A maintainer will review the suggestion and apply it by editing `src/data/categories.json` in a PR.
+A maintainer will review the suggestion and apply it by editing `config/articleCategories.json` in a PR.
 
 ### Option B: Pull Request (for contributors)
 
 1. **Fork** the [repository](https://github.com/Antoniskp/Appofa).
-2. **Edit** `src/data/categories.json`:
-   - Add your category object to the appropriate `categories` array inside the relevant `group`.
-   - Follow the existing schema (see above).
-   - Give the category a unique `id` following the `<group>-<name>` convention (e.g., `articles-climate`).
+2. **Edit** `config/articleCategories.json`:
+   - Add your category string to the appropriate `categories` array under `articleTypes.articles`, `articleTypes.news`, or `pollCategories`.
 3. **Open a Pull Request** against `main` with a clear description.
 
-Example addition to the `articles` group:
+Example addition to the `articles` type:
 
 ```json
-{
-  "id": "articles-climate",
-  "label": "Κλίμα & Φυσικές Καταστροφές"
-}
+"Κλίμα & Φυσικές Καταστροφές"
 ```
 
 ## Navigation
 
 The Categories page is accessible from:
 
-- **Top navigation bar** — "Κατηγορίες" link (desktop and mobile)
 - **Pages hub** (`/pages`) — Listed under the "Κατηγορίες" section

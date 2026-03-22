@@ -177,12 +177,12 @@ npm run seed
 
 ## Categories
 
-The `/categories` page lists all platform content categories (Articles, News, Polls), rendered statically from [`src/data/categories.json`](src/data/categories.json).
+The `/categories` page lists all platform content categories (Articles, News, Polls), rendered statically from [`config/articleCategories.json`](config/articleCategories.json). The page is accessible from the **Pages hub** (`/pages`).
 
 **Suggest a new category** — open a pre-filled GitHub Issue:
 [https://github.com/Antoniskp/Appofa/issues/new?labels=category-suggestion](https://github.com/Antoniskp/Appofa/issues/new?labels=category-suggestion)
 
-**Submit a change directly** — fork the repo, edit `src/data/categories.json`, and open a Pull Request. See [doc/CATEGORIES.md](doc/CATEGORIES.md) for the full schema description and contribution guide.
+**Submit a change directly** — fork the repo, edit `config/articleCategories.json`, and open a Pull Request. See [doc/CATEGORIES.md](doc/CATEGORIES.md) for the full schema description and contribution guide.
 
 ## Scripts
 ```bash

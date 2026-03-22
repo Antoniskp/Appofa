@@ -1,5 +1,5 @@
 import StaticPageLayout from '@/components/StaticPageLayout';
-import categoriesData from '@/src/data/categories.json';
+import categoriesData from '@/config/articleCategories.json';
 
 export const metadata = {
   title: 'Κατηγορίες - Απόφαση',
@@ -27,8 +27,34 @@ SUGGEST_URL.searchParams.set('labels', 'category-suggestion');
 SUGGEST_URL.searchParams.set('title', 'Πρόταση κατηγορίας: ');
 SUGGEST_URL.searchParams.set('body', SUGGEST_ISSUE_BODY);
 
+const ARTICLE_TYPE_META = {
+  articles: { icon: '✍️', labelEl: 'Άρθρα' },
+  news:     { icon: '📰', labelEl: 'Ειδήσεις' },
+};
+
+const POLL_META = { icon: '📊', labelEl: 'Ψηφοφορίες' };
+
 export default function CategoriesPage() {
-  const { groups } = categoriesData;
+  const { articleTypes, pollCategories } = categoriesData;
+
+  const sections = [
+    ...Object.entries(articleTypes)
+      .filter(([key]) => key !== 'personal')
+      .map(([key, type]) => ({
+        key,
+        icon: ARTICLE_TYPE_META[key]?.icon ?? '📁',
+        label: ARTICLE_TYPE_META[key]?.labelEl ?? type.labelEl,
+        description: type.description,
+        categories: type.categories,
+      })),
+    {
+      key: 'polls',
+      icon: POLL_META.icon,
+      label: POLL_META.labelEl,
+      description: null,
+      categories: pollCategories,
+    },
+  ];
 
   return (
     <StaticPageLayout title="Κατηγορίες" maxWidth="max-w-5xl" showHelpfulLinks={false}>
@@ -58,28 +84,25 @@ export default function CategoriesPage() {
         </a>
       </section>
 
-      {groups.map((group) => (
-        <section key={group.id}>
+      {sections.map((section) => (
+        <section key={section.key}>
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl" aria-hidden="true">{group.icon}</span>
+            <span className="text-2xl" aria-hidden="true">{section.icon}</span>
             <div>
-              <h2 className="text-2xl font-semibold">{group.label}</h2>
-              {group.description && (
-                <p className="text-sm text-gray-500 mt-0.5">{group.description}</p>
+              <h2 className="text-2xl font-semibold">{section.label}</h2>
+              {section.description && (
+                <p className="text-sm text-gray-500 mt-0.5">{section.description}</p>
               )}
             </div>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {group.categories.map((cat) => (
-              <div
-                key={cat.id}
-                className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-800"
+          <div className="flex flex-wrap gap-2">
+            {section.categories.map((cat) => (
+              <span
+                key={cat}
+                className="bg-white border border-gray-200 rounded-full px-4 py-1.5 text-sm text-gray-800"
               >
-                {cat.label}
-                {cat.description && (
-                  <p className="text-xs text-gray-500 mt-1">{cat.description}</p>
-                )}
-              </div>
+                {cat}
+              </span>
             ))}
           </div>
         </section>
@@ -88,8 +111,11 @@ export default function CategoriesPage() {
       <section className="border-t border-gray-200 pt-8">
         <h2 className="text-xl font-semibold mb-3">Πώς να υποβάλετε αλλαγές</h2>
         <p className="text-gray-700 mb-4">
-          Οι κατηγορίες αποθηκεύονται σε ένα αρχείο JSON στο αποθετήριο.
-          Μπορείτε να προτείνετε αλλαγές με δύο τρόπους:
+          Οι κατηγορίες αποθηκεύονται στο αρχείο{' '}
+          <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">
+            config/articleCategories.json
+          </code>{' '}
+          στο αποθετήριο. Μπορείτε να προτείνετε αλλαγές με δύο τρόπους:
         </p>
         <ol className="list-decimal list-inside space-y-3 text-gray-700">
           <li>
@@ -116,7 +142,7 @@ export default function CategoriesPage() {
             </a>
             , επεξεργαστείτε το αρχείο{' '}
             <code className="bg-gray-100 px-1.5 py-0.5 rounded text-sm font-mono">
-              src/data/categories.json
+              config/articleCategories.json
             </code>{' '}
             και υποβάλτε Pull Request.
           </li>
