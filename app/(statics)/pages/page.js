@@ -8,6 +8,17 @@ export const metadata = {
 
 const categories = [
   {
+    title: 'Κατηγορίες',
+    icon: '🗂️',
+    pages: [
+      {
+        href: '/categories',
+        title: 'Κατηγορίες',
+        description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών. Προτείνετε νέες κατηγορίες μέσω GitHub.',
+      },
+    ],
+  },
+  {
     title: 'Πληροφορίες',
     icon: '📖',
     pages: [
