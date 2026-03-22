@@ -544,6 +544,52 @@ describe('Poll API Tests', () => {
       expect(response.status).toBe(403);
       expect(response.body.success).toBe(false);
     });
+
+    test('should include userVote in response when hideCreator is true', async () => {
+      // Create a poll with hideCreator enabled (by admin, viewed by regular user)
+      const csrfToken = 'test-csrf-token-hide-creator';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Anonymous Poll',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          hideCreator: true,
+          options: [
+            { text: 'Option A' },
+            { text: 'Option B' }
+          ]
+        });
+
+      expect(createResponse.status).toBe(201);
+      const hiddenPollId = createResponse.body.data.id;
+      const hiddenOptionId = createResponse.body.data.options[0].id;
+
+      // Vote as the regular user
+      const csrfTokenVote = 'test-csrf-token-hide-creator-vote';
+      const headersVote = csrfHeaderFor(csrfTokenVote, regularUserId);
+
+      await request(app)
+        .post(`/api/polls/${hiddenPollId}/vote`)
+        .set('Cookie', [`auth_token=${userToken}`, ...headersVote.Cookie])
+        .set('x-csrf-token', csrfTokenVote)
+        .send({ optionId: hiddenOptionId });
+
+      // Fetch the poll as the regular user; userVote must be present even though creator is hidden
+      const response = await request(app)
+        .get(`/api/polls/${hiddenPollId}`)
+        .set('Cookie', `auth_token=${userToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data.creator).toBeNull();
+      expect(response.body.data).toHaveProperty('userVote');
+      expect(response.body.data.userVote).toHaveProperty('optionId', hiddenOptionId);
+    });
   });
 
   describe('POST /api/polls/:id/vote - Vote on Poll', () => {

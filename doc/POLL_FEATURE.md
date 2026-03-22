@@ -524,8 +524,8 @@ All poll endpoints are available at `/api/polls`
 **CSRF:** Required
 
 **Behavior:**
-- If poll has votes: Soft delete (status set to "archived")
-- If poll has no votes: Hard delete (permanently removed)
+- Always performs a hard delete (permanently removes the poll and all related data)
+- Related data removed: PollOptions, PollVotes (via DB cascade), Comments, and LocationLinks (explicit deletion in transaction)
 
 **Response:**
 ```json

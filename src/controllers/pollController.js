@@ -671,7 +671,7 @@ const pollController = {
           where: { pollId: id, userId: req.user.id }
         });
         if (userVote) {
-          pollData.userVote = {
+          responsePoll.userVote = {
             optionId: userVote.optionId,
             createdAt: userVote.createdAt
           };
