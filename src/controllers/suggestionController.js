@@ -44,7 +44,7 @@ const suggestionController = {
    */
   getSuggestions: async (req, res) => {
     try {
-      const { type, status, locationId, sort = 'newest', page = 1, limit = 12 } = req.query;
+      const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12 } = req.query;
 
       const where = {};
       if (type && SUGGESTION_TYPES.includes(type)) where.type = type;
@@ -52,6 +52,10 @@ const suggestionController = {
       if (locationId) {
         const parsedLocationId = parseInt(locationId, 10);
         if (!isNaN(parsedLocationId)) where.locationId = parsedLocationId;
+      }
+      if (authorId) {
+        const parsedAuthorId = parseInt(authorId, 10);
+        if (!isNaN(parsedAuthorId)) where.authorId = parsedAuthorId;
       }
 
       const parsedPage = Math.max(1, parseInt(page, 10) || 1);
