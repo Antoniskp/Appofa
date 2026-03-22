@@ -6,17 +6,26 @@ export const metadata = {
   description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών της πλατφόρμας Απόφαση.',
 };
 
-const SUGGEST_URL =
-  'https://github.com/Antoniskp/Appofa/issues/new?' +
-  'labels=category-suggestion&' +
-  'title=' + encodeURIComponent('Πρόταση κατηγορίας: ') + '&' +
-  'body=' + encodeURIComponent(
-    '## Πρόταση νέας κατηγορίας\n\n' +
-    '**Όνομα κατηγορίας:**\n<!-- Γράψτε το όνομα της κατηγορίας που προτείνετε -->\n\n' +
-    '**Γονική κατηγορία (προαιρετικό):**\n<!-- π.χ. Άρθρα, Ειδήσεις ή Ψηφοφορίες -->\n\n' +
-    '**Περιγραφή / Αιτιολόγηση:**\n<!-- Εξηγήστε γιατί η κατηγορία είναι χρήσιμη -->\n\n' +
-    '**Σύνδεσμοι / Πηγές (προαιρετικό):**\n<!-- Προσθέστε τυχόν σχετικούς συνδέσμους -->\n'
-  );
+const SUGGEST_ISSUE_BODY = [
+  '## Πρόταση νέας κατηγορίας',
+  '',
+  '**Όνομα κατηγορίας:**',
+  '<!-- Γράψτε το όνομα της κατηγορίας που προτείνετε -->',
+  '',
+  '**Γονική κατηγορία (προαιρετικό):**',
+  '<!-- π.χ. Άρθρα, Ειδήσεις ή Ψηφοφορίες -->',
+  '',
+  '**Περιγραφή / Αιτιολόγηση:**',
+  '<!-- Εξηγήστε γιατί η κατηγορία είναι χρήσιμη -->',
+  '',
+  '**Σύνδεσμοι / Πηγές (προαιρετικό):**',
+  '<!-- Προσθέστε τυχόν σχετικούς συνδέσμους -->',
+].join('\n');
+
+const SUGGEST_URL = new URL('https://github.com/Antoniskp/Appofa/issues/new');
+SUGGEST_URL.searchParams.set('labels', 'category-suggestion');
+SUGGEST_URL.searchParams.set('title', 'Πρόταση κατηγορίας: ');
+SUGGEST_URL.searchParams.set('body', SUGGEST_ISSUE_BODY);
 
 export default function CategoriesPage() {
   const { groups } = categoriesData;
@@ -37,7 +46,7 @@ export default function CategoriesPage() {
           </p>
         </div>
         <a
-          href={SUGGEST_URL}
+          href={SUGGEST_URL.toString()}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors whitespace-nowrap"
@@ -64,7 +73,7 @@ export default function CategoriesPage() {
             {group.categories.map((cat) => (
               <div
                 key={cat.id}
-                className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-800 hover:border-blue-300 hover:shadow-sm transition-all"
+                className="bg-white border border-gray-200 rounded-lg px-4 py-3 text-sm text-gray-800"
               >
                 {cat.label}
                 {cat.description && (
@@ -86,7 +95,7 @@ export default function CategoriesPage() {
           <li>
             <strong>Μέσω GitHub Issue:</strong>{' '}
             <a
-              href={SUGGEST_URL}
+              href={SUGGEST_URL.toString()}
               target="_blank"
               rel="noopener noreferrer"
               className="text-blue-600 hover:text-blue-800 underline"
