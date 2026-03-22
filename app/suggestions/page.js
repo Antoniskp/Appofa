@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon, MapPinIcon, LightBulbIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -105,6 +106,8 @@ function SuggestionCard({ suggestion }) {
 
 export default function SuggestionsPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const mine = searchParams.get('mine') === 'true';
   const {
     filters,
     page,
@@ -119,12 +122,13 @@ export default function SuggestionsPage() {
   const { data: suggestions, loading, error } = useAsyncData(
     async () => {
       const params = { page, limit: 12, ...filters };
+      if (mine && user?.id) params.authorId = user.id;
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const response = await suggestionAPI.getAll(params);
       if (response.success) return response;
       return { data: [], pagination: { totalPages: 1 } };
     },
-    [page, filters],
+    [page, filters, mine, user?.id],
     {
       initialData: [],
       transform: (response) => {
@@ -140,9 +144,11 @@ export default function SuggestionsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Προτάσεις & Ιδέες</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{mine ? 'Οι Προτάσεις μου' : 'Προτάσεις & Ιδέες'}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Μοιραστείτε ιδέες και προβλήματα για να βελτιωθεί η κοινότητά σας.
+              {mine
+                ? 'Οι προτάσεις και ιδέες που έχετε υποβάλει.'
+                : 'Μοιραστείτε ιδέες και προβλήματα για να βελτιωθεί η κοινότητά σας.'}
             </p>
           </div>
           {user && (

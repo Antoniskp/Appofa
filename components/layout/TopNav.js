@@ -107,7 +107,7 @@ export default function TopNav() {
     {
       id: 'suggest',
       label: 'Οι προτάσεις μου',
-      href: '/suggestions',
+      href: '/suggestions?mine=true',
       icon: <LightBulbIcon className="h-4 w-4" />,
       className: isActive('/suggestions')
     },
@@ -185,7 +185,7 @@ export default function TopNav() {
     {
       id: 'suggest',
       label: 'Οι προτάσεις μου',
-      href: '/suggestions',
+      href: '/suggestions?mine=true',
       icon: <LightBulbIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/suggestions')}`
     },
@@ -250,6 +250,12 @@ export default function TopNav() {
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/polls')}`}
               >
                 Ψηφοφορίες
+              </Link>
+              <Link
+                href="/suggestions"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/suggestions')}`}
+              >
+                Προτάσεις
               </Link>
               <Link
                 href="/locations"
@@ -346,6 +352,12 @@ export default function TopNav() {
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/polls')}`}
           >
             Ψηφοφορίες
+          </Link>
+          <Link
+            href="/suggestions"
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/suggestions')}`}
+          >
+            Προτάσεις
           </Link>
           <Link
             href="/locations"
