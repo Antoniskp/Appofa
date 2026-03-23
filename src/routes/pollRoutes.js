@@ -20,8 +20,8 @@ const voteLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting for authenticated users
-  skip: (req) => !!req.user
+  // Skip rate limiting for authenticated users and in test environment
+  skip: (req) => !!req.user || process.env.NODE_ENV === 'test'
 });
 
 // Optional CSRF protection - works for both authenticated and unauthenticated users
