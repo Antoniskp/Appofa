@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Οικονομία - Απόφαση',
   description: 'Βασικές έννοιες, τάσεις και ανάλυση της ελληνικής και παγκόσμιας οικονομίας.',
+  openGraph: {
+    title: 'Οικονομία - Απόφαση',
+    description: 'Βασικές έννοιες, τάσεις και ανάλυση της ελληνικής και παγκόσμιας οικονομίας.',
+    url: `${SITE_URL}/economy`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Οικονομία - Απόφαση',
+    description: 'Βασικές έννοιες, τάσεις και ανάλυση της ελληνικής και παγκόσμιας οικονομίας.',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/economy`,
+  },
 };
 
 export default function EconomyPage() {

@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Πολιτική Απορρήτου - Απόφαση',
   description: 'Πώς συλλέγουμε, χρησιμοποιούμε και προστατεύουμε τα προσωπικά σας δεδομένα',
+  openGraph: {
+    title: 'Πολιτική Απορρήτου - Απόφαση',
+    description: 'Πώς συλλέγουμε, χρησιμοποιούμε και προστατεύουμε τα προσωπικά σας δεδομένα',
+    url: `${SITE_URL}/privacy`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Πολιτική Απορρήτου - Απόφαση',
+    description: 'Πώς συλλέγουμε, χρησιμοποιούμε και προστατεύουμε τα προσωπικά σας δεδομένα',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/privacy`,
+  },
 };
 
 export default function PrivacyPage() {

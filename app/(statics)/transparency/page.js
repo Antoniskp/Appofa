@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Διαφάνεια & Μεθοδολογία - Απόφαση',
   description: 'Πώς λειτουργούμε, πώς συλλέγουμε δεδομένα και πώς διασφαλίζουμε τη διαφάνεια',
+  openGraph: {
+    title: 'Διαφάνεια & Μεθοδολογία - Απόφαση',
+    description: 'Πώς λειτουργούμε, πώς συλλέγουμε δεδομένα και πώς διασφαλίζουμε τη διαφάνεια',
+    url: `${SITE_URL}/transparency`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Διαφάνεια & Μεθοδολογία - Απόφαση',
+    description: 'Πώς λειτουργούμε, πώς συλλέγουμε δεδομένα και πώς διασφαλίζουμε τη διαφάνεια',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/transparency`,
+  },
 };
 
 export default function TransparencyPage() {

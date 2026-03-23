@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Κανόνες - Απόφαση',
   description: 'Κατευθυντήριες γραμμές και κανόνες κοινότητας',
+  openGraph: {
+    title: 'Κανόνες - Απόφαση',
+    description: 'Κατευθυντήριες γραμμές και κανόνες κοινότητας',
+    url: `${SITE_URL}/rules`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Κανόνες - Απόφαση',
+    description: 'Κατευθυντήριες γραμμές και κανόνες κοινότητας',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/rules`,
+  },
 };
 
 export default function RulesPage() {

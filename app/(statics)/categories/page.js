@@ -2,9 +2,25 @@ import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import categoriesData from '@/config/articleCategories.json';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Κατηγορίες - Απόφαση',
   description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών της πλατφόρμας Απόφαση.',
+  openGraph: {
+    title: 'Κατηγορίες - Απόφαση',
+    description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών της πλατφόρμας Απόφαση.',
+    url: `${SITE_URL}/categories`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Κατηγορίες - Απόφαση',
+    description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών της πλατφόρμας Απόφαση.',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/categories`,
+  },
 };
 
 const JSON_FILE_URL =

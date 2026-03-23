@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Σύγκριση Τιμών - Απόφαση',
   description: 'Πληροφορίες και αναλύσεις για τις τιμές καταναλωτικών αγαθών στην Ελλάδα.',
+  openGraph: {
+    title: 'Σύγκριση Τιμών - Απόφαση',
+    description: 'Πληροφορίες και αναλύσεις για τις τιμές καταναλωτικών αγαθών στην Ελλάδα.',
+    url: `${SITE_URL}/price-comparison`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Σύγκριση Τιμών - Απόφαση',
+    description: 'Πληροφορίες και αναλύσεις για τις τιμές καταναλωτικών αγαθών στην Ελλάδα.',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/price-comparison`,
+  },
 };
 
 export default function PriceComparisonPage() {

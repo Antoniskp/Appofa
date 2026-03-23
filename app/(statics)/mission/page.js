@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Αποστολή - Απόφαση',
   description: 'Η αποστολή και οι αρχές του Apofasi',
+  openGraph: {
+    title: 'Αποστολή - Απόφαση',
+    description: 'Η αποστολή και οι αρχές του Apofasi',
+    url: `${SITE_URL}/mission`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Αποστολή - Απόφαση',
+    description: 'Η αποστολή και οι αρχές του Apofasi',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/mission`,
+  },
 };
 
 export default function MissionPage() {

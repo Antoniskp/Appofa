@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Συνεργασία με νόημα - Απόφαση',
   description: 'Πώς μπορείτε να συνεισφέρετε στο Apofasi',
+  openGraph: {
+    title: 'Συνεργασία με νόημα - Απόφαση',
+    description: 'Πώς μπορείτε να συνεισφέρετε στο Apofasi',
+    url: `${SITE_URL}/contribute`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Συνεργασία με νόημα - Απόφαση',
+    description: 'Πώς μπορείτε να συνεισφέρετε στο Apofasi',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/contribute`,
+  },
 };
 
 export default function ContributePage() {

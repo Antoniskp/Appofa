@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Οδηγίες Χρήσης - Απόφαση',
   description: 'Ολοκληρωμένος οδηγός χρήσης της πλατφόρμας Απόφαση: Δημιουργία άρθρων, ψηφοφορίες, ρόλοι χρηστών και περισσότερα',
+  openGraph: {
+    title: 'Οδηγίες Χρήσης - Απόφαση',
+    description: 'Ολοκληρωμένος οδηγός χρήσης της πλατφόρμας Απόφαση: Δημιουργία άρθρων, ψηφοφορίες, ρόλοι χρηστών και περισσότερα',
+    url: `${SITE_URL}/instructions`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Οδηγίες Χρήσης - Απόφαση',
+    description: 'Ολοκληρωμένος οδηγός χρήσης της πλατφόρμας Απόφαση: Δημιουργία άρθρων, ψηφοφορίες, ρόλοι χρηστών και περισσότερα',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/instructions`,
+  },
 };
 
 export default function InstructionsPage() {
