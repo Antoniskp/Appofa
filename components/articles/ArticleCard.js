@@ -4,6 +4,7 @@ import { ImageCard, ImageTopCard } from '@/components/Card';
 import Badge, { TypeBadge } from '@/components/Badge';
 import { TruncatedTextTooltip } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
+import { FilmIcon } from '@heroicons/react/24/outline';
 
 /**
  * Helper function to strip markdown syntax from text
@@ -78,20 +79,18 @@ export default function ArticleCard({ article, variant = 'grid' }) {
     (article.sourceProvider === 'youtube' || article.sourceProvider === 'tiktok') &&
     !!(article.embedUrl || article.embedHtml || article.sourceUrl);
 
-  // Video card layout – uses a static thumbnail + play icon overlay so the
-  // card stays the same height as regular grid cards.
-  // Clicking navigates to the in-app detail page where the full embed renders.
+  // Video card layout – thumbnail with no fake play button; a coloured left
+  // border accent and "Watch on …" label make it clear this is a video article.
+  // Clicking navigates to the detail page where the full embed renders with autoplay.
   if (isVideoArticle) {
     const thumbnailUrl =
       article.sourceMeta?.thumbnailUrl ||
       article.bannerImageUrl ||
       defaultBannerImageUrl;
-    const providerLabel =
-      article.sourceProvider === 'youtube'
-        ? 'YouTube'
-        : article.sourceProvider === 'tiktok'
-        ? 'TikTok'
-        : null;
+    const isYouTube = article.sourceProvider === 'youtube';
+    const providerLabel = isYouTube ? 'YouTube' : article.sourceProvider === 'tiktok' ? 'TikTok' : null;
+    // Red left accent for YouTube, near-black for TikTok
+    const accentClass = isYouTube ? 'border-l-4 border-red-600' : 'border-l-4 border-gray-900';
 
     return (
       <ImageTopCard
@@ -101,19 +100,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         imageClassName="h-32"
         href={articleHref}
         hoverable
-        className="overflow-hidden"
-        imageOverlay={
-          <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center bg-black/30">
-            <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center">
-              <span className="text-white text-base ml-0.5">▶</span>
-            </div>
-            {providerLabel && (
-              <span className="absolute bottom-1.5 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white uppercase tracking-wide">
-                {providerLabel}
-              </span>
-            )}
-          </div>
-        }
+        className={`overflow-hidden ${accentClass}`}
       >
         <div className="flex flex-wrap gap-2 mb-2">
           {article.type && <TypeBadge type={article.type} />}
@@ -122,11 +109,22 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             <Badge variant="purple">{article.tags.join(', ')}</Badge>
           )}
         </div>
-        <h3 className="headline hover:text-blue-600">
+        <h3 className="headline hover:text-blue-600 flex items-start gap-1.5">
+          <FilmIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
+          <span className="sr-only">(Video) </span>
           <TruncatedTextTooltip maxLength={60} className="headline">
             {article.title}
           </TruncatedTextTooltip>
         </h3>
+        {providerLabel && (
+          <p className="text-xs text-gray-500 mt-1">
+            {isYouTube ? (
+              <span className="text-red-600 font-medium">▶ Watch on {providerLabel}</span>
+            ) : (
+              <span className="font-medium">▶ Watch on {providerLabel}</span>
+            )}
+          </p>
+        )}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
           <span>By {authorLabel}</span>
           <span>{formattedDate} {formattedTime}</span>

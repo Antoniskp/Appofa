@@ -35,9 +35,10 @@ function extractTikTokVideoId(embedUrl, sourceUrl) {
   return null;
 }
 
-export default function VideoEmbed({ article, compact = false }) {
+export default function VideoEmbed({ article, compact = false, autoplay = false }) {
   const isTikTok = article?.sourceProvider === 'tiktok';
-  const [tiktokPlaying, setTiktokPlaying] = useState(false);
+  // When autoplay is requested, skip the click-to-play thumbnail for TikTok.
+  const [tiktokPlaying, setTiktokPlaying] = useState(autoplay);
 
   // Load TikTok's embed.js only after the user clicks play so that the
   // blockquote is already in the DOM when the script processes it.
@@ -86,11 +87,15 @@ export default function VideoEmbed({ article, compact = false }) {
       );
     }
 
+    const iframeSrc = autoplay
+      ? `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}autoplay=1`
+      : embedUrl;
+
     return (
       <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
         <div className="aspect-video bg-black">
           <iframe
-            src={embedUrl}
+            src={iframeSrc}
             title={title}
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
