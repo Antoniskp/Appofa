@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Σελίδες - Απόφαση',
   description: 'Όλες οι πληροφορίες, οδηγίες και θεματικές σελίδες της πλατφόρμας Απόφαση σε κατηγορίες.',
+  openGraph: {
+    title: 'Σελίδες - Απόφαση',
+    description: 'Όλες οι πληροφορίες, οδηγίες και θεματικές σελίδες της πλατφόρμας Απόφαση σε κατηγορίες.',
+    url: `${SITE_URL}/pages`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Σελίδες - Απόφαση',
+    description: 'Όλες οι πληροφορίες, οδηγίες και θεματικές σελίδες της πλατφόρμας Απόφαση σε κατηγορίες.',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/pages`,
+  },
 };
 
 const categories = [
@@ -144,10 +160,11 @@ export default function PagesHubPage() {
               <Link
                 key={page.href}
                 href={page.href}
-                className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-md transition-all group"
+                className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none transition-all group"
               >
-                <h3 className="font-semibold text-blue-900 group-hover:text-blue-600 mb-1 transition-colors">
+                <h3 className="font-semibold text-blue-900 group-hover:text-blue-600 mb-1 transition-colors flex items-center justify-between">
                   {page.title}
+                  <span aria-hidden="true" className="text-gray-400 group-hover:text-blue-400 transition-colors">→</span>
                 </h3>
                 <p className="text-sm text-gray-600 leading-relaxed">{page.description}</p>
               </Link>

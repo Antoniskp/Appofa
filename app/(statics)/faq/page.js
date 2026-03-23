@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Συχνές Ερωτήσεις - Απόφαση',
   description: 'Απαντήσεις σε συχνές ερωτήσεις για την πλατφόρμα Απόφαση',
+  openGraph: {
+    title: 'Συχνές Ερωτήσεις - Απόφαση',
+    description: 'Απαντήσεις σε συχνές ερωτήσεις για την πλατφόρμα Απόφαση',
+    url: `${SITE_URL}/faq`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Συχνές Ερωτήσεις - Απόφαση',
+    description: 'Απαντήσεις σε συχνές ερωτήσεις για την πλατφόρμα Απόφαση',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/faq`,
+  },
 };
 
 export default function FAQPage() {

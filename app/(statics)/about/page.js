@@ -1,9 +1,25 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
+const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+
 export const metadata = {
   title: 'Σχετικά με εμάς - Απόφαση',
   description: 'Η ιστορία, το όραμα και η ομάδα πίσω από την πλατφόρμα Απόφαση',
+  openGraph: {
+    title: 'Σχετικά με εμάς - Απόφαση',
+    description: 'Η ιστορία, το όραμα και η ομάδα πίσω από την πλατφόρμα Απόφαση',
+    url: `${SITE_URL}/about`,
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Σχετικά με εμάς - Απόφαση',
+    description: 'Η ιστορία, το όραμα και η ομάδα πίσω από την πλατφόρμα Απόφαση',
+  },
+  alternates: {
+    canonical: `${SITE_URL}/about`,
+  },
 };
 
 export default function AboutPage() {
