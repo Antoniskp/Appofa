@@ -1,0 +1,679 @@
+const { Op } = require('sequelize');
+const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookmark, Follow, sequelize } = require('../models');
+const {
+  normalizeRequiredText,
+  normalizeOptionalText,
+  normalizeInteger,
+  normalizePassword
+} = require('../utils/validators');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
+const dbConfig = require('../config/database');
+
+const USERNAME_MIN_LENGTH = 3;
+const USERNAME_MAX_LENGTH = 50;
+const NAME_MAX_LENGTH = 100;
+const MOBILE_TEL_MAX_LENGTH = 30;
+const BIO_MAX_LENGTH = 280;
+const PASSWORD_MIN_LENGTH = 6;
+const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
+const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
+
+class ServiceError extends Error {
+  constructor(status, message) {
+    super(message);
+    this.status = status;
+    this.name = 'ServiceError';
+  }
+}
+
+async function buildUserStats() {
+  const totalUsers = await User.count();
+  const roles = ['admin', 'moderator', 'editor', 'viewer'];
+  const counts = await User.findAll({
+    attributes: [
+      'role',
+      [sequelize.fn('COUNT', sequelize.col('role')), 'count']
+    ],
+    group: ['role']
+  });
+  const byRole = roles.reduce((acc, role) => {
+    acc[role] = 0;
+    return acc;
+  }, {});
+  counts.forEach((item) => {
+    const role = item.get('role');
+    if (byRole[role] !== undefined) {
+      byRole[role] = parseInt(item.get('count'), 10);
+    }
+  });
+
+  return { total: totalUsers, byRole };
+}
+
+function buildUserStatsFromList(users = []) {
+  const byRole = { admin: 0, moderator: 0, editor: 0, viewer: 0 };
+  users.forEach((user) => {
+    if (byRole[user.role] !== undefined) {
+      byRole[user.role] += 1;
+    }
+  });
+  return { total: users.length, byRole };
+}
+
+async function getUserStatsForModeratorScope(moderatorUserId) {
+  const actor = await User.findByPk(moderatorUserId, {
+    attributes: ['id', 'role', 'homeLocationId']
+  });
+
+  if (!actor || actor.role !== 'moderator' || !actor.homeLocationId) {
+    return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
+  }
+
+  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+  if (manageableLocationIds.length === 0) {
+    return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
+  }
+
+  const users = await User.findAll({
+    where: { homeLocationId: { [Op.in]: manageableLocationIds } },
+    attributes: ['id', 'role']
+  });
+
+  return buildUserStatsFromList(users);
+}
+
+async function getUserProfile(userId) {
+  const user = await User.findByPk(userId, {
+    attributes: { exclude: ['password'] },
+    include: [
+      {
+        model: Location,
+        as: 'homeLocation',
+        attributes: ['id', 'name', 'type', 'slug']
+      }
+    ]
+  });
+
+  if (!user) throw new ServiceError(404, 'User not found.');
+
+  const userJson = user.toJSON();
+  const rawUser = await User.findByPk(userId, { attributes: ['password'] });
+  userJson.hasPassword = !!(rawUser && rawUser.password);
+
+  return userJson;
+}
+
+async function updateUserProfile(userId, data) {
+  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks } = data;
+
+  const user = await User.findByPk(userId);
+  if (!user) throw new ServiceError(404, 'User not found.');
+
+  if (username !== undefined) {
+    const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
+    if (usernameResult.error) throw new ServiceError(400, usernameResult.error);
+
+    if (usernameResult.value !== user.username) {
+      const existingUser = await User.findOne({
+        where: { username: usernameResult.value, id: { [Op.ne]: user.id } }
+      });
+      if (existingUser) throw new ServiceError(400, 'Username is already taken.');
+      user.username = usernameResult.value;
+    }
+  }
+
+  const firstNameResult = normalizeOptionalText(firstName, 'First name', undefined, NAME_MAX_LENGTH);
+  if (firstNameResult.error) throw new ServiceError(400, firstNameResult.error);
+  if (firstNameResult.value !== undefined) user.firstName = firstNameResult.value;
+
+  const lastNameResult = normalizeOptionalText(lastName, 'Last name', undefined, NAME_MAX_LENGTH);
+  if (lastNameResult.error) throw new ServiceError(400, lastNameResult.error);
+  if (lastNameResult.value !== undefined) user.lastName = lastNameResult.value;
+
+  if (avatar !== undefined) {
+    if (avatar === null) {
+      user.avatar = null;
+    } else if (typeof avatar === 'string') {
+      const trimmedAvatar = avatar.trim();
+      if (trimmedAvatar.length === 0) {
+        user.avatar = null;
+      } else {
+        let avatarUrl;
+        try {
+          avatarUrl = new URL(trimmedAvatar);
+        } catch {
+          throw new ServiceError(400, 'Avatar URL is malformed.');
+        }
+        if (!['http:', 'https:'].includes(avatarUrl.protocol)) {
+          throw new ServiceError(400, 'Avatar URL must use HTTP or HTTPS protocol.');
+        }
+        user.avatar = trimmedAvatar;
+      }
+    } else {
+      throw new ServiceError(400, 'Avatar must be a string.');
+    }
+  }
+
+  if (avatarColor !== undefined) {
+    if (avatarColor === null) {
+      user.avatarColor = null;
+    } else if (typeof avatarColor === 'string') {
+      const trimmedColor = avatarColor.trim();
+      if (trimmedColor.length === 0) {
+        user.avatarColor = null;
+      } else if (!VALID_HEX_COLOR_REGEX.test(trimmedColor)) {
+        throw new ServiceError(400, 'Avatar color must be a valid hex color (#RGB or #RRGGBB).');
+      } else {
+        user.avatarColor = trimmedColor;
+      }
+    } else {
+      throw new ServiceError(400, 'Avatar color must be a string.');
+    }
+  }
+
+  if (homeLocationId !== undefined) {
+    if (homeLocationId === null) {
+      if (user.homeLocationId !== null) {
+        await LocationLink.destroy({
+          where: {
+            entity_type: 'user',
+            entity_id: user.id,
+            location_id: user.homeLocationId
+          }
+        });
+      }
+      user.homeLocationId = null;
+    } else {
+      const locationId = parseInt(homeLocationId);
+      if (isNaN(locationId)) throw new ServiceError(400, 'Home location ID must be a number.');
+
+      const location = await Location.findByPk(locationId);
+      if (!location) throw new ServiceError(404, 'Location not found.');
+
+      user.homeLocationId = locationId;
+
+      const [link, created] = await LocationLink.findOrCreate({
+        where: { entity_type: 'user', entity_id: user.id },
+        defaults: { location_id: locationId }
+      });
+
+      if (!created && link.location_id !== locationId) {
+        link.location_id = locationId;
+        await link.save();
+      }
+    }
+  }
+
+  if (searchable !== undefined) {
+    if (typeof searchable !== 'boolean') throw new ServiceError(400, 'Searchable must be a boolean.');
+    user.searchable = searchable;
+  }
+
+  if (mobileTel !== undefined) {
+    if (mobileTel === null || mobileTel === '') {
+      user.mobileTel = null;
+    } else if (typeof mobileTel !== 'string') {
+      throw new ServiceError(400, 'Mobile phone must be a string.');
+    } else {
+      const trimmed = mobileTel.trim();
+      if (trimmed.length > MOBILE_TEL_MAX_LENGTH) {
+        throw new ServiceError(400, `Mobile phone must be at most ${MOBILE_TEL_MAX_LENGTH} characters.`);
+      }
+      user.mobileTel = trimmed || null;
+    }
+  }
+
+  if (bio !== undefined) {
+    if (bio === null || bio === '') {
+      user.bio = null;
+    } else if (typeof bio !== 'string') {
+      throw new ServiceError(400, 'Bio must be a string.');
+    } else {
+      const trimmed = bio.trim();
+      if (trimmed.length > BIO_MAX_LENGTH) {
+        throw new ServiceError(400, `Bio must be at most ${BIO_MAX_LENGTH} characters.`);
+      }
+      user.bio = trimmed || null;
+    }
+  }
+
+  if (socialLinks !== undefined) {
+    if (socialLinks === null) {
+      user.socialLinks = null;
+    } else if (typeof socialLinks !== 'object' || Array.isArray(socialLinks)) {
+      throw new ServiceError(400, 'Social links must be an object.');
+    } else {
+      const sanitized = {};
+      for (const [key, val] of Object.entries(socialLinks)) {
+        if (!ALLOWED_SOCIAL_KEYS.has(key)) {
+          throw new ServiceError(400, `Unknown social link key: ${key}.`);
+        }
+        if (val === null || val === '') continue;
+        if (typeof val !== 'string') {
+          throw new ServiceError(400, `Social link value for "${key}" must be a string.`);
+        }
+        let parsedUrl;
+        try {
+          parsedUrl = new URL(val.trim());
+        } catch {
+          throw new ServiceError(400, `Social link "${key}" is not a valid URL.`);
+        }
+        if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+          throw new ServiceError(400, `Social link "${key}" must use HTTP or HTTPS.`);
+        }
+        sanitized[key] = val.trim();
+      }
+      user.socialLinks = Object.keys(sanitized).length > 0 ? sanitized : null;
+    }
+  }
+
+  await user.save();
+
+  const updatedUser = await User.findByPk(user.id, {
+    attributes: { exclude: ['password'] }
+  });
+
+  return updatedUser;
+}
+
+async function deleteUserAccount(userId, password, mode) {
+  if (!mode || !['purge', 'anonymize'].includes(mode)) {
+    throw new ServiceError(400, 'Invalid mode. Must be "purge" or "anonymize".');
+  }
+
+  const user = await User.findByPk(userId);
+  if (!user) throw new ServiceError(404, 'User not found.');
+
+  if (!user.password) {
+    throw new ServiceError(400, 'Please set a password before deleting your account.');
+  }
+
+  const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
+  if (passwordResult.error) throw new ServiceError(400, passwordResult.error);
+
+  const isValidPassword = await user.comparePassword(passwordResult.value);
+  if (!isValidPassword) throw new ServiceError(400, 'Incorrect password.');
+
+  if (mode === 'purge') {
+    await sequelize.transaction(async (t) => {
+      await Follow.destroy({
+        where: { [Op.or]: [{ followerId: user.id }, { followingId: user.id }] },
+        transaction: t
+      });
+      await Bookmark.destroy({ where: { userId: user.id }, transaction: t });
+      await PollVote.destroy({ where: { userId: user.id }, transaction: t });
+      await Article.destroy({ where: { authorId: user.id }, transaction: t });
+      const userPolls = await Poll.findAll({ where: { creatorId: user.id }, attributes: ['id'], transaction: t });
+      if (userPolls.length > 0) {
+        const pollIds = userPolls.map((p) => p.id);
+        await PollVote.destroy({ where: { pollId: pollIds }, transaction: t });
+        await PollOption.destroy({ where: { pollId: pollIds }, transaction: t });
+        await Poll.destroy({ where: { creatorId: user.id }, transaction: t });
+      }
+      await user.destroy({ transaction: t });
+    });
+  } else {
+    const anonymousId = `deleted-user-${user.id}`;
+    await User.update({
+      username: anonymousId,
+      email: `${anonymousId}@deleted.invalid`,
+      password: null,
+      role: 'viewer',
+      firstName: null,
+      lastName: null,
+      avatar: null,
+      avatarColor: null,
+      homeLocationId: null,
+      searchable: false,
+      githubId: null,
+      githubAccessToken: null,
+      googleId: null,
+      googleAccessToken: null
+    }, { where: { id: user.id }, individualHooks: false });
+  }
+}
+
+async function getUsers(actorId, actorRole) {
+  const baseQuery = {
+    attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt', 'isVerified'],
+    include: [
+      {
+        model: Location,
+        as: 'homeLocation',
+        attributes: ['id', 'name', 'type', 'slug'],
+        required: false
+      }
+    ],
+    order: [['createdAt', 'DESC']]
+  };
+
+  let users;
+  let stats;
+
+  if (actorRole === 'admin') {
+    users = await User.findAll(baseQuery);
+    stats = await buildUserStats();
+  } else {
+    const actor = await User.findByPk(actorId, {
+      attributes: ['id', 'role', 'homeLocationId']
+    });
+
+    if (!actor || actor.role !== 'moderator') {
+      throw new ServiceError(403, 'Insufficient permissions.');
+    }
+
+    if (!actor.homeLocationId) {
+      throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
+    }
+
+    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+
+    users = manageableLocationIds.length > 0
+      ? await User.findAll({
+          ...baseQuery,
+          where: { homeLocationId: { [Op.in]: manageableLocationIds } }
+        })
+      : [];
+
+    stats = buildUserStatsFromList(users);
+  }
+
+  return { users, stats };
+}
+
+async function getUserStats(actorId, actorRole) {
+  if (actorRole === 'admin') {
+    return await buildUserStats();
+  }
+
+  const actor = await User.findByPk(actorId, {
+    attributes: ['id', 'role', 'homeLocationId']
+  });
+
+  if (!actor || actor.role !== 'moderator') {
+    throw new ServiceError(403, 'Insufficient permissions.');
+  }
+
+  if (!actor.homeLocationId) {
+    throw new ServiceError(403, 'Moderator must have an assigned location to view scoped stats.');
+  }
+
+  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+  const users = manageableLocationIds.length > 0
+    ? await User.findAll({
+        where: { homeLocationId: { [Op.in]: manageableLocationIds } },
+        attributes: ['id', 'role']
+      })
+    : [];
+
+  return buildUserStatsFromList(users);
+}
+
+async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
+  const allowedRoles = ['admin', 'moderator', 'editor', 'viewer'];
+  if (!allowedRoles.includes(role)) {
+    throw new ServiceError(400, 'Invalid role.');
+  }
+
+  let updatedUser = null;
+  let roleAlreadySet = false;
+  let validatedModeratorLocationId = null;
+
+  if (role === 'moderator') {
+    const locationValidation = normalizeInteger(locationId, 'Location ID', 1);
+    if (locationValidation.error) {
+      throw new ServiceError(400, 'Location ID is required when assigning moderator role.');
+    }
+
+    const location = await Location.findByPk(locationValidation.value, { attributes: ['id'] });
+    if (!location) throw new ServiceError(404, 'Location not found.');
+
+    validatedModeratorLocationId = locationValidation.value;
+  }
+
+  const actingUser = await User.findByPk(actorId, {
+    attributes: ['id', 'role', 'homeLocationId']
+  });
+
+  if (!actingUser) throw new ServiceError(401, 'Authentication required.');
+
+  let moderatorManageableLocationIds = [];
+  if (actingUser.role === 'moderator') {
+    if (!actingUser.homeLocationId) {
+      throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
+    }
+
+    moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.homeLocationId, false);
+
+    if (moderatorManageableLocationIds.length === 0) {
+      throw new ServiceError(403, 'No child locations available for moderator management.');
+    }
+
+    if (role === 'admin') {
+      throw new ServiceError(403, 'Moderators cannot assign admin role.');
+    }
+  }
+
+  await sequelize.transaction(async (transaction) => {
+    const user = await User.findByPk(targetId, {
+      transaction,
+      lock: transaction.LOCK.UPDATE
+    });
+    if (!user) {
+      const err = new Error('User not found.');
+      err.status = 404;
+      throw err;
+    }
+
+    if (actingUser.role === 'moderator') {
+      const targetManagedLocationId = role === 'moderator' ? validatedModeratorLocationId : user.homeLocationId;
+
+      if (!targetManagedLocationId || !moderatorManageableLocationIds.includes(targetManagedLocationId)) {
+        const err = new Error('Moderators can only manage moderator assignments in child locations.');
+        err.status = 403;
+        throw err;
+      }
+
+      const roleTransitionAllowed = role === 'moderator' || user.role === 'moderator';
+      if (!roleTransitionAllowed) {
+        const err = new Error('Moderators can only assign or revoke moderator roles in child locations.');
+        err.status = 403;
+        throw err;
+      }
+    }
+
+    const isSameRole = user.role === role;
+    const isSameModeratorLocation = role !== 'moderator' || user.homeLocationId === validatedModeratorLocationId;
+
+    if (isSameRole && isSameModeratorLocation) {
+      roleAlreadySet = true;
+      updatedUser = user;
+      return;
+    }
+
+    if (user.role === 'admin' && role !== 'admin') {
+      const adminCount = await User.count({
+        where: { role: 'admin' },
+        transaction,
+        lock: transaction.LOCK.UPDATE
+      });
+      if (adminCount <= 1) {
+        const err = new Error('At least one admin must remain.');
+        err.status = 400;
+        throw err;
+      }
+    }
+
+    user.role = role;
+    if (role === 'moderator') {
+      user.homeLocationId = validatedModeratorLocationId;
+    }
+    await user.save({ transaction });
+
+    updatedUser = await User.findByPk(user.id, {
+      transaction,
+      attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt'],
+      include: [
+        {
+          model: Location,
+          as: 'homeLocation',
+          attributes: ['id', 'name', 'type', 'slug'],
+          required: false
+        }
+      ]
+    });
+  });
+
+  const stats = actorRole === 'admin'
+    ? await buildUserStats()
+    : await getUserStatsForModeratorScope(actorId);
+
+  return { user: updatedUser, stats, roleAlreadySet };
+}
+
+async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isVerified) {
+  if (!targetId) throw new ServiceError(400, 'Invalid user id.');
+  if (typeof isVerified !== 'boolean') throw new ServiceError(400, 'isVerified must be a boolean.');
+
+  const actor = await User.findByPk(actorId, { attributes: ['id', 'role', 'homeLocationId'] });
+  if (!actor) throw new ServiceError(403, 'Insufficient permissions.');
+
+  const target = await User.findByPk(targetId);
+  if (!target) throw new ServiceError(404, 'User not found.');
+
+  if (actor.role === 'moderator') {
+    if (!actor.homeLocationId) {
+      throw new ServiceError(403, 'Moderator must have an assigned location.');
+    }
+    if (!target.homeLocationId) {
+      throw new ServiceError(403, 'Target user is not within your manageable scope.');
+    }
+    const manageableIds = await getDescendantLocationIds(actor.homeLocationId, false);
+    if (!manageableIds.includes(target.homeLocationId)) {
+      throw new ServiceError(403, 'Target user is not within your manageable scope.');
+    }
+  }
+
+  if (isVerified) {
+    target.isVerified = true;
+    target.verifiedAt = new Date();
+    target.verifiedByUserId = actor.id;
+    target.verifiedScopeLocationId = actor.role === 'admin' ? null : actor.homeLocationId;
+  } else {
+    target.isVerified = false;
+    target.verifiedAt = null;
+    target.verifiedByUserId = null;
+    target.verifiedScopeLocationId = null;
+  }
+
+  await target.save();
+
+  const updatedUser = await User.findByPk(target.id, { attributes: { exclude: ['password'] } });
+  return updatedUser;
+}
+
+async function getPublicUserProfile(userId) {
+  if (!userId) throw new ServiceError(400, 'Invalid user id.');
+
+  const user = await User.findOne({
+    where: { id: userId, searchable: true },
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
+  });
+
+  if (!user) throw new ServiceError(404, 'User not found or not visible.');
+  return user;
+}
+
+async function getPublicUserProfileByUsername(username) {
+  if (!username || typeof username !== 'string' || username.trim() === '') {
+    throw new ServiceError(400, 'Invalid username.');
+  }
+
+  const user = await User.findOne({
+    where: { username: username.trim(), searchable: true },
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
+  });
+
+  if (!user) throw new ServiceError(404, 'User not found or not visible.');
+  return user;
+}
+
+async function searchUsers(search, page, limit) {
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const offset = (pageNum - 1) * limitNum;
+
+  const whereClause = { searchable: true };
+
+  if (search && typeof search === 'string') {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&');
+    whereClause.username = {
+      [isPostgres ? Op.iLike : Op.like]: `%${sanitizedSearch}%`
+    };
+  }
+
+  const { count, rows: users } = await User.findAndCountAll({
+    where: whereClause,
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt'],
+    order: [['username', 'ASC']],
+    limit: limitNum,
+    offset
+  });
+
+  const totalPages = Math.ceil(count / limitNum);
+
+  return {
+    users,
+    pagination: {
+      currentPage: pageNum,
+      totalPages,
+      totalItems: count,
+      itemsPerPage: limitNum
+    }
+  };
+}
+
+async function getPublicUserStats() {
+  const stats = await User.findAll({
+    attributes: [
+      'searchable',
+      [sequelize.fn('COUNT', sequelize.col('searchable')), 'count']
+    ],
+    group: ['searchable']
+  });
+
+  let totalUsers = 0;
+  let searchableUsers = 0;
+  let nonSearchableUsers = 0;
+
+  stats.forEach((item) => {
+    const count = parseInt(item.get('count'), 10);
+    totalUsers += count;
+    if (item.get('searchable')) {
+      searchableUsers = count;
+    } else {
+      nonSearchableUsers = count;
+    }
+  });
+
+  return { totalUsers, searchableUsers, nonSearchableUsers };
+}
+
+module.exports = {
+  ServiceError,
+  buildUserStats,
+  buildUserStatsFromList,
+  getUserStatsForModeratorScope,
+  getUserProfile,
+  updateUserProfile,
+  deleteUserAccount,
+  getUsers,
+  getUserStats,
+  updateUserRole,
+  verifyUser,
+  getPublicUserProfile,
+  getPublicUserProfileByUsername,
+  searchUsers,
+  getPublicUserStats
+};
