@@ -52,8 +52,9 @@ export default function ArticleForm({
   const [newLocationId, setNewLocationId] = useState(null);
   const [newLocation, setNewLocation] = useState(null);
   const [locationError, setLocationError] = useState('');
-  // Track whether the title field has been manually edited by the user
+  // Track whether the title/summary fields have been manually edited by the user
   const [isTitleDirty, setIsTitleDirty] = useState(false);
+  const [isSummaryDirty, setIsSummaryDirty] = useState(false);
   // Embed preview data from VideoEmbedField
   const [embedPreview, setEmbedPreview] = useState(null);
 
@@ -85,6 +86,10 @@ export default function ArticleForm({
       // If article has sourceUrl, the title came from the video - keep it auto-fillable.
       if (article.title && !article.sourceUrl) {
         setIsTitleDirty(true);
+      }
+      // Same logic for summary: if it was manually set without a video, mark dirty.
+      if (article.summary && !article.sourceUrl) {
+        setIsSummaryDirty(true);
       }
 
       // Load linked locations only when article.id exists (edit mode)
@@ -143,6 +148,11 @@ export default function ArticleForm({
       setIsTitleDirty(true);
     }
 
+    // Track summary dirty state - once user edits the summary manually, don't auto-fill it
+    if (name === 'summary') {
+      setIsSummaryDirty(true);
+    }
+
     // If changing article type, reset category
     if (name === 'type') {
       setFormData((prev) => ({
@@ -174,14 +184,21 @@ export default function ArticleForm({
         embedHtml: ''
       }));
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        sourceUrl: previewData.url || '',
-        sourceProvider: previewData.provider || '',
-        sourceMeta: previewData,
-        embedUrl: previewData.embedUrl || '',
-        embedHtml: previewData.embedHtml || ''
-      }));
+      setFormData((prev) => {
+        const updates = {
+          ...prev,
+          sourceUrl: previewData.url || '',
+          sourceProvider: previewData.provider || '',
+          sourceMeta: previewData,
+          embedUrl: previewData.embedUrl || '',
+          embedHtml: previewData.embedHtml || ''
+        };
+        // Auto-suggest summary from video author name if summary is not dirty
+        if (!isSummaryDirty && !prev.summary && previewData.authorName) {
+          updates.summary = previewData.authorName;
+        }
+        return updates;
+      });
     }
   };
 
@@ -460,16 +477,18 @@ export default function ArticleForm({
         label="Summary"
         value={formData.summary}
         onChange={handleInputChange}
-        placeholder="Brief summary (optional)"
+        placeholder={formData.sourceUrl ? 'Video author / brief description (optional)' : 'Brief summary (optional)'}
       />
  
-      <FormInput
-        name="bannerImageUrl"
-        label="Banner Image URL"
-        value={formData.bannerImageUrl}
-        onChange={handleInputChange}
-        placeholder="https://example.com/banner.jpg or /images/yourimage.png"
-      />
+      {!formData.sourceUrl && (
+        <FormInput
+          name="bannerImageUrl"
+          label="Banner Image URL"
+          value={formData.bannerImageUrl}
+          onChange={handleInputChange}
+          placeholder="https://example.com/banner.jpg or /images/yourimage.png"
+        />
+      )}
 
       <TagInput
         label="Tags"
@@ -483,21 +502,22 @@ export default function ArticleForm({
         name="content"
         type="textarea"
         label="Content"
-        rows={10}
+        rows={formData.sourceUrl ? 3 : 10}
         value={formData.content}
         onChange={handleInputChange}
         onSelect={updateSelectionFromTextarea}
         onKeyUp={updateSelectionFromTextarea}
         onClick={updateSelectionFromTextarea}
         ref={contentInputRef}
-        required
+        required={!formData.sourceUrl}
         maxLength={50000}
         showCharCount
-        placeholder="Write your article content here..."
-        helpText="Use toolbar buttons for headings, bold/italic text, links, images and videos."
+        placeholder={formData.sourceUrl ? 'Add optional commentary on this video...' : 'Write your article content here...'}
+        helpText={formData.sourceUrl ? 'Content is optional for video posts.' : 'Use toolbar buttons for headings, bold/italic text, links, images and videos.'}
       />
 
-      <div className="-mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
+      {!formData.sourceUrl && (
+        <div className="-mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Quick formatting</p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -579,8 +599,9 @@ export default function ArticleForm({
           </button>
         </div>
       </div>
+      )}
 
-      {mediaPreviews.length > 0 && (
+      {!formData.sourceUrl && mediaPreviews.length > 0 && (
         <div className="rounded-md border border-gray-200 bg-white p-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Media preview</p>
           <div className="space-y-3">

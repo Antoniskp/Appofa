@@ -16,9 +16,9 @@ const Article = sequelize.define('Article', {
   },
   content: {
     type: DataTypes.TEXT,
-    allowNull: false,
+    allowNull: true,
     validate: {
-      len: [10, 50000]
+      len: [0, 50000]
     }
   },
   summary: {

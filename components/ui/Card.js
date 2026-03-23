@@ -169,6 +169,7 @@ export function ImageTopCard({
   imageAlt,
   imageFallback,
   imageClassName = 'h-48',
+  imageOverlay,
   children,
   footer,
   href,
@@ -180,7 +181,7 @@ export function ImageTopCard({
   
   const content = (
     <>
-      <div className={`overflow-hidden ${imageClassName}`}>
+      <div className={`relative overflow-hidden ${imageClassName}`}>
         <img 
           src={imageSrc} 
           alt={imageAlt} 
@@ -192,6 +193,7 @@ export function ImageTopCard({
             }
           }}
         />
+        {imageOverlay}
       </div>
       <div className="p-6">
         {children}
