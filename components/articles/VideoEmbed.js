@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
  */
 
 const TIKTOK_EMBED_SCRIPT_SRC = 'https://www.tiktok.com/embed.js';
+const WATCH_ON_TIKTOK = 'Watch on TikTok ↗';
 
 /**
  * Extract TikTok video ID from embedUrl or sourceUrl.
@@ -218,14 +219,13 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
           {!compact && (title || author) && (
             <div className="px-4 py-3 bg-white border-t border-gray-100">
               {title && <p className="text-sm font-medium text-gray-900">{title}</p>}
-              {author && <p className="text-xs text-gray-500 mt-0.5">{author}</p>}
               <a
                 href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-gray-500 hover:text-gray-700 mt-1 inline-block"
+                className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
               >
-                Watch on TikTok ↗
+                {author || WATCH_ON_TIKTOK}
               </a>
             </div>
           )}
@@ -246,14 +246,13 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
         )}
         <div className="flex-1 min-w-0">
           {title && <p className="text-sm font-semibold text-gray-900 line-clamp-2">{title}</p>}
-          {author && <p className="text-xs text-gray-500 mt-1">{author}</p>}
           <a
             href={sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-block mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+            className="inline-block mt-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
-            Watch on TikTok ↗
+            {author || WATCH_ON_TIKTOK}
           </a>
         </div>
       </div>
