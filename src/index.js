@@ -20,6 +20,7 @@ const commentRoutes = require('./routes/commentRoutes');
 const endorsementRoutes = require('./routes/endorsementRoutes');
 const suggestionRoutes = require('./routes/suggestionRoutes');
 const solutionRoutes = require('./routes/solutionRoutes');
+const linkPreviewRoutes = require('./routes/linkPreviewRoutes');
 
 const app = express();
 
@@ -66,6 +67,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/endorsements', endorsementRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/solutions', solutionRoutes);
+app.use('/api/link-preview', linkPreviewRoutes);
 
 // 404 handler
 app.use((req, res) => {

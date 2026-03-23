@@ -18,6 +18,7 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
+import VideoEmbed from '@/components/articles/VideoEmbed';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -288,6 +289,9 @@ export default function ArticleDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Video Embed (YouTube / TikTok) */}
+            <VideoEmbed article={article} />
 
             {/* Article Content */}
             <div className="prose max-w-none mb-8">

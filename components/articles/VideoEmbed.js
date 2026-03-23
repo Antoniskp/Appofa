@@ -1,0 +1,159 @@
+'use client';
+
+/**
+ * VideoEmbed
+ *
+ * Renders an embedded video player for YouTube or TikTok.
+ * - YouTube: renders an <iframe> using the stored embedUrl (youtube-nocookie CDN)
+ * - TikTok:  renders a sanitized iframe (when embedHtml contains one) or a
+ *            fallback link card; never injects arbitrary HTML
+ *
+ * Props:
+ *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
+ *                      embedHtml, sourceMeta fields
+ */
+
+// Allowed iframe src hosts for TikTok embed sanitization
+const ALLOWED_TIKTOK_IFRAME_HOSTS = new Set([
+  'www.tiktok.com',
+  'tiktok.com'
+]);
+
+/**
+ * Sanitize TikTok embedHtml by extracting the first safe <iframe>.
+ * Returns a safe HTML string or null if no safe iframe found.
+ */
+function sanitizeTikTokEmbedHtml(html) {
+  if (typeof html !== 'string') return null;
+
+  const iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["'][^>]*>/i);
+  if (iframeMatch) {
+    try {
+      const srcUrl = new URL(iframeMatch[1]);
+      if (ALLOWED_TIKTOK_IFRAME_HOSTS.has(srcUrl.hostname)) {
+        return `<iframe
+          src="${srcUrl.toString()}"
+          style="width:100%;max-width:605px;min-width:325px;border:none;"
+          allow="autoplay"
+          allowfullscreen
+          sandbox="allow-scripts allow-same-origin allow-popups"
+          loading="lazy"
+          title="TikTok video"
+        ></iframe>`;
+      }
+    } catch {
+      // ignore
+    }
+  }
+  return null;
+}
+
+export default function VideoEmbed({ article }) {
+  if (!article?.sourceUrl || !article?.sourceProvider) return null;
+
+  const { sourceProvider, sourceUrl, embedUrl, embedHtml, sourceMeta } = article;
+  const title = sourceMeta?.title || article.title || 'Video';
+  const author = sourceMeta?.authorName || null;
+  const thumbnail = sourceMeta?.thumbnailUrl || null;
+
+  // ── YouTube ─────────────────────────────────────────────────────────────────
+  if (sourceProvider === 'youtube') {
+    if (!embedUrl) {
+      // Fallback: link out
+      return (
+        <div className="mb-8 rounded-lg border border-gray-200 p-4 bg-gray-50">
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+          >
+            Watch on YouTube ↗
+          </a>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mb-8 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+        <div className="aspect-video bg-black">
+          <iframe
+            src={embedUrl}
+            title={title}
+            className="w-full h-full"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+          />
+        </div>
+        {(title || author) && (
+          <div className="px-4 py-3 bg-white border-t border-gray-100">
+            {title && <p className="text-sm font-medium text-gray-900">{title}</p>}
+            {author && <p className="text-xs text-gray-500 mt-0.5">{author}</p>}
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-red-600 hover:text-red-800 mt-1 inline-block"
+            >
+              Watch on YouTube ↗
+            </a>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── TikTok ──────────────────────────────────────────────────────────────────
+  if (sourceProvider === 'tiktok') {
+    if (embedHtml) {
+      const safeHtml = sanitizeTikTokEmbedHtml(embedHtml);
+      if (safeHtml) {
+        return (
+          <div className="mb-8 flex flex-col items-center">
+            <div
+              // eslint-disable-next-line react/no-danger
+              dangerouslySetInnerHTML={{ __html: safeHtml }}
+            />
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+            >
+              Watch on TikTok ↗
+            </a>
+          </div>
+        );
+      }
+    }
+
+    // Fallback card
+    return (
+      <div className="mb-8 rounded-lg border border-gray-200 p-4 flex items-center gap-4 bg-gray-50">
+        {thumbnail && (
+          <img
+            src={thumbnail}
+            alt="TikTok thumbnail"
+            className="w-24 h-24 object-cover rounded flex-shrink-0"
+            loading="lazy"
+          />
+        )}
+        <div className="flex-1 min-w-0">
+          {title && <p className="text-sm font-semibold text-gray-900 line-clamp-2">{title}</p>}
+          {author && <p className="text-xs text-gray-500 mt-1">{author}</p>}
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Watch on TikTok ↗
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+}

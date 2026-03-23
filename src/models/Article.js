@@ -92,6 +92,26 @@ const Article = sequelize.define('Article', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     allowNull: false
+  },
+  sourceUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  sourceProvider: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  sourceMeta: {
+    type: DataTypes.JSON,
+    allowNull: true
+  },
+  embedUrl: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  embedHtml: {
+    type: DataTypes.TEXT,
+    allowNull: true
   }
 }, {
   timestamps: true

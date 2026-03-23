@@ -66,9 +66,40 @@ const articleController = {
   // Create a new article
   createArticle: async (req, res) => {
     try {
-      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved,
+        sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = req.body;
 
-      const titleResult = normalizeRequiredText(title, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
+      // Validate sourceUrl if provided
+      let resolvedSourceUrl = null;
+      let resolvedSourceProvider = null;
+      let resolvedSourceMeta = null;
+      let resolvedEmbedUrl = null;
+      let resolvedEmbedHtml = null;
+
+      if (sourceUrl !== undefined && sourceUrl !== null && sourceUrl !== '') {
+        const sourceUrlResult = normalizeUrl(sourceUrl, 'Source URL', true);
+        if (sourceUrlResult.error) {
+          return res.status(400).json({ success: false, message: sourceUrlResult.error });
+        }
+        resolvedSourceUrl = sourceUrlResult.value;
+
+        // Validate provider
+        const ALLOWED_PROVIDERS = ['youtube', 'tiktok'];
+        if (sourceProvider && !ALLOWED_PROVIDERS.includes(sourceProvider)) {
+          return res.status(400).json({ success: false, message: 'Invalid source provider.' });
+        }
+        resolvedSourceProvider = sourceProvider || null;
+        resolvedSourceMeta = (sourceMeta && typeof sourceMeta === 'object') ? sourceMeta : null;
+        resolvedEmbedUrl = (embedUrl && typeof embedUrl === 'string') ? embedUrl.trim().slice(0, 2048) : null;
+        // embedHtml is stored as-is (sanitization happens on the frontend when rendering)
+        resolvedEmbedHtml = (embedHtml && typeof embedHtml === 'string') ? embedHtml.slice(0, 65535) : null;
+      }
+
+      // Resolve title: if not provided and sourceUrl has meta title, auto-fill
+      const autoTitle = resolvedSourceMeta?.title || null;
+      const rawTitle = (title === undefined || title === null || String(title).trim() === '') ? autoTitle : title;
+
+      const titleResult = normalizeRequiredText(rawTitle, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
       if (titleResult.error) {
         return res.status(400).json({
           success: false,
@@ -76,7 +107,14 @@ const articleController = {
         });
       }
 
-      const contentResult = normalizeRequiredText(content, 'Content', CONTENT_MIN_LENGTH, CONTENT_MAX_LENGTH);
+      // content is optional when a sourceUrl embed is provided; require otherwise
+      const rawContent = (content === undefined || content === null || String(content).trim() === '')
+        ? (resolvedSourceUrl ? '' : content)
+        : content;
+
+      const contentResult = resolvedSourceUrl
+        ? normalizeOptionalText(rawContent, 'Content', null, CONTENT_MAX_LENGTH)
+        : normalizeRequiredText(rawContent, 'Content', CONTENT_MIN_LENGTH, CONTENT_MAX_LENGTH);
       if (contentResult.error) {
         return res.status(400).json({
           success: false,
@@ -165,7 +203,7 @@ const articleController = {
       // Create article
       const article = await Article.create({
         title: titleResult.value,
-        content: contentResult.value,
+        content: contentResult.value || '',
         summary: summaryResult.value,
         category: categoryResult.value,
         tags: tagsResult.value ?? [],
@@ -177,7 +215,12 @@ const articleController = {
         bannerImageUrl: resolvedBannerImageUrl,
         hideAuthor: hideAuthorResult.value !== undefined ? hideAuthorResult.value : false,
         newsApprovedAt: isPreApproved ? new Date() : null,
-        newsApprovedBy: isPreApproved ? req.user.id : null
+        newsApprovedBy: isPreApproved ? req.user.id : null,
+        sourceUrl: resolvedSourceUrl,
+        sourceProvider: resolvedSourceProvider,
+        sourceMeta: resolvedSourceMeta,
+        embedUrl: resolvedEmbedUrl,
+        embedHtml: resolvedEmbedHtml
       });
 
       // Fetch article with author info
@@ -425,7 +468,8 @@ const articleController = {
   updateArticle: async (req, res) => {
     try {
       const { id } = req.params;
-      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved } = req.body;
+      const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved,
+        sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = req.body;
 
       const article = await Article.findByPk(id);
 
@@ -598,6 +642,37 @@ const articleController = {
         } else if (newsApprovedResult.value === false) {
           article.newsApprovedAt = null;
           article.newsApprovedBy = null;
+        }
+      }
+
+      // Handle embed fields
+      if (sourceUrl !== undefined) {
+        if (sourceUrl === null || sourceUrl === '') {
+          // Clear all embed fields
+          article.sourceUrl = null;
+          article.sourceProvider = null;
+          article.sourceMeta = null;
+          article.embedUrl = null;
+          article.embedHtml = null;
+        } else {
+          const sourceUrlResult = normalizeUrl(sourceUrl, 'Source URL', true);
+          if (sourceUrlResult.error) {
+            return res.status(400).json({ success: false, message: sourceUrlResult.error });
+          }
+          const ALLOWED_PROVIDERS = ['youtube', 'tiktok'];
+          if (sourceProvider && !ALLOWED_PROVIDERS.includes(sourceProvider)) {
+            return res.status(400).json({ success: false, message: 'Invalid source provider.' });
+          }
+          article.sourceUrl = sourceUrlResult.value;
+          article.sourceProvider = sourceProvider || null;
+          article.sourceMeta = (sourceMeta && typeof sourceMeta === 'object') ? sourceMeta : null;
+          article.embedUrl = (embedUrl && typeof embedUrl === 'string') ? embedUrl.trim().slice(0, 2048) : null;
+          article.embedHtml = (embedHtml && typeof embedHtml === 'string') ? embedHtml.slice(0, 65535) : null;
+
+          // Auto-fill title from meta if title not explicitly provided and current title is empty
+          if (title === undefined && article.sourceMeta?.title && !article.title) {
+            article.title = String(article.sourceMeta.title).slice(0, TITLE_MAX_LENGTH);
+          }
         }
       }
 

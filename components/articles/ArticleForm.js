@@ -8,6 +8,7 @@ import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import TagInput from '@/components/TagInput';
+import VideoEmbedField from '@/components/articles/VideoEmbedField';
 import { locationAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
@@ -40,12 +41,21 @@ export default function ArticleForm({
     commentsEnabled: true,
     commentsLocked: false,
     approved: false,
+    sourceUrl: '',
+    sourceProvider: '',
+    sourceMeta: null,
+    embedUrl: '',
+    embedHtml: '',
   });
 
   const [linkedLocations, setLinkedLocations] = useState([]);
   const [newLocationId, setNewLocationId] = useState(null);
   const [newLocation, setNewLocation] = useState(null);
   const [locationError, setLocationError] = useState('');
+  // Track whether the title field has been manually edited by the user
+  const [isTitleDirty, setIsTitleDirty] = useState(false);
+  // Embed preview data from VideoEmbedField
+  const [embedPreview, setEmbedPreview] = useState(null);
 
   // Initialize form data from article prop (edit mode)
   useEffect(() => {
@@ -64,7 +74,18 @@ export default function ArticleForm({
         commentsEnabled: article.commentsEnabled !== false,
         commentsLocked: Boolean(article.commentsLocked),
         approved: Boolean(article.newsApprovedAt),
+        sourceUrl: article.sourceUrl || '',
+        sourceProvider: article.sourceProvider || '',
+        sourceMeta: article.sourceMeta || null,
+        embedUrl: article.embedUrl || '',
+        embedHtml: article.embedHtml || '',
       });
+      // If article has a manually set title (no sourceUrl), mark title as dirty
+      // so VideoEmbedField won't overwrite it if user pastes a new URL later.
+      // If article has sourceUrl, the title came from the video - keep it auto-fillable.
+      if (article.title && !article.sourceUrl) {
+        setIsTitleDirty(true);
+      }
 
       // Load linked locations only when article.id exists (edit mode)
       if (article.id) {
@@ -117,6 +138,11 @@ export default function ArticleForm({
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
+    // Track title dirty state - once user edits the title manually, don't auto-fill it
+    if (name === 'title') {
+      setIsTitleDirty(true);
+    }
+
     // If changing article type, reset category
     if (name === 'type') {
       setFormData((prev) => ({
@@ -129,6 +155,42 @@ export default function ArticleForm({
         ...prev,
         [name]: type === 'checkbox' ? checked : value,
       }));
+    }
+  };
+
+  /**
+   * Called by VideoEmbedField when a preview is fetched.
+   * Stores embed data into formData.
+   */
+  const handleEmbedChange = (previewData) => {
+    setEmbedPreview(previewData);
+    if (!previewData) {
+      setFormData((prev) => ({
+        ...prev,
+        sourceUrl: '',
+        sourceProvider: '',
+        sourceMeta: null,
+        embedUrl: '',
+        embedHtml: ''
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        sourceUrl: previewData.url || '',
+        sourceProvider: previewData.provider || '',
+        sourceMeta: previewData,
+        embedUrl: previewData.embedUrl || '',
+        embedHtml: previewData.embedHtml || ''
+      }));
+    }
+  };
+
+  /**
+   * Called by VideoEmbedField to auto-suggest a title (only when title is not dirty).
+   */
+  const handleTitleSuggest = (suggestedTitle) => {
+    if (!isTitleDirty) {
+      setFormData((prev) => ({ ...prev, title: suggestedTitle }));
     }
   };
 
@@ -372,6 +434,14 @@ export default function ArticleForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <AlertMessage className="mb-6" message={submitError} />
+
+      {/* Video Embed Field — paste a YouTube / TikTok URL to embed it */}
+      <VideoEmbedField
+        value={formData.sourceUrl}
+        onChange={handleEmbedChange}
+        onTitleSuggest={handleTitleSuggest}
+        isTitleDirty={isTitleDirty}
+      />
 
       <FormInput
         name="title"

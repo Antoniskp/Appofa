@@ -16,6 +16,7 @@ const Endorsement = require('./Endorsement');
 const Suggestion = require('./Suggestion');
 const Solution = require('./Solution');
 const SuggestionVote = require('./SuggestionVote');
+const LinkPreviewCache = require('./LinkPreviewCache');
 
 // Define associations
 User.hasMany(Article, {
@@ -231,5 +232,6 @@ module.exports = {
   Endorsement,
   Suggestion,
   Solution,
-  SuggestionVote
+  SuggestionVote,
+  LinkPreviewCache
 };
