@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import ContactForm from '@/components/ContactForm';
@@ -17,7 +18,7 @@ export default function BecomeModeratorPage() {
   };
 
   return (
-    <StaticPageLayout title="Γίνε Moderator" maxWidth="max-w-3xl">
+    <StaticPageLayout title="Γίνε Moderator" maxWidth="max-w-3xl" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       {/* Introduction */}
       <div className="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 rounded-lg p-6 mb-8">
         <h2 className="text-2xl font-bold text-indigo-900 mb-3">Βοήθησε την κοινότητά σου</h2>

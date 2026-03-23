@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
 export const metadata = {
@@ -7,7 +8,7 @@ export const metadata = {
 
 export default function InstructionsPage() {
   return (
-    <StaticPageLayout title="Οδηγίες Χρήσης">
+    <StaticPageLayout title="Οδηγίες Χρήσης" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       {/* Section 1: Introduction */}
       <section>
         <h2 className="text-2xl font-semibold mb-3">Καλώς ήρθατε στην Απόφαση</h2>

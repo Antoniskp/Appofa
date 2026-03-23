@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import categoriesData from '@/config/articleCategories.json';
 
@@ -76,7 +77,7 @@ export default function CategoriesPage() {
   ];
 
   return (
-    <StaticPageLayout title="Κατηγορίες" maxWidth="max-w-5xl" showHelpfulLinks={false}>
+    <StaticPageLayout title="Κατηγορίες" maxWidth="max-w-5xl" showHelpfulLinks={false} breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       {/* intro */}
       <section>
         <p className="text-xl text-gray-700 leading-relaxed">

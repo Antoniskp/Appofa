@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
 export const metadata = {
@@ -7,7 +8,7 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <StaticPageLayout title="Όροι Χρήσης" maxWidth="max-w-4xl">
+    <StaticPageLayout title="Όροι Χρήσης" maxWidth="max-w-4xl" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       <section>
         <p className="text-gray-700 mb-4">
           <strong>Τελευταία ενημέρωση:</strong> Φεβρουάριος 2026
