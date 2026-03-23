@@ -180,6 +180,13 @@ export default function NewsDetailPage() {
   };
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
 
+  // For video articles the embed becomes the hero element at the top of the
+  // card; the static banner image is hidden so the user lands directly on the
+  // playable video.
+  const isVideoArticle =
+    (article.sourceProvider === 'youtube' || article.sourceProvider === 'tiktok') &&
+    !!(article.embedUrl || article.embedHtml || article.sourceUrl);
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -196,12 +203,19 @@ export default function NewsDetailPage() {
         </nav>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <img
-            src={bannerImageUrl}
-            alt={`${article.title} banner`}
-            className="w-full h-64 object-cover"
-            onError={handleBannerError}
-          />
+          {isVideoArticle ? (
+            /* Video articles: show the embed as the hero instead of a static banner */
+            <div className="bg-black">
+              <VideoEmbed article={article} autoplay />
+            </div>
+          ) : (
+            <img
+              src={bannerImageUrl}
+              alt={`${article.title} banner`}
+              className="w-full h-64 object-cover"
+              onError={handleBannerError}
+            />
+          )}
           <div className="p-8">
             {/* Article Header */}
             <div className="mb-8">
@@ -277,8 +291,9 @@ export default function NewsDetailPage() {
               </div>
             )}
 
-            {/* Video Embed (YouTube / TikTok) */}
-            <VideoEmbed article={article} />
+            {/* Video Embed (YouTube / TikTok) – only shown for non-video articles
+                that happen to have embed data; video articles show it as the hero above */}
+            {!isVideoArticle && <VideoEmbed article={article} />}
 
             {/* Article Content */}
             <div className="prose max-w-none mb-8">
