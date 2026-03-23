@@ -411,6 +411,26 @@ const getLinkPreview = async (req, res) => {
     });
 
     if (cached) {
+      // For TikTok entries cached before embedUrl was introduced, derive it from
+      // the normalized URL (which preserves the /video/<id> path for standard URLs).
+      let resolvedEmbedUrl = cached.embedUrl;
+      if (cached.provider === 'tiktok' && !resolvedEmbedUrl) {
+        try {
+          const cacheUrlObj = new URL(cacheKey);
+          const videoId = extractTikTokVideoId(cacheUrlObj);
+          if (videoId) {
+            resolvedEmbedUrl = buildTikTokEmbedUrl(videoId);
+            // Update the cache entry so future hits are correct (fire-and-forget)
+            LinkPreviewCache.update(
+              { embedUrl: resolvedEmbedUrl },
+              { where: { normalizedUrl: cacheKey } }
+            ).catch(() => {});
+          }
+        } catch {
+          // ignore – leave resolvedEmbedUrl as null
+        }
+      }
+
       return res.status(200).json({
         success: true,
         data: {
@@ -421,7 +441,7 @@ const getLinkPreview = async (req, res) => {
           thumbnailUrl: cached.thumbnailUrl,
           providerName: cached.providerName,
           providerUrl: cached.providerUrl,
-          embedUrl: cached.embedUrl,
+          embedUrl: resolvedEmbedUrl,
           embedHtml: cached.embedHtml,
           cached: true
         }
