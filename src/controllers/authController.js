@@ -1,23 +1,10 @@
-const jwt = require('jsonwebtoken');
-const { Op } = require('sequelize');
-const { User, Location, LocationLink, sequelize } = require('../models');
+const authService = require('../services/authService');
+const oauthService = require('../services/oauthService');
+const userService = require('../services/userService');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
-const {
-  normalizeRequiredText,
-  normalizeOptionalText,
-  normalizeEmail,
-  normalizePassword,
-  normalizeInteger
-} = require('../utils/validators');
-const { getDescendantLocationIds } = require('../utils/locationUtils');
 require('dotenv').config();
 
-const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
-const USERNAME_MIN_LENGTH = 3;
-const USERNAME_MAX_LENGTH = 50;
-const PASSWORD_MIN_LENGTH = 6;
-const NAME_MAX_LENGTH = 100;
 const AUTH_COOKIE = 'auth_token';
 
 const authCookieOptions = {
@@ -58,139 +45,11 @@ const clearAuthCookies = (res) => {
   res.clearCookie(CSRF_COOKIE, { path: '/' });
 };
 
-const buildUserStats = async () => {
-  const totalUsers = await User.count();
-  const roles = ['admin', 'moderator', 'editor', 'viewer'];
-  const counts = await User.findAll({
-    attributes: [
-      'role',
-      [sequelize.fn('COUNT', sequelize.col('role')), 'count']
-    ],
-    group: ['role']
-  });
-  const byRole = roles.reduce((acc, role) => {
-    acc[role] = 0;
-    return acc;
-  }, {});
-  counts.forEach((item) => {
-    const role = item.get('role');
-    if (byRole[role] !== undefined) {
-      byRole[role] = parseInt(item.get('count'), 10);
-    }
-  });
-
-  return {
-    total: totalUsers,
-    byRole
-  };
-};
-
-const buildUserStatsFromList = (users = []) => {
-  const byRole = {
-    admin: 0,
-    moderator: 0,
-    editor: 0,
-    viewer: 0
-  };
-
-  users.forEach((user) => {
-    if (byRole[user.role] !== undefined) {
-      byRole[user.role] += 1;
-    }
-  });
-
-  return {
-    total: users.length,
-    byRole
-  };
-};
-
 const authController = {
   // Register a new user
   register: async (req, res) => {
     try {
-      const { username, email, password, firstName, lastName, searchable } = req.body;
-
-      const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
-      if (usernameResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: usernameResult.error
-        });
-      }
-
-      const emailResult = normalizeEmail(email);
-      if (emailResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: emailResult.error
-        });
-      }
-
-      const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
-      if (passwordResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: passwordResult.error
-        });
-      }
-
-      const firstNameResult = normalizeOptionalText(firstName, 'First name', undefined, NAME_MAX_LENGTH);
-      if (firstNameResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: firstNameResult.error
-        });
-      }
-
-      const lastNameResult = normalizeOptionalText(lastName, 'Last name', undefined, NAME_MAX_LENGTH);
-      if (lastNameResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: lastNameResult.error
-        });
-      }
-
-      // Check if user already exists
-      const existingUser = await User.findOne({
-        where: {
-          [Op.or]: [{ email: emailResult.value }, { username: usernameResult.value }]
-        }
-      });
-
-      if (existingUser) {
-        return res.status(400).json({
-          success: false,
-          message: 'User with this email or username already exists.'
-        });
-      }
-
-      // Create new user
-      const user = await User.create({
-        username: usernameResult.value,
-        email: emailResult.value,
-        password: passwordResult.value,
-        role: 'viewer',
-        firstName: firstNameResult.value,
-        lastName: lastNameResult.value,
-        searchable: searchable !== undefined ? Boolean(searchable) : true
-      });
-
-      // Generate JWT token
-      if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET must be configured');
-      }
-      const token = jwt.sign(
-        { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email,
-          role: user.role 
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
+      const { user, token } = await authService.registerUser(req.body);
       setAuthCookies(res, token, user.id);
       res.status(201).json({
         success: true,
@@ -209,11 +68,11 @@ const authController = {
         }
       });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Registration error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error registering user.'
-      });
+      res.status(500).json({ success: false, message: 'Error registering user.' });
     }
   },
 
@@ -221,58 +80,7 @@ const authController = {
   login: async (req, res) => {
     try {
       const { email, password } = req.body;
-
-      const emailResult = normalizeEmail(email);
-      if (emailResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: emailResult.error
-        });
-      }
-
-      const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
-      if (passwordResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: passwordResult.error
-        });
-      }
-
-      // Find user by email
-      const user = await User.findOne({ where: { email: emailResult.value } });
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid email or password.'
-        });
-      }
-
-      // Verify password
-      const isValidPassword = await user.comparePassword(passwordResult.value);
-
-      if (!isValidPassword) {
-        return res.status(401).json({
-          success: false,
-          message: 'Invalid email or password.'
-        });
-      }
-
-      // Generate JWT token
-      if (!process.env.JWT_SECRET) {
-        throw new Error('JWT_SECRET must be configured');
-      }
-      const token = jwt.sign(
-        { 
-          id: user.id, 
-          username: user.username, 
-          email: user.email,
-          role: user.role 
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
+      const { user, token } = await authService.loginUser(email, password);
       setAuthCookies(res, token, user.id);
       res.status(200).json({
         success: true,
@@ -291,321 +99,44 @@ const authController = {
         }
       });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Login error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error logging in.'
-      });
+      res.status(500).json({ success: false, message: 'Error logging in.' });
     }
   },
 
   // Get current user profile
   getProfile: async (req, res) => {
     try {
-      const { Location } = require('../models');
-      const user = await User.findByPk(req.user.id, {
-        attributes: { exclude: ['password'] },
-        include: [
-          {
-            model: Location,
-            as: 'homeLocation',
-            attributes: ['id', 'name', 'type', 'slug']
-          }
-        ]
-      });
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
-
-      ensureUserCsrfCookie(req, res, user.id);
-
-      const userJson = user.toJSON();
-      const rawUser = await User.findByPk(req.user.id, { attributes: ['password'] });
-      userJson.hasPassword = !!(rawUser && rawUser.password);
-
-      res.status(200).json({
-        success: true,
-        data: { user: userJson }
-      });
+      const userJson = await userService.getUserProfile(req.user.id);
+      ensureUserCsrfCookie(req, res, req.user.id);
+      res.status(200).json({ success: true, data: { user: userJson } });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Get profile error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching user profile.'
-      });
+      res.status(500).json({ success: false, message: 'Error fetching user profile.' });
     }
   },
 
   // Update current user profile (excluding email)
   updateProfile: async (req, res) => {
     try {
-      const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks } = req.body;
-
-      const user = await User.findByPk(req.user.id);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
-
-      if (username !== undefined) {
-        const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
-        if (usernameResult.error) {
-          return res.status(400).json({
-            success: false,
-            message: usernameResult.error
-          });
-        }
-
-        if (usernameResult.value !== user.username) {
-          const existingUser = await User.findOne({
-            where: {
-              username: usernameResult.value,
-              id: { [Op.ne]: user.id }
-            }
-          });
-
-          if (existingUser) {
-            return res.status(400).json({
-              success: false,
-              message: 'Username is already taken.'
-            });
-          }
-          user.username = usernameResult.value;
-        }
-      }
-
-      const firstNameResult = normalizeOptionalText(firstName, 'First name', undefined, NAME_MAX_LENGTH);
-      if (firstNameResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: firstNameResult.error
-        });
-      }
-      if (firstNameResult.value !== undefined) {
-        user.firstName = firstNameResult.value;
-      }
-
-      const lastNameResult = normalizeOptionalText(lastName, 'Last name', undefined, NAME_MAX_LENGTH);
-      if (lastNameResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: lastNameResult.error
-        });
-      }
-      if (lastNameResult.value !== undefined) {
-        user.lastName = lastNameResult.value;
-      }
-
-      if (avatar !== undefined) {
-        if (avatar === null) {
-          user.avatar = null;
-        } else if (typeof avatar === 'string') {
-          const trimmedAvatar = avatar.trim();
-          if (trimmedAvatar.length === 0) {
-            user.avatar = null;
-          } else {
-            let avatarUrl;
-            try {
-              avatarUrl = new URL(trimmedAvatar);
-            } catch (parseError) {
-              return res.status(400).json({
-                success: false,
-                message: 'Avatar URL is malformed.'
-              });
-            }
-            if (!['http:', 'https:'].includes(avatarUrl.protocol)) {
-              return res.status(400).json({
-                success: false,
-                message: 'Avatar URL must use HTTP or HTTPS protocol.'
-              });
-            }
-            user.avatar = trimmedAvatar;
-          }
-        } else {
-          return res.status(400).json({
-            success: false,
-            message: 'Avatar must be a string.'
-          });
-        }
-      }
-
-      if (avatarColor !== undefined) {
-        if (avatarColor === null) {
-          user.avatarColor = null;
-        } else if (typeof avatarColor === 'string') {
-          const trimmedColor = avatarColor.trim();
-          if (trimmedColor.length === 0) {
-            user.avatarColor = null;
-          } else if (!VALID_HEX_COLOR_REGEX.test(trimmedColor)) {
-            return res.status(400).json({
-              success: false,
-              message: 'Avatar color must be a valid hex color (#RGB or #RRGGBB).'
-            });
-          } else {
-            user.avatarColor = trimmedColor;
-          }
-        } else {
-          return res.status(400).json({
-            success: false,
-            message: 'Avatar color must be a string.'
-          });
-        }
-      }
-
-      // Handle homeLocationId update
-      if (homeLocationId !== undefined) {
-        if (homeLocationId === null) {
-          // Only remove location link if user had a homeLocationId set
-          // This prevents deleting manual links created via /api/locations/link
-          if (user.homeLocationId !== null) {
-            await LocationLink.destroy({
-              where: {
-                entity_type: 'user',
-                entity_id: user.id,
-                location_id: user.homeLocationId
-              }
-            });
-          }
-          user.homeLocationId = null;
-        } else {
-          const locationId = parseInt(homeLocationId);
-          if (isNaN(locationId)) {
-            return res.status(400).json({
-              success: false,
-              message: 'Home location ID must be a number.'
-            });
-          }
-          // Verify location exists
-          const location = await Location.findByPk(locationId);
-          if (!location) {
-            return res.status(404).json({
-              success: false,
-              message: 'Location not found.'
-            });
-          }
-          user.homeLocationId = locationId;
-          
-          // Create or update LocationLink
-          const [link, created] = await LocationLink.findOrCreate({
-            where: {
-              entity_type: 'user',
-              entity_id: user.id
-            },
-            defaults: {
-              location_id: locationId
-            }
-          });
-          
-          // If link exists but points to different location, update it
-          if (!created && link.location_id !== locationId) {
-            link.location_id = locationId;
-            await link.save();
-          }
-        }
-      }
-
-      // Handle searchable update
-      if (searchable !== undefined) {
-        if (typeof searchable !== 'boolean') {
-          return res.status(400).json({
-            success: false,
-            message: 'Searchable must be a boolean.'
-          });
-        }
-        user.searchable = searchable;
-      }
-
-      // Handle mobileTel update
-      const MOBILE_TEL_MAX_LENGTH = 30;
-      if (mobileTel !== undefined) {
-        if (mobileTel === null || mobileTel === '') {
-          user.mobileTel = null;
-        } else if (typeof mobileTel !== 'string') {
-          return res.status(400).json({ success: false, message: 'Mobile phone must be a string.' });
-        } else {
-          const trimmed = mobileTel.trim();
-          if (trimmed.length > MOBILE_TEL_MAX_LENGTH) {
-            return res.status(400).json({ success: false, message: `Mobile phone must be at most ${MOBILE_TEL_MAX_LENGTH} characters.` });
-          }
-          user.mobileTel = trimmed || null;
-        }
-      }
-
-      // Handle bio update
-      const BIO_MAX_LENGTH = 280;
-      if (bio !== undefined) {
-        if (bio === null || bio === '') {
-          user.bio = null;
-        } else if (typeof bio !== 'string') {
-          return res.status(400).json({ success: false, message: 'Bio must be a string.' });
-        } else {
-          const trimmed = bio.trim();
-          if (trimmed.length > BIO_MAX_LENGTH) {
-            return res.status(400).json({ success: false, message: `Bio must be at most ${BIO_MAX_LENGTH} characters.` });
-          }
-          user.bio = trimmed || null;
-        }
-      }
-
-      // Handle socialLinks update
-      const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
-      if (socialLinks !== undefined) {
-        if (socialLinks === null) {
-          user.socialLinks = null;
-        } else if (typeof socialLinks !== 'object' || Array.isArray(socialLinks)) {
-          return res.status(400).json({ success: false, message: 'Social links must be an object.' });
-        } else {
-          const sanitized = {};
-          for (const [key, val] of Object.entries(socialLinks)) {
-            if (!ALLOWED_SOCIAL_KEYS.has(key)) {
-              return res.status(400).json({ success: false, message: `Unknown social link key: ${key}.` });
-            }
-            if (val === null || val === '') {
-              // allow clearing a key
-              continue;
-            }
-            if (typeof val !== 'string') {
-              return res.status(400).json({ success: false, message: `Social link value for "${key}" must be a string.` });
-            }
-            let parsedUrl;
-            try {
-              parsedUrl = new URL(val.trim());
-            } catch {
-              return res.status(400).json({ success: false, message: `Social link "${key}" is not a valid URL.` });
-            }
-            if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-              return res.status(400).json({ success: false, message: `Social link "${key}" must use HTTP or HTTPS.` });
-            }
-            sanitized[key] = val.trim();
-          }
-          user.socialLinks = Object.keys(sanitized).length > 0 ? sanitized : null;
-        }
-      }
-
-      await user.save();
-
-      const updatedUser = await User.findByPk(user.id, {
-        attributes: { exclude: ['password'] }
-      });
-
+      const updatedUser = await userService.updateUserProfile(req.user.id, req.body);
       res.status(200).json({
         success: true,
         message: 'Profile updated successfully.',
         data: { user: updatedUser }
       });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Update profile error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error updating profile.'
-      });
+      res.status(500).json({ success: false, message: 'Error updating profile.' });
     }
   },
 
@@ -613,606 +144,117 @@ const authController = {
   updatePassword: async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-
-      const currentPasswordResult = normalizePassword(currentPassword, 'Current password', PASSWORD_MIN_LENGTH);
-      if (currentPasswordResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: currentPasswordResult.error
-        });
-      }
-
-      const newPasswordResult = normalizePassword(newPassword, 'New password', PASSWORD_MIN_LENGTH);
-      if (newPasswordResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: newPasswordResult.error
-        });
-      }
-
-      const user = await User.findByPk(req.user.id);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
-
-      const isValidPassword = await user.comparePassword(currentPasswordResult.value);
-
-      if (!isValidPassword) {
-        return res.status(400).json({
-          success: false,
-          message: 'Current password is incorrect.'
-        });
-      }
-
-      user.password = newPasswordResult.value;
-      await user.save();
-
-      res.status(200).json({
-        success: true,
-        message: 'Password updated successfully.'
-      });
+      await authService.changePassword(req.user.id, currentPassword, newPassword);
+      res.status(200).json({ success: true, message: 'Password updated successfully.' });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Update password error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error updating password.'
-      });
+      res.status(500).json({ success: false, message: 'Error updating password.' });
     }
   },
-  // Get all users (admin only)
+
+  // Get all users (admin/moderator only)
   getUsers: async (req, res) => {
     try {
-      const baseQuery = {
-        attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt', 'isVerified'],
-        include: [
-          {
-            model: Location,
-            as: 'homeLocation',
-            attributes: ['id', 'name', 'type', 'slug'],
-            required: false
-          }
-        ],
-        order: [['createdAt', 'DESC']]
-      };
-
-      let users;
-      let stats;
-
-      if (req.user.role === 'admin') {
-        users = await User.findAll(baseQuery);
-        stats = await buildUserStats();
-      } else {
-        const actor = await User.findByPk(req.user.id, {
-          attributes: ['id', 'role', 'homeLocationId']
-        });
-
-        if (!actor || actor.role !== 'moderator') {
-          return res.status(403).json({
-            success: false,
-            message: 'Insufficient permissions.'
-          });
-        }
-
-        if (!actor.homeLocationId) {
-          return res.status(403).json({
-            success: false,
-            message: 'Moderator must have an assigned location to manage moderators.'
-          });
-        }
-
-        const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
-
-        users = manageableLocationIds.length > 0
-          ? await User.findAll({
-              ...baseQuery,
-              where: {
-                homeLocationId: { [Op.in]: manageableLocationIds }
-              }
-            })
-          : [];
-
-        stats = buildUserStatsFromList(users);
-      }
-
-      res.status(200).json({
-        success: true,
-        data: { users, stats }
-      });
+      const { users, stats } = await userService.getUsers(req.user.id, req.user.role);
+      res.status(200).json({ success: true, data: { users, stats } });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Get users error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching users.'
-      });
+      res.status(500).json({ success: false, message: 'Error fetching users.' });
     }
   },
 
-  // Get user statistics (admin only)
+  // Get user statistics (admin/moderator only)
   getUserStats: async (req, res) => {
     try {
-      let stats;
-
-      if (req.user.role === 'admin') {
-        stats = await buildUserStats();
-      } else {
-        const actor = await User.findByPk(req.user.id, {
-          attributes: ['id', 'role', 'homeLocationId']
-        });
-
-        if (!actor || actor.role !== 'moderator') {
-          return res.status(403).json({
-            success: false,
-            message: 'Insufficient permissions.'
-          });
-        }
-
-        if (!actor.homeLocationId) {
-          return res.status(403).json({
-            success: false,
-            message: 'Moderator must have an assigned location to view scoped stats.'
-          });
-        }
-
-        const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
-        const users = manageableLocationIds.length > 0
-          ? await User.findAll({
-              where: {
-                homeLocationId: { [Op.in]: manageableLocationIds }
-              },
-              attributes: ['id', 'role']
-            })
-          : [];
-
-        stats = buildUserStatsFromList(users);
-      }
-
-      res.status(200).json({
-        success: true,
-        data: stats
-      });
+      const stats = await userService.getUserStats(req.user.id, req.user.role);
+      res.status(200).json({ success: true, data: stats });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Get user stats error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching user stats.'
-      });
+      res.status(500).json({ success: false, message: 'Error fetching user stats.' });
     }
   },
 
-  // Update user role (admin only)
+  // Update user role (admin/moderator only)
   updateUserRole: async (req, res) => {
     try {
       const { id } = req.params;
       const { role, locationId } = req.body;
-
-      const allowedRoles = ['admin', 'moderator', 'editor', 'viewer'];
-      if (!allowedRoles.includes(role)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid role.'
-        });
-      }
-
-      let updatedUser = null;
-      let roleAlreadySet = false;
-      let validatedModeratorLocationId = null;
-
-      if (role === 'moderator') {
-        const locationValidation = normalizeInteger(locationId, 'Location ID', 1);
-        if (locationValidation.error) {
-          return res.status(400).json({
-            success: false,
-            message: 'Location ID is required when assigning moderator role.'
-          });
-        }
-
-        const location = await Location.findByPk(locationValidation.value, {
-          attributes: ['id']
-        });
-        if (!location) {
-          return res.status(404).json({
-            success: false,
-            message: 'Location not found.'
-          });
-        }
-
-        validatedModeratorLocationId = locationValidation.value;
-      }
-
-      const actingUser = await User.findByPk(req.user.id, {
-        attributes: ['id', 'role', 'homeLocationId']
-      });
-
-      if (!actingUser) {
-        return res.status(401).json({
-          success: false,
-          message: 'Authentication required.'
-        });
-      }
-
-      let moderatorManageableLocationIds = [];
-      if (actingUser.role === 'moderator') {
-        if (!actingUser.homeLocationId) {
-          return res.status(403).json({
-            success: false,
-            message: 'Moderator must have an assigned location to manage moderators.'
-          });
-        }
-
-        moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.homeLocationId, false);
-
-        if (moderatorManageableLocationIds.length === 0) {
-          return res.status(403).json({
-            success: false,
-            message: 'No child locations available for moderator management.'
-          });
-        }
-
-        if (role === 'admin') {
-          return res.status(403).json({
-            success: false,
-            message: 'Moderators cannot assign admin role.'
-          });
-        }
-      }
-
-      await sequelize.transaction(async (transaction) => {
-        const user = await User.findByPk(id, {
-          transaction,
-          lock: transaction.LOCK.UPDATE
-        });
-        if (!user) {
-          const notFoundError = new Error('USER_NOT_FOUND');
-          notFoundError.status = 404;
-          throw notFoundError;
-        }
-
-        if (actingUser.role === 'moderator') {
-          const targetManagedLocationId = role === 'moderator' ? validatedModeratorLocationId : user.homeLocationId;
-
-          if (!targetManagedLocationId || !moderatorManageableLocationIds.includes(targetManagedLocationId)) {
-            const scopeError = new Error('OUT_OF_SCOPE');
-            scopeError.status = 403;
-            throw scopeError;
-          }
-
-          const roleTransitionAllowed = role === 'moderator' || user.role === 'moderator';
-          if (!roleTransitionAllowed) {
-            const scopeError = new Error('INVALID_MODERATOR_TRANSITION');
-            scopeError.status = 403;
-            throw scopeError;
-          }
-        }
-
-        const isSameRole = user.role === role;
-        const isSameModeratorLocation = role !== 'moderator' || user.homeLocationId === validatedModeratorLocationId;
-
-        if (isSameRole && isSameModeratorLocation) {
-          roleAlreadySet = true;
-          updatedUser = user;
-          return;
-        }
-
-        if (user.role === 'admin' && role !== 'admin') {
-          const adminCount = await User.count({
-            where: { role: 'admin' },
-            transaction,
-            lock: transaction.LOCK.UPDATE
-          });
-          if (adminCount <= 1) {
-            const lastAdminError = new Error('LAST_ADMIN');
-            lastAdminError.status = 400;
-            throw lastAdminError;
-          }
-        }
-
-        user.role = role;
-        if (role === 'moderator') {
-          user.homeLocationId = validatedModeratorLocationId;
-        }
-        await user.save({ transaction });
-
-        updatedUser = await User.findByPk(user.id, {
-          transaction,
-          attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt'],
-          include: [
-            {
-              model: Location,
-              as: 'homeLocation',
-              attributes: ['id', 'name', 'type', 'slug'],
-              required: false
-            }
-          ]
-        });
-      });
-
-      const stats = req.user.role === 'admin'
-        ? await buildUserStats()
-        : await authController.getUserStatsForModeratorScope(req.user.id);
-
+      const { user, stats, roleAlreadySet } = await userService.updateUserRole(
+        req.user.id,
+        req.user.role,
+        id,
+        role,
+        locationId
+      );
       res.status(200).json({
         success: true,
         message: roleAlreadySet ? 'User already has the requested role.' : 'User role updated successfully.',
         data: {
           user: {
-            id: updatedUser.id,
-            username: updatedUser.username,
-            email: updatedUser.email,
-            role: updatedUser.role,
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            homeLocationId: updatedUser.homeLocationId,
-            homeLocation: updatedUser.homeLocation,
-            createdAt: updatedUser.createdAt
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            homeLocationId: user.homeLocationId,
+            homeLocation: user.homeLocation,
+            createdAt: user.createdAt
           },
           stats
         }
       });
     } catch (error) {
-      if (error.status === 404) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
-      if (error.status === 400) {
-        return res.status(400).json({
-          success: false,
-          message: 'At least one admin must remain.'
-        });
-      }
-      if (error.status === 403) {
-        if (error.message === 'OUT_OF_SCOPE') {
-          return res.status(403).json({
-            success: false,
-            message: 'Moderators can only manage moderator assignments in child locations.'
-          });
-        }
-        if (error.message === 'INVALID_MODERATOR_TRANSITION') {
-          return res.status(403).json({
-            success: false,
-            message: 'Moderators can only assign or revoke moderator roles in child locations.'
-          });
-        }
-
-        return res.status(403).json({
-          success: false,
-          message: 'Insufficient permissions.'
-        });
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
       }
       console.error('Update user role error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error updating user role.'
-      });
+      res.status(500).json({ success: false, message: 'Error updating user role.' });
     }
   },
 
   getUserStatsForModeratorScope: async (moderatorUserId) => {
-    const actor = await User.findByPk(moderatorUserId, {
-      attributes: ['id', 'role', 'homeLocationId']
-    });
-
-    if (!actor || actor.role !== 'moderator' || !actor.homeLocationId) {
-      return {
-        total: 0,
-        byRole: {
-          admin: 0,
-          moderator: 0,
-          editor: 0,
-          viewer: 0
-        }
-      };
-    }
-
-    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
-    if (manageableLocationIds.length === 0) {
-      return {
-        total: 0,
-        byRole: {
-          admin: 0,
-          moderator: 0,
-          editor: 0,
-          viewer: 0
-        }
-      };
-    }
-
-    const users = await User.findAll({
-      where: {
-        homeLocationId: { [Op.in]: manageableLocationIds }
-      },
-      attributes: ['id', 'role']
-    });
-
-    return buildUserStatsFromList(users);
+    return userService.getUserStatsForModeratorScope(moderatorUserId);
   },
 
   // GitHub OAuth initiation
   initiateGithubOAuth: async (req, res) => {
     try {
-      const { generateState, isOAuthConfigured } = require('../utils/oauthHelpers');
-      
-      if (!isOAuthConfigured('github')) {
-        return res.status(503).json({
-          success: false,
-          message: 'GitHub OAuth is not configured.'
-        });
-      }
-
-      const mode = req.query.mode || 'login'; // 'login' or 'link'
+      const mode = req.query.mode || 'login';
       const userId = mode === 'link' ? req.user?.id : null;
-
-      const state = generateState(userId, mode);
-      const clientId = process.env.GITHUB_CLIENT_ID;
-      const redirectUri = process.env.GITHUB_CALLBACK_URL;
-      
-      const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=user:email`;
-
-      res.status(200).json({
-        success: true,
-        data: { authUrl: githubAuthUrl }
-      });
+      const { authUrl } = oauthService.initiateGithubOAuth(mode, userId);
+      res.status(200).json({ success: true, data: { authUrl } });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('GitHub OAuth initiation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error initiating GitHub OAuth.'
-      });
+      res.status(500).json({ success: false, message: 'Error initiating GitHub OAuth.' });
     }
   },
 
   // GitHub OAuth callback
   githubCallback: async (req, res) => {
     try {
-      const axios = require('axios');
-      const { validateState } = require('../utils/oauthHelpers');
-      const { encryptToken } = require('../utils/encryption');
-      
       const { code, state } = req.query;
-
-      if (!code || !state) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=missing_params`);
+      const result = await oauthService.handleGithubCallback(code, state);
+      if (result.token) {
+        setAuthCookies(res, result.token, result.user.id);
       }
-
-      // Validate state token
-      const stateData = validateState(state);
-      if (!stateData) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=invalid_state`);
-      }
-
-      // Exchange code for access token
-      const tokenResponse = await axios.post(
-        'https://github.com/login/oauth/access_token',
-        {
-          client_id: process.env.GITHUB_CLIENT_ID,
-          client_secret: process.env.GITHUB_CLIENT_SECRET,
-          code,
-          redirect_uri: process.env.GITHUB_CALLBACK_URL
-        },
-        {
-          headers: { Accept: 'application/json' }
-        }
-      );
-
-      const accessToken = tokenResponse.data.access_token;
-
-      if (!accessToken) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=token_exchange_failed`);
-      }
-
-      // Fetch user profile from GitHub
-      const userResponse = await axios.get('https://api.github.com/user', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-
-      const githubUser = userResponse.data;
-
-      // Get user emails
-      const emailsResponse = await axios.get('https://api.github.com/user/emails', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-
-      const primaryEmail = emailsResponse.data.find(e => e.primary)?.email || githubUser.email;
-
-      if (stateData.mode === 'link') {
-        // Link GitHub account to existing user
-        if (!stateData.userId) {
-          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=unauthorized`);
-        }
-
-        const user = await User.findByPk(stateData.userId);
-        if (!user) {
-          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=user_not_found`);
-        }
-
-        // Check if GitHub account is already linked to another user
-        const existingGithubUser = await User.findOne({
-          where: { githubId: githubUser.id.toString() }
-        });
-
-        if (existingGithubUser && existingGithubUser.id !== user.id) {
-          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=github_already_linked`);
-        }
-
-        user.githubId = githubUser.id.toString();
-        user.githubAccessToken = encryptToken(accessToken);
-        if (!user.avatar && githubUser.avatar_url) {
-          user.avatar = githubUser.avatar_url;
-        }
-        await user.save();
-
-        return res.redirect(`${process.env.FRONTEND_URL}/profile?success=github_linked`);
-      } else {
-        // Login or signup with GitHub
-        let user = await User.findOne({
-          where: { githubId: githubUser.id.toString() }
-        });
-
-        if (user) {
-          // Update access token
-          user.githubAccessToken = encryptToken(accessToken);
-          if (githubUser.avatar_url) {
-            user.avatar = githubUser.avatar_url;
-          }
-          await user.save();
-        } else {
-          // Check if email already exists
-          const existingEmailUser = await User.findOne({
-            where: { email: primaryEmail }
-          });
-
-          if (existingEmailUser) {
-            // Link GitHub to existing account
-            existingEmailUser.githubId = githubUser.id.toString();
-            existingEmailUser.githubAccessToken = encryptToken(accessToken);
-            if (!existingEmailUser.avatar && githubUser.avatar_url) {
-              existingEmailUser.avatar = githubUser.avatar_url;
-            }
-            await existingEmailUser.save();
-            user = existingEmailUser;
-          } else {
-            // Create new user from GitHub profile
-            const username = githubUser.login || `github_${githubUser.id}`;
-            const name = githubUser.name || '';
-            const nameParts = name.split(' ');
-            
-            user = await User.create({
-              username,
-              email: primaryEmail,
-              githubId: githubUser.id.toString(),
-              githubAccessToken: encryptToken(accessToken),
-              firstName: nameParts[0] || githubUser.login,
-              lastName: nameParts.slice(1).join(' ') || '',
-              avatar: githubUser.avatar_url,
-              role: 'viewer'
-            });
-          }
-        }
-
-        // Generate JWT token
-        if (!process.env.JWT_SECRET) {
-          throw new Error('JWT_SECRET must be configured');
-        }
-        const token = jwt.sign(
-          { 
-            id: user.id, 
-            username: user.username, 
-            email: user.email,
-            role: user.role 
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-
-        setAuthCookies(res, token, user.id);
-        return res.redirect(`${process.env.FRONTEND_URL}/login?oauth=1`);
-      }
+      return res.redirect(result.redirectUrl);
     } catch (error) {
+      if (error.redirectUrl) {
+        return res.redirect(error.redirectUrl);
+      }
       console.error('GitHub callback error:', error);
       res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
     }
@@ -1221,222 +263,46 @@ const authController = {
   // Unlink GitHub account
   unlinkGithub: async (req, res) => {
     try {
-      const user = await User.findByPk(req.user.id);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
-
-      if (!user.githubId) {
-        return res.status(400).json({
-          success: false,
-          message: 'GitHub account is not linked.'
-        });
-      }
-
-      // Ensure user has a password before unlinking
-      if (!user.password) {
-        return res.status(400).json({
-          success: false,
-          message: 'Cannot unlink GitHub. Please set a password first.'
-        });
-      }
-
-      user.githubId = null;
-      user.githubAccessToken = null;
-      await user.save();
-
-      res.status(200).json({
-        success: true,
-        message: 'GitHub account unlinked successfully.'
-      });
+      await oauthService.unlinkGithubAccount(req.user.id);
+      res.status(200).json({ success: true, message: 'GitHub account unlinked successfully.' });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Unlink GitHub error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error unlinking GitHub account.'
-      });
+      res.status(500).json({ success: false, message: 'Error unlinking GitHub account.' });
     }
   },
 
   // Google OAuth initiation
   initiateGoogleOAuth: async (req, res) => {
     try {
-      const { generateState, isOAuthConfigured } = require('../utils/oauthHelpers');
-      
-      if (!isOAuthConfigured('google')) {
-        return res.status(503).json({
-          success: false,
-          message: 'Google OAuth is not configured.'
-        });
-      }
-
-      const mode = req.query.mode || 'login'; // 'login' or 'link'
+      const mode = req.query.mode || 'login';
       const userId = mode === 'link' ? req.user?.id : null;
-
-      const state = generateState(userId, mode);
-      const clientId = process.env.GOOGLE_CLIENT_ID;
-      const redirectUri = process.env.GOOGLE_CALLBACK_URL;
-      
-      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&response_type=code&scope=email profile`;
-
-      res.status(200).json({
-        success: true,
-        data: { authUrl: googleAuthUrl }
-      });
+      const { authUrl } = oauthService.initiateGoogleOAuth(mode, userId);
+      res.status(200).json({ success: true, data: { authUrl } });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Google OAuth initiation error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error initiating Google OAuth.'
-      });
+      res.status(500).json({ success: false, message: 'Error initiating Google OAuth.' });
     }
   },
 
   // Google OAuth callback
   googleCallback: async (req, res) => {
     try {
-      const axios = require('axios');
-      const { validateState } = require('../utils/oauthHelpers');
-      const { encryptToken } = require('../utils/encryption');
-      
       const { code, state } = req.query;
-
-      if (!code || !state) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=missing_params`);
+      const result = await oauthService.handleGoogleCallback(code, state);
+      if (result.token) {
+        setAuthCookies(res, result.token, result.user.id);
       }
-
-      // Validate state token
-      const stateData = validateState(state);
-      if (!stateData) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=invalid_state`);
-      }
-
-      // Exchange code for access token
-      const tokenResponse = await axios.post(
-        'https://oauth2.googleapis.com/token',
-        new URLSearchParams({
-          client_id: process.env.GOOGLE_CLIENT_ID,
-          client_secret: process.env.GOOGLE_CLIENT_SECRET,
-          code,
-          redirect_uri: process.env.GOOGLE_CALLBACK_URL,
-          grant_type: 'authorization_code'
-        }),
-        {
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-        }
-      );
-
-      const accessToken = tokenResponse.data.access_token;
-
-      if (!accessToken) {
-        return res.redirect(`${process.env.FRONTEND_URL}/login?error=token_exchange_failed`);
-      }
-
-      // Fetch user profile from Google
-      const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-        headers: { Authorization: `Bearer ${accessToken}` }
-      });
-
-      const googleUser = userResponse.data;
-
-      if (stateData.mode === 'link') {
-        // Link Google account to existing user
-        if (!stateData.userId) {
-          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=unauthorized`);
-        }
-
-        const user = await User.findByPk(stateData.userId);
-        if (!user) {
-          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=user_not_found`);
-        }
-
-        // Check if Google account is already linked to another user
-        const existingGoogleUser = await User.findOne({
-          where: { googleId: googleUser.id.toString() }
-        });
-
-        if (existingGoogleUser && existingGoogleUser.id !== user.id) {
-          return res.redirect(`${process.env.FRONTEND_URL}/profile?error=google_already_linked`);
-        }
-
-        user.googleId = googleUser.id.toString();
-        user.googleAccessToken = encryptToken(accessToken);
-        if (!user.avatar && googleUser.picture) {
-          user.avatar = googleUser.picture;
-        }
-        await user.save();
-
-        return res.redirect(`${process.env.FRONTEND_URL}/profile?success=google_linked`);
-      } else {
-        // Login or signup with Google
-        let user = await User.findOne({
-          where: { googleId: googleUser.id.toString() }
-        });
-
-        if (user) {
-          // Update access token
-          user.googleAccessToken = encryptToken(accessToken);
-          if (googleUser.picture) {
-            user.avatar = googleUser.picture;
-          }
-          await user.save();
-        } else {
-          // Check if email already exists
-          const existingEmailUser = await User.findOne({
-            where: { email: googleUser.email }
-          });
-
-          if (existingEmailUser) {
-            // Link Google to existing account
-            existingEmailUser.googleId = googleUser.id.toString();
-            existingEmailUser.googleAccessToken = encryptToken(accessToken);
-            if (!existingEmailUser.avatar && googleUser.picture) {
-              existingEmailUser.avatar = googleUser.picture;
-            }
-            await existingEmailUser.save();
-            user = existingEmailUser;
-          } else {
-            // Create new user from Google profile
-            const username = googleUser.email.split('@')[0] || `google_${googleUser.id}`;
-            const name = googleUser.name || '';
-            const nameParts = name.split(' ');
-            
-            user = await User.create({
-              username,
-              email: googleUser.email,
-              googleId: googleUser.id.toString(),
-              googleAccessToken: encryptToken(accessToken),
-              firstName: googleUser.given_name || nameParts[0] || '',
-              lastName: googleUser.family_name || nameParts.slice(1).join(' ') || '',
-              avatar: googleUser.picture,
-              role: 'viewer'
-            });
-          }
-        }
-
-        // Generate JWT token
-        if (!process.env.JWT_SECRET) {
-          throw new Error('JWT_SECRET must be configured');
-        }
-        const token = jwt.sign(
-          { 
-            id: user.id, 
-            username: user.username, 
-            email: user.email,
-            role: user.role 
-          },
-          process.env.JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-
-        setAuthCookies(res, token, user.id);
-        return res.redirect(`${process.env.FRONTEND_URL}/login?oauth=1`);
-      }
+      return res.redirect(result.redirectUrl);
     } catch (error) {
+      if (error.redirectUrl) {
+        return res.redirect(error.redirectUrl);
+      }
       console.error('Google callback error:', error);
       res.redirect(`${process.env.FRONTEND_URL}/login?error=oauth_failed`);
     }
@@ -1445,81 +311,35 @@ const authController = {
   // Unlink Google account
   unlinkGoogle: async (req, res) => {
     try {
-      const user = await User.findByPk(req.user.id);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
-
-      if (!user.googleId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Google account is not linked.'
-        });
-      }
-
-      // Ensure user has a password or another OAuth method before unlinking
-      if (!user.password && !user.githubId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Cannot unlink Google. Please set a password or link another account first.'
-        });
-      }
-
-      user.googleId = null;
-      user.googleAccessToken = null;
-      await user.save();
-
-      res.status(200).json({
-        success: true,
-        message: 'Google account unlinked successfully.'
-      });
+      await oauthService.unlinkGoogleAccount(req.user.id);
+      res.status(200).json({ success: true, message: 'Google account unlinked successfully.' });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Unlink Google error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error unlinking Google account.'
-      });
+      res.status(500).json({ success: false, message: 'Error unlinking Google account.' });
     }
   },
 
   // Get OAuth configuration status
   getOAuthConfig: async (req, res) => {
     try {
-      const { isOAuthConfigured } = require('../utils/oauthHelpers');
-
-      res.status(200).json({
-        success: true,
-        data: {
-          github: isOAuthConfigured('github'),
-          google: isOAuthConfigured('google'),
-          facebook: isOAuthConfigured('facebook')
-        }
-      });
+      const config = oauthService.getOAuthConfig();
+      res.status(200).json({ success: true, data: config });
     } catch (error) {
       console.error('Get OAuth config error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching OAuth configuration.'
-      });
+      res.status(500).json({ success: false, message: 'Error fetching OAuth configuration.' });
     }
   },
+
   logout: async (req, res) => {
     try {
       clearAuthCookies(res);
-      res.status(200).json({
-        success: true,
-        message: 'Logged out successfully.'
-      });
+      res.status(200).json({ success: true, message: 'Logged out successfully.' });
     } catch (error) {
       console.error('Logout error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error logging out.'
-      });
+      res.status(500).json({ success: false, message: 'Error logging out.' });
     }
   },
 
@@ -1527,38 +347,14 @@ const authController = {
   getPublicUserProfile: async (req, res) => {
     try {
       const userId = parseInt(req.params.id, 10);
-      if (!userId) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid user id.'
-        });
-      }
-
-      const user = await User.findOne({
-        where: {
-          id: userId,
-          searchable: true
-        },
-        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
-      });
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found or not visible.'
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        data: { user }
-      });
+      const user = await userService.getPublicUserProfile(userId);
+      res.status(200).json({ success: true, data: { user } });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Get public user profile error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching public user profile.'
-      });
+      res.status(500).json({ success: false, message: 'Error fetching public user profile.' });
     }
   },
 
@@ -1566,38 +362,14 @@ const authController = {
   getPublicUserProfileByUsername: async (req, res) => {
     try {
       const { username } = req.params;
-      if (!username || typeof username !== 'string' || username.trim() === '') {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid username.'
-        });
-      }
-
-      const user = await User.findOne({
-        where: {
-          username: username.trim(),
-          searchable: true
-        },
-        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
-      });
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found or not visible.'
-        });
-      }
-
-      res.status(200).json({
-        success: true,
-        data: { user }
-      });
+      const user = await userService.getPublicUserProfileByUsername(username);
+      res.status(200).json({ success: true, data: { user } });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Get public user profile by username error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching public user profile.'
-      });
+      res.status(500).json({ success: false, message: 'Error fetching public user profile.' });
     }
   },
 
@@ -1605,100 +377,25 @@ const authController = {
   searchUsers: async (req, res) => {
     try {
       const { search = '', page = 1, limit = 20 } = req.query;
-      
-      // Validate and sanitize pagination parameters
-      const pageNum = Math.max(1, parseInt(page) || 1);
-      const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
-      const offset = (pageNum - 1) * limitNum;
-
-      const whereClause = {
-        searchable: true
-      };
-
-      if (search && typeof search === 'string') {
-        const sequelize = require('../config/database');
-        const isPostgres = sequelize.getDialect() === 'postgres';
-        
-        // Escape special LIKE characters to prevent SQL injection
-        const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&');
-        
-        whereClause.username = {
-          [isPostgres ? Op.iLike : Op.like]: `%${sanitizedSearch}%`
-        };
-      }
-
-      const { count, rows: users } = await User.findAndCountAll({
-        where: whereClause,
-        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt'],
-        order: [['username', 'ASC']],
-        limit: limitNum,
-        offset: offset
-      });
-
-      const totalPages = Math.ceil(count / limitNum);
-
-      res.status(200).json({
-        success: true,
-        data: {
-          users,
-          pagination: {
-            currentPage: pageNum,
-            totalPages,
-            totalItems: count,
-            itemsPerPage: limitNum
-          }
-        }
-      });
+      const result = await userService.searchUsers(search, page, limit);
+      res.status(200).json({ success: true, data: result });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Search users error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error searching users.'
-      });
+      res.status(500).json({ success: false, message: 'Error searching users.' });
     }
   },
 
   // Get public user statistics (no authentication required)
   getPublicUserStats: async (req, res) => {
     try {
-      // Get counts in a single optimized query
-      const stats = await User.findAll({
-        attributes: [
-          'searchable',
-          [sequelize.fn('COUNT', sequelize.col('searchable')), 'count']
-        ],
-        group: ['searchable']
-      });
-
-      // Parse results
-      let totalUsers = 0;
-      let searchableUsers = 0;
-      let nonSearchableUsers = 0;
-
-      stats.forEach((item) => {
-        const count = parseInt(item.get('count'), 10);
-        totalUsers += count;
-        if (item.get('searchable')) {
-          searchableUsers = count;
-        } else {
-          nonSearchableUsers = count;
-        }
-      });
-
-      res.status(200).json({
-        success: true,
-        data: {
-          totalUsers,
-          searchableUsers,
-          nonSearchableUsers
-        }
-      });
+      const data = await userService.getPublicUserStats();
+      res.status(200).json({ success: true, data });
     } catch (error) {
       console.error('Get public user stats error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error fetching user statistics.'
-      });
+      res.status(500).json({ success: false, message: 'Error fetching user statistics.' });
     }
   },
 
@@ -1706,102 +403,18 @@ const authController = {
   deleteAccount: async (req, res) => {
     try {
       const { password, mode } = req.body;
-
-      if (!mode || !['purge', 'anonymize'].includes(mode)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Invalid mode. Must be "purge" or "anonymize".'
-        });
-      }
-
-      const user = await User.findByPk(req.user.id);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.'
-        });
-      }
-
-      if (!user.password) {
-        return res.status(400).json({
-          success: false,
-          message: 'Please set a password before deleting your account.'
-        });
-      }
-
-      const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
-      if (passwordResult.error) {
-        return res.status(400).json({
-          success: false,
-          message: passwordResult.error
-        });
-      }
-
-      const isValidPassword = await user.comparePassword(passwordResult.value);
-      if (!isValidPassword) {
-        return res.status(400).json({
-          success: false,
-          message: 'Incorrect password.'
-        });
-      }
-
-      const { Article, Poll, PollOption, PollVote, Bookmark, Follow } = require('../models');
-
-      if (mode === 'purge') {
-        await sequelize.transaction(async (t) => {
-          // Delete follow relationships
-          await Follow.destroy({ where: { [Op.or]: [{ followerId: user.id }, { followingId: user.id }] }, transaction: t });
-          // Delete bookmarks
-          await Bookmark.destroy({ where: { userId: user.id }, transaction: t });
-          // Delete poll votes cast by user
-          await PollVote.destroy({ where: { userId: user.id }, transaction: t });
-          // Delete articles authored by user
-          await Article.destroy({ where: { authorId: user.id }, transaction: t });
-          // Delete polls created by user (cascade deletes options and votes via DB)
-          const userPolls = await Poll.findAll({ where: { creatorId: user.id }, attributes: ['id'], transaction: t });
-          if (userPolls.length > 0) {
-            const pollIds = userPolls.map((p) => p.id);
-            await PollVote.destroy({ where: { pollId: pollIds }, transaction: t });
-            await PollOption.destroy({ where: { pollId: pollIds }, transaction: t });
-            await Poll.destroy({ where: { creatorId: user.id }, transaction: t });
-          }
-          // Delete the user record
-          await user.destroy({ transaction: t });
-        });
-      } else {
-        // Anonymize: scrub PII, disable login, keep record for FK integrity
-        const anonymousId = `deleted-user-${user.id}`;
-        await User.update({
-          username: anonymousId,
-          email: `${anonymousId}@deleted.invalid`,
-          password: null,
-          role: 'viewer',
-          firstName: null,
-          lastName: null,
-          avatar: null,
-          avatarColor: null,
-          homeLocationId: null,
-          searchable: false,
-          githubId: null,
-          githubAccessToken: null,
-          googleId: null,
-          googleAccessToken: null,
-        }, { where: { id: user.id }, individualHooks: false });
-      }
-
+      await userService.deleteUserAccount(req.user.id, password, mode);
       clearAuthCookies(res);
-
       res.status(200).json({
         success: true,
         message: mode === 'purge' ? 'Account permanently deleted.' : 'Account anonymized and deleted.'
       });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Delete account error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error deleting account.'
-      });
+      res.status(500).json({ success: false, message: 'Error deleting account.' });
     }
   },
 
@@ -1811,10 +424,7 @@ const authController = {
       return res.status(200).json({ success: true });
     } catch (error) {
       console.error('CSRF refresh error:', error);
-      return res.status(500).json({
-        success: false,
-        message: 'Error refreshing CSRF token.'
-      });
+      return res.status(500).json({ success: false, message: 'Error refreshing CSRF token.' });
     }
   },
 
@@ -1822,60 +432,23 @@ const authController = {
   verifyUser: async (req, res) => {
     try {
       const targetId = parseInt(req.params.id, 10);
-      if (!targetId) {
-        return res.status(400).json({ success: false, message: 'Invalid user id.' });
-      }
-
       const { isVerified } = req.body;
-      if (typeof isVerified !== 'boolean') {
-        return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
-      }
-
-      const actor = await User.findByPk(req.user.id, { attributes: ['id', 'role', 'homeLocationId'] });
-      if (!actor) {
-        return res.status(403).json({ success: false, message: 'Insufficient permissions.' });
-      }
-
-      const target = await User.findByPk(targetId);
-      if (!target) {
-        return res.status(404).json({ success: false, message: 'User not found.' });
-      }
-
-      if (actor.role === 'moderator') {
-        if (!actor.homeLocationId) {
-          return res.status(403).json({ success: false, message: 'Moderator must have an assigned location.' });
-        }
-        if (!target.homeLocationId) {
-          return res.status(403).json({ success: false, message: 'Target user is not within your manageable scope.' });
-        }
-        const manageableIds = await getDescendantLocationIds(actor.homeLocationId, false);
-        if (!manageableIds.includes(target.homeLocationId)) {
-          return res.status(403).json({ success: false, message: 'Target user is not within your manageable scope.' });
-        }
-      }
-
-      if (isVerified) {
-        target.isVerified = true;
-        target.verifiedAt = new Date();
-        target.verifiedByUserId = actor.id;
-        target.verifiedScopeLocationId = actor.role === 'admin' ? null : actor.homeLocationId;
-      } else {
-        target.isVerified = false;
-        target.verifiedAt = null;
-        target.verifiedByUserId = null;
-        target.verifiedScopeLocationId = null;
-      }
-
-      await target.save();
-
-      const updatedUser = await User.findByPk(target.id, { attributes: { exclude: ['password'] } });
-
+      const updatedUser = await userService.verifyUser(
+        req.user.id,
+        req.user.role,
+        req.user.homeLocationId,
+        targetId,
+        isVerified
+      );
       return res.status(200).json({
         success: true,
         message: isVerified ? 'User verified successfully.' : 'User unverified successfully.',
         data: { user: updatedUser }
       });
     } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
       console.error('Verify user error:', error);
       return res.status(500).json({ success: false, message: 'Error updating verification status.' });
     }
