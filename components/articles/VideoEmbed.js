@@ -128,6 +128,7 @@ export default function VideoEmbed({ article, compact = false }) {
             className="tiktok-embed"
             cite={sourceUrl}
             data-video-id={videoId}
+            data-autoplay="false"
             style={{ maxWidth: '605px', minWidth: '325px' }}
           >
             <section>
