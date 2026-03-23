@@ -6,21 +6,7 @@ const { sequelize } = require('./models');
 const { errorHandler } = require('./middleware/errorHandler');
 require('dotenv').config();
 
-const authRoutes = require('./routes/authRoutes');
-const articleRoutes = require('./routes/articleRoutes');
-const adminRoutes = require('./routes/adminRoutes');
-const locationRoutes = require('./routes/locationRoutes');
-const pollRoutes = require('./routes/pollRoutes');
-const bookmarkRoutes = require('./routes/bookmarkRoutes');
-const messageRoutes = require('./routes/messageRoutes');
-const statsRoutes = require('./routes/statsRoutes');
-const followRoutes = require('./routes/followRoutes');
-const tagRoutes = require('./routes/tagRoutes');
-const commentRoutes = require('./routes/commentRoutes');
-const endorsementRoutes = require('./routes/endorsementRoutes');
-const suggestionRoutes = require('./routes/suggestionRoutes');
-const solutionRoutes = require('./routes/solutionRoutes');
-const linkPreviewRoutes = require('./routes/linkPreviewRoutes');
+const registerRoutes = require('./routes');
 
 const app = express();
 
@@ -53,21 +39,7 @@ app.get('/', (req, res) => {
   });
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/articles', articleRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/locations', locationRoutes);
-app.use('/api/polls', pollRoutes);
-app.use('/api/bookmarks', bookmarkRoutes);
-app.use('/api/messages', messageRoutes);
-app.use('/api/stats', statsRoutes);
-app.use('/api/users', followRoutes);
-app.use('/api/tags', tagRoutes);
-app.use('/api/comments', commentRoutes);
-app.use('/api/endorsements', endorsementRoutes);
-app.use('/api/suggestions', suggestionRoutes);
-app.use('/api/solutions', solutionRoutes);
-app.use('/api/link-preview', linkPreviewRoutes);
+registerRoutes(app);
 
 // 404 handler
 app.use((req, res) => {
