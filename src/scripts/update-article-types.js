@@ -3,7 +3,7 @@
  * This script updates articles to have proper type values based on their isNews field
  */
 
-const { sequelize, Article } = require('./models');
+const { sequelize, Article } = require('../models');
 require('dotenv').config();
 
 const updateArticleTypes = async () => {

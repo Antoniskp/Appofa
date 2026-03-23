@@ -210,5 +210,5 @@ If you encounter issues:
 
 - User Model: `src/models/User.js`
 - Database Config: `src/config/database.js`
-- Migration Runner: `src/run-migrations.js`
+- Migration Runner: `src/scripts/run-migrations.js`
 - OAuth Routes: `src/routes/auth.js`

@@ -224,7 +224,7 @@ To add or modify categories:
 - `lib/utils/articleTypes.js` - Utility functions for type display
 
 ### Migration:
-- `src/update-article-types.js` - Migration script
+- `src/scripts/update-article-types.js` - Migration script
 - `package.json` - Added migration script command
 
 ## Troubleshooting

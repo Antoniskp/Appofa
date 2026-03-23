@@ -332,11 +332,11 @@ appofasiv8/
 │   └── docker-compose.yml       # Docker compose
 │
 ├── Scripts/                      # Helper scripts
-│   ├── setup-db.sh              # Database setup
-│   └── test-api.sh              # API testing
+│   ├── scripts/setup-db.sh      # Database setup
+│   └── scripts/test-api.sh      # API testing
 │
 └── Tools/                        # Development tools
-    └── postman_collection.json  # Postman API collection
+    └── doc/postman_collection.json  # Postman API collection
 ```
 
 ---

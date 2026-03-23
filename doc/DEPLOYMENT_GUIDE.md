@@ -97,7 +97,7 @@ Both components must be running for the application to function correctly.
    
    **Option A: Using the setup script**
    ```bash
-   ./setup-db.sh
+   ./scripts/setup-db.sh
    ```
    
    **Option B: Manual setup**

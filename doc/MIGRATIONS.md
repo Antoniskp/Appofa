@@ -45,12 +45,12 @@ The system tracks executed migrations in the `SequelizeMeta` table. This table i
 
 To apply all pending migrations:
 ```bash
-node src/run-migrations.js
+node src/scripts/run-migrations.js
 ```
 
 Or explicitly:
 ```bash
-node src/run-migrations.js up
+node src/scripts/run-migrations.js up
 ```
 
 This command:
@@ -64,7 +64,7 @@ This command:
 
 To rollback the most recently executed migration:
 ```bash
-node src/run-migrations.js down
+node src/scripts/run-migrations.js down
 ```
 
 This command:
@@ -76,7 +76,7 @@ This command:
 
 To see which migrations have been executed and which are pending:
 ```bash
-node src/run-migrations.js status
+node src/scripts/run-migrations.js status
 ```
 
 This displays:
@@ -122,7 +122,7 @@ Adds new columns to the `Users` table:
 1. Deploy your application code
 2. Run migrations before starting the server:
    ```bash
-   node src/run-migrations.js
+   node src/scripts/run-migrations.js
    ```
 3. Start the server:
    ```bash
@@ -137,7 +137,7 @@ When deploying code changes that include new migrations:
 2. Pull the latest code
 3. Run migrations:
    ```bash
-   node src/run-migrations.js
+   node src/scripts/run-migrations.js
    ```
 4. Start the server:
    ```bash
@@ -192,9 +192,9 @@ When creating new migrations:
 
 4. Test both up and down migrations:
    ```bash
-   node src/run-migrations.js up
-   node src/run-migrations.js down
-   node src/run-migrations.js up
+   node src/scripts/run-migrations.js up
+   node src/scripts/run-migrations.js down
+   node src/scripts/run-migrations.js up
    ```
 
 ## Troubleshooting
@@ -210,7 +210,7 @@ If a migration fails:
 ### Schema Out of Sync
 
 If your schema is out of sync with migrations:
-1. Check migration status: `node src/run-migrations.js status`
+1. Check migration status: `node src/scripts/run-migrations.js status`
 2. In development, you can drop and recreate the database, then run all migrations
 3. In production, create corrective migrations to bring schema into alignment
 

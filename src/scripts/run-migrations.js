@@ -5,14 +5,14 @@ require('dotenv').config();
 
 const fs = require('fs');
 const path = require('path');
-const sequelize = require('./config/database');
+const sequelize = require('../config/database');
 
 /**
  * Migration runner script for Sequelize migrations
  * This script runs migrations in order and tracks which ones have been executed
  */
 
-const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
+const MIGRATIONS_DIR = path.join(__dirname, '../migrations');
 const MIGRATIONS_TABLE = 'SequelizeMeta';
 
 /**
@@ -241,7 +241,7 @@ const command = process.argv[2] || 'up';
       break;
     default:
       console.log('Usage:');
-      console.log('  node src/run-migrations.js [command]');
+      console.log('  node src/scripts/run-migrations.js [command]');
       console.log('');
       console.log('Commands:');
       console.log('  up      Run pending migrations (default)');

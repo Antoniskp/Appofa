@@ -16,4 +16,3 @@ tmp/
 .pglog
 .pgsocket/
 .vscode/
-scripts/

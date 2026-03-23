@@ -55,7 +55,7 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 - [Article Types Testing](doc/ARTICLE_TYPES_TESTING.md) - Article type system testing
 - [Dependency Updates](doc/DEPENDENCY_UPDATES.md) - Dependency management and security audits
 - [Copilot Agents](doc/COPILOT_AGENTS.md) - AI agent configuration
-- [Postman Collection](postman_collection.json) - API testing collection
+- [Postman Collection](doc/postman_collection.json) - API testing collection
 
 ## Prerequisites
 - Node.js 22+

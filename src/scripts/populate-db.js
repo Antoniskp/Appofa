@@ -1,4 +1,4 @@
-const { sequelize, User, Article, Poll, PollOption, Location, LocationLink } = require('./models');
+const { sequelize, User, Article, Poll, PollOption, Location, LocationLink } = require('../models');
 require('dotenv').config();
 
 const isCodespaceEnv = () => {
