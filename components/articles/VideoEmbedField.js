@@ -80,6 +80,15 @@ export default function VideoEmbedField({
   const [preview, setPreview] = useState(null);
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
+  // Use refs for callbacks and dirty flag to avoid stale closures in debounced function
+  const onChangeRef = useRef(onChange);
+  const onTitleSuggestRef = useRef(onTitleSuggest);
+  const isTitleDirtyRef = useRef(isTitleDirty);
+
+  // Keep refs in sync with latest props
+  useEffect(() => { onChangeRef.current = onChange; }, [onChange]);
+  useEffect(() => { onTitleSuggestRef.current = onTitleSuggest; }, [onTitleSuggest]);
+  useEffect(() => { isTitleDirtyRef.current = isTitleDirty; }, [isTitleDirty]);
 
   // Keep input in sync if parent resets the value
   useEffect(() => {
@@ -94,7 +103,7 @@ export default function VideoEmbedField({
       setStatus('idle');
       setPreview(null);
       setErrorMessage('');
-      if (onChange) onChange(null);
+      if (onChangeRef.current) onChangeRef.current(null);
       return;
     }
 
@@ -108,24 +117,26 @@ export default function VideoEmbedField({
         const data = result.data;
         setPreview(data);
         setStatus('success');
-        if (onChange) onChange(data);
+        if (onChangeRef.current) onChangeRef.current(data);
         // Auto-fill title only if title field hasn't been touched by the user
-        if (!isTitleDirty && data.title && onTitleSuggest) {
-          onTitleSuggest(data.title);
+        if (!isTitleDirtyRef.current && data.title && onTitleSuggestRef.current) {
+          onTitleSuggestRef.current(data.title);
         }
       } else {
         setStatus('error');
         setErrorMessage((result && result.message) ? result.message : 'Could not load preview.');
         setPreview(null);
-        if (onChange) onChange(null);
+        if (onChangeRef.current) onChangeRef.current(null);
       }
     } catch (err) {
       setStatus('error');
       setErrorMessage(err?.message || 'Network error while fetching preview.');
       setPreview(null);
-      if (onChange) onChange(null);
+      if (onChangeRef.current) onChangeRef.current(null);
     }
-  }, [isTitleDirty, onChange, onTitleSuggest]);
+  // fetchPreview has no reactive dependencies - all state is accessed via refs
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleInputChange = (e) => {
     const newValue = e.target.value;

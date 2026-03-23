@@ -80,8 +80,10 @@ export default function ArticleForm({
         embedUrl: article.embedUrl || '',
         embedHtml: article.embedHtml || '',
       });
-      // If article has a sourceUrl, title was previously set, mark as dirty
-      if (article.title) {
+      // If article has a manually set title (no sourceUrl), mark title as dirty
+      // so VideoEmbedField won't overwrite it if user pastes a new URL later.
+      // If article has sourceUrl, the title came from the video - keep it auto-fillable.
+      if (article.title && !article.sourceUrl) {
         setIsTitleDirty(true);
       }
 

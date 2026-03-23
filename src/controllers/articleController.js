@@ -109,7 +109,7 @@ const articleController = {
 
       // content is optional when a sourceUrl embed is provided; require otherwise
       const rawContent = (content === undefined || content === null || String(content).trim() === '')
-        ? (resolvedSourceUrl ? ' ' : content)
+        ? (resolvedSourceUrl ? '' : content)
         : content;
 
       const contentResult = resolvedSourceUrl

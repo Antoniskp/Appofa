@@ -45,22 +45,17 @@ const TIKTOK_HOSTS = new Set([
 
 /**
  * Allowed hostnames for oEmbed endpoints (never allow user-supplied URLs to be fetched).
+ * We re-use YOUTUBE_HOSTS and TIKTOK_HOSTS for this; keeping it explicit here for clarity.
  */
-const OEMBED_HOSTS = new Set([
-  'www.youtube.com',
-  'www.tiktok.com'
-]);
 
 /**
  * Detect provider from a URL object.
  * Returns 'youtube', 'tiktok', or null.
  */
 const detectProvider = (urlObj) => {
-  const host = urlObj.hostname.toLowerCase().replace(/^www\./, '');
-  if (YOUTUBE_HOSTS.has(urlObj.hostname.toLowerCase())) return 'youtube';
-  if (host === 'youtube.com' || host === 'youtu.be' || host === 'music.youtube.com') return 'youtube';
-  if (TIKTOK_HOSTS.has(urlObj.hostname.toLowerCase())) return 'tiktok';
-  if (host === 'tiktok.com' || host === 'vm.tiktok.com' || host === 'm.tiktok.com') return 'tiktok';
+  const host = urlObj.hostname.toLowerCase();
+  if (YOUTUBE_HOSTS.has(host)) return 'youtube';
+  if (TIKTOK_HOSTS.has(host)) return 'tiktok';
   return null;
 };
 
@@ -199,8 +194,9 @@ const safeFetch = (url) => {
       return reject(new Error('Invalid fetch URL'));
     }
 
-    // Only allow fetching from the explicit oEmbed/allowed hostnames
-    if (!OEMBED_HOSTS.has(urlObj.hostname) && !urlObj.hostname.endsWith('.youtube.com') && !urlObj.hostname.endsWith('.tiktok.com')) {
+    // Only allow fetching from provider oEmbed hostnames (YouTube and TikTok)
+    const fetchHostAllowed = YOUTUBE_HOSTS.has(urlObj.hostname) || TIKTOK_HOSTS.has(urlObj.hostname);
+    if (!fetchHostAllowed) {
       return reject(new Error(`Fetch blocked: ${urlObj.hostname} not in allowlist`));
     }
 
