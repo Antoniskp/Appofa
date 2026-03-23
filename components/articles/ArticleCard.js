@@ -1,11 +1,9 @@
 'use client';
 
-import Link from 'next/link';
-import Card, { ImageCard, ImageTopCard } from '@/components/Card';
+import { ImageCard, ImageTopCard } from '@/components/Card';
 import Badge, { TypeBadge } from '@/components/Badge';
 import { TruncatedTextTooltip } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
-import VideoEmbed from '@/components/articles/VideoEmbed';
 
 /**
  * Helper function to strip markdown syntax from text
@@ -80,38 +78,60 @@ export default function ArticleCard({ article, variant = 'grid' }) {
     (article.sourceProvider === 'youtube' || article.sourceProvider === 'tiktok') &&
     !!(article.embedUrl || article.embedHtml || article.sourceUrl);
 
-  // Video card layout – renders an inline embed player.
-  // The card itself is NOT wrapped in a <Link> so that iframe clicks stay
-  // inside the iframe context (no navigation to TikTok/YouTube).
-  // The title is a dedicated <Link> that opens the in-app detail page.
+  // Video card layout – uses a static thumbnail + play icon overlay so the
+  // card stays the same height as regular grid cards.
+  // Clicking navigates to the in-app detail page where the full embed renders.
   if (isVideoArticle) {
-    return (
-      <Card className="overflow-hidden" padding="none">
-        {/* Inline embed player – compact=true removes detail-page mb-8 margin */}
-        <VideoEmbed article={article} compact />
+    const thumbnailUrl =
+      article.sourceMeta?.thumbnailUrl ||
+      article.bannerImageUrl ||
+      defaultBannerImageUrl;
+    const providerLabel =
+      article.sourceProvider === 'youtube'
+        ? 'YouTube'
+        : article.sourceProvider === 'tiktok'
+        ? 'TikTok'
+        : null;
 
-        {/* Card metadata – title links to the in-app detail page */}
-        <div className="p-4">
-          <div className="flex flex-wrap gap-2 mb-2">
-            {article.type && <TypeBadge type={article.type} />}
-            {article.category && <Badge variant="primary">{article.category}</Badge>}
-            {Array.isArray(article.tags) && article.tags.length > 0 && (
-              <Badge variant="purple">{article.tags.join(', ')}</Badge>
+    return (
+      <ImageTopCard
+        image={thumbnailUrl}
+        imageAlt={`${article.title} video thumbnail`}
+        imageFallback={defaultBannerImageUrl}
+        imageClassName="h-32"
+        href={articleHref}
+        hoverable
+        className="overflow-hidden"
+        imageOverlay={
+          <div aria-hidden="true" className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <div className="w-10 h-10 rounded-full bg-black/60 flex items-center justify-center">
+              <span className="text-white text-base ml-0.5">▶</span>
+            </div>
+            {providerLabel && (
+              <span className="absolute bottom-1.5 right-2 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white uppercase tracking-wide">
+                {providerLabel}
+              </span>
             )}
           </div>
-          <h3 className="headline">
-            <Link href={articleHref} className="hover:text-blue-600">
-              <TruncatedTextTooltip maxLength={60} className="headline">
-                {article.title}
-              </TruncatedTextTooltip>
-            </Link>
-          </h3>
-          <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
-            <span>By {authorLabel}</span>
-            <span>{formattedDate} {formattedTime}</span>
-          </div>
+        }
+      >
+        <div className="flex flex-wrap gap-2 mb-2">
+          {article.type && <TypeBadge type={article.type} />}
+          {article.category && <Badge variant="primary">{article.category}</Badge>}
+          {Array.isArray(article.tags) && article.tags.length > 0 && (
+            <Badge variant="purple">{article.tags.join(', ')}</Badge>
+          )}
         </div>
-      </Card>
+        <h3 className="headline hover:text-blue-600">
+          <TruncatedTextTooltip maxLength={60} className="headline">
+            {article.title}
+          </TruncatedTextTooltip>
+        </h3>
+        <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+          <span>By {authorLabel}</span>
+          <span>{formattedDate} {formattedTime}</span>
+        </div>
+      </ImageTopCard>
     );
   }
 

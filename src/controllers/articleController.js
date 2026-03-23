@@ -203,7 +203,7 @@ const articleController = {
       // Create article
       const article = await Article.create({
         title: titleResult.value,
-        content: contentResult.value || '',
+        content: contentResult.value ?? null,
         summary: summaryResult.value,
         category: categoryResult.value,
         tags: tagsResult.value ?? [],
