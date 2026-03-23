@@ -1,0 +1,39 @@
+const authRoutes = require('./authRoutes');
+const articleRoutes = require('./articleRoutes');
+const adminRoutes = require('./adminRoutes');
+const locationRoutes = require('./locationRoutes');
+const pollRoutes = require('./pollRoutes');
+const bookmarkRoutes = require('./bookmarkRoutes');
+const messageRoutes = require('./messageRoutes');
+const statsRoutes = require('./statsRoutes');
+const followRoutes = require('./followRoutes');
+const tagRoutes = require('./tagRoutes');
+const commentRoutes = require('./commentRoutes');
+const endorsementRoutes = require('./endorsementRoutes');
+const suggestionRoutes = require('./suggestionRoutes');
+const solutionRoutes = require('./solutionRoutes');
+const linkPreviewRoutes = require('./linkPreviewRoutes');
+
+const routes = [
+  { prefix: '/api/auth', router: authRoutes },
+  { prefix: '/api/articles', router: articleRoutes },
+  { prefix: '/api/admin', router: adminRoutes },
+  { prefix: '/api/locations', router: locationRoutes },
+  { prefix: '/api/polls', router: pollRoutes },
+  { prefix: '/api/bookmarks', router: bookmarkRoutes },
+  { prefix: '/api/messages', router: messageRoutes },
+  { prefix: '/api/stats', router: statsRoutes },
+  { prefix: '/api/users', router: followRoutes },
+  { prefix: '/api/tags', router: tagRoutes },
+  { prefix: '/api/comments', router: commentRoutes },
+  { prefix: '/api/endorsements', router: endorsementRoutes },
+  { prefix: '/api/suggestions', router: suggestionRoutes },
+  { prefix: '/api/solutions', router: solutionRoutes },
+  { prefix: '/api/link-preview', router: linkPreviewRoutes },
+];
+
+function registerRoutes(app) {
+  routes.forEach(({ prefix, router }) => app.use(prefix, router));
+}
+
+module.exports = registerRoutes;
