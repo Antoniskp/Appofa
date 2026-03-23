@@ -191,7 +191,7 @@ describe('Frontend smoke tests', () => {
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Η πλατφόρμα της τοπικής κοινότητας');
+    expect(container.textContent).toContain('Αποφάσεις που ξεκινούν από εσένα.');
     expect(container.textContent).toContain('Τελευταίες ειδήσεις');
 
     await act(async () => {
