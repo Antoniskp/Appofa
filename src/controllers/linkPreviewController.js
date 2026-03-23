@@ -179,6 +179,25 @@ const buildYouTubeEmbedUrl = (videoId) => {
 };
 
 /**
+ * Extract TikTok video ID from a URL object.
+ * Handles standard URLs: https://www.tiktok.com/@user/video/<id>
+ * Returns the video ID string or null.
+ */
+const extractTikTokVideoId = (urlObj) => {
+  const videoMatch = urlObj.pathname.match(/\/video\/(\d+)/);
+  if (videoMatch) return videoMatch[1];
+  return null;
+};
+
+/**
+ * Build a TikTok embed URL from a video ID.
+ * Uses TikTok's official /embed/v2/ endpoint.
+ */
+const buildTikTokEmbedUrl = (videoId) => {
+  return `https://www.tiktok.com/embed/v2/${encodeURIComponent(videoId)}`;
+};
+
+/**
  * Perform an HTTP GET request with timeout and body size limit.
  * Only resolves URLs on the explicit OEMBED_HOSTS allowlist.
  *
@@ -280,11 +299,21 @@ const fetchYouTubeOEmbed = async (originalUrl) => {
 
 /**
  * Fetch TikTok oEmbed metadata.
+ * Also attempts to extract videoId from the oEmbed HTML for shortlink support
+ * (vm.tiktok.com) where the original URL path doesn't contain the video ID.
  */
 const fetchTikTokOEmbed = async (originalUrl) => {
   const oEmbedUrl = `https://www.tiktok.com/oembed?url=${encodeURIComponent(originalUrl)}`;
   const body = await safeFetch(oEmbedUrl);
   const data = JSON.parse(body);
+
+  // Try to extract video ID from oEmbed HTML data-video-id attribute.
+  // This handles vm.tiktok.com shortlinks where the original URL has no ID.
+  let extractedVideoId = null;
+  if (data.html) {
+    const idMatch = data.html.match(/data-video-id=["'](\d+)["']/);
+    if (idMatch) extractedVideoId = idMatch[1];
+  }
 
   return {
     title: data.title || null,
@@ -292,7 +321,8 @@ const fetchTikTokOEmbed = async (originalUrl) => {
     thumbnailUrl: data.thumbnail_url || null,
     providerName: data.provider_name || 'TikTok',
     providerUrl: data.provider_url || 'https://www.tiktok.com',
-    embedHtml: data.html || null
+    embedHtml: data.html || null,
+    videoId: extractedVideoId
   };
 };
 
@@ -301,8 +331,8 @@ const fetchTikTokOEmbed = async (originalUrl) => {
  * Tries oEmbed first; never falls through to arbitrary URL fetching.
  */
 const buildPreview = async (urlObj, provider, originalUrl) => {
-  const videoId = provider === 'youtube' ? extractYouTubeVideoId(urlObj) : null;
-  const embedUrl = videoId ? buildYouTubeEmbedUrl(videoId) : null;
+  const youtubeVideoId = provider === 'youtube' ? extractYouTubeVideoId(urlObj) : null;
+  const youtubeEmbedUrl = youtubeVideoId ? buildYouTubeEmbedUrl(youtubeVideoId) : null;
 
   let meta = {};
 
@@ -317,6 +347,13 @@ const buildPreview = async (urlObj, provider, originalUrl) => {
     console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl}: ${err.message}`);
   }
 
+  // Compute TikTok embedUrl: prefer ID from URL path, fall back to ID from oEmbed HTML
+  let tikTokEmbedUrl = null;
+  if (provider === 'tiktok') {
+    const tikTokVideoId = extractTikTokVideoId(urlObj) || meta.videoId || null;
+    tikTokEmbedUrl = tikTokVideoId ? buildTikTokEmbedUrl(tikTokVideoId) : null;
+  }
+
   return {
     provider,
     url: originalUrl,
@@ -325,7 +362,7 @@ const buildPreview = async (urlObj, provider, originalUrl) => {
     thumbnailUrl: meta.thumbnailUrl || null,
     providerName: meta.providerName || (provider === 'youtube' ? 'YouTube' : 'TikTok'),
     providerUrl: meta.providerUrl || (provider === 'youtube' ? 'https://www.youtube.com' : 'https://www.tiktok.com'),
-    embedUrl: embedUrl || null,
+    embedUrl: youtubeEmbedUrl || tikTokEmbedUrl || null,
     embedHtml: meta.embedHtml || null
   };
 };
@@ -432,6 +469,8 @@ module.exports = {
   normalizeUrl,
   extractYouTubeVideoId,
   buildYouTubeEmbedUrl,
+  extractTikTokVideoId,
+  buildTikTokEmbedUrl,
   detectProvider,
   YOUTUBE_HOSTS,
   TIKTOK_HOSTS

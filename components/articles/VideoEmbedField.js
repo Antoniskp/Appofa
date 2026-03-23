@@ -190,6 +190,21 @@ export default function VideoEmbedField({
     }
 
     if (preview.provider === 'tiktok') {
+      if (preview.embedUrl) {
+        return (
+          <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 bg-black aspect-video">
+            <iframe
+              src={preview.embedUrl}
+              title={preview.title || 'TikTok video'}
+              className="w-full h-full"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+            />
+          </div>
+        );
+      }
       if (preview.embedHtml) {
         const safeHtml = sanitizeTikTokEmbedHtml(preview.embedHtml);
         if (safeHtml) {

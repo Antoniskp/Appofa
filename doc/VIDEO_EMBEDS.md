@@ -42,7 +42,7 @@ Embed YouTube and TikTok videos directly inside Articles, News, and Personal pos
 { "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
 ```
 
-**Response:**
+**YouTube response:**
 ```json
 {
   "success": true,
@@ -61,6 +61,32 @@ Embed YouTube and TikTok videos directly inside Articles, News, and Personal pos
 }
 ```
 
+**TikTok response:**
+```json
+{
+  "success": true,
+  "data": {
+    "provider": "tiktok",
+    "url": "https://www.tiktok.com/@user/video/1234567890",
+    "title": "My TikTok",
+    "authorName": "@user",
+    "thumbnailUrl": "https://p16.tiktokcdn.com/...",
+    "providerName": "TikTok",
+    "providerUrl": "https://www.tiktok.com",
+    "embedUrl": "https://www.tiktok.com/embed/v2/1234567890",
+    "embedHtml": "<blockquote class=\"tiktok-embed\" ...>",
+    "cached": false
+  }
+}
+```
+
+`embedUrl` for TikTok is derived by:
+1. Extracting the numeric video ID from `/video/<id>` in the URL path (standard URLs).
+2. If the URL is a shortlink (`vm.tiktok.com`) with no video ID in the path, extracting the ID from the `data-video-id` attribute in the oEmbed HTML returned by TikTok's oEmbed API.
+3. Building `https://www.tiktok.com/embed/v2/<videoId>`.
+
+`embedHtml` (TikTok's raw oEmbed HTML — a `<blockquote>` + `<script>`) is still stored but is **not** required for inline playback.
+
 ### Database
 
 New columns added to the `Articles` table:
@@ -78,8 +104,9 @@ A new `LinkPreviewCaches` table caches oEmbed API responses (default TTL: 7 days
 ### Security
 
 - **SSRF protection:** Only YouTube and TikTok hostnames are allowed. Private/loopback IPs, credentials in URLs, and non-HTTP(S) protocols are rejected.
-- **XSS prevention:** TikTok `embedHtml` is sanitized before rendering. Only `<iframe>` elements with a `www.tiktok.com` src are allowed. No `<script>` tags are ever injected.
+- **XSS prevention:** TikTok `embedHtml` is sanitized before rendering. Only `<iframe>` elements with a `www.tiktok.com` src are allowed. No `<script>` tags are ever injected. The preferred playback path uses a safe `embedUrl` iframe, bypassing `embedHtml` entirely.
 - **YouTube embeds** use the privacy-enhanced `youtube-nocookie.com` domain.
+- **TikTok embeds** use `https://www.tiktok.com/embed/v2/<videoId>` (official TikTok embed endpoint).
 - All fetches from the server to provider APIs are strictly allowlisted; no user-supplied URL is ever fetched directly.
 
 ### Frontend Components
