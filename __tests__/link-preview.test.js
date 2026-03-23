@@ -18,6 +18,8 @@ const {
   normalizeUrl,
   extractYouTubeVideoId,
   buildYouTubeEmbedUrl,
+  extractTikTokVideoId,
+  buildTikTokEmbedUrl,
   detectProvider,
   YOUTUBE_HOSTS,
   TIKTOK_HOSTS
@@ -160,6 +162,44 @@ describe('normalizeUrl', () => {
   });
 });
 
+describe('extractTikTokVideoId', () => {
+  const toUrlObj = (url) => new URL(url);
+
+  test('extracts video ID from standard @user/video/<id> URL', () => {
+    expect(extractTikTokVideoId(toUrlObj('https://www.tiktok.com/@user/video/1234567890123456789')))
+      .toBe('1234567890123456789');
+  });
+
+  test('extracts video ID from m.tiktok.com URL', () => {
+    expect(extractTikTokVideoId(toUrlObj('https://m.tiktok.com/@user/video/9876543210')))
+      .toBe('9876543210');
+  });
+
+  test('returns null for vm.tiktok.com shortlink (no video ID in path)', () => {
+    expect(extractTikTokVideoId(toUrlObj('https://vm.tiktok.com/ZMxxxxx/')))
+      .toBeNull();
+  });
+
+  test('returns null for TikTok profile URL', () => {
+    expect(extractTikTokVideoId(toUrlObj('https://www.tiktok.com/@user')))
+      .toBeNull();
+  });
+});
+
+describe('buildTikTokEmbedUrl', () => {
+  test('builds TikTok embed/v2 URL from video ID', () => {
+    const url = buildTikTokEmbedUrl('1234567890123456789');
+    expect(url).toBe('https://www.tiktok.com/embed/v2/1234567890123456789');
+  });
+
+  test('uses encodeURIComponent on the video ID', () => {
+    // Verify the ID is URL-encoded in the embed URL
+    const url = buildTikTokEmbedUrl('12345');
+    expect(url).toContain('/embed/v2/12345');
+    expect(url.startsWith('https://www.tiktok.com/embed/v2/')).toBe(true);
+  });
+});
+
 // ─── Integration Tests ────────────────────────────────────────────────────────
 
 describe('POST /api/link-preview', () => {
@@ -258,6 +298,90 @@ describe('POST /api/link-preview', () => {
       expect(res.body.data.provider).toBe('youtube');
       expect(res.body.data.embedUrl).toContain('youtube-nocookie.com/embed/dQw4w9WgXcQ');
       expect(res.body.data.title).toBe('Mock YouTube Video');
+    } finally {
+      https.get = originalGet;
+    }
+  });
+
+  test('returns embedUrl for a valid TikTok URL (with mocked oEmbed)', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      const mockRes = {
+        statusCode: 200,
+        headers: {},
+        on: (event, handler) => {
+          if (event === 'data') handler(JSON.stringify({
+            title: 'Mock TikTok Video',
+            author_name: 'Mock Creator',
+            thumbnail_url: 'https://p16.tiktokcdn.com/thumbnail.jpg',
+            provider_name: 'TikTok',
+            provider_url: 'https://www.tiktok.com',
+            html: '<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@user/video/1234567890" data-video-id="1234567890"></blockquote>'
+          }));
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    try {
+      const res = await request(app)
+        .post('/api/link-preview')
+        .send({ url: 'https://www.tiktok.com/@user/video/1234567890' })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.provider).toBe('tiktok');
+      expect(res.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/1234567890');
+      expect(res.body.data.title).toBe('Mock TikTok Video');
+    } finally {
+      https.get = originalGet;
+    }
+  });
+
+  test('returns embedUrl from oEmbed HTML data-video-id for TikTok shortlinks', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      const mockRes = {
+        statusCode: 200,
+        headers: {},
+        on: (event, handler) => {
+          if (event === 'data') handler(JSON.stringify({
+            title: 'Mock Shortlink TikTok',
+            author_name: 'Mock Creator',
+            thumbnail_url: 'https://p16.tiktokcdn.com/thumbnail2.jpg',
+            provider_name: 'TikTok',
+            provider_url: 'https://www.tiktok.com',
+            html: '<blockquote class="tiktok-embed" cite="https://www.tiktok.com/@user/video/9876543210" data-video-id="9876543210"></blockquote>'
+          }));
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    try {
+      const res = await request(app)
+        .post('/api/link-preview')
+        .send({ url: 'https://vm.tiktok.com/ZMxxxxx/' })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.provider).toBe('tiktok');
+      // ID should be extracted from oEmbed HTML data-video-id since path has no /video/<id>
+      expect(res.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/9876543210');
     } finally {
       https.get = originalGet;
     }

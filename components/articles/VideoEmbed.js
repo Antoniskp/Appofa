@@ -5,8 +5,8 @@
  *
  * Renders an embedded video player for YouTube or TikTok.
  * - YouTube: renders an <iframe> using the stored embedUrl (youtube-nocookie CDN)
- * - TikTok:  renders a sanitized iframe (when embedHtml contains one) or a
- *            fallback link card; never injects arbitrary HTML
+ * - TikTok:  renders an <iframe> from embedUrl when available (preferred), or a
+ *            sanitized iframe from embedHtml as fallback; never injects arbitrary HTML
  *
  * Props:
  *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
@@ -110,6 +110,40 @@ export default function VideoEmbed({ article, compact = false }) {
 
   // ── TikTok ──────────────────────────────────────────────────────────────────
   if (sourceProvider === 'tiktok') {
+    // Preferred path: render an iframe from embedUrl (safe, no script injection)
+    if (embedUrl) {
+      return (
+        <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
+          <div className="aspect-video bg-black flex items-center justify-center">
+            <iframe
+              src={embedUrl}
+              title={title}
+              className="w-full h-full"
+              allow="autoplay; encrypted-media"
+              allowFullScreen
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+            />
+          </div>
+          {!compact && (title || author) && (
+            <div className="px-4 py-3 bg-white border-t border-gray-100">
+              {title && <p className="text-sm font-medium text-gray-900">{title}</p>}
+              {author && <p className="text-xs text-gray-500 mt-0.5">{author}</p>}
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-gray-500 hover:text-gray-700 mt-1 inline-block"
+              >
+                Watch on TikTok ↗
+              </a>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // Fallback: sanitize embedHtml if it contains a safe iframe
     if (embedHtml) {
       const safeHtml = sanitizeTikTokEmbedHtml(embedHtml);
       if (safeHtml) {
