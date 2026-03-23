@@ -56,6 +56,7 @@ export default function VideoEmbedField({
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [errorMessage, setErrorMessage] = useState('');
   const [preview, setPreview] = useState(null);
+  const [tiktokPlaying, setTiktokPlaying] = useState(false);
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
   // Use refs for callbacks and dirty flag to avoid stale closures in debounced function
@@ -76,10 +77,11 @@ export default function VideoEmbedField({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
-  // Load TikTok's embed.js when a TikTok preview is shown so the blockquote
-  // is processed into an actual player widget.
+  // Load TikTok's embed.js only after the user clicks play so that the
+  // blockquote is already in the DOM when the script processes it.
+  // This prevents TikTok from autoplaying on page load.
   useEffect(() => {
-    if (preview?.provider !== 'tiktok') return;
+    if (preview?.provider !== 'tiktok' || !tiktokPlaying) return;
 
     const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
     if (!existing) {
@@ -90,7 +92,7 @@ export default function VideoEmbedField({
     } else if (window.tiktokEmbed?.lib?.render) {
       window.tiktokEmbed.lib.render();
     }
-  }, [preview?.provider]);
+  }, [preview?.provider, tiktokPlaying]);
 
   const fetchPreview = useCallback(async (url) => {
     if (!url || !url.trim()) {
@@ -110,6 +112,7 @@ export default function VideoEmbedField({
       if (result && result.success && result.data) {
         const data = result.data;
         setPreview(data);
+        setTiktokPlaying(false);
         setStatus('success');
         if (onChangeRef.current) onChangeRef.current(data);
         // Auto-fill title only if title field hasn't been touched by the user
@@ -189,6 +192,54 @@ export default function VideoEmbedField({
       // Primary: official blockquote + embed.js approach.
       // TikTok blocks /embed/v2/ iframes on third-party domains.
       if (videoId) {
+        // Show a static thumbnail + play button until the user clicks play.
+        // TikTok's embed.js ignores data-autoplay="false" as of 2025/2026,
+        // so we only inject the blockquote into the DOM after the click.
+        if (!tiktokPlaying) {
+          return (
+            <div className="mt-3 flex justify-center">
+              <div
+                style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}
+                className="relative bg-black rounded-lg overflow-hidden cursor-pointer"
+                role="button"
+                tabIndex={0}
+                aria-label="Play TikTok video"
+                onClick={() => setTiktokPlaying(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTiktokPlaying(true); } }}
+              >
+                {preview.thumbnailUrl ? (
+                  <img
+                    src={preview.thumbnailUrl}
+                    alt={preview.title || 'TikTok video thumbnail'}
+                    className="w-full object-cover"
+                    style={{ aspectRatio: '9/16', maxHeight: '740px' }}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div
+                    className="w-full flex items-center justify-center bg-gray-900"
+                    style={{ aspectRatio: '9/16', maxHeight: '740px' }}
+                  >
+                    <span className="text-white text-5xl">♪</span>
+                  </div>
+                )}
+                {/* Play button overlay */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30">
+                  <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
+                    <span className="text-white text-2xl ml-1">▶</span>
+                  </div>
+                  {(preview.title || preview.authorName) && (
+                    <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                      {preview.title && <p className="text-white text-sm font-medium line-clamp-2">{preview.title}</p>}
+                      {preview.authorName && <p className="text-gray-300 text-xs mt-0.5">{preview.authorName}</p>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div className="mt-3 flex justify-center">
             <blockquote
@@ -220,7 +271,7 @@ export default function VideoEmbedField({
               src={preview.embedUrl}
               title={preview.title || 'TikTok video'}
               className="w-full h-full"
-              allow="autoplay; encrypted-media"
+              allow="encrypted-media"
               allowFullScreen
               loading="lazy"
               sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * VideoEmbed
@@ -37,11 +37,13 @@ function extractTikTokVideoId(embedUrl, sourceUrl) {
 
 export default function VideoEmbed({ article, compact = false }) {
   const isTikTok = article?.sourceProvider === 'tiktok';
+  const [tiktokPlaying, setTiktokPlaying] = useState(false);
 
-  // Load TikTok's embed.js when a TikTok embed is in the DOM.
-  // The script processes every .tiktok-embed blockquote it finds on the page.
+  // Load TikTok's embed.js only after the user clicks play so that the
+  // blockquote is already in the DOM when the script processes it.
+  // This prevents TikTok from autoplaying on page load.
   useEffect(() => {
-    if (!isTikTok) return;
+    if (!isTikTok || !tiktokPlaying) return;
 
     const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
     if (!existing) {
@@ -53,7 +55,7 @@ export default function VideoEmbed({ article, compact = false }) {
       // Script already loaded — re-process any new blockquotes added to the DOM.
       window.tiktokEmbed.lib.render();
     }
-  }, [isTikTok]);
+  }, [isTikTok, tiktokPlaying]);
 
   if (!article?.sourceUrl || !article?.sourceProvider) return null;
 
@@ -122,6 +124,54 @@ export default function VideoEmbed({ article, compact = false }) {
     // TikTok blocks /embed/v2/ iframes on third-party domains, so the
     // blockquote method is the only approach that reliably works.
     if (videoId) {
+      // Show a static thumbnail + play button until the user clicks play.
+      // TikTok's embed.js ignores data-autoplay="false" as of 2025/2026,
+      // so we only inject the blockquote into the DOM after the click.
+      if (!tiktokPlaying) {
+        return (
+          <div className={`${outerMargin} flex flex-col items-center`}>
+            <div
+              style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}
+              className="relative bg-black rounded-lg overflow-hidden cursor-pointer"
+              role="button"
+              tabIndex={0}
+              aria-label="Play TikTok video"
+              onClick={() => setTiktokPlaying(true)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTiktokPlaying(true); } }}
+            >
+              {thumbnail ? (
+                <img
+                  src={thumbnail}
+                  alt={title || 'TikTok video thumbnail'}
+                  className="w-full object-cover"
+                  style={{ aspectRatio: '9/16', maxHeight: '740px' }}
+                  loading="lazy"
+                />
+              ) : (
+                <div
+                  className="w-full flex items-center justify-center bg-gray-900"
+                  style={{ aspectRatio: '9/16', maxHeight: '740px' }}
+                >
+                  <span className="text-white text-5xl">♪</span>
+                </div>
+              )}
+              {/* Play button overlay */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/30">
+                <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
+                  <span className="text-white text-2xl ml-1">▶</span>
+                </div>
+                {!compact && (title || author) && (
+                  <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                    {title && <p className="text-white text-sm font-medium line-clamp-2">{title}</p>}
+                    {author && <p className="text-gray-300 text-xs mt-0.5">{author}</p>}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       return (
         <div className={`${outerMargin} flex flex-col items-center`}>
           <blockquote
@@ -154,7 +204,7 @@ export default function VideoEmbed({ article, compact = false }) {
               src={embedUrl}
               title={title}
               className="w-full h-full"
-              allow="autoplay; encrypted-media"
+              allow="encrypted-media"
               allowFullScreen
               loading="lazy"
               sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
