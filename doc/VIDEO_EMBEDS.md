@@ -151,5 +151,5 @@ Optional tuning (edit `src/controllers/linkPreviewController.js`):
 ## Limitations
 
 - Only YouTube and TikTok are supported. To add more providers, extend the allowlists and add provider-specific oEmbed fetching in `linkPreviewController.js`.
-- TikTok may rate-limit or change their oEmbed API. The fallback renders a clickable card linking to TikTok.
+- TikTok may rate-limit or change their oEmbed API. The fallback renders a clickable card; when TikTok author metadata (`authorName`) is available it is displayed as the link label, otherwise "Watch on TikTok ↗" is used.
 - Live embed preview in the form editor (VideoEmbedField) requires network access to `/api/link-preview` from the browser.

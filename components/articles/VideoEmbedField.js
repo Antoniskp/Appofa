@@ -7,6 +7,7 @@ import { linkPreviewAPI } from '@/lib/api';
 const DEBOUNCE_MS = 700;
 
 const TIKTOK_EMBED_SCRIPT_SRC = 'https://www.tiktok.com/embed.js';
+const WATCH_ON_TIKTOK = 'Watch on TikTok ↗';
 
 /**
  * Extract TikTok video ID from embedUrl or sourceUrl.
@@ -293,14 +294,13 @@ export default function VideoEmbedField({
           )}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{preview.title}</p>
-            <p className="text-xs text-gray-500 mt-1">{preview.authorName}</p>
             <a
               href={preview.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-block mt-2 text-xs text-blue-600 hover:text-blue-800"
+              className="inline-block mt-1 text-xs text-blue-600 hover:text-blue-800"
             >
-              Watch on TikTok ↗
+              {preview.authorName || WATCH_ON_TIKTOK}
             </a>
           </div>
         </div>
