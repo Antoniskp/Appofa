@@ -48,7 +48,7 @@ function sanitizeTikTokEmbedHtml(html) {
   return null;
 }
 
-export default function VideoEmbed({ article }) {
+export default function VideoEmbed({ article, compact = false }) {
   if (!article?.sourceUrl || !article?.sourceProvider) return null;
 
   const { sourceProvider, sourceUrl, embedUrl, embedHtml, sourceMeta } = article;
@@ -56,12 +56,16 @@ export default function VideoEmbed({ article }) {
   const author = sourceMeta?.authorName || null;
   const thumbnail = sourceMeta?.thumbnailUrl || null;
 
+  // When used inside a card the caller passes compact=true to suppress the
+  // large bottom margin that is designed for detail-page layouts.
+  const outerMargin = compact ? '' : 'mb-8';
+
   // ── YouTube ─────────────────────────────────────────────────────────────────
   if (sourceProvider === 'youtube') {
     if (!embedUrl) {
       // Fallback: link out
       return (
-        <div className="mb-8 rounded-lg border border-gray-200 p-4 bg-gray-50">
+        <div className={`${outerMargin} rounded-lg border border-gray-200 p-4 bg-gray-50`}>
           <a
             href={sourceUrl}
             target="_blank"
@@ -75,7 +79,7 @@ export default function VideoEmbed({ article }) {
     }
 
     return (
-      <div className="mb-8 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+      <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
         <div className="aspect-video bg-black">
           <iframe
             src={embedUrl}
@@ -86,7 +90,7 @@ export default function VideoEmbed({ article }) {
             loading="lazy"
           />
         </div>
-        {(title || author) && (
+        {!compact && (title || author) && (
           <div className="px-4 py-3 bg-white border-t border-gray-100">
             {title && <p className="text-sm font-medium text-gray-900">{title}</p>}
             {author && <p className="text-xs text-gray-500 mt-0.5">{author}</p>}
@@ -110,19 +114,21 @@ export default function VideoEmbed({ article }) {
       const safeHtml = sanitizeTikTokEmbedHtml(embedHtml);
       if (safeHtml) {
         return (
-          <div className="mb-8 flex flex-col items-center">
+          <div className={`${outerMargin} flex flex-col items-center`}>
             <div
               // eslint-disable-next-line react/no-danger
               dangerouslySetInnerHTML={{ __html: safeHtml }}
             />
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 text-xs text-gray-500 hover:text-gray-700"
-            >
-              Watch on TikTok ↗
-            </a>
+            {!compact && (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 text-xs text-gray-500 hover:text-gray-700"
+              >
+                Watch on TikTok ↗
+              </a>
+            )}
           </div>
         );
       }
@@ -130,7 +136,7 @@ export default function VideoEmbed({ article }) {
 
     // Fallback card
     return (
-      <div className="mb-8 rounded-lg border border-gray-200 p-4 flex items-center gap-4 bg-gray-50">
+      <div className={`${outerMargin} rounded-lg border border-gray-200 p-4 flex items-center gap-4 bg-gray-50`}>
         {thumbnail && (
           <img
             src={thumbnail}

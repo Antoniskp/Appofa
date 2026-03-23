@@ -1,7 +1,11 @@
-import { ImageCard, ImageTopCard } from '@/components/Card';
+'use client';
+
+import Link from 'next/link';
+import Card, { ImageCard, ImageTopCard } from '@/components/Card';
 import Badge, { TypeBadge } from '@/components/Badge';
 import { TruncatedTextTooltip } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
+import VideoEmbed from '@/components/articles/VideoEmbed';
 
 /**
  * Helper function to strip markdown syntax from text
@@ -69,7 +73,48 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const articleHref = article.type === 'news'
     ? `/news/${idSlug(article.id, article.title)}`
     : `/articles/${idSlug(article.id, article.title)}`;
-  
+
+  // Detect video articles (YouTube / TikTok with usable embed data or at least
+  // a sourceUrl so the VideoEmbed fallback card can still render).
+  const isVideoArticle =
+    (article.sourceProvider === 'youtube' || article.sourceProvider === 'tiktok') &&
+    !!(article.embedUrl || article.embedHtml || article.sourceUrl);
+
+  // Video card layout – renders an inline embed player.
+  // The card itself is NOT wrapped in a <Link> so that iframe clicks stay
+  // inside the iframe context (no navigation to TikTok/YouTube).
+  // The title is a dedicated <Link> that opens the in-app detail page.
+  if (isVideoArticle) {
+    return (
+      <Card className="overflow-hidden" padding="none">
+        {/* Inline embed player – compact=true removes detail-page mb-8 margin */}
+        <VideoEmbed article={article} compact />
+
+        {/* Card metadata – title links to the in-app detail page */}
+        <div className="p-4">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {article.type && <TypeBadge type={article.type} />}
+            {article.category && <Badge variant="primary">{article.category}</Badge>}
+            {Array.isArray(article.tags) && article.tags.length > 0 && (
+              <Badge variant="purple">{article.tags.join(', ')}</Badge>
+            )}
+          </div>
+          <h3 className="headline">
+            <Link href={articleHref} className="hover:text-blue-600">
+              <TruncatedTextTooltip maxLength={60} className="headline">
+                {article.title}
+              </TruncatedTextTooltip>
+            </Link>
+          </h3>
+          <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+            <span>By {authorLabel}</span>
+            <span>{formattedDate} {formattedTime}</span>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   // List variant (image on left)
   if (variant === 'list') {
     return (
