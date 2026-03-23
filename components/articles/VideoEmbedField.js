@@ -6,46 +6,24 @@ import { linkPreviewAPI } from '@/lib/api';
 // Debounce delay in milliseconds
 const DEBOUNCE_MS = 700;
 
-// Allowed iframe src hosts for TikTok embed HTML sanitization
-const ALLOWED_IFRAME_HOSTS = new Set([
-  'www.tiktok.com',
-  'tiktok.com'
-]);
+const TIKTOK_EMBED_SCRIPT_SRC = 'https://www.tiktok.com/embed.js';
 
 /**
- * Sanitize TikTok embedHtml by allowing only a safe iframe with a
- * known TikTok src. Returns sanitized HTML string or null if unsafe.
- *
- * We intentionally do NOT allow <script> tags or arbitrary attributes.
- * TikTok's oEmbed HTML contains both an <blockquote> and a <script>;
- * we only keep the <iframe> variant (when present) or render a fallback link.
+ * Extract TikTok video ID from embedUrl or sourceUrl.
+ * embedUrl format:  https://www.tiktok.com/embed/v2/<videoId>
+ * sourceUrl format: https://www.tiktok.com/@user/video/<videoId>
  */
-const sanitizeTikTokEmbedHtml = (html) => {
-  if (typeof html !== 'string') return null;
-
-  // Extract the first <iframe src="..."> if present
-  const iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["'][^>]*>/i);
-  if (iframeMatch) {
-    try {
-      const srcUrl = new URL(iframeMatch[1]);
-      if (ALLOWED_IFRAME_HOSTS.has(srcUrl.hostname)) {
-        // Build a safe, minimal iframe
-        return `<iframe
-          src="${srcUrl.toString()}"
-          style="width:100%;max-width:605px;min-width:325px;border:none;"
-          allow="autoplay"
-          allowfullscreen
-          sandbox="allow-scripts allow-same-origin allow-popups"
-          loading="lazy"
-          title="TikTok video"
-        ></iframe>`;
-      }
-    } catch {
-      // ignore invalid src
-    }
+function extractTikTokVideoId(embedUrl, sourceUrl) {
+  if (embedUrl) {
+    const m = embedUrl.match(/\/embed\/v2\/([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
+  }
+  if (sourceUrl) {
+    const m = sourceUrl.match(/\/video\/([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
   }
   return null;
-};
+}
 
 /**
  * VideoEmbedField
@@ -97,6 +75,22 @@ export default function VideoEmbedField({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
+
+  // Load TikTok's embed.js when a TikTok preview is shown so the blockquote
+  // is processed into an actual player widget.
+  useEffect(() => {
+    if (preview?.provider !== 'tiktok') return;
+
+    const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
+    if (!existing) {
+      const script = document.createElement('script');
+      script.src = TIKTOK_EMBED_SCRIPT_SRC;
+      script.async = true;
+      document.body.appendChild(script);
+    } else if (window.tiktokEmbed?.lib?.render) {
+      window.tiktokEmbed.lib.render();
+    }
+  }, [preview?.provider]);
 
   const fetchPreview = useCallback(async (url) => {
     if (!url || !url.trim()) {
@@ -190,6 +184,34 @@ export default function VideoEmbedField({
     }
 
     if (preview.provider === 'tiktok') {
+      const videoId = extractTikTokVideoId(preview.embedUrl, preview.url);
+
+      // Primary: official blockquote + embed.js approach.
+      // TikTok blocks /embed/v2/ iframes on third-party domains.
+      if (videoId) {
+        return (
+          <div className="mt-3 flex justify-center">
+            <blockquote
+              className="tiktok-embed"
+              cite={preview.url}
+              data-video-id={videoId}
+              style={{ maxWidth: '605px', minWidth: '325px' }}
+            >
+              <section>
+                <a
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={preview.url}
+                >
+                  {preview.authorName || preview.title || 'TikTok Video'}
+                </a>
+              </section>
+            </blockquote>
+          </div>
+        );
+      }
+
+      // Secondary: try embedUrl iframe
       if (preview.embedUrl) {
         return (
           <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 bg-black aspect-video">
@@ -205,19 +227,8 @@ export default function VideoEmbedField({
           </div>
         );
       }
-      if (preview.embedHtml) {
-        const safeHtml = sanitizeTikTokEmbedHtml(preview.embedHtml);
-        if (safeHtml) {
-          return (
-            <div
-              className="mt-3 flex justify-center"
-              // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: safeHtml }}
-            />
-          );
-        }
-      }
-      // Fallback: link-out card
+
+      // Final fallback: link-out card
       return (
         <div className="mt-3 rounded-lg border border-gray-200 p-4 flex items-center gap-3">
           {preview.thumbnailUrl && (

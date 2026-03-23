@@ -1,57 +1,63 @@
 'use client';
 
+import { useEffect } from 'react';
+
 /**
  * VideoEmbed
  *
  * Renders an embedded video player for YouTube or TikTok.
  * - YouTube: renders an <iframe> using the stored embedUrl (youtube-nocookie CDN)
- * - TikTok:  renders an <iframe> from embedUrl when available (preferred), or a
- *            sanitized iframe from embedHtml as fallback; never injects arbitrary HTML
+ * - TikTok:  uses the official blockquote + embed.js approach (TikTok blocks
+ *            /embed/v2/ iframes on third-party domains via X-Frame-Options).
+ *            Falls back to the embedUrl iframe, then a link card.
  *
  * Props:
  *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
  *                      embedHtml, sourceMeta fields
  */
 
-// Allowed iframe src hosts for TikTok embed sanitization
-const ALLOWED_TIKTOK_IFRAME_HOSTS = new Set([
-  'www.tiktok.com',
-  'tiktok.com'
-]);
+const TIKTOK_EMBED_SCRIPT_SRC = 'https://www.tiktok.com/embed.js';
 
 /**
- * Sanitize TikTok embedHtml by extracting the first safe <iframe>.
- * Returns a safe HTML string or null if no safe iframe found.
+ * Extract TikTok video ID from embedUrl or sourceUrl.
+ * embedUrl format:  https://www.tiktok.com/embed/v2/<videoId>
+ * sourceUrl format: https://www.tiktok.com/@user/video/<videoId>
  */
-function sanitizeTikTokEmbedHtml(html) {
-  if (typeof html !== 'string') return null;
-
-  const iframeMatch = html.match(/<iframe[^>]+src=["']([^"']+)["'][^>]*>/i);
-  if (iframeMatch) {
-    try {
-      const srcUrl = new URL(iframeMatch[1]);
-      if (ALLOWED_TIKTOK_IFRAME_HOSTS.has(srcUrl.hostname)) {
-        return `<iframe
-          src="${srcUrl.toString()}"
-          style="width:100%;max-width:605px;min-width:325px;border:none;"
-          allow="autoplay"
-          allowfullscreen
-          sandbox="allow-scripts allow-same-origin allow-popups"
-          loading="lazy"
-          title="TikTok video"
-        ></iframe>`;
-      }
-    } catch {
-      // ignore
-    }
+function extractTikTokVideoId(embedUrl, sourceUrl) {
+  if (embedUrl) {
+    const m = embedUrl.match(/\/embed\/v2\/([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
+  }
+  if (sourceUrl) {
+    const m = sourceUrl.match(/\/video\/([a-zA-Z0-9_-]+)/);
+    if (m) return m[1];
   }
   return null;
 }
 
 export default function VideoEmbed({ article, compact = false }) {
+  const isTikTok = article?.sourceProvider === 'tiktok';
+
+  // Load TikTok's embed.js when a TikTok embed is in the DOM.
+  // The script processes every .tiktok-embed blockquote it finds on the page.
+  useEffect(() => {
+    if (!isTikTok) return;
+
+    const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
+    if (!existing) {
+      const script = document.createElement('script');
+      script.src = TIKTOK_EMBED_SCRIPT_SRC;
+      script.async = true;
+      document.body.appendChild(script);
+    } else if (window.tiktokEmbed?.lib?.render) {
+      // Script already loaded — re-process any new blockquotes added to the DOM.
+      window.tiktokEmbed.lib.render();
+    }
+  }, [isTikTok]);
+
   if (!article?.sourceUrl || !article?.sourceProvider) return null;
 
-  const { sourceProvider, sourceUrl, embedUrl, embedHtml, sourceMeta } = article;
+  const { sourceProvider, sourceUrl, embedUrl, sourceMeta } = article;
   const title = sourceMeta?.title || article.title || 'Video';
   const author = sourceMeta?.authorName || null;
   const thumbnail = sourceMeta?.thumbnailUrl || null;
@@ -110,7 +116,35 @@ export default function VideoEmbed({ article, compact = false }) {
 
   // ── TikTok ──────────────────────────────────────────────────────────────────
   if (sourceProvider === 'tiktok') {
-    // Preferred path: render an iframe from embedUrl (safe, no script injection)
+    const videoId = extractTikTokVideoId(embedUrl, sourceUrl);
+
+    // Primary: official blockquote + embed.js approach.
+    // TikTok blocks /embed/v2/ iframes on third-party domains, so the
+    // blockquote method is the only approach that reliably works.
+    if (videoId) {
+      return (
+        <div className={`${outerMargin} flex flex-col items-center`}>
+          <blockquote
+            className="tiktok-embed"
+            cite={sourceUrl}
+            data-video-id={videoId}
+            style={{ maxWidth: '605px', minWidth: '325px' }}
+          >
+            <section>
+              <a
+                target="_blank"
+                rel="noopener noreferrer"
+                href={sourceUrl}
+              >
+                {author || title || 'TikTok Video'}
+              </a>
+            </section>
+          </blockquote>
+        </div>
+      );
+    }
+
+    // Secondary: try the embedUrl iframe (may work in some contexts)
     if (embedUrl) {
       return (
         <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
@@ -143,32 +177,7 @@ export default function VideoEmbed({ article, compact = false }) {
       );
     }
 
-    // Fallback: sanitize embedHtml if it contains a safe iframe
-    if (embedHtml) {
-      const safeHtml = sanitizeTikTokEmbedHtml(embedHtml);
-      if (safeHtml) {
-        return (
-          <div className={`${outerMargin} flex flex-col items-center`}>
-            <div
-              // eslint-disable-next-line react/no-danger
-              dangerouslySetInnerHTML={{ __html: safeHtml }}
-            />
-            {!compact && (
-              <a
-                href={sourceUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-2 text-xs text-gray-500 hover:text-gray-700"
-              >
-                Watch on TikTok ↗
-              </a>
-            )}
-          </div>
-        );
-      }
-    }
-
-    // Fallback card
+    // Final fallback card
     return (
       <div className={`${outerMargin} rounded-lg border border-gray-200 p-4 flex items-center gap-4 bg-gray-50`}>
         {thumbnail && (
