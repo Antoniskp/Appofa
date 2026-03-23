@@ -195,6 +195,7 @@ export default function VideoEmbedField({
               className="tiktok-embed"
               cite={preview.url}
               data-video-id={videoId}
+              data-autoplay="false"
               style={{ maxWidth: '605px', minWidth: '325px' }}
             >
               <section>
