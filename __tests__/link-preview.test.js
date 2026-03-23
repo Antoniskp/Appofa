@@ -418,4 +418,66 @@ describe('POST /api/link-preview', () => {
       https.get = originalGet;
     }
   });
+
+  test('derives embedUrl from cached TikTok entry that has no embedUrl (stale cache fix)', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+
+    // First request: populate cache with a TikTok entry that has no embedUrl
+    // (simulating a cache entry created before the embedUrl feature was added)
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      const mockRes = {
+        statusCode: 200,
+        headers: {},
+        on: (event, handler) => {
+          if (event === 'data') handler(JSON.stringify({
+            title: 'Stale Cached TikTok',
+            author_name: 'Creator',
+            thumbnail_url: 'https://p16.tiktokcdn.com/stale.jpg',
+            provider_name: 'TikTok',
+            provider_url: 'https://www.tiktok.com',
+            html: null
+          }));
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    const staleTikTokUrl = 'https://www.tiktok.com/@user/video/5555555555555555555';
+
+    try {
+      // First call – fresh fetch, embedUrl derived from URL path
+      const firstRes = await request(app)
+        .post('/api/link-preview')
+        .send({ url: staleTikTokUrl })
+        .expect(200);
+
+      expect(firstRes.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/5555555555555555555');
+
+      // Manually wipe the embedUrl from the cache row to simulate a stale entry
+      await LinkPreviewCache.update(
+        { embedUrl: null },
+        { where: { normalizedUrl: 'https://www.tiktok.com/@user/video/5555555555555555555' } }
+      );
+
+      // Second call – should hit the cache but still return a correct embedUrl
+      // derived on-the-fly from the normalized URL
+      const secondRes = await request(app)
+        .post('/api/link-preview')
+        .send({ url: staleTikTokUrl })
+        .expect(200);
+
+      expect(secondRes.body.success).toBe(true);
+      expect(secondRes.body.data.provider).toBe('tiktok');
+      expect(secondRes.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/5555555555555555555');
+      expect(secondRes.body.data.cached).toBe(true);
+    } finally {
+      https.get = originalGet;
+    }
+  });
 });
