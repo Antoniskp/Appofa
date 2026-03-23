@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
 export const metadata = {
@@ -7,7 +8,7 @@ export const metadata = {
 
 export default function RulesPage() {
   return (
-    <StaticPageLayout title="Κανόνες Κοινότητας" maxWidth="max-w-3xl">
+    <StaticPageLayout title="Κανόνες Κοινότητας" maxWidth="max-w-3xl" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       <p className="text-gray-700 mb-6">
         Οι κατευθυντήριες γραμμές μας για μια υγιή, εποικοδομητική και σεβαστική κοινότητα.
       </p>

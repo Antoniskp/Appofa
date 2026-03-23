@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function ContributePage() {
   return (
-    <StaticPageLayout title="Συνεργασία με νόημα">
+    <StaticPageLayout title="Συνεργασία με νόημα" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       <section>
         <h2 className="text-2xl font-semibold mb-3">Το Apofasi χτίζεται από την κοινότητα</h2>
         <p className="text-gray-700 mb-4">

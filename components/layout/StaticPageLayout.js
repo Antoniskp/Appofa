@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 
 /**
@@ -12,13 +10,15 @@ import Link from 'next/link';
  * @param {string} props.maxWidth - Max width class (default: 'max-w-4xl')
  * @param {string} props.className - Additional CSS classes for the card element (optional)
  * @param {boolean} props.showHelpfulLinks - Show helper links section (default: true)
+ * @param {React.ReactNode} props.breadcrumb - Optional breadcrumb navigation (rendered above title)
  */
 export default function StaticPageLayout({ 
   title, 
   children, 
   maxWidth = 'max-w-4xl',
   className = '',
-  showHelpfulLinks = true
+  showHelpfulLinks = true,
+  breadcrumb = null
 }) {
   const helpfulLinks = [
     { href: '/faq', label: 'Συχνές Ερωτήσεις' },
@@ -30,6 +30,11 @@ export default function StaticPageLayout({
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        {breadcrumb && (
+          <nav aria-label="Breadcrumb" className="mb-4 text-sm text-gray-500">
+            {breadcrumb}
+          </nav>
+        )}
         {title && (
           <h1 className="text-4xl font-bold mb-8">{title}</h1>
         )}

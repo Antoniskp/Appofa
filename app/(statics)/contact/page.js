@@ -1,11 +1,12 @@
 'use client';
 
+import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import ContactForm from '@/components/ContactForm';
 
 export default function ContactPage() {
   return (
-    <StaticPageLayout title="Επικοινωνία" maxWidth="max-w-2xl">
+    <StaticPageLayout title="Επικοινωνία" maxWidth="max-w-2xl" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
       <p className="text-gray-700 mb-6">
         Συμπληρώστε τη φόρμα και η ομάδα μας θα σας απαντήσει όσο το δυνατόν πιο σύντομα.
       </p>
