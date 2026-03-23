@@ -1,4 +1,4 @@
-const { sequelize, Location } = require('./models');
+const { sequelize, Location } = require('../models');
 require('dotenv').config();
 
 const seedLocations = async () => {

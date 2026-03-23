@@ -565,7 +565,7 @@ pm2 save
 > - **Migrations** create or alter database tables introduced by new pull requests. Skipping them leaves the backend without tables it expects, causing database errors or crashes.
 > - **Frontend rebuild** (`rm -rf .next` then `npm run frontend:build`) is required whenever code, components, or dependencies change — especially when the Next.js version is bumped. Serving a stale `.next` build after a version upgrade causes the frontend process to fail, which makes nginx return 502 for every page.
 >
-> Use `deploy.sh` (which covers all these steps automatically) for a reliable one-command update.
+> Use `scripts/deploy.sh` (which covers all these steps automatically) for a reliable one-command update.
 
 ### Clean Update Workflow
 
@@ -761,7 +761,7 @@ pm2 restart newsapp-frontend
 pm2 save
 ```
 
-The startup script (`start-frontend.js`) compares the mtime of the installed `next` package against the last build. If the build is absent or stale it runs `npm run frontend:build` automatically before starting the server.
+The startup script (`scripts/start-frontend.js`) compares the mtime of the installed `next` package against the last build. If the build is absent or stale it runs `npm run frontend:build` automatically before starting the server.
 
 If the automatic rebuild also fails (e.g. due to a syntax error in new code), restart manually:
 
@@ -823,7 +823,7 @@ pm2 save
 
 ### Fix 5 — Full clean redeploy
 
-When in doubt, run the complete clean update sequence (mirrors what `deploy.sh` does):
+When in doubt, run the complete clean update sequence (mirrors what `scripts/deploy.sh` does):
 
 ```bash
 cd /var/www/Appofa

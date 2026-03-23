@@ -22,7 +22,7 @@ npm install
 
 ### 2. ✅ Initial Migration Run
 ```bash
-node src/run-migrations.js up
+node src/scripts/run-migrations.js up
 ```
 **Result**: All 18 migrations (000-017) ran successfully
 - Migration 017 output: "International location added successfully"
@@ -44,7 +44,7 @@ WHERE type = 'international' AND slug = 'international';
 
 ### 4. ✅ Idempotency Test (Migration System)
 ```bash
-node src/run-migrations.js up
+node src/scripts/run-migrations.js up
 ```
 **Result**: Migration system correctly detected all migrations as executed
 - Output: "✓ No pending migrations to run"
@@ -62,7 +62,7 @@ await migration.up(queryInterface, Sequelize);
 
 ### 6. ✅ Rollback Test
 ```bash
-node src/run-migrations.js down
+node src/scripts/run-migrations.js down
 ```
 **Result**: Rollback completed successfully
 - Output: "✓ 017-add-international-location.js rolled back successfully"
@@ -72,7 +72,7 @@ node src/run-migrations.js down
 
 ### 7. ✅ Re-run After Rollback
 ```bash
-node src/run-migrations.js up
+node src/scripts/run-migrations.js up
 ```
 **Result**: Migration re-ran successfully after rollback
 - Output: "International location added successfully"

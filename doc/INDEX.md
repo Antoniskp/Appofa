@@ -70,5 +70,5 @@ Welcome to the Appofa News Application documentation. All documentation files li
 ## Additional Resources
 
 - [README.md](../README.md) – Project overview and quick start
-- [postman_collection.json](../postman_collection.json) – Postman API testing collection
+- [postman_collection.json](postman_collection.json) – Postman API testing collection
 - [.env.example](../.env.example) – Environment variable template

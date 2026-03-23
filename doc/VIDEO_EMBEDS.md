@@ -128,7 +128,7 @@ Preview results are cached in the `LinkPreviewCaches` Postgres table (keyed by n
 ## Running Migrations
 
 ```bash
-node src/run-migrations.js
+node src/scripts/run-migrations.js
 ```
 
 This will apply:

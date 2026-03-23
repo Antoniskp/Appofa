@@ -13,15 +13,15 @@
  * restarted after a Next.js version bump without a fresh build.
  *
  * Usage (via npm):  npm run frontend:start
- * Direct usage:     node start-frontend.js
- * Custom port:      PORT=3001 node start-frontend.js
+ * Direct usage:     node scripts/start-frontend.js
+ * Custom port:      PORT=3001 node scripts/start-frontend.js
  */
 
 const { execSync, spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = __dirname;
+const ROOT = path.join(__dirname, '..');
 const DEFAULT_PORT = 3001;
 // BUILD_ID is written at the very end of a successful `next build` run.
 // Its mtime therefore reliably indicates when the last build finished.
