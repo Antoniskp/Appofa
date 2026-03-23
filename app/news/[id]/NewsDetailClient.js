@@ -18,6 +18,7 @@ import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import CommentsThread from '@/components/comments/CommentsThread';
+import VideoEmbed from '@/components/articles/VideoEmbed';
 
 export default function NewsDetailPage() {
   const params = useParams();
@@ -275,6 +276,9 @@ export default function NewsDetailPage() {
                 </p>
               </div>
             )}
+
+            {/* Video Embed (YouTube / TikTok) */}
+            <VideoEmbed article={article} />
 
             {/* Article Content */}
             <div className="prose max-w-none mb-8">

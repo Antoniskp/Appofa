@@ -26,6 +26,7 @@ Welcome to the Appofa News Application documentation. All documentation files li
 | [OAUTH.md](OAUTH.md) | GitHub OAuth setup, account linking, and usage |
 | [GOOGLE_ANALYTICS.md](GOOGLE_ANALYTICS.md) | Google Analytics GA4 integration guide |
 | [MESSAGE_SYSTEM_IMPLEMENTATION.md](MESSAGE_SYSTEM_IMPLEMENTATION.md) | User-to-user messaging feature implementation |
+| [VIDEO_EMBEDS.md](VIDEO_EMBEDS.md) | YouTube/TikTok video embed feature: usage, API, security |
 
 ---
 
