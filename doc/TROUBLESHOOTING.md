@@ -45,6 +45,23 @@ For full diagnostic steps and additional fix scenarios, see [VPS Setup — Troub
 
 ## Common Browser Console Errors
 
+### `Failed to load user` / `401 Unauthorized` on Page Load
+
+**Error Message (before fix):**
+```
+Failed to load user: Error: No token provided. Authentication required.
+```
+
+**Status:** ✅ Fixed
+
+**Cause:**
+When the application first loads it checks whether the current visitor is logged in by calling `/api/auth/profile`. For unauthenticated visitors the server correctly responds with **401 Unauthorized**. Previously this expected 401 was caught and logged as a `console.error`, which appeared alarming even though it is completely normal behaviour.
+
+**Fix applied (`lib/auth-context.js` + `lib/api/client.js`):**
+- The API client now attaches the HTTP status code to every thrown error (`err.status`).
+- The `AuthProvider` now silently ignores 401 responses during initial user loading, since they simply mean "no one is logged in".
+- Any other unexpected error (500, network failure, etc.) is still logged so real problems remain visible.
+
 ### `webpage_content_reporter.js` SyntaxError
 
 **Error Message:**
