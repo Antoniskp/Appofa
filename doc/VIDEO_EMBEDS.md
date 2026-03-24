@@ -153,3 +153,9 @@ Optional tuning (edit `src/controllers/linkPreviewController.js`):
 - Only YouTube and TikTok are supported. To add more providers, extend the allowlists and add provider-specific oEmbed fetching in `linkPreviewController.js`.
 - TikTok may rate-limit or change their oEmbed API. The fallback renders a clickable card; when TikTok author metadata (`authorName`) is available it is displayed as the link label, otherwise "Watch on TikTok ↗" is used.
 - Live embed preview in the form editor (VideoEmbedField) requires network access to `/api/link-preview` from the browser.
+
+---
+
+## Fast Video Post
+
+For a streamlined "one paste, one click" video posting experience, see [Fast Video Post](FAST_VIDEO_POST.md). The Fast Video Post feature reuses the same `VideoEmbedField` component, oEmbed backend, and security model described above, but wraps them in a dedicated `/videos/new` page optimized for speed.

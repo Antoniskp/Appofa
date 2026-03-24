@@ -27,6 +27,7 @@ Welcome to the Appofa News Application documentation. All documentation files li
 | [GOOGLE_ANALYTICS.md](GOOGLE_ANALYTICS.md) | Google Analytics GA4 integration guide |
 | [MESSAGE_SYSTEM_IMPLEMENTATION.md](MESSAGE_SYSTEM_IMPLEMENTATION.md) | User-to-user messaging feature implementation |
 | [VIDEO_EMBEDS.md](VIDEO_EMBEDS.md) | YouTube/TikTok video embed feature: usage, API, security |
+| [FAST_VIDEO_POST.md](FAST_VIDEO_POST.md) | Fast Video Post: one-paste video posting with auto-fill metadata |
 
 ---
 

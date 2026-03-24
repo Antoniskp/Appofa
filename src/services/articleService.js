@@ -117,11 +117,14 @@ const createArticle = async (userId, userRole, articleData) => {
       return { success: false, status: 400, message: titleResult.error };
     }
 
+    // Content is optional when a source URL is provided (existing behaviour for all
+    // types, including the new 'video' type where the video link is the main content).
+    const skipContentMin = !!resolvedSourceUrl;
     const rawContent = (content === undefined || content === null || String(content).trim() === '')
-      ? (resolvedSourceUrl ? '' : content)
+      ? (skipContentMin ? '' : content)
       : content;
 
-    const contentResult = resolvedSourceUrl
+    const contentResult = skipContentMin
       ? normalizeOptionalText(rawContent, 'Content', null, CONTENT_MAX_LENGTH)
       : normalizeRequiredText(rawContent, 'Content', CONTENT_MIN_LENGTH, CONTENT_MAX_LENGTH);
     if (contentResult.error) {
@@ -429,7 +432,11 @@ const updateArticle = async (articleId, user, updateData) => {
       article.title = titleResult.value;
     }
 
-    const contentResult = normalizeOptionalText(content, 'Content', CONTENT_MIN_LENGTH, CONTENT_MAX_LENGTH);
+    const effectiveType = type || article.type;
+    const effectiveSourceUrl = sourceUrl !== undefined ? sourceUrl : article.sourceUrl;
+    const isVideoWithSource = effectiveType === 'video' && effectiveSourceUrl;
+    const contentMinLength = isVideoWithSource ? null : CONTENT_MIN_LENGTH;
+    const contentResult = normalizeOptionalText(content, 'Content', contentMinLength, CONTENT_MAX_LENGTH);
     if (contentResult.error) {
       return { success: false, status: 400, message: contentResult.error };
     }

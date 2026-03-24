@@ -41,7 +41,7 @@ config/articleCategories.json
 }
 ```
 
-Current `articleTypes` keys: `personal` (hidden from public page), `articles`, `news`.
+Current `articleTypes` keys: `personal` (hidden from public page), `articles`, `news`, `video`.
 
 ## Suggesting a category
 
