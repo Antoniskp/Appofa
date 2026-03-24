@@ -246,6 +246,12 @@ export default function TopNav() {
                 Ειδήσεις
               </Link>
               <Link
+                href="/videos"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/videos')}`}
+              >
+                Βίντεο
+              </Link>
+              <Link
                 href="/polls"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/polls')}`}
               >
@@ -346,6 +352,12 @@ export default function TopNav() {
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/news')}`}
           >
             Ειδήσεις
+          </Link>
+          <Link
+            href="/videos"
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/videos')}`}
+          >
+            Βίντεο
           </Link>
           <Link
             href="/polls"
