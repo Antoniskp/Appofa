@@ -59,13 +59,14 @@ export default function PriceComparisonPage() {
             </p>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
+          <Link href="/price-comparison/energy" className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-indigo-400 hover:shadow-md transition-all group">
             <h3 className="text-lg font-semibold mb-2 text-indigo-700">⚡ Ενέργεια</h3>
-            <p className="text-gray-700 text-sm">
+            <p className="text-gray-700 text-sm mb-3">
               Ηλεκτρικό ρεύμα, φυσικό αέριο και καύσιμα. Η ελεύθερη αγορά ενέργειας επιτρέπει
               σύγκριση παρόχων και επιλογή προνομιακού τιμολογίου.
             </p>
-          </div>
+            <span className="text-indigo-600 text-sm font-medium group-hover:underline">Δες σύγκριση →</span>
+          </Link>
 
           <div className="bg-white border border-gray-200 rounded-lg p-5">
             <h3 className="text-lg font-semibold mb-2 text-indigo-700">🏥 Φάρμακα & Υγεία</h3>
