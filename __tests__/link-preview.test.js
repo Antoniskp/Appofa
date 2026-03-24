@@ -92,7 +92,8 @@ describe('validateAndParseUrl', () => {
       'https://www.tiktok.com/@user/video/1234567890',
       'https://tiktok.com/@user/video/1234567890',
       'https://vm.tiktok.com/abcdef/',
-      'https://m.tiktok.com/@user/video/1234567890'
+      'https://m.tiktok.com/@user/video/1234567890',
+      'https://t.tiktok.com/ZSxxxxxxx/'
     ];
     for (const url of urls) {
       const result = validateAndParseUrl(url);
@@ -183,6 +184,11 @@ describe('extractTikTokVideoId', () => {
   test('returns null for TikTok profile URL', () => {
     expect(extractTikTokVideoId(toUrlObj('https://www.tiktok.com/@user')))
       .toBeNull();
+  });
+
+  test('extracts video ID from TikTok /photo/ URL (slideshow posts)', () => {
+    expect(extractTikTokVideoId(toUrlObj('https://www.tiktok.com/@user/photo/1234567890123456789')))
+      .toBe('1234567890123456789');
   });
 });
 
@@ -476,6 +482,91 @@ describe('POST /api/link-preview', () => {
       expect(secondRes.body.data.provider).toBe('tiktok');
       expect(secondRes.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/5555555555555555555');
       expect(secondRes.body.data.cached).toBe(true);
+    } finally {
+      https.get = originalGet;
+    }
+  });
+
+  test('truncates long TikTok title to prevent DB overflow (VARCHAR 255)', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+
+    const longTitle = 'A'.repeat(500); // 500 chars exceeds VARCHAR(255)
+
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      const mockRes = {
+        statusCode: 200,
+        headers: {},
+        on: (event, handler) => {
+          if (event === 'data') handler(JSON.stringify({
+            title: longTitle,
+            author_name: 'B'.repeat(300),
+            thumbnail_url: 'https://p16.tiktokcdn.com/thumb.jpg',
+            provider_name: 'TikTok',
+            provider_url: 'https://www.tiktok.com',
+            html: '<blockquote class="tiktok-embed" data-video-id="7777777777777777777"></blockquote>'
+          }));
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    try {
+      const res = await request(app)
+        .post('/api/link-preview')
+        .send({ url: 'https://www.tiktok.com/@user/video/7777777777777777777' })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.title).toBe('A'.repeat(255));
+      expect(res.body.data.authorName).toBe('B'.repeat(255));
+    } finally {
+      https.get = originalGet;
+    }
+  });
+
+  test('returns embedUrl for TikTok /photo/ URL (slideshow posts)', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      const mockRes = {
+        statusCode: 200,
+        headers: {},
+        on: (event, handler) => {
+          if (event === 'data') handler(JSON.stringify({
+            title: 'Photo Slideshow Post',
+            author_name: 'Creator',
+            thumbnail_url: 'https://p16.tiktokcdn.com/photo.jpg',
+            provider_name: 'TikTok',
+            provider_url: 'https://www.tiktok.com',
+            html: '<blockquote class="tiktok-embed" data-video-id="8888888888888888888"></blockquote>'
+          }));
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    try {
+      const res = await request(app)
+        .post('/api/link-preview')
+        .send({ url: 'https://www.tiktok.com/@user/photo/8888888888888888888' })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.provider).toBe('tiktok');
+      expect(res.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/8888888888888888888');
+      expect(res.body.data.title).toBe('Photo Slideshow Post');
     } finally {
       https.get = originalGet;
     }

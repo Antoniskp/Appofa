@@ -30,7 +30,9 @@ The same providers supported by the [Video Embeds](VIDEO_EMBEDS.md) feature:
 
 ### TikTok
 - `https://www.tiktok.com/@<user>/video/<id>`
+- `https://www.tiktok.com/@<user>/photo/<id>` (slideshow posts)
 - `https://vm.tiktok.com/<code>/`
+- `https://t.tiktok.com/<code>/`
 - `https://m.tiktok.com/@<user>/video/<id>`
 
 ---

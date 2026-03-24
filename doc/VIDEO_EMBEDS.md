@@ -28,7 +28,9 @@ Embed YouTube and TikTok videos directly inside Articles, News, and Personal pos
 
 #### TikTok
 - `https://www.tiktok.com/@<user>/video/<id>`
+- `https://www.tiktok.com/@<user>/photo/<id>` (slideshow posts)
 - `https://vm.tiktok.com/<code>/`
+- `https://t.tiktok.com/<code>/`
 - `https://m.tiktok.com/@<user>/video/<id>`
 
 ---
@@ -81,8 +83,8 @@ Embed YouTube and TikTok videos directly inside Articles, News, and Personal pos
 ```
 
 `embedUrl` for TikTok is derived by:
-1. Extracting the numeric video ID from `/video/<id>` in the URL path (standard URLs).
-2. If the URL is a shortlink (`vm.tiktok.com`) with no video ID in the path, extracting the ID from the `data-video-id` attribute in the oEmbed HTML returned by TikTok's oEmbed API.
+1. Extracting the numeric video ID from `/video/<id>` or `/photo/<id>` in the URL path (standard URLs).
+2. If the URL is a shortlink (`vm.tiktok.com` or `t.tiktok.com`) with no video ID in the path, extracting the ID from the `data-video-id` attribute in the oEmbed HTML returned by TikTok's oEmbed API.
 3. Building `https://www.tiktok.com/embed/v2/<videoId>`.
 
 `embedHtml` (TikTok's raw oEmbed HTML — a `<blockquote>` + `<script>`) is still stored but is **not** required for inline playback.
@@ -145,13 +147,16 @@ Optional tuning (edit `src/controllers/linkPreviewController.js`):
 - `CACHE_TTL_MS` — cache lifetime (default: 7 days)
 - `FETCH_TIMEOUT_MS` — oEmbed fetch timeout (default: 8 seconds)
 - `MAX_BODY_BYTES` — max response body size (default: 512 KB)
+- `TIKTOK_RETRY_DELAY_MS` — delay before retrying a failed TikTok oEmbed request (default: 500 ms)
 
 ---
 
 ## Limitations
 
 - Only YouTube and TikTok are supported. To add more providers, extend the allowlists and add provider-specific oEmbed fetching in `linkPreviewController.js`.
-- TikTok may rate-limit or change their oEmbed API. The fallback renders a clickable card; when TikTok author metadata (`authorName`) is available it is displayed as the link label, otherwise "Watch on TikTok ↗" is used.
+- TikTok's oEmbed API is known to return intermittent 500 errors. The controller retries once (after a short delay) before falling back to partial data with a clickable card.
+- TikTok oEmbed titles (which contain video descriptions) are truncated to 255 characters to fit the database column limit.
+- When TikTok author metadata (`authorName`) is available it is displayed as the link label, otherwise "Watch on TikTok ↗" is used.
 - Live embed preview in the form editor (VideoEmbedField) requires network access to `/api/link-preview` from the browser.
 
 ---

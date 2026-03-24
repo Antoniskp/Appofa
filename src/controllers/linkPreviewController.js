@@ -24,6 +24,18 @@ const FETCH_TIMEOUT_MS = 8000;
 // Max response body size: 512 KB
 const MAX_BODY_BYTES = 512 * 1024;
 
+// Retry delay for TikTok oEmbed intermittent failures (milliseconds)
+const TIKTOK_RETRY_DELAY_MS = 500;
+
+/**
+ * Truncate a string to fit within a database column limit.
+ * Ensures the value doesn't exceed maxLen characters to prevent DB errors.
+ */
+const truncate = (str, maxLen = 255) => {
+  if (typeof str !== 'string') return str;
+  return str.length > maxLen ? str.slice(0, maxLen) : str;
+};
+
 /**
  * Allowed hostname sets by provider.
  * These are the only hostnames we will ever fetch oEmbed / pages from.
@@ -40,7 +52,8 @@ const TIKTOK_HOSTS = new Set([
   'tiktok.com',
   'www.tiktok.com',
   'vm.tiktok.com',
-  'm.tiktok.com'
+  'm.tiktok.com',
+  't.tiktok.com'
 ]);
 
 /**
@@ -184,7 +197,7 @@ const buildYouTubeEmbedUrl = (videoId) => {
  * Returns the video ID string or null.
  */
 const extractTikTokVideoId = (urlObj) => {
-  const videoMatch = urlObj.pathname.match(/\/video\/(\d+)/);
+  const videoMatch = urlObj.pathname.match(/\/(?:video|photo)\/(\d+)/);
   if (videoMatch) return videoMatch[1];
   return null;
 };
@@ -204,8 +217,14 @@ const buildTikTokEmbedUrl = (videoId) => {
  * @param {string} url - Must be a fully-qualified https:// URL on an allowed host.
  * @returns {Promise<string>} - Response body as string.
  */
-const safeFetch = (url) => {
+const MAX_REDIRECTS = 5;
+
+const safeFetch = (url, redirectCount = 0) => {
   return new Promise((resolve, reject) => {
+    if (redirectCount >= MAX_REDIRECTS) {
+      return reject(new Error('Too many redirects'));
+    }
+
     let urlObj;
     try {
       urlObj = new URL(url);
@@ -232,17 +251,21 @@ const safeFetch = (url) => {
         'Accept': 'application/json, text/html'
       }
     }, (res) => {
-      // Follow up to 3 redirects, but only to allowed hosts
+      // Follow redirects, but only to allowed hosts
       if ([301, 302, 303, 307, 308].includes(res.statusCode)) {
         const location = res.headers.location;
         if (location) {
           try {
             const redirectUrl = new URL(location, url);
+            const rHost = redirectUrl.hostname.toLowerCase();
+            const hostAllowed =
+              YOUTUBE_HOSTS.has(rHost) || TIKTOK_HOSTS.has(rHost) ||
+              rHost.endsWith('.youtube.com') || rHost.endsWith('.tiktok.com');
             if (
-              (redirectUrl.hostname.endsWith('.youtube.com') || redirectUrl.hostname.endsWith('.tiktok.com')) &&
+              hostAllowed &&
               (redirectUrl.protocol === 'https:' || redirectUrl.protocol === 'http:')
             ) {
-              return resolve(safeFetch(redirectUrl.toString()));
+              return resolve(safeFetch(redirectUrl.toString(), redirectCount + 1));
             }
           } catch {
             // ignore bad redirect
@@ -289,8 +312,8 @@ const fetchYouTubeOEmbed = async (originalUrl) => {
   const data = JSON.parse(body);
 
   return {
-    title: data.title || null,
-    authorName: data.author_name || null,
+    title: truncate(data.title) || null,
+    authorName: truncate(data.author_name) || null,
     thumbnailUrl: data.thumbnail_url || null,
     providerName: data.provider_name || 'YouTube',
     providerUrl: data.provider_url || 'https://www.youtube.com'
@@ -316,8 +339,8 @@ const fetchTikTokOEmbed = async (originalUrl) => {
   }
 
   return {
-    title: data.title || null,
-    authorName: data.author_name || null,
+    title: truncate(data.title) || null,
+    authorName: truncate(data.author_name) || null,
     thumbnailUrl: data.thumbnail_url || null,
     providerName: data.provider_name || 'TikTok',
     providerUrl: data.provider_url || 'https://www.tiktok.com',
@@ -336,15 +359,29 @@ const buildPreview = async (urlObj, provider, originalUrl) => {
 
   let meta = {};
 
-  try {
+  const fetchOEmbed = async () => {
     if (provider === 'youtube') {
-      meta = await fetchYouTubeOEmbed(originalUrl);
+      return fetchYouTubeOEmbed(originalUrl);
     } else if (provider === 'tiktok') {
-      meta = await fetchTikTokOEmbed(originalUrl);
+      return fetchTikTokOEmbed(originalUrl);
     }
+    return {};
+  };
+
+  try {
+    meta = await fetchOEmbed();
   } catch (err) {
-    // oEmbed failed – return partial data with what we have
-    console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl}: ${err.message}`);
+    // TikTok oEmbed is known to return intermittent 500 errors; retry once
+    if (provider === 'tiktok') {
+      try {
+        await new Promise((r) => setTimeout(r, TIKTOK_RETRY_DELAY_MS));
+        meta = await fetchOEmbed();
+      } catch (retryErr) {
+        console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl} after retry: ${retryErr.message}`);
+      }
+    } else {
+      console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl}: ${err.message}`);
+    }
   }
 
   // Compute TikTok embedUrl: prefer ID from URL path, fall back to ID from oEmbed HTML
