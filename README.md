@@ -10,9 +10,10 @@ A professional news application with a Node.js/Express API, PostgreSQL database,
 - **Suggestions & Solutions System** – post ideas/problems for locations, propose solutions, upvote/downvote both
 - **Message system** for user-to-user communication
 - **Video Embeds** – paste a YouTube or TikTok URL into any Article/News/Personal post to embed it with auto-filled title
+- **Fast Video Post** – ultra-fast `/videos/new` page: paste a URL, auto-fill metadata, publish in seconds
 - Profile auto-fill from GitHub profile data
 - Article CRUD with news submission and moderation workflow
-- Article types and categories with dependent dropdowns (Personal, Articles, News)
+- Article types and categories with dependent dropdowns (Personal, Articles, News, Video)
 - **Static Categories page** (`/categories`) with JSON-driven category list and GitHub-based suggestion flow
 - Hierarchical location system (International, Country, Prefecture, Municipality)
 - Next.js App Router frontend with Tailwind CSS styling
@@ -32,6 +33,7 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 - [Poll Audit Export](doc/POLL_EXPORT_AUDIT.md) - Privacy-preserving poll data export
 - [Suggestions & Solutions](doc/SUGGESTIONS_FEATURE.md) - Idea/problem submission with upvote/downvote voting
 - [Video Embeds](doc/VIDEO_EMBEDS.md) - Embed YouTube/TikTok videos in articles via URL paste
+- [Fast Video Post](doc/FAST_VIDEO_POST.md) - One-paste video posting at `/videos/new`
 - [Locations Model](doc/LOCATION_MODEL.md) - Hierarchical locations system
 - [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
 - [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
