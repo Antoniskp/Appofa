@@ -58,6 +58,25 @@
         "Μάρκετ",
         "Στον κόσμο τους - Αστεία"
       ]
+    },
+    "video": {
+      "value": "video",
+      "label": "Video",
+      "labelEl": "Βίντεο",
+      "description": "Quick video posts with embedded YouTube/TikTok",
+      "categoryRequired": false,
+      "categories": [
+        "Γενικά",
+        "Πολιτική",
+        "Sports",
+        "Τεχνολογία",
+        "Ψυχαγωγία",
+        "Lifestyle",
+        "Υγεία",
+        "Εκπαίδευση",
+        "Περιβάλλον",
+        "Οικονομία"
+      ]
     }
   },
   "pollCategories": [
