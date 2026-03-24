@@ -117,7 +117,10 @@ const createArticle = async (userId, userRole, articleData) => {
       return { success: false, status: 400, message: titleResult.error };
     }
 
-    const skipContentMin = !!resolvedSourceUrl || type === 'video';
+    // Content is optional when a source URL is provided (existing behaviour for all
+    // types) or for video posts that carry a source URL (the video link is the
+    // main content).
+    const skipContentMin = !!resolvedSourceUrl || (type === 'video' && resolvedSourceUrl);
     const rawContent = (content === undefined || content === null || String(content).trim() === '')
       ? (skipContentMin ? '' : content)
       : content;
