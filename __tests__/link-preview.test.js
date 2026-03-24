@@ -523,8 +523,8 @@ describe('POST /api/link-preview', () => {
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data.title.length).toBeLessThanOrEqual(255);
-      expect(res.body.data.authorName.length).toBeLessThanOrEqual(255);
+      expect(res.body.data.title).toBe('A'.repeat(255));
+      expect(res.body.data.authorName).toBe('B'.repeat(255));
     } finally {
       https.get = originalGet;
     }
