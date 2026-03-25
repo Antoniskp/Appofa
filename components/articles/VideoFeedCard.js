@@ -183,16 +183,17 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
   useEffect(() => {
     if (!playing || !videoId) return;
 
-    // Always remove any existing TikTok embed script and reload it.
-    // This guarantees that TikTok's initialisation code runs again and
-    // picks up the newly-mounted blockquote.  Relying on
-    // window.tiktokEmbed.lib.render() is fragile because that symbol is
-    // undocumented and may be absent after certain TikTok script updates.
-    // Already-processed embeds are unaffected: their blockquotes have been
-    // replaced by iframes and are invisible to TikTok's DOM scanner.
     const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
     if (existing) {
-      existing.remove();
+      // Script already loaded: use TikTok's render API if available so we
+      // don't reload webmssdk.js (which causes "Cannot read properties of
+      // undefined (reading 'prod')" when the SDK is re-initialised mid-session).
+      if (typeof window.tiktokEmbed?.lib?.render === 'function') {
+        window.tiktokEmbed.lib.render();
+      }
+      // If the render API is absent the already-loaded script will process
+      // newly-mounted blockquotes automatically on its next tick; no reload needed.
+      return;
     }
     const script = document.createElement('script');
     script.src = TIKTOK_EMBED_SCRIPT_SRC;
@@ -423,7 +424,7 @@ export default function VideoFeedCard({ article, onPlay }) {
               <span>
                 posted by{' '}
                 <Link
-                  href={`/profile/${postingUser}`}
+                  href={`/users/${postingUser}`}
                   className="hover:text-blue-600 transition-colors"
                 >
                   {postingUser}

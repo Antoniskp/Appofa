@@ -748,6 +748,47 @@ describe('News Application Integration Tests', () => {
       expect(response.status).toBe(404);
       expect(response.body.success).toBe(false);
     });
+
+    test('should create a video article with type=video', async () => {
+      const csrfToken = 'csrf-admin-create-video';
+      setCsrfToken(csrfToken, adminUserId);
+      const response = await request(app)
+        .post('/api/articles')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          title: 'Test YouTube Video',
+          content: '',
+          summary: 'Rick Astley',
+          type: 'video',
+          status: 'published',
+          category: 'Entertainment',
+          sourceUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+          sourceProvider: 'youtube',
+          embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0',
+          sourceMeta: {
+            title: 'Rick Astley – Never Gonna Give You Up',
+            authorName: 'Rick Astley',
+            thumbnailUrl: 'https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg'
+          }
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.article.type).toBe('video');
+      expect(response.body.data.article.sourceProvider).toBe('youtube');
+      expect(response.body.data.article.embedUrl).toBe('https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?rel=0');
+    });
+
+    test('should list video articles via type filter', async () => {
+      const response = await request(app)
+        .get('/api/articles?type=video&status=published');
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.articles.length).toBeGreaterThan(0);
+      expect(response.body.data.articles.every((a) => a.type === 'video')).toBe(true);
+    });
   });
 
   describe('Role-Based Access Control Tests', () => {
