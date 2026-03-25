@@ -20,6 +20,7 @@ const STATIC_ROUTES = [
   { url: '/economy', priority: 0.6, changeFrequency: 'weekly' },
   { url: '/education', priority: 0.6, changeFrequency: 'weekly' },
   { url: '/price-comparison', priority: 0.6, changeFrequency: 'weekly' },
+  { url: '/car-transfer', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/terms', priority: 0.3, changeFrequency: 'yearly' },
   { url: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
   { url: '/rules', priority: 0.4, changeFrequency: 'monthly' },
