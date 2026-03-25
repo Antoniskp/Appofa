@@ -110,7 +110,8 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     // The iframe handles its own CDN auth internally; no embed.js needed.
     if (videoId) {
       // Show a static thumbnail + play button until the user clicks play.
-      if (!tiktokPlaying) {
+      // Skip click-to-play when autoplay is requested.
+      if (!tiktokPlaying && !autoplay) {
         return (
           <div className={`${outerMargin} flex flex-col items-center`}>
             <div

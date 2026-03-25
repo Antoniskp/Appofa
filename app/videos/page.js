@@ -5,30 +5,22 @@ import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
-import VideoFeedCard from '@/components/articles/VideoFeedCard';
+import VideoThumbnailCard from '@/components/articles/VideoThumbnailCard';
 import EmptyState from '@/components/EmptyState';
 import SearchInput from '@/components/SearchInput';
 import CategoryPills from '@/components/CategoryPills';
 import { useAuth } from '@/lib/auth-context';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 18;
 
-/** Full-width video skeleton card shown while loading more */
-function VideoCardSkeleton() {
+/** Compact portrait skeleton cell for the video grid */
+function VideoGridSkeleton() {
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
-      <div className="aspect-video bg-gray-200 w-full" />
-      <div className="p-5 space-y-3">
-        <div className="flex gap-2">
-          <div className="h-5 w-16 bg-gray-200 rounded" />
-          <div className="h-5 w-20 bg-gray-100 rounded-full" />
-        </div>
-        <div className="h-6 bg-gray-200 rounded w-3/4" />
-        <div className="h-4 bg-gray-100 rounded w-1/2" />
-        <div className="space-y-2">
-          <div className="h-4 bg-gray-100 rounded" />
-          <div className="h-4 bg-gray-100 rounded w-5/6" />
-        </div>
+    <div className="rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100 animate-pulse">
+      <div className="bg-gray-200 w-full" style={{ aspectRatio: '9/16' }} />
+      <div className="p-2.5 space-y-1.5">
+        <div className="h-3.5 bg-gray-200 rounded w-5/6" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
       </div>
     </div>
   );
@@ -55,9 +47,6 @@ export default function VideosPage() {
   const fetchingRef = useRef(false);
   // Track current filters so we can reset feed when they change
   const filtersRef = useRef({ search, category });
-
-  // Ref for "currently playing" video so we can pause it when another plays
-  const currentPauseFnRef = useRef(null);
 
   const videoCategoryOptions = (articleCategories.articleTypes?.video?.categories ?? []).map(
     (cat) => (typeof cat === 'string' ? { value: cat, label: cat } : cat)
@@ -134,20 +123,12 @@ export default function VideosPage() {
     return () => observer.disconnect();
   }, [hasMore, fetchPage]);
 
-  /** When a video starts playing, pause the previously playing one */
-  const handleVideoPlay = useCallback((pauseFn) => {
-    if (currentPauseFnRef.current && currentPauseFnRef.current !== pauseFn) {
-      currentPauseFnRef.current();
-    }
-    currentPauseFnRef.current = pauseFn;
-  }, []);
-
   const handleSearchChange = (e) => setSearch(e.target.value);
   const handleCategorySelect = (cat) => setCategory(cat);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="max-w-2xl mx-auto px-4">
+      <div className="max-w-5xl mx-auto px-4">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Βίντεο</h1>
@@ -179,10 +160,13 @@ export default function VideosPage() {
 
         {/* Initial loading skeletons */}
         {initialLoading && (
-          <div className="space-y-6">
-            <VideoCardSkeleton />
-            <VideoCardSkeleton />
-            <VideoCardSkeleton />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <VideoGridSkeleton />
+            <VideoGridSkeleton />
+            <VideoGridSkeleton />
+            <VideoGridSkeleton />
+            <VideoGridSkeleton />
+            <VideoGridSkeleton />
           </div>
         )}
 
@@ -211,15 +195,15 @@ export default function VideosPage() {
           />
         )}
 
-        {/* Video feed */}
+        {/* Video grid */}
         {!initialLoading && !error && videos.length > 0 && (
-          <div className="space-y-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {videos.map((video) => (
               <div
                 key={video.id}
                 className="animate-fadeIn"
               >
-                <VideoFeedCard article={video} onPlay={handleVideoPlay} />
+                <VideoThumbnailCard article={video} />
               </div>
             ))}
           </div>
