@@ -44,19 +44,25 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
   // Load TikTok's embed.js only after the user clicks play so that the
   // blockquote is already in the DOM when the script processes it.
   // This prevents TikTok from autoplaying on page load.
+  //
+  // We always remove any existing embed.js and reload it fresh. This is the
+  // most reliable strategy because window.tiktokEmbed.lib.render() is an
+  // undocumented / occasionally missing API that silently fails in some
+  // browser environments and on TikTok script updates.  Reloading the script
+  // (which is tiny and browser-cached) guarantees it re-scans the DOM for new
+  // .tiktok-embed blockquotes without breaking already-processed embeds (those
+  // blockquotes have already been replaced by iframes and are not re-targeted).
   useEffect(() => {
     if (!isTikTok || !tiktokPlaying) return;
 
     const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
-    if (!existing) {
-      const script = document.createElement('script');
-      script.src = TIKTOK_EMBED_SCRIPT_SRC;
-      script.async = true;
-      document.body.appendChild(script);
-    } else if (window.tiktokEmbed?.lib?.render) {
-      // Script already loaded — re-process any new blockquotes added to the DOM.
-      window.tiktokEmbed.lib.render();
+    if (existing) {
+      existing.remove();
     }
+    const script = document.createElement('script');
+    script.src = TIKTOK_EMBED_SCRIPT_SRC;
+    script.async = true;
+    document.body.appendChild(script);
   }, [isTikTok, tiktokPlaying]);
 
   if (!article?.sourceUrl || !article?.sourceProvider) return null;

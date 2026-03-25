@@ -183,19 +183,21 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
   useEffect(() => {
     if (!playing || !videoId) return;
 
+    // Always remove any existing TikTok embed script and reload it.
+    // This guarantees that TikTok's initialisation code runs again and
+    // picks up the newly-mounted blockquote.  Relying on
+    // window.tiktokEmbed.lib.render() is fragile because that symbol is
+    // undocumented and may be absent after certain TikTok script updates.
+    // Already-processed embeds are unaffected: their blockquotes have been
+    // replaced by iframes and are invisible to TikTok's DOM scanner.
     const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
-    if (!existing) {
-      const script = document.createElement('script');
-      script.src = TIKTOK_EMBED_SCRIPT_SRC;
-      script.async = true;
-      document.body.appendChild(script);
-    } else {
-      // Script already loaded — give the DOM a tick to paint the blockquote
-      // before asking the TikTok library to scan and render it.
-      setTimeout(() => {
-        window.tiktokEmbed?.lib?.render();
-      }, 0);
+    if (existing) {
+      existing.remove();
     }
+    const script = document.createElement('script');
+    script.src = TIKTOK_EMBED_SCRIPT_SRC;
+    script.async = true;
+    document.body.appendChild(script);
   }, [playing, videoId]);
 
   if (!videoId) {
