@@ -80,9 +80,6 @@ rm -rf .next
 echo "🏗️  Building frontend..."
 NODE_ENV=production npm run frontend:build
 
-# Record the git commit that was built so start-frontend.js can detect future code changes.
-git rev-parse HEAD > .next/BUILD_GIT_REF 2>/dev/null || true
-
 echo "♻️  Restarting services with PM2..."
 if command -v pm2 >/dev/null 2>&1; then
 	if pm2 describe newsapp-backend >/dev/null 2>&1; then
