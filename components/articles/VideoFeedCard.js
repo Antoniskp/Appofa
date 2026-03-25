@@ -9,7 +9,7 @@ import { idSlug } from '@/lib/utils/slugify';
  * VideoFeedCard
  *
  * Full-width video card for the /videos feed. Features:
- * - Lazy-loaded video embed (iframe/TikTok blockquote rendered only when near viewport)
+ * - Lazy-loaded video embed (iframe rendered only when near viewport)
  * - IntersectionObserver-based autoplay for YouTube (muted); TikTok stays click-to-play
  * - Rich metadata: title, provider badge, author, category, tags, relative timestamp, summary
  * - "Watch on YouTube/TikTok" external link
@@ -19,8 +19,6 @@ import { idSlug } from '@/lib/utils/slugify';
  *   onPlay   {function} optional callback so the parent can pause other videos
  *             receives a ref to the iframe postMessage pause function
  */
-
-const TIKTOK_EMBED_SCRIPT_SRC = 'https://www.tiktok.com/embed.js';
 
 function extractTikTokVideoId(embedUrl, sourceUrl) {
   if (embedUrl) {
@@ -180,27 +178,6 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
   const thumbnail = sourceMeta?.thumbnailUrl;
   const author = sourceMeta?.authorName;
 
-  useEffect(() => {
-    if (!playing || !videoId) return;
-
-    const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
-    if (existing) {
-      // Script already loaded: use TikTok's render API if available so we
-      // don't reload webmssdk.js (which causes "Cannot read properties of
-      // undefined (reading 'prod')" when the SDK is re-initialised mid-session).
-      if (typeof window.tiktokEmbed?.lib?.render === 'function') {
-        window.tiktokEmbed.lib.render();
-      }
-      // If the render API is absent the already-loaded script will process
-      // newly-mounted blockquotes automatically on its next tick; no reload needed.
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = TIKTOK_EMBED_SCRIPT_SRC;
-    script.async = true;
-    document.body.appendChild(script);
-  }, [playing, videoId]);
-
   if (!videoId) {
     return (
       <div className="aspect-video bg-gray-900 flex items-center justify-center">
@@ -270,19 +247,17 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
 
   return (
     <div className="flex justify-center bg-black py-4">
-      <blockquote
-        className="tiktok-embed"
-        cite={sourceUrl}
-        data-video-id={videoId}
-        data-autoplay="false"
-        style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}
-      >
-        <section>
-          <a target="_blank" rel="noopener noreferrer" href={sourceUrl}>
-            {author || title || 'TikTok Video'}
-          </a>
-        </section>
-      </blockquote>
+      <div style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}>
+        <iframe
+          src={`https://www.tiktok.com/embed/v2/${videoId}`}
+          title={title}
+          style={{ width: '100%', height: '740px', border: 'none' }}
+          allow="encrypted-media"
+          allowFullScreen
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+        />
+      </div>
     </div>
   );
 }
