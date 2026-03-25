@@ -38,8 +38,9 @@ export default function ArticleDetailPage() {
   });
 
   const isNews = article?.type === 'news' || article?.isNews;
-  const breadcrumbLabel = isNews ? 'News' : 'Articles';
-  const breadcrumbHref = isNews ? '/news' : '/articles';
+  const isVideo = article?.type === 'video';
+  const breadcrumbLabel = isVideo ? 'Βίντεο' : (isNews ? 'News' : 'Articles');
+  const breadcrumbHref = isVideo ? '/videos' : (isNews ? '/news' : '/articles');
 
   const handleDelete = async () => {
     try {
@@ -199,8 +200,8 @@ export default function ArticleDetailPage() {
         <nav aria-label="Breadcrumb" className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>
-              <Link href={breadcrumbHref} className="text-blue-600 hover:text-blue-800">
-                {breadcrumbLabel}
+              <Link href={breadcrumbHref} className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
+                {isVideo && <span aria-hidden="true">←</span>}{breadcrumbLabel}
               </Link>
             </li>
             <li className="text-gray-400">/</li>
@@ -209,12 +210,19 @@ export default function ArticleDetailPage() {
         </nav>
 
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <img
-            src={bannerImageUrl}
-            alt={`${article.title} banner`}
-            className="w-full h-64 object-cover"
-            onError={handleBannerError}
-          />
+          {/* For video articles: show video embed at the top, hide banner image */}
+          {isVideo ? (
+            <div className="p-4 sm:p-6 pb-0">
+              <VideoEmbed article={article} autoplay={true} compact={false} />
+            </div>
+          ) : (
+            <img
+              src={bannerImageUrl}
+              alt={`${article.title} banner`}
+              className="w-full h-64 object-cover"
+              onError={handleBannerError}
+            />
+          )}
           <div className="p-8">
             {/* Article Header */}
             <div className="mb-8">
@@ -290,8 +298,8 @@ export default function ArticleDetailPage() {
               </div>
             )}
 
-            {/* Video Embed (YouTube / TikTok) */}
-            <VideoEmbed article={article} />
+            {/* Video Embed (YouTube / TikTok) — only for non-video-type articles */}
+            {!isVideo && <VideoEmbed article={article} />}
 
             {/* Article Content */}
             <div className="prose max-w-none mb-8">
