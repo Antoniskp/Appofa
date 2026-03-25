@@ -1,22 +1,22 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 /**
  * VideoEmbed
  *
  * Renders an embedded video player for YouTube or TikTok.
  * - YouTube: renders an <iframe> using the stored embedUrl (youtube-nocookie CDN)
- * - TikTok:  uses the official blockquote + embed.js approach (TikTok blocks
- *            /embed/v2/ iframes on third-party domains via X-Frame-Options).
- *            Falls back to the embedUrl iframe, then a link card.
+ * - TikTok:  uses the official oEmbed <iframe> at https://www.tiktok.com/embed/v2/<videoId>.
+ *            This avoids the blockquote + embed.js approach which triggers webmssdk.js
+ *            to fetch signed CDN URLs tied to the original publisher's domain, causing
+ *            403 errors and "Cannot read properties of undefined (reading 'prod')" crashes.
  *
  * Props:
  *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
  *                      embedHtml, sourceMeta fields
  */
 
-const TIKTOK_EMBED_SCRIPT_SRC = 'https://www.tiktok.com/embed.js';
 const WATCH_ON_TIKTOK = 'Watch on TikTok ↗';
 
 /**
@@ -37,35 +37,7 @@ function extractTikTokVideoId(embedUrl, sourceUrl) {
 }
 
 export default function VideoEmbed({ article, compact = false, autoplay = false }) {
-  const isTikTok = article?.sourceProvider === 'tiktok';
-  // When autoplay is requested, skip the click-to-play thumbnail for TikTok.
-  const [tiktokPlaying, setTiktokPlaying] = useState(autoplay);
-
-  // Load TikTok's embed.js only after the user clicks play so that the
-  // blockquote is already in the DOM when the script processes it.
-  // This prevents TikTok from autoplaying on page load.
-  //
-  // If embed.js is already present we call TikTok's render API (when
-  // available) rather than removing and re-adding the script.  Removing and
-  // reloading embed.js causes webmssdk.js to reinitialise mid-session, which
-  // throws "Cannot read properties of undefined (reading 'prod')".
-  useEffect(() => {
-    if (!isTikTok || !tiktokPlaying) return;
-
-    const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
-    if (existing) {
-      // Use TikTok's render API if available; otherwise the already-loaded
-      // script will process newly-mounted blockquotes on its own.
-      if (typeof window.tiktokEmbed?.lib?.render === 'function') {
-        window.tiktokEmbed.lib.render();
-      }
-      return;
-    }
-    const script = document.createElement('script');
-    script.src = TIKTOK_EMBED_SCRIPT_SRC;
-    script.async = true;
-    document.body.appendChild(script);
-  }, [isTikTok, tiktokPlaying]);
+  const [tiktokPlaying, setTiktokPlaying] = useState(false);
 
   if (!article?.sourceUrl || !article?.sourceProvider) return null;
 
@@ -134,13 +106,10 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
   if (sourceProvider === 'tiktok') {
     const videoId = extractTikTokVideoId(embedUrl, sourceUrl);
 
-    // Primary: official blockquote + embed.js approach.
-    // TikTok blocks /embed/v2/ iframes on third-party domains, so the
-    // blockquote method is the only approach that reliably works.
+    // Primary: official TikTok oEmbed iframe.
+    // The iframe handles its own CDN auth internally; no embed.js needed.
     if (videoId) {
       // Show a static thumbnail + play button until the user clicks play.
-      // TikTok's embed.js ignores data-autoplay="false" as of 2025/2026,
-      // so we only inject the blockquote into the DOM after the click.
       if (!tiktokPlaying) {
         return (
           <div className={`${outerMargin} flex flex-col items-center`}>
@@ -188,23 +157,17 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
 
       return (
         <div className={`${outerMargin} flex flex-col items-center`}>
-          <blockquote
-            className="tiktok-embed"
-            cite={sourceUrl}
-            data-video-id={videoId}
-            data-autoplay="false"
-            style={{ maxWidth: '605px', minWidth: '325px' }}
-          >
-            <section>
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
-                href={sourceUrl}
-              >
-                {author || title || 'TikTok Video'}
-              </a>
-            </section>
-          </blockquote>
+          <div style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}>
+            <iframe
+              src={`https://www.tiktok.com/embed/v2/${videoId}`}
+              title={title}
+              style={{ width: '100%', height: '740px', border: 'none' }}
+              allow="encrypted-media"
+              allowFullScreen
+              loading="lazy"
+              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
+            />
+          </div>
         </div>
       );
     }
