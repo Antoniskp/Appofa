@@ -108,7 +108,7 @@ A new `LinkPreviewCaches` table caches oEmbed API responses (default TTL: 7 days
 - **SSRF protection:** Only YouTube and TikTok hostnames are allowed. Private/loopback IPs, credentials in URLs, and non-HTTP(S) protocols are rejected.
 - **XSS prevention:** TikTok `embedHtml` is sanitized before rendering. Only `<iframe>` elements with a `www.tiktok.com` src are allowed. No `<script>` tags are ever injected. The preferred playback path uses a safe `embedUrl` iframe, bypassing `embedHtml` entirely.
 - **YouTube embeds** use the privacy-enhanced `youtube-nocookie.com` domain.
-- **TikTok embeds** use `https://www.tiktok.com/embed/v2/<videoId>` (official TikTok embed endpoint).
+- **TikTok embeds** use `https://www.tiktok.com/embed/v2/<videoId>` (official TikTok embed endpoint). No `sandbox` attribute is applied to TikTok iframes: sandboxing prevents TikTok's internal `webmssdk.js` from reading its production-environment configuration object, which causes an `Uncaught TypeError: Cannot read properties of undefined (reading 'prod')` crash and stops the player from initialising. Because TikTok's own embed documentation does not use `sandbox`, omitting it is the correct approach here.
 - All fetches from the server to provider APIs are strictly allowlisted; no user-supplied URL is ever fetched directly.
 
 ### Frontend Components
@@ -158,6 +158,7 @@ Optional tuning (edit `src/controllers/linkPreviewController.js`):
 - TikTok oEmbed titles (which contain video descriptions) are truncated to 255 characters to fit the database column limit.
 - When TikTok author metadata (`authorName`) is available it is displayed as the link label, otherwise "Watch on TikTok ↗" is used.
 - Live embed preview in the form editor (VideoEmbedField) requires network access to `/api/link-preview` from the browser.
+- YouTube autoplay uses `autoplay=1&mute=1`. The `mute=1` parameter is required by browser autoplay policies; without it the browser silently blocks playback.
 
 ---
 

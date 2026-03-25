@@ -6,11 +6,16 @@ import { useState } from 'react';
  * VideoEmbed
  *
  * Renders an embedded video player for YouTube or TikTok.
- * - YouTube: renders an <iframe> using the stored embedUrl (youtube-nocookie CDN)
+ * - YouTube: renders an <iframe> using the stored embedUrl (youtube-nocookie CDN).
+ *            When autoplay=true, appends autoplay=1&mute=1 (mute is required by
+ *            browsers for policy-compliant autoplay).
  * - TikTok:  uses the official oEmbed <iframe> at https://www.tiktok.com/embed/v2/<videoId>.
  *            This avoids the blockquote + embed.js approach which triggers webmssdk.js
  *            to fetch signed CDN URLs tied to the original publisher's domain, causing
  *            403 errors and "Cannot read properties of undefined (reading 'prod')" crashes.
+ *            No `sandbox` attribute is applied to TikTok iframes: sandboxing breaks
+ *            TikTok's internal webmssdk.js initialisation (the SDK cannot read its
+ *            production-environment config), which prevents playback entirely.
  *
  * Props:
  *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
@@ -69,7 +74,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     }
 
     const iframeSrc = autoplay
-      ? `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}autoplay=1`
+      ? `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}autoplay=1&mute=1`
       : embedUrl;
 
     return (
@@ -163,10 +168,9 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
               src={`https://www.tiktok.com/embed/v2/${videoId}`}
               title={title}
               style={{ width: '100%', height: '740px', border: 'none' }}
-              allow="encrypted-media"
+              allow="autoplay; encrypted-media"
               allowFullScreen
               loading="lazy"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
             />
           </div>
         </div>
@@ -182,10 +186,9 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
               src={embedUrl}
               title={title}
               className="w-full h-full"
-              allow="encrypted-media"
+              allow="autoplay; encrypted-media"
               allowFullScreen
               loading="lazy"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
             />
           </div>
           {!compact && (title || author) && (

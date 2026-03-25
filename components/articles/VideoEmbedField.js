@@ -228,10 +228,9 @@ export default function VideoEmbedField({
                 src={`https://www.tiktok.com/embed/v2/${videoId}`}
                 title={preview.title || 'TikTok video'}
                 style={{ width: '100%', height: '740px', border: 'none' }}
-                allow="encrypted-media"
+                allow="autoplay; encrypted-media"
                 allowFullScreen
                 loading="lazy"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
               />
             </div>
           </div>
@@ -246,10 +245,9 @@ export default function VideoEmbedField({
               src={preview.embedUrl}
               title={preview.title || 'TikTok video'}
               className="w-full h-full"
-              allow="encrypted-media"
+              allow="autoplay; encrypted-media"
               allowFullScreen
               loading="lazy"
-              sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
             />
           </div>
         );
