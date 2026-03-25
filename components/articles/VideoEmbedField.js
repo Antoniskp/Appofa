@@ -82,19 +82,21 @@ export default function VideoEmbedField({
   // blockquote is already in the DOM when the script processes it.
   // This prevents TikTok from autoplaying on page load.
   //
-  // Always remove any existing TikTok embed script and reload it fresh.
-  // This guarantees TikTok's initialisation code re-scans the DOM and picks
-  // up the newly-mounted blockquote.  Relying on
-  // window.tiktokEmbed.lib.render() is fragile because that symbol is
-  // undocumented and may be absent after certain TikTok script updates.
-  // Already-processed embeds are unaffected (their blockquotes have been
-  // replaced by iframes and are invisible to TikTok's DOM scanner).
+  // If embed.js is already present, call TikTok's render API so it picks up
+  // the newly-mounted blockquote without reloading the script.  Removing and
+  // reloading the script forces webmssdk.js to reinitialise mid-session
+  // against stale state, throwing "Cannot read properties of undefined
+  // (reading 'prod')".  If the render API is absent the already-loaded script
+  // will process newly-mounted blockquotes automatically on its next tick.
   useEffect(() => {
     if (preview?.provider !== 'tiktok' || !tiktokPlaying) return;
 
     const existing = document.querySelector(`script[src="${TIKTOK_EMBED_SCRIPT_SRC}"]`);
     if (existing) {
-      existing.remove();
+      if (typeof window.tiktokEmbed?.lib?.render === 'function') {
+        window.tiktokEmbed.lib.render();
+      }
+      return;
     }
     const script = document.createElement('script');
     script.src = TIKTOK_EMBED_SCRIPT_SRC;
