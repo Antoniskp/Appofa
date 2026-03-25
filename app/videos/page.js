@@ -1,82 +1,154 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
-import ArticleCard from '@/components/ArticleCard';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import VideoFeedCard from '@/components/articles/VideoFeedCard';
 import EmptyState from '@/components/EmptyState';
-import { useAsyncData } from '@/hooks/useAsyncData';
-import { useFilters } from '@/hooks/useFilters';
-import Pagination from '@/components/Pagination';
 import SearchInput from '@/components/SearchInput';
 import CategoryPills from '@/components/CategoryPills';
 import { useAuth } from '@/lib/auth-context';
 
+const PAGE_SIZE = 10;
+
+/** Full-width video skeleton card shown while loading more */
+function VideoCardSkeleton() {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-pulse">
+      <div className="aspect-video bg-gray-200 w-full" />
+      <div className="p-5 space-y-3">
+        <div className="flex gap-2">
+          <div className="h-5 w-16 bg-gray-200 rounded" />
+          <div className="h-5 w-20 bg-gray-100 rounded-full" />
+        </div>
+        <div className="h-6 bg-gray-200 rounded w-3/4" />
+        <div className="h-4 bg-gray-100 rounded w-1/2" />
+        <div className="space-y-2">
+          <div className="h-4 bg-gray-100 rounded" />
+          <div className="h-4 bg-gray-100 rounded w-5/6" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function VideosPage() {
   const { user } = useAuth();
 
-  const {
-    filters,
-    page,
-    totalPages,
-    setTotalPages,
-    handleFilterChange,
-    nextPage,
-    prevPage,
-    goToPage,
-    updateFilter,
-  } = useFilters({
-    category: '',
-    type: 'video',
-    search: '',
-  });
+  // Filter state
+  const [search, setSearch] = useState('');
+  const [category, setCategory] = useState('');
 
-  const handleSearchChange = (e) => {
-    updateFilter('search', e.target.value);
-  };
+  // Feed state
+  const [videos, setVideos] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const handleCategorySelect = (cat) => {
-    updateFilter('category', cat);
-  };
+  // Sentinel ref for IntersectionObserver (infinite scroll trigger)
+  const sentinelRef = useRef(null);
+  // Track in-flight request to avoid duplicate fetches
+  const fetchingRef = useRef(false);
+  // Track current filters so we can reset feed when they change
+  const filtersRef = useRef({ search, category });
 
-  const videoCategoryOptions = (articleCategories.articleTypes?.video?.categories ?? []).map(cat =>
-    typeof cat === 'string' ? { value: cat, label: cat } : cat
+  // Ref for "currently playing" video so we can pause it when another plays
+  const currentPauseFnRef = useRef(null);
+
+  const videoCategoryOptions = (articleCategories.articleTypes?.video?.categories ?? []).map(
+    (cat) => (typeof cat === 'string' ? { value: cat, label: cat } : cat)
   );
 
-  const { data: videos, loading, error } = useAsyncData(
-    async () => {
+  /** Fetch one page of videos and append (or replace on reset) */
+  const fetchPage = useCallback(async (pageNum, currentSearch, currentCategory, replace = false) => {
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
+    if (replace) {
+      setInitialLoading(true);
+    } else {
+      setLoading(true);
+    }
+    setError(null);
+
+    try {
       const params = {
-        page,
-        limit: 12,
-        ...filters,
+        page: pageNum,
+        limit: PAGE_SIZE,
+        type: 'video',
         status: 'published',
       };
-      Object.keys(params).forEach(key => {
-        if (!params[key]) delete params[key];
-      });
-      if (params.tag) delete params.tag;
+      if (currentSearch) params.search = currentSearch;
+      if (currentCategory) params.category = currentCategory;
+
       const response = await articleAPI.getAll(params);
-      if (response.success) {
-        return response;
+      const articles = response?.data?.articles || [];
+      const totalPages = response?.data?.pagination?.totalPages || 1;
+
+      if (replace) {
+        setVideos(articles);
+      } else {
+        setVideos((prev) => [...prev, ...articles]);
       }
-      return { data: { articles: [], pagination: { totalPages: 1 } } };
-    },
-    [page, filters],
-    {
-      initialData: [],
-      transform: (response) => {
-        setTotalPages(response.data.pagination?.totalPages || 1);
-        return response.data.articles || [];
-      }
+      setHasMore(pageNum < totalPages);
+    } catch (err) {
+      setError(err?.message || 'Σφάλμα κατά τη φόρτωση βίντεο. Δοκιμάστε ξανά.');
+    } finally {
+      setLoading(false);
+      setInitialLoading(false);
+      fetchingRef.current = false;
     }
-  );
+  }, []);
+
+  /** Initial load — runs when search or category filter changes */
+  useEffect(() => {
+    filtersRef.current = { search, category };
+    setPage(1);
+    setHasMore(true);
+    // fetchPage is a stable useCallback — safe to include in deps
+    fetchPage(1, search, category, true);
+  }, [search, category, fetchPage]);
+
+  /** Load next page when sentinel enters viewport */
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && hasMore && !fetchingRef.current) {
+          setPage((prev) => {
+            const next = prev + 1;
+            fetchPage(next, filtersRef.current.search, filtersRef.current.category, false);
+            return next;
+          });
+        }
+      },
+      { rootMargin: '300px 0px', threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [hasMore, fetchPage]);
+
+  /** When a video starts playing, pause the previously playing one */
+  const handleVideoPlay = useCallback((pauseFn) => {
+    if (currentPauseFnRef.current && currentPauseFnRef.current !== pauseFn) {
+      currentPauseFnRef.current();
+    }
+    currentPauseFnRef.current = pauseFn;
+  }, []);
+
+  const handleSearchChange = (e) => setSearch(e.target.value);
+  const handleCategorySelect = (cat) => setCategory(cat);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container">
-        {/* Header with Add Video button */}
+      <div className="max-w-2xl mx-auto px-4">
+        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Βίντεο</h1>
           {user && (
@@ -95,39 +167,43 @@ export default function VideosPage() {
           <SearchInput
             name="search"
             placeholder="Αναζήτηση βίντεο..."
-            value={filters.search}
+            value={search}
             onChange={handleSearchChange}
-            className="max-w-md"
           />
           <CategoryPills
             categories={videoCategoryOptions}
-            selected={filters.category}
+            selected={category}
             onSelect={handleCategorySelect}
           />
         </div>
 
-        {/* Loading State */}
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <SkeletonLoader type="card" count={6} />
+        {/* Initial loading skeletons */}
+        {initialLoading && (
+          <div className="space-y-6">
+            <VideoCardSkeleton />
+            <VideoCardSkeleton />
+            <VideoCardSkeleton />
           </div>
         )}
 
-        {/* Error State */}
-        {error && (
+        {/* Error state */}
+        {!initialLoading && error && (
           <EmptyState
             type="error"
             title="Σφάλμα Φόρτωσης Βίντεο"
             description={error}
             action={{
               text: 'Δοκιμάστε Ξανά',
-              onClick: () => window.location.reload()
+              onClick: () => {
+                setError(null);
+                fetchPage(1, search, category, true);
+              },
             }}
           />
         )}
 
-        {/* Empty State */}
-        {!loading && !error && videos.length === 0 && (
+        {/* Empty state */}
+        {!initialLoading && !error && videos.length === 0 && (
           <EmptyState
             type="empty"
             title="Δεν Βρέθηκαν Βίντεο"
@@ -135,23 +211,36 @@ export default function VideosPage() {
           />
         )}
 
-        {/* Videos Grid */}
-        {!loading && !error && videos.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Video feed */}
+        {!initialLoading && !error && videos.length > 0 && (
+          <div className="space-y-6">
             {videos.map((video) => (
-              <ArticleCard key={video.id} article={video} variant="grid" />
+              <div
+                key={video.id}
+                className="animate-fadeIn"
+              >
+                <VideoFeedCard article={video} onPlay={handleVideoPlay} />
+              </div>
             ))}
           </div>
         )}
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={goToPage}
-          onPrevious={prevPage}
-          onNext={nextPage}
-        />
+        {/* Infinite scroll sentinel */}
+        <div ref={sentinelRef} className="h-1" aria-hidden="true" />
+
+        {/* Loading more spinner */}
+        {loading && !initialLoading && (
+          <div className="flex justify-center py-8">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" aria-label="Φόρτωση..." />
+          </div>
+        )}
+
+        {/* End of feed message */}
+        {!loading && !hasMore && videos.length > 0 && (
+          <p className="text-center text-sm text-gray-400 py-8">
+            Δεν υπάρχουν άλλα βίντεο
+          </p>
+        )}
       </div>
     </div>
   );
