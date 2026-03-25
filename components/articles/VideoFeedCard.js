@@ -61,7 +61,12 @@ function sendYouTubeCommand(iframe, func) {
 function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
   const iframeRef = useRef(null);
   const containerRef = useRef(null);
-  const [isNear, setIsNear] = useState(false);
+  // Once true, stays true — prevents destroying the iframe on scroll-away
+  const [hasBeenNear, setHasBeenNear] = useState(false);
+  // Tracks whether the YouTube iframe API has fired onReady
+  const [playerReady, setPlayerReady] = useState(false);
+  // True when the play observer wants the video to be playing
+  const shouldPlayRef = useRef(false);
 
   // Register the pause callback so the parent can pause this video
   useEffect(() => {
@@ -70,30 +75,66 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
     }
   }, [onPauseRef]);
 
-  // Lazy-load: render the iframe only when the card is near the viewport
+  // Lazy-load: render the iframe once the card is near the viewport;
+  // once set to true it never goes back to false so the iframe is never destroyed.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     const nearObserver = new IntersectionObserver(
-      ([entry]) => setIsNear(entry.isIntersecting),
+      ([entry]) => {
+        if (entry.isIntersecting) setHasBeenNear(true);
+      },
       { rootMargin: '200px 0px', threshold: 0 }
     );
     nearObserver.observe(el);
     return () => nearObserver.disconnect();
   }, []);
 
+  // Listen for the YouTube iframe API onReady / onStateChange messages
+  useEffect(() => {
+    if (!hasBeenNear) return;
+
+    function handleMessage(event) {
+      if (!iframeRef.current) return;
+      // Only handle messages from our iframe's contentWindow
+      if (event.source !== iframeRef.current.contentWindow) return;
+
+      let data;
+      try {
+        data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      } catch {
+        return;
+      }
+
+      if (data?.event === 'onReady') {
+        setPlayerReady(true);
+        // If the play observer already fired, start playback now
+        if (shouldPlayRef.current) {
+          sendYouTubeCommand(iframeRef.current, 'playVideo');
+        }
+      }
+    }
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [hasBeenNear]);
+
   // Autoplay / pause when the video scrolls in/out of the viewport
   useEffect(() => {
     const el = containerRef.current;
-    if (!el || !isNear) return;
+    if (!el || !hasBeenNear) return;
 
     const playObserver = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          sendYouTubeCommand(iframeRef.current, 'playVideo');
+          shouldPlayRef.current = true;
+          if (playerReady) {
+            sendYouTubeCommand(iframeRef.current, 'playVideo');
+          }
           onPlay?.();
         } else {
+          shouldPlayRef.current = false;
           sendYouTubeCommand(iframeRef.current, 'pauseVideo');
         }
       },
@@ -101,21 +142,27 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
     );
     playObserver.observe(el);
     return () => playObserver.disconnect();
-  }, [isNear, onPlay]);
+  }, [hasBeenNear, playerReady, onPlay]);
 
-  // Build src with enablejsapi=1 and mute=1 for autoplay support
-  const iframeSrc = isNear
-    ? buildYouTubeSrc(embedUrl, { enablejsapi: 1, mute: 1, rel: 0 })
+  // Build src with all params needed for JS API + muted autoplay
+  const iframeSrc = hasBeenNear
+    ? buildYouTubeSrc(embedUrl, {
+        enablejsapi: 1,
+        autoplay: 1,
+        mute: 1,
+        rel: 0,
+        origin: typeof window !== 'undefined' ? window.location.origin : '',
+      })
     : '';
 
   return (
     <div ref={containerRef} className="aspect-video bg-black w-full">
-      {isNear && (
+      {hasBeenNear && (
         <iframe
           ref={iframeRef}
           src={iframeSrc}
           title={title}
-          className="w-full h-full"
+          className="w-full h-full border-0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
         />
@@ -142,8 +189,12 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
       script.src = TIKTOK_EMBED_SCRIPT_SRC;
       script.async = true;
       document.body.appendChild(script);
-    } else if (window.tiktokEmbed?.lib?.render) {
-      window.tiktokEmbed.lib.render();
+    } else {
+      // Script already loaded — give the DOM a tick to paint the blockquote
+      // before asking the TikTok library to scan and render it.
+      setTimeout(() => {
+        window.tiktokEmbed?.lib?.render();
+      }, 0);
     }
   }, [playing, videoId]);
 
