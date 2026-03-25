@@ -252,10 +252,9 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
           src={`https://www.tiktok.com/embed/v2/${videoId}`}
           title={title}
           style={{ width: '100%', height: '740px', border: 'none' }}
-          allow="encrypted-media"
+          allow="autoplay; encrypted-media"
           allowFullScreen
           loading="lazy"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-presentation"
         />
       </div>
     </div>
