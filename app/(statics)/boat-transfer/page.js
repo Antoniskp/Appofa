@@ -206,9 +206,9 @@ export default function BoatTransferPage() {
                 <td className="px-4 py-3 text-gray-600 text-xs">Ανάλογα με μήκος σκάφους και μαρίνα</td>
               </tr>
               <tr>
-                <td className="px-4 py-3 text-gray-700">Φόρος πολυτελούς διαβίωσης (ΤΕΠΔ)</td>
+                <td className="px-4 py-3 text-gray-700">Τέλος Πλοίων Αναψυχής (ΤΕΠΑΗ)</td>
                 <td className="px-4 py-3 text-gray-700">Μεταβλητό</td>
-                <td className="px-4 py-3 text-gray-600 text-xs">Για σκάφη αναψυχής άνω των 5μ. — βάσει μήκους</td>
+                <td className="px-4 py-3 text-gray-600 text-xs">Ετήσιο τέλος για σκάφη αναψυχής άνω των 5μ. — βάσει μήκους</td>
               </tr>
               <tr className="bg-gray-50">
                 <td className="px-4 py-3 text-gray-700">Εισαγωγή (τελωνείο + φόροι)</td>
