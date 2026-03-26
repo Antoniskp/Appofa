@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * VideoEmbed
  *
  * Renders an embedded video player for YouTube or TikTok.
  * - YouTube: renders an <iframe> using the stored embedUrl (youtube-nocookie CDN).
- *            When autoplay=true, appends autoplay=1&mute=1 (mute is required by
- *            browsers for policy-compliant autoplay).
+ *            When autoplay=true, appends autoplay=1&mute=1&enablejsapi=1 (mute is
+ *            required by browsers for policy-compliant autoplay). An unmute button
+ *            overlay is shown so the user can enable sound with one click; clicking
+ *            it sends an unMute command via the YouTube IFrame API postMessage.
  * - TikTok:  uses the official oEmbed <iframe> at https://www.tiktok.com/embed/v2/<videoId>.
  *            This avoids the blockquote + embed.js approach which triggers webmssdk.js
  *            to fetch signed CDN URLs tied to the original publisher's domain, causing
@@ -16,11 +18,9 @@ import { useState } from 'react';
  *            No `sandbox` attribute is applied to TikTok iframes: sandboxing breaks
  *            TikTok's internal webmssdk.js initialisation (the SDK cannot read its
  *            production-environment config), which prevents playback entirely.
- *            The `autoplay` prop is intentionally ignored for TikTok — TikTok always
- *            uses a click-to-play thumbnail gate regardless of `autoplay`. Injecting
- *            the TikTok iframe immediately on page load (bypassing the gate) causes
- *            webmssdk.js to crash with "Cannot read properties of undefined (reading
- *            'prod')" before TikTok's SDK environment config is initialised.
+ *            When autoplay=true (detail pages), the click-to-play thumbnail gate is
+ *            skipped and the TikTok iframe is rendered immediately with ?autoplay=1.
+ *            When autoplay=false (feed cards), the existing click-to-play gate is used.
  *
  * Props:
  *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
@@ -48,6 +48,14 @@ function extractTikTokVideoId(embedUrl, sourceUrl) {
 
 export default function VideoEmbed({ article, compact = false, autoplay = false }) {
   const [tiktokPlaying, setTiktokPlaying] = useState(false);
+  const [youtubeMuted, setYoutubeMuted] = useState(true);
+  const youtubeIframeRef = useRef(null);
+
+  // Reset muted state and tiktok gate when the video source changes.
+  useEffect(() => {
+    setYoutubeMuted(true);
+    setTiktokPlaying(false);
+  }, [article?.sourceUrl]);
 
   if (!article?.sourceUrl || !article?.sourceProvider) return null;
 
@@ -79,13 +87,33 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     }
 
     const iframeSrc = autoplay
-      ? `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}autoplay=1&mute=1`
+      ? `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}autoplay=1&mute=1&enablejsapi=1`
       : embedUrl;
+
+    function handleUnmute() {
+      if (youtubeIframeRef.current) {
+        let targetOrigin = 'https://www.youtube.com';
+        try {
+          const { hostname } = new URL(embedUrl);
+          if (hostname === 'www.youtube-nocookie.com' || hostname === 'youtube-nocookie.com') {
+            targetOrigin = 'https://www.youtube-nocookie.com';
+          }
+        } catch (_) {
+          // malformed embedUrl — fall back to youtube.com origin
+        }
+        youtubeIframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+          targetOrigin
+        );
+      }
+      setYoutubeMuted(false);
+    }
 
     return (
       <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
-        <div className="aspect-video bg-black">
+        <div className="aspect-video bg-black relative">
           <iframe
+            ref={youtubeIframeRef}
             src={iframeSrc}
             title={title}
             className="w-full h-full"
@@ -93,6 +121,15 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
             allowFullScreen
             loading="lazy"
           />
+          {autoplay && youtubeMuted && (
+            <button
+              onClick={handleUnmute}
+              className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 text-white text-sm font-medium hover:bg-black/90 transition-colors"
+              aria-label="Unmute video"
+            >
+              🔇 Unmute
+            </button>
+          )}
         </div>
         {!compact && (title || author) && (
           <div className="px-4 py-3 bg-white border-t border-gray-100">
@@ -119,9 +156,10 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     // Primary: official TikTok oEmbed iframe.
     // The iframe handles its own CDN auth internally; no embed.js needed.
     if (videoId) {
-      // Always show a static thumbnail + play button until the user clicks play.
-      // autoplay is intentionally ignored for TikTok (see JSDoc above).
-      if (!tiktokPlaying) {
+      // When autoplay=true (detail pages), skip the click-to-play gate and render
+      // the iframe directly with ?autoplay=1. When autoplay=false (feed cards),
+      // show the thumbnail gate until the user clicks.
+      if (!autoplay && !tiktokPlaying) {
         return (
           <div className={`${outerMargin} flex flex-col items-center`}>
             <div
@@ -170,7 +208,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
         <div className={`${outerMargin} flex flex-col items-center`}>
           <div style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}>
             <iframe
-              src={`https://www.tiktok.com/embed/v2/${videoId}`}
+              src={`https://www.tiktok.com/embed/v2/${videoId}${autoplay ? '?autoplay=1' : ''}`}
               title={title}
               style={{ width: '100%', height: '740px', border: 'none' }}
               allow="autoplay; encrypted-media"
@@ -183,10 +221,11 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     }
 
     // Secondary: try the embedUrl iframe (may work in some contexts).
-    // Gate behind click-to-play to prevent webmssdk.js from being injected
-    // immediately on page load before TikTok's SDK environment is initialised.
+    // Gate behind click-to-play when autoplay=false to prevent webmssdk.js
+    // from being injected immediately on page load before TikTok's SDK
+    // environment is initialised.
     if (embedUrl) {
-      if (!tiktokPlaying) {
+      if (!autoplay && !tiktokPlaying) {
         return (
           <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
             <div
