@@ -22,11 +22,11 @@ module.exports = {
           allowNull: true
         },
         title: {
-          type: Sequelize.STRING,
+          type: Sequelize.TEXT,
           allowNull: true
         },
         authorName: {
-          type: Sequelize.STRING,
+          type: Sequelize.TEXT,
           allowNull: true
         },
         thumbnailUrl: {

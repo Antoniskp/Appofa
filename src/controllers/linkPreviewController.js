@@ -31,7 +31,7 @@ const TIKTOK_RETRY_DELAY_MS = 500;
  * Truncate a string to fit within a database column limit.
  * Ensures the value doesn't exceed maxLen characters to prevent DB errors.
  */
-const truncate = (str, maxLen = 255) => {
+const truncate = (str, maxLen = 2000) => {
   if (typeof str !== 'string') return str;
   return str.length > maxLen ? str.slice(0, maxLen) : str;
 };
