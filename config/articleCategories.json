@@ -66,6 +66,10 @@
       "description": "Quick video posts with embedded YouTube/TikTok",
       "categoryRequired": false,
       "categories": [
+        "Ελλάδα",
+        "Κόσμος",
+        "Πόλεμος",
+        "Σύστημα",
         "Γενικά",
         "Πολιτική",
         "Sports",
