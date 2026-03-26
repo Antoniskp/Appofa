@@ -412,9 +412,28 @@ export default function SuggestionDetailPage() {
             </span>
           </h2>
 
+          {/* Responses List */}
+          {suggestion.solutions && suggestion.solutions.length > 0 ? (
+            <div className="space-y-3 mb-5">
+              {suggestion.solutions.map((sol) => (
+                <SolutionCard
+                  key={sol.id}
+                  solution={sol}
+                  user={user}
+                  onVote={handleSolutionVote}
+                  votingId={votingId}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm mb-5">
+              {responseConfig.emptyText}
+            </div>
+          )}
+
           {/* Add Response Form */}
           {canAddSolution ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-5 mb-5 shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-800 mb-3">
                 {responseConfig.submitLabel}
               </h3>
@@ -447,32 +466,13 @@ export default function SuggestionDetailPage() {
               </form>
             </div>
           ) : !user ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5 text-sm text-gray-600 text-center">
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 text-center">
               <Link href="/login" className="text-blue-600 hover:underline font-medium">
                 Συνδεθείτε
               </Link>{' '}
               {responseConfig.loginPrompt}
             </div>
           ) : null}
-
-          {/* Responses List */}
-          {suggestion.solutions && suggestion.solutions.length > 0 ? (
-            <div className="space-y-3">
-              {suggestion.solutions.map((sol) => (
-                <SolutionCard
-                  key={sol.id}
-                  solution={sol}
-                  user={user}
-                  onVote={handleSolutionVote}
-                  votingId={votingId}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
-              {responseConfig.emptyText}
-            </div>
-          )}
         </div>
       </div>
     </div>
