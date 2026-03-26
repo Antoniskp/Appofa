@@ -42,6 +42,7 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 - [Message System](doc/MESSAGE_SYSTEM_IMPLEMENTATION.md) - User messaging feature
 
 ### Deployment & Operations
+- [Deployment](DEPLOYMENT.md) - **Nginx config, deployment process, port layout, and build artifact notes**
 - [VPS Setup Guide](doc/VPS_SETUP.md) - **Complete VPS deployment guide** (Ubuntu/Debian)
 - [Deployment Guide](doc/DEPLOYMENT_GUIDE.md) - Local, Docker, and cloud platform deployments
 - [Upgrade Guide](doc/UPGRADE_GUIDE.md) - Migration and upgrade instructions
