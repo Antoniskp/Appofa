@@ -17,11 +17,11 @@ const LinkPreviewCache = sequelize.define('LinkPreviewCache', {
     allowNull: true
   },
   title: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   authorName: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: true
   },
   thumbnailUrl: {

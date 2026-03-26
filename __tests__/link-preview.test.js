@@ -487,11 +487,11 @@ describe('POST /api/link-preview', () => {
     }
   });
 
-  test('truncates long TikTok title to prevent DB overflow (VARCHAR 255)', async () => {
+  test('truncates long TikTok title to prevent DB overflow (TEXT column, 2000-char soft cap)', async () => {
     const https = require('https');
     const originalGet = https.get;
 
-    const longTitle = 'A'.repeat(500); // 500 chars exceeds VARCHAR(255)
+    const longTitle = 'A'.repeat(2500); // 2500 chars exceeds the 2000-char soft cap
 
     https.get = (_url, _opts, callback) => {
       const isCallback = typeof _opts === 'function' ? _opts : callback;
@@ -501,7 +501,7 @@ describe('POST /api/link-preview', () => {
         on: (event, handler) => {
           if (event === 'data') handler(JSON.stringify({
             title: longTitle,
-            author_name: 'B'.repeat(300),
+            author_name: 'B'.repeat(2500),
             thumbnail_url: 'https://p16.tiktokcdn.com/thumb.jpg',
             provider_name: 'TikTok',
             provider_url: 'https://www.tiktok.com',
@@ -523,8 +523,8 @@ describe('POST /api/link-preview', () => {
         .expect(200);
 
       expect(res.body.success).toBe(true);
-      expect(res.body.data.title).toBe('A'.repeat(255));
-      expect(res.body.data.authorName).toBe('B'.repeat(255));
+      expect(res.body.data.title).toBe('A'.repeat(2000));
+      expect(res.body.data.authorName).toBe('B'.repeat(2000));
     } finally {
       https.get = originalGet;
     }
