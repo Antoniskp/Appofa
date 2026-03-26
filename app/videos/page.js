@@ -17,7 +17,7 @@ const PAGE_SIZE = 18;
 function VideoGridSkeleton() {
   return (
     <div className="rounded-xl overflow-hidden bg-white shadow-sm border border-gray-100 animate-pulse">
-      <div className="bg-gray-200 w-full" style={{ aspectRatio: '9/16' }} />
+      <div className="bg-gray-200 w-full" style={{ aspectRatio: '16/9' }} />
       <div className="p-2.5 space-y-1.5">
         <div className="h-3.5 bg-gray-200 rounded w-5/6" />
         <div className="h-3 bg-gray-100 rounded w-1/2" />

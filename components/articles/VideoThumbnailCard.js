@@ -57,10 +57,8 @@ export default function VideoThumbnailCard({ article }) {
   const authorName = sourceMeta?.authorName || author?.username || null;
   const articleHref = `/articles/${idSlug(id, title)}`;
 
-  // TikTok: portrait 9/16, YouTube: landscape 16/9
-  const aspectStyle = isTikTok
-    ? { aspectRatio: '9/16' }
-    : { aspectRatio: '16/9' };
+  // Uniform landscape 16/9 for all providers (TikTok thumbnails are center-cropped)
+  const aspectStyle = { aspectRatio: '16/9' };
 
   const relativeTime = (() => {
     if (!createdAt) return null;
