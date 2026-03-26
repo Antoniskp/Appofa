@@ -182,8 +182,58 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
       );
     }
 
-    // Secondary: try the embedUrl iframe (may work in some contexts)
+    // Secondary: try the embedUrl iframe (may work in some contexts).
+    // Gate behind click-to-play to prevent webmssdk.js from being injected
+    // immediately on page load before TikTok's SDK environment is initialised.
     if (embedUrl) {
+      if (!tiktokPlaying) {
+        return (
+          <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
+            <div
+              className="aspect-video bg-black flex items-center justify-center relative cursor-pointer"
+              role="button"
+              tabIndex={0}
+              aria-label="Play TikTok video"
+              onClick={() => setTiktokPlaying(true)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTiktokPlaying(true); } }}
+            >
+              {thumbnail ? (
+                <img
+                  src={thumbnail}
+                  alt={title || 'TikTok video thumbnail'}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-900">
+                  <span className="text-white text-5xl">♪</span>
+                </div>
+              )}
+              {/* Play button overlay */}
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
+                  <span className="text-white text-2xl ml-1">▶</span>
+                </div>
+              </div>
+            </div>
+            {!compact && (title || author) && (
+              <div className="px-4 py-3 bg-white border-t border-gray-100">
+                {title && <p className="text-sm font-medium text-gray-900">{title}</p>}
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={author ? `View ${author} on TikTok` : 'Watch on TikTok'}
+                  className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
+                >
+                  {author || WATCH_ON_TIKTOK}
+                </a>
+              </div>
+            )}
+          </div>
+        );
+      }
+
       return (
         <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
           <div className="aspect-video bg-black flex items-center justify-center">
@@ -203,6 +253,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
                 href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                aria-label={author ? `View ${author} on TikTok` : 'Watch on TikTok'}
                 className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
               >
                 {author || WATCH_ON_TIKTOK}
