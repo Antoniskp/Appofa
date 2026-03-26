@@ -12,10 +12,15 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 
-const SUGGESTION_TYPES = [
+const BASE_SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
   { value: 'problem', label: 'Πρόβλημα – Αναφορά ζητήματος' },
   { value: 'location_suggestion', label: 'Τοποθεσία – Αίτημα για συγκεκριμένο χώρο' },
+];
+
+const PRIVILEGED_SUGGESTION_TYPES = [
+  ...BASE_SUGGESTION_TYPES,
+  { value: 'problem_request', label: 'Ερώτημα Κοινότητας – Ζητώ από χρήστες να αναφέρουν προβλήματα' },
 ];
 
 const SUGGESTION_STATUSES = [
@@ -98,6 +103,7 @@ export default function EditSuggestionPage() {
   }
 
   const isPrivileged = ['admin', 'moderator'].includes(user.role);
+  const suggestionTypes = isPrivileged ? PRIVILEGED_SUGGESTION_TYPES : BASE_SUGGESTION_TYPES;
 
   const validate = () => {
     const errs = {};
@@ -180,7 +186,7 @@ export default function EditSuggestionPage() {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {SUGGESTION_TYPES.map((t) => (
+                {suggestionTypes.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>

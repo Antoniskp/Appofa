@@ -11,11 +11,23 @@ import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 
-const SUGGESTION_TYPES = [
+const BASE_SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
   { value: 'problem', label: 'Πρόβλημα – Αναφορά ζητήματος' },
   { value: 'location_suggestion', label: 'Τοποθεσία – Αίτημα για συγκεκριμένο χώρο' },
 ];
+
+const PRIVILEGED_SUGGESTION_TYPES = [
+  ...BASE_SUGGESTION_TYPES,
+  { value: 'problem_request', label: 'Ερώτημα Κοινότητας – Ζητώ από χρήστες να αναφέρουν προβλήματα' },
+];
+
+const BODY_PLACEHOLDERS = {
+  idea: 'Περιγράψτε αναλυτικά την ιδέα σας...',
+  problem: 'Περιγράψτε το πρόβλημα που αντιμετωπίζετε...',
+  problem_request: 'Διατυπώστε το ερώτημα που θέλετε να απευθύνετε στην κοινότητα...',
+  location_suggestion: 'Περιγράψτε αναλυτικά το αίτημά σας για συγκεκριμένο χώρο...',
+};
 
 export default function NewSuggestionPage() {
   const router = useRouter();
@@ -44,6 +56,9 @@ export default function NewSuggestionPage() {
       </div>
     );
   }
+
+  const isPrivileged = user && ['admin', 'moderator'].includes(user.role);
+  const suggestionTypes = isPrivileged ? PRIVILEGED_SUGGESTION_TYPES : BASE_SUGGESTION_TYPES;
 
   const validate = () => {
     const errs = {};
@@ -119,7 +134,7 @@ export default function NewSuggestionPage() {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {SUGGESTION_TYPES.map((t) => (
+                {suggestionTypes.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>
@@ -158,7 +173,7 @@ export default function NewSuggestionPage() {
                 value={form.body}
                 onChange={handleChange}
                 rows={6}
-                placeholder="Περιγράψτε αναλυτικά την ιδέα ή το πρόβλημα..."
+                placeholder={BODY_PLACEHOLDERS[form.type] || 'Περιγράψτε αναλυτικά...'}
                 maxLength={10000}
                 className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[120px] ${
                   errors.body ? 'border-red-400 focus:ring-red-400' : 'border-gray-300 focus:border-blue-500'

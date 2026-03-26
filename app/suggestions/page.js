@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { PlusCircleIcon, MapPinIcon, LightBulbIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PlusCircleIcon, MapPinIcon, LightBulbIcon, ExclamationTriangleIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -17,18 +17,21 @@ import { useFilters } from '@/hooks/useFilters';
 const TYPE_LABELS = {
   idea: 'Ιδέα',
   problem: 'Πρόβλημα',
+  problem_request: 'Ερώτημα Κοινότητας',
   location_suggestion: 'Τοποθεσία',
 };
 
 const TYPE_ICONS = {
   idea: LightBulbIcon,
   problem: ExclamationTriangleIcon,
+  problem_request: QuestionMarkCircleIcon,
   location_suggestion: MapPinIcon,
 };
 
 const TYPE_VARIANTS = {
   idea: 'primary',
   problem: 'warning',
+  problem_request: 'danger',
   location_suggestion: 'success',
 };
 
@@ -175,6 +178,7 @@ function SuggestionsContent() {
                 { value: '', label: 'Όλοι' },
                 { value: 'idea', label: 'Ιδέα' },
                 { value: 'problem', label: 'Πρόβλημα' },
+                { value: 'problem_request', label: 'Ερώτημα Κοινότητας' },
                 { value: 'location_suggestion', label: 'Τοποθεσία' },
               ],
             },

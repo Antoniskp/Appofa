@@ -31,12 +31,14 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 const TYPE_LABELS = {
   idea: 'Ιδέα',
   problem: 'Πρόβλημα',
+  problem_request: 'Ερώτημα Κοινότητας',
   location_suggestion: 'Τοποθεσία',
 };
 
 const TYPE_VARIANTS = {
   idea: 'primary',
   problem: 'warning',
+  problem_request: 'danger',
   location_suggestion: 'success',
 };
 
@@ -52,6 +54,37 @@ const STATUS_VARIANTS = {
   under_review: 'warning',
   implemented: 'success',
   rejected: 'danger',
+};
+
+const RESPONSE_CONFIG = {
+  idea: {
+    sectionTitle: 'Σχόλια & Απόψεις',
+    submitLabel: 'Προσθήκη Σχολίου',
+    placeholder: 'Μοιραστείτε την άποψή σας για αυτή την ιδέα...',
+    loginPrompt: 'για να προσθέσετε σχόλιο.',
+    emptyText: 'Δεν υπάρχουν σχόλια ακόμα. Γίνετε ο πρώτος!',
+  },
+  problem: {
+    sectionTitle: 'Προτεινόμενες Λύσεις',
+    submitLabel: 'Υποβολή Λύσης',
+    placeholder: 'Περιγράψτε την πρότασή σας για λύση...',
+    loginPrompt: 'για να προτείνετε λύση.',
+    emptyText: 'Δεν υπάρχουν λύσεις ακόμα. Γίνετε ο πρώτος που θα προτείνει!',
+  },
+  problem_request: {
+    sectionTitle: 'Αναφερόμενα Προβλήματα',
+    submitLabel: 'Αναφέρετε το Πρόβλημά σας',
+    placeholder: 'Περιγράψτε το πρόβλημα που αντιμετωπίζετε...',
+    loginPrompt: 'για να αναφέρετε το πρόβλημά σας.',
+    emptyText: 'Κανείς δεν έχει αναφέρει πρόβλημα ακόμα. Γίνετε ο πρώτος!',
+  },
+  location_suggestion: {
+    sectionTitle: 'Σχόλια',
+    submitLabel: 'Προσθήκη Σχολίου',
+    placeholder: 'Μοιραστείτε την άποψή σας για αυτή την τοποθεσία...',
+    loginPrompt: 'για να προσθέσετε σχόλιο.',
+    emptyText: 'Δεν υπάρχουν σχόλια ακόμα.',
+  },
 };
 
 // ─── Vote Buttons Component ───────────────────────────────────────────────────
@@ -285,7 +318,11 @@ export default function SuggestionDetailPage() {
   const isOwner = user?.id === suggestion.authorId;
   const isPrivileged = user && ['admin', 'moderator'].includes(user.role);
   const canAddSolution =
-    user && suggestion.status !== 'implemented' && suggestion.status !== 'rejected';
+    user &&
+    suggestion.status !== 'implemented' &&
+    suggestion.status !== 'rejected';
+
+  const responseConfig = RESPONSE_CONFIG[suggestion.type] || RESPONSE_CONFIG.idea;
 
   return (
     <>
@@ -366,20 +403,20 @@ export default function SuggestionDetailPage() {
           )}
         </div>
 
-        {/* Solutions Section */}
+        {/* Response Section */}
         <div>
           <h2 className="text-lg font-bold text-gray-900 mb-4">
-            Προτεινόμενες Λύσεις{' '}
+            {responseConfig.sectionTitle}{' '}
             <span className="text-gray-400 font-normal text-base">
               ({suggestion.solutions?.length || 0})
             </span>
           </h2>
 
-          {/* Add Solution Form */}
+          {/* Add Response Form */}
           {canAddSolution ? (
             <div className="bg-white rounded-xl border border-gray-200 p-5 mb-5 shadow-sm">
               <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                Προτείνετε μια Λύση
+                {responseConfig.submitLabel}
               </h3>
               <form onSubmit={handleSubmitSolution}>
                 <textarea
@@ -389,7 +426,7 @@ export default function SuggestionDetailPage() {
                     if (solutionError) setSolutionError('');
                   }}
                   rows={4}
-                  placeholder="Περιγράψτε την πρότασή σας για λύση..."
+                  placeholder={responseConfig.placeholder}
                   maxLength={5000}
                   className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[100px] ${
                     solutionError ? 'border-red-400' : 'border-gray-300 focus:border-blue-500'
@@ -404,7 +441,7 @@ export default function SuggestionDetailPage() {
                     disabled={submittingSolution}
                     className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
                   >
-                    {submittingSolution ? 'Υποβολή...' : 'Υποβολή Λύσης'}
+                    {submittingSolution ? 'Υποβολή...' : responseConfig.submitLabel}
                   </button>
                 </div>
               </form>
@@ -414,11 +451,11 @@ export default function SuggestionDetailPage() {
               <Link href="/login" className="text-blue-600 hover:underline font-medium">
                 Συνδεθείτε
               </Link>{' '}
-              για να προτείνετε λύση.
+              {responseConfig.loginPrompt}
             </div>
           ) : null}
 
-          {/* Solutions List */}
+          {/* Responses List */}
           {suggestion.solutions && suggestion.solutions.length > 0 ? (
             <div className="space-y-3">
               {suggestion.solutions.map((sol) => (
@@ -433,7 +470,7 @@ export default function SuggestionDetailPage() {
             </div>
           ) : (
             <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm">
-              Δεν υπάρχουν λύσεις ακόμα. Γίνετε ο πρώτος που θα προτείνει!
+              {responseConfig.emptyText}
             </div>
           )}
         </div>

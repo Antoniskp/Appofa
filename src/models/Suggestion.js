@@ -19,7 +19,7 @@ const Suggestion = sequelize.define('Suggestion', {
     allowNull: false
   },
   type: {
-    type: DataTypes.ENUM('idea', 'problem', 'location_suggestion'),
+    type: DataTypes.ENUM('idea', 'problem', 'problem_request', 'location_suggestion'),
     defaultValue: 'idea',
     allowNull: false
   },

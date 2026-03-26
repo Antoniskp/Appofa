@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location } = require('../models');
 const { normalizeRequiredText, normalizeOptionalText, normalizeEnum, normalizeInteger } = require('../utils/validators');
 
-const SUGGESTION_TYPES = ['idea', 'problem', 'location_suggestion'];
+const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
 const VOTE_VALUES = [-1, 1];
 
@@ -175,6 +175,13 @@ const suggestionController = {
 
       const typeResult = normalizeEnum(type || 'idea', SUGGESTION_TYPES, 'Type');
       if (typeResult.error) return res.status(400).json({ success: false, message: typeResult.error });
+
+      if (typeResult.value === 'problem_request') {
+        const role = req.user.role;
+        if (role !== 'admin' && role !== 'moderator') {
+          return res.status(403).json({ success: false, message: 'Only admins and moderators can create problem_request suggestions.' });
+        }
+      }
 
       let parsedLocationId = null;
       if (locationId !== undefined && locationId !== null && locationId !== '') {
