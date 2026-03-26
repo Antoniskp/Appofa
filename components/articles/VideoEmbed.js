@@ -16,6 +16,11 @@ import { useState } from 'react';
  *            No `sandbox` attribute is applied to TikTok iframes: sandboxing breaks
  *            TikTok's internal webmssdk.js initialisation (the SDK cannot read its
  *            production-environment config), which prevents playback entirely.
+ *            The `autoplay` prop is intentionally ignored for TikTok — TikTok always
+ *            uses a click-to-play thumbnail gate regardless of `autoplay`. Injecting
+ *            the TikTok iframe immediately on page load (bypassing the gate) causes
+ *            webmssdk.js to crash with "Cannot read properties of undefined (reading
+ *            'prod')" before TikTok's SDK environment config is initialised.
  *
  * Props:
  *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
@@ -114,9 +119,9 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     // Primary: official TikTok oEmbed iframe.
     // The iframe handles its own CDN auth internally; no embed.js needed.
     if (videoId) {
-      // Show a static thumbnail + play button until the user clicks play.
-      // Skip click-to-play when autoplay is requested.
-      if (!tiktokPlaying && !autoplay) {
+      // Always show a static thumbnail + play button until the user clicks play.
+      // autoplay is intentionally ignored for TikTok (see JSDoc above).
+      if (!tiktokPlaying) {
         return (
           <div className={`${outerMargin} flex flex-col items-center`}>
             <div
