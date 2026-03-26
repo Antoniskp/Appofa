@@ -15,6 +15,7 @@ import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 const SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
   { value: 'problem', label: 'Πρόβλημα – Αναφορά ζητήματος' },
+  { value: 'problem_request', label: 'Ερώτημα Κοινότητας – Ζητώ από χρήστες να αναφέρουν προβλήματα' },
   { value: 'location_suggestion', label: 'Τοποθεσία – Αίτημα για συγκεκριμένο χώρο' },
 ];
 

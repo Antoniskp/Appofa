@@ -80,6 +80,7 @@ describe('Suggestions & Solutions API Tests', () => {
   let user1Token, user1Id;
   let user2Token, user2Id;
   let adminToken, adminId;
+  let moderatorToken, moderatorId;
 
   let testSuggestionId;
   let testSolutionId;
@@ -87,6 +88,7 @@ describe('Suggestions & Solutions API Tests', () => {
   const csrf1 = 'csrf-suggestions-user1';
   const csrf2 = 'csrf-suggestions-user2';
   const csrfAdmin = 'csrf-suggestions-admin';
+  const csrfMod = 'csrf-suggestions-mod';
 
   beforeAll(async () => {
     await sequelize.authenticate();
@@ -95,6 +97,7 @@ describe('Suggestions & Solutions API Tests', () => {
     ({ token: user1Token, id: user1Id } = await registerAndLogin(app, 'sug_user1', 'viewer'));
     ({ token: user2Token, id: user2Id } = await registerAndLogin(app, 'sug_user2', 'viewer'));
     ({ token: adminToken, id: adminId } = await registerAndLogin(app, 'sug_admin', 'admin'));
+    ({ token: moderatorToken, id: moderatorId } = await registerAndLogin(app, 'sug_mod', 'moderator'));
   });
 
   afterAll(async () => {
@@ -592,6 +595,150 @@ describe('Suggestions & Solutions API Tests', () => {
       for (let i = 0; i < scores.length - 1; i++) {
         expect(scores[i]).toBeGreaterThanOrEqual(scores[i + 1]);
       }
+    });
+  });
+
+  // ─── problem_request type — flows ────────────────────────────────────────────
+
+  describe('problem_request type — flows', () => {
+    let problemRequestId;
+    let ideaSuggestionId;
+    let problemSuggestionId;
+
+    it('should allow any authenticated user to create a problem_request suggestion', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Ποιο είναι το μεγαλύτερο πρόβλημα;',
+          body: 'Πείτε μας ποιο είναι το μεγαλύτερο πρόβλημα στη γειτονιά σας.',
+          type: 'problem_request'
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.type).toBe('problem_request');
+      problemRequestId = res.body.data.id;
+    });
+
+    it('should allow admin to create a problem_request suggestion', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({
+          title: 'Ποιο είναι το μεγαλύτερο πρόβλημα στην πόλη;',
+          body: 'Θέλουμε να ακούσουμε τα μεγαλύτερα προβλήματα που αντιμετωπίζετε.',
+          type: 'problem_request'
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.type).toBe('problem_request');
+    });
+
+    it('should allow moderator to create a problem_request suggestion', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeadersFor(csrfMod, moderatorId))
+        .send({
+          title: 'Μοιραστείτε τα προβλήματα της γειτονιάς σας',
+          body: 'Αναφέρετε τα βασικά ζητήματα που αντιμετωπίζετε στην περιοχή σας.',
+          type: 'problem_request'
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.type).toBe('problem_request');
+    });
+
+    it('should allow any user to create an idea suggestion', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Ιδέα για νέο πάρκο στην πόλη',
+          body: 'Θα ήθελα να προτείνω τη δημιουργία ενός νέου πάρκου στο κέντρο.',
+          type: 'idea'
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.data.type).toBe('idea');
+      ideaSuggestionId = res.body.data.id;
+    });
+
+    it('should allow any user to create a problem suggestion', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user2Token}`)
+        .set(csrfHeadersFor(csrf2, user2Id))
+        .send({
+          title: 'Πρόβλημα με τα σκουπίδια στην πλατεία',
+          body: 'Τα σκουπίδια δεν μαζεύονται εδώ και δύο εβδομάδες στην κεντρική πλατεία.',
+          type: 'problem'
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.data.type).toBe('problem');
+      problemSuggestionId = res.body.data.id;
+    });
+
+    it('should allow users to add responses to a problem_request suggestion', async () => {
+      const res = await request(app)
+        .post(`/api/suggestions/${problemRequestId}/solutions`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({ body: 'Το μεγαλύτερο πρόβλημα είναι η έλλειψη φωτισμού στους δρόμους.' });
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+    });
+
+    it('should allow users to add responses to an idea suggestion', async () => {
+      const res = await request(app)
+        .post(`/api/suggestions/${ideaSuggestionId}/solutions`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .set(csrfHeadersFor(csrf2, user2Id))
+        .send({ body: 'Εξαιρετική ιδέα! Το πάρκο θα βελτίωνε σημαντικά τη ζωή στην πόλη.' });
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+    });
+
+    it('should allow users to vote on a problem_request suggestion', async () => {
+      const res = await request(app)
+        .post(`/api/suggestions/${problemRequestId}/vote`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({ value: 1 });
+      expect(res.status).toBe(200);
+      expect(res.body.data.score).toBe(1);
+      expect(res.body.data.myVote).toBe(1);
+    });
+
+    it('should allow users to vote on an idea suggestion', async () => {
+      const res = await request(app)
+        .post(`/api/suggestions/${ideaSuggestionId}/vote`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .set(csrfHeadersFor(csrf2, user2Id))
+        .send({ value: 1 });
+      expect(res.status).toBe(200);
+      expect(res.body.data.score).toBe(1);
+    });
+
+    it('should filter by problem_request type', async () => {
+      const res = await request(app).get('/api/suggestions?type=problem_request');
+      expect(res.status).toBe(200);
+      expect(res.body.data.every((s) => s.type === 'problem_request')).toBe(true);
+      expect(res.body.data.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should filter by idea type', async () => {
+      const res = await request(app).get('/api/suggestions?type=idea');
+      expect(res.status).toBe(200);
+      expect(res.body.data.every((s) => s.type === 'idea')).toBe(true);
+    });
+
+    it('should filter by problem type', async () => {
+      const res = await request(app).get('/api/suggestions?type=problem');
+      expect(res.status).toBe(200);
+      expect(res.body.data.every((s) => s.type === 'problem')).toBe(true);
     });
   });
 });

@@ -1,6 +1,17 @@
 # Suggestions & Solutions Feature
 
-Users can post ideas, problems, or location suggestions. Others can propose solutions and both suggestions and solutions can be upvoted or downvoted.
+Users can post ideas, problems, or location suggestions. Admins and moderators can also post community-wide problem collection prompts (`problem_request`). Others can respond with solutions/comments, and both suggestions and responses can be upvoted or downvoted.
+
+---
+
+## The Three Flows
+
+| Type | Who creates it | What others respond with | Response section label |
+|---|---|---|---|
+| `idea` | Any authenticated user | Comments & opinions | Σχόλια & Απόψεις |
+| `problem` | Any authenticated user | Proposed solutions | Προτεινόμενες Λύσεις |
+| `problem_request` | **Admin / Moderator only** | User-reported problems | Αναφερόμενα Προβλήματα |
+| `location_suggestion` | Any authenticated user | Comments | Σχόλια |
 
 ---
 
@@ -12,7 +23,7 @@ Users can post ideas, problems, or location suggestions. Others can propose solu
 | `id` | INTEGER PK | Auto-increment |
 | `title` | STRING | 5–200 chars |
 | `body` | TEXT | 10–10 000 chars |
-| `type` | ENUM | `idea`, `problem`, `location_suggestion` |
+| `type` | ENUM | `idea`, `problem`, `problem_request`, `location_suggestion` |
 | `locationId` | INTEGER FK → Locations | optional |
 | `authorId` | INTEGER FK → Users | cascade delete |
 | `status` | ENUM | `open`, `under_review`, `implemented`, `rejected` |
@@ -48,11 +59,11 @@ All endpoints are mounted under `/api/suggestions` and `/api/solutions`.
 |---|---|---|---|
 | `GET` | `/api/suggestions` | optional | List suggestions (filters + pagination) |
 | `GET` | `/api/suggestions/:id` | optional | Get suggestion detail with solutions sorted by score |
-| `POST` | `/api/suggestions` | ✅ required | Create a new suggestion |
+| `POST` | `/api/suggestions` | ✅ required | Create a new suggestion (`problem_request` requires admin/moderator role) |
 | `PATCH` | `/api/suggestions/:id` | ✅ owner/admin | Update title, body, type, locationId, or status |
 | `DELETE` | `/api/suggestions/:id` | ✅ owner/admin | Delete a suggestion and its solutions |
 | `GET` | `/api/suggestions/:id/solutions` | optional | List solutions sorted by score desc |
-| `POST` | `/api/suggestions/:id/solutions` | ✅ required | Add a solution under a suggestion |
+| `POST` | `/api/suggestions/:id/solutions` | ✅ required | Add a response under a suggestion |
 | `POST` | `/api/suggestions/:id/vote` | ✅ required | Vote on a suggestion (+1 / -1) |
 
 ### Solutions
@@ -67,7 +78,7 @@ All endpoints are mounted under `/api/suggestions` and `/api/solutions`.
 
 | Param | Values | Default | Description |
 |---|---|---|---|
-| `type` | `idea`, `problem`, `location_suggestion` | all | Filter by type |
+| `type` | `idea`, `problem`, `problem_request`, `location_suggestion` | all | Filter by type |
 | `status` | `open`, `under_review`, `implemented`, `rejected` | all | Filter by status |
 | `locationId` | integer | — | Filter by location |
 | `sort` | `newest`, `top` | `newest` | Sort order |
@@ -148,10 +159,19 @@ Solutions in the suggestion detail response (`GET /api/suggestions/:id`) are sor
 
 | Route | Description |
 |---|---|
-| `/suggestions` | List page with type/status/sort filters and pagination |
-| `/suggestions/new` | Create new suggestion form (auth required); optional location picker |
-| `/suggestions/:id` | Detail page with vote controls, solution list sorted by score, solution submission form, and delete button for owners/admins |
-| `/suggestions/:id/edit` | Edit suggestion form (owner or admin/moderator required); allows updating title, body, type, location, and status (status editable by admin/moderator only) |
+| `/suggestions` | List page with type/status/sort filters and pagination; `problem_request` type shown with distinct red/danger badge |
+| `/suggestions/new` | Create new suggestion form (auth required); `problem_request` option shown only to admin/moderator; body placeholder adapts to selected type |
+| `/suggestions/:id` | Detail page with vote controls, dynamic response section (title, placeholder, empty text adapt per type), response submission form, and delete button for owners/admins |
+| `/suggestions/:id/edit` | Edit suggestion form (owner or admin/moderator required); `problem_request` option shown only to admin/moderator; allows updating title, body, type, location, and status (status editable by admin/moderator only) |
+
+### Response Section Labels Per Type
+
+| Type | Section title | Submit button | Placeholder |
+|---|---|---|---|
+| `idea` | Σχόλια & Απόψεις | Προσθήκη Σχολίου | Μοιραστείτε την άποψή σας για αυτή την ιδέα... |
+| `problem` | Προτεινόμενες Λύσεις | Υποβολή Λύσης | Περιγράψτε την πρότασή σας για λύση... |
+| `problem_request` | Αναφερόμενα Προβλήματα | Αναφέρετε το Πρόβλημά σας | Περιγράψτε το πρόβλημα που αντιμετωπίζετε... |
+| `location_suggestion` | Σχόλια | Προσθήκη Σχολίου | Μοιραστείτε την άποψή σας για αυτή την τοποθεσία... |
 
 ### Location Integration
 
@@ -163,10 +183,12 @@ Suggestions can optionally be linked to a location via `locationId`. When a sugg
 
 ---
 
-## Running the Migration
+## Running the Migrations
 
 ```bash
 npm run migrate
 ```
 
-Migration `028-create-suggestions-tables.js` creates `Suggestions`, `Solutions`, and `SuggestionVotes` tables with all required indexes.
+- Migration `028-create-suggestions-tables.js` creates `Suggestions`, `Solutions`, and `SuggestionVotes` tables with all required indexes.
+- Migration `029-add-problem-request-type.js` adds `problem_request` to the `enum_Suggestions_type` ENUM in PostgreSQL (no-op for SQLite test environment).
+

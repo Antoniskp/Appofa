@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location } = require('../models');
 const { normalizeRequiredText, normalizeOptionalText, normalizeEnum, normalizeInteger } = require('../utils/validators');
 
-const SUGGESTION_TYPES = ['idea', 'problem', 'location_suggestion'];
+const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
 const VOTE_VALUES = [-1, 1];
 
