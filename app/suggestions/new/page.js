@@ -11,15 +11,11 @@ import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 
-const BASE_SUGGESTION_TYPES = [
+const SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
   { value: 'problem', label: 'Πρόβλημα – Αναφορά ζητήματος' },
-  { value: 'location_suggestion', label: 'Τοποθεσία – Αίτημα για συγκεκριμένο χώρο' },
-];
-
-const PRIVILEGED_SUGGESTION_TYPES = [
-  ...BASE_SUGGESTION_TYPES,
   { value: 'problem_request', label: 'Ερώτημα Κοινότητας – Ζητώ από χρήστες να αναφέρουν προβλήματα' },
+  { value: 'location_suggestion', label: 'Τοποθεσία – Αίτημα για συγκεκριμένο χώρο' },
 ];
 
 const BODY_PLACEHOLDERS = {
@@ -56,9 +52,6 @@ export default function NewSuggestionPage() {
       </div>
     );
   }
-
-  const isPrivileged = user && ['admin', 'moderator'].includes(user.role);
-  const suggestionTypes = isPrivileged ? PRIVILEGED_SUGGESTION_TYPES : BASE_SUGGESTION_TYPES;
 
   const validate = () => {
     const errs = {};
@@ -134,7 +127,7 @@ export default function NewSuggestionPage() {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                {suggestionTypes.map((t) => (
+                {SUGGESTION_TYPES.map((t) => (
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>

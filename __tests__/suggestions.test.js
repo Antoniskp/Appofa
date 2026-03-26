@@ -598,14 +598,14 @@ describe('Suggestions & Solutions API Tests', () => {
     });
   });
 
-  // ─── problem_request type — role restrictions ────────────────────────────────
+  // ─── problem_request type — flows ────────────────────────────────────────────
 
-  describe('problem_request type — role restrictions and flows', () => {
+  describe('problem_request type — flows', () => {
     let problemRequestId;
     let ideaSuggestionId;
     let problemSuggestionId;
 
-    it('should reject creation of problem_request by a regular user (403)', async () => {
+    it('should allow any authenticated user to create a problem_request suggestion', async () => {
       const res = await request(app)
         .post('/api/suggestions')
         .set('Authorization', `Bearer ${user1Token}`)
@@ -615,8 +615,10 @@ describe('Suggestions & Solutions API Tests', () => {
           body: 'Πείτε μας ποιο είναι το μεγαλύτερο πρόβλημα στη γειτονιά σας.',
           type: 'problem_request'
         });
-      expect(res.status).toBe(403);
-      expect(res.body.success).toBe(false);
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.type).toBe('problem_request');
+      problemRequestId = res.body.data.id;
     });
 
     it('should allow admin to create a problem_request suggestion', async () => {
@@ -632,7 +634,6 @@ describe('Suggestions & Solutions API Tests', () => {
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.type).toBe('problem_request');
-      problemRequestId = res.body.data.id;
     });
 
     it('should allow moderator to create a problem_request suggestion', async () => {
