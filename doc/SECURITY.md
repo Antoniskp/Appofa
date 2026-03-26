@@ -109,6 +109,23 @@ Two new advisories were published against the existing lockfile. Both have been 
 | `npm audit --omit=dev` (production) | **0** | 0 | 0 |
 | `npm audit` (all deps incl. dev) | **0** | 0 | 0 |
 
+### npm Dependency Audit (2026-03-26)
+
+Twenty-two moderate-severity vulnerabilities were reported, all originating from a single advisory against `brace-expansion`. Resolved via `npm audit fix` and a new override.
+
+#### Fixed: brace-expansion Zero-step Sequence DoS (Moderate)
+- **Advisory**: [GHSA-f886-m6hf-6m8v](https://github.com/advisories/GHSA-f886-m6hf-6m8v)
+- **Severity**: Moderate
+- **Affected versions**: `brace-expansion <5.0.5`
+- **Impact**: A crafted brace pattern with a zero-step sequence (e.g. `{0..0..0}`) could cause the process to hang and exhaust memory.
+- **Resolution**: ✅ `npm audit fix` updated several dev dependencies (jest 30.2.0→30.3.0, nodemon 3.1.11→3.1.14, eslint 9.39.3→9.39.4). Added `brace-expansion >=5.0.5` override to `package.json` to force the patched version across all remaining transitive paths (eslint → minimatch, jest → test-exclude → minimatch).
+
+#### Current audit status (2026-03-26)
+| Scope | High | Medium | Low |
+|-------|------|--------|-----|
+| `npm audit --omit=dev` (production) | **0** | 0 | 0 |
+| `npm audit` (all deps incl. dev) | **0** | 0 | 0 |
+
 #### Recommended maintenance workflow
 1. **Weekly**: run `npm audit` — fix highs/criticals promptly via `npm audit fix`.
 2. **Before every deploy**: the CI workflow (`.github/workflows/security-audit.yml`) blocks on `npm audit --omit=dev --audit-level=high`.
@@ -168,7 +185,7 @@ In case of a security incident:
 
 ---
 
-**Last Updated**: 2026-03-20  
+**Last Updated**: 2026-03-26  
 **Security Review Status**: ✅ Passed  
 **CodeQL Alerts**: 0  
 **npm Audit (production deps)**: 0 vulnerabilities (`npm audit --omit=dev`)  
