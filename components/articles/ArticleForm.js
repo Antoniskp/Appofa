@@ -244,7 +244,8 @@ export default function ArticleForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    const { approved, ...rest } = formData;
+    onSubmit({ ...rest, newsApproved: approved });
   };
 
   const updateContent = (nextContent) => {
