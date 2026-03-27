@@ -11,6 +11,7 @@ import {
   EnvelopeIcon,
   LockClosedIcon,
   DocumentTextIcon,
+  Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -26,6 +27,7 @@ const categories = [
       { href: '/about', label: 'Σχετικά με εμάς', description: 'Ποιοι είμαστε και τι κάνουμε', Icon: InformationCircleIcon },
       { href: '/mission', label: 'Αποστολή μας', description: 'Η αποστολή και το όραμα της πλατφόρμας', Icon: StarIcon },
       { href: '/transparency', label: 'Διαφάνεια', description: 'Πολιτική διαφάνειας', Icon: EyeIcon },
+      { href: '/platform/modules', label: 'Ενότητες Εφαρμογής', description: 'Όλες οι λειτουργίες και ενότητες της πλατφόρμας', Icon: Squares2X2Icon },
     ],
   },
   {
