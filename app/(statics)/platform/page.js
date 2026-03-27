@@ -16,6 +16,7 @@ import {
   CubeIcon,
   SparklesIcon,
   PuzzlePieceIcon,
+  NewspaperIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -48,6 +49,7 @@ const categories = [
     pages: [
       { href: '/contribute', label: 'Συνεισφορά', description: 'Πώς μπορείτε να βοηθήσετε', Icon: HandRaisedIcon },
       { href: '/become-moderator', label: 'Γίνε Συντονιστής', description: 'Πληροφορίες για τους moderators', Icon: UserGroupIcon },
+      { href: '/reporters', label: 'Δημοσιογράφοι & Συντάκτες', description: 'Αίτηση και οδηγίες για δημοσιογράφους', Icon: NewspaperIcon },
     ],
   },
   {
