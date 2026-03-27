@@ -128,7 +128,7 @@ export default function VideosPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
-      <div className="max-w-5xl mx-auto px-4">
+      <div className="app-container">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Βίντεο</h1>
