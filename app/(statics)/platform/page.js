@@ -11,7 +11,11 @@ import {
   EnvelopeIcon,
   LockClosedIcon,
   DocumentTextIcon,
-  Squares2X2Icon,
+  ArrowPathIcon,
+  UsersIcon,
+  CubeIcon,
+  SparklesIcon,
+  PuzzlePieceIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -22,12 +26,21 @@ export const metadata = {
 
 const categories = [
   {
+    title: '🗺️ Οδηγός Πλατφόρμας',
+    pages: [
+      { href: '/platform/flows', label: 'Ροές Εφαρμογής', description: 'Πώς λειτουργούν οι κύριες ροές', Icon: ArrowPathIcon },
+      { href: '/platform/roles', label: 'Ρόλοι Χρηστών', description: 'Δικαιώματα και ρόλοι (viewer, editor, admin)', Icon: UsersIcon },
+      { href: '/platform/objects', label: 'Αντικείμενα', description: 'Άρθρα, χρήστες, ψηφοφορίες, τοποθεσίες', Icon: CubeIcon },
+      { href: '/platform/features', label: 'Χαρακτηριστικά', description: 'Όλες οι δυνατότητες της πλατφόρμας', Icon: SparklesIcon },
+      { href: '/platform/modules', label: 'Ενότητες Εφαρμογής', description: 'Όλες οι ενότητες και σελίδες της εφαρμογής', Icon: PuzzlePieceIcon },
+    ],
+  },
+  {
     title: '📖 Πληροφορίες',
     pages: [
       { href: '/about', label: 'Σχετικά με εμάς', description: 'Ποιοι είμαστε και τι κάνουμε', Icon: InformationCircleIcon },
       { href: '/mission', label: 'Αποστολή μας', description: 'Η αποστολή και το όραμα της πλατφόρμας', Icon: StarIcon },
       { href: '/transparency', label: 'Διαφάνεια', description: 'Πολιτική διαφάνειας', Icon: EyeIcon },
-      { href: '/platform/modules', label: 'Ενότητες Εφαρμογής', description: 'Όλες οι λειτουργίες και ενότητες της πλατφόρμας', Icon: Squares2X2Icon },
     ],
   },
   {
