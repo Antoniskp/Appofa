@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShareIcon, BookmarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
@@ -23,6 +23,7 @@ import VideoEmbed from '@/components/articles/VideoEmbed';
 export default function ArticleDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useAuth();
   const { addToast } = useToast();
   const { error: toastError } = useToast();
@@ -149,12 +150,21 @@ export default function ArticleDetailPage() {
       commentsEnabled: article.commentsEnabled !== false,
       commentsLocked: article.commentsLocked === true,
     });
-    const basePath = article.type === 'news' ? '/news' : '/articles';
+    const isVideoType = article.type === 'video';
+    const isOnVideosPath = pathname?.startsWith('/videos/');
+    let basePath;
+    if (article.type === 'news') {
+      basePath = '/news';
+    } else if (isVideoType && isOnVideosPath) {
+      basePath = '/videos';
+    } else {
+      basePath = '/articles';
+    }
     const canonical = idSlug(article.id, article.title);
     if (params.id !== canonical) {
       router.replace(`${basePath}/${canonical}`);
     }
-  }, [article, params.id, router]);
+  }, [article, params.id, router, pathname]);
 
   if (loading) {
     return (
