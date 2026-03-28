@@ -95,6 +95,10 @@ const CandidateApplication = sequelize.define('CandidateApplication', {
     allowNull: true,
     references: { model: 'CandidateProfiles', key: 'id' },
     onDelete: 'SET NULL'
+  },
+  position: {
+    type: DataTypes.ENUM('mayor', 'prefect', 'parliamentary'),
+    allowNull: true
   }
 }, {
   tableName: 'CandidateApplications',

@@ -51,7 +51,7 @@ const SAFE_USER_ATTRS = ['id', 'username', 'firstName', 'lastName', 'avatar', 'e
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
-async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus } = {}) {
+async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus, position } = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
   const offset = (pageNum - 1) * limitNum;
@@ -59,6 +59,7 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
   const where = {};
   if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
   if (claimStatus) where.claimStatus = claimStatus;
+  if (position) where.position = position;
   if (search) where.fullName = { [Op.like]: `%${search}%` };
 
   const { count, rows } = await CandidateProfile.findAndCountAll({
@@ -92,7 +93,7 @@ async function getCandidateBySlug(slug) {
 // ─── Path A — User Application ───────────────────────────────────────────────
 
 async function submitApplication(applicantUserId, data) {
-  const { fullName, supportingStatement, constituencyId, bio, contactEmail, socialLinks, politicalPositions, manifesto } = data;
+  const { fullName, supportingStatement, constituencyId, bio, contactEmail, socialLinks, politicalPositions, manifesto, position } = data;
 
   if (!fullName || !fullName.trim()) throw new ServiceError(400, 'Full name is required.');
   if (!supportingStatement || !supportingStatement.trim()) throw new ServiceError(400, 'Supporting statement is required.');
@@ -115,6 +116,7 @@ async function submitApplication(applicantUserId, data) {
     socialLinks: socialLinks || null,
     politicalPositions: politicalPositions || null,
     manifesto: manifesto || null,
+    position: position || null,
     status: 'pending'
   });
 
@@ -157,6 +159,7 @@ async function approveApplication(moderatorUserId, moderatorRole, applicationId)
     socialLinks: application.socialLinks || null,
     politicalPositions: application.politicalPositions || null,
     manifesto: application.manifesto || null,
+    position: application.position || null,
     claimStatus: 'claimed',
     claimedByUserId: application.applicantUserId,
     claimVerifiedAt: new Date(),
@@ -203,7 +206,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     throw new ServiceError(403, 'Only admins and moderators can create candidate profiles.');
   }
 
-  const { fullName, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto } = data;
+  const { fullName, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position } = data;
   if (!fullName || !fullName.trim()) throw new ServiceError(400, 'Full name is required.');
 
   const base = generateSlug(fullName.trim());
@@ -219,6 +222,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     socialLinks: socialLinks || null,
     politicalPositions: politicalPositions || null,
     manifesto: manifesto || null,
+    position: position || null,
     claimStatus: 'unclaimed',
     createdByUserId: moderatorUserId,
     source: 'moderator'
@@ -304,7 +308,7 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
     throw new ServiceError(403, 'You do not have permission to update this profile.');
   }
 
-  const allowedFields = ['fullName', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto'];
+  const allowedFields = ['fullName', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position'];
   if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug');
 
   const updates = {};

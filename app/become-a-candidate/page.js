@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { candidateAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { positionConstituencyType } from '@/lib/utils/candidatePositions';
 
 export default function BecomeACandidatePage() {
   const { user, loading: authLoading } = useAuth();
@@ -13,6 +14,7 @@ export default function BecomeACandidatePage() {
 
   const [form, setForm] = useState({
     fullName: '',
+    position: '',
     constituencyId: '',
     bio: '',
     contactEmail: '',
@@ -25,12 +27,15 @@ export default function BecomeACandidatePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  const constituencyType = positionConstituencyType(form.position);
+
   const { data: locations } = useAsyncData(
     async () => {
-      const res = await locationAPI.getAll({ limit: 200 });
+      if (!constituencyType) return [];
+      const res = await locationAPI.getAll({ type: constituencyType, limit: 500 });
       return res.data || [];
     },
-    [],
+    [constituencyType],
     { initialData: [] }
   );
 
@@ -40,7 +45,12 @@ export default function BecomeACandidatePage() {
   }
 
   const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => {
+      const updated = { ...prev, [field]: value };
+      // Reset constituency when position changes
+      if (field === 'position') updated.constituencyId = '';
+      return updated;
+    });
   };
 
   const handlePairChange = (setter, index, field, value) => {
@@ -79,7 +89,8 @@ export default function BecomeACandidatePage() {
         constituencyId: form.constituencyId || undefined,
         bio: form.bio || undefined,
         contactEmail: form.contactEmail || undefined,
-        manifesto: form.manifesto || undefined
+        manifesto: form.manifesto || undefined,
+        position: form.position || undefined
       };
 
       const slObj = pairsToObject(socialLinks);
@@ -119,7 +130,7 @@ export default function BecomeACandidatePage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-900 mb-1">Γίνετε Υποψήφιος</h1>
-        <p className="text-gray-500 mb-6">Υποβάλετε αίτηση για να συμμετάσχετε στο Appofa ως ανεξάρτητος βουλευτικός υποψήφιος.</p>
+        <p className="text-gray-500 mb-6">Υποβάλετε αίτηση για να συμμετάσχετε στο Appofa ως ανεξάρτητος υποψήφιος.</p>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
           {/* Personal Info */}
@@ -135,11 +146,27 @@ export default function BecomeACandidatePage() {
           </div>
 
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Θέση <span className="text-red-500">*</span></label>
+            <select
+              value={form.position}
+              onChange={(e) => handleChange('position', e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="">Επιλέξτε θέση</option>
+              <option value="parliamentary">Βουλευτής</option>
+              <option value="prefect">Περιφερειάρχης</option>
+              <option value="mayor">Δήμαρχος</option>
+            </select>
+          </div>
+
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
             <select
               value={form.constituencyId}
               onChange={(e) => handleChange('constituencyId', e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={!form.position}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               <option value="">Επιλέξτε εκλογική περιφέρεια</option>
               {locations.map((loc) => (

@@ -77,7 +77,7 @@ export default function CandidatesPage() {
     nextPage,
     prevPage,
     goToPage
-  } = useFilters({ search: '', constituencyId: '', claimStatus: '' });
+  } = useFilters({ search: '', constituencyId: '', claimStatus: '', position: '' });
 
   const { data: locations } = useAsyncData(
     async () => {
@@ -94,6 +94,7 @@ export default function CandidatesPage() {
       if (filters.search) params.search = filters.search;
       if (filters.constituencyId) params.constituencyId = filters.constituencyId;
       if (filters.claimStatus) params.claimStatus = filters.claimStatus;
+      if (filters.position) params.position = filters.position;
       const res = await candidateAPI.getAll(params);
       if (res.success) return res;
       return { data: { profiles: [], pagination: { totalPages: 1 } } };
@@ -147,6 +148,16 @@ export default function CandidatesPage() {
             <option value="unclaimed">Unclaimed</option>
             <option value="pending">Claim Pending</option>
             <option value="claimed">Verified</option>
+          </select>
+          <select
+            value={filters.position}
+            onChange={(e) => handleFilterChange('position', e.target.value)}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Όλες οι θέσεις</option>
+            <option value="parliamentary">Βουλευτής</option>
+            <option value="prefect">Περιφερειάρχης</option>
+            <option value="mayor">Δήμαρχος</option>
           </select>
         </div>
 

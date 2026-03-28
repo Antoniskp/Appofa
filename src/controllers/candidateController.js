@@ -4,8 +4,8 @@ const candidateController = {
   // GET /api/candidates
   getCandidates: async (req, res) => {
     try {
-      const { page, limit, constituencyId, search, claimStatus } = req.query;
-      const data = await candidateService.getCandidates({ page, limit, constituencyId, search, claimStatus });
+      const { page, limit, constituencyId, search, claimStatus, position } = req.query;
+      const data = await candidateService.getCandidates({ page, limit, constituencyId, search, claimStatus, position });
       return res.status(200).json({ success: true, data });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });

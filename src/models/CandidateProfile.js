@@ -113,6 +113,10 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
     type: DataTypes.ENUM('moderator', 'application', 'self'),
     defaultValue: 'moderator',
     allowNull: false
+  },
+  position: {
+    type: DataTypes.ENUM('mayor', 'prefect', 'parliamentary'),
+    allowNull: true
   }
 }, {
   tableName: 'CandidateProfiles',
