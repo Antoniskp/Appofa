@@ -10,7 +10,7 @@ const CITIZEN_HELP_PATHS = [
   '/taxation-guide', '/rental-guide', '/property-transfer',
   '/car-transfer', '/boat-transfer', '/start-business',
   '/price-comparison', '/digital-services', '/economy',
-  '/citizen-help',
+  '/citizen-help', '/citizen-help/independent-candidate',
 ];
 
 const PLATFORM_PATHS = [
