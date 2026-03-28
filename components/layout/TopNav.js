@@ -8,7 +8,9 @@ import {
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
   ChevronDownIcon,
+  ClipboardDocumentCheckIcon,
   ClipboardDocumentListIcon,
+  IdentificationIcon,
   LightBulbIcon,
   MapPinIcon,
   NewspaperIcon,
@@ -111,6 +113,23 @@ export default function TopNav() {
       icon: <LightBulbIcon className="h-4 w-4" />,
       className: isActive('/suggestions')
     },
+    ...(user?.role === 'candidate' ? [
+      { divider: true },
+      {
+        id: 'candidate-dashboard',
+        label: 'Πίνακας υποψηφίου',
+        href: '/candidates/dashboard',
+        icon: <IdentificationIcon className="h-4 w-4" />,
+        className: isActive('/candidates/dashboard')
+      },
+      {
+        id: 'my-application',
+        label: 'Η αίτησή μου',
+        href: '/my-application',
+        icon: <ClipboardDocumentCheckIcon className="h-4 w-4" />,
+        className: isActive('/my-application')
+      },
+    ] : []),
     ...(canAccessAdmin() ? [
       { divider: true },
       {
@@ -189,6 +208,23 @@ export default function TopNav() {
       icon: <LightBulbIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/suggestions')}`
     },
+    ...(user?.role === 'candidate' ? [
+      { divider: true },
+      {
+        id: 'candidate-dashboard',
+        label: 'Πίνακας υποψηφίου',
+        href: '/candidates/dashboard',
+        icon: <IdentificationIcon className="h-5 w-5" />,
+        className: `text-base font-medium ${isActive('/candidates/dashboard')}`
+      },
+      {
+        id: 'my-application',
+        label: 'Η αίτησή μου',
+        href: '/my-application',
+        icon: <ClipboardDocumentCheckIcon className="h-5 w-5" />,
+        className: `text-base font-medium ${isActive('/my-application')}`
+      },
+    ] : []),
     ...(canAccessAdmin() ? [
       { divider: true },
       {

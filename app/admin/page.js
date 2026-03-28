@@ -398,6 +398,12 @@ function AdminDashboardContent() {
               Manage Messages
             </Link>
             <Link
+              href="/admin/candidates"
+              className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition"
+            >
+              Manage Candidates
+            </Link>
+            <Link
               href="/admin/status"
               className="bg-white text-blue-700 border border-blue-200 px-6 py-2 rounded hover:bg-blue-50 transition"
             >

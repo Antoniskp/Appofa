@@ -142,6 +142,49 @@ export default function UsersPage() {
         {/* Show user cards only for authenticated users */}
         {isAuthenticated && (
           <>
+            {/* Candidate dashboard banner — shown only to users with candidate role */}
+            {user?.role === 'candidate' && (
+              <div className="mb-6 bg-white rounded-lg shadow-sm border border-green-200 p-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🏛️</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">Πίνακας Υποψηφίου</p>
+                    <p className="text-sm text-gray-500">Διαχειριστείτε το προφίλ σας ως ανεξάρτητος υποψήφιος.</p>
+                  </div>
+                </div>
+                <Link
+                  href="/candidates/dashboard"
+                  className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+                >
+                  Πίνακας →
+                </Link>
+              </div>
+            )}
+
+            {/* Become a candidate banner — shown to authenticated users who are not yet candidates */}
+            {user?.role !== 'candidate' && (
+              <div className="mb-6 bg-white rounded-lg shadow-sm border border-blue-200 p-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🗳️</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">Γίνετε Ανεξάρτητος Υποψήφιος</p>
+                    <p className="text-sm text-gray-500">Υποβάλετε αίτηση για να συμμετάσχετε ως υποψήφιος στην πλατφόρμα.</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <Link
+                    href="/become-a-candidate"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+                  >
+                    Υποβολή Αίτησης →
+                  </Link>
+                  <Link href="/my-application" className="text-xs text-blue-500 hover:underline">
+                    Έχετε ήδη υποβάλει αίτηση; Δείτε την κατάστασή της →
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {/* Search using FilterBar */}
             <FilterBar
               filters={filters}
