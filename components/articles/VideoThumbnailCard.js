@@ -55,7 +55,7 @@ export default function VideoThumbnailCard({ article }) {
   const videoTitle = sourceMeta?.title || title || 'Video';
   const thumbnail = sourceMeta?.thumbnailUrl || null;
   const authorName = sourceMeta?.authorName || author?.username || null;
-  const articleHref = `/articles/${idSlug(id, title)}`;
+  const articleHref = `/videos/${idSlug(id, title)}`;
 
   // Uniform landscape 16/9 for all providers (TikTok thumbnails are center-cropped)
   const aspectStyle = { aspectRatio: '16/9' };
