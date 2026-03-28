@@ -1,12 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { candidateAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { useAsyncData } from '@/hooks/useAsyncData';
-import { positionConstituencyType } from '@/lib/utils/candidatePositions';
 
 export default function BecomeACandidatePage() {
   const { user, loading: authLoading } = useAuth();
@@ -27,17 +25,37 @@ export default function BecomeACandidatePage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const constituencyType = positionConstituencyType(form.position);
+  const [prefectures, setPrefectures] = useState([]);
+  const [municipalities, setMunicipalities] = useState([]);
+  const [selectedPrefectureId, setSelectedPrefectureId] = useState('');
 
-  const { data: locations } = useAsyncData(
-    async () => {
-      if (!constituencyType) return [];
-      const res = await locationAPI.getAll({ type: constituencyType, limit: 500 });
-      return res.data || [];
-    },
-    [constituencyType],
-    { initialData: [] }
-  );
+  // Fetch prefectures whenever position changes
+  useEffect(() => {
+    setSelectedPrefectureId('');
+    setMunicipalities([]);
+    if (!form.position) {
+      setPrefectures([]);
+      return;
+    }
+    locationAPI.getAll({ type: 'prefecture', limit: 500 }).then((res) => {
+      setPrefectures(res.locations || []);
+    }).catch(() => {
+      setPrefectures([]);
+    });
+  }, [form.position]);
+
+  // Fetch municipalities when a prefecture is selected (mayor only)
+  useEffect(() => {
+    if (form.position !== 'mayor' || !selectedPrefectureId) {
+      setMunicipalities([]);
+      return;
+    }
+    locationAPI.getAll({ type: 'municipality', parent_id: selectedPrefectureId, limit: 500 }).then((res) => {
+      setMunicipalities(res.locations || []);
+    }).catch(() => {
+      setMunicipalities([]);
+    });
+  }, [form.position, selectedPrefectureId]);
 
   if (!authLoading && !user) {
     router.replace('/login?redirect=/become-a-candidate');
@@ -48,7 +66,11 @@ export default function BecomeACandidatePage() {
     setForm((prev) => {
       const updated = { ...prev, [field]: value };
       // Reset constituency when position changes
-      if (field === 'position') updated.constituencyId = '';
+      if (field === 'position') {
+        updated.constituencyId = '';
+        setSelectedPrefectureId('');
+        setMunicipalities([]);
+      }
       return updated;
     });
   };
@@ -162,17 +184,40 @@ export default function BecomeACandidatePage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
-            <select
-              value={form.constituencyId}
-              onChange={(e) => handleChange('constituencyId', e.target.value)}
-              disabled={!form.position}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value="">Επιλέξτε εκλογική περιφέρεια</option>
-              {locations.map((loc) => (
-                <option key={loc.id} value={loc.id}>{loc.name}</option>
-              ))}
-            </select>
+            <div className="space-y-2">
+              <select
+                value={selectedPrefectureId}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setSelectedPrefectureId(val);
+                  if (form.position !== 'mayor') {
+                    handleChange('constituencyId', val);
+                  } else {
+                    handleChange('constituencyId', '');
+                  }
+                }}
+                disabled={!form.position}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">Επιλέξτε Περιφέρεια</option>
+                {prefectures.map((loc) => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+
+              {form.position === 'mayor' && selectedPrefectureId && (
+                <select
+                  value={form.constituencyId}
+                  onChange={(e) => handleChange('constituencyId', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Επιλέξτε Δήμο</option>
+                  {municipalities.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           <div>
