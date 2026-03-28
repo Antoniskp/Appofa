@@ -15,6 +15,7 @@ import {
   ChartBarIcon,
   ComputerDesktopIcon,
   CurrencyEuroIcon,
+  UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -72,6 +73,17 @@ const categories = [
     title: '🚀 Επιχειρηματικότητα',
     pages: [
       { href: '/start-business', label: 'Έναρξη Επιχείρησης', description: 'Πώς να ξεκινήσετε τη δική σας επιχείρηση', Icon: RocketLaunchIcon },
+    ],
+  },
+  {
+    title: '🗳️ Εκλογές & Πολιτική',
+    pages: [
+      {
+        href: '/citizen-help/independent-candidate',
+        label: 'Ανεξάρτητος Υποψήφιος',
+        description: 'Διαδικασίες & κόστη για υποψηφιότητα χωρίς κόμμα',
+        Icon: UserCircleIcon,
+      },
     ],
   },
 ];
