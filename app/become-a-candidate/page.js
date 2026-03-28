@@ -16,11 +16,11 @@ export default function BecomeACandidatePage() {
     constituencyId: '',
     bio: '',
     contactEmail: '',
-    socialLinks: '',
-    politicalPositions: '',
     manifesto: '',
     supportingStatement: ''
   });
+  const [politicalPositions, setPoliticalPositions] = useState([{ key: '', value: '' }]);
+  const [socialLinks, setSocialLinks] = useState([{ key: '', value: '' }]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -43,6 +43,30 @@ export default function BecomeACandidatePage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handlePairChange = (setter, index, field, value) => {
+    setter((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+  };
+
+  const addPair = (setter) => {
+    setter((prev) => [...prev, { key: '', value: '' }]);
+  };
+
+  const removePair = (setter, index) => {
+    setter((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const pairsToObject = (pairs) => {
+    const obj = {};
+    pairs.forEach(({ key, value }) => {
+      if (key.trim()) obj[key.trim()] = value.trim();
+    });
+    return obj;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -58,22 +82,21 @@ export default function BecomeACandidatePage() {
         manifesto: form.manifesto || undefined
       };
 
-      if (form.socialLinks.trim()) {
-        try { payload.socialLinks = JSON.parse(form.socialLinks); } catch { /* ignore */ }
-      }
-      if (form.politicalPositions.trim()) {
-        try { payload.politicalPositions = JSON.parse(form.politicalPositions); } catch { /* ignore */ }
-      }
+      const slObj = pairsToObject(socialLinks);
+      if (Object.keys(slObj).length > 0) payload.socialLinks = slObj;
+
+      const ppObj = pairsToObject(politicalPositions);
+      if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
 
       await candidateAPI.apply(payload);
       setSuccess(true);
     } catch (err) {
-      setError(err.message || 'Failed to submit application. Please try again.');
+      setError(err.message || 'Αποτυχία υποβολής αίτησης. Παρακαλώ δοκιμάστε ξανά.');
       setSubmitting(false);
     }
   };
 
-  if (authLoading) return <div className="app-container py-10"><p className="text-gray-500">Loading...</p></div>;
+  if (authLoading) return <div className="app-container py-10"><p className="text-gray-500">Φόρτωση...</p></div>;
 
   if (success) {
     return (
@@ -81,10 +104,10 @@ export default function BecomeACandidatePage() {
         <div className="app-container max-w-lg mx-auto text-center">
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
             <div className="text-4xl mb-4">🎉</div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Application Submitted!</h1>
-            <p className="text-gray-600 mb-6">Your application to become a candidate has been submitted. A moderator will review it shortly.</p>
+            <h1 className="text-xl font-bold text-gray-900 mb-2">Η Αίτησή σας Υποβλήθηκε!</h1>
+            <p className="text-gray-600 mb-6">Η αίτησή σας για να γίνετε υποψήφιος έχει υποβληθεί. Ένας συντονιστής θα την εξετάσει σύντομα.</p>
             <Link href="/my-application" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-              View My Application
+              Δείτε την Αίτησή μου
             </Link>
           </div>
         </div>
@@ -95,13 +118,13 @@ export default function BecomeACandidatePage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">Become a Candidate</h1>
-        <p className="text-gray-500 mb-6">Apply to join Appofa as an independent parliamentary candidate.</p>
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Γίνετε Υποψήφιος</h1>
+        <p className="text-gray-500 mb-6">Υποβάλετε αίτηση για να συμμετάσχετε στο Appofa ως ανεξάρτητος βουλευτικός υποψήφιος.</p>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
           {/* Personal Info */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Name <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Πλήρες Όνομα <span className="text-red-500">*</span></label>
             <input
               type="text"
               value={form.fullName}
@@ -112,13 +135,13 @@ export default function BecomeACandidatePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Constituency</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
             <select
               value={form.constituencyId}
               onChange={(e) => handleChange('constituencyId', e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Select a constituency</option>
+              <option value="">Επιλέξτε εκλογική περιφέρεια</option>
               {locations.map((loc) => (
                 <option key={loc.id} value={loc.id}>{loc.name}</option>
               ))}
@@ -126,7 +149,7 @@ export default function BecomeACandidatePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email Επικοινωνίας</label>
             <input
               type="email"
               value={form.contactEmail}
@@ -136,48 +159,117 @@ export default function BecomeACandidatePage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Biography</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Βιογραφικό</label>
             <textarea
               value={form.bio}
               onChange={(e) => handleChange('bio', e.target.value)}
               rows={4}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              placeholder="Tell voters about yourself..."
+              placeholder="Πείτε στους ψηφοφόρους για εσάς..."
             />
           </div>
 
+          {/* Political Positions - key/value UI */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Political Positions <span className="text-xs text-gray-400">(JSON format, optional)</span></label>
-            <textarea
-              value={form.politicalPositions}
-              onChange={(e) => handleChange('politicalPositions', e.target.value)}
-              rows={3}
-              placeholder={'{"Economy": "...", "Education": "..."}'}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικές Θέσεις</label>
+            <div className="space-y-2">
+              {politicalPositions.map((pair, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={pair.key}
+                    onChange={(e) => handlePairChange(setPoliticalPositions, index, 'key', e.target.value)}
+                    placeholder="π.χ. Οικονομία"
+                    className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    value={pair.value}
+                    onChange={(e) => handlePairChange(setPoliticalPositions, index, 'value', e.target.value)}
+                    placeholder="..."
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePair(setPoliticalPositions, index)}
+                    disabled={politicalPositions.length === 1}
+                    className="text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-1"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addPair(setPoliticalPositions)}
+                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                + Προσθήκη
+              </button>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Manifesto</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Πρόγραμμα</label>
             <textarea
               value={form.manifesto}
               onChange={(e) => handleChange('manifesto', e.target.value)}
               rows={5}
-              placeholder="Your programme and vision..."
+              placeholder="Το πρόγραμμα και το όραμά σας..."
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Why are you running? <span className="text-red-500">*</span></label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Γιατί είστε υποψήφιος; <span className="text-red-500">*</span></label>
             <textarea
               value={form.supportingStatement}
               onChange={(e) => handleChange('supportingStatement', e.target.value)}
               rows={4}
-              placeholder="Your supporting statement — why you want to become a candidate..."
+              placeholder="Η δήλωση υποστήριξής σας — γιατί θέλετε να γίνετε υποψήφιος..."
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               required
             />
+          </div>
+
+          {/* Social Links - key/value UI */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Σύνδεσμοι Κοινωνικών Δικτύων</label>
+            <div className="space-y-2">
+              {socialLinks.map((pair, index) => (
+                <div key={index} className="flex gap-2 items-center">
+                  <input
+                    type="text"
+                    value={pair.key}
+                    onChange={(e) => handlePairChange(setSocialLinks, index, 'key', e.target.value)}
+                    placeholder="π.χ. Twitter"
+                    className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="text"
+                    value={pair.value}
+                    onChange={(e) => handlePairChange(setSocialLinks, index, 'value', e.target.value)}
+                    placeholder="https://..."
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removePair(setSocialLinks, index)}
+                    disabled={socialLinks.length === 1}
+                    className="text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-1"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => addPair(setSocialLinks)}
+                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                + Προσθήκη
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -189,7 +281,7 @@ export default function BecomeACandidatePage() {
             disabled={submitting}
             className="w-full py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {submitting ? 'Submitting...' : 'Submit Application'}
+            {submitting ? 'Υποβολή...' : 'Υποβολή Αίτησης'}
           </button>
         </form>
       </div>
