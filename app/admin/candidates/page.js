@@ -24,6 +24,12 @@ function ClaimBadge({ status }) {
   );
 }
 
+function ActiveBadge({ isActive }) {
+  return isActive
+    ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Active</span>
+    : <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Not Active</span>;
+}
+
 export default function AdminCandidatesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -91,6 +97,7 @@ export default function AdminCandidatesPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Name</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Constituency</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Active</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Source</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                 </tr>
@@ -99,11 +106,12 @@ export default function AdminCandidatesPage() {
                 {profiles.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <Link href={`/candidates/${p.slug}`} className="font-medium text-gray-900 hover:text-blue-600">{p.fullName}</Link>
+                      <Link href={`/admin/candidates/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">{p.fullName}</Link>
                       <p className="text-xs text-gray-400">/{p.slug}</p>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
                     <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
+                    <td className="px-4 py-3"><ActiveBadge isActive={p.isActiveCandidate} /></td>
                     <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">

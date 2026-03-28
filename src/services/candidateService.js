@@ -51,7 +51,7 @@ const SAFE_USER_ATTRS = ['id', 'username', 'firstName', 'lastName', 'avatar', 'e
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
-async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus, position } = {}) {
+async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus, position, activeOnly } = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
   const offset = (pageNum - 1) * limitNum;
@@ -61,6 +61,7 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
   if (claimStatus) where.claimStatus = claimStatus;
   if (position) where.position = position;
   if (search) where.fullName = { [Op.like]: `%${search}%` };
+  if (activeOnly === 'true') where.isActiveCandidate = true;
 
   const { count, rows } = await CandidateProfile.findAndCountAll({
     where,
@@ -87,6 +88,57 @@ async function getCandidateBySlug(slug) {
     include: PROFILE_INCLUDE
   });
   if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  return profile;
+}
+
+async function getCandidateById(id) {
+  const profile = await CandidateProfile.findByPk(id, {
+    include: [
+      ...PROFILE_INCLUDE,
+      { model: User, as: 'appointedBy', attributes: ['id', 'username', 'firstName', 'lastName'], required: false }
+    ]
+  });
+  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  return profile;
+}
+
+// ─── Appointment ─────────────────────────────────────────────────────────────
+
+async function appointAsCandidate(moderatorUserId, moderatorRole, candidateProfileId, data) {
+  if (!['admin', 'moderator'].includes(moderatorRole)) {
+    throw new ServiceError(403, 'Only admins and moderators can appoint candidates.');
+  }
+
+  const profile = await CandidateProfile.findByPk(candidateProfileId);
+  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+
+  if (!data.position || !['mayor', 'prefect', 'parliamentary'].includes(data.position)) {
+    throw new ServiceError(400, 'A valid position is required (mayor, prefect, or parliamentary).');
+  }
+
+  const updates = {
+    isActiveCandidate: true,
+    appointedAt: new Date(),
+    appointedByUserId: moderatorUserId,
+    position: data.position,
+    retiredAt: null
+  };
+  if (data.constituencyId !== undefined) updates.constituencyId = data.constituencyId || null;
+
+  await profile.update(updates);
+  return profile;
+}
+
+async function retireCandidate(moderatorUserId, moderatorRole, candidateProfileId) {
+  if (!['admin', 'moderator'].includes(moderatorRole)) {
+    throw new ServiceError(403, 'Only admins and moderators can retire candidates.');
+  }
+
+  const profile = await CandidateProfile.findByPk(candidateProfileId);
+  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  if (!profile.isActiveCandidate) throw new ServiceError(400, 'Profile is not an active candidate.');
+
+  await profile.update({ isActiveCandidate: false, retiredAt: new Date() });
   return profile;
 }
 
@@ -427,6 +479,7 @@ async function getDashboard(candidateUserId) {
 module.exports = {
   getCandidates,
   getCandidateBySlug,
+  getCandidateById,
   submitApplication,
   getMyApplication,
   approveApplication,
@@ -441,6 +494,8 @@ module.exports = {
   getApplicationById,
   getPendingClaims,
   getDashboard,
+  appointAsCandidate,
+  retireCandidate,
   // Export for testing
   generateSlug
 };

@@ -4,13 +4,25 @@ const candidateController = {
   // GET /api/candidates
   getCandidates: async (req, res) => {
     try {
-      const { page, limit, constituencyId, search, claimStatus, position } = req.query;
-      const data = await candidateService.getCandidates({ page, limit, constituencyId, search, claimStatus, position });
+      const { page, limit, constituencyId, search, claimStatus, position, activeOnly } = req.query;
+      const data = await candidateService.getCandidates({ page, limit, constituencyId, search, claimStatus, position, activeOnly });
       return res.status(200).json({ success: true, data });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
       console.error('getCandidates error:', error);
       return res.status(500).json({ success: false, message: 'Error fetching candidates.' });
+    }
+  },
+
+  // GET /api/candidates/profile/:id
+  getProfileById: async (req, res) => {
+    try {
+      const profile = await candidateService.getCandidateById(parseInt(req.params.id, 10));
+      return res.status(200).json({ success: true, data: { profile } });
+    } catch (error) {
+      if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+      console.error('getProfileById error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching candidate profile.' });
     }
   },
 
@@ -196,6 +208,30 @@ const candidateController = {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
       console.error('rejectClaim error:', error);
       return res.status(500).json({ success: false, message: 'Error rejecting claim.' });
+    }
+  },
+
+  // POST /api/candidates/:id/appoint
+  appointAsCandidate: async (req, res) => {
+    try {
+      const profile = await candidateService.appointAsCandidate(req.user.id, req.user.role, parseInt(req.params.id, 10), req.body);
+      return res.status(200).json({ success: true, data: { profile } });
+    } catch (error) {
+      if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+      console.error('appointAsCandidate error:', error);
+      return res.status(500).json({ success: false, message: 'Error appointing candidate.' });
+    }
+  },
+
+  // POST /api/candidates/:id/retire
+  retireCandidate: async (req, res) => {
+    try {
+      const profile = await candidateService.retireCandidate(req.user.id, req.user.role, parseInt(req.params.id, 10));
+      return res.status(200).json({ success: true, data: { profile } });
+    } catch (error) {
+      if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+      console.error('retireCandidate error:', error);
+      return res.status(500).json({ success: false, message: 'Error retiring candidate.' });
     }
   }
 };

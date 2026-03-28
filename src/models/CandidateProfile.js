@@ -117,6 +117,25 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
   position: {
     type: DataTypes.ENUM('mayor', 'prefect', 'parliamentary'),
     allowNull: true
+  },
+  isActiveCandidate: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  appointedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  appointedByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL'
+  },
+  retiredAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   tableName: 'CandidateProfiles',
