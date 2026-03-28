@@ -13,6 +13,7 @@ const endorsementRoutes = require('./endorsementRoutes');
 const suggestionRoutes = require('./suggestionRoutes');
 const solutionRoutes = require('./solutionRoutes');
 const linkPreviewRoutes = require('./linkPreviewRoutes');
+const candidateRoutes = require('./candidateRoutes');
 
 const routes = [
   { prefix: '/api/auth', router: authRoutes },
@@ -30,6 +31,7 @@ const routes = [
   { prefix: '/api/suggestions', router: suggestionRoutes },
   { prefix: '/api/solutions', router: solutionRoutes },
   { prefix: '/api/link-preview', router: linkPreviewRoutes },
+  { prefix: '/api/candidates', router: candidateRoutes },
 ];
 
 function registerRoutes(app) {
