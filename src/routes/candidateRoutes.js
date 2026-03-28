@@ -44,8 +44,17 @@ router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin'), candidateC
 // Any logged-in user: claim a profile
 router.post('/:id/claim', apiLimiter, authMiddleware, candidateController.submitClaim);
 
+// Moderator/Admin: appoint profile as active candidate
+router.post('/:id/appoint', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), candidateController.appointAsCandidate);
+
+// Moderator/Admin: retire active candidate
+router.post('/:id/retire', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), candidateController.retireCandidate);
+
 // Authenticated: update own profile (service enforces ownership)
 router.put('/:id', apiLimiter, authMiddleware, candidateController.updateProfile);
+
+// Admin: get profile by numeric id (must be before /:slug catch-all)
+router.get('/profile/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), candidateController.getProfileById);
 
 // Public: get candidate by slug (last, catches all unmatched GET /:param)
 router.get('/:slug', apiLimiter, optionalAuthMiddleware, candidateController.getCandidateBySlug);

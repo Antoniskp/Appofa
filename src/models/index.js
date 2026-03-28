@@ -221,6 +221,7 @@ CandidateProfile.belongsTo(Location, { foreignKey: 'constituencyId', as: 'consti
 CandidateProfile.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
 CandidateProfile.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
 CandidateProfile.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+CandidateProfile.belongsTo(User, { foreignKey: 'appointedByUserId', as: 'appointedBy' });
 CandidateProfile.hasMany(CandidateApplication, { foreignKey: 'candidateProfileId', as: 'applications' });
 User.hasOne(CandidateProfile, { foreignKey: 'claimedByUserId', as: 'candidateProfile' });
 
