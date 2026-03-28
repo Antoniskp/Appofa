@@ -8,12 +8,40 @@ module.exports = {
       ? { type: Sequelize.STRING(30), allowNull: true }
       : { type: Sequelize.ENUM('mayor', 'prefect', 'parliamentary'), allowNull: true };
 
-    await queryInterface.addColumn('CandidateProfiles', 'position', columnDef);
-    await queryInterface.addColumn('CandidateApplications', 'position', columnDef);
+    // These columns are included in the initial PublicPersonProfiles migration
+    // but we keep these steps for databases that were created before the rename.
+    const tables = await queryInterface.showAllTables();
+
+    if (tables.includes('PublicPersonProfiles')) {
+      const pppCols = await queryInterface.describeTable('PublicPersonProfiles');
+      if (!pppCols.position) {
+        await queryInterface.addColumn('PublicPersonProfiles', 'position', columnDef);
+      }
+    }
+
+    if (tables.includes('CandidateApplications')) {
+      const appCols = await queryInterface.describeTable('CandidateApplications');
+      if (!appCols.position) {
+        await queryInterface.addColumn('CandidateApplications', 'position', columnDef);
+      }
+    }
   },
 
   async down(queryInterface) {
-    await queryInterface.removeColumn('CandidateProfiles', 'position');
-    await queryInterface.removeColumn('CandidateApplications', 'position');
+    const tables = await queryInterface.showAllTables();
+
+    if (tables.includes('PublicPersonProfiles')) {
+      const pppCols = await queryInterface.describeTable('PublicPersonProfiles');
+      if (pppCols.position) {
+        await queryInterface.removeColumn('PublicPersonProfiles', 'position');
+      }
+    }
+
+    if (tables.includes('CandidateApplications')) {
+      const appCols = await queryInterface.describeTable('CandidateApplications');
+      if (appCols.position) {
+        await queryInterface.removeColumn('CandidateApplications', 'position');
+      }
+    }
   }
 };

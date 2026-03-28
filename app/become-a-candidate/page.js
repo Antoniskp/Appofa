@@ -6,12 +6,24 @@ import Link from 'next/link';
 import { candidateAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
+const SOCIAL_LINK_KEYS = [
+  { key: 'website', label: 'Ιστοσελίδα' },
+  { key: 'x', label: 'X (Twitter)' },
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'linkedin', label: 'LinkedIn' },
+  { key: 'github', label: 'GitHub' },
+  { key: 'youtube', label: 'YouTube' },
+  { key: 'tiktok', label: 'TikTok' },
+];
+
 export default function BecomeACandidatePage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
 
   const [form, setForm] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     position: '',
     constituencyId: '',
     bio: '',
@@ -19,17 +31,41 @@ export default function BecomeACandidatePage() {
     manifesto: '',
     supportingStatement: ''
   });
+  const [socialLinks, setSocialLinks] = useState(
+    Object.fromEntries(SOCIAL_LINK_KEYS.map(({ key }) => [key, '']))
+  );
   const [politicalPositions, setPoliticalPositions] = useState([{ key: '', value: '' }]);
-  const [socialLinks, setSocialLinks] = useState([{ key: '', value: '' }]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  // Constituency cascading picker
   const [prefectures, setPrefectures] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
   const [selectedPrefectureId, setSelectedPrefectureId] = useState('');
 
-  // Fetch prefectures whenever position changes
+  // Person location cascading picker (always shown)
+  const [personPrefectures, setPersonPrefectures] = useState([]);
+  const [personMunicipalities, setPersonMunicipalities] = useState([]);
+  const [personSelectedPrefectureId, setPersonSelectedPrefectureId] = useState('');
+  const [personSelectedMunicipalityId, setPersonSelectedMunicipalityId] = useState('');
+
+  // Load person location prefectures on mount
+  useEffect(() => {
+    locationAPI.getAll({ type: 'prefecture', limit: 500 })
+      .then((res) => setPersonPrefectures(res.locations || []))
+      .catch(() => {});
+  }, []);
+
+  // Load person municipalities when prefecture changes
+  useEffect(() => {
+    if (!personSelectedPrefectureId) { setPersonMunicipalities([]); return; }
+    locationAPI.getAll({ type: 'municipality', parent_id: personSelectedPrefectureId, limit: 500 })
+      .then((res) => setPersonMunicipalities(res.locations || []))
+      .catch(() => {});
+  }, [personSelectedPrefectureId]);
+
+  // Fetch constituency prefectures whenever position changes
   useEffect(() => {
     setSelectedPrefectureId('');
     setMunicipalities([]);
@@ -105,17 +141,27 @@ export default function BecomeACandidatePage() {
     setSubmitting(true);
 
     try {
+      // Determine locationId for the person
+      const locationId = personSelectedMunicipalityId || personSelectedPrefectureId || undefined;
+
       const payload = {
-        fullName: form.fullName,
+        firstName: form.firstName,
+        lastName: form.lastName,
         supportingStatement: form.supportingStatement,
         constituencyId: form.constituencyId || undefined,
         bio: form.bio || undefined,
         contactEmail: form.contactEmail || undefined,
         manifesto: form.manifesto || undefined,
-        position: form.position || undefined
+        position: form.position || undefined,
       };
 
-      const slObj = pairsToObject(socialLinks);
+      if (locationId) payload.locationId = parseInt(locationId, 10);
+
+      // Social links — fixed keys, only non-empty
+      const slObj = {};
+      SOCIAL_LINK_KEYS.forEach(({ key }) => {
+        if (socialLinks[key]) slObj[key] = socialLinks[key];
+      });
       if (Object.keys(slObj).length > 0) payload.socialLinks = slObj;
 
       const ppObj = pairsToObject(politicalPositions);
@@ -155,16 +201,60 @@ export default function BecomeACandidatePage() {
         <p className="text-gray-500 mb-6">Υποβάλετε αίτηση για να συμμετάσχετε στο Appofa ως ανεξάρτητος υποψήφιος.</p>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-          {/* Personal Info */}
+          {/* First/Last Name side by side */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={form.firstName}
+                onChange={(e) => handleChange('firstName', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Επώνυμο <span className="text-red-500">*</span></label>
+              <input
+                type="text"
+                value={form.lastName}
+                onChange={(e) => handleChange('lastName', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Person Location (always shown) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Πλήρες Όνομα <span className="text-red-500">*</span></label>
-            <input
-              type="text"
-              value={form.fullName}
-              onChange={(e) => handleChange('fullName', e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Τοποθεσία</label>
+            <div className="space-y-2">
+              <select
+                value={personSelectedPrefectureId}
+                onChange={(e) => {
+                  setPersonSelectedPrefectureId(e.target.value);
+                  setPersonSelectedMunicipalityId('');
+                }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Επιλέξτε Περιφέρεια (προαιρετικό)</option>
+                {personPrefectures.map((loc) => (
+                  <option key={loc.id} value={loc.id}>{loc.name}</option>
+                ))}
+              </select>
+              {personSelectedPrefectureId && (
+                <select
+                  value={personSelectedMunicipalityId}
+                  onChange={(e) => setPersonSelectedMunicipalityId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Επιλέξτε Δήμο (προαιρετικό)</option>
+                  {personMunicipalities.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           <div>
@@ -209,7 +299,7 @@ export default function BecomeACandidatePage() {
                 <select
                   value={form.constituencyId}
                   onChange={(e) => handleChange('constituencyId', e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Επιλέξτε Δήμο</option>
                   {municipalities.map((loc) => (
@@ -304,43 +394,22 @@ export default function BecomeACandidatePage() {
             />
           </div>
 
-          {/* Social Links - key/value UI */}
+          {/* Social Links — fixed labeled inputs */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Σύνδεσμοι Κοινωνικών Δικτύων</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Σύνδεσμοι Κοινωνικών Δικτύων</label>
             <div className="space-y-2">
-              {socialLinks.map((pair, index) => (
-                <div key={index} className="flex gap-2 items-center">
+              {SOCIAL_LINK_KEYS.map(({ key, label }) => (
+                <div key={key} className="flex items-center gap-3">
+                  <span className="w-28 text-sm text-gray-600 flex-shrink-0">{label}</span>
                   <input
-                    type="text"
-                    value={pair.key}
-                    onChange={(e) => handlePairChange(setSocialLinks, index, 'key', e.target.value)}
-                    placeholder="π.χ. Twitter"
-                    className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="text"
-                    value={pair.value}
-                    onChange={(e) => handlePairChange(setSocialLinks, index, 'value', e.target.value)}
+                    type="url"
+                    value={socialLinks[key]}
+                    onChange={(e) => setSocialLinks((prev) => ({ ...prev, [key]: e.target.value }))}
                     placeholder="https://..."
                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  <button
-                    type="button"
-                    onClick={() => removePair(setSocialLinks, index)}
-                    disabled={socialLinks.length === 1}
-                    className="text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-1"
-                  >
-                    ×
-                  </button>
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={() => addPair(setSocialLinks)}
-                className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-              >
-                + Προσθήκη
-              </button>
             </div>
           </div>
 
