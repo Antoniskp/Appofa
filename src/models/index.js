@@ -17,6 +17,8 @@ const Suggestion = require('./Suggestion');
 const Solution = require('./Solution');
 const SuggestionVote = require('./SuggestionVote');
 const LinkPreviewCache = require('./LinkPreviewCache');
+const CandidateProfile = require('./CandidateProfile');
+const CandidateApplication = require('./CandidateApplication');
 
 // Define associations
 User.hasMany(Article, {
@@ -214,6 +216,21 @@ User.hasMany(Solution, { foreignKey: 'authorId', as: 'solutions' });
 SuggestionVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
 User.hasMany(SuggestionVote, { foreignKey: 'userId', as: 'suggestionVotes' });
 
+// CandidateProfile associations
+CandidateProfile.belongsTo(Location, { foreignKey: 'constituencyId', as: 'constituency' });
+CandidateProfile.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
+CandidateProfile.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
+CandidateProfile.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+CandidateProfile.hasMany(CandidateApplication, { foreignKey: 'candidateProfileId', as: 'applications' });
+User.hasOne(CandidateProfile, { foreignKey: 'claimedByUserId', as: 'candidateProfile' });
+
+// CandidateApplication associations
+CandidateApplication.belongsTo(User, { foreignKey: 'applicantUserId', as: 'applicant' });
+CandidateApplication.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'reviewer' });
+CandidateApplication.belongsTo(Location, { foreignKey: 'constituencyId', as: 'constituency' });
+CandidateApplication.belongsTo(CandidateProfile, { foreignKey: 'candidateProfileId', as: 'candidateProfile' });
+User.hasMany(CandidateApplication, { foreignKey: 'applicantUserId', as: 'candidateApplications' });
+
 module.exports = {
   sequelize,
   User,
@@ -233,5 +250,7 @@ module.exports = {
   Suggestion,
   Solution,
   SuggestionVote,
-  LinkPreviewCache
+  LinkPreviewCache,
+  CandidateProfile,
+  CandidateApplication
 };

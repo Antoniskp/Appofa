@@ -29,7 +29,7 @@ const User = sequelize.define('User', {
     allowNull: true  // Allow null for OAuth-only accounts
   },
   role: {
-    type: DataTypes.ENUM('admin', 'moderator', 'editor', 'viewer'),
+    type: DataTypes.ENUM('admin', 'moderator', 'editor', 'viewer', 'candidate'),
     defaultValue: 'viewer',
     allowNull: false
   },
