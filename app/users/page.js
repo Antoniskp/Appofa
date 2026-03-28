@@ -142,6 +142,25 @@ export default function UsersPage() {
         {/* Show user cards only for authenticated users */}
         {isAuthenticated && (
           <>
+            {/* Create public person profile banner — shown only to moderators and admins */}
+            {(user?.role === 'moderator' || user?.role === 'admin') && (
+              <div className="mb-6 bg-white rounded-lg shadow-sm border border-purple-200 p-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🧑</span>
+                  <div>
+                    <p className="font-semibold text-gray-800">Δημιουργία Δημόσιου Προφίλ Προσώπου</p>
+                    <p className="text-sm text-gray-500">Ως συντονιστής, μπορείτε να δημιουργήσετε δημόσια προφίλ για αξιόλογα πρόσωπα της κοινότητας.</p>
+                  </div>
+                </div>
+                <Link
+                  href="/admin/candidates/new"
+                  className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+                >
+                  Δημιουργία Προφίλ →
+                </Link>
+              </div>
+            )}
+
             {/* Candidate dashboard banner — shown only to users with candidate role */}
             {user?.role === 'candidate' && (
               <div className="mb-6 bg-white rounded-lg shadow-sm border border-green-200 p-5 flex items-center justify-between gap-4">
