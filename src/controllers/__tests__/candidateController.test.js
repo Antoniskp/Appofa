@@ -7,16 +7,16 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { helmetConfig, corsOptions } = require('../../config/securityHeaders');
-const { sequelize, User, CandidateProfile, CandidateApplication } = require('../../models');
+const { sequelize, User, PublicPersonProfile, CandidateApplication } = require('../../models');
 const authRoutes = require('../../routes/authRoutes');
-const candidateRoutes = require('../../routes/candidateRoutes');
+const personRoutes = require('../../routes/personRoutes');
 
 const app = express();
 app.use(helmet(helmetConfig));
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
-app.use('/api/candidates', candidateRoutes);
+app.use('/api/candidates', personRoutes);
 
 describe('Candidate API Tests', () => {
   let adminToken, adminId;
@@ -91,7 +91,7 @@ describe('Candidate API Tests', () => {
 
   describe('POST /api/candidates', () => {
     it('returns 401 when not authenticated', async () => {
-      const res = await request(app).post('/api/candidates').send({ fullName: 'Test' });
+      const res = await request(app).post('/api/candidates').send({ firstName: 'Test', lastName: 'X' });
       expect(res.status).toBe(401);
     });
 
@@ -99,11 +99,11 @@ describe('Candidate API Tests', () => {
       const res = await request(app)
         .post('/api/candidates')
         .set(withToken(viewerToken))
-        .send({ fullName: 'Test' });
+        .send({ firstName: 'Test', lastName: 'X' });
       expect(res.status).toBe(403);
     });
 
-    it('returns 400 when fullName is missing', async () => {
+    it('returns 400 when firstName is missing', async () => {
       const res = await request(app)
         .post('/api/candidates')
         .set(withToken(moderatorToken))
@@ -115,7 +115,7 @@ describe('Candidate API Tests', () => {
       const res = await request(app)
         .post('/api/candidates')
         .set(withToken(moderatorToken))
-        .send({ fullName: 'Maria Papadopoulou', bio: 'Independent candidate' });
+        .send({ firstName: 'Maria', lastName: 'Papadopoulou', bio: 'Independent candidate' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.profile).toHaveProperty('slug');
@@ -154,7 +154,7 @@ describe('Candidate API Tests', () => {
       const res = await request(app)
         .post('/api/candidates/apply')
         .set(withToken(viewerToken))
-        .send({ fullName: 'Viewer User' });
+        .send({ firstName: 'Viewer', lastName: 'User' });
       expect(res.status).toBe(400);
     });
 
@@ -162,7 +162,7 @@ describe('Candidate API Tests', () => {
       const res = await request(app)
         .post('/api/candidates/apply')
         .set(withToken(viewerToken))
-        .send({ fullName: 'Viewer User', supportingStatement: 'I want to represent my area.' });
+        .send({ firstName: 'Viewer', lastName: 'User', supportingStatement: 'I want to represent my area.' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.application.status).toBe('pending');
@@ -173,7 +173,7 @@ describe('Candidate API Tests', () => {
       const res = await request(app)
         .post('/api/candidates/apply')
         .set(withToken(viewerToken))
-        .send({ fullName: 'Viewer User', supportingStatement: 'Second attempt' });
+        .send({ firstName: 'Viewer', lastName: 'User', supportingStatement: 'Second attempt' });
       expect(res.status).toBe(409);
     });
   });
@@ -301,7 +301,7 @@ describe('Candidate API Tests', () => {
       const applyRes = await request(app)
         .post('/api/candidates/apply')
         .set({ Cookie: [`auth_token=${v2Token}`] })
-        .send({ fullName: 'Viewer Two', supportingStatement: 'I want to run.' });
+        .send({ firstName: 'Viewer', lastName: 'Two', supportingStatement: 'I want to run.' });
       const v2AppId = applyRes.body.data.application.id;
 
       const res = await request(app)
@@ -394,7 +394,7 @@ describe('Candidate API Tests', () => {
       const createRes = await request(app)
         .post('/api/candidates')
         .set(withToken(adminToken))
-        .send({ fullName: 'Reject Claim Test' });
+        .send({ firstName: 'Reject', lastName: 'Claim Test' });
       const newProfileId = createRes.body.data.profile.id;
 
       await request(app)
@@ -454,7 +454,7 @@ describe('Candidate API Tests', () => {
     });
 
     it('allows candidate to update own profile', async () => {
-      const profile = await CandidateProfile.findOne({ where: { claimedByUserId: candidateId } });
+      const profile = await PublicPersonProfile.findOne({ where: { claimedByUserId: candidateId } });
       const res = await request(app)
         .put(`/api/candidates/${profile.id}`)
         .set(withToken(candidateToken))
@@ -484,7 +484,7 @@ describe('Candidate API Tests', () => {
       const createRes = await request(app)
         .post('/api/candidates')
         .set(withToken(adminToken))
-        .send({ fullName: 'To Be Deleted' });
+        .send({ firstName: 'To Be', lastName: 'Deleted' });
       const deleteId = createRes.body.data.profile.id;
 
       const res = await request(app)

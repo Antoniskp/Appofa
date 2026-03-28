@@ -1,0 +1,120 @@
+/**
+ * PublicPersonProfile model tests
+ */
+const { PublicPersonProfile, User, Location, CandidateApplication } = require('../index');
+
+describe('PublicPersonProfile Model', () => {
+  it('has all required fields defined', () => {
+    const fields = Object.keys(PublicPersonProfile.rawAttributes);
+    const required = ['id', 'slug', 'firstName', 'lastName', 'locationId', 'constituencyId',
+      'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto',
+      'claimStatus', 'claimedByUserId', 'claimRequestedAt', 'claimVerifiedAt',
+      'claimVerifiedByUserId', 'claimToken', 'claimTokenExpiresAt',
+      'createdByUserId', 'source'];
+    required.forEach((f) => expect(fields).toContain(f));
+  });
+
+  it('has claimStatus ENUM with correct values', () => {
+    const attr = PublicPersonProfile.rawAttributes.claimStatus;
+    expect(attr.type.values).toEqual(expect.arrayContaining(['unclaimed', 'pending', 'claimed', 'rejected']));
+  });
+
+  it('has claimStatus defaulting to unclaimed', () => {
+    expect(PublicPersonProfile.rawAttributes.claimStatus.defaultValue).toBe('unclaimed');
+  });
+
+  it('has source ENUM with correct values', () => {
+    const attr = PublicPersonProfile.rawAttributes.source;
+    expect(attr.type.values).toEqual(expect.arrayContaining(['moderator', 'application', 'self']));
+  });
+
+  it('has source defaulting to moderator', () => {
+    expect(PublicPersonProfile.rawAttributes.source.defaultValue).toBe('moderator');
+  });
+
+  it('has slug as unique', () => {
+    expect(PublicPersonProfile.rawAttributes.slug.unique).toBe(true);
+  });
+
+  it('has firstName allowNull false', () => {
+    expect(PublicPersonProfile.rawAttributes.firstName.allowNull).toBe(false);
+  });
+
+  it('has lastName allowNull false', () => {
+    expect(PublicPersonProfile.rawAttributes.lastName.allowNull).toBe(false);
+  });
+
+  it('has fullName as a virtual field combining firstName and lastName', () => {
+    const inst = PublicPersonProfile.build({ firstName: 'Jane', lastName: 'Doe' });
+    expect(inst.fullName).toBe('Jane Doe');
+  });
+
+  it('fullName virtual trims whitespace when one name part is empty', () => {
+    const inst = PublicPersonProfile.build({ firstName: 'Jane', lastName: '' });
+    expect(inst.fullName).toBe('Jane');
+  });
+
+  it('has correct associations', () => {
+    const assocNames = Object.keys(PublicPersonProfile.associations);
+    expect(assocNames).toContain('location');
+    expect(assocNames).toContain('constituency');
+    expect(assocNames).toContain('claimedBy');
+    expect(assocNames).toContain('claimVerifiedBy');
+    expect(assocNames).toContain('createdBy');
+    expect(assocNames).toContain('applications');
+  });
+
+  it('location association is BelongsTo Location', () => {
+    const assoc = PublicPersonProfile.associations.location;
+    expect(assoc.associationType).toBe('BelongsTo');
+    expect(assoc.target.name).toBe('Location');
+  });
+
+  it('constituency association is BelongsTo Location', () => {
+    const assoc = PublicPersonProfile.associations.constituency;
+    expect(assoc.associationType).toBe('BelongsTo');
+    expect(assoc.target.name).toBe('Location');
+  });
+
+  it('applications association is HasMany CandidateApplication', () => {
+    const assoc = PublicPersonProfile.associations.applications;
+    expect(assoc.associationType).toBe('HasMany');
+    expect(assoc.target.name).toBe('CandidateApplication');
+  });
+
+  it('socialLinks getter parses JSON', () => {
+    const inst = PublicPersonProfile.build({});
+    inst.setDataValue('socialLinks', '{"twitter":"https://x.com"}');
+    expect(inst.socialLinks).toEqual({ twitter: 'https://x.com' });
+  });
+
+  it('socialLinks getter returns null for invalid JSON', () => {
+    const inst = PublicPersonProfile.build({});
+    inst.setDataValue('socialLinks', 'not-json');
+    expect(inst.socialLinks).toBeNull();
+  });
+
+  it('socialLinks getter returns null for null value', () => {
+    const inst = PublicPersonProfile.build({});
+    inst.setDataValue('socialLinks', null);
+    expect(inst.socialLinks).toBeNull();
+  });
+
+  it('socialLinks setter serializes object to JSON', () => {
+    const inst = PublicPersonProfile.build({});
+    inst.socialLinks = { website: 'https://example.com' };
+    expect(inst.getDataValue('socialLinks')).toBe('{"website":"https://example.com"}');
+  });
+
+  it('politicalPositions getter parses JSON', () => {
+    const inst = PublicPersonProfile.build({});
+    inst.setDataValue('politicalPositions', '{"Economy":"support SMEs"}');
+    expect(inst.politicalPositions).toEqual({ Economy: 'support SMEs' });
+  });
+
+  it('politicalPositions setter serializes object', () => {
+    const inst = PublicPersonProfile.build({});
+    inst.politicalPositions = { Health: 'free healthcare' };
+    expect(inst.getDataValue('politicalPositions')).toBe('{"Health":"free healthcare"}');
+  });
+});

@@ -6,10 +6,10 @@ const { CandidateApplication } = require('../index');
 describe('CandidateApplication Model', () => {
   it('has all required fields defined', () => {
     const fields = Object.keys(CandidateApplication.rawAttributes);
-    const required = ['id', 'applicantUserId', 'fullName', 'constituencyId', 'bio',
-      'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto',
+    const required = ['id', 'applicantUserId', 'firstName', 'lastName', 'locationId',
+      'constituencyId', 'bio', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto',
       'supportingStatement', 'status', 'reviewedByUserId', 'reviewedAt',
-      'rejectionReason', 'candidateProfileId'];
+      'rejectionReason', 'publicPersonProfileId'];
     required.forEach((f) => expect(fields).toContain(f));
   });
 
@@ -19,6 +19,19 @@ describe('CandidateApplication Model', () => {
 
   it('supportingStatement is required (allowNull: false)', () => {
     expect(CandidateApplication.rawAttributes.supportingStatement.allowNull).toBe(false);
+  });
+
+  it('firstName is required (allowNull: false)', () => {
+    expect(CandidateApplication.rawAttributes.firstName.allowNull).toBe(false);
+  });
+
+  it('lastName is required (allowNull: false)', () => {
+    expect(CandidateApplication.rawAttributes.lastName.allowNull).toBe(false);
+  });
+
+  it('has fullName as a virtual field combining firstName and lastName', () => {
+    const inst = CandidateApplication.build({ firstName: 'John', lastName: 'Smith' });
+    expect(inst.fullName).toBe('John Smith');
   });
 
   it('status ENUM has correct values', () => {
@@ -35,7 +48,7 @@ describe('CandidateApplication Model', () => {
     expect(assocNames).toContain('applicant');
     expect(assocNames).toContain('reviewer');
     expect(assocNames).toContain('constituency');
-    expect(assocNames).toContain('candidateProfile');
+    expect(assocNames).toContain('publicPersonProfile');
   });
 
   it('applicant association is BelongsTo User', () => {
@@ -44,10 +57,10 @@ describe('CandidateApplication Model', () => {
     expect(assoc.target.name).toBe('User');
   });
 
-  it('candidateProfile association is BelongsTo CandidateProfile', () => {
-    const assoc = CandidateApplication.associations.candidateProfile;
+  it('publicPersonProfile association is BelongsTo PublicPersonProfile', () => {
+    const assoc = CandidateApplication.associations.publicPersonProfile;
     expect(assoc.associationType).toBe('BelongsTo');
-    expect(assoc.target.name).toBe('CandidateProfile');
+    expect(assoc.target.name).toBe('PublicPersonProfile');
   });
 
   it('socialLinks getter parses JSON', () => {

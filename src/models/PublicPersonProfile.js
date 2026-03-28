@@ -1,17 +1,16 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
-const CandidateApplication = sequelize.define('CandidateApplication', {
+const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
   id: {
     type: DataTypes.INTEGER,
     primaryKey: true,
     autoIncrement: true
   },
-  applicantUserId: {
-    type: DataTypes.INTEGER,
+  slug: {
+    type: DataTypes.STRING(255),
     allowNull: false,
-    references: { model: 'Users', key: 'id' },
-    onDelete: 'CASCADE'
+    unique: true
   },
   firstName: {
     type: DataTypes.STRING(100),
@@ -35,6 +34,10 @@ const CandidateApplication = sequelize.define('CandidateApplication', {
   },
   bio: {
     type: DataTypes.TEXT,
+    allowNull: true
+  },
+  photo: {
+    type: DataTypes.STRING(500),
     allowNull: true
   },
   contactEmail: {
@@ -77,48 +80,82 @@ const CandidateApplication = sequelize.define('CandidateApplication', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  supportingStatement: {
-    type: DataTypes.TEXT,
-    allowNull: false
-  },
   fullName: {
     type: DataTypes.VIRTUAL,
     get() {
       return `${this.firstName || ''} ${this.lastName || ''}`.trim();
     }
   },
-  status: {
-    type: DataTypes.ENUM('pending', 'approved', 'rejected'),
-    defaultValue: 'pending',
+  claimStatus: {
+    type: DataTypes.ENUM('unclaimed', 'pending', 'claimed', 'rejected'),
+    defaultValue: 'unclaimed',
     allowNull: false
   },
-  reviewedByUserId: {
+  claimedByUserId: {
     type: DataTypes.INTEGER,
     allowNull: true,
     references: { model: 'Users', key: 'id' },
     onDelete: 'SET NULL'
   },
-  reviewedAt: {
+  claimRequestedAt: {
     type: DataTypes.DATE,
     allowNull: true
   },
-  rejectionReason: {
-    type: DataTypes.TEXT,
+  claimVerifiedAt: {
+    type: DataTypes.DATE,
     allowNull: true
   },
-  publicPersonProfileId: {
+  claimVerifiedByUserId: {
     type: DataTypes.INTEGER,
     allowNull: true,
-    references: { model: 'PublicPersonProfiles', key: 'id' },
+    references: { model: 'Users', key: 'id' },
     onDelete: 'SET NULL'
+  },
+  claimToken: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  claimTokenExpiresAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  createdByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL'
+  },
+  source: {
+    type: DataTypes.ENUM('moderator', 'application', 'self'),
+    defaultValue: 'moderator',
+    allowNull: false
   },
   position: {
     type: DataTypes.ENUM('mayor', 'prefect', 'parliamentary'),
     allowNull: true
+  },
+  isActiveCandidate: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  appointedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  appointedByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL'
+  },
+  retiredAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
-  tableName: 'CandidateApplications',
+  tableName: 'PublicPersonProfiles',
   timestamps: true
 });
 
-module.exports = CandidateApplication;
+module.exports = PublicPersonProfile;

@@ -4,8 +4,8 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const dialect = queryInterface.sequelize.getDialect();
 
-    // CandidateProfiles
-    await queryInterface.createTable('CandidateProfiles', {
+    // PublicPersonProfiles
+    await queryInterface.createTable('PublicPersonProfiles', {
       id: {
         type: Sequelize.INTEGER,
         primaryKey: true,
@@ -17,9 +17,19 @@ module.exports = {
         allowNull: false,
         unique: true
       },
-      fullName: {
-        type: Sequelize.STRING(255),
+      firstName: {
+        type: Sequelize.STRING(100),
         allowNull: false
+      },
+      lastName: {
+        type: Sequelize.STRING(100),
+        allowNull: false
+      },
+      locationId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: { model: 'Locations', key: 'id' },
+        onDelete: 'SET NULL'
       },
       constituencyId: {
         type: Sequelize.INTEGER,
@@ -52,9 +62,9 @@ module.exports = {
         allowNull: true
       },
       claimStatus: {
-        type: dialect === 'postgres'
-          ? Sequelize.ENUM('unclaimed', 'pending', 'claimed', 'rejected')
-          : Sequelize.STRING(20),
+        type: dialect === 'sqlite'
+          ? Sequelize.STRING(20)
+          : Sequelize.ENUM('unclaimed', 'pending', 'claimed', 'rejected'),
         defaultValue: 'unclaimed',
         allowNull: false
       },
@@ -93,11 +103,36 @@ module.exports = {
         onDelete: 'SET NULL'
       },
       source: {
-        type: dialect === 'postgres'
-          ? Sequelize.ENUM('moderator', 'application', 'self')
-          : Sequelize.STRING(20),
+        type: dialect === 'sqlite'
+          ? Sequelize.STRING(20)
+          : Sequelize.ENUM('moderator', 'application', 'self'),
         defaultValue: 'moderator',
         allowNull: false
+      },
+      position: {
+        type: dialect === 'sqlite'
+          ? Sequelize.STRING(30)
+          : Sequelize.ENUM('mayor', 'prefect', 'parliamentary'),
+        allowNull: true
+      },
+      isActiveCandidate: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      },
+      appointedAt: {
+        type: Sequelize.DATE,
+        allowNull: true
+      },
+      appointedByUserId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: { model: 'Users', key: 'id' },
+        onDelete: 'SET NULL'
+      },
+      retiredAt: {
+        type: Sequelize.DATE,
+        allowNull: true
       },
       createdAt: {
         type: Sequelize.DATE,
@@ -125,9 +160,19 @@ module.exports = {
         references: { model: 'Users', key: 'id' },
         onDelete: 'CASCADE'
       },
-      fullName: {
-        type: Sequelize.STRING(255),
+      firstName: {
+        type: Sequelize.STRING(100),
         allowNull: false
+      },
+      lastName: {
+        type: Sequelize.STRING(100),
+        allowNull: false
+      },
+      locationId: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: { model: 'Locations', key: 'id' },
+        onDelete: 'SET NULL'
       },
       constituencyId: {
         type: Sequelize.INTEGER,
@@ -159,10 +204,16 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: false
       },
+      position: {
+        type: dialect === 'sqlite'
+          ? Sequelize.STRING(30)
+          : Sequelize.ENUM('mayor', 'prefect', 'parliamentary'),
+        allowNull: true
+      },
       status: {
-        type: dialect === 'postgres'
-          ? Sequelize.ENUM('pending', 'approved', 'rejected')
-          : Sequelize.STRING(20),
+        type: dialect === 'sqlite'
+          ? Sequelize.STRING(20)
+          : Sequelize.ENUM('pending', 'approved', 'rejected'),
         defaultValue: 'pending',
         allowNull: false
       },
@@ -180,10 +231,10 @@ module.exports = {
         type: Sequelize.TEXT,
         allowNull: true
       },
-      candidateProfileId: {
+      publicPersonProfileId: {
         type: Sequelize.INTEGER,
         allowNull: true,
-        references: { model: 'CandidateProfiles', key: 'id' },
+        references: { model: 'PublicPersonProfiles', key: 'id' },
         onDelete: 'SET NULL'
       },
       createdAt: {
@@ -201,6 +252,6 @@ module.exports = {
 
   async down(queryInterface, Sequelize) {
     await queryInterface.dropTable('CandidateApplications');
-    await queryInterface.dropTable('CandidateProfiles');
+    await queryInterface.dropTable('PublicPersonProfiles');
   }
 };
