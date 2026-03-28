@@ -8,6 +8,7 @@ import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import { positionLabel } from '@/lib/utils/candidatePositions';
 
 export default function CandidateProfilePage({ params }) {
   const { slug } = use(params);
@@ -81,6 +82,11 @@ export default function CandidateProfilePage({ params }) {
                   <p className="mt-1 flex items-center gap-1 text-gray-500">
                     <MapPinIcon className="h-4 w-4 flex-shrink-0" />
                     {profile.constituency.name}
+                  </p>
+                )}
+                {profile.position && (
+                  <p className="mt-1 text-sm font-medium text-blue-700">
+                    {positionLabel(profile.position)}
                   </p>
                 )}
                 {profile.contactEmail && (

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI, locationSectionAPI, suggestionAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI, suggestionAPI, candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
@@ -11,11 +11,12 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
 import { PencilIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { idSlug } from '@/lib/utils/slugify';
+import { positionLabel } from '@/lib/utils/candidatePositions';
 import LocationSections from '@/components/LocationSections';
 import LocationSectionManager from '@/components/LocationSectionManager';
 import UserRow from '@/components/user/UserRow';
 
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions'];
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'candidates'];
 const DEFAULT_TAB = 'polls';
 const HEADER_SECTION_TYPES = ['official_links', 'contacts', 'webcams'];
 
@@ -29,6 +30,7 @@ export default function LocationDetailPage() {
   const isAuthenticated = !authLoading && !!user;
   const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0 });
   const [suggestions, setSuggestions] = useState([]);
+  const [candidates, setCandidates] = useState([]);
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
@@ -129,6 +131,16 @@ export default function LocationDetailPage() {
           }
         } catch (err) {
           console.error('Failed to load suggestions:', err);
+        }
+
+        // Fetch candidates for this location
+        try {
+          const candidatesRes = await candidateAPI.getAll({ constituencyId: locId, limit: 50 });
+          if (candidatesRes.success) {
+            setCandidates(candidatesRes.data?.profiles || []);
+          }
+        } catch (err) {
+          console.error('Failed to load candidates:', err);
         }
       },
       onError: (err) => {
@@ -285,6 +297,7 @@ export default function LocationDetailPage() {
     articles: `Articles${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
     users: `Users${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
     suggestions: `Suggestions${suggestions.length ? ` (${suggestions.length})` : ''}`,
+    candidates: `Υποψήφιοι${candidates.length ? ` (${candidates.length})` : ''}`,
   };
 
   return (
@@ -850,6 +863,39 @@ export default function LocationDetailPage() {
                               <span>{new Date(suggestion.createdAt).toLocaleDateString()}</span>
                             </>
                           )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Candidates tab */}
+              <div
+                id="tabpanel-candidates"
+                role="tabpanel"
+                aria-labelledby="tab-candidates"
+                hidden={activeTab !== 'candidates'}
+              >
+                {candidates.length === 0 ? (
+                  <p className="text-center text-gray-500 py-8">Δεν υπάρχουν υποψήφιοι για αυτή την περιφέρεια.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {candidates.map(candidate => (
+                      <Link
+                        key={candidate.id}
+                        href={`/candidates/${candidate.slug}`}
+                        className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium text-gray-900">{candidate.fullName}</h3>
+                            {candidate.position && (
+                              <p className="text-sm text-gray-500">
+                                {positionLabel(candidate.position)}
+                              </p>
+                            )}
+                          </div>
                         </div>
                       </Link>
                     ))}
