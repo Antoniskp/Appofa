@@ -17,6 +17,7 @@ import {
   SparklesIcon,
   PuzzlePieceIcon,
   NewspaperIcon,
+  CurrencyEuroIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -34,6 +35,7 @@ const categories = [
       { href: '/platform/objects', label: 'Αντικείμενα', description: 'Άρθρα, χρήστες, ψηφοφορίες, τοποθεσίες', Icon: CubeIcon },
       { href: '/platform/features', label: 'Χαρακτηριστικά', description: 'Όλες οι δυνατότητες της πλατφόρμας', Icon: SparklesIcon },
       { href: '/platform/modules', label: 'Ενότητες Εφαρμογής', description: 'Όλες οι ενότητες και σελίδες της εφαρμογής', Icon: PuzzlePieceIcon },
+      { href: '/platform/cost', label: 'Κόστος & Ώρες', description: 'Εκτιμώμενο κόστος ανάπτυξης και συντήρησης', Icon: CurrencyEuroIcon },
     ],
   },
   {
