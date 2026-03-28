@@ -2,6 +2,8 @@ const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { CandidateProfile, CandidateApplication, User, Location } = require('../models');
 
+const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
 class ServiceError extends Error {
   constructor(status, message) {
     super(message);
@@ -152,8 +154,8 @@ async function approveApplication(moderatorUserId, moderatorRole, applicationId)
     constituencyId: application.constituencyId || null,
     bio: application.bio || null,
     contactEmail: application.contactEmail || null,
-    socialLinks: application.getDataValue('socialLinks') ? JSON.parse(application.getDataValue('socialLinks')) : null,
-    politicalPositions: application.getDataValue('politicalPositions') ? JSON.parse(application.getDataValue('politicalPositions')) : null,
+    socialLinks: application.socialLinks || null,
+    politicalPositions: application.politicalPositions || null,
     manifesto: application.manifesto || null,
     claimStatus: 'claimed',
     claimedByUserId: application.applicantUserId,
@@ -236,7 +238,7 @@ async function submitClaim(userId, candidateProfileId, supportingStatement) {
   if (profile.claimStatus === 'pending') throw new ServiceError(409, 'A claim is already pending for this profile.');
 
   const claimToken = crypto.randomBytes(32).toString('hex');
-  const claimTokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const claimTokenExpiresAt = new Date(Date.now() + CLAIM_TOKEN_EXPIRY_MS);
 
   await profile.update({
     claimStatus: 'pending',
