@@ -50,6 +50,13 @@ const maintenanceHours = [
   { task: 'Νέα χαρακτηριστικά (μέσος όρος)', hoursPerMonth: '~10 ώρ.' },
 ];
 
+const realCosts = [
+  { category: 'GitHub Copilot (Ιαν–Μαρ 2026)', cost: '€120', note: '€40/μήνα × 3 μήνες' },
+  { category: 'GitHub Professional (ετήσιο)', cost: '€40', note: 'Εφάπαξ χρέωση' },
+  { category: 'Server / VPS (Ιαν–Μαρ 2026)', cost: '€18', note: '€6/μήνα × 3 μήνες' },
+  { category: 'Domain & ChatGPT', cost: '€100', note: 'Εφάπαξ / συνδρομή' },
+];
+
 const costs = [
   { category: 'Αρχική ανάπτυξη (~545 ώρ.)', low: '~€16.350', high: '~€43.600' },
   { category: 'Ετήσια συντήρηση (~384 ώρ.)', low: '~€11.520', high: '~€30.720' },
@@ -148,7 +155,43 @@ export default function CostPage() {
         </div>
       </section>
 
-      {/* 3. Estimated Costs */}
+      {/* 3. Real Development Costs */}
+      <section>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">💸 Πραγματικό Κόστος Ανάπτυξης</h2>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left px-4 py-3 font-semibold text-gray-700">Κατηγορία</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Κόστος</th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-700 whitespace-nowrap">Σημείωση</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {realCosts.map(({ category, cost, note }) => (
+                <tr key={category} className="bg-white hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-gray-800">{category}</td>
+                  <td className="px-4 py-3 text-right font-mono text-gray-700">{cost}</td>
+                  <td className="px-4 py-3 text-right text-gray-500">{note}</td>
+                </tr>
+              ))}
+              <tr className="bg-blue-50 border-t-2 border-blue-200">
+                <td className="px-4 py-3 font-bold text-blue-900">Σύνολο</td>
+                <td className="px-4 py-3 text-right font-bold font-mono text-blue-900">€278</td>
+                <td className="px-4 py-3 text-right text-blue-700">Ιαν – Μαρ 2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-4 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+          💡 Η πλατφόρμα αναπτύχθηκε από <strong>ένα άτομο</strong>, με τη βοήθεια AI (GitHub Copilot,
+          ChatGPT) και συζητήσεων με φίλους και την κοινότητα. Η ιδέα ωρίμαζε για{' '}
+          <strong>15 χρόνια</strong> και η ανάπτυξη ξεκίνησε στις{' '}
+          <strong>25 Δεκεμβρίου 2025</strong> — με πολλές ώρες εργασίας κάθε μέρα.
+        </p>
+      </section>
+
+      {/* 4. Estimated Costs */}
       <section>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">💶 Εκτιμώμενο Κόστος</h2>
         <p className="text-sm text-gray-600 mb-4">
@@ -185,7 +228,7 @@ export default function CostPage() {
         </p>
       </section>
 
-      {/* 4. Technology Stack */}
+      {/* 5. Technology Stack */}
       <section>
         <h2 className="text-xl font-semibold text-gray-800 mb-4">🛠️ Τεχνολογίες</h2>
         <div className="flex flex-wrap gap-2">
