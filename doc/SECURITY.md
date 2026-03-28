@@ -126,6 +126,23 @@ Twenty-two moderate-severity vulnerabilities were reported, all originating from
 | `npm audit --omit=dev` (production) | **0** | 0 | 0 |
 | `npm audit` (all deps incl. dev) | **0** | 0 | 0 |
 
+### npm Dependency Audit (2026-03-28)
+
+One high-severity vulnerability was reported against the existing lockfile. It has been resolved via `npm audit fix`.
+
+#### Fixed: path-to-regexp Denial of Service (High)
+- **Advisories**: [GHSA-j3q9-mxjg-w52f](https://github.com/advisories/GHSA-j3q9-mxjg-w52f) (DoS via sequential optional groups), [GHSA-27v5-c462-wpq7](https://github.com/advisories/GHSA-27v5-c462-wpq7) (ReDoS via multiple wildcards)
+- **Severity**: High
+- **Affected versions**: `path-to-regexp 8.0.0 – 8.3.0`
+- **Impact**: Crafted route patterns could cause catastrophic backtracking, leading to denial of service.
+- **Resolution**: ✅ `npm audit fix` updated the lockfile to `path-to-regexp@8.4.0` (transitive dependency of `express → router`).
+
+#### Current audit status (2026-03-28)
+| Scope | High | Medium | Low |
+|-------|------|--------|-----|
+| `npm audit --omit=dev` (production) | **0** | 0 | 0 |
+| `npm audit` (all deps incl. dev) | **0** | 0 | 0 |
+
 #### Recommended maintenance workflow
 1. **Weekly**: run `npm audit` — fix highs/criticals promptly via `npm audit fix`.
 2. **Before every deploy**: the CI workflow (`.github/workflows/security-audit.yml`) blocks on `npm audit --omit=dev --audit-level=high`.
@@ -185,7 +202,7 @@ In case of a security incident:
 
 ---
 
-**Last Updated**: 2026-03-26  
+**Last Updated**: 2026-03-28  
 **Security Review Status**: ✅ Passed  
 **CodeQL Alerts**: 0  
 **npm Audit (production deps)**: 0 vulnerabilities (`npm audit --omit=dev`)  
