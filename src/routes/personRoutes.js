@@ -3,6 +3,7 @@ const router = express.Router();
 const personController = require('../controllers/personController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
+const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
@@ -12,7 +13,7 @@ router.get('/', apiLimiter, personController.getCandidates);
 // ─── Authenticated — specific routes BEFORE parameterized routes ─────────────
 
 // Any logged-in user
-router.post('/apply', apiLimiter, authMiddleware, personController.submitApplication);
+router.post('/apply', apiLimiter, authMiddleware, csrfProtection, personController.submitApplication);
 router.get('/my-application', apiLimiter, authMiddleware, personController.getMyApplication);
 
 // Candidate / admin / moderator dashboard
@@ -22,8 +23,8 @@ router.get('/dashboard', apiLimiter, authMiddleware, checkRole('candidate', 'adm
 router.get('/applications', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.getPendingApplications);
 
 // Moderator/Admin: approve/reject application (before /:id)
-router.post('/applications/:id/approve', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.approveApplication);
-router.post('/applications/:id/reject', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.rejectApplication);
+router.post('/applications/:id/approve', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.approveApplication);
+router.post('/applications/:id/reject', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.rejectApplication);
 
 // Moderator/Admin: get single application (before /:slug)
 router.get('/applications/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.getApplicationById);
@@ -32,26 +33,26 @@ router.get('/applications/:id', apiLimiter, authMiddleware, checkRole('admin', '
 router.get('/claims', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.getPendingClaims);
 
 // Moderator/Admin: approve/reject claim
-router.post('/claims/:id/approve', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.approveClaim);
-router.post('/claims/:id/reject', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.rejectClaim);
+router.post('/claims/:id/approve', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.approveClaim);
+router.post('/claims/:id/reject', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.rejectClaim);
 
 // Moderator/Admin: create profile
-router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.createProfile);
+router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.createProfile);
 
 // Admin: delete profile
-router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin'), personController.deleteProfile);
+router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, personController.deleteProfile);
 
 // Any logged-in user: claim a profile
-router.post('/:id/claim', apiLimiter, authMiddleware, personController.submitClaim);
+router.post('/:id/claim', apiLimiter, authMiddleware, csrfProtection, personController.submitClaim);
 
 // Moderator/Admin: appoint profile as active candidate
-router.post('/:id/appoint', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.appointAsCandidate);
+router.post('/:id/appoint', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.appointAsCandidate);
 
 // Moderator/Admin: retire active candidate
-router.post('/:id/retire', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.retireCandidate);
+router.post('/:id/retire', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.retireCandidate);
 
 // Authenticated: update own profile (service enforces ownership)
-router.put('/:id', apiLimiter, authMiddleware, personController.updateProfile);
+router.put('/:id', apiLimiter, authMiddleware, csrfProtection, personController.updateProfile);
 
 // Admin: get profile by numeric id (must be before /:slug catch-all)
 router.get('/profile/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.getProfileById);
