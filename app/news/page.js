@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
@@ -30,6 +31,14 @@ export default function NewsPage() {
     category: '',
     search: '',
   });
+
+  const [categoryCounts, setCategoryCounts] = useState({});
+
+  useEffect(() => {
+    articleAPI.getCategoryCounts({ type: 'news', status: 'published' })
+      .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
+      .catch((err) => console.error('Failed to fetch news category counts:', err));
+  }, []);
 
   // For search input
   const handleSearchChange = (e) => {
@@ -103,6 +112,7 @@ export default function NewsPage() {
             categories={newsCategoryOptions}
             selected={filters.category}
             onSelect={handleCategorySelect}
+            counts={categoryCounts}
           />
         </div>
 

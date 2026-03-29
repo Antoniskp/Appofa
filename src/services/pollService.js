@@ -1535,6 +1535,40 @@ const exportPoll = async (pollId, userId, userRole) => {
 // Exports
 // ---------------------------------------------------------------------------
 
+/**
+ * Get poll counts grouped by category.
+ * @param {object} queryParams - { status }
+ * @returns {Promise<{success: boolean, data?: object, status?: number, message?: string}>}
+ */
+const getCategoryCounts = async (queryParams = {}) => {
+  try {
+    const { status = 'published' } = queryParams;
+
+    const where = { category: { [Op.ne]: null } };
+    if (status) where.status = status;
+
+    const rows = await Poll.findAll({
+      attributes: [
+        'category',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where,
+      group: ['category'],
+      raw: true
+    });
+
+    const counts = {};
+    rows.forEach((row) => {
+      counts[row.category] = parseInt(row.count, 10);
+    });
+
+    return { success: true, data: { counts } };
+  } catch (error) {
+    console.error('Get poll category counts error:', error);
+    return { success: false, status: 500, message: 'Error fetching poll category counts.' };
+  }
+};
+
 module.exports = {
   // Constants (exported for use in controller or tests if needed)
   POLL_TYPES,
@@ -1558,5 +1592,6 @@ module.exports = {
   addPollOption,
   getResults,
   getMyVotedPolls,
-  exportPoll
+  exportPoll,
+  getCategoryCounts
 };

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { pollAPI } from '@/lib/api';
@@ -32,6 +33,14 @@ export default function PollsPage() {
     category: '',
     search: '',
   });
+
+  const [categoryCounts, setCategoryCounts] = useState({});
+
+  useEffect(() => {
+    pollAPI.getCategoryCounts({ status: 'published' })
+      .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
+      .catch((err) => console.error('Failed to fetch poll category counts:', err));
+  }, []);
 
   const { data: polls, loading, error } = useAsyncData(
     async () => {
@@ -89,6 +98,7 @@ export default function PollsPage() {
             categories={(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat }))}
             selected={filters.category}
             onSelect={(cat) => updateFilter('category', cat)}
+            counts={categoryCounts}
           />
           <div className="flex gap-4">
             <select
