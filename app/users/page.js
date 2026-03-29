@@ -95,6 +95,23 @@ export default function UsersPage() {
           </Link>
         </div>
 
+        {/* Public Persons CTA banner */}
+        <div className="mb-8 bg-white rounded-lg shadow-sm border border-blue-200 p-5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">🏛️</span>
+            <div>
+              <p className="font-semibold text-gray-800">Δημόσια Πρόσωπα</p>
+              <p className="text-sm text-gray-500">Ανακαλύψτε δημόσια προφίλ πολιτικών και άλλων αξιόλογων προσώπων.</p>
+            </div>
+          </div>
+          <Link
+            href="/persons"
+            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+          >
+            Δείτε τα Πρόσωπα →
+          </Link>
+        </div>
+
         {/* User Statistics - shown to everyone */}
         {!statsLoading && userStats && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">
