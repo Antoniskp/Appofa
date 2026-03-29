@@ -3,12 +3,27 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, ClockIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Pagination from '@/components/Pagination';
 import SkeletonLoader from '@/components/SkeletonLoader';
+
+function CandidateAvatar({ photo, name }) {
+  const [imgError, setImgError] = useState(false);
+  if (photo && !imgError) {
+    return (
+      <img
+        src={photo}
+        alt={name}
+        className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+        onError={() => setImgError(true)}
+      />
+    );
+  }
+  return <UserCircleIcon className="h-10 w-10 text-gray-300 flex-shrink-0" />;
+}
 
 function ClaimBadge({ status }) {
   const map = {
@@ -106,8 +121,13 @@ export default function AdminCandidatesPage() {
                 {profiles.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <Link href={`/admin/candidates/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">{p.fullName}</Link>
-                      <p className="text-xs text-gray-400">/{p.slug}</p>
+                      <div className="flex items-center gap-3">
+                        <CandidateAvatar photo={p.photo} name={p.fullName} />
+                        <div>
+                          <Link href={`/admin/candidates/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">{p.fullName}</Link>
+                          <p className="text-xs text-gray-400">/{p.slug}</p>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
                     <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
