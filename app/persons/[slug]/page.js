@@ -2,12 +2,13 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { UserCircleIcon, MapPinIcon, EnvelopeIcon, GlobeAltIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, MapPinIcon, EnvelopeIcon, GlobeAltIcon, PencilSquareIcon, BuildingLibraryIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import EmptyState from '@/components/EmptyState';
 import { positionLabel } from '@/lib/utils/candidatePositions';
 
 const SOCIAL_LINK_LABELS = {
@@ -36,9 +37,13 @@ export default function PersonProfilePage({ params }) {
 
   if (loading) return <div className="app-container py-10"><SkeletonLoader count={1} type="card" /></div>;
   if (error || !profile) return (
-    <div className="app-container py-10 text-center">
-      <p className="text-red-500">Το προφίλ δεν βρέθηκε.</p>
-      <Link href="/persons" className="mt-4 inline-block text-blue-600 hover:underline">← Επιστροφή στα Πρόσωπα</Link>
+    <div className="app-container py-10">
+      <EmptyState
+        type="error"
+        title="Το προφίλ δεν βρέθηκε"
+        description={error ? "Παρουσιάστηκε σφάλμα κατά τη φόρτωση του προφίλ." : "Αυτό το προφίλ δεν είναι διαθέσιμο ή δεν υπάρχει."}
+        action={{ text: '← Επιστροφή στα Πρόσωπα', href: '/persons' }}
+      />
     </div>
   );
 
@@ -52,7 +57,7 @@ export default function PersonProfilePage({ params }) {
         <Link href="/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Πρόσωπα</Link>
 
         {/* Claim Banner */}
-        {profile.claimStatus === 'unclaimed' && (
+        {profile.claimStatus === 'unclaimed' && user && (
           <div className="mb-4 bg-yellow-50 border border-yellow-300 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
             <div className="flex items-center gap-2">
               <ExclamationTriangleIcon className="h-5 w-5 text-yellow-500 flex-shrink-0" />
@@ -107,7 +112,7 @@ export default function PersonProfilePage({ params }) {
                 )}
                 {profile.isActiveCandidate && profile.constituency && (
                   <p className="mt-1 flex items-center gap-1 text-gray-500">
-                    <MapPinIcon className="h-4 w-4 flex-shrink-0" />
+                    <BuildingLibraryIcon className="h-4 w-4 flex-shrink-0" />
                     Εκλογική Περιφέρεια: {profile.constituency.name}
                   </p>
                 )}

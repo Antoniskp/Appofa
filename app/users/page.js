@@ -115,18 +115,18 @@ export default function UsersPage() {
         {/* User Statistics - shown to everyone */}
         {!statsLoading && userStats && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Community Statistics</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Στατιστικά Κοινότητας</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Registered users</p>
+                <p className="text-sm text-gray-600 mb-1">Εγγεγραμμένοι χρήστες</p>
                 <p className="text-3xl font-bold text-blue-600">{userStats.totalUsers}</p>
               </div>
               <div className="bg-green-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Visible users</p>
+                <p className="text-sm text-gray-600 mb-1">Ορατοί χρήστες</p>
                 <p className="text-3xl font-bold text-green-600">{userStats.searchableUsers}</p>
               </div>
               <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Invisible users</p>
+                <p className="text-sm text-gray-600 mb-1">Μη ορατοί χρήστες</p>
                 <p className="text-3xl font-bold text-gray-600">{userStats.nonSearchableUsers}</p>
               </div>
             </div>
@@ -137,20 +137,20 @@ export default function UsersPage() {
         {!authLoading && !isAuthenticated && (
           <div className="mb-8 bg-white rounded-lg shadow-md p-6">
             <p className="text-gray-700 mb-4">
-              Want to see the full list of users and connect with the community?
+              Θέλετε να δείτε την πλήρη λίστα χρηστών και να συνδεθείτε με την κοινότητα;
             </p>
             <div className="flex gap-4">
               <Link
                 href="/login"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                Log In
+                Σύνδεση
               </Link>
               <Link
                 href="/register"
                 className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
               >
-                Register
+                Εγγραφή
               </Link>
             </div>
           </div>
@@ -198,7 +198,7 @@ export default function UsersPage() {
             )}
 
             {/* Become a candidate banner — shown to authenticated users who are not yet candidates */}
-            {user?.role !== 'candidate' && (
+            {!['candidate', 'admin', 'moderator'].includes(user?.role) && (
               <div className="mb-6 bg-white rounded-lg shadow-sm border border-blue-200 p-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">🗳️</span>
