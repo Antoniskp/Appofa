@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/ArticleCard';
@@ -10,8 +12,10 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
 import SearchInput from '@/components/SearchInput';
 import CategoryPills from '@/components/CategoryPills';
+import { useAuth } from '@/lib/auth-context';
 
 export default function ArticlesPage() {
+  const { user } = useAuth();
   const {
     filters,
     page,
@@ -78,13 +82,24 @@ export default function ArticlesPage() {
       <div className="app-container">
         {/* Search and Category Pills */}
         <div className="flex flex-col gap-4 mb-8">
-          <SearchInput
-            name="search"
-            placeholder="Search articles..."
-            value={filters.search}
-            onChange={handleSearchChange}
-            className="max-w-md"
-          />
+          <div className="flex items-center gap-3">
+            <SearchInput
+              name="search"
+              placeholder="Search articles..."
+              value={filters.search}
+              onChange={handleSearchChange}
+              className="flex-grow max-w-md"
+            />
+            {user && (
+              <Link
+                href="/editor"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                <PlusCircleIcon className="h-5 w-5" />
+                Νέο Άρθρο
+              </Link>
+            )}
+          </div>
           <CategoryPills
             categories={articleCategoryOptions}
             selected={filters.category}

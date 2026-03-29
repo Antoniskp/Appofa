@@ -129,28 +129,26 @@ export default function VideosPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Βίντεο</h1>
-          {user && (
-            <Link
-              href="/videos/new"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              <PlusCircleIcon className="h-5 w-5" />
-              Προσθήκη Βίντεο
-            </Link>
-          )}
-        </div>
-
         {/* Search and Category Pills */}
         <div className="flex flex-col gap-4 mb-8">
-          <SearchInput
-            name="search"
-            placeholder="Αναζήτηση βίντεο..."
-            value={search}
-            onChange={handleSearchChange}
-          />
+          <div className="flex items-center gap-3">
+            <SearchInput
+              name="search"
+              placeholder="Αναζήτηση βίντεο..."
+              value={search}
+              onChange={handleSearchChange}
+              className="flex-grow max-w-md"
+            />
+            {user && (
+              <Link
+                href="/videos/new"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                <PlusCircleIcon className="h-5 w-5" />
+                Προσθήκη Βίντεο
+              </Link>
+            )}
+          </div>
           <CategoryPills
             categories={videoCategoryOptions}
             selected={category}

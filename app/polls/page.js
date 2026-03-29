@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import PollCard from '@/components/PollCard';
@@ -65,13 +67,24 @@ export default function PollsPage() {
       <div className="app-container">
         {/* Search, Category Pills, and compact filters */}
         <div className="flex flex-col gap-4 mb-8">
-          <SearchInput
-            name="search"
-            placeholder="Αναζήτηση δημοσκοπήσεων..."
-            value={filters.search}
-            onChange={(e) => updateFilter('search', e.target.value)}
-            className="max-w-md"
-          />
+          <div className="flex items-center gap-3">
+            <SearchInput
+              name="search"
+              placeholder="Αναζήτηση δημοσκοπήσεων..."
+              value={filters.search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="flex-grow max-w-md"
+            />
+            {user && (
+              <Link
+                href="/polls/create"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                <PlusCircleIcon className="h-5 w-5" />
+                Νέα Δημοσκόπηση
+              </Link>
+            )}
+          </div>
           <CategoryPills
             categories={(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat }))}
             selected={filters.category}
