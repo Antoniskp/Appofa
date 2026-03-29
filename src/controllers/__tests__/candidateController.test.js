@@ -27,11 +27,11 @@ describe('Candidate API Tests', () => {
   let applicationId;
 
   const csrfToken = 'test-csrf-candidate';
-  const csrfHeaders = (userId) => {
+  const csrfHeaders = (userId, authToken) => {
     const { storeCsrfToken } = require('../../utils/csrf');
     storeCsrfToken(csrfToken, userId);
     return {
-      Cookie: [`csrf_token=${csrfToken}`, `auth_token=${adminToken}`],
+      Cookie: [`csrf_token=${csrfToken}`, `auth_token=${authToken}`],
       'x-csrf-token': csrfToken
     };
   };
@@ -106,7 +106,7 @@ describe('Candidate API Tests', () => {
     it('returns 400 when firstName is missing', async () => {
       const res = await request(app)
         .post('/api/candidates')
-        .set(withToken(moderatorToken))
+        .set(csrfHeaders(moderatorId, moderatorToken))
         .send({});
       expect(res.status).toBe(400);
     });
@@ -114,7 +114,7 @@ describe('Candidate API Tests', () => {
     it('creates a candidate profile as moderator', async () => {
       const res = await request(app)
         .post('/api/candidates')
-        .set(withToken(moderatorToken))
+        .set(csrfHeaders(moderatorId, moderatorToken))
         .send({ firstName: 'Maria', lastName: 'Papadopoulou', bio: 'Independent candidate' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -153,7 +153,7 @@ describe('Candidate API Tests', () => {
     it('returns 400 when required fields missing', async () => {
       const res = await request(app)
         .post('/api/candidates/apply')
-        .set(withToken(viewerToken))
+        .set(csrfHeaders(viewerId, viewerToken))
         .send({ firstName: 'Viewer', lastName: 'User' });
       expect(res.status).toBe(400);
     });
@@ -161,7 +161,7 @@ describe('Candidate API Tests', () => {
     it('submits application successfully', async () => {
       const res = await request(app)
         .post('/api/candidates/apply')
-        .set(withToken(viewerToken))
+        .set(csrfHeaders(viewerId, viewerToken))
         .send({ firstName: 'Viewer', lastName: 'User', supportingStatement: 'I want to represent my area.' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
@@ -172,7 +172,7 @@ describe('Candidate API Tests', () => {
     it('returns 409 if user already has pending application', async () => {
       const res = await request(app)
         .post('/api/candidates/apply')
-        .set(withToken(viewerToken))
+        .set(csrfHeaders(viewerId, viewerToken))
         .send({ firstName: 'Viewer', lastName: 'User', supportingStatement: 'Second attempt' });
       expect(res.status).toBe(409);
     });
@@ -263,7 +263,7 @@ describe('Candidate API Tests', () => {
     it('approves application and creates profile', async () => {
       const res = await request(app)
         .post(`/api/candidates/applications/${applicationId}/approve`)
-        .set(withToken(moderatorToken));
+        .set(csrfHeaders(moderatorId, moderatorToken));
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.profile).toBeDefined();
@@ -276,7 +276,7 @@ describe('Candidate API Tests', () => {
     it('returns 400 if application not pending anymore', async () => {
       const res = await request(app)
         .post(`/api/candidates/applications/${applicationId}/approve`)
-        .set(withToken(moderatorToken));
+        .set(csrfHeaders(moderatorId, moderatorToken));
       expect(res.status).toBe(400);
     });
   });
@@ -297,16 +297,16 @@ describe('Candidate API Tests', () => {
       });
       const v2Cookie = v2Login.headers['set-cookie'].find((c) => c.startsWith('auth_token='));
       const v2Token = v2Cookie.split(';')[0].replace('auth_token=', '');
-
+      const v2User = await User.findOne({ where: { username: 'cand_viewer2' } });
       const applyRes = await request(app)
         .post('/api/candidates/apply')
-        .set({ Cookie: [`auth_token=${v2Token}`] })
+        .set(csrfHeaders(v2User.id, v2Token))
         .send({ firstName: 'Viewer', lastName: 'Two', supportingStatement: 'I want to run.' });
       const v2AppId = applyRes.body.data.application.id;
 
       const res = await request(app)
         .post(`/api/candidates/applications/${v2AppId}/reject`)
-        .set(withToken(moderatorToken))
+        .set(csrfHeaders(moderatorId, moderatorToken))
         .send({ rejectionReason: 'Insufficient information' });
       expect(res.status).toBe(200);
       expect(res.body.data.application.status).toBe('rejected');
@@ -325,7 +325,7 @@ describe('Candidate API Tests', () => {
     it('submits a claim on unclaimed profile', async () => {
       const res = await request(app)
         .post(`/api/candidates/${profileId}/claim`)
-        .set(withToken(candidateToken))
+        .set(csrfHeaders(candidateId, candidateToken))
         .send({ supportingStatement: 'This is my profile.' });
       expect(res.status).toBe(200);
       expect(res.body.data.profile.claimStatus).toBe('pending');
@@ -334,7 +334,7 @@ describe('Candidate API Tests', () => {
     it('returns 409 if claim already pending', async () => {
       const res = await request(app)
         .post(`/api/candidates/${profileId}/claim`)
-        .set(withToken(adminToken))
+        .set(csrfHeaders(adminId, adminToken))
         .send({ supportingStatement: 'Me too.' });
       expect(res.status).toBe(409);
     });
@@ -377,7 +377,7 @@ describe('Candidate API Tests', () => {
     it('approves the claim', async () => {
       const res = await request(app)
         .post(`/api/candidates/claims/${profileId}/approve`)
-        .set(withToken(moderatorToken));
+        .set(csrfHeaders(moderatorId, moderatorToken));
       expect(res.status).toBe(200);
       expect(res.body.data.profile.claimStatus).toBe('claimed');
       // Verify candidate role
@@ -393,18 +393,18 @@ describe('Candidate API Tests', () => {
       // Create a fresh unclaimed profile and submit a claim
       const createRes = await request(app)
         .post('/api/candidates')
-        .set(withToken(adminToken))
+        .set(csrfHeaders(adminId, adminToken))
         .send({ firstName: 'Reject', lastName: 'Claim Test' });
       const newProfileId = createRes.body.data.profile.id;
 
       await request(app)
         .post(`/api/candidates/${newProfileId}/claim`)
-        .set(withToken(adminToken))
+        .set(csrfHeaders(adminId, adminToken))
         .send({ supportingStatement: 'Claim this.' });
 
       const rejectRes = await request(app)
         .post(`/api/candidates/claims/${newProfileId}/reject`)
-        .set(withToken(moderatorToken))
+        .set(csrfHeaders(moderatorId, moderatorToken))
         .send({ reason: 'Could not verify' });
       expect(rejectRes.status).toBe(200);
       expect(rejectRes.body.data.profile.claimStatus).toBe('rejected');
@@ -457,7 +457,7 @@ describe('Candidate API Tests', () => {
       const profile = await PublicPersonProfile.findOne({ where: { claimedByUserId: candidateId } });
       const res = await request(app)
         .put(`/api/candidates/${profile.id}`)
-        .set(withToken(candidateToken))
+        .set(csrfHeaders(candidateId, candidateToken))
         .send({ bio: 'Updated bio' });
       expect(res.status).toBe(200);
       expect(res.body.data.profile.bio).toBe('Updated bio');
@@ -483,13 +483,13 @@ describe('Candidate API Tests', () => {
       // Create a disposable profile
       const createRes = await request(app)
         .post('/api/candidates')
-        .set(withToken(adminToken))
+        .set(csrfHeaders(adminId, adminToken))
         .send({ firstName: 'To Be', lastName: 'Deleted' });
       const deleteId = createRes.body.data.profile.id;
 
       const res = await request(app)
         .delete(`/api/candidates/${deleteId}`)
-        .set(withToken(adminToken));
+        .set(csrfHeaders(adminId, adminToken));
       expect(res.status).toBe(200);
       expect(res.body.data.deleted).toBe(true);
     });
