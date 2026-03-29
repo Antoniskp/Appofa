@@ -2,7 +2,7 @@
 
 import { use } from 'react';
 import Link from 'next/link';
-import { UserCircleIcon, MapPinIcon, EnvelopeIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, MapPinIcon, EnvelopeIcon, GlobeAltIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/react/24/solid';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -42,6 +42,7 @@ export default function PersonProfilePage({ params }) {
     </div>
   );
 
+  const isPrivileged = user && ['admin', 'moderator'].includes(user.role);
   const socialLinksObj = profile.socialLinks || {};
   const politicalPositions = profile.politicalPositions || {};
 
@@ -87,6 +88,15 @@ export default function PersonProfilePage({ params }) {
                   <h1 className="text-2xl font-bold text-gray-900">{profile.firstName} {profile.lastName}</h1>
                   {profile.claimStatus === 'claimed' && (
                     <CheckBadgeIcon className="h-6 w-6 text-green-500" title="Επαληθευμένο Προφίλ" />
+                  )}
+                  {isPrivileged && (
+                    <Link
+                      href={`/admin/persons/${profile.id}/edit`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                      <PencilSquareIcon className="h-4 w-4" />
+                      Επεξεργασία
+                    </Link>
                   )}
                 </div>
                 {profile.location && (
