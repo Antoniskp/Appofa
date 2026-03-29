@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { MagnifyingGlassIcon, UserCircleIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
-import { personAPI, locationAPI } from '@/lib/api';
+import { personAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
@@ -125,7 +125,14 @@ export default function PersonsPage() {
         </div>
 
         {loading && <SkeletonLoader count={6} type="card" />}
-        {error && <p className="text-red-500 text-center py-8">Αποτυχία φόρτωσης προσώπων.</p>}
+        {error && (
+          <EmptyState
+            type="error"
+            title="Σφάλμα φόρτωσης"
+            description="Αποτυχία φόρτωσης προσώπων. Παρακαλώ δοκιμάστε ξανά."
+            action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
+          />
+        )}
 
         {!loading && !error && persons.length === 0 && (
           <EmptyState message="Δεν βρέθηκαν πρόσωπα." />
