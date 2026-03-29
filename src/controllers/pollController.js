@@ -216,6 +216,15 @@ const pollController = {
       success: true,
       data: result.data
     });
+  },
+
+  // Get poll counts grouped by category
+  getCategoryCounts: async (req, res) => {
+    const result = await pollService.getCategoryCounts(req.query);
+    if (!result.success) {
+      return res.status(result.status).json({ success: false, message: result.message });
+    }
+    return res.status(200).json(result);
   }
 };
 

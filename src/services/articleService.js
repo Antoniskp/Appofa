@@ -658,6 +658,41 @@ const approveNews = async (articleId, user) => {
   }
 };
 
+/**
+ * Get article counts grouped by category.
+ * @param {object} queryParams - { type, status }
+ * @returns {Promise<{success: boolean, data?: object, status?: number, message?: string}>}
+ */
+const getCategoryCounts = async (queryParams = {}) => {
+  try {
+    const { type, status = 'published' } = queryParams;
+
+    const where = { category: { [Op.ne]: null } };
+    if (type) where.type = type;
+    if (status) where.status = status;
+
+    const rows = await Article.findAll({
+      attributes: [
+        'category',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      where,
+      group: ['category'],
+      raw: true
+    });
+
+    const counts = {};
+    rows.forEach((row) => {
+      counts[row.category] = parseInt(row.count, 10);
+    });
+
+    return { success: true, data: { counts } };
+  } catch (error) {
+    console.error('Get category counts error:', error);
+    return { success: false, status: 500, message: 'Error fetching category counts.' };
+  }
+};
+
 module.exports = {
   sanitizeArticle,
   createArticle,
@@ -665,5 +700,6 @@ module.exports = {
   getArticleById,
   updateArticle,
   deleteArticle,
-  approveNews
+  approveNews,
+  getCategoryCounts
 };
