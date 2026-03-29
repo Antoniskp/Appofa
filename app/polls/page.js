@@ -1,8 +1,5 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import PollCard from '@/components/PollCard';
@@ -11,7 +8,8 @@ import EmptyState from '@/components/EmptyState';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
-import FilterBar from '@/components/FilterBar';
+import SearchInput from '@/components/SearchInput';
+import CategoryPills from '@/components/CategoryPills';
 import articleCategories from '@/config/articleCategories.json';
 
 export default function PollsPage() {
@@ -25,11 +23,11 @@ export default function PollsPage() {
     nextPage,
     prevPage,
     goToPage,
+    updateFilter,
   } = useFilters({
     status: '',
     type: '',
     category: '',
-    tag: '',
     search: '',
   });
 
@@ -65,55 +63,41 @@ export default function PollsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        {/* Filters */}
-        <FilterBar
-          filters={filters}
-          onChange={handleFilterChange}
-          filterConfig={[
-            {
-              name: 'status',
-              label: 'Κατάσταση',
-              type: 'select',
-              options: [
-                { value: '', label: 'Όλες' },
-                { value: 'active', label: 'Ενεργές' },
-                { value: 'closed', label: 'Κλειστές' },
-              ],
-            },
-            {
-              name: 'type',
-              label: 'Τύπος',
-              type: 'select',
-              options: [
-                { value: '', label: 'Όλοι' },
-                { value: 'simple', label: 'Απλή' },
-                { value: 'complex', label: 'Σύνθετη' },
-              ],
-            },
-            {
-              name: 'category',
-              label: 'Κατηγορία',
-              type: 'select',
-              options: [
-                { value: '', label: 'Όλες' },
-                ...(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat })),
-              ],
-            },
-            {
-              name: 'tag',
-              label: 'Tag',
-              type: 'text',
-              placeholder: 'Filter by tag',
-            },
-            {
-              name: 'search',
-              label: 'Αναζήτηση',
-              type: 'text',
-              placeholder: 'Αναζήτηση δημοσκοπήσεων...',
-            },
-          ]}
-          className="mb-8"
-        />
+        {/* Search, Category Pills, and compact filters */}
+        <div className="flex flex-col gap-4 mb-8">
+          <SearchInput
+            name="search"
+            placeholder="Αναζήτηση δημοσκοπήσεων..."
+            value={filters.search}
+            onChange={(e) => updateFilter('search', e.target.value)}
+            className="max-w-md"
+          />
+          <CategoryPills
+            categories={(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat }))}
+            selected={filters.category}
+            onSelect={(cat) => updateFilter('category', cat)}
+          />
+          <div className="flex gap-4">
+            <select
+              value={filters.status}
+              onChange={(e) => updateFilter('status', e.target.value)}
+              className="text-sm border rounded px-3 py-1.5 bg-white"
+            >
+              <option value="">Όλες οι καταστάσεις</option>
+              <option value="active">Ενεργές</option>
+              <option value="closed">Κλειστές</option>
+            </select>
+            <select
+              value={filters.type}
+              onChange={(e) => updateFilter('type', e.target.value)}
+              className="text-sm border rounded px-3 py-1.5 bg-white"
+            >
+              <option value="">Όλοι οι τύποι</option>
+              <option value="simple">Απλή</option>
+              <option value="complex">Σύνθετη</option>
+            </select>
+          </div>
+        </div>
 
         {/* Loading State */}
         {loading && (
