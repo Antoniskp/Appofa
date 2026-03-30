@@ -20,6 +20,8 @@ const LinkPreviewCache = require('./LinkPreviewCache');
 const CandidateProfile = require('./CandidateProfile');
 const CandidateApplication = require('./CandidateApplication');
 const PublicPersonProfile = require('./PublicPersonProfile');
+const PersonRemovalRequest = require('./PersonRemovalRequest');
+const Report = require('./Report');
 
 // Define associations
 User.hasMany(Article, {
@@ -244,6 +246,18 @@ PublicPersonProfile.belongsTo(User, { foreignKey: 'appointedByUserId', as: 'appo
 PublicPersonProfile.hasMany(CandidateApplication, { foreignKey: 'publicPersonProfileId', as: 'applications' });
 User.hasOne(PublicPersonProfile, { foreignKey: 'claimedByUserId', as: 'publicPersonProfile' });
 
+// PersonRemovalRequest associations
+PersonRemovalRequest.belongsTo(PublicPersonProfile, { foreignKey: 'publicPersonProfileId', as: 'publicPersonProfile' });
+PersonRemovalRequest.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
+PublicPersonProfile.hasMany(PersonRemovalRequest, { foreignKey: 'publicPersonProfileId', as: 'removalRequests' });
+User.hasMany(PersonRemovalRequest, { foreignKey: 'reviewedBy', as: 'reviewedRemovalRequests' });
+
+// Report associations
+Report.belongsTo(User, { foreignKey: 'reportedByUserId', as: 'reporter' });
+Report.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
+User.hasMany(Report, { foreignKey: 'reportedByUserId', as: 'reports' });
+User.hasMany(Report, { foreignKey: 'reviewedBy', as: 'reviewedReports' });
+
 module.exports = {
   sequelize,
   User,
@@ -266,5 +280,7 @@ module.exports = {
   LinkPreviewCache,
   CandidateProfile,
   CandidateApplication,
-  PublicPersonProfile
+  PublicPersonProfile,
+  PersonRemovalRequest,
+  Report
 };
