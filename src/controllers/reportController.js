@@ -124,8 +124,9 @@ const reportController = {
   reviewReport: async (req, res) => {
     const { action, adminNotes } = req.body;
 
-    if (!action || !['dismiss', 'action'].includes(action)) {
-      return res.status(400).json({ success: false, message: 'Action must be "dismiss" or "action".' });
+    const VALID_ACTIONS = ['dismiss', 'action', 'mark_reviewed', 'reopen', 'update_notes'];
+    if (!action || !VALID_ACTIONS.includes(action)) {
+      return res.status(400).json({ success: false, message: 'Invalid action.' });
     }
 
     const report = await Report.findByPk(req.params.id);
@@ -133,12 +134,28 @@ const reportController = {
       return res.status(404).json({ success: false, message: 'Report not found.' });
     }
 
-    await report.update({
-      status: action === 'dismiss' ? 'dismissed' : 'actioned',
-      adminNotes: adminNotes || null,
-      reviewedBy: req.user.id,
-      reviewedAt: new Date()
-    });
+    if (action === 'reopen') {
+      await report.update({
+        status: 'pending',
+        adminNotes: null,
+        reviewedBy: null,
+        reviewedAt: null
+      });
+    } else if (action === 'update_notes') {
+      await report.update({ adminNotes: adminNotes || null });
+    } else {
+      const statusMap = {
+        dismiss: 'dismissed',
+        action: 'actioned',
+        mark_reviewed: 'reviewed'
+      };
+      await report.update({
+        status: statusMap[action],
+        adminNotes: adminNotes || null,
+        reviewedBy: req.user.id,
+        reviewedAt: new Date()
+      });
+    }
 
     return res.status(200).json({ success: true, data: { report } });
   },
