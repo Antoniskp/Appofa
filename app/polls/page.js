@@ -13,6 +13,7 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
 import SearchInput from '@/components/SearchInput';
 import CategoryPills from '@/components/CategoryPills';
+import FilterBar from '@/components/FilterBar';
 import articleCategories from '@/config/articleCategories.json';
 
 export default function PollsPage() {
@@ -84,7 +85,33 @@ export default function PollsPage() {
               placeholder="Αναζήτηση δημοσκοπήσεων..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="flex-grow max-w-md"
+              className="flex-grow"
+            />
+            <FilterBar
+              filters={filters}
+              onChange={handleFilterChange}
+              filterConfig={[
+                {
+                  name: 'status',
+                  label: 'Κατάσταση',
+                  type: 'select',
+                  options: [
+                    { value: '', label: 'Όλες οι καταστάσεις' },
+                    { value: 'active', label: 'Ενεργές' },
+                    { value: 'closed', label: 'Κλειστές' },
+                  ],
+                },
+                {
+                  name: 'type',
+                  label: 'Τύπος',
+                  type: 'select',
+                  options: [
+                    { value: '', label: 'Όλοι οι τύποι' },
+                    { value: 'simple', label: 'Απλή' },
+                    { value: 'complex', label: 'Σύνθετη' },
+                  ],
+                },
+              ]}
             />
             {user && (
               <Link
@@ -103,26 +130,6 @@ export default function PollsPage() {
             counts={categoryCounts}
             countsLoaded={countsLoaded}
           />
-          <div className="flex gap-4">
-            <select
-              value={filters.status}
-              onChange={(e) => updateFilter('status', e.target.value)}
-              className="text-sm border rounded px-3 py-1.5 bg-white"
-            >
-              <option value="">Όλες οι καταστάσεις</option>
-              <option value="active">Ενεργές</option>
-              <option value="closed">Κλειστές</option>
-            </select>
-            <select
-              value={filters.type}
-              onChange={(e) => updateFilter('type', e.target.value)}
-              className="text-sm border rounded px-3 py-1.5 bg-white"
-            >
-              <option value="">Όλοι οι τύποι</option>
-              <option value="simple">Απλή</option>
-              <option value="complex">Σύνθετη</option>
-            </select>
-          </div>
         </div>
 
         {/* Loading State */}
