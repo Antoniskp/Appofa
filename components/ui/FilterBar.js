@@ -1,27 +1,20 @@
 'use client';
 
-import { useState } from 'react';
 import { FunnelIcon } from '@heroicons/react/24/outline';
-import FormSelect from '@/components/FormSelect';
-import SearchInput from '@/components/SearchInput';
 
 /**
- * Reusable filter bar component
+ * Reusable filter bar component — renders filters inline in a single flex row.
  * @param {object} filters - Current filter values
  * @param {function} onChange - Filter change handler
  * @param {array} filterConfig - Array of filter configurations
  * @param {string} className - Additional CSS classes
- * @param {boolean} defaultExpanded - Whether filters are shown by default
  */
 export default function FilterBar({
   filters,
   onChange,
   filterConfig = [],
   className = '',
-  defaultExpanded = false
 }) {
-  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
-
   if (filterConfig.length === 0) {
     return null;
   }
@@ -33,12 +26,9 @@ export default function FilterBar({
   ).length;
 
   return (
-    <div className={`relative ${className}`}>
-      {/* Toggle Button */}
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
-      >
+    <div className={`flex flex-wrap items-center gap-2 ${className}`}>
+      {/* Static funnel label with active count badge */}
+      <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white">
         <FunnelIcon className="h-5 w-5 text-gray-600" />
         <span className="text-sm font-medium text-gray-700">
           Φίλτρα
@@ -48,59 +38,62 @@ export default function FilterBar({
             </span>
           )}
         </span>
-      </button>
+      </div>
 
-      {/* Filters */}
-      {isExpanded && (
-        <div className="absolute right-0 top-full mt-1 z-10 card p-6 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
-        {filterConfig.map((config) => {
-          const { name, label, type = 'select', options = [], placeholder } = config;
+      {/* Inline filters */}
+      {filterConfig.map((config) => {
+        const { name, label, type = 'select', options = [], placeholder } = config;
 
-          if (type === 'select') {
-            const emptyOption = options.find((option) => (
-              typeof option === 'object' ? option.value === '' : option === ''
-            ));
-            const filteredOptions = emptyOption
-              ? options.filter((option) => (
-                  typeof option === 'object' ? option.value !== '' : option !== ''
-                ))
-              : options;
-            const resolvedPlaceholder = placeholder
-              || (emptyOption ? (emptyOption.label || emptyOption) : `All ${label.toLowerCase()}`);
+        if (type === 'select') {
+          const emptyOption = options.find((option) => (
+            typeof option === 'object' ? option.value === '' : option === ''
+          ));
+          const filteredOptions = emptyOption
+            ? options.filter((option) => (
+                typeof option === 'object' ? option.value !== '' : option !== ''
+              ))
+            : options;
+          const resolvedPlaceholder = placeholder
+            || (emptyOption ? (emptyOption.label || emptyOption) : `All ${label.toLowerCase()}`);
 
-            return (
-              <FormSelect
-                key={name}
-                name={name}
-                label={label}
-                value={filters[name] || ''}
-                onChange={onChange}
-                options={filteredOptions}
-                placeholder={resolvedPlaceholder}
-              />
-            );
-          }
+          return (
+            <select
+              key={name}
+              name={name}
+              value={filters[name] || ''}
+              onChange={onChange}
+              aria-label={label}
+              className="h-10 min-w-[150px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">{resolvedPlaceholder}</option>
+              {filteredOptions.map((option) => {
+                const value = typeof option === 'object' ? option.value : option;
+                const label = typeof option === 'object' ? (option.label || option.value) : option;
+                return (
+                  <option key={value} value={value}>{label}</option>
+                );
+              })}
+            </select>
+          );
+        }
 
-          if (type === 'text') {
-            return (
-              <SearchInput
-                key={name}
-                id={name}
-                name={name}
-                label={label}
-                value={filters[name] || ''}
-                onChange={onChange}
-                placeholder={placeholder || `Filter by ${label.toLowerCase()}...`}
-              />
-            );
-          }
+        if (type === 'text') {
+          return (
+            <input
+              key={name}
+              type="text"
+              name={name}
+              value={filters[name] || ''}
+              onChange={onChange}
+              placeholder={placeholder || `Filter by ${label.toLowerCase()}...`}
+              aria-label={label}
+              className="h-10 min-w-[150px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          );
+        }
 
-          return null;
-        })}
-          </div>
-        </div>
-      )}
+        return null;
+      })}
     </div>
   );
 }
