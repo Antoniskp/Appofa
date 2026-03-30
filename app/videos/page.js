@@ -33,6 +33,7 @@ export default function VideosPage() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
   const [categoryCounts, setCategoryCounts] = useState({});
+  const [countsLoaded, setCountsLoaded] = useState(false);
 
   // Feed state
   const [videos, setVideos] = useState([]);
@@ -107,7 +108,8 @@ export default function VideosPage() {
   useEffect(() => {
     articleAPI.getCategoryCounts({ type: 'video', status: 'published' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
-      .catch((err) => console.error('Failed to fetch video category counts:', err));
+      .catch((err) => console.error('Failed to fetch video category counts:', err))
+      .finally(() => setCountsLoaded(true));
   }, []);
 
   /** Load next page when sentinel enters viewport */
@@ -162,6 +164,7 @@ export default function VideosPage() {
             selected={category}
             onSelect={handleCategorySelect}
             counts={categoryCounts}
+            countsLoaded={countsLoaded}
           />
         </div>
 
