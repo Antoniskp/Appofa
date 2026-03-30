@@ -77,7 +77,7 @@ export default function HomePage() {
       try {
         const response = await articleAPI.getAll({
           status: 'published',
-          type: 'article',
+          type: 'articles',
           orderBy: 'createdAt',
           order: 'desc',
           limit: 3,
