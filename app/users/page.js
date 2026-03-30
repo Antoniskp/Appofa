@@ -78,58 +78,59 @@ export default function UsersPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        {/* Worthy Citizens CTA banner */}
-        <div className="mb-8 bg-white rounded-lg shadow-sm border border-amber-200 p-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🏆</span>
-            <div>
-              <p className="font-semibold text-gray-800">Κορυφαίοι Πολίτες</p>
-              <p className="text-sm text-gray-500">Δείτε ποιοι πολίτες αναγνωρίζονται από την κοινότητα.</p>
+        {/* Public CTA banners — 2-column responsive grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          {/* Worthy Citizens CTA banner */}
+          <div className="bg-white rounded-lg shadow-sm border border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🏆</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Κορυφαίοι Πολίτες</p>
+                <p className="text-xs text-gray-500">Αναγνωρισμένοι από την κοινότητα.</p>
+              </div>
             </div>
+            <Link
+              href="/worthy-citizens"
+              className="inline-flex items-center px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
+            >
+              Λίστα →
+            </Link>
           </div>
-          <Link
-            href="/worthy-citizens"
-            className="inline-flex items-center px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
-          >
-            Δείτε τη λίστα →
-          </Link>
+
+          {/* Public Persons CTA banner */}
+          <div className="bg-white rounded-lg shadow-sm border border-blue-200 px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">🏛️</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-800">Δημόσια Πρόσωπα</p>
+                <p className="text-xs text-gray-500">Προφίλ πολιτικών και αξιόλογων προσώπων.</p>
+              </div>
+            </div>
+            <Link
+              href="/persons"
+              className="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
+            >
+              Πρόσωπα →
+            </Link>
+          </div>
         </div>
 
-        {/* Public Persons CTA banner */}
-        <div className="mb-8 bg-white rounded-lg shadow-sm border border-blue-200 p-5 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🏛️</span>
-            <div>
-              <p className="font-semibold text-gray-800">Δημόσια Πρόσωπα</p>
-              <p className="text-sm text-gray-500">Ανακαλύψτε δημόσια προφίλ πολιτικών και άλλων αξιόλογων προσώπων.</p>
-            </div>
-          </div>
-          <Link
-            href="/persons"
-            className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
-          >
-            Δείτε τα Πρόσωπα →
-          </Link>
-        </div>
-
-        {/* User Statistics - shown to everyone */}
+        {/* User Statistics - slim inline strip */}
         {!statsLoading && userStats && (
-          <div className="mb-8 bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Στατιστικά Κοινότητας</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-blue-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Εγγεγραμμένοι χρήστες</p>
-                <p className="text-3xl font-bold text-blue-600">{userStats.totalUsers}</p>
-              </div>
-              <div className="bg-green-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Ορατοί χρήστες</p>
-                <p className="text-3xl font-bold text-green-600">{userStats.searchableUsers}</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">Μη ορατοί χρήστες</p>
-                <p className="text-3xl font-bold text-gray-600">{userStats.nonSearchableUsers}</p>
-              </div>
-            </div>
+          <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-100 py-2.5 px-4 flex items-center gap-6 flex-wrap">
+            <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">Στατιστικά</span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">Εγγεγραμμένοι</span>
+              <span className="text-lg font-bold text-blue-600">{userStats.totalUsers}</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">Ορατοί</span>
+              <span className="text-lg font-bold text-green-600">{userStats.searchableUsers}</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">Μη ορατοί</span>
+              <span className="text-lg font-bold text-gray-500">{userStats.nonSearchableUsers}</span>
+            </span>
           </div>
         )}
 
@@ -159,67 +160,70 @@ export default function UsersPage() {
         {/* Show user cards only for authenticated users */}
         {isAuthenticated && (
           <>
-            {/* Create public person profile banner — shown only to moderators and admins */}
-            {(user?.role === 'moderator' || user?.role === 'admin') && (
-              <div className="mb-6 bg-white rounded-lg shadow-sm border border-purple-200 p-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🧑</span>
-                  <div>
-                    <p className="font-semibold text-gray-800">Δημιουργία Δημόσιου Προφίλ Προσώπου</p>
-                    <p className="text-sm text-gray-500">Ως συντονιστής, μπορείτε να δημιουργήσετε δημόσια προφίλ για αξιόλογα πρόσωπα της κοινότητας.</p>
+            {/* Role-based banners — grouped together */}
+            <div className="mb-6 flex flex-col gap-3">
+              {/* Create public person profile banner — shown only to moderators and admins */}
+              {(user?.role === 'moderator' || user?.role === 'admin') && (
+                <div className="bg-white rounded-lg shadow-sm border border-purple-200 px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🧑</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">Δημιουργία Δημόσιου Προφίλ</p>
+                      <p className="text-xs text-gray-500">Δημιουργήστε προφίλ για αξιόλογα πρόσωπα της κοινότητας.</p>
+                    </div>
                   </div>
-                </div>
-                <Link
-                  href="/admin/persons/create"
-                  className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
-                >
-                  Δημιουργία Προφίλ →
-                </Link>
-              </div>
-            )}
-
-            {/* Candidate dashboard banner — shown only to users with candidate role */}
-            {user?.role === 'candidate' && (
-              <div className="mb-6 bg-white rounded-lg shadow-sm border border-green-200 p-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🏛️</span>
-                  <div>
-                    <p className="font-semibold text-gray-800">Πίνακας Υποψηφίου</p>
-                    <p className="text-sm text-gray-500">Διαχειριστείτε το προφίλ σας ως ανεξάρτητος υποψήφιος.</p>
-                  </div>
-                </div>
-                <Link
-                  href="/candidates/dashboard"
-                  className="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
-                >
-                  Πίνακας →
-                </Link>
-              </div>
-            )}
-
-            {/* Become a candidate banner — shown to authenticated users who are not yet candidates */}
-            {!['candidate', 'admin', 'moderator'].includes(user?.role) && (
-              <div className="mb-6 bg-white rounded-lg shadow-sm border border-blue-200 p-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">🗳️</span>
-                  <div>
-                    <p className="font-semibold text-gray-800">Γίνετε Ανεξάρτητος Υποψήφιος</p>
-                    <p className="text-sm text-gray-500">Υποβάλετε αίτηση για να συμμετάσχετε ως υποψήφιος στην πλατφόρμα.</p>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
                   <Link
-                    href="/become-a-candidate"
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md transition-colors whitespace-nowrap"
+                    href="/admin/persons/create"
+                    className="inline-flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
                   >
-                    Υποβολή Αίτησης →
-                  </Link>
-                  <Link href="/my-application" className="text-xs text-blue-500 hover:underline">
-                    Έχετε ήδη υποβάλει αίτηση; Δείτε την κατάστασή της →
+                    Δημιουργία →
                   </Link>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Candidate dashboard banner — shown only to users with candidate role */}
+              {user?.role === 'candidate' && (
+                <div className="bg-white rounded-lg shadow-sm border border-green-200 px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🏛️</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">Πίνακας Υποψηφίου</p>
+                      <p className="text-xs text-gray-500">Διαχειριστείτε το προφίλ σας ως ανεξάρτητος υποψήφιος.</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/candidates/dashboard"
+                    className="inline-flex items-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
+                  >
+                    Πίνακας →
+                  </Link>
+                </div>
+              )}
+
+              {/* Become a candidate banner — shown to authenticated users who are not yet candidates */}
+              {!['candidate', 'admin', 'moderator'].includes(user?.role) && (
+                <div className="bg-white rounded-lg shadow-sm border border-blue-200 px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🗳️</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">Γίνετε Ανεξάρτητος Υποψήφιος</p>
+                      <p className="text-xs text-gray-500">Υποβάλετε αίτηση για να συμμετάσχετε ως υποψήφιος.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    <Link
+                      href="/become-a-candidate"
+                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
+                    >
+                      Υποβολή →
+                    </Link>
+                    <Link href="/my-application" className="text-xs text-blue-500 hover:underline" aria-label="Δείτε την κατάσταση της αίτησής σας">
+                       Δείτε την αίτησή σας →
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Search using FilterBar */}
             <FilterBar
