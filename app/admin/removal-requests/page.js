@@ -1,0 +1,188 @@
+'use client';
+
+import { useState } from 'react';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import { personRemovalRequestAPI } from '@/lib/api';
+import AdminTable from '@/components/admin/AdminTable';
+import Pagination from '@/components/Pagination';
+
+const STATUS_COLORS = {
+  pending: 'bg-yellow-100 text-yellow-800',
+  approved: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800',
+};
+
+function RemovalRequestsContent() {
+  const [statusFilter, setStatusFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedRequest, setSelectedRequest] = useState(null);
+  const [adminNotes, setAdminNotes] = useState('');
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSuccess, setReviewSuccess] = useState('');
+
+  const { data: requests, loading, error, refetch } = useAsyncData(
+    async () => {
+      const params = { page, limit: 20 };
+      if (statusFilter) params.status = statusFilter;
+      const res = await personRemovalRequestAPI.getAll(params);
+      if (res.success) {
+        if (res.data.pagination) setTotalPages(res.data.pagination.totalPages);
+        return res.data.requests || [];
+      }
+      return [];
+    },
+    [statusFilter, page],
+    { initialData: [] }
+  );
+
+  const handleReview = async (action) => {
+    if (!selectedRequest) return;
+    setReviewLoading(true);
+    setReviewError('');
+    setReviewSuccess('');
+    try {
+      const res = await personRemovalRequestAPI.review(selectedRequest.id, { action, adminNotes });
+      if (res.success) {
+        setReviewSuccess(`Request ${action === 'approve' ? 'approved' : 'rejected'} successfully.`);
+        setSelectedRequest(res.data.request);
+        refetch();
+      } else {
+        setReviewError(res.message || 'Review failed.');
+      }
+    } catch {
+      setReviewError('Review failed.');
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const columns = [
+    { key: 'id', label: 'ID' },
+    { key: 'person', label: 'Person', render: (row) => row.publicPersonProfile ? `${row.publicPersonProfile.firstName} ${row.publicPersonProfile.lastName}` : '-' },
+    { key: 'requesterName', label: 'Requester Name' },
+    { key: 'requesterEmail', label: 'Email' },
+    {
+      key: 'status',
+      label: 'Status',
+      render: (row) => (
+        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[row.status] || 'bg-gray-100 text-gray-700'}`}>
+          {row.status}
+        </span>
+      )
+    },
+    { key: 'createdAt', label: 'Submitted', render: (row) => new Date(row.createdAt).toLocaleDateString() },
+  ];
+
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">Removal Requests</h1>
+
+      {/* Filters */}
+      <div className="mb-4 flex gap-3">
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Filter by status"
+        >
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+        </select>
+      </div>
+
+      {error && (
+        <div role="alert" className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md text-red-700">
+          Failed to load removal requests.
+        </div>
+      )}
+
+      {loading ? (
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-12 bg-gray-100 rounded animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <>
+          <AdminTable
+            columns={columns}
+            data={requests}
+            onRowClick={(row) => { setSelectedRequest(row); setAdminNotes(row.adminNotes || ''); setReviewError(''); setReviewSuccess(''); }}
+          />
+          <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      )}
+
+      {/* Detail Panel */}
+      {selectedRequest && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="detail-title">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-start mb-4">
+              <h2 id="detail-title" className="text-xl font-bold text-gray-900">Removal Request #{selectedRequest.id}</h2>
+              <button onClick={() => setSelectedRequest(null)} className="text-gray-400 hover:text-gray-600" aria-label="Close">
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <dl className="grid grid-cols-2 gap-4 mb-6 text-sm">
+              <div><dt className="font-medium text-gray-500">Person</dt><dd>{selectedRequest.publicPersonProfile ? `${selectedRequest.publicPersonProfile.firstName} ${selectedRequest.publicPersonProfile.lastName}` : '-'}</dd></div>
+              <div><dt className="font-medium text-gray-500">Status</dt><dd><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[selectedRequest.status] || 'bg-gray-100 text-gray-700'}`}>{selectedRequest.status}</span></dd></div>
+              <div><dt className="font-medium text-gray-500">Requester</dt><dd>{selectedRequest.requesterName}</dd></div>
+              <div><dt className="font-medium text-gray-500">Email</dt><dd>{selectedRequest.requesterEmail}</dd></div>
+              <div className="col-span-2"><dt className="font-medium text-gray-500">Message</dt><dd className="mt-1 whitespace-pre-wrap">{selectedRequest.message}</dd></div>
+            </dl>
+
+            {selectedRequest.status === 'pending' && (
+              <div className="border-t pt-4">
+                <label htmlFor="adminNotes" className="block text-sm font-medium text-gray-700 mb-1">Admin Notes (optional)</label>
+                <textarea
+                  id="adminNotes"
+                  rows={3}
+                  value={adminNotes}
+                  onChange={(e) => setAdminNotes(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                  placeholder="Internal notes..."
+                />
+
+                {reviewError && <div role="alert" className="mb-3 p-3 bg-red-50 border border-red-200 rounded text-red-700 text-sm">{reviewError}</div>}
+                {reviewSuccess && <div role="status" className="mb-3 p-3 bg-green-50 border border-green-200 rounded text-green-700 text-sm">{reviewSuccess}</div>}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleReview('approve')}
+                    disabled={reviewLoading}
+                    className="flex-1 bg-green-600 text-white font-medium py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
+                  >
+                    {reviewLoading ? 'Processing...' : 'Approve'}
+                  </button>
+                  <button
+                    onClick={() => handleReview('reject')}
+                    disabled={reviewLoading}
+                    className="flex-1 bg-red-600 text-white font-medium py-2 px-4 rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
+                  >
+                    {reviewLoading ? 'Processing...' : 'Reject'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function RemovalRequestsPage() {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'moderator']}>
+      <RemovalRequestsContent />
+    </ProtectedRoute>
+  );
+}
