@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { FunnelIcon } from '@heroicons/react/24/outline';
 
 /**
@@ -15,6 +16,8 @@ export default function FilterBar({
   filterConfig = [],
   className = '',
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+
   if (filterConfig.length === 0) {
     return null;
   }
@@ -27,21 +30,24 @@ export default function FilterBar({
 
   return (
     <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-      {/* Static funnel label with active count badge */}
-      <div className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 bg-white">
+      {/* Toggle button — always visible */}
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+        aria-expanded={isOpen}
+        aria-label="Φίλτρα"
+      >
         <FunnelIcon className="h-5 w-5 text-gray-600" />
-        <span className="text-sm font-medium text-gray-700">
-          Φίλτρα
-          {activeFilterCount > 0 && (
-            <span className="ml-2 inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full">
-              {activeFilterCount}
-            </span>
-          )}
-        </span>
-      </div>
+        {activeFilterCount > 0 && (
+          <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full">
+            {activeFilterCount}
+          </span>
+        )}
+      </button>
 
-      {/* Inline filters */}
-      {filterConfig.map((config) => {
+      {/* Inline filters — only shown when open */}
+      {isOpen && filterConfig.map((config) => {
         const { name, label, type = 'select', options = [], placeholder } = config;
 
         if (type === 'select') {
