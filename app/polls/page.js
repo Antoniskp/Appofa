@@ -85,7 +85,7 @@ export default function PollsPage() {
               placeholder="Αναζήτηση δημοσκοπήσεων..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="flex-grow"
+              className="flex-grow max-w-md"
             />
             <FilterBar
               filters={filters}
