@@ -28,7 +28,7 @@ const Poll = sequelize.define('Poll', {
     defaultValue: []
   },
   type: {
-    type: DataTypes.ENUM('simple', 'complex'),
+    type: DataTypes.ENUM('simple', 'complex', 'binary'),
     defaultValue: 'simple',
     allowNull: false
   },

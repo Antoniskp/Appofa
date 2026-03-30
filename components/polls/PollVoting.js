@@ -149,7 +149,36 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       {/* Show options and voting button only if there are options */}
       {poll.options.length > 0 && (
         <>
-          {poll.type === 'simple' ? (
+          {poll.type === 'binary' ? (
+            // Binary poll — two prominent buttons, submit on click
+            <BinaryPollOptions
+              options={poll.options}
+              selectedOptionId={selectedOptionId}
+              isSubmitting={isSubmitting}
+              hasVoted={hasVoted}
+              onSelect={async (optionId) => {
+                setSelectedOptionId(optionId);
+                setIsSubmitting(true);
+                setError('');
+                setSuccess('');
+                try {
+                  const response = await pollAPI.vote(poll.id, optionId);
+                  if (response.success) {
+                    setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
+                    setHasVoted(true);
+                    setUserVote({ optionId });
+                    if (onVoteSuccess) {
+                      setTimeout(() => onVoteSuccess(), 1000);
+                    }
+                  }
+                } catch (err) {
+                  setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+                } finally {
+                  setIsSubmitting(false);
+                }
+              }}
+            />
+          ) : poll.type === 'simple' ? (
             // Simple poll - radio buttons
             <div className="space-y-3">
               {poll.options.map((option) => (
@@ -185,6 +214,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
             />
           )}
           
+          {poll.type !== 'binary' && (
           <div className="flex items-center gap-4 pt-4">
             <button
               onClick={handleSubmitVote}
@@ -200,11 +230,12 @@ export default function PollVoting({ poll, onVoteSuccess }) {
               </p>
             )}
           </div>
+          )}
         </>
       )}
       
-      {/* Add Option Form */}
-      {poll.allowUserContributions && user && (
+      {/* Add Option Form — hidden for binary polls */}
+      {poll.allowUserContributions && user && poll.type !== 'binary' && (
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
           {!showAddOption ? (
             <button
@@ -324,6 +355,49 @@ export default function PollVoting({ poll, onVoteSuccess }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Binary poll voting component — two large side-by-side buttons.
+ * Submits the vote immediately on click (single-click vote).
+ */
+function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, onSelect }) {
+  if (!options || options.length < 2) return null;
+  const [yesOpt, noOpt] = [options[0], options[1]];
+
+  const btnBase =
+    'flex-1 flex flex-col items-center justify-center gap-2 py-6 px-4 rounded-xl border-2 text-lg font-bold transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed';
+
+  return (
+    <div className="flex flex-col sm:flex-row gap-4">
+      <button
+        type="button"
+        disabled={isSubmitting}
+        onClick={() => onSelect(yesOpt.id)}
+        className={`${btnBase} ${
+          selectedOptionId === yesOpt.id
+            ? 'bg-green-500 border-green-500 text-white shadow-lg focus:ring-green-300'
+            : 'bg-white border-green-500 text-green-600 hover:bg-green-50 focus:ring-green-300'
+        }`}
+      >
+        {selectedOptionId === yesOpt.id && <CheckCircleIcon className="h-7 w-7" />}
+        {yesOpt.text}
+      </button>
+      <button
+        type="button"
+        disabled={isSubmitting}
+        onClick={() => onSelect(noOpt.id)}
+        className={`${btnBase} ${
+          selectedOptionId === noOpt.id
+            ? 'bg-red-500 border-red-500 text-white shadow-lg focus:ring-red-300'
+            : 'bg-white border-red-500 text-red-600 hover:bg-red-50 focus:ring-red-300'
+        }`}
+      >
+        {selectedOptionId === noOpt.id && <CheckCircleIcon className="h-7 w-7" />}
+        {noOpt.text}
+      </button>
     </div>
   );
 }
