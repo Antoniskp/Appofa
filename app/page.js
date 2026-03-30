@@ -133,10 +133,10 @@ export default function HomePage() {
       {/* Latest Videos Section */}
       <section className="bg-white">
         <div className="app-container py-16">
-          <h2 className="section-title">
-            Τελευταία{' '}
-            <Link href="/videos" className="hover:underline">
-              Βίντεο
+          <h2 className="section-title flex items-center gap-4">
+            Τελευταία Βίντεο
+            <Link href="/videos" className="btn-primary text-sm">
+              Δείτε όλα
             </Link>
           </h2>
           {videosLoading && (
@@ -172,10 +172,10 @@ export default function HomePage() {
       {/* Latest News Section */}
       <section className="bg-gray-50">
         <div className="app-container py-16">
-          <h2 className="section-title">
-            Τελευταίες{' '}
-            <Link href="/news" className="hover:underline">
-              Ειδήσεις
+          <h2 className="section-title flex items-center gap-4">
+            Τελευταίες Ειδήσεις
+            <Link href="/news" className="btn-primary text-sm">
+              Δείτε όλα
             </Link>
           </h2>
           {newsLoading && (
@@ -211,10 +211,10 @@ export default function HomePage() {
       {/* Latest Articles Section */}
       <section className="bg-white">
         <div className="app-container py-16">
-          <h2 className="section-title">
-            Τελευταία{' '}
-            <Link href="/articles" className="hover:underline">
-              Άρθρα
+          <h2 className="section-title flex items-center gap-4">
+            Τελευταία Άρθρα
+            <Link href="/articles" className="btn-primary text-sm">
+              Δείτε όλα
             </Link>
           </h2>
           {articlesLoading && (
@@ -250,10 +250,10 @@ export default function HomePage() {
       {/* Top Suggestions Section */}
       <section className="bg-gray-50">
         <div className="app-container py-16">
-          <h2 className="section-title">
-            Κορυφαίες{' '}
-            <Link href="/suggestions" className="hover:underline">
-              Προτάσεις
+          <h2 className="section-title flex items-center gap-4">
+            Κορυφαίες Προτάσεις
+            <Link href="/suggestions" className="btn-primary text-sm">
+              Δείτε όλα
             </Link>
           </h2>
           {suggestionsLoading && (
@@ -289,10 +289,10 @@ export default function HomePage() {
       {/* Biggest Polls Section */}
       <section className="bg-white">
         <div className="app-container py-16">
-          <h2 className="section-title">
-            Μεγαλύτερες{' '}
-            <Link href="/polls" className="hover:underline">
-              Ψηφοφορίες
+          <h2 className="section-title flex items-center gap-4">
+            Μεγαλύτερες Ψηφοφορίες
+            <Link href="/polls" className="btn-primary text-sm">
+              Δείτε όλα
             </Link>
           </h2>
           {pollsLoading && (
