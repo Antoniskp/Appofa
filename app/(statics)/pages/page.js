@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
+import { LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
@@ -22,243 +23,56 @@ export const metadata = {
   },
 };
 
-const groups = [
+const sections = [
   {
+    href: '/platform',
     title: 'Πλατφόρμα',
-    description: 'Σελίδες σχετικές με τη λειτουργία, τη χρήση και τους κανόνες της πλατφόρμας.',
-    categories: [
-      {
-        title: 'Πληροφορίες',
-        icon: '📖',
-        pages: [
-          {
-            href: '/about',
-            title: 'Σχετικά με εμάς',
-            description: 'Η ιστορία, το όραμα και η ομάδα πίσω από την πλατφόρμα Απόφαση.',
-          },
-          {
-            href: '/mission',
-            title: 'Αποστολή',
-            description: 'Η αποστολή και οι στόχοι μας για μια διαφανή και συμμετοχική κοινότητα.',
-          },
-          {
-            href: '/transparency',
-            title: 'Διαφάνεια',
-            description: 'Πώς λειτουργούμε, ποιες αρχές ακολουθούμε και πώς διαχειριζόμαστε το περιεχόμενο.',
-          },
-          {
-            href: '/categories',
-            title: 'Κατηγορίες',
-            description: 'Όλες οι κατηγορίες άρθρων, ειδήσεων και ψηφοφοριών. Προτείνετε νέες κατηγορίες μέσω GitHub.',
-          },
-          {
-            href: '/contact',
-            title: 'Επικοινωνία',
-            description: 'Στείλτε μας μήνυμα ή επικοινωνήστε μέσω Discord για άμεση βοήθεια.',
-          },
-        ],
-      },
-      {
-        title: 'Βοήθεια / Οδηγίες',
-        icon: '🛟',
-        pages: [
-          {
-            href: '/instructions',
-            title: 'Οδηγίες Χρήσης',
-            description: 'Οδηγός για νέους χρήστες: πώς να δημιουργήσετε λογαριασμό, άρθρο ή ψηφοφορία.',
-          },
-          {
-            href: '/faq',
-            title: 'Συχνές Ερωτήσεις (FAQ)',
-            description: 'Απαντήσεις στις πιο συχνές ερωτήσεις για τη χρήση της πλατφόρμας.',
-          },
-        ],
-      },
-      {
-        title: 'Συμμετοχή',
-        icon: '🤝',
-        pages: [
-          {
-            href: '/contribute',
-            title: 'Συνεισφορά',
-            description: 'Μάθετε πώς μπορείτε να βοηθήσετε στην ανάπτυξη και βελτίωση της πλατφόρμας.',
-          },
-          {
-            href: '/become-moderator',
-            title: 'Γίνε Συντονιστής',
-            description: 'Πληροφορίες για όσους ενδιαφέρονται να αναλάβουν ρόλο συντονιστή στην κοινότητα.',
-          },
-        ],
-      },
-      {
-        title: 'Νομικά / Κανόνες',
-        icon: '⚖️',
-        pages: [
-          {
-            href: '/terms',
-            title: 'Όροι Χρήσης',
-            description: 'Οι νομικοί όροι που διέπουν τη χρήση της πλατφόρμας.',
-          },
-          {
-            href: '/privacy',
-            title: 'Πολιτική Απορρήτου',
-            description: 'Πώς συλλέγουμε, χρησιμοποιούμε και προστατεύουμε τα δεδομένα σας.',
-          },
-          {
-            href: '/rules',
-            title: 'Κανόνες Κοινότητας',
-            description: 'Οι κανόνες συμπεριφοράς και περιεχομένου για όλα τα μέλη της κοινότητας.',
-          },
-        ],
-      },
-    ],
+    description:
+      'Πληροφορίες, κανόνες, συμμετοχή, οδηγίες χρήσης και νομικά θέματα για την πλατφόρμα Απόφαση.',
+    Icon: WrenchScrewdriverIcon,
+    color: 'text-blue-700',
+    bg: 'bg-blue-50',
   },
   {
-    title: 'Για τον Πολίτη',
-    description: 'Θεματικές σελίδες και πρακτικοί οδηγοί για τον πολίτη.',
-    categories: [
-      {
-        title: 'Θεματικές',
-        icon: '📰',
-        description: 'Ενημερωτικές σελίδες για θέματα που αφορούν την κοινότητα.',
-        pages: [
-          {
-            href: '/economy',
-            title: 'Οικονομία',
-            description: 'Βασικές έννοιες, τάσεις και ανάλυση της ελληνικής και παγκόσμιας οικονομίας.',
-          },
-          {
-            href: '/education',
-            title: 'Εκπαίδευση',
-            description: 'Το εκπαιδευτικό σύστημα, προκλήσεις και προτάσεις για τη βελτίωσή του.',
-          },
-          {
-            href: '/price-comparison',
-            title: 'Σύγκριση Τιμών',
-            description: 'Πληροφορίες και αναλύσεις για τις τιμές καταναλωτικών αγαθών στην Ελλάδα.',
-          },
-          {
-            href: '/car-transfer',
-            title: 'Αγορά & Μεταβίβαση Αυτοκινήτου',
-            description: 'Πλήρης οδηγός για αγορά, πώληση και μεταβίβαση αυτοκινήτου στην Ελλάδα — έγγραφα, κόστη, φόροι.',
-          },
-          {
-            href: '/boat-transfer',
-            title: 'Αγορά & Μεταβίβαση Σκάφους',
-            description: 'Πλήρης οδηγός για αγορά, πώληση και μεταβίβαση σκάφους αναψυχής στην Ελλάδα — νηολόγηση, έγγραφα, κόστη.',
-          },
-          {
-            href: '/property-transfer',
-            title: 'Αγορά & Μεταβίβαση Ακινήτου',
-            description: 'Πλήρης οδηγός για αγορά, πώληση και μεταβίβαση γης, κατοικίας ή κτιρίου στην Ελλάδα — συμβολαιογράφος, φόροι, Κτηματολόγιο.',
-          },
-          {
-            href: '/rental-guide',
-            title: 'Ενοίκιο & Μισθωτήριο',
-            description: 'Πώς συντάσσεις και δηλώνεις μισθωτήριο, δικαιώματα ενοικιαστή και ιδιοκτήτη, ηλεκτρονική δήλωση στην ΑΑΔΕ.',
-          },
-        ],
-      },
-      {
-        title: 'Οδηγοί Πολίτη',
-        icon: '🏛️',
-        description: 'Πρακτικοί οδηγοί για δημόσιες υπηρεσίες, εργασία, φορολογία και καθημερινές διαδικασίες στην Ελλάδα.',
-        pages: [
-          {
-            href: '/kep-services',
-            title: 'Υπηρεσίες ΚΕΠ',
-            description: 'Πλήρης οδηγός για τις υπηρεσίες των ΚΕΠ — έγγραφα, πιστοποιητικά, ηλεκτρονικές εναλλακτικές μέσω gov.gr.',
-          },
-          {
-            href: '/digital-services',
-            title: 'Ψηφιακές Υπηρεσίες Δημοσίου',
-            description: 'Οδηγός για τις ψηφιακές υπηρεσίες του Ελληνικού Δημοσίου — TAXISnet, myAADE, gov.gr, e-ΕΦΚΑ, ΕΡΓΑΝΗ, myHealth.',
-          },
-          {
-            href: '/taxation-guide',
-            title: 'Φορολογία Πολίτη',
-            description: 'Πώς υποβάλλεις φορολογική δήλωση, ΕΝΦΙΑ, τεκμήρια, φορολογικές κλίμακες — πρακτικός οδηγός.',
-          },
-          {
-            href: '/start-business',
-            title: 'Έναρξη Επιχείρησης',
-            description: 'Πώς ανοίγεις επιχείρηση στην Ελλάδα — νομικές μορφές (ΙΚΕ, ΕΠΕ, ΑΕ, ατομική), βήματα, κόστη, φορολογία.',
-          },
-          {
-            href: '/labor-market',
-            title: 'Αγορά Εργασίας',
-            description: 'Κατώτατος μισθός, εργασιακά δικαιώματα, άδειες, απόλυση, ωράριο — πρακτικός οδηγός για εργαζόμενους και εργοδότες.',
-          },
-          {
-            href: '/dypa-unemployment',
-            title: 'ΔΥΠΑ — Επίδομα Ανεργίας',
-            description: 'Επίδομα ανεργίας, εγγραφή στη ΔΥΠΑ, προγράμματα κατάρτισης και επιδοτούμενης απασχόλησης στην Ελλάδα.',
-          },
-          {
-            href: '/health-insurance',
-            title: 'ΕΟΠΥΥ & Ασφάλιση Υγείας',
-            description: 'Δικαιώματα ασφαλισμένου στον ΕΟΠΥΥ, προσωπικός γιατρός, παραπεμπτικά, φαρμακευτική κάλυψη, νοσοκομειακή περίθαλψη.',
-          },
-          {
-            href: '/driving-license',
-            title: 'Δίπλωμα Οδήγησης',
-            description: 'Κατηγορίες διπλώματος οδήγησης, βήματα για απόκτηση, κόστη, ανανέωση και ανάκτηση χαμένου διπλώματος στην Ελλάδα.',
-          },
-          {
-            href: '/consumer-rights',
-            title: 'Καταναλωτικά Δικαιώματα',
-            description: 'Δικαιώματα καταναλωτή στην Ελλάδα — επιστροφές, εγγυήσεις, αθέμιτες εμπορικές πρακτικές, Συνήγορος Καταναλωτή.',
-          },
-        ],
-      },
-    ],
+    href: '/citizen-help',
+    title: 'Βοήθεια Πολίτη',
+    description:
+      'Πρακτικοί οδηγοί για φορολογία, εργασία, μεταβιβάσεις ακινήτων, ψηφιακές υπηρεσίες και πολλά άλλα.',
+    Icon: LifebuoyIcon,
+    color: 'text-green-700',
+    bg: 'bg-green-50',
   },
 ];
 
 export default function PagesHubPage() {
   return (
-    <StaticPageLayout title="Σελίδες" maxWidth="max-w-5xl" showHelpfulLinks={false}>
-      <section>
-        <p className="text-xl text-gray-700 leading-relaxed">
-          Όλες οι πληροφορίες, οδηγίες και θεματικές ενότητες της πλατφόρμας Απόφαση σε κατηγορίες.
-        </p>
-      </section>
+    <StaticPageLayout title="Σελίδες" maxWidth="max-w-3xl" showHelpfulLinks={false}>
+      <p className="text-xl text-gray-700 leading-relaxed -mt-2">
+        Όλες οι πληροφορίες, οδηγίες και θεματικές ενότητες της πλατφόρμας Απόφαση.
+      </p>
 
-      {groups.map((group) => (
-        <div key={group.title}>
-          <div className="border-b-2 border-gray-200 pb-2 mb-6 mt-10">
-            <h2 className="text-2xl font-bold text-gray-900">{group.title}</h2>
-            <p className="text-gray-500 text-sm mt-1">{group.description}</p>
-          </div>
-
-          {group.categories.map((category) => (
-            <section key={category.title} className="mb-8">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-2xl" aria-hidden="true">{category.icon}</span>
-                <h3 className="text-xl font-semibold">{category.title}</h3>
-              </div>
-              {category.description && (
-                <p className="text-gray-600 mb-4 text-sm">{category.description}</p>
-              )}
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {category.pages.map((page) => (
-                  <Link
-                    key={page.href}
-                    href={page.href}
-                    className="block bg-white border border-gray-200 rounded-lg p-5 hover:border-blue-400 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none transition-all group"
-                  >
-                    <h4 className="font-semibold text-blue-900 group-hover:text-blue-600 mb-1 transition-colors flex items-center justify-between">
-                      {page.title}
-                      <span aria-hidden="true" className="text-gray-400 group-hover:text-blue-400 transition-colors">→</span>
-                    </h4>
-                    <p className="text-sm text-gray-600 leading-relaxed">{page.description}</p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
-      ))}
+      <div className="grid sm:grid-cols-2 gap-6 mt-8">
+        {sections.map(({ href, title, description, Icon, color, bg }) => (
+          <Link
+            key={href}
+            href={href}
+            className="flex flex-col gap-4 border border-gray-200 rounded-xl p-6 hover:border-blue-400 hover:shadow-md transition-all group bg-white"
+          >
+            <div className={`w-12 h-12 rounded-lg ${bg} flex items-center justify-center`}>
+              <Icon className={`h-6 w-6 ${color}`} aria-hidden="true" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors flex items-center justify-between">
+                {title}
+                <span aria-hidden="true" className="text-gray-400 group-hover:text-blue-400">
+                  →
+                </span>
+              </h2>
+              <p className="text-sm text-gray-600 mt-1 leading-relaxed">{description}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
     </StaticPageLayout>
   );
 }
