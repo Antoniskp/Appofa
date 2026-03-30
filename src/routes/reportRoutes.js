@@ -7,8 +7,8 @@ const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
-// Public: submit report
-router.post('/', createLimiter, optionalAuthMiddleware, csrfProtection, reportController.submitReport);
+// Public: submit report (no csrfProtection — unauthenticated endpoint)
+router.post('/', createLimiter, optionalAuthMiddleware, reportController.submitReport);
 
 // Admin/Moderator: list reports
 router.get('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), reportController.getReports);

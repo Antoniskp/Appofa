@@ -68,7 +68,7 @@ function ReportsContent() {
     { key: 'id', label: 'ID' },
     { key: 'contentType', label: 'Content Type' },
     { key: 'contentId', label: 'Content ID' },
-    { key: 'category', label: 'Category', render: (row) => row.category.replace('_', ' ') },
+    { key: 'category', label: 'Category', render: (row) => row.category.replace(/_/g, ' ') },
     {
       key: 'reporter',
       label: 'Reporter',

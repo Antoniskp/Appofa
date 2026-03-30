@@ -7,8 +7,8 @@ const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
-// Public: submit removal request
-router.post('/', createLimiter, optionalAuthMiddleware, csrfProtection, personRemovalRequestController.submitRemovalRequest);
+// Public: submit removal request (no csrfProtection — unauthenticated endpoint)
+router.post('/', createLimiter, optionalAuthMiddleware, personRemovalRequestController.submitRemovalRequest);
 
 // Admin/Moderator: list requests
 router.get('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personRemovalRequestController.getRemovalRequests);
