@@ -35,11 +35,13 @@ export default function PollsPage() {
   });
 
   const [categoryCounts, setCategoryCounts] = useState({});
+  const [countsLoaded, setCountsLoaded] = useState(false);
 
   useEffect(() => {
     pollAPI.getCategoryCounts({ status: 'published' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
-      .catch((err) => console.error('Failed to fetch poll category counts:', err));
+      .catch((err) => console.error('Failed to fetch poll category counts:', err))
+      .finally(() => setCountsLoaded(true));
   }, []);
 
   const { data: polls, loading, error } = useAsyncData(
@@ -99,6 +101,7 @@ export default function PollsPage() {
             selected={filters.category}
             onSelect={(cat) => updateFilter('category', cat)}
             counts={categoryCounts}
+            countsLoaded={countsLoaded}
           />
           <div className="flex gap-4">
             <select

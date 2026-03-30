@@ -1,10 +1,20 @@
 import React from 'react';
 
-export default function CategoryPills({ categories, selected, onSelect, counts = {}, className = '' }) {
-  const hasCounts = counts && Object.keys(counts).length > 0;
+export default function CategoryPills({ categories, selected, onSelect, counts = {}, countsLoaded = false, className = '' }) {
+  const hasCounts = countsLoaded && counts && Object.keys(counts).length > 0;
   const visibleCategories = hasCounts
     ? categories.filter((cat) => (counts[cat.value || cat] ?? 0) > 0)
     : categories;
+
+  if (!countsLoaded) {
+    return (
+      <div className={`flex flex-wrap gap-2 ${className}`}>
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-8 w-20 rounded-full bg-gray-200 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>

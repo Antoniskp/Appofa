@@ -34,11 +34,13 @@ export default function ArticlesPage() {
   });
 
   const [categoryCounts, setCategoryCounts] = useState({});
+  const [countsLoaded, setCountsLoaded] = useState(false);
 
   useEffect(() => {
     articleAPI.getCategoryCounts({ type: 'articles', status: 'published' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
-      .catch((err) => console.error('Failed to fetch article category counts:', err));
+      .catch((err) => console.error('Failed to fetch article category counts:', err))
+      .finally(() => setCountsLoaded(true));
   }, []);
 
   // For search input
@@ -114,6 +116,7 @@ export default function ArticlesPage() {
             selected={filters.category}
             onSelect={handleCategorySelect}
             counts={categoryCounts}
+            countsLoaded={countsLoaded}
           />
         </div>
 
