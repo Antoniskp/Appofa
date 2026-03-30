@@ -10,6 +10,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import { positionLabel } from '@/lib/utils/candidatePositions';
+import ReportButton from '@/components/ReportButton';
 
 const SOCIAL_LINK_LABELS = {
   website: 'Ιστοσελίδα',
@@ -103,6 +104,7 @@ export default function PersonProfilePage({ params }) {
                       Επεξεργασία
                     </Link>
                   )}
+                  <ReportButton contentType="person" contentId={profile.id} />
                 </div>
                 {profile.location && (
                   <p className="mt-1 flex items-center gap-1 text-gray-500">

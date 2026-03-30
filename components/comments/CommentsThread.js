@@ -5,6 +5,7 @@ import { commentAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import CommentForm from './CommentForm';
 import { formatDistanceToNow } from 'date-fns';
+import ReportButton from '@/components/ReportButton';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 const MAX_DEPTH = 5;
@@ -126,7 +127,7 @@ function CommentItem({
           )}
         </div>
         {!isDeleted && user && (
-          <div className="flex gap-3 mt-1 flex-wrap">
+          <div className="flex gap-3 mt-1 flex-wrap items-center">
             {depth < MAX_DEPTH && (
               <button
                 className="text-xs text-blue-500 hover:underline"
@@ -157,6 +158,7 @@ function CommentItem({
                 )}
               </>
             )}
+            <ReportButton contentType="comment" contentId={comment.id} />
           </div>
         )}
         {showReplyForm && (

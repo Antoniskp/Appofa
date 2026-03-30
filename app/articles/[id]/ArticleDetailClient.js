@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import VideoEmbed from '@/components/articles/VideoEmbed';
+import ReportButton from '@/components/ReportButton';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -295,6 +296,7 @@ export default function ArticleDetailPage() {
                     tooltip="Εκτύπωση"
                     onClick={() => window.print()}
                   />
+                  <ReportButton contentType="article" contentId={article.id} />
                 </div>
               </div>
             </div>

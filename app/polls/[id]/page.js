@@ -28,6 +28,7 @@ import ConfirmDialog from '@/components/ConfirmDialog';
 import { useToast } from '@/components/ToastProvider';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
+import ReportButton from '@/components/ReportButton';
 
 export default function PollDetailPage() {
   const params = useParams();
@@ -336,6 +337,7 @@ export default function PollDetailPage() {
                   tooltip="Εκτύπωση"
                   onClick={() => window.print()}
                 />
+                <ReportButton contentType="poll" contentId={poll.id} />
               </div>
             </div>
           </div>
