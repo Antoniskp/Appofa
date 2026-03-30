@@ -1,11 +1,6 @@
 import React from 'react';
 
 export default function CategoryPills({ categories, selected, onSelect, counts = {}, countsLoaded = false, className = '' }) {
-  const hasCounts = countsLoaded && counts && Object.keys(counts).length > 0;
-  const visibleCategories = hasCounts
-    ? categories.filter((cat) => (counts[cat.value || cat] ?? 0) > 0)
-    : categories;
-
   if (!countsLoaded) {
     return (
       <div className={`flex flex-wrap gap-2 ${className}`}>
@@ -15,6 +10,11 @@ export default function CategoryPills({ categories, selected, onSelect, counts =
       </div>
     );
   }
+
+  const hasCounts = counts && categories.some((cat) => (counts[cat.value || cat] ?? 0) > 0);
+  const visibleCategories = hasCounts
+    ? categories.filter((cat) => (counts[cat.value || cat] ?? 0) > 0)
+    : [];
 
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>

@@ -1586,7 +1586,9 @@ const getCategoryCounts = async (queryParams = {}) => {
 
     const counts = {};
     rows.forEach((row) => {
-      counts[row.category] = parseInt(row.count, 10);
+      if (row.category && row.category.trim()) {
+        counts[row.category] = parseInt(row.count, 10);
+      }
     });
 
     return { success: true, data: { counts } };
