@@ -33,11 +33,13 @@ export default function NewsPage() {
   });
 
   const [categoryCounts, setCategoryCounts] = useState({});
+  const [countsLoaded, setCountsLoaded] = useState(false);
 
   useEffect(() => {
     articleAPI.getCategoryCounts({ type: 'news', status: 'published' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
-      .catch((err) => console.error('Failed to fetch news category counts:', err));
+      .catch((err) => console.error('Failed to fetch news category counts:', err))
+      .finally(() => setCountsLoaded(true));
   }, []);
 
   // For search input
@@ -113,6 +115,7 @@ export default function NewsPage() {
             selected={filters.category}
             onSelect={handleCategorySelect}
             counts={categoryCounts}
+            countsLoaded={countsLoaded}
           />
         </div>
 
