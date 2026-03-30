@@ -133,7 +133,12 @@ export default function HomePage() {
       {/* Latest Videos Section */}
       <section className="bg-white">
         <div className="app-container py-16">
-          <h2 className="section-title">Τελευταία Βίντεο</h2>
+          <h2 className="section-title">
+            Τελευταία{' '}
+            <Link href="/videos" className="hover:underline">
+              Βίντεο
+            </Link>
+          </h2>
           {videosLoading && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <SkeletonLoader type="card" count={6} variant="grid" />
@@ -155,18 +160,11 @@ export default function HomePage() {
             />
           )}
           {videos.length > 0 && (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                {videos.map((video) => (
-                  <VideoThumbnailCard key={video.id} article={video} />
-                ))}
-              </div>
-              <div className="text-center mt-12">
-                <Link href="/videos" className="btn-primary">
-                  Όλα τα βίντεο
-                </Link>
-              </div>
-            </>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+              {videos.map((video) => (
+                <VideoThumbnailCard key={video.id} article={video} />
+              ))}
+            </div>
           )}
         </div>
       </section>
@@ -174,7 +172,12 @@ export default function HomePage() {
       {/* Latest News Section */}
       <section className="bg-gray-50">
         <div className="app-container py-16">
-          <h2 className="section-title">Τελευταίες Ειδήσεις</h2>
+          <h2 className="section-title">
+            Τελευταίες{' '}
+            <Link href="/news" className="hover:underline">
+              Ειδήσεις
+            </Link>
+          </h2>
           {newsLoading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <SkeletonLoader type="card" count={3} variant="grid" />
@@ -196,18 +199,11 @@ export default function HomePage() {
             />
           )}
           {latestNews.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {latestNews.map((article) => (
-                  <ArticleCard key={article.id} article={article} variant="grid" />
-                ))}
-              </div>
-              <div className="text-center mt-12">
-                <Link href="/news" className="btn-primary">
-                  Όλες οι ειδήσεις
-                </Link>
-              </div>
-            </>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {latestNews.map((article) => (
+                <ArticleCard key={article.id} article={article} variant="grid" />
+              ))}
+            </div>
           )}
         </div>
       </section>
@@ -215,7 +211,12 @@ export default function HomePage() {
       {/* Latest Articles Section */}
       <section className="bg-white">
         <div className="app-container py-16">
-          <h2 className="section-title">Τελευταία Άρθρα</h2>
+          <h2 className="section-title">
+            Τελευταία{' '}
+            <Link href="/articles" className="hover:underline">
+              Άρθρα
+            </Link>
+          </h2>
           {articlesLoading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <SkeletonLoader type="card" count={3} variant="grid" />
@@ -237,18 +238,11 @@ export default function HomePage() {
             />
           )}
           {latestArticles.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {latestArticles.map((article) => (
-                  <ArticleCard key={article.id} article={article} variant="grid" />
-                ))}
-              </div>
-              <div className="text-center mt-12">
-                <Link href="/articles" className="btn-primary">
-                  Όλα τα άρθρα
-                </Link>
-              </div>
-            </>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {latestArticles.map((article) => (
+                <ArticleCard key={article.id} article={article} variant="grid" />
+              ))}
+            </div>
           )}
         </div>
       </section>
@@ -256,7 +250,12 @@ export default function HomePage() {
       {/* Top Suggestions Section */}
       <section className="bg-gray-50">
         <div className="app-container py-16">
-          <h2 className="section-title">Κορυφαίες Προτάσεις</h2>
+          <h2 className="section-title">
+            Κορυφαίες{' '}
+            <Link href="/suggestions" className="hover:underline">
+              Προτάσεις
+            </Link>
+          </h2>
           {suggestionsLoading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <SkeletonLoader type="card" count={3} variant="grid" />
@@ -278,18 +277,11 @@ export default function HomePage() {
             />
           )}
           {suggestions.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {suggestions.map((suggestion) => (
-                  <SuggestionCard key={suggestion.id} suggestion={suggestion} />
-                ))}
-              </div>
-              <div className="text-center mt-12">
-                <Link href="/suggestions" className="btn-primary">
-                  Όλες οι προτάσεις
-                </Link>
-              </div>
-            </>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {suggestions.map((suggestion) => (
+                <SuggestionCard key={suggestion.id} suggestion={suggestion} />
+              ))}
+            </div>
           )}
         </div>
       </section>
@@ -297,7 +289,12 @@ export default function HomePage() {
       {/* Biggest Polls Section */}
       <section className="bg-white">
         <div className="app-container py-16">
-          <h2 className="section-title">Μεγαλύτερες Ψηφοφορίες</h2>
+          <h2 className="section-title">
+            Μεγαλύτερες{' '}
+            <Link href="/polls" className="hover:underline">
+              Ψηφοφορίες
+            </Link>
+          </h2>
           {pollsLoading && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <SkeletonLoader type="card" count={3} variant="grid" />
@@ -319,21 +316,14 @@ export default function HomePage() {
             />
           )}
           {polls.length > 0 && (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {polls
-                  .sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0))
-                  .slice(0, 3)
-                  .map((poll) => (
-                    <PollCard key={poll.id} poll={poll} variant="grid" />
-                  ))}
-              </div>
-              <div className="text-center mt-12">
-                <Link href="/polls" className="btn-primary">
-                  Όλες οι ψηφοφορίες
-                </Link>
-              </div>
-            </>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {polls
+                .sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0))
+                .slice(0, 3)
+                .map((poll) => (
+                  <PollCard key={poll.id} poll={poll} variant="grid" />
+                ))}
+            </div>
           )}
         </div>
       </section>
