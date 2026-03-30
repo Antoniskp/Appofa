@@ -16,6 +16,7 @@ import {
   ComputerDesktopIcon,
   CurrencyEuroIcon,
   UserCircleIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -89,6 +90,12 @@ const categories = [
         label: 'Αμοιβές Αξιωματούχων',
         description: 'Μισθοί & παροχές ΠΜ, Υπουργών, Βουλευτών, Περιφερειαρχών, Δημάρχων',
         Icon: CurrencyEuroIcon,
+      },
+      {
+        href: '/citizen-help/government-positions',
+        label: 'Κυβερνητικές Θέσεις',
+        description: 'Ποιος κατέχει ποια θέση — Πρόεδρος, ΠΜ, Υπουργοί',
+        Icon: UserGroupIcon,
       },
     ],
   },
