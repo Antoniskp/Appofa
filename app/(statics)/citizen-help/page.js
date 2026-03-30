@@ -17,6 +17,7 @@ import {
   CurrencyEuroIcon,
   UserCircleIcon,
   UserGroupIcon,
+  MapIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -96,6 +97,12 @@ const categories = [
         label: 'Κυβερνητικές Θέσεις',
         description: 'Ποιος κατέχει ποια θέση — Πρόεδρος, ΠΜ, Υπουργοί',
         Icon: UserGroupIcon,
+      },
+      {
+        href: '/citizen-help/prefecture-seats',
+        label: 'Έδρες ανά Περιφέρεια',
+        description: 'Πόσοι βουλευτές εκλέγονται σε κάθε εκλογική περιφέρεια',
+        Icon: MapIcon,
       },
     ],
   },
