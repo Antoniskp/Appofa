@@ -194,6 +194,11 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   
   return (
     <div className="space-y-6">
+      {/* Binary poll — special split-bar view */}
+      {poll.type === 'binary' && options.length === 2 && (
+        <BinarySplitBar options={optionsWithStats} totalVotes={totalVotes} />
+      )}
+
       {/* Chart Type Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
@@ -331,6 +336,58 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Split-bar result view for binary polls.
+ * Shows a full-width horizontal bar split proportionally between the two options.
+ */
+function BinarySplitBar({ options, totalVotes }) {
+  // Display in original order (order 0 = yes/agree, order 1 = no/disagree)
+  const sorted = [...options].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  const [opt1, opt2] = sorted;
+
+  const pct1 = totalVotes > 0 ? parseFloat(opt1.percentage) : 50;
+  const pct2 = totalVotes > 0 ? parseFloat(opt2.percentage) : 50;
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-6">
+      <h3 className="text-base font-semibold text-gray-700 mb-4 text-center">Αποτέλεσμα</h3>
+
+      {/* Labels */}
+      <div className="flex justify-between text-sm font-medium mb-2">
+        <span className="text-green-600">{opt1.text}</span>
+        <span className="text-red-600">{opt2.text}</span>
+      </div>
+
+      {/* Split bar */}
+      <div className="flex w-full h-8 rounded-full overflow-hidden">
+        <div
+          className="bg-green-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
+          style={{ width: `${pct1}%` }}
+        >
+          {pct1 > 8 && `${pct1}%`}
+        </div>
+        <div
+          className="bg-red-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
+          style={{ width: `${pct2}%` }}
+        >
+          {pct2 > 8 && `${pct2}%`}
+        </div>
+      </div>
+
+      {/* Percentages below */}
+      <div className="flex justify-between text-sm mt-2">
+        <span className="font-bold text-green-600">{pct1}%</span>
+        <span className="font-bold text-red-600">{pct2}%</span>
+      </div>
+
+      {/* Total votes */}
+      <div className="text-center text-sm text-gray-500 mt-3">
+        {totalVotes} {totalVotes === 1 ? 'ψήφος' : 'ψήφοι'} συνολικά
       </div>
     </div>
   );

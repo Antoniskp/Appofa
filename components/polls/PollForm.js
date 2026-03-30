@@ -35,6 +35,7 @@ export default function PollForm({
     category: '',
     tags: [],
     type: 'simple',
+    binaryStyle: 'yes_no',
     visibility: 'public',
     resultsVisibility: 'after_vote',
     allowUserContributions: false,
@@ -63,6 +64,7 @@ export default function PollForm({
         category: poll.category || '',
         tags: Array.isArray(poll.tags) ? poll.tags : [],
         type: poll.type || 'simple',
+        binaryStyle: 'yes_no',
         visibility: poll.visibility || 'public',
         resultsVisibility: poll.resultsVisibility || 'after_vote',
         allowUserContributions: Boolean(poll.allowUserContributions),
@@ -164,17 +166,25 @@ export default function PollForm({
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Filter out empty options
-    const validOptions = options.filter(opt => opt.text.trim() !== '');
-    
-    // Require at least 2 options unless user contributions are allowed
-    const minOptions = formData.allowUserContributions ? 0 : 2;
-    if (validOptions.length < minOptions) {
-      // Greek grammar: 0 and 2+ use plural 'επιλογές'
-      alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} επιλογές`);
-      return;
+    // Binary polls have auto-created options — skip options validation
+    if (formData.type !== 'binary') {
+      // Filter out empty options
+      const validOptions = options.filter(opt => opt.text.trim() !== '');
+      
+      // Require at least 2 options unless user contributions are allowed
+      const minOptions = formData.allowUserContributions ? 0 : 2;
+      if (validOptions.length < minOptions) {
+        // Greek grammar: 0 and 2+ use plural 'επιλογές'
+        alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} επιλογές`);
+        return;
+      }
     }
     
+    // Filter out empty options for non-binary polls
+    const validOptions = formData.type !== 'binary'
+      ? options.filter(opt => opt.text.trim() !== '')
+      : [];
+
     // Parse tags from comma-separated string to array
     const payload = {
       ...formData,
@@ -257,9 +267,27 @@ export default function PollForm({
               options={[
                 { value: 'simple', label: 'Απλή' },
                 { value: 'complex', label: 'Σύνθετη' },
+                { value: 'binary', label: 'Δυαδική (Ναι/Όχι)' },
               ]}
             />
           </div>
+
+          {formData.type === 'binary' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Στυλ Δυαδικής Δημοσκόπησης
+              </label>
+              <FormSelect
+                name="binaryStyle"
+                value={formData.binaryStyle}
+                onChange={handleInputChange}
+                options={[
+                  { value: 'yes_no', label: 'Ναι / Όχι' },
+                  { value: 'agree_disagree', label: 'Συμφωνώ / Διαφωνώ' },
+                ]}
+              />
+            </div>
+          )}
 
           <FormSelect
             name="visibility"
@@ -380,7 +408,8 @@ export default function PollForm({
         </div>
       </div>
 
-      {/* Poll Options */}
+      {/* Poll Options — hidden for binary polls (options are auto-created) */}
+      {formData.type !== 'binary' && (
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Επιλογές Δημοσκόπησης</h3>
 
@@ -495,6 +524,7 @@ export default function PollForm({
           </button>
         </div>
       </div>
+      )}
 
       {/* Submit Buttons */}
       <div className="flex gap-4">

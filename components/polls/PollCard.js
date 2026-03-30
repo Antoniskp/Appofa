@@ -63,6 +63,8 @@ export default function PollCard({ poll, variant = 'grid' }) {
         return <Badge variant="primary">Απλή</Badge>;
       case 'complex':
         return <Badge variant="purple">Σύνθετη</Badge>;
+      case 'binary':
+        return <Badge variant="success">Δυαδική</Badge>;
       default:
         return <Badge variant="secondary">{type}</Badge>;
     }

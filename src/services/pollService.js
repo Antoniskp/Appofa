@@ -16,7 +16,8 @@ const {
 // Constants
 // ---------------------------------------------------------------------------
 
-const POLL_TYPES = ['simple', 'complex'];
+const POLL_TYPES = ['simple', 'complex', 'binary'];
+const BINARY_STYLES = ['yes_no', 'agree_disagree'];
 const POLL_VISIBILITIES = ['public', 'private', 'locals_only'];
 const RESULTS_VISIBILITIES = ['always', 'after_vote', 'after_deadline'];
 const POLL_STATUSES = ['active', 'closed', 'archived'];
@@ -98,6 +99,7 @@ const createPoll = async (userId, pollData) => {
       category,
       tags,
       type,
+      binaryStyle,
       allowUserContributions,
       allowUnauthenticatedVotes,
       visibility,
@@ -217,9 +219,11 @@ const createPoll = async (userId, pollData) => {
     }
 
     // Validate options
+    // Binary polls auto-create options; skip the min-options check
+    const isBinary = typeResult.value === 'binary';
     // If user contributions are allowed, poll can be created with 0 options
-    const minOptionsRequired = allowUserContributionsResult.value ? 0 : 2;
-    if (!Array.isArray(options) || options.length < minOptionsRequired) {
+    const minOptionsRequired = (isBinary || allowUserContributionsResult.value) ? 0 : 2;
+    if (!isBinary && (!Array.isArray(options) || options.length < minOptionsRequired)) {
       await transaction.rollback();
       const errorMessage =
         minOptionsRequired === 0 ? 'Options must be an array.' : 'At least 2 options are required.';
@@ -251,58 +255,75 @@ const createPoll = async (userId, pollData) => {
 
     // Create options
     const createdOptions = [];
-    for (let i = 0; i < options.length; i++) {
-      const option = options[i];
 
-      // For simple polls, text is required
-      if (typeResult.value === 'simple') {
-        const optionTextResult = normalizeRequiredText(
-          option.text,
-          `Option ${i + 1} text`,
-          OPTION_TEXT_MIN_LENGTH,
-          OPTION_TEXT_MAX_LENGTH
-        );
-        if (optionTextResult.error) {
-          await transaction.rollback();
-          return { success: false, status: 400, message: optionTextResult.error };
-        }
+    if (isBinary) {
+      // Auto-create options based on binaryStyle
+      const style = (binaryStyle && BINARY_STYLES.includes(binaryStyle)) ? binaryStyle : 'yes_no';
+      const binaryOptions = style === 'agree_disagree'
+        ? [{ text: 'Συμφωνώ', order: 0 }, { text: 'Διαφωνώ', order: 1 }]
+        : [{ text: 'Ναι', order: 0 }, { text: 'Όχι', order: 1 }];
 
+      for (const opt of binaryOptions) {
         const pollOption = await PollOption.create(
-          {
-            pollId: poll.id,
-            text: optionTextResult.value,
-            order: i
-          },
+          { pollId: poll.id, text: opt.text, order: opt.order },
           { transaction }
         );
-
         createdOptions.push(pollOption);
-      } else {
-        // For complex polls, answerType is optional
-        let answerTypeValue = null;
-        if (option.answerType) {
-          const answerTypeResult = normalizeEnum(option.answerType, ANSWER_TYPES, 'Answer type');
-          if (answerTypeResult.error) {
+      }
+    } else {
+      for (let i = 0; i < options.length; i++) {
+        const option = options[i];
+
+        // For simple polls, text is required
+        if (typeResult.value === 'simple') {
+          const optionTextResult = normalizeRequiredText(
+            option.text,
+            `Option ${i + 1} text`,
+            OPTION_TEXT_MIN_LENGTH,
+            OPTION_TEXT_MAX_LENGTH
+          );
+          if (optionTextResult.error) {
             await transaction.rollback();
-            return { success: false, status: 400, message: answerTypeResult.error };
+            return { success: false, status: 400, message: optionTextResult.error };
           }
-          answerTypeValue = answerTypeResult.value;
+
+          const pollOption = await PollOption.create(
+            {
+              pollId: poll.id,
+              text: optionTextResult.value,
+              order: i
+            },
+            { transaction }
+          );
+
+          createdOptions.push(pollOption);
+        } else {
+          // For complex polls, answerType is optional
+          let answerTypeValue = null;
+          if (option.answerType) {
+            const answerTypeResult = normalizeEnum(option.answerType, ANSWER_TYPES, 'Answer type');
+            if (answerTypeResult.error) {
+              await transaction.rollback();
+              return { success: false, status: 400, message: answerTypeResult.error };
+            }
+            answerTypeValue = answerTypeResult.value;
+          }
+
+          const pollOption = await PollOption.create(
+            {
+              pollId: poll.id,
+              text: option.text || null,
+              photoUrl: option.photoUrl || null,
+              linkUrl: option.linkUrl || null,
+              displayText: option.displayText || null,
+              answerType: answerTypeValue,
+              order: i
+            },
+            { transaction }
+          );
+
+          createdOptions.push(pollOption);
         }
-
-        const pollOption = await PollOption.create(
-          {
-            pollId: poll.id,
-            text: option.text || null,
-            photoUrl: option.photoUrl || null,
-            linkUrl: option.linkUrl || null,
-            displayText: option.displayText || null,
-            answerType: answerTypeValue,
-            order: i
-          },
-          { transaction }
-        );
-
-        createdOptions.push(pollOption);
       }
     }
 
@@ -667,7 +688,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { title, description, category, tags, deadline, status, locationId, hideCreator } = updateData;
+    const { title, description, category, tags, deadline, status, locationId, hideCreator, options } = updateData;
 
     const poll = await Poll.findByPk(pollId, {
       include: [
@@ -681,6 +702,12 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
     if (!poll) {
       await transaction.rollback();
       return { success: false, status: 404, message: 'Poll not found.' };
+    }
+
+    // Binary polls do not allow updating options
+    if (poll.type === 'binary' && options !== undefined) {
+      await transaction.rollback();
+      return { success: false, status: 400, message: 'Cannot modify options of a binary poll.' };
     }
 
     // Check permissions - must be creator or admin
