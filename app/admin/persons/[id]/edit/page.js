@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
@@ -54,6 +54,8 @@ export default function EditPersonProfilePage({ params }) {
   const [constMunicipalities, setConstMunicipalities] = useState([]);
   const [constSelectedPrefectureId, setConstSelectedPrefectureId] = useState('');
   const [constituencyId, setConstituencyId] = useState('');
+
+  const hasInitializedCandidate = useRef(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -121,8 +123,11 @@ export default function EditPersonProfilePage({ params }) {
     setPoliticalPositions(ppPairs.length > 0 ? ppPairs : [{ key: '', value: '' }]);
 
     // Candidate fields
-    if (profile.position || profile.isActiveCandidate) {
-      setShowCandidateSection(true);
+    if (!hasInitializedCandidate.current) {
+      if (profile.position || profile.isActiveCandidate) {
+        setShowCandidateSection(true);
+      }
+      hasInitializedCandidate.current = true;
     }
     setCandidateForm({
       position: profile.position || '',
@@ -189,6 +194,11 @@ export default function EditPersonProfilePage({ params }) {
         if (candidateForm.manifesto) payload.manifesto = candidateForm.manifesto;
         const ppObj = pairsToObject(politicalPositions);
         if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
+      } else {
+        payload.position = null;
+        payload.constituencyId = null;
+        payload.manifesto = null;
+        payload.politicalPositions = {};
       }
 
       await personAPI.updateProfile(id, payload);
