@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { reportAPI } from '@/lib/api';
@@ -67,7 +68,27 @@ function ReportsContent() {
   const columns = [
     { key: 'id', label: 'ID' },
     { key: 'contentType', label: 'Content Type' },
-    { key: 'contentId', label: 'Content ID' },
+    {
+      key: 'contentId',
+      label: 'Content ID',
+      render: (row) => {
+        const urlMap = {
+          article: `/articles/${row.contentId}`,
+          person: `/persons/${row.contentId}`,
+          poll: `/polls/${row.contentId}`,
+          candidate: `/persons/${row.contentId}`,
+          user: `/users/${row.contentId}`,
+        };
+        const url = urlMap[row.contentType];
+        return url ? (
+          <Link href={url} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+            {row.contentId}
+          </Link>
+        ) : (
+          <span>{row.contentId}</span>
+        );
+      }
+    },
     { key: 'category', label: 'Category', render: (row) => row.category.replace(/_/g, ' ') },
     {
       key: 'reporter',
@@ -155,7 +176,28 @@ function ReportsContent() {
 
             <dl className="grid grid-cols-2 gap-4 mb-6 text-sm">
               <div><dt className="font-medium text-gray-500">Content Type</dt><dd>{selectedReport.contentType}</dd></div>
-              <div><dt className="font-medium text-gray-500">Content ID</dt><dd>{selectedReport.contentId}</dd></div>
+              <div>
+                <dt className="font-medium text-gray-500">Content ID</dt>
+                <dd>
+                  {(() => {
+                    const urlMap = {
+                      article: `/articles/${selectedReport.contentId}`,
+                      person: `/persons/${selectedReport.contentId}`,
+                      poll: `/polls/${selectedReport.contentId}`,
+                      candidate: `/persons/${selectedReport.contentId}`,
+                      user: `/users/${selectedReport.contentId}`,
+                    };
+                    const url = urlMap[selectedReport.contentType];
+                    return url ? (
+                      <Link href={url} className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">
+                        {selectedReport.contentId}
+                      </Link>
+                    ) : (
+                      <span>{selectedReport.contentId}</span>
+                    );
+                  })()}
+                </dd>
+              </div>
               <div><dt className="font-medium text-gray-500">Category</dt><dd>{selectedReport.category?.replace(/_/g, ' ')}</dd></div>
               <div><dt className="font-medium text-gray-500">Status</dt><dd><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[selectedReport.status] || 'bg-gray-100 text-gray-700'}`}>{selectedReport.status}</span></dd></div>
               <div><dt className="font-medium text-gray-500">Reporter</dt><dd>{selectedReport.reporter?.username || selectedReport.reporterName || 'Anonymous'}</dd></div>
