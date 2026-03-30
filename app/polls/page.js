@@ -30,7 +30,6 @@ export default function PollsPage() {
     updateFilter,
   } = useFilters({
     status: '',
-    type: '',
     category: '',
     search: '',
   });
@@ -99,16 +98,6 @@ export default function PollsPage() {
                     { value: '', label: 'Όλες οι καταστάσεις' },
                     { value: 'active', label: 'Ενεργές' },
                     { value: 'closed', label: 'Κλειστές' },
-                  ],
-                },
-                {
-                  name: 'type',
-                  label: 'Τύπος',
-                  type: 'select',
-                  options: [
-                    { value: '', label: 'Όλοι οι τύποι' },
-                    { value: 'simple', label: 'Απλή' },
-                    { value: 'complex', label: 'Σύνθετη' },
                   ],
                 },
               ]}
