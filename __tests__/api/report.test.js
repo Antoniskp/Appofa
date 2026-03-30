@@ -223,6 +223,78 @@ describe('Report API', () => {
       expect(res.body.data.report.status).toBe('actioned');
     });
 
+    it('200 — admin can mark a report as reviewed', async () => {
+      const record = await Report.create({
+        contentType: 'article',
+        contentId: 30,
+        category: 'spam',
+        reporterName: 'Reviewed Test',
+        reporterEmail: 'reviewed@example.com',
+        status: 'pending',
+      });
+      const res = await request(app)
+        .post(`/api/reports/${record.id}/review`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ action: 'mark_reviewed', adminNotes: 'Needs further review.' });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.report.status).toBe('reviewed');
+    });
+
+    it('200 — admin can reopen a dismissed report', async () => {
+      const record = await Report.create({
+        contentType: 'comment',
+        contentId: 40,
+        category: 'harassment',
+        reporterName: 'Reopen Test',
+        reporterEmail: 'reopen@example.com',
+        status: 'dismissed',
+        adminNotes: 'Old notes',
+        reviewedBy: adminUserId,
+        reviewedAt: new Date(),
+      });
+      const res = await request(app)
+        .post(`/api/reports/${record.id}/review`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ action: 'reopen' });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.report.status).toBe('pending');
+      expect(res.body.data.report.adminNotes).toBeNull();
+      expect(res.body.data.report.reviewedBy).toBeNull();
+      expect(res.body.data.report.reviewedAt).toBeNull();
+    });
+
+    it('200 — admin can update notes without changing status', async () => {
+      const record = await Report.create({
+        contentType: 'poll',
+        contentId: 50,
+        category: 'misinformation',
+        reporterName: 'Notes Test',
+        reporterEmail: 'notes@example.com',
+        status: 'actioned',
+        reviewedBy: adminUserId,
+        reviewedAt: new Date(),
+      });
+      const res = await request(app)
+        .post(`/api/reports/${record.id}/review`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ action: 'update_notes', adminNotes: 'Updated admin notes.' });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.report.status).toBe('actioned');
+      expect(res.body.data.report.adminNotes).toBe('Updated admin notes.');
+    });
+
+    it('400 — invalid action is rejected', async () => {
+      const res = await request(app)
+        .post(`/api/reports/${reportId}/review`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ action: 'invalid_action' });
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
     it('403 — non-admin (viewer) is rejected', async () => {
       const res = await request(app)
         .post(`/api/reports/${reportId}/review`)
