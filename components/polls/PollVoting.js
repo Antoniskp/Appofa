@@ -364,43 +364,40 @@ export default function PollVoting({ poll, onVoteSuccess }) {
  * Submits the vote immediately on click (single-click vote).
  */
 function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, onSelect }) {
-  const [yesOpt, noOpt] = options.length >= 2 ? [options[0], options[1]] : [options[0], null];
+  if (!options || options.length < 2) return null;
+  const [yesOpt, noOpt] = [options[0], options[1]];
 
   const btnBase =
     'flex-1 flex flex-col items-center justify-center gap-2 py-6 px-4 rounded-xl border-2 text-lg font-bold transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed';
 
   return (
     <div className="flex flex-col sm:flex-row gap-4">
-      {yesOpt && (
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => onSelect(yesOpt.id)}
-          className={`${btnBase} ${
-            selectedOptionId === yesOpt.id
-              ? 'bg-green-500 border-green-500 text-white shadow-lg focus:ring-green-300'
-              : 'bg-white border-green-500 text-green-600 hover:bg-green-50 focus:ring-green-300'
-          }`}
-        >
-          {selectedOptionId === yesOpt.id && <CheckCircleIcon className="h-7 w-7" />}
-          {yesOpt.text}
-        </button>
-      )}
-      {noOpt && (
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => onSelect(noOpt.id)}
-          className={`${btnBase} ${
-            selectedOptionId === noOpt.id
-              ? 'bg-red-500 border-red-500 text-white shadow-lg focus:ring-red-300'
-              : 'bg-white border-red-500 text-red-600 hover:bg-red-50 focus:ring-red-300'
-          }`}
-        >
-          {selectedOptionId === noOpt.id && <CheckCircleIcon className="h-7 w-7" />}
-          {noOpt.text}
-        </button>
-      )}
+      <button
+        type="button"
+        disabled={isSubmitting}
+        onClick={() => onSelect(yesOpt.id)}
+        className={`${btnBase} ${
+          selectedOptionId === yesOpt.id
+            ? 'bg-green-500 border-green-500 text-white shadow-lg focus:ring-green-300'
+            : 'bg-white border-green-500 text-green-600 hover:bg-green-50 focus:ring-green-300'
+        }`}
+      >
+        {selectedOptionId === yesOpt.id && <CheckCircleIcon className="h-7 w-7" />}
+        {yesOpt.text}
+      </button>
+      <button
+        type="button"
+        disabled={isSubmitting}
+        onClick={() => onSelect(noOpt.id)}
+        className={`${btnBase} ${
+          selectedOptionId === noOpt.id
+            ? 'bg-red-500 border-red-500 text-white shadow-lg focus:ring-red-300'
+            : 'bg-white border-red-500 text-red-600 hover:bg-red-50 focus:ring-red-300'
+        }`}
+      >
+        {selectedOptionId === noOpt.id && <CheckCircleIcon className="h-7 w-7" />}
+        {noOpt.text}
+      </button>
     </div>
   );
 }

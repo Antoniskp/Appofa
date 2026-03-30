@@ -167,10 +167,11 @@ export default function PollForm({
     e.preventDefault();
     
     // Binary polls have auto-created options — skip options validation
+    const validOptions = formData.type === 'binary'
+      ? []
+      : options.filter(opt => opt.text.trim() !== '');
+
     if (formData.type !== 'binary') {
-      // Filter out empty options
-      const validOptions = options.filter(opt => opt.text.trim() !== '');
-      
       // Require at least 2 options unless user contributions are allowed
       const minOptions = formData.allowUserContributions ? 0 : 2;
       if (validOptions.length < minOptions) {
@@ -180,11 +181,6 @@ export default function PollForm({
       }
     }
     
-    // Filter out empty options for non-binary polls
-    const validOptions = formData.type !== 'binary'
-      ? options.filter(opt => opt.text.trim() !== '')
-      : [];
-
     // Parse tags from comma-separated string to array
     const payload = {
       ...formData,
