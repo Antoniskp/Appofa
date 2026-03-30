@@ -199,6 +199,7 @@ export default function EditPersonProfilePage({ params }) {
         payload.constituencyId = null;
         payload.manifesto = null;
         payload.politicalPositions = {};
+        payload.isActiveCandidate = false;
       }
 
       await personAPI.updateProfile(id, payload);

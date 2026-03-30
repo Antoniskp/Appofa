@@ -376,12 +376,18 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
   }
 
   const allowedFields = ['firstName', 'lastName', 'locationId', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position'];
-  if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug');
+  if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug', 'isActiveCandidate');
 
   const updates = {};
   allowedFields.forEach((field) => {
     if (data[field] !== undefined) updates[field] = data[field];
   });
+
+  if (isModerator && data.isActiveCandidate === false) {
+    updates.retiredAt = new Date();
+  } else if (isModerator && data.isActiveCandidate === true) {
+    updates.retiredAt = null;
+  }
 
   await profile.update(updates);
   return profile;
