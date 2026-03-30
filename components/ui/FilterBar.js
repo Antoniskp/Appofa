@@ -33,11 +33,11 @@ export default function FilterBar({
   ).length;
 
   return (
-    <div className={className}>
+    <div className={`relative ${className}`}>
       {/* Toggle Button */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors mb-4"
+        className="flex items-center gap-2 bg-white px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors"
       >
         <FunnelIcon className="h-5 w-5 text-gray-600" />
         <span className="text-sm font-medium text-gray-700">
@@ -52,7 +52,7 @@ export default function FilterBar({
 
       {/* Filters */}
       {isExpanded && (
-        <div className="card p-6 mb-4 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 top-full mt-1 z-10 card p-6 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
         {filterConfig.map((config) => {
           const { name, label, type = 'select', options = [], placeholder } = config;
