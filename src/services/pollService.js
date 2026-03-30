@@ -1569,7 +1569,7 @@ const exportPoll = async (pollId, userId, userRole) => {
  */
 const getCategoryCounts = async (queryParams = {}) => {
   try {
-    const { status = 'published' } = queryParams;
+    const { status = 'active' } = queryParams;
 
     const where = { category: { [Op.ne]: null } };
     if (status) where.status = status;

@@ -38,7 +38,7 @@ export default function PollsPage() {
   const [countsLoaded, setCountsLoaded] = useState(false);
 
   useEffect(() => {
-    pollAPI.getCategoryCounts({ status: 'published' })
+    pollAPI.getCategoryCounts({ status: 'active' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
       .catch((err) => console.error('Failed to fetch poll category counts:', err))
       .finally(() => setCountsLoaded(true));
