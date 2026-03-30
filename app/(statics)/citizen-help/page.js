@@ -84,6 +84,12 @@ const categories = [
         description: 'Διαδικασίες & κόστη για υποψηφιότητα χωρίς κόμμα',
         Icon: UserCircleIcon,
       },
+      {
+        href: '/citizen-help/public-officials-salaries',
+        label: 'Αμοιβές Αξιωματούχων',
+        description: 'Μισθοί & παροχές ΠΜ, Υπουργών, Βουλευτών, Περιφερειαρχών, Δημάρχων',
+        Icon: CurrencyEuroIcon,
+      },
     ],
   },
 ];
