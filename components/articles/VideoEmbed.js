@@ -18,9 +18,10 @@ import { useEffect, useRef, useState } from 'react';
  *            No `sandbox` attribute is applied to TikTok iframes: sandboxing breaks
  *            TikTok's internal webmssdk.js initialisation (the SDK cannot read its
  *            production-environment config), which prevents playback entirely.
- *            When autoplay=true (detail pages), the click-to-play thumbnail gate is
- *            skipped and the TikTok iframe is rendered immediately with ?autoplay=1.
- *            When autoplay=false (feed cards), the existing click-to-play gate is used.
+ *            The click-to-play thumbnail gate is always enforced for TikTok regardless
+ *            of the autoplay prop. Rendering the iframe immediately (as autoplay=true
+ *            previously did) causes webmssdk.js to crash before TikTok's environment
+ *            config is initialised. The autoplay prop only affects YouTube embeds.
  *
  * Props:
  *   article  {object}  article data with sourceUrl, sourceProvider, embedUrl,
@@ -156,10 +157,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     // Primary: official TikTok oEmbed iframe.
     // The iframe handles its own CDN auth internally; no embed.js needed.
     if (videoId) {
-      // When autoplay=true (detail pages), skip the click-to-play gate and render
-      // the iframe directly with ?autoplay=1. When autoplay=false (feed cards),
-      // show the thumbnail gate until the user clicks.
-      if (!autoplay && !tiktokPlaying) {
+      if (!tiktokPlaying) {
         return (
           <div className={`${outerMargin} flex flex-col items-center`}>
             <div
@@ -208,7 +206,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
         <div className={`${outerMargin} flex flex-col items-center`}>
           <div style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}>
             <iframe
-              src={`https://www.tiktok.com/embed/v2/${videoId}${autoplay ? '?autoplay=1' : ''}`}
+              src={`https://www.tiktok.com/embed/v2/${videoId}`}
               title={title}
               style={{ width: '100%', height: '740px', border: 'none' }}
               allow="autoplay; encrypted-media"
@@ -221,11 +219,10 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
     }
 
     // Secondary: try the embedUrl iframe (may work in some contexts).
-    // Gate behind click-to-play when autoplay=false to prevent webmssdk.js
-    // from being injected immediately on page load before TikTok's SDK
-    // environment is initialised.
+    // Gate behind click-to-play to prevent webmssdk.js from being injected
+    // immediately on page load before TikTok's SDK environment is initialised.
     if (embedUrl) {
-      if (!autoplay && !tiktokPlaying) {
+      if (!tiktokPlaying) {
         return (
           <div className={`${outerMargin} rounded-lg overflow-hidden border border-gray-200 shadow-sm`}>
             <div
