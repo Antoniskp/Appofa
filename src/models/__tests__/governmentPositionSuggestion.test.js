@@ -15,8 +15,21 @@ describe('GovernmentPositionSuggestion Model', () => {
     expect(attr.references.model).toBe('PublicPersonProfiles');
   });
 
-  it('personId does NOT allow null (required)', () => {
-    expect(GovernmentPositionSuggestion.rawAttributes.personId.allowNull).toBe(false);
+  it('personId allows null (optional when userId is set)', () => {
+    expect(GovernmentPositionSuggestion.rawAttributes.personId.allowNull).toBe(true);
+  });
+
+  it('has userId field', () => {
+    const attr = GovernmentPositionSuggestion.rawAttributes.userId;
+    expect(attr).toBeDefined();
+    expect(attr.allowNull).toBe(true);
+  });
+
+  it('has user association to User', () => {
+    const assoc = GovernmentPositionSuggestion.associations.user;
+    expect(assoc).toBeDefined();
+    expect(assoc.associationType).toBe('BelongsTo');
+    expect(assoc.target.name).toBe('User');
   });
 
   it('does NOT have name field', () => {

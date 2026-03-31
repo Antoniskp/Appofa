@@ -615,7 +615,7 @@ async function searchUsers(search, page, limit) {
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt'],
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'isVerified', 'createdAt'],
     order: [['username', 'ASC']],
     limit: limitNum,
     offset
