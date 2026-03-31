@@ -156,6 +156,7 @@ const dreamTeamController = {
 
       const positionIds = positions.map((p) => p.id);
 
+      // Step 1: aggregate WITHOUT include to avoid GROUP BY conflict in PostgreSQL
       const voteCounts = await DreamTeamVote.findAll({
         attributes: [
           'positionId',
@@ -166,28 +167,36 @@ const dreamTeamController = {
         where: { positionId: { [Op.in]: positionIds } },
         group: ['positionId', 'personId', 'personName'],
         order: [[sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'DESC']],
-        include: [
-          {
-            model: PublicPersonProfile,
-            as: 'person',
-            attributes: ['photo'],
-            required: false,
-          },
-        ],
+        raw: true,
       });
 
-      // Total votes per position
-      const totalByPosition = {};
-      voteCounts.forEach((v) => {
-        totalByPosition[v.positionId] = (totalByPosition[v.positionId] || 0) + parseInt(v.dataValues.voteCount, 10);
-      });
-
-      // Winner per position (first entry after ORDER BY voteCount DESC)
+      // Step 2: determine winner per position and collect their personIds
       const winnerByPosition = {};
       voteCounts.forEach((v) => {
         if (!winnerByPosition[v.positionId]) {
           winnerByPosition[v.positionId] = v;
         }
+      });
+
+      const winnerPersonIds = [...new Set(
+        Object.values(winnerByPosition).map((v) => v.personId).filter(Boolean)
+      )];
+
+      // Step 3: fetch photos separately
+      const personPhotos = {};
+      if (winnerPersonIds.length > 0) {
+        const persons = await PublicPersonProfile.findAll({
+          where: { id: { [Op.in]: winnerPersonIds } },
+          attributes: ['id', 'photo'],
+          raw: true,
+        });
+        persons.forEach((p) => { personPhotos[p.id] = p.photo; });
+      }
+
+      // Total votes per position
+      const totalByPosition = {};
+      voteCounts.forEach((v) => {
+        totalByPosition[v.positionId] = (totalByPosition[v.positionId] || 0) + parseInt(v.voteCount, 10);
       });
 
       const dreamTeam = positions.map((position) => {
@@ -199,10 +208,10 @@ const dreamTeamController = {
             ? {
                 personId: winner.personId,
                 personName: winner.personName,
-                photo: winner.person ? winner.person.photo : null,
-                voteCount: parseInt(winner.dataValues.voteCount, 10),
+                photo: personPhotos[winner.personId] || null,
+                voteCount: parseInt(winner.voteCount, 10),
                 percentage: total > 0
-                  ? Math.round((parseInt(winner.dataValues.voteCount, 10) / total) * 100)
+                  ? Math.round((parseInt(winner.voteCount, 10) / total) * 100)
                   : 0,
               }
             : null,
