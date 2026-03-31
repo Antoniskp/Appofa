@@ -13,6 +13,27 @@ const positionTypesMap = positionTypesData.reduce((acc, pt) => {
 
 const DEFAULT_META = { labelGr: 'Θέση', color: 'bg-indigo-100 text-indigo-700', icon: '⚖️' };
 
+// Latin → Greek lookalike map for client-side normalization
+const LATIN_TO_GREEK = {
+  A: 'Α', B: 'Β', E: 'Ε', Z: 'Ζ', H: 'Η', I: 'Ι',
+  K: 'Κ', M: 'Μ', N: 'Ν', O: 'Ο', P: 'Ρ', T: 'Τ',
+  X: 'Χ', Y: 'Υ',
+};
+
+/**
+ * Normalize a search query: strip Greek tonos/diacritics and map visually
+ * identical Latin characters to their Greek equivalents.
+ */
+function normalizeGreekQuery(str) {
+  if (!str) return str;
+  const stripped = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  return stripped.replace(/[A-Za-z]/g, (ch) => {
+    const greek = LATIN_TO_GREEK[ch.toUpperCase()];
+    if (!greek) return ch;
+    return ch === ch.toUpperCase() ? greek : greek.toLowerCase();
+  });
+}
+
 function PersonAvatar({ photo, name, size = 'md' }) {
   const sizes = { sm: 'h-8 w-8 text-sm', md: 'h-12 w-12 text-base', lg: 'h-16 w-16 text-xl' };
   if (photo) {
@@ -37,6 +58,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   const [searching, setSearching] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
+  const [isTopSuggestions, setIsTopSuggestions] = useState(false);
   const searchTimer = useRef(null);
   const requestIdRef = useRef(0);
   const dropdownRef = useRef(null);
@@ -74,6 +96,38 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
     }
   }, [myVote]);
 
+  // Load top suggestions immediately (no query needed)
+  const loadTopSuggestions = useCallback(async () => {
+    const myId = ++requestIdRef.current;
+    setSearching(true);
+    try {
+      const [profileRes, userRes] = await Promise.allSettled([
+        apiRequest('/api/persons?limit=8'),
+        onVote
+          ? apiRequest('/api/users/search?limit=8')
+          : Promise.resolve(null),
+      ]);
+
+      if (myId !== requestIdRef.current) return;
+
+      const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
+      const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
+
+      const merged = [
+        ...profiles.map((p) => ({ ...p, type: 'profile' })),
+        ...users.map((u) => ({ ...u, type: 'user' })),
+      ];
+      setSearchResults(merged);
+      setIsTopSuggestions(true);
+      setDropdownOpen(merged.length > 0);
+    } catch {
+      if (myId !== requestIdRef.current) return;
+      setSearchResults([]);
+    } finally {
+      if (myId === requestIdRef.current) setSearching(false);
+    }
+  }, [onVote]);
+
   // Debounced person search — queries both profiles and users in parallel
   const handleSearchChange = useCallback((e) => {
     const q = e.target.value;
@@ -82,18 +136,20 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
 
     if (!q.trim()) {
       setSearchResults([]);
+      setIsTopSuggestions(false);
       setDropdownOpen(false);
       return;
     }
 
     // Keep dropdown open while user is typing
     setDropdownOpen(true);
+    setIsTopSuggestions(false);
 
     searchTimer.current = setTimeout(async () => {
       const myId = ++requestIdRef.current;
       setSearching(true);
       try {
-        const encodedQ = encodeURIComponent(q);
+        const encodedQ = encodeURIComponent(normalizeGreekQuery(q));
         const [profileRes, userRes] = await Promise.allSettled([
           apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
           // Only fetch users if the component has an onVote handler (user is logged in)
@@ -128,6 +184,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       : `${person.firstName} ${person.lastName}`.trim();
     setSelectedPerson({ id: person.id, name, type: person.type });
     setSearchQuery(name);
+    setIsTopSuggestions(false);
     setDropdownOpen(false);
   }, []);
 
@@ -223,6 +280,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                   setSelectedPerson(null);
                   setSearchQuery('');
                   setSearchResults([]);
+                  setIsTopSuggestions(false);
                   setDropdownOpen(false);
                 }}
                 className="text-xs text-gray-400 hover:text-red-500 transition-colors ml-2 flex-shrink-0"
@@ -241,7 +299,13 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                 type="text"
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onFocus={() => searchResults.length > 0 && setDropdownOpen(true)}
+                onFocus={() => {
+                  if (searchResults.length > 0) {
+                    setDropdownOpen(true);
+                  } else if (!searchQuery.trim()) {
+                    loadTopSuggestions();
+                  }
+                }}
                 placeholder="Αναζητήστε πρόσωπο..."
                 className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 aria-label={`Αναζήτηση προσώπου για ${position.title}`}
@@ -261,6 +325,11 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                 role="listbox"
                 className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
               >
+                {isTopSuggestions && (
+                  <li className="px-4 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100 pointer-events-none">
+                    Δημοφιλείς Προτάσεις
+                  </li>
+                )}
                 {searchResults.map((person) => {
                   const displayName = person.type === 'user'
                     ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
