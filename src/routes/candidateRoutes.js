@@ -3,6 +3,7 @@ const router = express.Router();
 const candidateController = require('../controllers/candidateController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
+const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
@@ -38,8 +39,8 @@ router.post('/claims/:id/reject', apiLimiter, authMiddleware, checkRole('admin',
 // Moderator/Admin: create profile
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), candidateController.createProfile);
 
-// Admin: delete profile
-router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin'), candidateController.deleteProfile);
+// Admin/Moderator: delete profile
+router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, candidateController.deleteProfile);
 
 // Any logged-in user: claim a profile
 router.post('/:id/claim', apiLimiter, authMiddleware, candidateController.submitClaim);

@@ -60,6 +60,8 @@ export default function EditPersonProfilePage({ params }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const { data: profile } = useAsyncData(
     async () => {
@@ -160,6 +162,19 @@ export default function EditPersonProfilePage({ params }) {
       if (key.trim()) obj[key.trim()] = value.trim();
     });
     return obj;
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Διαγραφή αυτού του προφίλ; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί.')) return;
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await personAPI.deleteProfile(id);
+      router.push('/admin/persons');
+    } catch (err) {
+      setDeleteError(err.message || 'Αποτυχία διαγραφής προφίλ.');
+      setDeleting(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -454,6 +469,22 @@ export default function EditPersonProfilePage({ params }) {
             {saving ? 'Αποθήκευση...' : 'Αποθήκευση Αλλαγών'}
           </button>
         </form>
+
+        {profile && profile.claimStatus === 'unclaimed' && ['admin', 'moderator'].includes(user?.role) && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            {deleteError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{deleteError}</p>
+            )}
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-full py-2.5 bg-white border border-red-300 text-red-600 text-sm font-semibold rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+            >
+              {deleting ? 'Διαγραφή...' : 'Διαγραφή Προφίλ'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
