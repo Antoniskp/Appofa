@@ -1,0 +1,9 @@
+[
+  { "key": "head_of_state",      "labelGr": "Αρχηγός Κράτους",     "labelEn": "Head of State",        "scope": "national",  "icon": "👑",  "color": "bg-purple-100 text-purple-700" },
+  { "key": "prime_minister",     "labelGr": "Πρωθυπουργός",        "labelEn": "Prime Minister",       "scope": "national",  "icon": "🏛️", "color": "bg-blue-100 text-blue-700" },
+  { "key": "minister",           "labelGr": "Υπουργός",            "labelEn": "Minister",             "scope": "national",  "icon": "⚖️",  "color": "bg-indigo-100 text-indigo-700" },
+  { "key": "parliament_speaker", "labelGr": "Πρόεδρος Βουλής",     "labelEn": "Speaker of Parliament","scope": "national",  "icon": "🏛️", "color": "bg-green-100 text-green-700" },
+  { "key": "mayor",              "labelGr": "Δήμαρχος",            "labelEn": "Mayor",                "scope": "municipal", "icon": "🏙️",  "color": "bg-orange-100 text-orange-700" },
+  { "key": "municipal_council",  "labelGr": "Δημοτικός Σύμβουλος", "labelEn": "Municipal Councillor", "scope": "municipal", "icon": "🗳️",  "color": "bg-yellow-100 text-yellow-700" },
+  { "key": "regional_governor",  "labelGr": "Περιφερειάρχης",      "labelEn": "Regional Governor",    "scope": "regional",  "icon": "🗺️",  "color": "bg-teal-100 text-teal-700" }
+]

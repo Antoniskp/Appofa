@@ -15,17 +15,9 @@ const GovernmentCurrentHolder = sequelize.define('GovernmentCurrentHolder', {
   },
   personId: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
     references: { model: 'PublicPersonProfiles', key: 'id' },
-    onDelete: 'SET NULL',
-  },
-  holderName: {
-    type: DataTypes.STRING(200),
-    allowNull: true,
-  },
-  holderPhoto: {
-    type: DataTypes.STRING(500),
-    allowNull: true,
+    onDelete: 'CASCADE',
   },
   since: {
     type: DataTypes.DATEONLY,

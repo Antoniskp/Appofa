@@ -1,70 +1,68 @@
 'use strict';
 
+const path = require('path');
+const { positions: POSITIONS, countryCode } = require(path.join(__dirname, '../../config/governmentPositions.json'));
+
 module.exports = {
   async up(queryInterface) {
+    const dialect = queryInterface.sequelize.getDialect();
     const now = new Date();
-    const positions = [
-      { slug: 'proedros-dimokratias', title: 'Πρόεδρος της Δημοκρατίας', titleEn: 'President of the Republic', category: 'president', description: null, order: 1, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'proedros-voulis', title: 'Πρόεδρος της Βουλής', titleEn: 'Speaker of Parliament', category: 'minister', description: null, order: 2, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'prothypoyrgos', title: 'Πρωθυπουργός', titleEn: 'Prime Minister', category: 'prime_minister', description: null, order: 3, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-oikonomikon', title: 'Υπουργός Οικονομικών', titleEn: 'Minister of Finance', category: 'minister', description: null, order: 4, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-esoterikon', title: 'Υπουργός Εσωτερικών', titleEn: 'Minister of Interior', category: 'minister', description: null, order: 5, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-eksoterikon', title: 'Υπουργός Εξωτερικών', titleEn: 'Minister of Foreign Affairs', category: 'minister', description: null, order: 6, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-amynas', title: 'Υπουργός Εθνικής Άμυνας', titleEn: 'Minister of National Defence', category: 'minister', description: null, order: 7, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-dikaiosynis', title: 'Υπουργός Δικαιοσύνης', titleEn: 'Minister of Justice', category: 'minister', description: null, order: 8, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-paideias', title: 'Υπουργός Παιδείας και Θρησκευμάτων', titleEn: 'Minister of Education and Religious Affairs', category: 'minister', description: null, order: 9, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-ygeias', title: 'Υπουργός Υγείας', titleEn: 'Minister of Health', category: 'minister', description: null, order: 10, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-ergasias', title: 'Υπουργός Εργασίας και Κοινωνικής Ασφάλισης', titleEn: 'Minister of Labour and Social Insurance', category: 'minister', description: null, order: 11, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-anaptyxis', title: 'Υπουργός Ανάπτυξης', titleEn: 'Minister of Development', category: 'minister', description: null, order: 12, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-ypodomon', title: 'Υπουργός Υποδομών και Μεταφορών', titleEn: 'Minister of Infrastructure and Transport', category: 'minister', description: null, order: 13, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-perivallon', title: 'Υπουργός Περιβάλλοντος και Ενέργειας', titleEn: 'Minister of Environment and Energy', category: 'minister', description: null, order: 14, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-politismoy', title: 'Υπουργός Πολιτισμού', titleEn: 'Minister of Culture', category: 'minister', description: null, order: 15, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-tourismoy', title: 'Υπουργός Τουρισμού', titleEn: 'Minister of Tourism', category: 'minister', description: null, order: 16, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-agrotikis', title: 'Υπουργός Αγροτικής Ανάπτυξης και Τροφίμων', titleEn: 'Minister of Rural Development and Food', category: 'minister', description: null, order: 17, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-naftilias', title: 'Υπουργός Ναυτιλίας και Νησιωτικής Πολιτικής', titleEn: 'Minister of Shipping and Island Policy', category: 'minister', description: null, order: 18, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-psifiakis', title: 'Υπουργός Ψηφιακής Διακυβέρνησης', titleEn: 'Minister of Digital Governance', category: 'minister', description: null, order: 19, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-metanastefsis', title: 'Υπουργός Μετανάστευσης και Ασύλου', titleEn: 'Minister of Migration and Asylum', category: 'minister', description: null, order: 20, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-prostasias', title: 'Υπουργός Προστασίας του Πολίτη', titleEn: 'Minister of Citizen Protection', category: 'minister', description: null, order: 21, isActive: true, createdAt: now, updatedAt: now },
-      { slug: 'ypoyrgos-makethonias', title: 'Υπουργός Μακεδονίας και Θράκης', titleEn: 'Minister of Macedonia and Thrace', category: 'minister', description: null, order: 22, isActive: true, createdAt: now, updatedAt: now },
-    ];
 
-    for (const pos of positions) {
-      await queryInterface.sequelize.query(
-        `INSERT INTO "GovernmentPositions" (slug, title, "titleEn", category, description, "order", "isActive", "createdAt", "updatedAt")
-         VALUES (:slug, :title, :titleEn, :category, :description, :order, :isActive, :createdAt, :updatedAt)
-         ON CONFLICT (slug) DO NOTHING`,
-        { replacements: pos, type: queryInterface.sequelize.QueryTypes.INSERT }
-      );
+    for (const pos of POSITIONS) {
+      if (dialect === 'sqlite') {
+        await queryInterface.sequelize.query(
+          `INSERT OR IGNORE INTO "GovernmentPositions"
+             (slug, title, "titleEn", "positionTypeKey", scope, "countryCode", description, "order", "isActive", "createdAt", "updatedAt")
+           VALUES
+             (:slug, :title, :titleEn, :positionTypeKey, :scope, :countryCode, NULL, :order, 1, :createdAt, :updatedAt)`,
+          {
+            replacements: {
+              slug: pos.slug,
+              title: pos.title,
+              titleEn: pos.titleEn || null,
+              positionTypeKey: pos.positionTypeKey,
+              scope: pos.scope || 'national',
+              countryCode: countryCode || 'GR',
+              order: pos.order,
+              createdAt: now.toISOString(),
+              updatedAt: now.toISOString(),
+            },
+            type: queryInterface.sequelize.QueryTypes.INSERT,
+          }
+        );
+      } else {
+        await queryInterface.sequelize.query(
+          `INSERT INTO "GovernmentPositions"
+             (slug, title, "titleEn", "positionTypeKey", scope, "countryCode", description, "order", "isActive", "createdAt", "updatedAt")
+           VALUES
+             (:slug, :title, :titleEn, :positionTypeKey, :scope, :countryCode, NULL, :order, true, :createdAt, :updatedAt)
+           ON CONFLICT (slug) DO UPDATE SET
+             "positionTypeKey" = EXCLUDED."positionTypeKey",
+             scope = EXCLUDED.scope,
+             "countryCode" = EXCLUDED."countryCode",
+             "titleEn" = EXCLUDED."titleEn",
+             "updatedAt" = EXCLUDED."updatedAt"`,
+          {
+            replacements: {
+              slug: pos.slug,
+              title: pos.title,
+              titleEn: pos.titleEn || null,
+              positionTypeKey: pos.positionTypeKey,
+              scope: pos.scope || 'national',
+              countryCode: countryCode || 'GR',
+              order: pos.order,
+              createdAt: now,
+              updatedAt: now,
+            },
+            type: queryInterface.sequelize.QueryTypes.INSERT,
+          }
+        );
+      }
     }
   },
 
   async down(queryInterface) {
-    const slugs = [
-      'proedros-dimokratias',
-      'proedros-voulis',
-      'prothypoyrgos',
-      'ypoyrgos-oikonomikon',
-      'ypoyrgos-esoterikon',
-      'ypoyrgos-eksoterikon',
-      'ypoyrgos-amynas',
-      'ypoyrgos-dikaiosynis',
-      'ypoyrgos-paideias',
-      'ypoyrgos-ygeias',
-      'ypoyrgos-ergasias',
-      'ypoyrgos-anaptyxis',
-      'ypoyrgos-ypodomon',
-      'ypoyrgos-perivallon',
-      'ypoyrgos-politismoy',
-      'ypoyrgos-tourismoy',
-      'ypoyrgos-agrotikis',
-      'ypoyrgos-naftilias',
-      'ypoyrgos-psifiakis',
-      'ypoyrgos-metanastefsis',
-      'ypoyrgos-prostasias',
-      'ypoyrgos-makethonias',
-    ];
-    await queryInterface.bulkDelete('GovernmentPositions', {
-      slug: slugs,
-    });
+    const slugs = POSITIONS.map((p) => p.slug);
+    await queryInterface.bulkDelete('GovernmentPositions', { slug: slugs });
   },
 };

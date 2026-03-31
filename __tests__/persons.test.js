@@ -154,17 +154,16 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       expect(res2.body.data.profile.slug).toBe('alice-test-2');
     });
 
-    it('creates a profile with candidate position (201)', async () => {
+    it('creates a profile (position field removed in refactor) (201)', async () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
         .send({
           firstName: 'Bob',
           lastName: 'Mayor',
-          position: 'mayor'
         });
       expect(res.status).toBe(201);
-      expect(res.body.data.profile.position).toBe('mayor');
+      expect(res.body.data.profile).not.toHaveProperty('position');
     });
 
     it('creates a profile with social links (201)', async () => {

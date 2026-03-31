@@ -1,0 +1,27 @@
+{
+  "countryCode": "GR",
+  "positions": [
+    { "slug": "proedros-dimokratias",  "title": "Πρόεδρος της Δημοκρατίας",                          "titleEn": "President of the Republic",                        "positionTypeKey": "head_of_state",      "scope": "national", "order": 1 },
+    { "slug": "proedros-voulis",       "title": "Πρόεδρος της Βουλής",                               "titleEn": "Speaker of Parliament",                            "positionTypeKey": "parliament_speaker", "scope": "national", "order": 2 },
+    { "slug": "prothypoyrgos",         "title": "Πρωθυπουργός",                                      "titleEn": "Prime Minister",                                   "positionTypeKey": "prime_minister",     "scope": "national", "order": 3 },
+    { "slug": "ypoyrgos-oikonomikon",  "title": "Υπουργός Οικονομικών",                              "titleEn": "Minister of Finance",                              "positionTypeKey": "minister",           "scope": "national", "order": 4 },
+    { "slug": "ypoyrgos-esoterikon",   "title": "Υπουργός Εσωτερικών",                               "titleEn": "Minister of Interior",                             "positionTypeKey": "minister",           "scope": "national", "order": 5 },
+    { "slug": "ypoyrgos-eksoterikon",  "title": "Υπουργός Εξωτερικών",                               "titleEn": "Minister of Foreign Affairs",                      "positionTypeKey": "minister",           "scope": "national", "order": 6 },
+    { "slug": "ypoyrgos-amynas",       "title": "Υπουργός Εθνικής Άμυνας",                           "titleEn": "Minister of National Defence",                     "positionTypeKey": "minister",           "scope": "national", "order": 7 },
+    { "slug": "ypoyrgos-dikaiosynis",  "title": "Υπουργός Δικαιοσύνης",                              "titleEn": "Minister of Justice",                              "positionTypeKey": "minister",           "scope": "national", "order": 8 },
+    { "slug": "ypoyrgos-paideias",     "title": "Υπουργός Παιδείας και Θρησκευμάτων",                "titleEn": "Minister of Education and Religious Affairs",       "positionTypeKey": "minister",           "scope": "national", "order": 9 },
+    { "slug": "ypoyrgos-ygeias",       "title": "Υπουργός Υγείας",                                   "titleEn": "Minister of Health",                               "positionTypeKey": "minister",           "scope": "national", "order": 10 },
+    { "slug": "ypoyrgos-ergasias",     "title": "Υπουργός Εργασίας και Κοινωνικής Ασφάλισης",        "titleEn": "Minister of Labour and Social Insurance",          "positionTypeKey": "minister",           "scope": "national", "order": 11 },
+    { "slug": "ypoyrgos-anaptyxis",    "title": "Υπουργός Ανάπτυξης",                                "titleEn": "Minister of Development",                          "positionTypeKey": "minister",           "scope": "national", "order": 12 },
+    { "slug": "ypoyrgos-ypodomon",     "title": "Υπουργός Υποδομών και Μεταφορών",                   "titleEn": "Minister of Infrastructure and Transport",         "positionTypeKey": "minister",           "scope": "national", "order": 13 },
+    { "slug": "ypoyrgos-perivallon",   "title": "Υπουργός Περιβάλλοντος και Ενέργειας",              "titleEn": "Minister of Environment and Energy",               "positionTypeKey": "minister",           "scope": "national", "order": 14 },
+    { "slug": "ypoyrgos-politismoy",   "title": "Υπουργός Πολιτισμού",                               "titleEn": "Minister of Culture",                              "positionTypeKey": "minister",           "scope": "national", "order": 15 },
+    { "slug": "ypoyrgos-tourismoy",    "title": "Υπουργός Τουρισμού",                                "titleEn": "Minister of Tourism",                              "positionTypeKey": "minister",           "scope": "national", "order": 16 },
+    { "slug": "ypoyrgos-agrotikis",    "title": "Υπουργός Αγροτικής Ανάπτυξης και Τροφίμων",         "titleEn": "Minister of Rural Development and Food",           "positionTypeKey": "minister",           "scope": "national", "order": 17 },
+    { "slug": "ypoyrgos-naftilias",    "title": "Υπουργός Ναυτιλίας και Νησιωτικής Πολιτικής",       "titleEn": "Minister of Shipping and Island Policy",           "positionTypeKey": "minister",           "scope": "national", "order": 18 },
+    { "slug": "ypoyrgos-psifiakis",    "title": "Υπουργός Ψηφιακής Διακυβέρνησης",                   "titleEn": "Minister of Digital Governance",                   "positionTypeKey": "minister",           "scope": "national", "order": 19 },
+    { "slug": "ypoyrgos-metanastefsis","title": "Υπουργός Μετανάστευσης και Ασύλου",                 "titleEn": "Minister of Migration and Asylum",                 "positionTypeKey": "minister",           "scope": "national", "order": 20 },
+    { "slug": "ypoyrgos-prostasias",   "title": "Υπουργός Προστασίας του Πολίτη",                    "titleEn": "Minister of Citizen Protection",                   "positionTypeKey": "minister",           "scope": "national", "order": 21 },
+    { "slug": "ypoyrgos-makethonias",  "title": "Υπουργός Μακεδονίας και Θράκης",                    "titleEn": "Minister of Macedonia and Thrace",                 "positionTypeKey": "minister",           "scope": "national", "order": 22 }
+  ]
+}

@@ -270,6 +270,10 @@ PublicPersonProfile.hasMany(GovernmentCurrentHolder, { foreignKey: 'personId', a
 
 GovernmentPosition.hasMany(GovernmentPositionSuggestion, { foreignKey: 'positionId', as: 'aiSuggestions' });
 GovernmentPositionSuggestion.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });
+GovernmentPositionSuggestion.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
+PublicPersonProfile.hasMany(GovernmentPositionSuggestion, { foreignKey: 'personId', as: 'dreamTeamSuggestions' });
+
+GovernmentPosition.belongsTo(Location, { foreignKey: 'jurisdictionId', as: 'jurisdiction' });
 
 GovernmentPosition.hasMany(DreamTeamVote, { foreignKey: 'positionId', as: 'dreamTeamVotes' });
 DreamTeamVote.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });

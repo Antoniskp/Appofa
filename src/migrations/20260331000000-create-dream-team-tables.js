@@ -6,7 +6,6 @@ module.exports = {
 
     // ── GovernmentPositions ──────────────────────────────────────────────────
     if (!tables.includes('GovernmentPositions')) {
-      const dialect = queryInterface.sequelize.getDialect();
       await queryInterface.createTable('GovernmentPositions', {
         id: {
           type: Sequelize.INTEGER,
@@ -27,11 +26,25 @@ module.exports = {
           type: Sequelize.STRING(200),
           allowNull: true,
         },
-        category: {
-          type: dialect === 'sqlite'
-            ? Sequelize.STRING
-            : Sequelize.ENUM('president', 'prime_minister', 'minister'),
+        positionTypeKey: {
+          type: Sequelize.STRING(50),
           allowNull: false,
+        },
+        scope: {
+          type: Sequelize.STRING(20),
+          allowNull: false,
+          defaultValue: 'national',
+        },
+        countryCode: {
+          type: Sequelize.STRING(5),
+          allowNull: false,
+          defaultValue: 'GR',
+        },
+        jurisdictionId: {
+          type: Sequelize.INTEGER,
+          allowNull: true,
+          references: { model: 'Locations', key: 'id' },
+          onDelete: 'SET NULL',
         },
         description: {
           type: Sequelize.TEXT,
@@ -78,17 +91,9 @@ module.exports = {
         },
         personId: {
           type: Sequelize.INTEGER,
-          allowNull: true,
+          allowNull: false,
           references: { model: 'PublicPersonProfiles', key: 'id' },
-          onDelete: 'SET NULL',
-        },
-        holderName: {
-          type: Sequelize.STRING(200),
-          allowNull: true,
-        },
-        holderPhoto: {
-          type: Sequelize.STRING(500),
-          allowNull: true,
+          onDelete: 'CASCADE',
         },
         since: {
           type: Sequelize.DATEONLY,
@@ -187,13 +192,6 @@ module.exports = {
 
     if (tables.includes('GovernmentPositions')) {
       await queryInterface.dropTable('GovernmentPositions');
-      try {
-        await queryInterface.sequelize.query(
-          'DROP TYPE IF EXISTS "enum_GovernmentPositions_category";'
-        );
-      } catch (error) {
-        console.warn('Warning: Could not drop enum type:', error.message);
-      }
       console.log('GovernmentPositions table dropped successfully');
     }
   },

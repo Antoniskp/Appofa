@@ -4,12 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircleIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { apiRequest } from '@/lib/api/client.js';
+import positionTypesData from '@/config/governmentPositionTypes.json';
 
-const CATEGORY_META = {
-  president: { label: 'Πρόεδρος', color: 'bg-purple-100 text-purple-700', icon: '👑' },
-  prime_minister: { label: 'Πρωθυπουργός', color: 'bg-blue-100 text-blue-700', icon: '🏛️' },
-  minister: { label: 'Υπουργός', color: 'bg-indigo-100 text-indigo-700', icon: '⚖️' },
-};
+const positionTypesMap = positionTypesData.reduce((acc, pt) => {
+  acc[pt.key] = pt;
+  return acc;
+}, {});
+
+const DEFAULT_META = { labelGr: 'Θέση', color: 'bg-indigo-100 text-indigo-700', icon: '⚖️' };
 
 function PersonAvatar({ photo, name, size = 'md' }) {
   const sizes = { sm: 'h-8 w-8 text-sm', md: 'h-12 w-12 text-base', lg: 'h-16 w-16 text-xl' };
@@ -43,7 +45,7 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
   const totalVotes = votes.reduce((sum, v) => sum + parseInt(v.voteCount, 10), 0);
   const topVotes = votes.slice(0, 5);
 
-  const meta = CATEGORY_META[position.category] || CATEGORY_META.minister;
+  const meta = positionTypesMap[position.positionTypeKey] || DEFAULT_META;
 
   // Set initial selected person from myVote
   useEffect(() => {
@@ -114,7 +116,7 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-gray-900 text-lg leading-tight truncate">{position.title}</h3>
             <span className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded-full mt-1 ${meta.color}`}>
-              {meta.label}
+              {meta.labelGr}
             </span>
           </div>
         </div>
@@ -129,16 +131,16 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
             </p>
             <div className="flex items-center gap-3">
               <PersonAvatar
-                photo={currentHolder.person?.photo || currentHolder.holderPhoto}
+                photo={currentHolder.person?.photo}
                 name={currentHolder.person
                   ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
-                  : currentHolder.holderName}
+                  : '—'}
               />
               <div>
                 <p className="font-semibold text-gray-800 text-sm">
                   {currentHolder.person
                     ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
-                    : currentHolder.holderName || '—'}
+                    : '—'}
                 </p>
                 {currentHolder.since && (
                   <p className="text-xs text-gray-400">
@@ -272,14 +274,16 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
                 {currentHolder
                   ? (currentHolder.person
                       ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
-                      : currentHolder.holderName)
+                      : '—')
                   : '—'}
               </p>
             </div>
             <div className="p-3 bg-purple-50">
               <p className="text-purple-400 mb-1">🤖 AI</p>
               <p className="font-semibold text-purple-700 text-xs leading-tight">
-                {position.aiSuggestions?.[0]?.name || '—'}
+                {position.aiSuggestions?.[0]?.person
+                  ? `${position.aiSuggestions[0].person.firstName} ${position.aiSuggestions[0].person.lastName}`
+                  : '—'}
               </p>
             </div>
             <div className="p-3 bg-blue-50">

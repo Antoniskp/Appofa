@@ -20,9 +20,25 @@ const GovernmentPosition = sequelize.define('GovernmentPosition', {
     type: DataTypes.STRING(200),
     allowNull: true,
   },
-  category: {
-    type: DataTypes.ENUM('president', 'prime_minister', 'minister'),
+  positionTypeKey: {
+    type: DataTypes.STRING(50),
     allowNull: false,
+  },
+  scope: {
+    type: DataTypes.ENUM('national', 'regional', 'municipal'),
+    allowNull: false,
+    defaultValue: 'national',
+  },
+  countryCode: {
+    type: DataTypes.STRING(5),
+    allowNull: false,
+    defaultValue: 'GR',
+  },
+  jurisdictionId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Locations', key: 'id' },
+    onDelete: 'SET NULL',
   },
   description: {
     type: DataTypes.TEXT,
