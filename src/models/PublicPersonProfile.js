@@ -130,10 +130,6 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
     defaultValue: 'moderator',
     allowNull: false
   },
-  position: {
-    type: DataTypes.ENUM('mayor', 'prefect', 'parliamentary'),
-    allowNull: true
-  },
   isActiveCandidate: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

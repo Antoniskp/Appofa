@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import {
   PlusIcon,
   TrashIcon,
-  PencilSquareIcon,
   CheckIcon,
   XMarkIcon,
   UserCircleIcon,
@@ -15,12 +14,12 @@ import { apiRequest } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import positionTypesData from '@/config/governmentPositionTypes.json';
 
-const CATEGORY_LABELS = {
-  president: '👑 Πρόεδρος',
-  prime_minister: '🏛️ Πρωθυπουργός',
-  minister: '⚖️ Υπουργός / Άλλο',
-};
+const positionTypesMap = positionTypesData.reduce((acc, pt) => {
+  acc[pt.key] = pt;
+  return acc;
+}, {});
 
 // ─── Inline editable text ────────────────────────────────────────────────────
 function InlineEdit({ value, onSave, placeholder = '—', className = '' }) {
@@ -58,8 +57,6 @@ function InlineEdit({ value, onSave, placeholder = '—', className = '' }) {
     </button>
   );
 }
-
-// ─── Person search dropdown ───────────────────────────────────────────────────
 function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφίλ...' }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -110,17 +107,17 @@ function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφί
 
 // ─── Suggestions panel for one position ──────────────────────────────────────
 function SuggestionsPanel({ position, onRefresh }) {
-  const [newName, setNewName] = useState('');
+  const [selectedPerson, setSelectedPerson] = useState(null);
   const [newReason, setNewReason] = useState('');
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const handleAdd = async () => {
-    if (!newName.trim()) return;
+    if (!selectedPerson) return;
     setSaving(true);
     try {
-      await dreamTeamAPI.adminCreateSuggestion({ positionId: position.id, name: newName.trim(), reason: newReason.trim() || null, order: position.aiSuggestions?.length || 0 });
-      setNewName(''); setNewReason(''); setAdding(false);
+      await dreamTeamAPI.adminCreateSuggestion({ positionId: position.id, personId: selectedPerson.id, reason: newReason.trim() || null, order: position.aiSuggestions?.length || 0 });
+      setSelectedPerson(null); setNewReason(''); setAdding(false);
       onRefresh();
     } catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); } finally { setSaving(false); }
   };
@@ -131,12 +128,6 @@ function SuggestionsPanel({ position, onRefresh }) {
       await dreamTeamAPI.adminDeleteSuggestion(id);
       onRefresh();
     } catch (err) { alert(err.message || 'Σφάλμα διαγραφής'); }
-  };
-
-  const handleUpdateName = async (suggestion, name) => {
-    if (!name) return;
-    try { await dreamTeamAPI.adminUpdateSuggestion(suggestion.id, { name }); onRefresh(); }
-    catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); }
   };
 
   const handleUpdateReason = async (suggestion, reason) => {
@@ -154,7 +145,9 @@ function SuggestionsPanel({ position, onRefresh }) {
       {suggestions.map((s) => (
         <div key={s.id} className="flex items-start gap-2 py-1 group">
           <div className="flex-1 min-w-0">
-            <InlineEdit value={s.name} onSave={(v) => handleUpdateName(s, v)} className="text-sm font-medium" />
+            <p className="text-sm font-medium text-gray-800 truncate">
+              {s.person ? `${s.person.firstName} ${s.person.lastName}` : '—'}
+            </p>
             <InlineEdit value={s.reason} onSave={(v) => handleUpdateReason(s, v)} placeholder="Λόγος..." className="text-xs text-gray-500 block" />
           </div>
           <button onClick={() => handleDelete(s.id)} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity flex-shrink-0">
@@ -165,13 +158,16 @@ function SuggestionsPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 space-y-1 border-t pt-2">
-          <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Όνομα προσώπου *" className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ *" />
+          {selectedPerson && (
+            <p className="text-xs text-green-600">✓ {selectedPerson.firstName} {selectedPerson.lastName}</p>
+          )}
           <input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Λόγος (προαιρετικό)" className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
-            <button onClick={handleAdd} disabled={saving || !newName.trim()} className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50">
+            <button onClick={handleAdd} disabled={saving || !selectedPerson} className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50">
               <CheckIcon className="h-3.5 w-3.5" /> Αποθήκευση
             </button>
-            <button onClick={() => { setAdding(false); setNewName(''); setNewReason(''); }} className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 border rounded">
+            <button onClick={() => { setAdding(false); setSelectedPerson(null); setNewReason(''); }} className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 border rounded">
               Ακύρωση
             </button>
           </div>
@@ -190,21 +186,17 @@ function HolderPanel({ position, onRefresh }) {
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
-  const [holderName, setHolderName] = useState('');
   const [since, setSince] = useState('');
-  const [useProfile, setUseProfile] = useState(true);
 
   const activeHolder = (position.currentHolders || []).find((h) => h.isActive);
   const allHolders = position.currentHolders || [];
 
   const handleAdd = async () => {
-    const personId = useProfile ? selectedPerson?.id : null;
-    const name = useProfile ? null : holderName.trim();
-    if (!personId && !name) return;
+    if (!selectedPerson) return;
     setSaving(true);
     try {
-      await dreamTeamAPI.adminCreateHolder({ positionId: position.id, personId, holderName: name, since: since || null });
-      setAdding(false); setSelectedPerson(null); setHolderName(''); setSince('');
+      await dreamTeamAPI.adminCreateHolder({ positionId: position.id, personId: selectedPerson.id, since: since || null });
+      setAdding(false); setSelectedPerson(null); setSince('');
       onRefresh();
     } catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); } finally { setSaving(false); }
   };
@@ -217,7 +209,7 @@ function HolderPanel({ position, onRefresh }) {
 
   const holderDisplayName = (h) => {
     if (h.person) return `${h.person.firstName} ${h.person.lastName}`;
-    return h.holderName || '—';
+    return '—';
   };
 
   return (
@@ -243,23 +235,16 @@ function HolderPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 border-t pt-2 space-y-2">
-          <div className="flex gap-3 text-xs">
-            <label className="flex items-center gap-1 cursor-pointer">
-              <input type="radio" checked={useProfile} onChange={() => setUseProfile(true)} /> Από προφίλ
-            </label>
-            <label className="flex items-center gap-1 cursor-pointer">
-              <input type="radio" checked={!useProfile} onChange={() => setUseProfile(false)} /> Χειροκίνητα
-            </label>
-          </div>
-          {useProfile
-            ? <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ..." />
-            : <input value={holderName} onChange={(e) => setHolderName(e.target.value)} placeholder="Όνομα κατόχου *" className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />}
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ *" />
+          {selectedPerson && (
+            <p className="text-xs text-green-600">✓ {selectedPerson.firstName} {selectedPerson.lastName}</p>
+          )}
           <input type="date" value={since} onChange={(e) => setSince(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
-            <button onClick={handleAdd} disabled={saving || (useProfile ? !selectedPerson : !holderName.trim())} className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50">
+            <button onClick={handleAdd} disabled={saving || !selectedPerson} className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:opacity-50">
               <CheckIcon className="h-3.5 w-3.5" /> Αποθήκευση
             </button>
-            <button onClick={() => { setAdding(false); setSelectedPerson(null); setHolderName(''); setSince(''); }} className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 border rounded">
+            <button onClick={() => { setAdding(false); setSelectedPerson(null); setSince(''); }} className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 border rounded">
               Ακύρωση
             </button>
           </div>
@@ -299,17 +284,21 @@ export default function AdminDreamTeamPage() {
   const getTab = (id) => activeTab[id] || 'holders';
   const setTab = (id, tab) => setActiveTab((prev) => ({ ...prev, [id]: tab }));
 
-  const grouped = {
-    president: positions.filter((p) => p.category === 'president'),
-    prime_minister: positions.filter((p) => p.category === 'prime_minister'),
-    minister: positions.filter((p) => p.category === 'minister'),
-  };
+  // Group by scope, then by positionTypeKey within scope
+  const scopeOrder = ['national', 'regional', 'municipal'];
+  const scopeLabels = { national: '🏛️ Εθνικές Θέσεις', regional: '🗺️ Περιφερειακές Θέσεις', municipal: '🏙️ Δημοτικές Θέσεις' };
 
-  const renderGroup = (key, label) => {
-    const group = grouped[key];
-    if (!group.length) return null;
+  const grouped = scopeOrder.reduce((acc, scope) => {
+    acc[scope] = positions.filter((p) => p.scope === scope);
+    return acc;
+  }, {});
+
+  const renderGroup = (scope) => {
+    const group = grouped[scope];
+    if (!group || !group.length) return null;
+    const label = scopeLabels[scope];
     return (
-      <section key={key}>
+      <section key={scope}>
         <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">{label}</h2>
         <div className="space-y-2">
           {group.map((pos) => {
@@ -318,8 +307,9 @@ export default function AdminDreamTeamPage() {
             const activeHolder = (pos.currentHolders || []).find((h) => h.isActive);
             const holderName = activeHolder?.person
               ? `${activeHolder.person.firstName} ${activeHolder.person.lastName}`
-              : activeHolder?.holderName;
+              : null;
             const suggCount = (pos.aiSuggestions || []).length;
+            const ptMeta = positionTypesMap[pos.positionTypeKey];
 
             return (
               <div key={pos.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -328,6 +318,7 @@ export default function AdminDreamTeamPage() {
                   onClick={() => toggleExpand(pos.id)}
                   className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-gray-50 transition-colors"
                 >
+                  {ptMeta && <span className="text-base flex-shrink-0" aria-hidden="true">{ptMeta.icon}</span>}
                   <span className="flex-1 font-medium text-gray-800 text-sm">{pos.title}</span>
                   <span className="text-xs text-gray-400 hidden sm:block">
                     {holderName
@@ -394,9 +385,7 @@ export default function AdminDreamTeamPage() {
 
         {!loading && (
           <div className="space-y-8">
-            {renderGroup('president', '👑 Πρόεδρος Δημοκρατίας')}
-            {renderGroup('minister', '⚖️ Πρόεδρος Βουλής & Υπουργοί')}
-            {renderGroup('prime_minister', '🏛️ Πρωθυπουργός')}
+            {scopeOrder.map((scope) => renderGroup(scope))}
           </div>
         )}
       </div>

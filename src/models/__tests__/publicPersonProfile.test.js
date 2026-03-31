@@ -54,6 +54,11 @@ describe('PublicPersonProfile Model', () => {
     expect(inst.fullName).toBe('Jane');
   });
 
+  it('does NOT have position field (removed in refactor)', () => {
+    const fields = Object.keys(PublicPersonProfile.rawAttributes);
+    expect(fields).not.toContain('position');
+  });
+
   it('has correct associations', () => {
     const assocNames = Object.keys(PublicPersonProfile.associations);
     expect(assocNames).toContain('location');

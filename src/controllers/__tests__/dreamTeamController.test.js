@@ -70,7 +70,9 @@ describe('Dream Team API Tests', () => {
       slug: 'prime_minister_test',
       title: 'Πρωθυπουργός',
       titleEn: 'Prime Minister',
-      category: 'prime_minister',
+      positionTypeKey: 'prime_minister',
+      scope: 'national',
+      countryCode: 'GR',
       order: 1,
       isActive: true,
     });
@@ -247,7 +249,9 @@ describe('Dream Team API Tests', () => {
       const emptyPos = await GovernmentPosition.create({
         slug: 'minister_empty_test',
         title: 'Υπουργός Δοκιμής',
-        category: 'minister',
+        positionTypeKey: 'minister',
+        scope: 'national',
+        countryCode: 'GR',
         order: 99,
         isActive: true,
       });

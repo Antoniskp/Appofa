@@ -37,6 +37,13 @@ const dreamTeamController = {
             where: { isActive: true },
             required: false,
             order: [['order', 'ASC']],
+            include: [
+              {
+                model: PublicPersonProfile,
+                as: 'person',
+                attributes: ['id', 'firstName', 'lastName', 'photo'],
+              },
+            ],
           },
         ],
       });
@@ -180,6 +187,13 @@ const dreamTeamController = {
             where: { isActive: true },
             required: false,
             order: [['order', 'ASC']],
+            include: [
+              {
+                model: PublicPersonProfile,
+                as: 'person',
+                attributes: ['id', 'firstName', 'lastName', 'photo'],
+              },
+            ],
           },
         ],
       });
@@ -264,7 +278,7 @@ const dreamTeamController = {
           {
             model: GovernmentPosition,
             as: 'position',
-            attributes: ['id', 'slug', 'title', 'category'],
+            attributes: ['id', 'slug', 'title', 'positionTypeKey', 'scope'],
           },
           {
             model: PublicPersonProfile,
@@ -307,6 +321,13 @@ const dreamTeamController = {
             as: 'aiSuggestions',
             required: false,
             order: [['order', 'ASC']],
+            include: [
+              {
+                model: PublicPersonProfile,
+                as: 'person',
+                attributes: ['id', 'firstName', 'lastName', 'photo'],
+              },
+            ],
           },
         ],
       });
@@ -322,22 +343,29 @@ const dreamTeamController = {
   // POST /api/admin/dream-team/suggestions
   adminCreateSuggestion: async (req, res) => {
     try {
-      const { positionId, name, reason, order: ord } = req.body;
-      if (!positionId || !name || !name.trim()) {
-        return res.status(400).json({ success: false, message: 'Απαιτούνται positionId και name.' });
+      const { positionId, personId, reason, order: ord } = req.body;
+      if (!positionId || !personId) {
+        return res.status(400).json({ success: false, message: 'Απαιτούνται positionId και personId (PublicPersonProfile).' });
       }
       const position = await GovernmentPosition.findByPk(positionId);
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
+      const person = await PublicPersonProfile.findByPk(personId);
+      if (!person) {
+        return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
+      }
       const suggestion = await GovernmentPositionSuggestion.create({
         positionId,
-        name: name.trim(),
+        personId,
         reason: reason?.trim() || null,
         order: ord ?? 0,
         isActive: true,
       });
-      return res.status(201).json({ success: true, data: suggestion });
+      const suggestionWithPerson = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
+        include: [{ model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'] }],
+      });
+      return res.status(201).json({ success: true, data: suggestionWithPerson });
     } catch (error) {
       console.error('dreamTeamController.adminCreateSuggestion error:', error);
       return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
@@ -351,14 +379,23 @@ const dreamTeamController = {
       if (!suggestion) {
         return res.status(404).json({ success: false, message: 'Η πρόταση δεν βρέθηκε.' });
       }
-      const { name, reason, order: ord, isActive } = req.body;
+      const { personId, reason, order: ord, isActive } = req.body;
+      if (personId !== undefined) {
+        const person = await PublicPersonProfile.findByPk(personId);
+        if (!person) {
+          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
+        }
+      }
       await suggestion.update({
-        ...(name !== undefined && { name: name.trim() }),
+        ...(personId !== undefined && { personId }),
         ...(reason !== undefined && { reason: reason?.trim() || null }),
         ...(ord !== undefined && { order: ord }),
         ...(isActive !== undefined && { isActive }),
       });
-      return res.status(200).json({ success: true, data: suggestion });
+      const updated = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
+        include: [{ model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'] }],
+      });
+      return res.status(200).json({ success: true, data: updated });
     } catch (error) {
       console.error('dreamTeamController.adminUpdateSuggestion error:', error);
       return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
@@ -385,22 +422,20 @@ const dreamTeamController = {
   // POST /api/admin/dream-team/holders
   adminCreateHolder: async (req, res) => {
     try {
-      const { positionId, personId, holderName, holderPhoto, since, notes } = req.body;
-      if (!positionId || (!personId && !holderName?.trim())) {
+      const { positionId, personId, since, notes } = req.body;
+      if (!positionId || !personId) {
         return res.status(400).json({
           success: false,
-          message: 'Απαιτούνται positionId και personId ή holderName.',
+          message: 'Απαιτείται personId (PublicPersonProfile).',
         });
       }
       const position = await GovernmentPosition.findByPk(positionId);
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      if (personId) {
-        const person = await PublicPersonProfile.findByPk(personId);
-        if (!person) {
-          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
-        }
+      const person = await PublicPersonProfile.findByPk(personId);
+      if (!person) {
+        return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
       }
 
       // Deactivate any existing active holder for this position
@@ -411,9 +446,7 @@ const dreamTeamController = {
 
       const holder = await GovernmentCurrentHolder.create({
         positionId,
-        personId: personId || null,
-        holderName: holderName?.trim() || null,
-        holderPhoto: holderPhoto?.trim() || null,
+        personId,
         since: since || null,
         notes: notes?.trim() || null,
         isActive: true,
@@ -437,17 +470,15 @@ const dreamTeamController = {
       if (!holder) {
         return res.status(404).json({ success: false, message: 'Ο κάτοχος δεν βρέθηκε.' });
       }
-      const { personId, holderName, holderPhoto, since, notes, isActive } = req.body;
-      if (personId) {
+      const { personId, since, notes, isActive } = req.body;
+      if (personId !== undefined) {
         const person = await PublicPersonProfile.findByPk(personId);
         if (!person) {
           return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
         }
       }
       await holder.update({
-        ...(personId !== undefined && { personId: personId || null }),
-        ...(holderName !== undefined && { holderName: holderName?.trim() || null }),
-        ...(holderPhoto !== undefined && { holderPhoto: holderPhoto?.trim() || null }),
+        ...(personId !== undefined && { personId }),
         ...(since !== undefined && { since: since || null }),
         ...(notes !== undefined && { notes: notes?.trim() || null }),
         ...(isActive !== undefined && { isActive }),
