@@ -9,14 +9,22 @@ import { FunnelIcon } from '@heroicons/react/24/outline';
  * @param {function} onChange - Filter change handler
  * @param {array} filterConfig - Array of filter configurations
  * @param {string} className - Additional CSS classes
+ * @param {boolean} [isOpen] - Controlled open state (optional)
+ * @param {function} [onToggle] - Controlled toggle handler (optional)
  */
 export default function FilterBar({
   filters,
   onChange,
   filterConfig = [],
   className = '',
+  isOpen: controlledIsOpen,
+  onToggle,
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use controlled state if provided, otherwise fall back to internal state
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
+  const handleToggle = onToggle ?? (() => setInternalIsOpen((prev) => !prev));
 
   if (filterConfig.length === 0) {
     return null;
@@ -33,7 +41,7 @@ export default function FilterBar({
       {/* Toggle button — always visible */}
       <button
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={handleToggle}
         className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
         aria-expanded={isOpen}
         aria-label="Φίλτρα"
