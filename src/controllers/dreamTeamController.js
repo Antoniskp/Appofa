@@ -8,6 +8,7 @@ const {
   GovernmentPositionSuggestion,
   DreamTeamVote,
   PublicPersonProfile,
+  User,
 } = require('../models');
 
 const dreamTeamController = {
@@ -50,19 +51,33 @@ const dreamTeamController = {
 
       const positionIds = positions.map((p) => p.id);
 
-      // Fetch vote counts per position
+      // Fetch vote counts per position (include candidateUserId in group to satisfy PostgreSQL)
       const voteCounts = await DreamTeamVote.findAll({
         attributes: [
           'positionId',
           'personId',
+          'candidateUserId',
           'personName',
           [sequelize.fn('COUNT', sequelize.col('id')), 'voteCount'],
         ],
         where: { positionId: { [Op.in]: positionIds } },
-        group: ['positionId', 'personId', 'personName'],
+        group: ['positionId', 'personId', 'candidateUserId', 'personName'],
         order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
         raw: true,
       });
+
+      // Enrich vote counts with person photos for PublicPersonProfile votes
+      const votedPersonIds = [...new Set(voteCounts.map((v) => v.personId).filter(Boolean))];
+      if (votedPersonIds.length > 0) {
+        const votedPersons = await PublicPersonProfile.findAll({
+          where: { id: { [Op.in]: votedPersonIds } },
+          attributes: ['id', 'firstName', 'lastName', 'photo'],
+          raw: true,
+        });
+        const personMap = {};
+        votedPersons.forEach((p) => { personMap[p.id] = p; });
+        voteCounts.forEach((v) => { v.person = personMap[v.personId] || null; });
+      }
 
       // Fetch current user's votes
       let myVotes = [];
@@ -104,12 +119,12 @@ const dreamTeamController = {
   // POST /api/dream-team/vote
   vote: async (req, res) => {
     try {
-      const { positionId, personId } = req.body;
+      const { positionId, personId, candidateUserId } = req.body;
 
-      if (!positionId || !personId) {
+      if (!positionId || (!personId && !candidateUserId)) {
         return res.status(400).json({
           success: false,
-          message: 'Απαιτούνται positionId και personId.',
+          message: 'Απαιτούνται positionId και (personId ή candidateUserId).',
         });
       }
 
@@ -123,36 +138,54 @@ const dreamTeamController = {
         });
       }
 
-      const person = await PublicPersonProfile.findByPk(personId, {
-        attributes: ['id', 'firstName', 'lastName'],
-      });
-      if (!person) {
-        return res.status(404).json({
-          success: false,
-          message: 'Το πρόσωπο δεν βρέθηκε.',
+      let personName;
+      if (personId) {
+        const person = await PublicPersonProfile.findByPk(personId, {
+          attributes: ['id', 'firstName', 'lastName'],
         });
+        if (!person) {
+          return res.status(404).json({
+            success: false,
+            message: 'Το πρόσωπο δεν βρέθηκε.',
+          });
+        }
+        personName = `${person.firstName} ${person.lastName}`.trim();
+      } else {
+        const candidateUser = await User.findByPk(candidateUserId, {
+          attributes: ['id', 'username', 'firstName', 'lastName'],
+        });
+        if (!candidateUser) {
+          return res.status(404).json({
+            success: false,
+            message: 'Ο χρήστης δεν βρέθηκε.',
+          });
+        }
+        personName = (`${candidateUser.firstName || ''} ${candidateUser.lastName || ''}`.trim()) || candidateUser.username;
       }
-
-      const personName = `${person.firstName} ${person.lastName}`.trim();
 
       const existing = await DreamTeamVote.findOne({
         where: { userId: req.user.id, positionId },
       });
 
       if (existing) {
-        await existing.update({ personId, personName });
+        await existing.update({
+          personId: personId || null,
+          candidateUserId: candidateUserId || null,
+          personName,
+        });
       } else {
         await DreamTeamVote.create({
           userId: req.user.id,
           positionId,
-          personId,
+          personId: personId || null,
+          candidateUserId: candidateUserId || null,
           personName,
         });
       }
 
       return res.status(200).json({
         success: true,
-        data: { positionId, personId, personName },
+        data: { positionId, personId: personId || null, candidateUserId: candidateUserId || null, personName },
         message: 'Ψήφος καταγράφηκε επιτυχώς.',
       });
     } catch (error) {
@@ -284,6 +317,12 @@ const dreamTeamController = {
             model: PublicPersonProfile,
             as: 'person',
             attributes: ['id', 'firstName', 'lastName', 'photo'],
+            required: false,
+          },
+          {
+            model: User,
+            as: 'candidateUser',
+            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
             required: false,
           },
         ],

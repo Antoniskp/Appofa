@@ -29,6 +29,12 @@ const DreamTeamVote = sequelize.define('DreamTeamVote', {
     type: DataTypes.STRING(200),
     allowNull: true,
   },
+  candidateUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'CASCADE',
+  },
 }, {
   tableName: 'DreamTeamVotes',
   timestamps: true,

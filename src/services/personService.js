@@ -61,7 +61,6 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
   const where = {};
   if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
   if (claimStatus) where.claimStatus = claimStatus;
-  if (position) where.position = position;
   if (search) {
     where[Op.or] = [
       { firstName: { [Op.like]: `%${search}%` } },

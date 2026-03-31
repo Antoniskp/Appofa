@@ -67,16 +67,21 @@ export default function DreamTeamPage() {
     loadData();
   }, [loadData]);
 
-  const handleVote = useCallback(async (positionId, personId) => {
+  const handleVote = useCallback(async (positionId, personId, candidateUserId) => {
     setVotingPosition(positionId);
     try {
-      const res = await dreamTeamAPI.vote(positionId, personId);
+      const res = await dreamTeamAPI.vote(positionId, personId, candidateUserId);
       if (res?.success) {
         showToast(res.message || 'Ψήφος καταγράφηκε!');
         // Update myVotesMap optimistically
         setMyVotesMap((prev) => ({
           ...prev,
-          [positionId]: { positionId, personId, personName: res.data?.personName },
+          [positionId]: {
+            positionId,
+            personId: personId || null,
+            candidateUserId: candidateUserId || null,
+            personName: res.data?.personName,
+          },
         }));
         // Refresh positions to get updated vote counts
         const posRes = await dreamTeamAPI.getPositions();

@@ -38,6 +38,7 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const searchTimer = useRef(null);
+  const requestIdRef = useRef(0);
   const dropdownRef = useRef(null);
 
   const currentHolder = position.currentHolders?.[0] || null;
@@ -47,14 +48,33 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
 
   const meta = positionTypesMap[position.positionTypeKey] || DEFAULT_META;
 
-  // Set initial selected person from myVote
+  // Restore selected person from myVote using joined data when available
   useEffect(() => {
     if (myVote) {
-      setSelectedPerson({ id: myVote.personId, name: myVote.personName });
+      let name;
+      let type;
+      let id;
+      if (myVote.person) {
+        name = `${myVote.person.firstName} ${myVote.person.lastName}`.trim();
+        type = 'profile';
+        id = myVote.personId;
+      } else if (myVote.candidateUser) {
+        name = (`${myVote.candidateUser.firstName || ''} ${myVote.candidateUser.lastName || ''}`.trim()) || myVote.candidateUser.username;
+        type = 'user';
+        id = myVote.candidateUserId;
+      } else {
+        name = myVote.personName || '';
+        type = myVote.personId ? 'profile' : 'user';
+        id = myVote.personId || myVote.candidateUserId;
+      }
+      if (id) {
+        setSelectedPerson({ id, name, type });
+        setSearchQuery(name);
+      }
     }
   }, [myVote]);
 
-  // Debounced person search
+  // Debounced person search — queries both profiles and users in parallel
   const handleSearchChange = useCallback((e) => {
     const q = e.target.value;
     setSearchQuery(q);
@@ -66,24 +86,47 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
       return;
     }
 
+    // Keep dropdown open while user is typing
+    setDropdownOpen(true);
+
     searchTimer.current = setTimeout(async () => {
+      const myId = ++requestIdRef.current;
       setSearching(true);
       try {
-        const res = await apiRequest(`/api/persons?search=${encodeURIComponent(q)}&limit=10`);
-        const profiles = res?.data?.profiles || [];
-        setSearchResults(profiles);
-        setDropdownOpen(profiles.length > 0);
+        const encodedQ = encodeURIComponent(q);
+        const [profileRes, userRes] = await Promise.allSettled([
+          apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
+          // Only fetch users if the component has an onVote handler (user is logged in)
+          onVote
+            ? apiRequest(`/api/users/search?search=${encodedQ}&limit=8`)
+            : Promise.resolve(null),
+        ]);
+
+        if (myId !== requestIdRef.current) return; // stale, discard
+
+        const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
+        const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
+
+        const profileResults = profiles.map((p) => ({ ...p, type: 'profile' }));
+        const userResults = users.map((u) => ({ ...u, type: 'user' }));
+
+        const merged = [...profileResults, ...userResults];
+        setSearchResults(merged);
+        setDropdownOpen(merged.length > 0);
       } catch {
+        if (myId !== requestIdRef.current) return;
         setSearchResults([]);
       } finally {
-        setSearching(false);
+        if (myId === requestIdRef.current) setSearching(false);
       }
     }, 300);
-  }, []);
+  }, [onVote]);
 
   const handleSelectPerson = useCallback((person) => {
-    const name = `${person.firstName} ${person.lastName}`.trim();
-    setSelectedPerson({ id: person.id, name });
+    const name = person.type === 'user'
+      ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
+      : `${person.firstName} ${person.lastName}`.trim();
+    setSelectedPerson({ id: person.id, name, type: person.type });
     setSearchQuery(name);
     setDropdownOpen(false);
   }, []);
@@ -99,11 +142,18 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const isVoteChanged = selectedPerson && selectedPerson.id !== myVote?.personId;
+  const isVoteChanged = selectedPerson && (
+    (selectedPerson.type === 'profile' && selectedPerson.id !== myVote?.personId) ||
+    (selectedPerson.type === 'user' && selectedPerson.id !== myVote?.candidateUserId)
+  );
 
   const handleVoteClick = () => {
     if (selectedPerson && isVoteChanged) {
-      onVote(position.id, selectedPerson.id);
+      if (selectedPerson.type === 'user') {
+        onVote(position.id, null, selectedPerson.id);
+      } else {
+        onVote(position.id, selectedPerson.id, null);
+      }
     }
   };
 
@@ -192,34 +242,34 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
                 role="listbox"
                 className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
               >
-                {searchResults.map((person) => (
-                  <li
-                    key={person.id}
-                    role="option"
-                    aria-selected={selectedPerson?.id === person.id}
-                    onClick={() => handleSelectPerson(person)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSelectPerson(person)}
-                    tabIndex={0}
-                    className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
-                  >
-                    <PersonAvatar
-                      photo={person.photo}
-                      name={`${person.firstName} ${person.lastName}`}
-                      size="sm"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-800 truncate">
-                        {person.firstName} {person.lastName}
-                      </p>
-                      {person.bio && (
-                        <p className="text-xs text-gray-400 truncate">{person.bio}</p>
+                {searchResults.map((person) => {
+                  const displayName = person.type === 'user'
+                    ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
+                    : `${person.firstName} ${person.lastName}`;
+                  const photo = person.type === 'user' ? person.avatar : person.photo;
+                  return (
+                    <li
+                      key={`${person.type}-${person.id}`}
+                      role="option"
+                      aria-selected={selectedPerson?.id === person.id && selectedPerson?.type === person.type}
+                      onClick={() => handleSelectPerson(person)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSelectPerson(person)}
+                      tabIndex={0}
+                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
+                      <PersonAvatar photo={photo} name={displayName} size="sm" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-800 truncate">{displayName}</p>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${person.type === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+                          {person.type === 'user' ? '🧑 Χρήστης' : '📋 Δημόσιο Προφίλ'}
+                        </span>
+                      </div>
+                      {selectedPerson?.id === person.id && selectedPerson?.type === person.type && (
+                        <CheckCircleIcon className="h-4 w-4 text-green-500 flex-shrink-0" />
                       )}
-                    </div>
-                    {selectedPerson?.id === person.id && (
-                      <CheckCircleIcon className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    )}
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
@@ -235,14 +285,21 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
               {topVotes.map((v, idx) => {
                 const count = parseInt(v.voteCount, 10);
                 const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-                const isMyVote = v.personId === myVote?.personId;
+                const isMyVote = (v.personId && v.personId === myVote?.personId) ||
+                  (v.candidateUserId && v.candidateUserId === myVote?.candidateUserId);
+                const photo = v.person?.photo || null;
                 return (
-                  <div key={`${v.personId}-${idx}`}>
+                  <div key={`${v.personId || v.candidateUserId}-${idx}`}>
                     <div className="flex items-center justify-between text-xs mb-1">
-                      <span className={`font-medium truncate flex-1 mr-2 ${isMyVote ? 'text-blue-600' : 'text-gray-700'}`}>
-                        {isMyVote && <span className="mr-1">✓</span>}
-                        {v.personName}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
+                        {photo && (
+                          <img src={photo} alt="" className="h-5 w-5 rounded-full object-cover flex-shrink-0" />
+                        )}
+                        <span className={`font-medium truncate ${isMyVote ? 'text-blue-600' : 'text-gray-700'}`}>
+                          {isMyVote && <span className="mr-1">✓</span>}
+                          {v.personName}
+                        </span>
+                      </div>
                       <span className="text-gray-500 flex-shrink-0">{pct}% ({count})</span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
