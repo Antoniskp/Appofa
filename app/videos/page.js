@@ -170,7 +170,7 @@ export default function VideosPage() {
 
         {/* Initial loading skeletons */}
         {initialLoading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <VideoGridSkeleton />
             <VideoGridSkeleton />
             <VideoGridSkeleton />
@@ -207,7 +207,7 @@ export default function VideosPage() {
 
         {/* Video grid */}
         {!initialLoading && !error && videos.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {videos.map((video) => (
               <div
                 key={video.id}
