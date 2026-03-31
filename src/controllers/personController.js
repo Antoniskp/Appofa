@@ -4,8 +4,8 @@ const personController = {
   // GET /api/persons
   getCandidates: async (req, res) => {
     try {
-      const { page, limit, constituencyId, search, claimStatus, position, activeOnly } = req.query;
-      const data = await personService.getCandidates({ page, limit, constituencyId, search, claimStatus, position, activeOnly });
+      const { page, limit, constituencyId, search, claimStatus, activeOnly } = req.query;
+      const data = await personService.getCandidates({ page, limit, constituencyId, search, claimStatus, activeOnly });
       return res.status(200).json({ success: true, data });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });

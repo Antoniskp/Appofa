@@ -279,6 +279,7 @@ GovernmentPosition.hasMany(DreamTeamVote, { foreignKey: 'positionId', as: 'dream
 DreamTeamVote.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });
 DreamTeamVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
 DreamTeamVote.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
+DreamTeamVote.belongsTo(User, { foreignKey: 'candidateUserId', as: 'candidateUser' });
 User.hasMany(DreamTeamVote, { foreignKey: 'userId', as: 'dreamTeamVotes' });
 
 module.exports = {

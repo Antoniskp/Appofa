@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   PlusIcon,
@@ -62,18 +62,51 @@ function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφί
   const [results, setResults] = useState([]);
   const [open, setOpen] = useState(false);
   const timer = useRef(null);
+  const requestIdRef = useRef(0);
   const ref = useRef(null);
+
+  // Close dropdown on outside click (Bug 5)
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const search = useCallback((q) => {
     clearTimeout(timer.current);
     if (!q.trim()) { setResults([]); setOpen(false); return; }
+
+    // Keep dropdown open while user is typing
+    setOpen(true);
+
     timer.current = setTimeout(async () => {
+      const myId = ++requestIdRef.current;
       try {
-        const res = await apiRequest(`/api/persons?search=${encodeURIComponent(q)}&limit=8`);
-        const profiles = res?.data?.profiles || [];
-        setResults(profiles);
-        setOpen(profiles.length > 0);
-      } catch { setResults([]); }
+        const encodedQ = encodeURIComponent(q);
+        const [profileRes, userRes] = await Promise.allSettled([
+          apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
+          apiRequest(`/api/users/search?search=${encodedQ}&limit=8`),
+        ]);
+
+        if (myId !== requestIdRef.current) return; // stale, discard
+
+        const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
+        const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
+
+        const merged = [
+          ...profiles.map((p) => ({ ...p, resultType: 'profile' })),
+          ...users.map((u) => ({ ...u, resultType: 'user' })),
+        ];
+        setResults(merged);
+        setOpen(merged.length > 0);
+      } catch {
+        if (myId !== requestIdRef.current) return;
+        setResults([]);
+      }
     }, 300);
   }, []);
 
@@ -86,19 +119,36 @@ function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφί
         className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
       {open && results.length > 0 && (
-        <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-          {results.map((p) => (
-            <li
-              key={p.id}
-              onClick={() => { onSelect(p); setQuery(`${p.firstName} ${p.lastName}`); setOpen(false); }}
-              className="flex items-center gap-2 px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
-            >
-              {p.photo
-                ? <img src={p.photo} alt="" className="h-7 w-7 rounded-full object-cover" />
-                : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
-              <span className="font-medium">{p.firstName} {p.lastName}</span>
-            </li>
-          ))}
+        <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+          {results.map((p) => {
+            const isUserOnly = p.resultType === 'user';
+            const displayName = isUserOnly
+              ? ((`${p.firstName || ''} ${p.lastName || ''}`.trim()) || p.username)
+              : `${p.firstName} ${p.lastName}`;
+            const photo = isUserOnly ? p.avatar : p.photo;
+
+            return (
+              <li
+                key={`${p.resultType}-${p.id}`}
+                onClick={() => {
+                  if (isUserOnly) return; // admin panel: only allow PublicPersonProfiles
+                  onSelect(p);
+                  setQuery(displayName);
+                  setOpen(false);
+                }}
+                title={isUserOnly ? 'Αυτός ο χρήστης δεν έχει δημόσιο προφίλ. Δημιουργήστε ένα πρώτα.' : undefined}
+                className={`flex items-center gap-2 px-3 py-2 text-sm ${isUserOnly ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'}`}
+              >
+                {photo
+                  ? <img src={photo} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                  : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
+                <span className="font-medium flex-1 truncate">{displayName}</span>
+                <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${isUserOnly ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {isUserOnly ? '🧑 Χρήστης' : '📋 Προφίλ'}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
