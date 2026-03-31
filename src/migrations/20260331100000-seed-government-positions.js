@@ -40,7 +40,9 @@ module.exports = {
              "positionTypeKey" = EXCLUDED."positionTypeKey",
              scope = EXCLUDED.scope,
              "countryCode" = EXCLUDED."countryCode",
+             title = EXCLUDED.title,
              "titleEn" = EXCLUDED."titleEn",
+             "order" = EXCLUDED."order",
              "updatedAt" = EXCLUDED."updatedAt"`,
           {
             replacements: {

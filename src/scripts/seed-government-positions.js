@@ -2,7 +2,7 @@ const path = require('path');
 const { sequelize, GovernmentPosition } = require('../models');
 require('dotenv').config();
 
-const { positions: POSITIONS, countryCode: COUNTRY_CODE } = require(
+const { positions: POSITIONS, countryCode } = require(
   path.join(__dirname, '../../config/governmentPositions.json')
 );
 
@@ -23,7 +23,7 @@ const seedGovernmentPositions = async () => {
           titleEn: pos.titleEn || null,
           positionTypeKey: pos.positionTypeKey,
           scope: pos.scope || 'national',
-          countryCode: COUNTRY_CODE || 'GR',
+          countryCode: countryCode || 'GR',
           description: null,
           order: pos.order,
           isActive: true,

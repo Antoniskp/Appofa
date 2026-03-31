@@ -37,7 +37,10 @@ module.exports = {
         `);
 
         if (dialect === 'sqlite') {
-          // SQLite does not support ALTER COLUMN; positionTypeKey stays nullable in SQLite test env
+          // NOTE: SQLite does not support ALTER COLUMN to add NOT NULL constraints.
+          // In SQLite test environments, positionTypeKey stays nullable at the DB level,
+          // but the Sequelize model enforces allowNull: false at the application level.
+          // Production PostgreSQL databases will have the NOT NULL constraint enforced below.
         } else {
           await queryInterface.changeColumn('GovernmentPositions', 'positionTypeKey', {
             type: Sequelize.STRING(50),
