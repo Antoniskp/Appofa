@@ -260,6 +260,37 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
           </div>
         )}
 
+        {/* Comparison Table */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            Σύγκριση
+          </p>
+          <div className="grid grid-cols-3 divide-x divide-gray-100 border border-gray-100 rounded-xl overflow-hidden text-center text-xs">
+            <div className="p-3 bg-gray-50">
+              <p className="text-gray-400 mb-1">🏛️ Σήμερα</p>
+              <p className="font-semibold text-gray-700 text-xs leading-tight">
+                {currentHolder
+                  ? (currentHolder.person
+                      ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
+                      : currentHolder.holderName)
+                  : '—'}
+              </p>
+            </div>
+            <div className="p-3 bg-purple-50">
+              <p className="text-purple-400 mb-1">🤖 AI</p>
+              <p className="font-semibold text-purple-700 text-xs leading-tight">
+                {position.aiSuggestions?.[0]?.name || '—'}
+              </p>
+            </div>
+            <div className="p-3 bg-blue-50">
+              <p className="text-blue-400 mb-1">🗳️ Χρήστες</p>
+              <p className="font-semibold text-blue-700 text-xs leading-tight">
+                {votes[0]?.personName || '—'}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Vote Button */}
         <button
           onClick={handleVoteClick}
