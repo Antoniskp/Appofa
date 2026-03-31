@@ -140,7 +140,7 @@ export default function HomePage() {
             </Link>
           </h2>
           {videosLoading && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <SkeletonLoader type="card" count={6} variant="grid" />
             </div>
           )}
@@ -160,7 +160,7 @@ export default function HomePage() {
             />
           )}
           {videos.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {videos.map((video) => (
                 <VideoThumbnailCard key={video.id} article={video} />
               ))}
