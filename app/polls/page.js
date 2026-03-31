@@ -36,6 +36,7 @@ export default function PollsPage() {
 
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
+  const [filterBarOpen, setFilterBarOpen] = useState(false);
 
   useEffect(() => {
     pollAPI.getCategoryCounts({ status: 'active' })
@@ -89,6 +90,8 @@ export default function PollsPage() {
             <FilterBar
               filters={filters}
               onChange={handleFilterChange}
+              isOpen={filterBarOpen}
+              onToggle={() => setFilterBarOpen((prev) => !prev)}
               filterConfig={[
                 {
                   name: 'status',
