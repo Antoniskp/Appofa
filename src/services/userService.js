@@ -8,6 +8,7 @@ const {
 } = require('../utils/validators');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
+const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
@@ -607,13 +608,22 @@ async function searchUsers(search, page, limit) {
 
   if (search && typeof search === 'string') {
     const isPostgres = dbConfig.getDialect() === 'postgres';
-    const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&');
     const likeOp = isPostgres ? Op.iLike : Op.like;
-    whereClause[Op.or] = [
-      { username: { [likeOp]: `%${sanitizedSearch}%` } },
-      { firstName: { [likeOp]: `%${sanitizedSearch}%` } },
-      { lastName: { [likeOp]: `%${sanitizedSearch}%` } },
+    const sanitizedRaw = sanitizeForLike(search);
+    const sanitizedNorm = sanitizeForLike(normalizeGreek(search));
+    const conditions = [
+      { username: { [likeOp]: `%${sanitizedRaw}%` } },
+      { firstName: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastName: { [likeOp]: `%${sanitizedRaw}%` } },
     ];
+    if (sanitizedNorm !== sanitizedRaw) {
+      conditions.push(
+        { username: { [likeOp]: `%${sanitizedNorm}%` } },
+        { firstName: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastName: { [likeOp]: `%${sanitizedNorm}%` } }
+      );
+    }
+    whereClause[Op.or] = conditions;
   }
 
   const { count, rows: users } = await User.findAndCountAll({

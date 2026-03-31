@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { PublicPersonProfile, CandidateApplication, User, Location } = require('../models');
+const dbConfig = require('../config/database');
+const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
 
@@ -62,10 +64,21 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
   if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
   if (claimStatus) where.claimStatus = claimStatus;
   if (search) {
-    where[Op.or] = [
-      { firstName: { [Op.like]: `%${search}%` } },
-      { lastName: { [Op.like]: `%${search}%` } }
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    const sanitizedRaw = sanitizeForLike(search);
+    const sanitizedNorm = sanitizeForLike(normalizeGreek(search));
+    const conditions = [
+      { firstName: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastName: { [likeOp]: `%${sanitizedRaw}%` } },
     ];
+    if (sanitizedNorm !== sanitizedRaw) {
+      conditions.push(
+        { firstName: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastName: { [likeOp]: `%${sanitizedNorm}%` } }
+      );
+    }
+    where[Op.or] = conditions;
   }
   if (activeOnly === 'true') where.isActiveCandidate = true;
 
