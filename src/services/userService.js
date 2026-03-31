@@ -608,9 +608,12 @@ async function searchUsers(search, page, limit) {
   if (search && typeof search === 'string') {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const sanitizedSearch = search.replace(/[%_\\]/g, '\\$&');
-    whereClause.username = {
-      [isPostgres ? Op.iLike : Op.like]: `%${sanitizedSearch}%`
-    };
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    whereClause[Op.or] = [
+      { username: { [likeOp]: `%${sanitizedSearch}%` } },
+      { firstName: { [likeOp]: `%${sanitizedSearch}%` } },
+      { lastName: { [likeOp]: `%${sanitizedSearch}%` } },
+    ];
   }
 
   const { count, rows: users } = await User.findAndCountAll({

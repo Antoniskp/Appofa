@@ -363,6 +363,26 @@ const dreamTeamController = {
     }
   },
 
+  // DELETE /api/dream-team/vote/:positionId
+  deleteVote: async (req, res) => {
+    try {
+      const positionId = parseInt(req.params.positionId, 10);
+      if (isNaN(positionId) || positionId <= 0) {
+        return res.status(400).json({ success: false, message: 'Απαιτείται positionId.' });
+      }
+      const deleted = await DreamTeamVote.destroy({
+        where: { userId: req.user.id, positionId },
+      });
+      if (!deleted) {
+        return res.status(404).json({ success: false, message: 'Ψήφος δεν βρέθηκε.' });
+      }
+      return res.status(200).json({ success: true, message: 'Ψήφος διαγράφηκε.' });
+    } catch (error) {
+      console.error('dreamTeamController.deleteVote error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
   // ─── Admin: positions overview ───────────────────────────────────────────────
 
   // GET /api/admin/dream-team/positions

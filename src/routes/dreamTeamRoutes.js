@@ -8,6 +8,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 
 router.get('/positions', apiLimiter, optionalAuthMiddleware, dreamTeamController.getPositionsWithData);
 router.post('/vote', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.vote);
+router.delete('/vote/:positionId', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.deleteVote);
 router.get('/results', apiLimiter, optionalAuthMiddleware, dreamTeamController.getResults);
 router.get('/my-votes', apiLimiter, authMiddleware, dreamTeamController.getMyVotes);
 

@@ -31,7 +31,7 @@ function PersonAvatar({ photo, name, size = 'md' }) {
   );
 }
 
-export default function PositionCard({ position, myVote, onVote, loading }) {
+export default function PositionCard({ position, myVote, onVote, onDeleteVote, loading }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -213,9 +213,24 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
           </p>
 
           {myVote && (
-            <div className="flex items-center gap-2 mb-2 p-2 bg-green-50 rounded-lg border border-green-200">
-              <CheckCircleSolid className="h-4 w-4 text-green-500 flex-shrink-0" />
-              <span className="text-sm text-green-700 font-medium">{myVote.personName}</span>
+            <div className="flex items-center justify-between mb-2 p-2 bg-green-50 rounded-lg border border-green-200">
+              <div className="flex items-center gap-2">
+                <CheckCircleSolid className="h-4 w-4 text-green-500 flex-shrink-0" />
+                <span className="text-sm text-green-700 font-medium">{myVote.personName}</span>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedPerson(null);
+                  setSearchQuery('');
+                  setSearchResults([]);
+                  setDropdownOpen(false);
+                }}
+                className="text-xs text-gray-400 hover:text-red-500 transition-colors ml-2 flex-shrink-0"
+                title="Αλλαγή ψήφου"
+                aria-label="Αλλαγή ψήφου"
+              >
+                ✕
+              </button>
             </div>
           )}
 
@@ -381,6 +396,17 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
             'Ψηφίστε'
           )}
         </button>
+
+        {myVote && onDeleteVote && !isVoteChanged && (
+          <button
+            onClick={() => onDeleteVote(position.id)}
+            disabled={loading}
+            className="w-full mt-2 text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+            aria-label={`Διαγραφή ψήφου για ${position.title}`}
+          >
+            🗑 Διαγραφή ψήφου
+          </button>
+        )}
       </div>
     </div>
   );
