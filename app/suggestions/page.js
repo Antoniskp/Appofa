@@ -49,12 +49,11 @@ const STATUS_VARIANTS = {
   rejected: 'danger',
 };
 
-function VoteScore({ score }) {
-  const colorClass =
-    score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-gray-500';
+function VoteCounts({ upvotes, downvotes }) {
   return (
-    <span className={`text-sm font-semibold ${colorClass}`}>
-      {score > 0 ? `+${score}` : score}
+    <span className="flex items-center gap-1.5 text-xs text-gray-500">
+      <span className="text-green-600 font-semibold">👍 {upvotes ?? 0}</span>
+      <span className="text-red-500 font-semibold">👎 {downvotes ?? 0}</span>
     </span>
   );
 }
@@ -94,8 +93,7 @@ function SuggestionCard({ suggestion }) {
             )}
             <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
             <span className="flex items-center gap-1">
-              <VoteScore score={suggestion.score} />
-              <span>ψήφοι</span>
+              <VoteCounts upvotes={suggestion.upvotes} downvotes={suggestion.downvotes} />
             </span>
             {suggestion.solutions && (
               <span>{suggestion.solutions?.length ?? 0} λύσεις</span>

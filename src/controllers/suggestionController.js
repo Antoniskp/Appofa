@@ -17,6 +17,17 @@ async function computeScore(targetType, targetId) {
 }
 
 /**
+ * Compute separate upvote and downvote counts for a given target.
+ */
+async function computeCounts(targetType, targetId) {
+  const [upvotes, downvotes] = await Promise.all([
+    SuggestionVote.count({ where: { targetType, targetId, value: 1 } }),
+    SuggestionVote.count({ where: { targetType, targetId, value: -1 } }),
+  ]);
+  return { upvotes, downvotes };
+}
+
+/**
  * Get the caller's current vote value for a target (null if no vote).
  */
 async function getMyVote(userId, targetType, targetId) {
@@ -29,12 +40,12 @@ async function getMyVote(userId, targetType, targetId) {
 }
 
 /**
- * Attach score and myVote to a plain suggestion/solution object.
+ * Attach upvotes, downvotes, score, and myVote to a plain suggestion/solution object.
  */
 async function attachVoteInfo(obj, targetType, userId) {
-  const score = await computeScore(targetType, obj.id);
+  const { upvotes, downvotes } = await computeCounts(targetType, obj.id);
   const myVote = await getMyVote(userId, targetType, obj.id);
-  return { ...obj, score, myVote };
+  return { ...obj, upvotes, downvotes, score: upvotes - downvotes, myVote };
 }
 
 const suggestionController = {
@@ -206,7 +217,7 @@ const suggestionController = {
 
       return res.status(201).json({
         success: true,
-        data: { ...created.toJSON(), score: 0, myVote: null },
+        data: { ...created.toJSON(), upvotes: 0, downvotes: 0, score: 0, myVote: null },
         message: 'Suggestion created successfully.'
       });
     } catch (error) {
@@ -359,7 +370,7 @@ const suggestionController = {
 
       return res.status(201).json({
         success: true,
-        data: { ...created.toJSON(), score: 0, myVote: null },
+        data: { ...created.toJSON(), upvotes: 0, downvotes: 0, score: 0, myVote: null },
         message: 'Solution created successfully.'
       });
     } catch (error) {
@@ -457,19 +468,19 @@ async function handleVote(req, res, targetType, targetId) {
     if (existing.value === value) {
       // Same vote → remove (toggle off)
       await existing.destroy();
-      const score = await computeScore(targetType, targetId);
-      return res.json({ success: true, data: { score, myVote: null }, message: 'Vote removed.' });
+      const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: null }, message: 'Vote removed.' });
     } else {
       // Different vote → update
       await existing.update({ value });
-      const score = await computeScore(targetType, targetId);
-      return res.json({ success: true, data: { score, myVote: value }, message: 'Vote updated.' });
+      const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote updated.' });
     }
   } else {
     // No existing vote → create
     await SuggestionVote.create({ userId, targetType, targetId, value });
-    const score = await computeScore(targetType, targetId);
-    return res.json({ success: true, data: { score, myVote: value }, message: 'Vote recorded.' });
+    const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+    return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote recorded.' });
   }
 }
 

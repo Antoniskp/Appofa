@@ -15,12 +15,11 @@ const TYPE_VARIANTS = {
   location_suggestion: 'success',
 };
 
-function VoteScore({ score }) {
-  const colorClass =
-    score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-gray-500';
+function VoteCounts({ upvotes, downvotes }) {
   return (
-    <span className={`font-semibold ${colorClass}`}>
-      {score > 0 ? `+${score}` : score}
+    <span className="flex items-center gap-1.5 text-sm text-gray-500">
+      <span className="text-green-600 font-semibold">👍 {upvotes ?? 0}</span>
+      <span className="text-red-500 font-semibold">👎 {downvotes ?? 0}</span>
     </span>
   );
 }
@@ -43,7 +42,7 @@ export default function SuggestionCard({ suggestion }) {
         {suggestion.author && (
           <span>@{suggestion.author.username}</span>
         )}
-        <VoteScore score={suggestion.score ?? 0} />
+        <VoteCounts upvotes={suggestion.upvotes ?? 0} downvotes={suggestion.downvotes ?? 0} />
       </div>
     </Link>
   );
