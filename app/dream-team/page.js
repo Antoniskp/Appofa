@@ -96,6 +96,29 @@ export default function DreamTeamPage() {
     }
   }, [showToast]);
 
+  const handleDeleteVote = useCallback(async (positionId) => {
+    setVotingPosition(positionId);
+    try {
+      const res = await dreamTeamAPI.deleteVote(positionId);
+      if (res?.success) {
+        showToast('Η ψήφος σας διαγράφηκε.');
+        setMyVotesMap((prev) => {
+          const updated = { ...prev };
+          delete updated[positionId];
+          return updated;
+        });
+        const posRes = await dreamTeamAPI.getPositions();
+        if (posRes?.success) setPositions(posRes.data || []);
+        const resRes = await dreamTeamAPI.getResults();
+        if (resRes?.success) setResults(resRes.data || []);
+      }
+    } catch (err) {
+      showToast(err.message || 'Σφάλμα κατά τη διαγραφή ψήφου.', 'error');
+    } finally {
+      setVotingPosition(null);
+    }
+  }, [showToast]);
+
   const totalVotes = positions.reduce((sum, p) => {
     return sum + (p.votes || []).reduce((s, v) => s + parseInt(v.voteCount, 10), 0);
   }, 0);
@@ -173,6 +196,7 @@ export default function DreamTeamPage() {
                     position={position}
                     myVote={myVotesMap[position.id] || null}
                     onVote={user ? handleVote : undefined}
+                    onDeleteVote={user ? handleDeleteVote : undefined}
                     loading={votingPosition === position.id}
                   />
                 ))}
