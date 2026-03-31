@@ -14,6 +14,7 @@
     "frontend:start": "node scripts/start-frontend.js",
     "seed": "node src/scripts/populate-db.js",
     "seed:locations": "node src/scripts/seed-locations.js",
+    "seed:government-positions": "node src/scripts/seed-government-positions.js",
     "migrate": "node src/scripts/run-migrations.js",
     "migrate:up": "node src/scripts/run-migrations.js up",
     "migrate:down": "node src/scripts/run-migrations.js down",
