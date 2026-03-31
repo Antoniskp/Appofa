@@ -395,7 +395,7 @@ export default function AdminDreamTeamPage() {
         {!loading && (
           <div className="space-y-8">
             {renderGroup('president', '👑 Πρόεδρος Δημοκρατίας')}
-            {renderGroup('minister', '⚖️ Πρόεδρος Βουλής / Υπουργοί')}
+            {renderGroup('minister', '⚖️ Πρόεδρος Βουλής & Υπουργοί')}
             {renderGroup('prime_minister', '🏛️ Πρωθυπουργός')}
           </div>
         )}
