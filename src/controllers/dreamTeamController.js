@@ -8,6 +8,7 @@ const {
   DreamTeamVote,
   PublicPersonProfile,
 } = require('../models');
+const AI_SUGGESTIONS = require('../config/aiGovernmentSuggestions');
 
 const dreamTeamController = {
   // GET /api/dream-team/positions
@@ -77,6 +78,7 @@ const dreamTeamController = {
         ...position.toJSON(),
         votes: votesByPosition[position.id] || [],
         myVote: myVoteByPosition[position.id] || null,
+        aiSuggestions: AI_SUGGESTIONS[position.slug] || [],
       }));
 
       return res.status(200).json({ success: true, data });
@@ -152,6 +154,21 @@ const dreamTeamController = {
       const positions = await GovernmentPosition.findAll({
         where: { isActive: true },
         order: [['order', 'ASC']],
+        include: [
+          {
+            model: GovernmentCurrentHolder,
+            as: 'currentHolders',
+            where: { isActive: true },
+            required: false,
+            include: [
+              {
+                model: PublicPersonProfile,
+                as: 'person',
+                attributes: ['id', 'firstName', 'lastName', 'photo'],
+              },
+            ],
+          },
+        ],
       });
 
       const positionIds = positions.map((p) => p.id);
@@ -202,8 +219,12 @@ const dreamTeamController = {
       const dreamTeam = positions.map((position) => {
         const winner = winnerByPosition[position.id];
         const total = totalByPosition[position.id] || 0;
+        const posJson = position.toJSON();
         return {
-          position: position.toJSON(),
+          position: {
+            ...posJson,
+            aiSuggestions: AI_SUGGESTIONS[posJson.slug] || [],
+          },
           winner: winner
             ? {
                 personId: winner.personId,

@@ -12,6 +12,13 @@ const CATEGORY_META = {
 function WinnerCard({ item }) {
   const meta = CATEGORY_META[item.position?.category] || CATEGORY_META.minister;
   const winner = item.winner;
+  const currentHolder = item.position?.currentHolders?.[0] || null;
+  const currentHolderName = currentHolder
+    ? (currentHolder.person
+        ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
+        : currentHolder.holderName)
+    : null;
+  const aiSuggestion = item.position?.aiSuggestions?.[0]?.name || null;
 
   return (
     <div className={`rounded-2xl border-2 ${meta.color} p-5 flex flex-col items-center text-center gap-3 transition-shadow hover:shadow-md`}>
@@ -56,6 +63,22 @@ function WinnerCard({ item }) {
       ) : (
         <p className="text-sm text-gray-400 italic">Καμία ψήφος ακόμα</p>
       )}
+
+      {/* Comparison row */}
+      <div className="w-full grid grid-cols-3 divide-x divide-gray-200 border border-gray-200 rounded-xl overflow-hidden text-center text-xs mt-1">
+        <div className="p-2 bg-gray-50">
+          <p className="text-gray-400 mb-0.5">🏛️ Σήμερα</p>
+          <p className="font-semibold text-gray-700 leading-tight">{currentHolderName || '—'}</p>
+        </div>
+        <div className="p-2 bg-purple-50">
+          <p className="text-purple-400 mb-0.5">🤖 AI</p>
+          <p className="font-semibold text-purple-700 leading-tight">{aiSuggestion || '—'}</p>
+        </div>
+        <div className="p-2 bg-blue-50">
+          <p className="text-blue-400 mb-0.5">🗳️ Χρήστες</p>
+          <p className="font-semibold text-blue-700 leading-tight">{winner?.personName || '—'}</p>
+        </div>
+      </div>
     </div>
   );
 }
