@@ -373,12 +373,16 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
 }
 
 async function deleteProfile(requestingUserId, requestingRole, candidateProfileId) {
-  if (requestingRole !== 'admin') {
-    throw new ServiceError(403, 'Only admins can delete candidate profiles.');
+  if (!['admin', 'moderator'].includes(requestingRole)) {
+    throw new ServiceError(403, 'Only admins and moderators can delete candidate profiles.');
   }
 
   const profile = await CandidateProfile.findByPk(candidateProfileId);
   if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+
+  if (requestingRole === 'moderator' && profile.claimStatus !== 'unclaimed') {
+    throw new ServiceError(403, 'Moderators can only delete unclaimed profiles.');
+  }
 
   await profile.destroy();
   return { deleted: true };

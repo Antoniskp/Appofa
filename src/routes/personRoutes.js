@@ -39,8 +39,8 @@ router.post('/claims/:id/reject', apiLimiter, authMiddleware, checkRole('admin',
 // Moderator/Admin: create profile
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.createProfile);
 
-// Admin: delete profile
-router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, personController.deleteProfile);
+// Admin/Moderator: delete profile
+router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.deleteProfile);
 
 // Any logged-in user: claim a profile
 router.post('/:id/claim', apiLimiter, authMiddleware, csrfProtection, personController.submitClaim);
