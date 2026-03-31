@@ -114,6 +114,40 @@ const User = sequelize.define('User', {
       this.setDataValue('socialLinks', val ? JSON.stringify(val) : null);
     }
   },
+  dateOfBirth: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  professions: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('professions');
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch (err) {
+        console.error('Failed to parse professions JSON:', err.message);
+        return [];
+      }
+    },
+    set(val) {
+      this.setDataValue('professions', val && val.length > 0 ? JSON.stringify(val) : null);
+    }
+  },
+  interests: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('interests');
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch (err) {
+        console.error('Failed to parse interests JSON:', err.message);
+        return [];
+      }
+    },
+    set(val) {
+      this.setDataValue('interests', val && val.length > 0 ? JSON.stringify(val) : null);
+    }
+  },
   isVerified: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

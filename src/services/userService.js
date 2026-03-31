@@ -18,6 +18,9 @@ const BIO_MAX_LENGTH = 280;
 const PASSWORD_MIN_LENGTH = 6;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
+const MAX_PROFESSIONS = 5;
+const MAX_INTERESTS = 10;
+const DAYS_PER_YEAR = 365.25;
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -105,7 +108,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks } = data;
+  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -268,6 +271,60 @@ async function updateUserProfile(userId, data) {
     }
   }
 
+  if (dateOfBirth !== undefined) {
+    if (dateOfBirth === null || dateOfBirth === '') {
+      user.dateOfBirth = null;
+    } else {
+      const dob = new Date(dateOfBirth);
+      if (isNaN(dob.getTime())) {
+        throw new ServiceError(400, 'Date of birth is not a valid date.');
+      }
+      const ageDiff = Date.now() - dob.getTime();
+      const ageYears = Math.floor(ageDiff / (1000 * 60 * 60 * 24 * DAYS_PER_YEAR));
+      if (ageYears < 13) {
+        throw new ServiceError(400, 'You must be at least 13 years old.');
+      }
+      if (ageYears > 120) {
+        throw new ServiceError(400, 'Date of birth indicates an age over 120 years, which is not valid.');
+      }
+      user.dateOfBirth = dateOfBirth;
+    }
+  }
+
+  if (professions !== undefined) {
+    if (professions === null) {
+      user.professions = null;
+    } else if (!Array.isArray(professions)) {
+      throw new ServiceError(400, 'Professions must be an array.');
+    } else if (professions.length > MAX_PROFESSIONS) {
+      throw new ServiceError(400, `You can add at most ${MAX_PROFESSIONS} professions.`);
+    } else {
+      for (const p of professions) {
+        if (!p || typeof p !== 'object') throw new ServiceError(400, 'Each profession must be an object.');
+        if (!p.categoryId || typeof p.categoryId !== 'string') throw new ServiceError(400, 'Each profession must have a categoryId.');
+        if (!p.professionId || typeof p.professionId !== 'string') throw new ServiceError(400, 'Each profession must have a professionId.');
+      }
+      user.professions = professions.length > 0 ? professions : null;
+    }
+  }
+
+  if (interests !== undefined) {
+    if (interests === null) {
+      user.interests = null;
+    } else if (!Array.isArray(interests)) {
+      throw new ServiceError(400, 'Interests must be an array.');
+    } else if (interests.length > MAX_INTERESTS) {
+      throw new ServiceError(400, `You can add at most ${MAX_INTERESTS} interests.`);
+    } else {
+      for (const item of interests) {
+        if (!item || typeof item !== 'object') throw new ServiceError(400, 'Each interest must be an object.');
+        if (!item.categoryId || typeof item.categoryId !== 'string') throw new ServiceError(400, 'Each interest must have a categoryId.');
+        if (!item.interestId || typeof item.interestId !== 'string') throw new ServiceError(400, 'Each interest must have an interestId.');
+      }
+      user.interests = interests.length > 0 ? interests : null;
+    }
+  }
+
   await user.save();
 
   const updatedUser = await User.findByPk(user.id, {
@@ -329,7 +386,10 @@ async function deleteUserAccount(userId, password, mode) {
       githubId: null,
       githubAccessToken: null,
       googleId: null,
-      googleAccessToken: null
+      googleAccessToken: null,
+      professions: null,
+      interests: null,
+      dateOfBirth: null
     }, { where: { id: user.id }, individualHooks: false });
   }
 }
@@ -578,7 +638,7 @@ async function getPublicUserProfile(userId) {
 
   const user = await User.findOne({
     where: { id: userId, searchable: true },
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -592,7 +652,7 @@ async function getPublicUserProfileByUsername(username) {
 
   const user = await User.findOne({
     where: { username: username.trim(), searchable: true },
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified']
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
