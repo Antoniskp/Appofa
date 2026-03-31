@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { StarIcon } from '@heroicons/react/24/solid';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import PollCard from '@/components/PollCard';
@@ -105,6 +106,13 @@ export default function PollsPage() {
                 },
               ]}
             />
+            <Link
+              href="/dream-team"
+              className="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium whitespace-nowrap"
+            >
+              <StarIcon className="h-5 w-5" />
+              Ονειρεμένη Κυβέρνηση
+            </Link>
             {user && (
               <Link
                 href="/polls/create"

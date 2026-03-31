@@ -1,0 +1,247 @@
+'use strict';
+
+const { Op } = require('sequelize');
+const sequelize = require('../config/database');
+const {
+  GovernmentPosition,
+  GovernmentCurrentHolder,
+  DreamTeamVote,
+  PublicPersonProfile,
+} = require('../models');
+
+const dreamTeamController = {
+  // GET /api/dream-team/positions
+  getPositionsWithData: async (req, res) => {
+    try {
+      const positions = await GovernmentPosition.findAll({
+        where: { isActive: true },
+        order: [['order', 'ASC']],
+        include: [
+          {
+            model: GovernmentCurrentHolder,
+            as: 'currentHolders',
+            where: { isActive: true },
+            required: false,
+            include: [
+              {
+                model: PublicPersonProfile,
+                as: 'person',
+                attributes: ['id', 'firstName', 'lastName', 'photo', 'bio'],
+              },
+            ],
+          },
+        ],
+      });
+
+      const positionIds = positions.map((p) => p.id);
+
+      // Fetch vote counts per position
+      const voteCounts = await DreamTeamVote.findAll({
+        attributes: [
+          'positionId',
+          'personId',
+          'personName',
+          [sequelize.fn('COUNT', sequelize.col('id')), 'voteCount'],
+        ],
+        where: { positionId: { [Op.in]: positionIds } },
+        group: ['positionId', 'personId', 'personName'],
+        order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
+        raw: true,
+      });
+
+      // Fetch current user's votes
+      let myVotes = [];
+      if (req.user) {
+        myVotes = await DreamTeamVote.findAll({
+          where: {
+            userId: req.user.id,
+            positionId: { [Op.in]: positionIds },
+          },
+          raw: true,
+        });
+      }
+
+      // Build lookup maps
+      const votesByPosition = {};
+      voteCounts.forEach((v) => {
+        if (!votesByPosition[v.positionId]) votesByPosition[v.positionId] = [];
+        votesByPosition[v.positionId].push(v);
+      });
+
+      const myVoteByPosition = {};
+      myVotes.forEach((v) => {
+        myVoteByPosition[v.positionId] = v;
+      });
+
+      const data = positions.map((position) => ({
+        ...position.toJSON(),
+        votes: votesByPosition[position.id] || [],
+        myVote: myVoteByPosition[position.id] || null,
+      }));
+
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.getPositionsWithData error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // POST /api/dream-team/vote
+  vote: async (req, res) => {
+    try {
+      const { positionId, personId } = req.body;
+
+      if (!positionId || !personId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Απαιτούνται positionId και personId.',
+        });
+      }
+
+      const position = await GovernmentPosition.findOne({
+        where: { id: positionId, isActive: true },
+      });
+      if (!position) {
+        return res.status(404).json({
+          success: false,
+          message: 'Η θέση δεν βρέθηκε.',
+        });
+      }
+
+      const person = await PublicPersonProfile.findByPk(personId, {
+        attributes: ['id', 'firstName', 'lastName'],
+      });
+      if (!person) {
+        return res.status(404).json({
+          success: false,
+          message: 'Το πρόσωπο δεν βρέθηκε.',
+        });
+      }
+
+      const personName = `${person.firstName} ${person.lastName}`.trim();
+
+      const existing = await DreamTeamVote.findOne({
+        where: { userId: req.user.id, positionId },
+      });
+
+      if (existing) {
+        await existing.update({ personId, personName });
+      } else {
+        await DreamTeamVote.create({
+          userId: req.user.id,
+          positionId,
+          personId,
+          personName,
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: { positionId, personId, personName },
+        message: 'Ψήφος καταγράφηκε επιτυχώς.',
+      });
+    } catch (error) {
+      console.error('dreamTeamController.vote error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/results
+  getResults: async (req, res) => {
+    try {
+      const positions = await GovernmentPosition.findAll({
+        where: { isActive: true },
+        order: [['order', 'ASC']],
+      });
+
+      const positionIds = positions.map((p) => p.id);
+
+      const voteCounts = await DreamTeamVote.findAll({
+        attributes: [
+          'positionId',
+          'personId',
+          'personName',
+          [sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'voteCount'],
+        ],
+        where: { positionId: { [Op.in]: positionIds } },
+        group: ['positionId', 'personId', 'personName'],
+        order: [[sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'DESC']],
+        include: [
+          {
+            model: PublicPersonProfile,
+            as: 'person',
+            attributes: ['photo'],
+            required: false,
+          },
+        ],
+      });
+
+      // Total votes per position
+      const totalByPosition = {};
+      voteCounts.forEach((v) => {
+        totalByPosition[v.positionId] = (totalByPosition[v.positionId] || 0) + parseInt(v.dataValues.voteCount, 10);
+      });
+
+      // Winner per position (first entry after ORDER BY voteCount DESC)
+      const winnerByPosition = {};
+      voteCounts.forEach((v) => {
+        if (!winnerByPosition[v.positionId]) {
+          winnerByPosition[v.positionId] = v;
+        }
+      });
+
+      const dreamTeam = positions.map((position) => {
+        const winner = winnerByPosition[position.id];
+        const total = totalByPosition[position.id] || 0;
+        return {
+          position: position.toJSON(),
+          winner: winner
+            ? {
+                personId: winner.personId,
+                personName: winner.personName,
+                photo: winner.person ? winner.person.photo : null,
+                voteCount: parseInt(winner.dataValues.voteCount, 10),
+                percentage: total > 0
+                  ? Math.round((parseInt(winner.dataValues.voteCount, 10) / total) * 100)
+                  : 0,
+              }
+            : null,
+        };
+      });
+
+      return res.status(200).json({ success: true, data: dreamTeam });
+    } catch (error) {
+      console.error('dreamTeamController.getResults error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/my-votes
+  getMyVotes: async (req, res) => {
+    try {
+      const votes = await DreamTeamVote.findAll({
+        where: { userId: req.user.id },
+        include: [
+          {
+            model: GovernmentPosition,
+            as: 'position',
+            attributes: ['id', 'slug', 'title', 'category'],
+          },
+          {
+            model: PublicPersonProfile,
+            as: 'person',
+            attributes: ['id', 'firstName', 'lastName', 'photo'],
+            required: false,
+          },
+        ],
+      });
+
+      return res.status(200).json({ success: true, data: votes });
+    } catch (error) {
+      console.error('dreamTeamController.getMyVotes error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+};
+
+module.exports = dreamTeamController;

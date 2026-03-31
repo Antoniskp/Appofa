@@ -1,5 +1,8 @@
 const sequelize = require('../config/database');
 const User = require('./User');
+const GovernmentPosition = require('./GovernmentPosition');
+const GovernmentCurrentHolder = require('./GovernmentCurrentHolder');
+const DreamTeamVote = require('./DreamTeamVote');
 const Article = require('./Article');
 const Location = require('./Location');
 const LocationLink = require('./LocationLink');
@@ -258,6 +261,18 @@ Report.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
 User.hasMany(Report, { foreignKey: 'reportedByUserId', as: 'reports' });
 User.hasMany(Report, { foreignKey: 'reviewedBy', as: 'reviewedReports' });
 
+// GovernmentPosition associations
+GovernmentPosition.hasMany(GovernmentCurrentHolder, { foreignKey: 'positionId', as: 'currentHolders' });
+GovernmentCurrentHolder.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });
+GovernmentCurrentHolder.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
+PublicPersonProfile.hasMany(GovernmentCurrentHolder, { foreignKey: 'personId', as: 'governmentPositions' });
+
+GovernmentPosition.hasMany(DreamTeamVote, { foreignKey: 'positionId', as: 'dreamTeamVotes' });
+DreamTeamVote.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });
+DreamTeamVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
+DreamTeamVote.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
+User.hasMany(DreamTeamVote, { foreignKey: 'userId', as: 'dreamTeamVotes' });
+
 module.exports = {
   sequelize,
   User,
@@ -282,5 +297,8 @@ module.exports = {
   CandidateApplication,
   PublicPersonProfile,
   PersonRemovalRequest,
-  Report
+  Report,
+  GovernmentPosition,
+  GovernmentCurrentHolder,
+  DreamTeamVote,
 };
