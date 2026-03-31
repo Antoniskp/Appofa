@@ -4,6 +4,8 @@ const { sequelize, User, Article, Location, LocationLink, Poll, PollOption, Poll
 const authMiddleware = require('../middleware/auth');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
+const csrfProtection = require('../middleware/csrfProtection');
+const dreamTeamController = require('../controllers/dreamTeamController');
 
 const runCheck = async (checkFn) => {
   const start = Date.now();
@@ -289,3 +291,18 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
 });
 
 module.exports = router;
+
+// ─── Dream Team Admin Routes ──────────────────────────────────────────────────
+// All routes require admin or moderator role
+
+router.get('/dream-team/positions',    apiLimiter, authMiddleware, checkRole('admin', 'moderator'), dreamTeamController.adminGetPositions);
+
+// Suggestions CRUD
+router.post(  '/dream-team/suggestions',     apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminCreateSuggestion);
+router.put(   '/dream-team/suggestions/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminUpdateSuggestion);
+router.delete('/dream-team/suggestions/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminDeleteSuggestion);
+
+// Current holders CRUD
+router.post(  '/dream-team/holders',     apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminCreateHolder);
+router.put(   '/dream-team/holders/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminUpdateHolder);
+router.delete('/dream-team/holders/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminDeleteHolder);
