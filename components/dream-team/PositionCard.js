@@ -181,16 +181,20 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
             </p>
             <div className="flex items-center gap-3">
               <PersonAvatar
-                photo={currentHolder.person?.photo}
+                photo={currentHolder.person?.photo || currentHolder.user?.avatar || null}
                 name={currentHolder.person
                   ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
-                  : '—'}
+                  : currentHolder.user
+                    ? ((`${currentHolder.user.firstName || ''} ${currentHolder.user.lastName || ''}`.trim()) || currentHolder.user.username)
+                    : '—'}
               />
               <div>
                 <p className="font-semibold text-gray-800 text-sm">
                   {currentHolder.person
                     ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
-                    : '—'}
+                    : currentHolder.user
+                      ? ((`${currentHolder.user.firstName || ''} ${currentHolder.user.lastName || ''}`.trim()) || currentHolder.user.username)
+                      : '—'}
                 </p>
                 {currentHolder.since && (
                   <p className="text-xs text-gray-400">
@@ -331,7 +335,9 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
                 {currentHolder
                   ? (currentHolder.person
                       ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
-                      : '—')
+                      : currentHolder.user
+                        ? ((`${currentHolder.user.firstName || ''} ${currentHolder.user.lastName || ''}`.trim()) || currentHolder.user.username)
+                        : '—')
                   : '—'}
               </p>
             </div>
@@ -340,7 +346,9 @@ export default function PositionCard({ position, myVote, onVote, loading }) {
               <p className="font-semibold text-purple-700 text-xs leading-tight">
                 {position.aiSuggestions?.[0]?.person
                   ? `${position.aiSuggestions[0].person.firstName} ${position.aiSuggestions[0].person.lastName}`
-                  : '—'}
+                  : position.aiSuggestions?.[0]?.user
+                    ? ((`${position.aiSuggestions[0].user.firstName || ''} ${position.aiSuggestions[0].user.lastName || ''}`.trim()) || position.aiSuggestions[0].user.username)
+                    : '—'}
               </p>
             </div>
             <div className="p-3 bg-blue-50">

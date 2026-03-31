@@ -29,6 +29,13 @@ const dreamTeamController = {
                 model: PublicPersonProfile,
                 as: 'person',
                 attributes: ['id', 'firstName', 'lastName', 'photo', 'bio'],
+                required: false,
+              },
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                required: false,
               },
             ],
           },
@@ -43,6 +50,13 @@ const dreamTeamController = {
                 model: PublicPersonProfile,
                 as: 'person',
                 attributes: ['id', 'firstName', 'lastName', 'photo'],
+                required: false,
+              },
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                required: false,
               },
             ],
           },
@@ -211,6 +225,13 @@ const dreamTeamController = {
                 model: PublicPersonProfile,
                 as: 'person',
                 attributes: ['id', 'firstName', 'lastName', 'photo'],
+                required: false,
+              },
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                required: false,
               },
             ],
           },
@@ -225,6 +246,13 @@ const dreamTeamController = {
                 model: PublicPersonProfile,
                 as: 'person',
                 attributes: ['id', 'firstName', 'lastName', 'photo'],
+                required: false,
+              },
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                required: false,
               },
             ],
           },
@@ -352,6 +380,13 @@ const dreamTeamController = {
                 model: PublicPersonProfile,
                 as: 'person',
                 attributes: ['id', 'firstName', 'lastName', 'photo'],
+                required: false,
+              },
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                required: false,
               },
             ],
           },
@@ -365,6 +400,13 @@ const dreamTeamController = {
                 model: PublicPersonProfile,
                 as: 'person',
                 attributes: ['id', 'firstName', 'lastName', 'photo'],
+                required: false,
+              },
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                required: false,
               },
             ],
           },
@@ -382,27 +424,42 @@ const dreamTeamController = {
   // POST /api/admin/dream-team/suggestions
   adminCreateSuggestion: async (req, res) => {
     try {
-      const { positionId, personId, reason, order: ord } = req.body;
-      if (!positionId || !personId) {
-        return res.status(400).json({ success: false, message: 'Απαιτούνται positionId και personId (PublicPersonProfile).' });
+      const { positionId, personId, userId, reason, order: ord } = req.body;
+      if (!positionId || (!personId && !userId)) {
+        return res.status(400).json({ success: false, message: 'Απαιτείται personId (PublicPersonProfile) ή userId (verified app user).' });
       }
       const position = await GovernmentPosition.findByPk(positionId);
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      const person = await PublicPersonProfile.findByPk(personId);
-      if (!person) {
-        return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
+      if (personId) {
+        const person = await PublicPersonProfile.findByPk(personId);
+        if (!person) {
+          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
+        }
+      }
+      if (userId) {
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+        if (!user) {
+          return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
+        }
+        if (!user.isVerified || !user.searchable) {
+          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+        }
       }
       const suggestion = await GovernmentPositionSuggestion.create({
         positionId,
-        personId,
+        personId: personId || null,
+        userId: userId || null,
         reason: reason?.trim() || null,
         order: ord ?? 0,
         isActive: true,
       });
       const suggestionWithPerson = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
-        include: [{ model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'] }],
+        include: [
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+        ],
       });
       return res.status(201).json({ success: true, data: suggestionWithPerson });
     } catch (error) {
@@ -418,21 +475,34 @@ const dreamTeamController = {
       if (!suggestion) {
         return res.status(404).json({ success: false, message: 'Η πρόταση δεν βρέθηκε.' });
       }
-      const { personId, reason, order: ord, isActive } = req.body;
-      if (personId !== undefined) {
+      const { personId, userId, reason, order: ord, isActive } = req.body;
+      if (personId !== undefined && personId !== null) {
         const person = await PublicPersonProfile.findByPk(personId);
         if (!person) {
           return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
         }
       }
+      if (userId !== undefined && userId !== null) {
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+        if (!user) {
+          return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
+        }
+        if (!user.isVerified || !user.searchable) {
+          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+        }
+      }
       await suggestion.update({
-        ...(personId !== undefined && { personId }),
+        ...(personId !== undefined && { personId: personId || null }),
+        ...(userId !== undefined && { userId: userId || null }),
         ...(reason !== undefined && { reason: reason?.trim() || null }),
         ...(ord !== undefined && { order: ord }),
         ...(isActive !== undefined && { isActive }),
       });
       const updated = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
-        include: [{ model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'] }],
+        include: [
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+        ],
       });
       return res.status(200).json({ success: true, data: updated });
     } catch (error) {
@@ -461,20 +531,31 @@ const dreamTeamController = {
   // POST /api/admin/dream-team/holders
   adminCreateHolder: async (req, res) => {
     try {
-      const { positionId, personId, since, notes } = req.body;
-      if (!positionId || !personId) {
+      const { positionId, personId, userId, since, notes } = req.body;
+      if (!positionId || (!personId && !userId)) {
         return res.status(400).json({
           success: false,
-          message: 'Απαιτείται personId (PublicPersonProfile).',
+          message: 'Απαιτείται personId (PublicPersonProfile) ή userId (verified app user).',
         });
       }
       const position = await GovernmentPosition.findByPk(positionId);
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      const person = await PublicPersonProfile.findByPk(personId);
-      if (!person) {
-        return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
+      if (personId) {
+        const person = await PublicPersonProfile.findByPk(personId);
+        if (!person) {
+          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
+        }
+      }
+      if (userId) {
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+        if (!user) {
+          return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
+        }
+        if (!user.isVerified || !user.searchable) {
+          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+        }
       }
 
       // Deactivate any existing active holder for this position
@@ -485,14 +566,18 @@ const dreamTeamController = {
 
       const holder = await GovernmentCurrentHolder.create({
         positionId,
-        personId,
+        personId: personId || null,
+        userId: userId || null,
         since: since || null,
         notes: notes?.trim() || null,
         isActive: true,
       });
 
       const holderWithPerson = await GovernmentCurrentHolder.findByPk(holder.id, {
-        include: [{ model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'] }],
+        include: [
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+        ],
       });
 
       return res.status(201).json({ success: true, data: holderWithPerson });
@@ -509,21 +594,34 @@ const dreamTeamController = {
       if (!holder) {
         return res.status(404).json({ success: false, message: 'Ο κάτοχος δεν βρέθηκε.' });
       }
-      const { personId, since, notes, isActive } = req.body;
-      if (personId !== undefined) {
+      const { personId, userId, since, notes, isActive } = req.body;
+      if (personId !== undefined && personId !== null) {
         const person = await PublicPersonProfile.findByPk(personId);
         if (!person) {
           return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
         }
       }
+      if (userId !== undefined && userId !== null) {
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+        if (!user) {
+          return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
+        }
+        if (!user.isVerified || !user.searchable) {
+          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+        }
+      }
       await holder.update({
-        ...(personId !== undefined && { personId }),
+        ...(personId !== undefined && { personId: personId || null }),
+        ...(userId !== undefined && { userId: userId || null }),
         ...(since !== undefined && { since: since || null }),
         ...(notes !== undefined && { notes: notes?.trim() || null }),
         ...(isActive !== undefined && { isActive }),
       });
       const updated = await GovernmentCurrentHolder.findByPk(holder.id, {
-        include: [{ model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'] }],
+        include: [
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+        ],
       });
       return res.status(200).json({ success: true, data: updated });
     } catch (error) {

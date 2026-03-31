@@ -122,6 +122,8 @@ function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφί
         <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
           {results.map((p) => {
             const isUserOnly = p.resultType === 'user';
+            const isVerifiedUser = isUserOnly && p.isVerified === true;
+            const isBlockedUser = isUserOnly && !isVerifiedUser;
             const displayName = isUserOnly
               ? ((`${p.firstName || ''} ${p.lastName || ''}`.trim()) || p.username)
               : `${p.firstName} ${p.lastName}`;
@@ -131,20 +133,20 @@ function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφί
               <li
                 key={`${p.resultType}-${p.id}`}
                 onClick={() => {
-                  if (isUserOnly) return; // admin panel: only allow PublicPersonProfiles
+                  if (isBlockedUser) return;
                   onSelect(p);
                   setQuery(displayName);
                   setOpen(false);
                 }}
-                title={isUserOnly ? 'Αυτός ο χρήστης δεν έχει δημόσιο προφίλ. Δημιουργήστε ένα πρώτα.' : undefined}
-                className={`flex items-center gap-2 px-3 py-2 text-sm ${isUserOnly ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'}`}
+                title={isBlockedUser ? 'Μόνο επαληθευμένοι χρήστες μπορούν να προστεθούν.' : undefined}
+                className={`flex items-center gap-2 px-3 py-2 text-sm ${isBlockedUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'}`}
               >
                 {photo
                   ? <img src={photo} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
                   : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
                 <span className="font-medium flex-1 truncate">{displayName}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${isUserOnly ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                  {isUserOnly ? '🧑 Χρήστης' : '📋 Προφίλ'}
+                <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${isBlockedUser ? 'bg-gray-100 text-gray-400' : isVerifiedUser ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
+                  {isBlockedUser ? '🔒 Μη επαληθευμένος' : isVerifiedUser ? '✅ Χρήστης' : '📋 Προφίλ'}
                 </span>
               </li>
             );
@@ -166,7 +168,13 @@ function SuggestionsPanel({ position, onRefresh }) {
     if (!selectedPerson) return;
     setSaving(true);
     try {
-      await dreamTeamAPI.adminCreateSuggestion({ positionId: position.id, personId: selectedPerson.id, reason: newReason.trim() || null, order: position.aiSuggestions?.length || 0 });
+      const isUser = selectedPerson.resultType === 'user';
+      await dreamTeamAPI.adminCreateSuggestion({
+        positionId: position.id,
+        ...(isUser ? { userId: selectedPerson.id } : { personId: selectedPerson.id }),
+        reason: newReason.trim() || null,
+        order: position.aiSuggestions?.length || 0,
+      });
       setSelectedPerson(null); setNewReason(''); setAdding(false);
       onRefresh();
     } catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); } finally { setSaving(false); }
@@ -196,7 +204,11 @@ function SuggestionsPanel({ position, onRefresh }) {
         <div key={s.id} className="flex items-start gap-2 py-1 group">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">
-              {s.person ? `${s.person.firstName} ${s.person.lastName}` : '—'}
+              {s.person
+                ? `${s.person.firstName} ${s.person.lastName}`
+                : s.user
+                  ? ((`${s.user.firstName || ''} ${s.user.lastName || ''}`.trim()) || s.user.username)
+                  : '—'}
             </p>
             <InlineEdit value={s.reason} onSave={(v) => handleUpdateReason(s, v)} placeholder="Λόγος..." className="text-xs text-gray-500 block" />
           </div>
@@ -208,9 +220,9 @@ function SuggestionsPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 space-y-1 border-t pt-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ *" />
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.firstName} {selectedPerson.lastName}</p>
+            <p className="text-xs text-green-600">✓ {selectedPerson.resultType === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
           )}
           <input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Λόγος (προαιρετικό)" className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
@@ -245,7 +257,12 @@ function HolderPanel({ position, onRefresh }) {
     if (!selectedPerson) return;
     setSaving(true);
     try {
-      await dreamTeamAPI.adminCreateHolder({ positionId: position.id, personId: selectedPerson.id, since: since || null });
+      const isUser = selectedPerson.resultType === 'user';
+      await dreamTeamAPI.adminCreateHolder({
+        positionId: position.id,
+        ...(isUser ? { userId: selectedPerson.id } : { personId: selectedPerson.id }),
+        since: since || null,
+      });
       setAdding(false); setSelectedPerson(null); setSince('');
       onRefresh();
     } catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); } finally { setSaving(false); }
@@ -259,6 +276,7 @@ function HolderPanel({ position, onRefresh }) {
 
   const holderDisplayName = (h) => {
     if (h.person) return `${h.person.firstName} ${h.person.lastName}`;
+    if (h.user) return ((`${h.user.firstName || ''} ${h.user.lastName || ''}`.trim()) || h.user.username);
     return '—';
   };
 
@@ -269,8 +287,8 @@ function HolderPanel({ position, onRefresh }) {
       )}
       {allHolders.map((h) => (
         <div key={h.id} className="flex items-center gap-2 py-1 group">
-          {h.person?.photo
-            ? <img src={h.person.photo} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+          {h.person?.photo || h.user?.avatar
+            ? <img src={h.person?.photo || h.user?.avatar} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
             : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">{holderDisplayName(h)}</p>
@@ -285,9 +303,9 @@ function HolderPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 border-t pt-2 space-y-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ *" />
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.firstName} {selectedPerson.lastName}</p>
+            <p className="text-xs text-green-600">✓ {selectedPerson.resultType === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
           )}
           <input type="date" value={since} onChange={(e) => setSince(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
@@ -357,7 +375,9 @@ export default function AdminDreamTeamPage() {
             const activeHolder = (pos.currentHolders || []).find((h) => h.isActive);
             const holderName = activeHolder?.person
               ? `${activeHolder.person.firstName} ${activeHolder.person.lastName}`
-              : null;
+              : activeHolder?.user
+                ? ((`${activeHolder.user.firstName || ''} ${activeHolder.user.lastName || ''}`.trim()) || activeHolder.user.username)
+                : null;
             const suggCount = (pos.aiSuggestions || []).length;
             const ptMeta = positionTypesMap[pos.positionTypeKey];
 

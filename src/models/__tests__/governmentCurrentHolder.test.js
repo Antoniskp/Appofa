@@ -9,8 +9,21 @@ describe('GovernmentCurrentHolder Model', () => {
     expect(attr).toBeDefined();
   });
 
-  it('personId does NOT allow null (required)', () => {
-    expect(GovernmentCurrentHolder.rawAttributes.personId.allowNull).toBe(false);
+  it('personId allows null (optional when userId is set)', () => {
+    expect(GovernmentCurrentHolder.rawAttributes.personId.allowNull).toBe(true);
+  });
+
+  it('has userId field', () => {
+    const attr = GovernmentCurrentHolder.rawAttributes.userId;
+    expect(attr).toBeDefined();
+    expect(attr.allowNull).toBe(true);
+  });
+
+  it('has user association to User', () => {
+    const assoc = GovernmentCurrentHolder.associations.user;
+    expect(assoc).toBeDefined();
+    expect(assoc.associationType).toBe('BelongsTo');
+    expect(assoc.target.name).toBe('User');
   });
 
   it('does NOT have holderName field', () => {
