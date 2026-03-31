@@ -89,13 +89,21 @@ const RESPONSE_CONFIG = {
 
 // ─── Vote Buttons Component ───────────────────────────────────────────────────
 
-function VoteButtons({ score, myVote, onVote, disabled }) {
+const VOTE_LABELS = {
+  idea:                { up: 'Approve',         down: 'Disapprove'    },
+  problem:             { up: 'It is a problem',  down: 'Not a problem' },
+  problem_request:     { up: 'I have this too',  down: 'Not relevant'  },
+  location_suggestion: { up: 'Good location',   down: 'Bad location'  },
+};
+
+function VoteButtons({ upvotes, downvotes, myVote, onVote, disabled, type }) {
+  const labels = VOTE_LABELS[type] || VOTE_LABELS.idea;
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1.5">
       <button
         onClick={() => onVote(1)}
         disabled={disabled}
-        title="Ψήφος υπέρ"
+        title={labels.up}
         className={`p-1.5 rounded-lg transition-colors ${
           myVote === 1
             ? 'bg-green-100 text-green-700'
@@ -109,18 +117,14 @@ function VoteButtons({ score, myVote, onVote, disabled }) {
         )}
       </button>
 
-      <span
-        className={`text-sm font-bold min-w-[2rem] text-center ${
-          score > 0 ? 'text-green-600' : score < 0 ? 'text-red-500' : 'text-gray-500'
-        }`}
-      >
-        {score > 0 ? `+${score}` : score}
+      <span className="text-sm font-bold min-w-[1.5rem] text-center text-green-600">
+        {upvotes}
       </span>
 
       <button
         onClick={() => onVote(-1)}
         disabled={disabled}
-        title="Ψήφος κατά"
+        title={labels.down}
         className={`p-1.5 rounded-lg transition-colors ${
           myVote === -1
             ? 'bg-red-100 text-red-600'
@@ -133,6 +137,10 @@ function VoteButtons({ score, myVote, onVote, disabled }) {
           <HandThumbDownIcon className="h-5 w-5" />
         )}
       </button>
+
+      <span className="text-sm font-bold min-w-[1.5rem] text-center text-red-500">
+        {downvotes}
+      </span>
     </div>
   );
 }
@@ -149,10 +157,12 @@ function SolutionCard({ solution, user, onVote, votingId }) {
           <span>{new Date(solution.createdAt).toLocaleDateString('el-GR')}</span>
         </div>
         <VoteButtons
-          score={solution.score}
+          upvotes={solution.upvotes ?? 0}
+          downvotes={solution.downvotes ?? 0}
           myVote={solution.myVote}
           onVote={(val) => onVote(solution.id, val)}
           disabled={!user || votingId === `sol-${solution.id}`}
+          type="idea"
         />
       </div>
     </div>
@@ -199,6 +209,8 @@ export default function SuggestionDetailPage() {
       if (res.success) {
         setSuggestion((prev) => ({
           ...prev,
+          upvotes: res.data.upvotes,
+          downvotes: res.data.downvotes,
           score: res.data.score,
           myVote: res.data.myVote,
         }));
@@ -227,7 +239,7 @@ export default function SuggestionDetailPage() {
           solutions: prev.solutions
             .map((s) =>
               s.id === solutionId
-                ? { ...s, score: res.data.score, myVote: res.data.myVote }
+                ? { ...s, upvotes: res.data.upvotes, downvotes: res.data.downvotes, score: res.data.score, myVote: res.data.myVote }
                 : s
             )
             .sort((a, b) => b.score - a.score || new Date(a.createdAt) - new Date(b.createdAt)),
@@ -386,10 +398,12 @@ export default function SuggestionDetailPage() {
             </div>
 
             <VoteButtons
-              score={suggestion.score}
+              upvotes={suggestion.upvotes ?? 0}
+              downvotes={suggestion.downvotes ?? 0}
               myVote={suggestion.myVote}
               onVote={handleSuggestionVote}
               disabled={!user || votingId === 'suggestion'}
+              type={suggestion.type}
             />
           </div>
 
