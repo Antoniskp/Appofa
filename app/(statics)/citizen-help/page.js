@@ -104,6 +104,12 @@ const categories = [
         description: 'Πόσοι βουλευτές εκλέγονται σε κάθε εκλογική περιφέρεια',
         Icon: MapIcon,
       },
+      {
+        href: '/citizen-help/regions-electoral-map',
+        label: 'Περιφέρειες & Εκλογικές Περιφέρειες',
+        description: 'Χαρτογράφηση Περιφερειών με εκλογικές περιφέρειες & ανάλυση',
+        Icon: GlobeAltIcon,
+      },
     ],
   },
 ];
