@@ -30,6 +30,9 @@ export default function UsersPage() {
 
   const { data: users, loading, error } = useAsyncData(
     async () => {
+      // Wait for auth to resolve before fetching
+      if (authLoading) return null;
+
       if (!isAuthenticated) {
         return { data: { users: [], pagination: { totalPages: 1 } } };
       }
@@ -39,9 +42,11 @@ export default function UsersPage() {
         ...filters,
       };
       
-      // Remove empty filters
+      // Remove empty filters (but keep valid falsy values like 0)
       Object.keys(params).forEach(key => {
-        if (!params[key]) delete params[key];
+        if (params[key] === '' || params[key] === null || params[key] === undefined) {
+          delete params[key];
+        }
       });
 
       const response = await authAPI.searchUsers(params);
@@ -50,10 +55,12 @@ export default function UsersPage() {
       }
       return { data: { users: [], pagination: { totalPages: 1 } } };
     },
-    [page, filters, isAuthenticated],
+    [page, filters, isAuthenticated, authLoading],
     {
       initialData: [],
       transform: (response) => {
+        // If auth is still loading, response is null — preserve existing data
+        if (response === null) return undefined;
         setTotalPages(response.data.pagination?.totalPages || 1);
         return response.data.users || [];
       }
