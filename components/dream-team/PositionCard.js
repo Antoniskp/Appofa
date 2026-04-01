@@ -111,7 +111,9 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
     try {
       const [profileRes, userRes] = await Promise.allSettled([
         apiRequest('/api/persons?limit=8'),
-        apiRequest('/api/users/search?limit=8'),
+        onVote
+          ? apiRequest('/api/auth/users/search?limit=8')
+          : Promise.resolve(null),
       ]);
 
       if (myId !== requestIdRef.current) return;
@@ -133,7 +135,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
     } finally {
       if (myId === requestIdRef.current) setSearching(false);
     }
-  }, []);
+  }, [onVote]);
 
   // Debounced person search — queries both profiles and users in parallel
   const handleSearchChange = useCallback((e) => {
@@ -160,7 +162,9 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
         const encodedQ = encodeURIComponent(normalizeGreekQuery(q));
         const [profileRes, userRes] = await Promise.allSettled([
           apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
-          apiRequest(`/api/users/search?search=${encodedQ}&limit=8`),
+          onVote
+            ? apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`)
+            : Promise.resolve(null),
         ]);
 
         if (myId !== requestIdRef.current) return; // stale, discard
@@ -183,7 +187,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
         if (myId === requestIdRef.current) setSearching(false);
       }
     }, 300);
-  }, []);
+  }, [onVote]);
 
   const handleSelectPerson = useCallback((person) => {
     const name = person.type === 'user'
