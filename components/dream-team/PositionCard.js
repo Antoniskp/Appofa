@@ -162,9 +162,16 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       return;
     }
 
-    // Keep dropdown open while user is typing
+    // For very short queries (1 char), keep current results visible and don't
+    // fire an API call — wait for more input before hitting the server.
+    if (q.trim().length < 2) {
+      setDropdownOpen(searchResults.length > 0);
+      return;
+    }
+
+    // 2+ characters: fire debounced search.
+    // Do NOT clear searchResults here — keep showing old results until new ones arrive.
     setDropdownOpen(true);
-    setIsTopSuggestions(false);
 
     searchTimer.current = setTimeout(async () => {
       const myId = ++requestIdRef.current;
@@ -185,10 +192,10 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
 
         const profileResults = profiles.map((p) => ({ ...p, type: 'profile' }));
         const userResults = users.map((u) => ({ ...u, type: 'user' }));
-
         const merged = [...profileResults, ...userResults];
         const hasResults = merged.length > 0;
         setSearchResults(merged);
+        setIsTopSuggestions(false); // only clear top-suggestions flag after new results arrive
         setSearchStatus(hasResults ? null : 'empty');
         setDropdownOpen(true);
       } catch {
@@ -199,7 +206,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
         if (myId === requestIdRef.current) setSearching(false);
       }
     }, 300);
-  }, [onVote]);
+  }, [onVote, searchResults.length]);
 
   const handleSelectPerson = useCallback((person) => {
     const name = person.type === 'user'
