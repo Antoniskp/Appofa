@@ -1,6 +1,6 @@
 'use client';
 
-import { authAPI } from '@/lib/api';
+import { authAPI, personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import UserCard from '@/components/UserCard';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -10,6 +10,7 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/Pagination';
 import FilterBar from '@/components/FilterBar';
 import Link from 'next/link';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -28,13 +29,13 @@ export default function UsersPage() {
     search: '',
   });
 
-  const { data: users, loading, error } = useAsyncData(
+  const { data: usersData, loading, error } = useAsyncData(
     async () => {
       // Wait for auth to resolve before fetching
       if (authLoading) return null;
 
       if (!isAuthenticated) {
-        return { data: { users: [], pagination: { totalPages: 1 } } };
+        return { data: { users: [], pagination: { totalPages: 1 } }, persons: [] };
       }
       const params = {
         page,
@@ -49,23 +50,39 @@ export default function UsersPage() {
         }
       });
 
-      const response = await authAPI.searchUsers(params);
-      if (response.success) {
-        return response;
-      }
-      return { data: { users: [], pagination: { totalPages: 1 } } };
+      // Fetch users and (when searching) public person profiles in parallel
+      const [usersResponse, personsResponse] = await Promise.allSettled([
+        authAPI.searchUsers(params),
+        filters.search
+          ? personAPI.getAll({ search: filters.search, limit: 20 })
+          : Promise.resolve(null),
+      ]);
+
+      const usersRes = usersResponse.status === 'fulfilled' ? usersResponse.value : null;
+      const personsRes = personsResponse.status === 'fulfilled' ? personsResponse.value : null;
+
+      return {
+        data: usersRes?.success ? usersRes.data : { users: [], pagination: { totalPages: 1 } },
+        persons: personsRes?.success ? (personsRes.data?.profiles || []) : [],
+      };
     },
     [page, filters, isAuthenticated, authLoading],
     {
-      initialData: [],
+      initialData: { users: [], persons: [] },
       transform: (response) => {
         // If auth is still loading, response is null — preserve existing data
         if (response === null) return undefined;
         setTotalPages(response.data.pagination?.totalPages || 1);
-        return response.data.users || [];
+        return {
+          users: response.data.users || [],
+          persons: response.persons || [],
+        };
       }
     }
   );
+
+  const users = usersData?.users || [];
+  const persons = usersData?.persons || [];
 
   // Fetch public user statistics
   const { data: userStats, loading: statsLoading } = useAsyncData(
@@ -293,6 +310,49 @@ export default function UsersPage() {
                 onPrevious={prevPage}
                 onNext={nextPage}
               />
+            )}
+
+            {/* Public Person Profiles — shown when search is active */}
+            {!loading && filters.search && persons.length > 0 && (
+              <div className="mt-10">
+                <h2 className="text-lg font-semibold text-gray-700 mb-4">Δημόσια Πρόσωπα</h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {persons.map((profile) => (
+                    <Link
+                      key={profile.id}
+                      href={`/persons/${profile.slug}`}
+                      className="block bg-white rounded-xl shadow-sm border border-blue-100 hover:shadow-md transition-shadow overflow-hidden"
+                    >
+                      <div className="p-5">
+                        <div className="flex items-start gap-4">
+                          {profile.photo ? (
+                            <img
+                              src={profile.photo}
+                              alt={`${profile.firstName} ${profile.lastName}`}
+                              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <UserCircleIcon className="w-12 h-12 text-gray-300 flex-shrink-0" />
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-base font-semibold text-gray-900 truncate">
+                                {profile.firstName} {profile.lastName}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                📋 Δημόσιο Προφίλ
+                              </span>
+                            </div>
+                            {profile.bio && (
+                              <p className="mt-1 text-sm text-gray-500 line-clamp-2">{profile.bio}</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             )}
           </>
         )}
