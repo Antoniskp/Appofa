@@ -57,7 +57,9 @@ export function useAsyncData(
       if (!isMountedRef.current) return;
       
       const transformedData = transform(response);
-      setData(transformedData);
+      if (transformedData !== undefined) {
+        setData(transformedData);
+      }
       
       if (onSuccess) {
         onSuccess(transformedData);
