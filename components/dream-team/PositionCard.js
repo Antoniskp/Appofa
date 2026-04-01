@@ -69,6 +69,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   const searchTimer = useRef(null);
   const requestIdRef = useRef(0);
   const dropdownRef = useRef(null);
+  const prevMyVoteRef = useRef(null);
 
   const currentHolder = position.currentHolders?.[0] || null;
   const votes = position.votes || [];
@@ -78,7 +79,8 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   const meta = positionTypesMap[position.positionTypeKey] || DEFAULT_META;
   const icon = positionIconMap[position.slug] || meta.icon;
 
-  // Restore selected person from myVote using joined data when available
+  // Restore selected person from myVote using joined data when available.
+  // When myVote transitions from truthy → null (vote deleted), clear search state.
   useEffect(() => {
     if (myVote) {
       let name;
@@ -101,7 +103,16 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
         setSelectedPerson({ id, name, type });
         setSearchQuery(name);
       }
+    } else if (prevMyVoteRef.current != null && !myVote) {
+      // myVote just became null (vote was deleted) — reset search state
+      setSelectedPerson(null);
+      setSearchQuery('');
+      setSearchResults([]);
+      setSearchStatus(null);
+      setIsTopSuggestions(false);
+      setDropdownOpen(false);
     }
+    prevMyVoteRef.current = myVote;
   }, [myVote]);
 
   // Load top suggestions immediately (no query needed)
@@ -183,6 +194,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       } catch {
         if (myId !== requestIdRef.current) return;
         setSearchResults([]);
+        setDropdownOpen(false);
       } finally {
         if (myId === requestIdRef.current) setSearching(false);
       }
@@ -195,6 +207,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       : `${person.firstName} ${person.lastName}`.trim();
     setSelectedPerson({ id: person.id, name, type: person.type });
     setSearchQuery(name);
+    setSearchResults([]);
     setSearchStatus(null);
     setIsTopSuggestions(false);
     setDropdownOpen(false);
@@ -218,7 +231,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   );
 
   const handleVoteClick = () => {
-    if (selectedPerson && isVoteChanged) {
+    if (onVote && selectedPerson && isVoteChanged) {
       if (selectedPerson.type === 'user') {
         onVote(position.id, null, selectedPerson.id);
       } else {
@@ -470,7 +483,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
         {/* Vote Button */}
         <button
           onClick={handleVoteClick}
-          disabled={!selectedPerson || !isVoteChanged || loading}
+          disabled={!onVote || !selectedPerson || !isVoteChanged || loading}
           className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label={`Ψηφίστε για ${position.title}`}
         >

@@ -292,4 +292,55 @@ describe('Dream Team API Tests', () => {
       });
     });
   });
+
+  // ── GET /api/auth/users/search (used by dream-team search bar) ───────────
+
+  describe('GET /api/auth/users/search', () => {
+    it('returns 401 when not authenticated', async () => {
+      const res = await request(app).get('/api/auth/users/search?search=dtuser');
+      expect(res.status).toBe(401);
+    });
+
+    it('returns searchable users for authenticated user', async () => {
+      // Both users are searchable by default; search without query returns all
+      await User.update({ searchable: true }, { where: { id: userId } });
+      const res = await request(app)
+        .get('/api/auth/users/search')
+        .set(withToken(secondUserToken));
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.users)).toBe(true);
+      const found = res.body.data.users.find((u) => u.id === userId);
+      expect(found).toBeDefined();
+    });
+
+    it('does not return non-searchable users', async () => {
+      await User.update({ searchable: false }, { where: { id: userId } });
+      const res = await request(app)
+        .get('/api/auth/users/search')
+        .set(withToken(secondUserToken));
+      expect(res.status).toBe(200);
+      const found = res.body.data.users.find((u) => u.id === userId);
+      expect(found).toBeUndefined();
+    });
+
+    it('returns empty array when search matches nothing', async () => {
+      const res = await request(app)
+        .get('/api/auth/users/search?search=zzznomatch999')
+        .set(withToken(userToken));
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.users).toHaveLength(0);
+    });
+
+    it('returns results without search param (default listing)', async () => {
+      await User.update({ searchable: true }, { where: { id: secondUserId } });
+      const res = await request(app)
+        .get('/api/auth/users/search')
+        .set(withToken(userToken));
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.users)).toBe(true);
+    });
+  });
 });
