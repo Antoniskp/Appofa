@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { CheckCircleIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
-import { apiRequest } from '@/lib/api/client.js';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
+import PersonSearch from './PersonSearch';
 
 const positionTypesMap = positionTypesData.reduce((acc, pt) => {
   acc[pt.key] = pt;
@@ -18,27 +18,6 @@ const positionIconMap = positionsData.positions.reduce((acc, p) => {
 }, {});
 
 const DEFAULT_META = { labelGr: 'Θέση', color: 'bg-indigo-100 text-indigo-700', icon: '⚖️' };
-
-// Latin → Greek lookalike map for client-side normalization
-const LATIN_TO_GREEK = {
-  A: 'Α', B: 'Β', E: 'Ε', Z: 'Ζ', H: 'Η', I: 'Ι',
-  K: 'Κ', M: 'Μ', N: 'Ν', O: 'Ο', P: 'Ρ', T: 'Τ',
-  X: 'Χ', Y: 'Υ',
-};
-
-/**
- * Normalize a search query: strip Greek tonos/diacritics and map visually
- * identical Latin characters to their Greek equivalents.
- */
-function normalizeGreekQuery(str) {
-  if (!str) return str;
-  const stripped = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  return stripped.replace(/[A-Za-z]/g, (ch) => {
-    const greek = LATIN_TO_GREEK[ch.toUpperCase()];
-    if (!greek) return ch;
-    return ch === ch.toUpperCase() ? greek : greek.toLowerCase();
-  });
-}
 
 function PersonAvatar({ photo, name, size = 'md' }) {
   const sizes = { sm: 'h-8 w-8 text-sm', md: 'h-12 w-12 text-base', lg: 'h-16 w-16 text-xl' };
@@ -60,15 +39,7 @@ function PersonAvatar({ photo, name, size = 'md' }) {
 
 export default function PositionCard({ position, myVote, onVote, onDeleteVote, loading }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searching, setSearching] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [searchStatus, setSearchStatus] = useState(null);
   const [selectedPerson, setSelectedPerson] = useState(null);
-  const [isTopSuggestions, setIsTopSuggestions] = useState(false);
-  const searchTimer = useRef(null);
-  const requestIdRef = useRef(0);
-  const dropdownRef = useRef(null);
   const prevMyVoteRef = useRef(null);
 
   const currentHolder = position.currentHolders?.[0] || null;
@@ -107,106 +78,9 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       // myVote just became null (vote was deleted) — reset search state
       setSelectedPerson(null);
       setSearchQuery('');
-      setSearchResults([]);
-      setSearchStatus(null);
-      setIsTopSuggestions(false);
-      setDropdownOpen(false);
     }
     prevMyVoteRef.current = myVote;
   }, [myVote]);
-
-  // Load top suggestions immediately (no query needed)
-  const loadTopSuggestions = useCallback(async () => {
-    const myId = ++requestIdRef.current;
-    setSearching(true);
-    try {
-      const [profileRes, userRes] = await Promise.allSettled([
-        apiRequest('/api/persons?limit=8'),
-        onVote
-          ? apiRequest('/api/auth/users/search?limit=8')
-          : Promise.resolve(null),
-      ]);
-
-      if (myId !== requestIdRef.current) return;
-
-      const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
-      const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
-
-      const merged = [
-        ...profiles.map((p) => ({ ...p, type: 'profile' })),
-        ...users.map((u) => ({ ...u, type: 'user' })),
-      ];
-      setSearchResults(merged);
-      setIsTopSuggestions(true);
-      setDropdownOpen(merged.length > 0);
-      setSearchStatus(merged.length > 0 ? null : 'empty');
-    } catch {
-      if (myId !== requestIdRef.current) return;
-      setSearchResults([]);
-    } finally {
-      if (myId === requestIdRef.current) setSearching(false);
-    }
-  }, [onVote]);
-
-  // Debounced person search — queries both profiles and users in parallel
-  const handleSearchChange = useCallback((e) => {
-    const q = e.target.value;
-    setSearchQuery(q);
-    setSearchStatus(null);
-    clearTimeout(searchTimer.current);
-
-    if (!q.trim()) {
-      setSearchResults([]);
-      setIsTopSuggestions(false);
-      setDropdownOpen(false);
-      return;
-    }
-
-    // For very short queries (1 char), keep current results visible and don't
-    // fire an API call — wait for more input before hitting the server.
-    if (q.trim().length < 2) {
-      setDropdownOpen(searchResults.length > 0);
-      return;
-    }
-
-    // 2+ characters: fire debounced search.
-    // Do NOT clear searchResults here — keep showing old results until new ones arrive.
-    setDropdownOpen(true);
-
-    searchTimer.current = setTimeout(async () => {
-      const myId = ++requestIdRef.current;
-      setSearching(true);
-      try {
-        const encodedQ = encodeURIComponent(normalizeGreekQuery(q));
-        const [profileRes, userRes] = await Promise.allSettled([
-          apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
-          onVote
-            ? apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`)
-            : Promise.resolve(null),
-        ]);
-
-        if (myId !== requestIdRef.current) return; // stale, discard
-
-        const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
-        const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
-
-        const profileResults = profiles.map((p) => ({ ...p, type: 'profile' }));
-        const userResults = users.map((u) => ({ ...u, type: 'user' }));
-        const merged = [...profileResults, ...userResults];
-        const hasResults = merged.length > 0;
-        setSearchResults(merged);
-        setIsTopSuggestions(false); // only clear top-suggestions flag after new results arrive
-        setSearchStatus(hasResults ? null : 'empty');
-        setDropdownOpen(true);
-      } catch {
-        if (myId !== requestIdRef.current) return;
-        setSearchResults([]);
-        setDropdownOpen(false);
-      } finally {
-        if (myId === requestIdRef.current) setSearching(false);
-      }
-    }, 300);
-  }, [onVote, searchResults.length]);
 
   const handleSelectPerson = useCallback((person) => {
     const name = person.type === 'user'
@@ -214,22 +88,6 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       : `${person.firstName} ${person.lastName}`.trim();
     setSelectedPerson({ id: person.id, name, type: person.type });
     setSearchQuery(name);
-    setSearchResults([]);
-    setSearchStatus(null);
-    setIsTopSuggestions(false);
-    setDropdownOpen(false);
-  }, []);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setDropdownOpen(false);
-        setSearchStatus(null);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   const isVoteChanged = selectedPerson && (
@@ -312,10 +170,6 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                 onClick={() => {
                   setSelectedPerson(null);
                   setSearchQuery('');
-                  setSearchResults([]);
-                  setSearchStatus(null);
-                  setIsTopSuggestions(false);
-                  setDropdownOpen(false);
                 }}
                 className="text-xs text-gray-400 hover:text-red-500 transition-colors ml-2 flex-shrink-0"
                 title="Αλλαγή ψήφου"
@@ -326,84 +180,14 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
             </div>
           )}
 
-          <div className="relative" ref={dropdownRef}>
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                onFocus={() => {
-                  if (searchResults.length > 0) {
-                    setDropdownOpen(true);
-                  } else if (!searchQuery.trim()) {
-                    loadTopSuggestions();
-                  }
-                }}
-                placeholder="Αναζητήστε πρόσωπο..."
-                className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                aria-label={`Αναζήτηση προσώπου για ${position.title}`}
-                aria-expanded={dropdownOpen}
-                aria-haspopup="listbox"
-                role="combobox"
-              />
-              {searching && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                </div>
-              )}
-            </div>
-
-            {dropdownOpen && searchStatus === 'empty' && (
-              <div
-                role="status"
-                aria-live="polite"
-                className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 text-sm text-gray-400 text-center"
-              >
-                Δεν βρέθηκαν αποτελέσματα
-              </div>
-            )}
-            {dropdownOpen && searchResults.length > 0 && (
-              <ul
-                role="listbox"
-                className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto"
-              >
-                {isTopSuggestions && (
-                  <li className="px-4 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50 border-b border-gray-100 pointer-events-none">
-                    Δημοφιλείς Προτάσεις
-                  </li>
-                )}
-                {searchResults.map((person) => {
-                  const displayName = person.type === 'user'
-                    ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
-                    : `${person.firstName} ${person.lastName}`;
-                  const photo = person.type === 'user' ? person.avatar : person.photo;
-                  return (
-                    <li
-                      key={`${person.type}-${person.id}`}
-                      role="option"
-                      aria-selected={selectedPerson?.id === person.id && selectedPerson?.type === person.type}
-                      onClick={() => handleSelectPerson(person)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSelectPerson(person)}
-                      tabIndex={0}
-                      className="flex items-center gap-3 px-4 py-2.5 hover:bg-gray-50 cursor-pointer transition-colors"
-                    >
-                      <PersonAvatar photo={photo} name={displayName} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">{displayName}</p>
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${person.type === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                          {person.type === 'user' ? '🧑 Χρήστης' : '📋 Δημόσιο Προφίλ'}
-                        </span>
-                      </div>
-                      {selectedPerson?.id === person.id && selectedPerson?.type === person.type && (
-                        <CheckCircleIcon className="h-4 w-4 text-green-500 flex-shrink-0" />
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+          <PersonSearch
+            onSelect={handleSelectPerson}
+            includeUsers={!!onVote}
+            showTopSuggestions={true}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Αναζητήστε πρόσωπο..."
+          />
         </div>
 
         {/* Vote Results */}
