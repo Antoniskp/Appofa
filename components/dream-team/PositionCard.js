@@ -63,6 +63,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchStatus, setSearchStatus] = useState(null);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [isTopSuggestions, setIsTopSuggestions] = useState(false);
   const searchTimer = useRef(null);
@@ -111,7 +112,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       const [profileRes, userRes] = await Promise.allSettled([
         apiRequest('/api/persons?limit=8'),
         onVote
-          ? apiRequest('/api/users/search?limit=8')
+          ? apiRequest('/api/auth/users/search?limit=8')
           : Promise.resolve(null),
       ]);
 
@@ -139,6 +140,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   const handleSearchChange = useCallback((e) => {
     const q = e.target.value;
     setSearchQuery(q);
+    setSearchStatus(null);
     clearTimeout(searchTimer.current);
 
     if (!q.trim()) {
@@ -161,7 +163,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
           apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
           // Only fetch users if the component has an onVote handler (user is logged in)
           onVote
-            ? apiRequest(`/api/users/search?search=${encodedQ}&limit=8`)
+            ? apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`)
             : Promise.resolve(null),
         ]);
 
@@ -174,8 +176,10 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
         const userResults = users.map((u) => ({ ...u, type: 'user' }));
 
         const merged = [...profileResults, ...userResults];
+        const hasResults = merged.length > 0;
         setSearchResults(merged);
-        setDropdownOpen(merged.length > 0);
+        setSearchStatus(hasResults ? null : 'empty');
+        setDropdownOpen(true);
       } catch {
         if (myId !== requestIdRef.current) return;
         setSearchResults([]);
@@ -191,6 +195,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       : `${person.firstName} ${person.lastName}`.trim();
     setSelectedPerson({ id: person.id, name, type: person.type });
     setSearchQuery(name);
+    setSearchStatus(null);
     setIsTopSuggestions(false);
     setDropdownOpen(false);
   }, []);
@@ -200,6 +205,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
         setDropdownOpen(false);
+        setSearchStatus(null);
       }
     };
     document.addEventListener('mousedown', handler);
@@ -287,6 +293,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                   setSelectedPerson(null);
                   setSearchQuery('');
                   setSearchResults([]);
+                  setSearchStatus(null);
                   setIsTopSuggestions(false);
                   setDropdownOpen(false);
                 }}
@@ -327,6 +334,15 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
               )}
             </div>
 
+            {dropdownOpen && searchStatus === 'empty' && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg px-4 py-3 text-sm text-gray-400 text-center"
+              >
+                Δεν βρέθηκαν αποτελέσματα
+              </div>
+            )}
             {dropdownOpen && searchResults.length > 0 && (
               <ul
                 role="listbox"
