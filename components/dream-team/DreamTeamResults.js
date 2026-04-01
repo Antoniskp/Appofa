@@ -2,6 +2,12 @@
 
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { TrophyIcon } from '@heroicons/react/24/solid';
+import positionsData from '@/config/governmentPositions.json';
+
+const positionIconMap = positionsData.positions.reduce((acc, p) => {
+  if (p.icon) acc[p.slug] = p.icon;
+  return acc;
+}, {});
 
 const CATEGORY_META = {
   president: { label: 'Πρόεδρος', color: 'border-purple-300 bg-purple-50', badge: 'bg-purple-100 text-purple-700', icon: '👑' },
@@ -11,6 +17,7 @@ const CATEGORY_META = {
 
 function WinnerCard({ item }) {
   const meta = CATEGORY_META[item.position?.category] || CATEGORY_META.minister;
+  const icon = positionIconMap[item.position?.slug] || meta.icon;
   const winner = item.winner;
   const currentHolder = item.position?.currentHolders?.[0] || null;
   const currentHolderName = currentHolder
@@ -45,7 +52,7 @@ function WinnerCard({ item }) {
       {/* Position */}
       <div>
         <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">
-          {meta.icon} {item.position?.title || '—'}
+          {icon} {item.position?.title || '—'}
         </p>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${meta.badge}`}>
           {meta.label}

@@ -15,9 +15,15 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import positionTypesData from '@/config/governmentPositionTypes.json';
+import positionsData from '@/config/governmentPositions.json';
 
 const positionTypesMap = positionTypesData.reduce((acc, pt) => {
   acc[pt.key] = pt;
+  return acc;
+}, {});
+
+const positionIconMap = positionsData.positions.reduce((acc, p) => {
+  if (p.icon) acc[p.slug] = p.icon;
   return acc;
 }, {});
 
@@ -380,6 +386,7 @@ export default function AdminDreamTeamPage() {
                 : null;
             const suggCount = (pos.aiSuggestions || []).length;
             const ptMeta = positionTypesMap[pos.positionTypeKey];
+            const posIcon = positionIconMap[pos.slug] || (ptMeta && ptMeta.icon);
 
             return (
               <div key={pos.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -388,7 +395,7 @@ export default function AdminDreamTeamPage() {
                   onClick={() => toggleExpand(pos.id)}
                   className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-gray-50 transition-colors"
                 >
-                  {ptMeta && <span className="text-base flex-shrink-0" aria-hidden="true">{ptMeta.icon}</span>}
+                  {posIcon && <span className="text-base flex-shrink-0" aria-hidden="true">{posIcon}</span>}
                   <span className="flex-1 font-medium text-gray-800 text-sm">{pos.title}</span>
                   <span className="text-xs text-gray-400 hidden sm:block">
                     {holderName
