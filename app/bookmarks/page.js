@@ -66,8 +66,8 @@ export default function BookmarksPage() {
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Bookmarks</h1>
-            <p className="text-gray-600 mt-2">Your saved articles and polls.</p>
+            <h1 className="text-3xl font-bold text-gray-900">Αποθηκευμένα</h1>
+            <p className="text-gray-600 mt-2">Τα αποθηκευμένα άρθρα και δημοσκοπήσεις σας.</p>
           </div>
 
           <FilterBar
@@ -76,12 +76,12 @@ export default function BookmarksPage() {
             filterConfig={[
               {
                 name: 'type',
-                label: 'Type',
+                label: 'Τύπος',
                 type: 'select',
                 options: [
-                  { value: '', label: 'All' },
-                  { value: 'article', label: 'Articles' },
-                  { value: 'poll', label: 'Polls' },
+                  { value: '', label: 'Όλα' },
+                  { value: 'article', label: 'Άρθρα' },
+                  { value: 'poll', label: 'Δημοσκοπήσεις' },
                 ],
               },
             ]}
@@ -97,10 +97,10 @@ export default function BookmarksPage() {
           {error && (
             <EmptyState
               type="error"
-              title="Error loading bookmarks"
+              title="Σφάλμα φόρτωσης"
               description={error}
               action={{
-                text: 'Try again',
+                text: 'Δοκιμάστε ξανά',
                 onClick: () => window.location.reload(),
               }}
             />
@@ -109,10 +109,10 @@ export default function BookmarksPage() {
           {!loading && !error && !hasItems && (
             <EmptyState
               type="empty"
-              title="No bookmarks yet"
-              description="Save articles and polls to see them here."
+              title="Δεν υπάρχουν αποθηκευμένα"
+              description="Αποθηκεύστε άρθρα και δημοσκοπήσεις για να τα δείτε εδώ."
               action={{
-                text: 'Browse articles',
+                text: 'Δείτε άρθρα',
                 href: '/articles'
               }}
             />
@@ -138,11 +138,11 @@ export default function BookmarksPage() {
             <div className="space-y-10">
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Articles</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Άρθρα</h2>
                   <span className="text-sm text-gray-500">{articleItems.length}</span>
                 </div>
                 {articleItems.length === 0 ? (
-                  <p className="text-sm text-gray-600">No saved articles yet.</p>
+                  <p className="text-sm text-gray-600">Δεν υπάρχουν αποθηκευμένα άρθρα.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {articleItems.map((article) => (
@@ -154,11 +154,11 @@ export default function BookmarksPage() {
 
               <section>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">Polls</h2>
+                  <h2 className="text-xl font-semibold text-gray-900">Δημοσκοπήσεις</h2>
                   <span className="text-sm text-gray-500">{pollItems.length}</span>
                 </div>
                 {pollItems.length === 0 ? (
-                  <p className="text-sm text-gray-600">No saved polls yet.</p>
+                  <p className="text-sm text-gray-600">Δεν υπάρχουν αποθηκευμένες δημοσκοπήσεις.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {pollItems.map((poll) => (

@@ -206,7 +206,9 @@ function SuggestionsContent() {
 
         {/* Content */}
         {loading ? (
-          <SkeletonLoader count={6} type="card" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
+            <SkeletonLoader count={6} type="card" />
+          </div>
         ) : error ? (
           <EmptyState
             title="Σφάλμα φόρτωσης"
@@ -221,7 +223,7 @@ function SuggestionsContent() {
           />
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
               {suggestions.map((suggestion) => (
                 <SuggestionCard key={suggestion.id} suggestion={suggestion} />
               ))}
