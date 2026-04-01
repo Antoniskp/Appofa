@@ -1,0 +1,100 @@
+{
+  "categories": [
+    {
+      "id": "politics_society",
+      "label": "Politics & Society",
+      "interests": [
+        {
+          "id": "local_politics", "label": "Local Politics",
+          "subInterests": [
+            { "id": "municipality", "label": "Municipality Affairs" },
+            { "id": "urban_planning", "label": "Urban Planning" }
+          ]
+        },
+        { "id": "international_affairs", "label": "International Affairs", "subInterests": [] },
+        { "id": "human_rights", "label": "Human Rights", "subInterests": [] },
+        { "id": "elections", "label": "Elections & Voting", "subInterests": [] }
+      ]
+    },
+    {
+      "id": "technology",
+      "label": "Technology",
+      "interests": [
+        {
+          "id": "software", "label": "Software & Programming",
+          "subInterests": [
+            { "id": "open_source", "label": "Open Source" },
+            { "id": "web_dev", "label": "Web Development" },
+            { "id": "ai_ml", "label": "AI / Machine Learning" }
+          ]
+        },
+        { "id": "gadgets", "label": "Gadgets & Hardware", "subInterests": [] },
+        { "id": "cybersecurity_interest", "label": "Cybersecurity", "subInterests": [] },
+        { "id": "blockchain", "label": "Blockchain & Crypto", "subInterests": [] }
+      ]
+    },
+    {
+      "id": "science",
+      "label": "Science & Nature",
+      "interests": [
+        { "id": "astronomy", "label": "Astronomy & Space", "subInterests": [] },
+        { "id": "biology", "label": "Biology & Life Sciences", "subInterests": [] },
+        { "id": "environment", "label": "Environment & Climate", "subInterests": [] },
+        { "id": "physics", "label": "Physics", "subInterests": [] }
+      ]
+    },
+    {
+      "id": "arts",
+      "label": "Arts & Culture",
+      "interests": [
+        {
+          "id": "music", "label": "Music",
+          "subInterests": [
+            { "id": "guitar", "label": "Guitar" },
+            { "id": "piano", "label": "Piano" },
+            { "id": "singing", "label": "Singing" },
+            { "id": "djing", "label": "DJing" }
+          ]
+        },
+        { "id": "visual_arts", "label": "Visual Arts & Painting", "subInterests": [] },
+        { "id": "cinema", "label": "Cinema & Film", "subInterests": [] },
+        { "id": "literature", "label": "Literature & Books", "subInterests": [] },
+        { "id": "theatre", "label": "Theatre & Performing Arts", "subInterests": [] }
+      ]
+    },
+    {
+      "id": "sports",
+      "label": "Sports & Fitness",
+      "interests": [
+        { "id": "football", "label": "Football / Soccer", "subInterests": [] },
+        { "id": "basketball", "label": "Basketball", "subInterests": [] },
+        { "id": "running", "label": "Running & Athletics", "subInterests": [] },
+        { "id": "cycling", "label": "Cycling", "subInterests": [] },
+        { "id": "gym", "label": "Gym & Weightlifting", "subInterests": [] },
+        { "id": "swimming", "label": "Swimming", "subInterests": [] },
+        { "id": "martial_arts", "label": "Martial Arts", "subInterests": [] }
+      ]
+    },
+    {
+      "id": "education_learning",
+      "label": "Education & Learning",
+      "interests": [
+        { "id": "languages", "label": "Languages", "subInterests": [] },
+        { "id": "history", "label": "History", "subInterests": [] },
+        { "id": "philosophy", "label": "Philosophy", "subInterests": [] },
+        { "id": "economics", "label": "Economics", "subInterests": [] }
+      ]
+    },
+    {
+      "id": "lifestyle",
+      "label": "Lifestyle",
+      "interests": [
+        { "id": "travel", "label": "Travel", "subInterests": [] },
+        { "id": "food", "label": "Food & Cooking", "subInterests": [] },
+        { "id": "gaming", "label": "Gaming & Esports", "subInterests": [] },
+        { "id": "volunteering", "label": "Volunteering & Community", "subInterests": [] },
+        { "id": "photography_hobby", "label": "Photography", "subInterests": [] }
+      ]
+    }
+  ]
+}

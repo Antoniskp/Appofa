@@ -1,0 +1,140 @@
+{
+  "categories": [
+    {
+      "id": "technology",
+      "label": "Technology & IT",
+      "professions": [
+        {
+          "id": "software_engineer", "label": "Software Engineer",
+          "subProfessions": [
+            { "id": "frontend", "label": "Frontend Developer" },
+            { "id": "backend", "label": "Backend Developer" },
+            { "id": "fullstack", "label": "Full Stack Developer" },
+            { "id": "devops", "label": "DevOps Engineer" },
+            { "id": "mobile", "label": "Mobile Developer" }
+          ]
+        },
+        {
+          "id": "data_scientist", "label": "Data Scientist",
+          "subProfessions": [
+            { "id": "ml_engineer", "label": "ML Engineer" },
+            { "id": "data_analyst", "label": "Data Analyst" },
+            { "id": "data_engineer", "label": "Data Engineer" }
+          ]
+        },
+        { "id": "cybersecurity", "label": "Cybersecurity Specialist", "subProfessions": [] },
+        { "id": "ux_designer", "label": "UX/UI Designer", "subProfessions": [] },
+        { "id": "sysadmin", "label": "System Administrator", "subProfessions": [] }
+      ]
+    },
+    {
+      "id": "healthcare",
+      "label": "Healthcare & Medicine",
+      "professions": [
+        {
+          "id": "doctor", "label": "Doctor / Physician",
+          "subProfessions": [
+            { "id": "gp", "label": "General Practitioner" },
+            { "id": "surgeon", "label": "Surgeon" },
+            { "id": "cardiologist", "label": "Cardiologist" },
+            { "id": "pediatrician", "label": "Pediatrician" },
+            { "id": "neurologist", "label": "Neurologist" }
+          ]
+        },
+        { "id": "nurse", "label": "Nurse", "subProfessions": [] },
+        { "id": "pharmacist", "label": "Pharmacist", "subProfessions": [] },
+        { "id": "psychologist", "label": "Psychologist", "subProfessions": [] },
+        { "id": "dentist", "label": "Dentist", "subProfessions": [] }
+      ]
+    },
+    {
+      "id": "education",
+      "label": "Education",
+      "professions": [
+        {
+          "id": "teacher", "label": "Teacher",
+          "subProfessions": [
+            { "id": "primary", "label": "Primary School" },
+            { "id": "secondary", "label": "Secondary School" },
+            { "id": "university", "label": "University Lecturer" }
+          ]
+        },
+        { "id": "researcher", "label": "Researcher / Academic", "subProfessions": [] },
+        { "id": "school_counselor", "label": "School Counselor", "subProfessions": [] }
+      ]
+    },
+    {
+      "id": "law",
+      "label": "Law & Legal",
+      "professions": [
+        {
+          "id": "lawyer", "label": "Lawyer / Attorney",
+          "subProfessions": [
+            { "id": "civil_law", "label": "Civil Law" },
+            { "id": "criminal_law", "label": "Criminal Law" },
+            { "id": "corporate_law", "label": "Corporate Law" }
+          ]
+        },
+        { "id": "judge", "label": "Judge", "subProfessions": [] },
+        { "id": "notary", "label": "Notary", "subProfessions": [] }
+      ]
+    },
+    {
+      "id": "business",
+      "label": "Business & Finance",
+      "professions": [
+        { "id": "accountant", "label": "Accountant", "subProfessions": [] },
+        { "id": "financial_analyst", "label": "Financial Analyst", "subProfessions": [] },
+        { "id": "entrepreneur", "label": "Entrepreneur / Business Owner", "subProfessions": [] },
+        {
+          "id": "manager", "label": "Manager",
+          "subProfessions": [
+            { "id": "project_manager", "label": "Project Manager" },
+            { "id": "hr_manager", "label": "HR Manager" },
+            { "id": "operations_manager", "label": "Operations Manager" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "creative",
+      "label": "Creative & Media",
+      "professions": [
+        { "id": "journalist", "label": "Journalist", "subProfessions": [] },
+        { "id": "graphic_designer", "label": "Graphic Designer", "subProfessions": [] },
+        { "id": "photographer", "label": "Photographer", "subProfessions": [] },
+        { "id": "writer", "label": "Writer / Author", "subProfessions": [] },
+        { "id": "filmmaker", "label": "Filmmaker / Videographer", "subProfessions": [] }
+      ]
+    },
+    {
+      "id": "engineering",
+      "label": "Engineering",
+      "professions": [
+        { "id": "civil_engineer", "label": "Civil Engineer", "subProfessions": [] },
+        { "id": "mechanical_engineer", "label": "Mechanical Engineer", "subProfessions": [] },
+        { "id": "electrical_engineer", "label": "Electrical Engineer", "subProfessions": [] },
+        { "id": "architect", "label": "Architect", "subProfessions": [] }
+      ]
+    },
+    {
+      "id": "public_sector",
+      "label": "Public Sector & Politics",
+      "professions": [
+        { "id": "civil_servant", "label": "Civil Servant", "subProfessions": [] },
+        { "id": "politician", "label": "Politician / Public Official", "subProfessions": [] },
+        { "id": "military", "label": "Military / Defence", "subProfessions": [] },
+        { "id": "police", "label": "Police / Law Enforcement", "subProfessions": [] }
+      ]
+    },
+    {
+      "id": "other",
+      "label": "Other",
+      "professions": [
+        { "id": "student", "label": "Student", "subProfessions": [] },
+        { "id": "retired", "label": "Retired", "subProfessions": [] },
+        { "id": "other", "label": "Other / Not listed", "subProfessions": [] }
+      ]
+    }
+  ]
+}
