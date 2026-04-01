@@ -5,9 +5,15 @@ import { CheckCircleIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { apiRequest } from '@/lib/api/client.js';
 import positionTypesData from '@/config/governmentPositionTypes.json';
+import positionsData from '@/config/governmentPositions.json';
 
 const positionTypesMap = positionTypesData.reduce((acc, pt) => {
   acc[pt.key] = pt;
+  return acc;
+}, {});
+
+const positionIconMap = positionsData.positions.reduce((acc, p) => {
+  if (p.icon) acc[p.slug] = p.icon;
   return acc;
 }, {});
 
@@ -69,6 +75,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   const topVotes = votes.slice(0, 5);
 
   const meta = positionTypesMap[position.positionTypeKey] || DEFAULT_META;
+  const icon = positionIconMap[position.slug] || meta.icon;
 
   // Restore selected person from myVote using joined data when available
   useEffect(() => {
@@ -219,7 +226,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       {/* Header */}
       <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <span className="text-2xl" aria-hidden="true">{meta.icon}</span>
+          <span className="text-2xl" aria-hidden="true">{icon}</span>
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-gray-900 text-lg leading-tight truncate">{position.title}</h3>
             <span className={`inline-block text-xs font-medium px-2.5 py-0.5 rounded-full mt-1 ${meta.color}`}>
