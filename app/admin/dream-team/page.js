@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   PlusIcon,
@@ -10,10 +10,10 @@ import {
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI';
-import { apiRequest } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
+import PersonSearch from '@/components/dream-team/PersonSearch';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
 
@@ -63,105 +63,6 @@ function InlineEdit({ value, onSave, placeholder = '—', className = '' }) {
     </button>
   );
 }
-function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφίλ...' }) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
-  const [open, setOpen] = useState(false);
-  const timer = useRef(null);
-  const requestIdRef = useRef(0);
-  const ref = useRef(null);
-
-  // Close dropdown on outside click (Bug 5)
-  useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
-
-  const search = useCallback((q) => {
-    clearTimeout(timer.current);
-    if (!q.trim()) { setResults([]); setOpen(false); return; }
-
-    // Keep dropdown open while user is typing
-    setOpen(true);
-
-    timer.current = setTimeout(async () => {
-      const myId = ++requestIdRef.current;
-      try {
-        const encodedQ = encodeURIComponent(q);
-        const [profileRes, userRes] = await Promise.allSettled([
-          apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
-          apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`),
-        ]);
-
-        if (myId !== requestIdRef.current) return; // stale, discard
-
-        const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
-        const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
-
-        const merged = [
-          ...profiles.map((p) => ({ ...p, resultType: 'profile' })),
-          ...users.map((u) => ({ ...u, resultType: 'user' })),
-        ];
-        setResults(merged);
-        setOpen(merged.length > 0);
-      } catch {
-        if (myId !== requestIdRef.current) return;
-        setResults([]);
-      }
-    }, 300);
-  }, []);
-
-  return (
-    <div className="relative" ref={ref}>
-      <input
-        value={query}
-        onChange={(e) => { setQuery(e.target.value); search(e.target.value); }}
-        placeholder={placeholder}
-        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-      {open && results.length > 0 && (
-        <ul className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
-          {results.map((p) => {
-            const isUserOnly = p.resultType === 'user';
-            const isVerifiedUser = isUserOnly && p.isVerified === true;
-            const isBlockedUser = isUserOnly && !isVerifiedUser;
-            const displayName = isUserOnly
-              ? ((`${p.firstName || ''} ${p.lastName || ''}`.trim()) || p.username)
-              : `${p.firstName} ${p.lastName}`;
-            const photo = isUserOnly ? p.avatar : p.photo;
-
-            return (
-              <li
-                key={`${p.resultType}-${p.id}`}
-                onClick={() => {
-                  if (isBlockedUser) return;
-                  onSelect(p);
-                  setQuery(displayName);
-                  setOpen(false);
-                }}
-                title={isBlockedUser ? 'Μόνο επαληθευμένοι χρήστες μπορούν να προστεθούν.' : undefined}
-                className={`flex items-center gap-2 px-3 py-2 text-sm ${isBlockedUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'}`}
-              >
-                {photo
-                  ? <img src={photo} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
-                  : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
-                <span className="font-medium flex-1 truncate">{displayName}</span>
-                <span className={`text-xs px-1.5 py-0.5 rounded flex-shrink-0 ${isBlockedUser ? 'bg-gray-100 text-gray-400' : isVerifiedUser ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500'}`}>
-                  {isBlockedUser ? '🔒 Μη επαληθευμένος' : isVerifiedUser ? '✅ Χρήστης' : '📋 Προφίλ'}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </div>
-  );
-}
 
 // ─── Suggestions panel for one position ──────────────────────────────────────
 function SuggestionsPanel({ position, onRefresh }) {
@@ -174,7 +75,7 @@ function SuggestionsPanel({ position, onRefresh }) {
     if (!selectedPerson) return;
     setSaving(true);
     try {
-      const isUser = selectedPerson.resultType === 'user';
+      const isUser = selectedPerson.type === 'user';
       await dreamTeamAPI.adminCreateSuggestion({
         positionId: position.id,
         ...(isUser ? { userId: selectedPerson.id } : { personId: selectedPerson.id }),
@@ -226,9 +127,9 @@ function SuggestionsPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 space-y-1 border-t pt-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
+          <PersonSearch onSelect={setSelectedPerson} includeUsers={true} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.resultType === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
+            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
           )}
           <input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Λόγος (προαιρετικό)" className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
@@ -263,7 +164,7 @@ function HolderPanel({ position, onRefresh }) {
     if (!selectedPerson) return;
     setSaving(true);
     try {
-      const isUser = selectedPerson.resultType === 'user';
+      const isUser = selectedPerson.type === 'user';
       await dreamTeamAPI.adminCreateHolder({
         positionId: position.id,
         ...(isUser ? { userId: selectedPerson.id } : { personId: selectedPerson.id }),
@@ -309,9 +210,9 @@ function HolderPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 border-t pt-2 space-y-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
+          <PersonSearch onSelect={setSelectedPerson} includeUsers={true} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.resultType === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
+            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
           )}
           <input type="date" value={since} onChange={(e) => setSince(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
