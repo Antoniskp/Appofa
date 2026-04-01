@@ -95,7 +95,7 @@ function PersonSearch({ onSelect, placeholder = 'Αναζητήστε προφί
         const encodedQ = encodeURIComponent(q);
         const [profileRes, userRes] = await Promise.allSettled([
           apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
-          apiRequest(`/api/users/search?search=${encodedQ}&limit=8`),
+          apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`),
         ]);
 
         if (myId !== requestIdRef.current) return; // stale, discard
