@@ -239,7 +239,21 @@ const getLocation = async (id) => {
         {
           model: Location,
           as: 'parent',
-          attributes: ['id', 'name', 'type', 'slug']
+          attributes: ['id', 'name', 'type', 'slug'],
+          include: [
+            {
+              model: Location,
+              as: 'parent',
+              attributes: ['id', 'name', 'type', 'slug'],
+              include: [
+                {
+                  model: Location,
+                  as: 'parent',
+                  attributes: ['id', 'name', 'type', 'slug']
+                }
+              ]
+            }
+          ]
         },
         {
           model: Location,
