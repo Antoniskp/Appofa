@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Suggestion, Solution, SuggestionVote, User, Location } = require('../models');
+const { Suggestion, Solution, SuggestionVote, User, Location, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeOptionalText, normalizeEnum, normalizeInteger } = require('../utils/validators');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
@@ -466,7 +466,6 @@ const suggestionController = {
    */
   getCategoryCounts: async (req, res) => {
     try {
-      const sequelize = require('sequelize');
       const where = { category: { [Op.ne]: null } };
       const { status } = req.query;
       if (status) where.status = status;
