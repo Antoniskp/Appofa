@@ -10,13 +10,14 @@ const positionIconMap = positionsData.positions.reduce((acc, p) => {
 }, {});
 
 const CATEGORY_META = {
-  president: { label: 'Πρόεδρος', color: 'border-purple-300 bg-purple-50', badge: 'bg-purple-100 text-purple-700', icon: '👑' },
+  head_of_state: { label: 'Πρόεδρος', color: 'border-purple-300 bg-purple-50', badge: 'bg-purple-100 text-purple-700', icon: '👑' },
+  parliament_speaker: { label: 'Πρόεδρος Βουλής', color: 'border-green-300 bg-green-50', badge: 'bg-green-100 text-green-700', icon: '🏛️' },
   prime_minister: { label: 'Πρωθυπουργός', color: 'border-blue-300 bg-blue-50', badge: 'bg-blue-100 text-blue-700', icon: '🏛️' },
   minister: { label: 'Υπουργός', color: 'border-indigo-200 bg-indigo-50', badge: 'bg-indigo-100 text-indigo-700', icon: '⚖️' },
 };
 
 function WinnerCard({ item }) {
-  const meta = CATEGORY_META[item.position?.category] || CATEGORY_META.minister;
+  const meta = CATEGORY_META[item.position?.positionTypeKey] || CATEGORY_META.minister;
   const icon = positionIconMap[item.position?.slug] || meta.icon;
   const winner = item.winner;
   const currentHolder = item.position?.currentHolders?.[0] || null;
@@ -101,9 +102,10 @@ export default function DreamTeamResults({ results = [] }) {
     );
   }
 
-  const presidents = results.filter((r) => r.position?.category === 'president');
-  const primeMinisters = results.filter((r) => r.position?.category === 'prime_minister');
-  const ministers = results.filter((r) => r.position?.category === 'minister');
+  const presidents = results.filter((r) => r.position?.positionTypeKey === 'head_of_state');
+  const speakers = results.filter((r) => r.position?.positionTypeKey === 'parliament_speaker');
+  const primeMinisters = results.filter((r) => r.position?.positionTypeKey === 'prime_minister');
+  const ministers = results.filter((r) => r.position?.positionTypeKey === 'minister');
 
   return (
     <div className="space-y-8">
@@ -115,6 +117,20 @@ export default function DreamTeamResults({ results = [] }) {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto sm:max-w-none">
             {presidents.map((item) => (
+              <WinnerCard key={item.position?.id} item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Speaker of Parliament */}
+      {speakers.length > 0 && (
+        <section>
+          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span>🏛️</span> Πρόεδρος της Βουλής
+          </h2>
+          <div className="max-w-xs mx-auto">
+            {speakers.map((item) => (
               <WinnerCard key={item.position?.id} item={item} />
             ))}
           </div>
