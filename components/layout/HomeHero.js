@@ -44,7 +44,7 @@ const NAV_CARDS = [
   {
     icon: AcademicCapIcon,
     title: 'Εκπαίδευση',
-    description: 'Μάθε πώς λειτουργεί το κράτος',
+    description: 'Μάθε πώς λειτουργεί η εκπαίδευση στο κράτος',
     href: '/education',
   },
   {
@@ -56,7 +56,7 @@ const NAV_CARDS = [
   {
     icon: UsersIcon,
     title: 'Dream Team',
-    description: 'Η ομάδα πίσω από την Απόφαση',
+    description: 'Ψήφισε για την ιδανική κυβέρνηση',
     href: '/dream-team',
   },
   {
@@ -132,7 +132,7 @@ export default function HomeHero() {
           <div className="absolute inset-0 bg-black/55 pointer-events-none" />
         )}
 
-        <div className="relative app-container py-6 md:py-8">
+        <div className="relative app-container py-12 md:py-16">
           <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10 animate-fade-in">
 
             {/* Left – text & actions */}
@@ -224,11 +224,9 @@ export default function HomeHero() {
 
           </div>
         </div>
-      </section>
 
-      {/* Icon navigation cards */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="app-container py-6">
+        {/* Icon navigation cards */}
+        <div className="relative app-container pb-8">
           <div className="flex flex-wrap justify-center gap-4">
             {NAV_CARDS.map(({ icon: Icon, title, description, href }) => (
               <Link
