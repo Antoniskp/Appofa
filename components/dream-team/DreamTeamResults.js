@@ -107,45 +107,19 @@ export default function DreamTeamResults({ results = [] }) {
   const primeMinisters = results.filter((r) => r.position?.positionTypeKey === 'prime_minister');
   const ministers = results.filter((r) => r.position?.positionTypeKey === 'minister');
 
+  const topPositions = [...presidents, ...speakers, ...primeMinisters];
+
   return (
     <div className="space-y-8">
-      {/* Presidents */}
-      {presidents.length > 0 && (
+      {/* Top 3 positions side by side */}
+      {topPositions.length > 0 && (
         <section>
           <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span>👑</span> Πρόεδρος της Δημοκρατίας
+            <span>🏛️</span> Ανώτατες Θέσεις
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto sm:max-w-none">
-            {presidents.map((item) => (
-              <WinnerCard key={item.position?.id} item={item} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Speaker of Parliament */}
-      {speakers.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span>🏛️</span> Πρόεδρος της Βουλής
-          </h2>
-          <div className="max-w-xs mx-auto">
-            {speakers.map((item) => (
-              <WinnerCard key={item.position?.id} item={item} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Prime Minister */}
-      {primeMinisters.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span>🏛️</span> Πρωθυπουργός
-          </h2>
-          <div className="max-w-xs mx-auto">
-            {primeMinisters.map((item) => (
-              <WinnerCard key={item.position?.id} item={item} />
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {topPositions.map((item) => (
+              <WinnerCard key={`${item.position?.positionTypeKey}-${item.position?.id}`} item={item} />
             ))}
           </div>
         </section>
