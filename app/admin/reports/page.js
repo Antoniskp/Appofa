@@ -135,7 +135,7 @@ function ReportsContent() {
         );
       }
     },
-    { key: 'category', label: 'Category', render: (row) => row.category.replace(/_/g, ' ') },
+    { key: 'category', label: 'Category', render: (row) => row.category?.replace(/_/g, ' ') || '-' },
     {
       key: 'reporter',
       label: 'Reporter',

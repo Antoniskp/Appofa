@@ -110,10 +110,10 @@ export default function AdminCandidatesPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Constituency</th>
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Constituency</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Active</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Source</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Source</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
@@ -129,10 +129,10 @@ export default function AdminCandidatesPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
+                    <td className="hidden lg:table-cell px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
                     <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
                     <td className="px-4 py-3"><ActiveBadge isActive={p.isActiveCandidate} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
+                    <td className="hidden xl:table-cell px-4 py-3 text-sm text-gray-500">{p.source}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/candidates/${p.id}/edit`} className="p-1.5 text-gray-500 hover:text-blue-600 rounded">

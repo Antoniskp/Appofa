@@ -101,11 +101,11 @@ export default function AdminPersonsPage() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Όνομα</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Τοποθεσία</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Εκλογική Περιφέρεια</th>
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Τοποθεσία</th>
+                  <th className="hidden xl:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Εκλογική Περιφέρεια</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Κατάσταση</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ενεργός</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Πηγή</th>
+                  <th className="hidden lg:table-cell px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Πηγή</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Ενέργειες</th>
                 </tr>
               </thead>
@@ -118,11 +118,11 @@ export default function AdminPersonsPage() {
                       </Link>
                       <p className="text-xs text-gray-400">/{p.slug}</p>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{p.location?.name || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
+                    <td className="hidden lg:table-cell px-4 py-3 text-sm text-gray-600">{p.location?.name || '—'}</td>
+                    <td className="hidden xl:table-cell px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
                     <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
                     <td className="px-4 py-3"><ActiveBadge isActive={p.isActiveCandidate} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
+                    <td className="hidden lg:table-cell px-4 py-3 text-sm text-gray-500">{p.source}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/persons/${p.id}/edit`} className="p-1.5 text-gray-500 hover:text-blue-600 rounded">
