@@ -44,7 +44,7 @@ const NAV_CARDS = [
   {
     icon: AcademicCapIcon,
     title: 'Εκπαίδευση',
-    description: 'Μάθε πώς λειτουργεί το κράτος',
+    description: 'Μάθε πώς λειτουργεί η εκπαίδευση στο κράτος',
     href: '/education',
   },
   {
@@ -56,7 +56,7 @@ const NAV_CARDS = [
   {
     icon: UsersIcon,
     title: 'Dream Team',
-    description: 'Η ομάδα πίσω από την Απόφαση',
+    description: 'Ψήφισε για την ιδανική κυβέρνηση',
     href: '/dream-team',
   },
   {
@@ -132,7 +132,7 @@ export default function HomeHero() {
           <div className="absolute inset-0 bg-black/55 pointer-events-none" />
         )}
 
-        <div className="relative app-container py-6 md:py-8">
+        <div className="relative app-container py-12 md:py-16">
           <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10 animate-fade-in">
 
             {/* Left – text & actions */}
@@ -223,28 +223,26 @@ export default function HomeHero() {
             )}
 
           </div>
-        </div>
-      </section>
 
-      {/* Icon navigation cards */}
-      <section className="bg-white border-b border-gray-100">
-        <div className="app-container py-6">
-          <div className="flex flex-wrap justify-center gap-4">
-            {NAV_CARDS.map(({ icon: Icon, title, description, href }) => (
-              <Link
-                key={href}
-                href={href}
-                className="flex flex-col items-center gap-3 p-5 bg-white border border-gray-200 rounded-2xl text-center hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 group w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.75rem)] lg:w-40"
-              >
-                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
-                  <Icon className="w-6 h-6 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-sm">{title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-snug">{description}</p>
-                </div>
-              </Link>
-            ))}
+          {/* Icon navigation cards */}
+          <div className="mt-10">
+            <div className="flex flex-wrap justify-center gap-4">
+              {NAV_CARDS.map(({ icon: Icon, title, description, href }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="flex flex-col items-center gap-3 p-5 bg-white border border-gray-200 rounded-2xl text-center shadow-sm hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 group w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.75rem)] lg:w-40"
+                >
+                  <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
+                    <Icon className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">{title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 leading-snug">{description}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>
