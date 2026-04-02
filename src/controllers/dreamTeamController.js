@@ -93,6 +93,19 @@ const dreamTeamController = {
         voteCounts.forEach((v) => { v.person = personMap[v.personId] || null; });
       }
 
+      // Enrich vote counts with User avatars for candidateUserId-based votes
+      const votedUserIds = [...new Set(voteCounts.map((v) => v.candidateUserId).filter(Boolean))];
+      if (votedUserIds.length > 0) {
+        const votedUsers = await User.findAll({
+          where: { id: { [Op.in]: votedUserIds } },
+          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+          raw: true,
+        });
+        const userMap = {};
+        votedUsers.forEach((u) => { userMap[u.id] = u; });
+        voteCounts.forEach((v) => { v.candidateUser = userMap[v.candidateUserId] || null; });
+      }
+
       // Fetch current user's votes
       let myVotes = [];
       if (req.user) {
@@ -266,16 +279,17 @@ const dreamTeamController = {
         attributes: [
           'positionId',
           'personId',
+          'candidateUserId',
           'personName',
           [sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'voteCount'],
         ],
         where: { positionId: { [Op.in]: positionIds } },
-        group: ['positionId', 'personId', 'personName'],
+        group: ['positionId', 'personId', 'candidateUserId', 'personName'],
         order: [[sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'DESC']],
         raw: true,
       });
 
-      // Step 2: determine winner per position and collect their personIds
+      // Step 2: determine winner per position and collect their personIds / candidateUserIds
       const winnerByPosition = {};
       voteCounts.forEach((v) => {
         if (!winnerByPosition[v.positionId]) {
@@ -286,8 +300,11 @@ const dreamTeamController = {
       const winnerPersonIds = [...new Set(
         Object.values(winnerByPosition).map((v) => v.personId).filter(Boolean)
       )];
+      const winnerUserIds = [...new Set(
+        Object.values(winnerByPosition).map((v) => v.candidateUserId).filter(Boolean)
+      )];
 
-      // Step 3: fetch photos separately
+      // Step 3: fetch photos separately for PublicPersonProfile winners
       const personPhotos = {};
       if (winnerPersonIds.length > 0) {
         const persons = await PublicPersonProfile.findAll({
@@ -296,6 +313,17 @@ const dreamTeamController = {
           raw: true,
         });
         persons.forEach((p) => { personPhotos[p.id] = p.photo; });
+      }
+
+      // Step 4: fetch avatars for User-based winners
+      const userAvatars = {};
+      if (winnerUserIds.length > 0) {
+        const users = await User.findAll({
+          where: { id: { [Op.in]: winnerUserIds } },
+          attributes: ['id', 'avatar'],
+          raw: true,
+        });
+        users.forEach((u) => { userAvatars[u.id] = u.avatar; });
       }
 
       // Total votes per position
@@ -312,8 +340,10 @@ const dreamTeamController = {
           winner: winner
             ? {
                 personId: winner.personId,
+                candidateUserId: winner.candidateUserId,
                 personName: winner.personName,
                 photo: personPhotos[winner.personId] || null,
+                avatar: userAvatars[winner.candidateUserId] || null,
                 voteCount: parseInt(winner.voteCount, 10),
                 percentage: total > 0
                   ? Math.round((parseInt(winner.voteCount, 10) / total) * 100)

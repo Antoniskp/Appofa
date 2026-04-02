@@ -202,7 +202,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                 const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
                 const isMyVote = (v.personId && v.personId === myVote?.personId) ||
                   (v.candidateUserId && v.candidateUserId === myVote?.candidateUserId);
-                const photo = v.person?.photo || null;
+                const photo = v.person?.photo || v.candidateUser?.avatar || null;
                 return (
                   <div key={`${v.personId || v.candidateUserId}-${idx}`}>
                     <div className="flex items-center justify-between text-xs mb-1">

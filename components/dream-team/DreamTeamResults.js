@@ -32,9 +32,9 @@ function WinnerCard({ item }) {
     <div className={`rounded-2xl border-2 ${meta.color} p-5 flex flex-col items-center text-center gap-3 transition-shadow hover:shadow-md`}>
       {/* Photo */}
       <div className="relative">
-        {winner?.photo ? (
+        {winner?.photo || winner?.avatar ? (
           <img
-            src={winner.photo}
+            src={winner.photo || winner.avatar}
             alt={winner.personName}
             className="h-20 w-20 rounded-full object-cover border-4 border-white shadow-md"
           />
