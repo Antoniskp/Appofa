@@ -33,6 +33,7 @@ export default function LocationDetailPage() {
   const [candidates, setCandidates] = useState([]);
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
+  const [homeBreadcrumb, setHomeBreadcrumb] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({});
@@ -157,6 +158,25 @@ export default function LocationDetailPage() {
       router.replace(`/locations/${location.slug}`);
     }
   }, [location, params.slug, router]);
+
+  // Build home breadcrumb from user's homeLocation (full parent chain)
+  const homeLocationSlug = user?.homeLocation?.slug;
+  useEffect(() => {
+    if (!homeLocationSlug) {
+      setHomeBreadcrumb([]);
+      return;
+    }
+    locationAPI.getById(homeLocationSlug).then((res) => {
+      if (!res.success) return;
+      const crumbs = [];
+      let current = res.location;
+      while (current) {
+        crumbs.unshift(current);
+        current = current.parent;
+      }
+      setHomeBreadcrumb(crumbs);
+    }).catch(() => {});
+  }, [homeLocationSlug]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -304,27 +324,86 @@ export default function LocationDetailPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb */}
-        {breadcrumb.length > 1 && (
-          <nav className="mb-4">
-            <ol className="flex items-center space-x-2 text-sm text-gray-500">
-              {breadcrumb.map((crumb, index) => (
-                <li key={crumb.id} className="flex items-center">
-                  {index > 0 && <span className="mx-2">/</span>}
-                  {index === breadcrumb.length - 1 ? (
-                    <span className="text-gray-900 font-medium">{crumb.name}</span>
-                  ) : (
-                    <Link
-                      href={`/locations/${crumb.slug}`}
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      {crumb.name}
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </nav>
-        )}
+        {(() => {
+          const homeLocationIds = new Set(homeBreadcrumb.map((c) => c.id));
+          const isInHomeHierarchy = breadcrumb.some((c) => homeLocationIds.has(c.id));
+
+          return (
+            <>
+              {/* Home breadcrumb — always visible for logged-in users with a home location */}
+              {homeBreadcrumb.length > 0 && (
+                <nav className="mb-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <ol className="flex items-center flex-wrap gap-1 text-sm">
+                    <li className="flex items-center text-amber-700 font-semibold mr-1">🏠</li>
+                    {homeBreadcrumb.map((crumb, index) => (
+                      <li key={crumb.id} className="flex items-center">
+                        {index > 0 && <span className="mx-1 text-amber-400">/</span>}
+                        <Link
+                          href={`/locations/${crumb.slug}`}
+                          className={
+                            breadcrumb.some((c) => c.id === crumb.id)
+                              ? 'text-amber-700 font-semibold hover:text-amber-900'
+                              : 'text-amber-600 hover:text-amber-800'
+                          }
+                        >
+                          {crumb.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ol>
+                </nav>
+              )}
+
+              {/* Current location breadcrumb — shown when not in home hierarchy, or when no home location */}
+              {homeBreadcrumb.length > 0 ? (
+                !isInHomeHierarchy && breadcrumb.length > 0 && (
+                  <nav className="mb-4">
+                    <ol className="flex items-center flex-wrap gap-1 text-sm text-gray-500">
+                      <li className="flex items-center text-gray-500 mr-1">📍 <span className="ml-1">Currently viewing:</span></li>
+                      {breadcrumb.map((crumb, index) => (
+                        <li key={crumb.id} className="flex items-center">
+                          {index > 0 && <span className="mx-1">/</span>}
+                          {index === breadcrumb.length - 1 ? (
+                            <span className="text-gray-900 font-medium">{crumb.name}</span>
+                          ) : (
+                            <Link
+                              href={`/locations/${crumb.slug}`}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              {crumb.name}
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </nav>
+                )
+              ) : (
+                breadcrumb.length > 0 && (
+                  <nav className="mb-4">
+                    <ol className="flex items-center flex-wrap gap-1 text-sm text-gray-500">
+                      {breadcrumb.map((crumb, index) => (
+                        <li key={crumb.id} className="flex items-center">
+                          {index > 0 && <span className="mx-1">/</span>}
+                          {index === breadcrumb.length - 1 ? (
+                            <span className="text-gray-900 font-medium">{crumb.name}</span>
+                          ) : (
+                            <Link
+                              href={`/locations/${crumb.slug}`}
+                              className="text-blue-600 hover:text-blue-800"
+                            >
+                              {crumb.name}
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ol>
+                  </nav>
+                )
+              )}
+            </>
+          );
+        })()}
 
         {/* Compact Location Header */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">

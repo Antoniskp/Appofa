@@ -93,7 +93,28 @@ async function getUserProfile(userId) {
       {
         model: Location,
         as: 'homeLocation',
-        attributes: ['id', 'name', 'type', 'slug']
+        attributes: ['id', 'name', 'type', 'slug'],
+        include: [
+          {
+            model: Location,
+            as: 'parent',
+            attributes: ['id', 'name', 'type', 'slug'],
+            include: [
+              {
+                model: Location,
+                as: 'parent',
+                attributes: ['id', 'name', 'type', 'slug'],
+                include: [
+                  {
+                    model: Location,
+                    as: 'parent',
+                    attributes: ['id', 'name', 'type', 'slug']
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     ]
   });
