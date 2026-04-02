@@ -3,18 +3,16 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShareIcon, BookmarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
+import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
-import { articleAPI, bookmarkAPI } from '@/lib/api';
+import { bookmarkAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
 import RichArticleContent from '@/components/RichArticleContent';
-import Button from '@/components/Button';
 import SkeletonLoader from '@/components/SkeletonLoader';
-import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import CommentsThread from '@/components/comments/CommentsThread';
@@ -28,21 +26,10 @@ export default function NewsDetailPage() {
   const { addToast } = useToast();
   const { error: toastError } = useToast();
   const { article, loading, error } = useFetchArticle(params.id);
-  const { canEditArticle, canDeleteArticle } = usePermissions();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { canEditArticle } = usePermissions();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
-
-  const handleDelete = async () => {
-    try {
-      await articleAPI.delete(article.id);
-      addToast('News article deleted successfully', { type: 'success' });
-      router.push('/news');
-    } catch (err) {
-      addToast(`Failed to delete news article: ${err.message}`, { type: 'error' });
-    }
-  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -280,6 +267,13 @@ export default function NewsDetailPage() {
                     onClick={() => window.print()}
                   />
                   <ReportButton contentType="article" contentId={article.id} />
+                  {canEditArticle(article) && (
+                    <TooltipIconButton
+                      icon={PencilSquareIcon}
+                      tooltip="Επεξεργασία"
+                      onClick={() => router.push(`/articles/${article.id}/edit`)}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -302,26 +296,6 @@ export default function NewsDetailPage() {
               <RichArticleContent content={article.content} />
             </div>
 
-            {/* Action Buttons */}
-            {(canEditArticle(article) || canDeleteArticle(article)) && (
-              <div className="flex gap-4 pt-8 border-t border-gray-200">
-                {canEditArticle(article) && (
-                  <Link href={`/articles/${article.id}/edit`}>
-                    <Button variant="secondary">
-                      Edit Article
-                    </Button>
-                  </Link>
-                )}
-                {canDeleteArticle(article) && (
-                  <Button 
-                    variant="danger" 
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    Delete Article
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </article>
@@ -335,17 +309,6 @@ export default function NewsDetailPage() {
         />
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={handleDelete}
-        title="Delete News Article"
-        message="Are you sure you want to delete this news article? This action cannot be undone."
-        confirmText="Delete Article"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </div>
   );
 }

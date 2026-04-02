@@ -3,9 +3,9 @@
 import { useParams, useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ShareIcon, BookmarkIcon, PrinterIcon } from '@heroicons/react/24/outline';
+import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
-import { articleAPI, bookmarkAPI } from '@/lib/api';
+import { bookmarkAPI } from '@/lib/api';
 import CommentsThread from '@/components/comments/CommentsThread';
 import { useAuth } from '@/lib/auth-context';
 import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
@@ -13,9 +13,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
 import RichArticleContent from '@/components/RichArticleContent';
-import Button from '@/components/Button';
 import SkeletonLoader from '@/components/SkeletonLoader';
-import { ConfirmDialog } from '@/components/Modal';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import VideoEmbed from '@/components/articles/VideoEmbed';
@@ -29,8 +27,7 @@ export default function ArticleDetailPage() {
   const { addToast } = useToast();
   const { error: toastError } = useToast();
   const { article, loading, error } = useFetchArticle(params.id);
-  const { canEditArticle, canDeleteArticle } = usePermissions();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const { canEditArticle } = usePermissions();
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
@@ -43,16 +40,6 @@ export default function ArticleDetailPage() {
   const isVideo = article?.type === 'video';
   const breadcrumbLabel = isVideo ? 'Βίντεο' : (isNews ? 'News' : 'Articles');
   const breadcrumbHref = isVideo ? '/videos' : (isNews ? '/news' : '/articles');
-
-  const handleDelete = async () => {
-    try {
-      await articleAPI.delete(article.id);
-      addToast('Article deleted successfully', { type: 'success' });
-      router.push('/articles');
-    } catch (err) {
-      addToast(`Failed to delete article: ${err.message}`, { type: 'error' });
-    }
-  };
 
   const handleShare = () => {
     if (navigator.share) {
@@ -297,6 +284,13 @@ export default function ArticleDetailPage() {
                     onClick={() => window.print()}
                   />
                   <ReportButton contentType="article" contentId={article.id} />
+                  {canEditArticle(article) && (
+                    <TooltipIconButton
+                      icon={PencilSquareIcon}
+                      tooltip="Επεξεργασία"
+                      onClick={() => router.push(`/articles/${article.id}/edit`)}
+                    />
+                  )}
                 </div>
               </div>
             </div>
@@ -318,27 +312,6 @@ export default function ArticleDetailPage() {
               <RichArticleContent content={article.content} />
             </div>
 
-            {/* Action Buttons */}
-            {(canEditArticle(article) || canDeleteArticle(article)) && (
-              <div className="flex gap-4 pt-8 border-t border-gray-200">
-                {canEditArticle(article) && (
-                  <Link href={`/articles/${article.id}/edit`}>
-                    <Button variant="secondary">
-                      Edit Article
-                    </Button>
-                  </Link>
-                )}
-                {canDeleteArticle(article) && (
-                  <Button 
-                    variant="danger" 
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    Delete Article
-                  </Button>
-                )}
-              </div>
-            )}
-
             <CommentsThread
               entityType="article"
               entityId={article.id}
@@ -349,17 +322,6 @@ export default function ArticleDetailPage() {
         </div>
       </article>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={handleDelete}
-        title="Delete Article"
-        message="Are you sure you want to delete this article? This action cannot be undone."
-        confirmText="Delete Article"
-        cancelText="Cancel"
-        variant="danger"
-      />
     </div>
   );
 }

@@ -9,6 +9,7 @@ import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
 import TagInput from '@/components/TagInput';
 import Tooltip from '@/components/Tooltip';
+import ConfirmDialog from '@/components/ConfirmDialog';
 import { tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 
@@ -25,6 +26,7 @@ export default function PollForm({
   poll = null,
   onSubmit,
   onCancel,
+  onDelete,
   isSubmitting = false,
   submitError = '',
   mode = 'create'
@@ -46,6 +48,8 @@ export default function PollForm({
     commentsEnabled: true,
     commentsLocked: false,
   });
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const [options, setOptions] = useState([
     { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
@@ -523,7 +527,7 @@ export default function PollForm({
       )}
 
       {/* Submit Buttons */}
-      <div className="flex gap-4">
+      <div className="flex gap-4 items-center">
         <button
           type="submit"
           disabled={isSubmitting}
@@ -540,7 +544,30 @@ export default function PollForm({
         >
           Ακύρωση
         </button>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={() => setDeleteConfirmOpen(true)}
+            className="ml-auto flex items-center gap-2 bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition font-medium"
+          >
+            <TrashIcon className="h-4 w-4" />
+            Διαγραφή
+          </button>
+        )}
       </div>
+
+      {onDelete && (
+        <ConfirmDialog
+          isOpen={deleteConfirmOpen}
+          title="Διαγραφή Δημοσκόπησης"
+          message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη δημοσκόπηση; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+          confirmText="Διαγραφή"
+          cancelText="Ακύρωση"
+          destructive
+          onConfirm={onDelete}
+          onCancel={() => setDeleteConfirmOpen(false)}
+        />
+      )}
     </form>
   );
 }

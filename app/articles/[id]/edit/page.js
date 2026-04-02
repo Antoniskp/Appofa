@@ -19,7 +19,7 @@ function EditArticlePageContent() {
   const { article, loading, error: loadError, refetch } = useFetchArticle(params.id);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const { canEditArticle } = usePermissions();
+  const { canEditArticle, canDeleteArticle } = usePermissions();
 
   // Show error toast only when loading completes with an error
   useEffect(() => {
@@ -52,6 +52,17 @@ function EditArticlePageContent() {
       setSubmitError(`Failed to update article: ${err.message}`);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await articleAPI.delete(params.id);
+      success('Article deleted successfully');
+      const redirectPath = article.type === 'news' ? '/news' : '/articles';
+      router.push(redirectPath);
+    } catch (err) {
+      error(`Failed to delete article: ${err.message}`);
     }
   };
 
@@ -102,6 +113,7 @@ function EditArticlePageContent() {
             article={article}
             onSubmit={handleSubmit}
             onCancel={() => router.push(articleDetailPath)}
+            onDelete={canDeleteArticle(article) ? handleDelete : undefined}
             isSubmitting={submitting}
             submitError={submitError}
           />

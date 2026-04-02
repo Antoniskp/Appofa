@@ -8,7 +8,6 @@ import {
   UserIcon, 
   EyeIcon, 
   PencilSquareIcon,
-  TrashIcon,
   ClockIcon,
   BookmarkIcon,
   ShareIcon,
@@ -24,7 +23,6 @@ import PollResults from '@/components/PollResults';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import Badge from '@/components/Badge';
-import ConfirmDialog from '@/components/ConfirmDialog';
 import { useToast } from '@/components/ToastProvider';
 import { TooltipIconButton } from '@/components/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
@@ -40,8 +38,6 @@ export default function PollDetailPage() {
   const [poll, setPoll] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
@@ -83,22 +79,6 @@ export default function PollDetailPage() {
   const handleVoteSuccess = () => {
     // Refresh poll data after voting
     fetchPoll();
-  };
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    
-    try {
-      const response = await pollAPI.delete(pollId);
-      if (response.success) {
-        router.push('/polls');
-      }
-    } catch (err) {
-      alert('Σφάλμα κατά τη διαγραφή της δημοσκόπησης');
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
   };
 
   const handleShare = () => {
@@ -169,7 +149,6 @@ export default function PollDetailPage() {
   const isPollActive = poll && poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const isCreator = user && poll && poll.creatorId === user.id;
   const canEdit = isCreator || isAdmin;
-  const canDelete = isCreator || isAdmin;
   const showResults = canViewResults(poll);
   const creatorLabel = poll?.hideCreator ? 'Ανώνυμος' : (poll?.creator?.username || 'Άγνωστος');
 
@@ -338,33 +317,16 @@ export default function PollDetailPage() {
                   onClick={() => window.print()}
                 />
                 <ReportButton contentType="poll" contentId={poll.id} />
+                {canEdit && (
+                  <TooltipIconButton
+                    icon={PencilSquareIcon}
+                    tooltip="Επεξεργασία"
+                    onClick={() => router.push(`/polls/${poll.id}/edit`)}
+                  />
+                )}
               </div>
             </div>
           </div>
-          
-          {/* Edit/Delete Action Buttons */}
-          {(canEdit || canDelete) && (
-            <div className="flex gap-2 mt-4">
-              {canEdit && (
-                <Link
-                  href={`/polls/${poll.id}/edit`}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition text-sm"
-                >
-                  <PencilSquareIcon className="h-4 w-4" />
-                  Επεξεργασία
-                </Link>
-              )}
-              {canDelete && (
-                <button
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition text-sm"
-                >
-                  <TrashIcon className="h-4 w-4" />
-                  Διαγραφή
-                </button>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Voting Section */}
@@ -417,17 +379,6 @@ export default function PollDetailPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
-        onConfirm={handleDelete}
-        title="Διαγραφή Δημοσκόπησης"
-        message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη δημοσκόπηση; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
-        confirmText="Διαγραφή"
-        cancelText="Ακύρωση"
-        isLoading={isDeleting}
-      />
     </div>
   );
 }
