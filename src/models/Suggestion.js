@@ -45,6 +45,10 @@ const Suggestion = sequelize.define('Suggestion', {
     type: DataTypes.ENUM('open', 'under_review', 'implemented', 'rejected'),
     defaultValue: 'open',
     allowNull: false
+  },
+  category: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true,

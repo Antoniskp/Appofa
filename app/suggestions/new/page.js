@@ -10,6 +10,7 @@ import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/FormInput';
 import FormSelect from '@/components/FormSelect';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import articleCategories from '@/config/articleCategories.json';
 
 const SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
@@ -30,7 +31,7 @@ export default function NewSuggestionPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  const [form, setForm] = useState({ title: '', body: '', type: 'idea', locationId: null });
+  const [form, setForm] = useState({ title: '', body: '', type: 'idea', locationId: null, category: '' });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -85,6 +86,7 @@ export default function NewSuggestionPage() {
         body: form.body,
         type: form.type,
         ...(form.locationId ? { locationId: form.locationId } : { locationId: null }),
+        ...(form.category ? { category: form.category } : {}),
       };
       const res = await suggestionAPI.create(payload);
       if (res.success) {
@@ -131,6 +133,24 @@ export default function NewSuggestionPage() {
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Κατηγορία <span className="text-gray-400 font-normal">(προαιρετικό)</span>
+              </label>
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">-- Επιλέξτε κατηγορία --</option>
+                {(articleCategories.suggestionCategories || []).map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>

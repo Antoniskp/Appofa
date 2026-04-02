@@ -11,6 +11,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/SkeletonLoader';
 import EmptyState from '@/components/EmptyState';
 import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import articleCategories from '@/config/articleCategories.json';
 
 const SUGGESTION_TYPES = [
   { value: 'idea', label: 'Ιδέα – Πρόταση βελτίωσης' },
@@ -52,6 +53,7 @@ export default function EditSuggestionPage() {
         type: data.type,
         status: data.status,
         locationId: data.locationId || null,
+        category: data.category || '',
       });
     },
   });
@@ -136,6 +138,7 @@ export default function EditSuggestionPage() {
         body: form.body,
         type: form.type,
         locationId: form.locationId,
+        category: form.category || null,
       };
       if (isPrivileged) {
         payload.status = form.status;
@@ -185,6 +188,24 @@ export default function EditSuggestionPage() {
                   <option key={t.value} value={t.value}>
                     {t.label}
                   </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Κατηγορία <span className="text-gray-400 font-normal">(προαιρετικό)</span>
+              </label>
+              <select
+                name="category"
+                value={form.category}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">-- Επιλέξτε κατηγορία --</option>
+                {(articleCategories.suggestionCategories || []).map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
             </div>

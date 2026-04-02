@@ -8,6 +8,7 @@ const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 // Public routes – optional auth to expose myVote
 router.get('/', apiLimiter, optionalAuthMiddleware, suggestionController.getSuggestions);
+router.get('/category-counts', apiLimiter, suggestionController.getCategoryCounts);
 router.get('/:id', apiLimiter, optionalAuthMiddleware, suggestionController.getSuggestionById);
 router.get('/:id/solutions', apiLimiter, optionalAuthMiddleware, suggestionController.getSolutions);
 

@@ -53,6 +53,7 @@ const ARTICLE_TYPE_META = {
 };
 
 const POLL_META = { icon: '📊', labelEl: 'Ψηφοφορίες' };
+const SUGGESTION_META = { icon: '💡', labelEl: 'Προτάσεις & Ιδέες' };
 
 function GithubIcon() {
   return (
@@ -71,7 +72,7 @@ function StepBadge({ n }) {
 }
 
 export default function CategoriesPage() {
-  const { articleTypes, pollCategories } = categoriesData;
+  const { articleTypes, pollCategories, suggestionCategories } = categoriesData;
 
   const sections = [
     ...Object.entries(articleTypes)
@@ -89,6 +90,13 @@ export default function CategoriesPage() {
       label: POLL_META.labelEl,
       description: null,
       categories: pollCategories,
+    },
+    {
+      key: 'suggestions',
+      icon: SUGGESTION_META.icon,
+      label: SUGGESTION_META.labelEl,
+      description: null,
+      categories: suggestionCategories || [],
     },
   ];
 
