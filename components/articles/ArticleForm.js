@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { InformationCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ConfirmDialog } from '@/components/Modal';
 import Badge from '@/components/Badge';
 import AlertMessage from '@/components/AlertMessage';
 import FormInput from '@/components/FormInput';
@@ -19,10 +20,12 @@ export default function ArticleForm({
   article = null,
   onSubmit,
   onCancel,
+  onDelete,
   isSubmitting = false,
   submitError = ''
 }) {
   const { user } = useAuth();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const isAdminOrModerator = user?.role === 'admin' || user?.role === 'moderator';
   const contentInputRef = useRef(null);
   const [contentSelection, setContentSelection] = useState({ start: 0, end: 0 });
@@ -840,7 +843,7 @@ export default function ArticleForm({
         </div>
       )}
 
-      <div className="flex gap-4">
+      <div className="flex gap-4 items-center">
         <button
           type="submit"
           disabled={isSubmitting}
@@ -855,7 +858,30 @@ export default function ArticleForm({
         >
           Cancel
         </button>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={() => setDeleteConfirmOpen(true)}
+            className="ml-auto flex items-center gap-2 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
+          >
+            <TrashIcon className="h-4 w-4" />
+            Delete Article
+          </button>
+        )}
       </div>
+
+      {onDelete && (
+        <ConfirmDialog
+          isOpen={deleteConfirmOpen}
+          onClose={() => setDeleteConfirmOpen(false)}
+          onConfirm={onDelete}
+          title="Delete Article"
+          message="Are you sure you want to delete this article? This action cannot be undone."
+          confirmText="Delete Article"
+          cancelText="Cancel"
+          variant="danger"
+        />
+      )}
     </form>
   );
 }

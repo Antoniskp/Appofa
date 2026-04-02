@@ -70,6 +70,17 @@ function EditPollContent() {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      const response = await pollAPI.delete(pollId);
+      if (response.success) {
+        router.push('/polls');
+      }
+    } catch (err) {
+      alert('Σφάλμα κατά τη διαγραφή της δημοσκόπησης');
+    }
+  };
+
   const handleCancel = () => {
     router.push(`/polls/${pollId}`);
   };
@@ -120,6 +131,7 @@ function EditPollContent() {
           mode="edit"
           onSubmit={handleSubmit}
           onCancel={handleCancel}
+          onDelete={handleDelete}
           isSubmitting={isSubmitting}
           submitError={submitError}
         />
