@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon, MapPinIcon, LightBulbIcon, ExclamationTriangleIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
@@ -12,8 +12,11 @@ import Pagination from '@/components/Pagination';
 import FilterBar from '@/components/FilterBar';
 import Badge from '@/components/Badge';
 import InlineSuggestionVote from '@/components/InlineSuggestionVote';
+import SearchInput from '@/components/SearchInput';
+import CategoryPills from '@/components/CategoryPills';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
+import articleCategories from '@/config/articleCategories.json';
 
 const TYPE_LABELS = {
   idea: 'Ιδέα',
@@ -50,6 +53,11 @@ const STATUS_VARIANTS = {
   rejected: 'danger',
 };
 
+const suggestionCategoryOptions = (articleCategories.suggestionCategories || []).map((cat) => ({
+  value: cat,
+  label: cat,
+}));
+
 function SuggestionCard({ suggestion }) {
   const TypeIcon = TYPE_ICONS[suggestion.type] || LightBulbIcon;
 
@@ -68,6 +76,11 @@ function SuggestionCard({ suggestion }) {
               <Badge variant={STATUS_VARIANTS[suggestion.status] || 'default'}>
                 {STATUS_LABELS[suggestion.status] || suggestion.status}
               </Badge>
+              {suggestion.category && (
+                <Badge variant="default">
+                  {suggestion.category}
+                </Badge>
+              )}
               {suggestion.location && (
                 <span className="text-xs text-gray-500 flex items-center gap-1">
                   <MapPinIcon className="h-3 w-3" />
@@ -115,7 +128,19 @@ function SuggestionsContent() {
     nextPage,
     prevPage,
     goToPage,
-  } = useFilters({ type: '', status: '', sort: 'newest' });
+    updateFilter,
+  } = useFilters({ type: '', status: '', sort: 'newest', category: '', search: '' });
+
+  const [categoryCounts, setCategoryCounts] = useState({});
+  const [countsLoaded, setCountsLoaded] = useState(false);
+  const [filterBarOpen, setFilterBarOpen] = useState(false);
+
+  useEffect(() => {
+    suggestionAPI.getCategoryCounts()
+      .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
+      .catch((err) => console.error('Failed to fetch suggestion category counts:', err))
+      .finally(() => setCountsLoaded(true));
+  }, []);
 
   const { data: suggestions, loading, error } = useAsyncData(
     async () => {
@@ -139,67 +164,75 @@ function SuggestionsContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{mine ? 'Οι Προτάσεις μου' : 'Προτάσεις & Ιδέες'}</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {mine
-                ? 'Οι προτάσεις και ιδέες που έχετε υποβάλει.'
-                : 'Μοιραστείτε ιδέες και προβλήματα για να βελτιωθεί η κοινότητά σας.'}
-            </p>
+        {/* Search, Filters, and action button */}
+        <div className="flex flex-col gap-4 mb-8">
+          <div className="flex items-center gap-3">
+            <SearchInput
+              name="search"
+              placeholder="Αναζήτηση προτάσεων..."
+              value={filters.search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="flex-grow max-w-md"
+            />
+            <FilterBar
+              filters={filters}
+              onChange={handleFilterChange}
+              isOpen={filterBarOpen}
+              onToggle={() => setFilterBarOpen((prev) => !prev)}
+              filterConfig={[
+                {
+                  name: 'type',
+                  label: 'Τύπος',
+                  type: 'select',
+                  options: [
+                    { value: '', label: 'Όλοι οι τύποι' },
+                    { value: 'idea', label: 'Ιδέα' },
+                    { value: 'problem', label: 'Πρόβλημα' },
+                    { value: 'problem_request', label: 'Ερώτημα Κοινότητας' },
+                    { value: 'location_suggestion', label: 'Τοποθεσία' },
+                  ],
+                },
+                {
+                  name: 'status',
+                  label: 'Κατάσταση',
+                  type: 'select',
+                  options: [
+                    { value: '', label: 'Όλες οι καταστάσεις' },
+                    { value: 'open', label: 'Ανοιχτό' },
+                    { value: 'under_review', label: 'Σε Εξέταση' },
+                    { value: 'implemented', label: 'Υλοποιήθηκε' },
+                    { value: 'rejected', label: 'Απορρίφθηκε' },
+                  ],
+                },
+                {
+                  name: 'sort',
+                  label: 'Ταξινόμηση',
+                  type: 'select',
+                  options: [
+                    { value: 'newest', label: 'Νεότερα' },
+                    { value: 'top', label: 'Κορυφαία' },
+                  ],
+                },
+              ]}
+            />
+            {user && (
+              <Link
+                href="/suggestions/new"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                <PlusCircleIcon className="h-5 w-5" />
+                Νέα Πρόταση
+              </Link>
+            )}
           </div>
-          {user && (
-            <Link
-              href="/suggestions/new"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              <PlusCircleIcon className="h-5 w-5" />
-              Νέα Πρόταση
-            </Link>
-          )}
+          <CategoryPills
+            categories={suggestionCategoryOptions}
+            selected={filters.category}
+            onSelect={(cat) => updateFilter('category', cat)}
+            counts={categoryCounts}
+            countsLoaded={countsLoaded}
+          />
         </div>
-
-        {/* Filters */}
-        <FilterBar
-          filters={filters}
-          onChange={handleFilterChange}
-          filterConfig={[
-            {
-              name: 'type',
-              label: 'Τύπος',
-              type: 'select',
-              options: [
-                { value: '', label: 'Όλοι' },
-                { value: 'idea', label: 'Ιδέα' },
-                { value: 'problem', label: 'Πρόβλημα' },
-                { value: 'problem_request', label: 'Ερώτημα Κοινότητας' },
-                { value: 'location_suggestion', label: 'Τοποθεσία' },
-              ],
-            },
-            {
-              name: 'status',
-              label: 'Κατάσταση',
-              type: 'select',
-              options: [
-                { value: '', label: 'Όλες' },
-                { value: 'open', label: 'Ανοιχτό' },
-                { value: 'under_review', label: 'Σε Εξέταση' },
-                { value: 'implemented', label: 'Υλοποιήθηκε' },
-                { value: 'rejected', label: 'Απορρίφθηκε' },
-              ],
-            },
-            {
-              name: 'sort',
-              label: 'Ταξινόμηση',
-              type: 'select',
-              options: [
-                { value: 'newest', label: 'Νεότερα' },
-                { value: 'top', label: 'Κορυφαία' },
-              ],
-            },
-          ]}
-        />
 
         {/* Content */}
         {loading ? (

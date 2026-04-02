@@ -55,11 +55,18 @@ const suggestionController = {
    */
   getSuggestions: async (req, res) => {
     try {
-      const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12 } = req.query;
+      const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12, category, search } = req.query;
 
       const where = {};
       if (type && SUGGESTION_TYPES.includes(type)) where.type = type;
       if (status && SUGGESTION_STATUSES.includes(status)) where.status = status;
+      if (category) where.category = category;
+      if (search) {
+        where[Op.or] = [
+          { title: { [Op.like]: `%${search}%` } },
+          { body: { [Op.like]: `%${search}%` } }
+        ];
+      }
       if (locationId) {
         const parsedLocationId = parseInt(locationId, 10);
         if (!isNaN(parsedLocationId)) where.locationId = parsedLocationId;
@@ -176,7 +183,7 @@ const suggestionController = {
    */
   createSuggestion: async (req, res) => {
     try {
-      const { title, body, type, locationId, status } = req.body;
+      const { title, body, type, locationId, status, category } = req.body;
 
       const titleResult = normalizeRequiredText(title, 'Title', 5, 200);
       if (titleResult.error) return res.status(400).json({ success: false, message: titleResult.error });
@@ -205,7 +212,8 @@ const suggestionController = {
         type: typeResult.value,
         locationId: parsedLocationId,
         authorId: req.user.id,
-        status: 'open'
+        status: 'open',
+        ...(category ? { category } : {})
       });
 
       const created = await Suggestion.findByPk(suggestion.id, {
@@ -286,6 +294,10 @@ const suggestionController = {
           }
           updates.locationId = parsedLocId;
         }
+      }
+
+      if (req.body.category !== undefined) {
+        updates.category = req.body.category || null;
       }
 
       await suggestion.update(updates);
@@ -445,6 +457,41 @@ const suggestionController = {
     } catch (error) {
       console.error('Vote solution error:', error);
       return res.status(500).json({ success: false, message: 'Error processing vote.' });
+    }
+  },
+
+  /**
+   * GET /api/suggestions/category-counts
+   * Get suggestion counts grouped by category.
+   */
+  getCategoryCounts: async (req, res) => {
+    try {
+      const sequelize = require('sequelize');
+      const where = { category: { [Op.ne]: null } };
+      const { status } = req.query;
+      if (status) where.status = status;
+
+      const rows = await Suggestion.findAll({
+        attributes: [
+          'category',
+          [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+        ],
+        where,
+        group: ['category'],
+        raw: true
+      });
+
+      const counts = {};
+      rows.forEach((row) => {
+        if (row.category && row.category.trim()) {
+          counts[row.category] = parseInt(row.count, 10);
+        }
+      });
+
+      return res.json({ success: true, data: { counts } });
+    } catch (error) {
+      console.error('Get suggestion category counts error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching suggestion category counts.' });
     }
   }
 };
