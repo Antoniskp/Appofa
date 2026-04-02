@@ -4,23 +4,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { apiRequest } from '@/lib/api/client.js';
 
-// Latin → Greek lookalike map for client-side normalization
-const LATIN_TO_GREEK = {
-  A: 'Α', B: 'Β', E: 'Ε', Z: 'Ζ', H: 'Η', I: 'Ι',
-  K: 'Κ', M: 'Μ', N: 'Ν', O: 'Ο', P: 'Ρ', T: 'Τ',
-  X: 'Χ', Y: 'Υ',
-};
-
-function normalizeGreekQuery(str) {
-  if (!str) return str;
-  const stripped = str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  return stripped.replace(/[A-Za-z]/g, (ch) => {
-    const greek = LATIN_TO_GREEK[ch.toUpperCase()];
-    if (!greek) return ch;
-    return ch === ch.toUpperCase() ? greek : greek.toLowerCase();
-  });
-}
-
 /**
  * Shared person-search dropdown component.
  *
@@ -129,7 +112,8 @@ export default function PersonSearch({
       const myId = ++requestIdRef.current;
       setSearching(true);
       try {
-        const encodedQ = encodeURIComponent(normalizeGreekQuery(q));
+        // Send raw query; backend already handles Greek normalization + raw matching.
+        const encodedQ = encodeURIComponent(q.trim());
         const [profileRes, userRes] = await Promise.allSettled([
           apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
           includeUsers
