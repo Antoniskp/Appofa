@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { statsAPI } from '@/lib/api';
+import { statsAPI, heroSettingsAPI } from '@/lib/api';
 import { 
   MapPinIcon, 
   ChartBarIcon,
@@ -13,7 +13,59 @@ import {
   CheckBadgeIcon,
   ShieldCheckIcon,
   UserPlusIcon,
+  NewspaperIcon,
+  DocumentTextIcon,
+  AcademicCapIcon,
+  FlagIcon,
+  HandRaisedIcon,
 } from '@heroicons/react/24/outline';
+
+const DEFAULT_BG_COLOR = '#1a2a3a';
+
+const NAV_CARDS = [
+  {
+    icon: NewspaperIcon,
+    title: 'Ειδήσεις',
+    description: 'Όλα τα media σε ένα σημείο',
+    href: '/news',
+  },
+  {
+    icon: ChartBarIcon,
+    title: 'Ψηφοφορίες',
+    description: 'Ψηφίστε & δείτε τάσεις',
+    href: '/polls',
+  },
+  {
+    icon: DocumentTextIcon,
+    title: 'Άρθρα',
+    description: 'Αναλύσεις & απόψεις πολιτών',
+    href: '/articles',
+  },
+  {
+    icon: AcademicCapIcon,
+    title: 'Εκπαίδευση',
+    description: 'Μάθε πώς λειτουργεί το κράτος',
+    href: '/education',
+  },
+  {
+    icon: FlagIcon,
+    title: 'Αποστολή',
+    description: 'Τι επιδιώκουμε',
+    href: '/mission',
+  },
+  {
+    icon: UsersIcon,
+    title: 'Dream Team',
+    description: 'Η ομάδα πίσω από την Απόφαση',
+    href: '/dream-team',
+  },
+  {
+    icon: HandRaisedIcon,
+    title: 'Συνεισφορά',
+    description: 'Βοήθησε το project',
+    href: '/contribute',
+  },
+];
 
 function StatSkeleton() {
   return (
@@ -28,12 +80,31 @@ export default function HomeHero() {
   const { user, loading: authLoading } = useAuth();
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
+  const [heroBg, setHeroBg] = useState({ type: 'color', value: DEFAULT_BG_COLOR });
 
   useEffect(() => {
     statsAPI.getCommunityStats()
       .then((res) => { if (res?.success) setStats(res.data); })
       .catch(() => {})
       .finally(() => setStatsLoading(false));
+  }, []);
+
+  useEffect(() => {
+    heroSettingsAPI.get()
+      .then((res) => {
+        if (!res?.success) return;
+        const { backgroundImageUrl, backgroundColor } = res.data;
+        const color = backgroundColor || DEFAULT_BG_COLOR;
+        if (backgroundImageUrl && /^https?:\/\//.test(backgroundImageUrl)) {
+          const img = new Image();
+          img.onload = () => setHeroBg({ type: 'image', url: backgroundImageUrl, color });
+          img.onerror = () => setHeroBg({ type: 'color', value: color });
+          img.src = backgroundImageUrl;
+        } else {
+          setHeroBg({ type: 'color', value: color });
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const metrics = stats ? [
@@ -43,106 +114,140 @@ export default function HomeHero() {
     { label: 'Σχόλια',        value: stats.totalComments, icon: ChatBubbleLeftRightIcon },
   ] : null;
 
+  const heroStyle =
+    heroBg.type === 'image'
+      ? {
+          backgroundImage: `url(${heroBg.url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+        }
+      : { backgroundColor: heroBg.value };
+
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-indigo-600 via-blue-600 to-cyan-500 text-white">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-6 left-10 w-56 h-56 bg-white/10 rounded-full blur-3xl animate-float"></div>
-        <div className="absolute bottom-4 right-10 w-64 h-64 bg-cyan-300/20 rounded-full blur-3xl animate-pulse-glow"></div>
-        <div className="absolute top-1/2 left-1/3 w-48 h-48 bg-indigo-300/10 rounded-full blur-2xl animate-float" style={{ animationDelay: '2s' }}></div>
-      </div>
+    <>
+      {/* Hero banner */}
+      <section className="relative overflow-hidden text-white" style={heroStyle}>
+        {/* Dark overlay for image backgrounds */}
+        {heroBg.type === 'image' && (
+          <div className="absolute inset-0 bg-black/55 pointer-events-none" />
+        )}
 
-      <div className="relative app-container py-6 md:py-8">
-        <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10 animate-fade-in">
+        <div className="relative app-container py-6 md:py-8">
+          <div className="flex flex-col md:flex-row md:items-center gap-6 md:gap-10 animate-fade-in">
 
-          {/* Left – text & actions */}
-          <div className="flex-1 min-w-0">
-            {!authLoading && user && (
-              <p className="text-sm mb-1 text-cyan-100 font-medium">
-                Καλώς ήρθες, {user.firstName || user.username}!
-              </p>
-            )}
-
-            <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight">
-              Αποφάσεις που ξεκινούν από εσένα.
-            </h1>
-
-            <p className="text-base text-cyan-50/90 mb-5">
-              Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.
-            </p>
-
-            <div className="flex flex-wrap gap-3" style={{ animationDelay: '0.2s' }}>
-              <Link 
-                href={!authLoading && user?.homeLocation ? `/locations/${user.homeLocation.slug}` : '/locations'} 
-                className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
-              >
-                <MapPinIcon className="w-4 h-4" />
-                {!authLoading && user?.homeLocation ? 'Δες την Περιοχή σου' : 'Βρες την Περιοχή σου'}
-                <ArrowRightIcon className="w-4 h-4" />
-              </Link>
-
-              <Link 
-                href="/polls" 
-                className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-              >
-                <ChartBarIcon className="w-4 h-4" />
-                Δες Ψηφοφορίες
-              </Link>
-
+            {/* Left – text & actions */}
+            <div className="flex-1 min-w-0">
               {!authLoading && user && (
-                (user.role === 'admin' || user.role === 'moderator') ? (
-                  <Link 
-                    href="/admin" 
-                    className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                  >
-                    <ShieldCheckIcon className="w-4 h-4" />
-                    Admin / Moderator
-                  </Link>
-                ) : (
-                  <Link 
-                    href="/become-moderator" 
-                    className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                  >
-                    <ShieldCheckIcon className="w-4 h-4" />
-                    Γίνε Moderator
-                  </Link>
-                )
+                <p className="text-sm mb-1 text-cyan-100 font-medium">
+                  Καλώς ήρθες, {user.firstName || user.username}!
+                </p>
               )}
 
-              {!authLoading && !user && (
+              <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight">
+                Αποφάσεις που ξεκινούν από εσένα.
+              </h1>
+
+              <p className="text-base text-white/80 mb-5">
+                Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.
+              </p>
+
+              <div className="flex flex-wrap gap-3">
                 <Link 
-                  href="/register" 
-                  className="inline-flex items-center gap-2 bg-white text-indigo-700 px-5 py-2.5 rounded-xl font-semibold hover:bg-cyan-50 focus:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
+                  href={!authLoading && user?.homeLocation ? `/locations/${user.homeLocation.slug}` : '/locations'} 
+                  className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
                 >
-                  <UserPlusIcon className="w-4 h-4" />
-                  Εγγραφή
+                  <MapPinIcon className="w-4 h-4" />
+                  {!authLoading && user?.homeLocation ? 'Δες την Περιοχή σου' : 'Βρες την Περιοχή σου'}
+                  <ArrowRightIcon className="w-4 h-4" />
                 </Link>
-              )}
-            </div>
-          </div>
 
-          {/* Right – community stats */}
-          {(statsLoading || metrics) && (
-            <div className="md:w-64 lg:w-72 shrink-0">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-4 grid grid-cols-2 gap-4 animate-fade-in" style={{ animationDelay: '0.4s' }}>
-                {statsLoading ? (
-                  Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
-                ) : (
-                  metrics.map(({ label, value, icon: Icon }) => (
-                    <div key={label} className="flex flex-col items-center gap-0.5">
-                      <Icon className="w-4 h-4 text-cyan-200 mb-0.5" />
-                      <span className="text-xl font-bold leading-none">
-                        {typeof value === 'number' ? value.toLocaleString('el-GR') : '—'}
-                      </span>
-                      <span className="text-xs font-medium text-cyan-100/80 uppercase tracking-wider">{label}</span>
-                    </div>
-                  ))
+                <Link 
+                  href="/polls" 
+                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                >
+                  <ChartBarIcon className="w-4 h-4" />
+                  Δες Ψηφοφορίες
+                </Link>
+
+                {!authLoading && user && (
+                  (user.role === 'admin' || user.role === 'moderator') ? (
+                    <Link 
+                      href="/admin" 
+                      className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                    >
+                      <ShieldCheckIcon className="w-4 h-4" />
+                      Admin / Moderator
+                    </Link>
+                  ) : (
+                    <Link 
+                      href="/become-moderator" 
+                      className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                    >
+                      <ShieldCheckIcon className="w-4 h-4" />
+                      Γίνε Moderator
+                    </Link>
+                  )
+                )}
+
+                {!authLoading && !user && (
+                  <Link 
+                    href="/register" 
+                    className="inline-flex items-center gap-2 bg-white text-indigo-700 px-5 py-2.5 rounded-xl font-semibold hover:bg-cyan-50 focus:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
+                  >
+                    <UserPlusIcon className="w-4 h-4" />
+                    Εγγραφή
+                  </Link>
                 )}
               </div>
             </div>
-          )}
 
+            {/* Right – community stats */}
+            {(statsLoading || metrics) && (
+              <div className="md:w-64 lg:w-72 shrink-0">
+                <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-4 grid grid-cols-2 gap-4 animate-fade-in">
+                  {statsLoading ? (
+                    Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
+                  ) : (
+                    metrics.map(({ label, value, icon: Icon }) => (
+                      <div key={label} className="flex flex-col items-center gap-0.5">
+                        <Icon className="w-4 h-4 text-cyan-200 mb-0.5" />
+                        <span className="text-xl font-bold leading-none">
+                          {typeof value === 'number' ? value.toLocaleString('el-GR') : '—'}
+                        </span>
+                        <span className="text-xs font-medium text-cyan-100/80 uppercase tracking-wider">{label}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* Icon navigation cards */}
+      <section className="bg-white border-b border-gray-100">
+        <div className="app-container py-6">
+          <div className="flex flex-wrap justify-center gap-4">
+            {NAV_CARDS.map(({ icon: Icon, title, description, href }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex flex-col items-center gap-3 p-5 bg-white border border-gray-200 rounded-2xl text-center hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 group w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.75rem)] lg:w-40"
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
+                  <Icon className="w-6 h-6 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 text-sm">{title}</p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-snug">{description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

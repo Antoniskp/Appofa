@@ -422,6 +422,12 @@ function AdminDashboardContent() {
               Dream Team
             </Link>
             <Link
+              href="/admin/hero"
+              className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition"
+            >
+              Hero Settings
+            </Link>
+            <Link
               href="/admin/status"
               className="bg-white text-blue-700 border border-blue-200 px-6 py-2 rounded hover:bg-blue-50 transition"
             >
