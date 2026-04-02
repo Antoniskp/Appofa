@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Card from '@/components/Card';
 import { ImageTopCard } from '@/components/Card';
@@ -9,6 +10,7 @@ import { ChartBarIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import { idSlug } from '@/lib/utils/slugify';
+import { pollAPI } from '@/lib/api';
 
 /**
  * Reusable poll card component
@@ -28,6 +30,42 @@ export default function PollCard({ poll, variant = 'grid' }) {
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const totalVotes = poll.totalVotes || 0;
+
+  // ── Inline voting state ───────────────────────────────────────────────────
+  const initialVotedId = poll.userVote?.optionId ?? null;
+  const [inlineVotedId, setInlineVotedId]       = useState(initialVotedId);
+  const [inlineVoteCounts, setInlineVoteCounts] = useState(null); // populated after first inline vote
+  const [isInlineSubmitting, setIsInlineSubmitting] = useState(false);
+
+  // Which poll types can be voted on inline (binary OR simple with ≤3 options)
+  const options = poll.options || [];
+  const isInlineVotable =
+    isPollActive &&
+    (user || poll.allowUnauthenticatedVotes) &&
+    (poll.type === 'binary' ||
+      (poll.type === 'simple' && options.length >= 2 && options.length <= 3));
+
+  const handleInlineVote = async (e, optionId) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isInlineSubmitting) return;
+
+    const prevVotedId = inlineVotedId;
+    setIsInlineSubmitting(true);
+    // Optimistic: mark the selection immediately
+    setInlineVotedId(optionId);
+    try {
+      const res = await pollAPI.vote(poll.id, optionId);
+      if (res.success && res.data?.voteCounts) {
+        setInlineVoteCounts(res.data.voteCounts);
+      }
+    } catch {
+      // Rollback to the previous vote on error
+      setInlineVotedId(prevVotedId);
+    } finally {
+      setIsInlineSubmitting(false);
+    }
+  };
   
   // Check if user can view results
   const canViewResults = () => {
@@ -211,6 +249,73 @@ export default function PollCard({ poll, variant = 'grid' }) {
     </div>
   );
 
+  // Inline voting section for binary / simple polls with ≤3 options.
+  // Only used when results are NOT already shown (avoids nested <Link> issues).
+  const renderInlineVoting = () => {
+    if (!isInlineVotable || showResults) return null;
+
+    // After voting — show compact progress bars
+    if (inlineVotedId !== null) {
+      const counts = inlineVoteCounts
+        ? options.map((o) => ({ ...o, voteCount: inlineVoteCounts[String(o.id)] ?? o.voteCount ?? 0 }))
+        : options;
+      const total = counts.reduce((s, o) => s + (o.voteCount || 0), 0);
+      return (
+        <div className="mt-3 space-y-1.5">
+          {counts.map((option) => {
+            const pct = total > 0 ? Math.round(((option.voteCount || 0) / total) * 100) : 0;
+            const isVoted = option.id === inlineVotedId;
+            return (
+              <div key={option.id} className="relative">
+                <div className="flex items-center justify-between text-xs mb-0.5">
+                  <span className={`font-medium truncate max-w-[70%] ${isVoted ? 'text-blue-700' : 'text-gray-700'}`}>
+                    {isVoted && <CheckCircleIcon className="h-3.5 w-3.5 inline mr-1 text-blue-600" />}
+                    {option.text}
+                  </span>
+                  <span className={`font-semibold ${isVoted ? 'text-blue-700' : 'text-gray-500'}`}>{pct}%</span>
+                </div>
+                <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-500 ${isVoted ? 'bg-blue-500' : 'bg-gray-300'}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-xs text-gray-400 mt-1">
+            {total} {total === 1 ? 'ψήφος' : 'ψήφοι'}
+          </p>
+        </div>
+      );
+    }
+
+    // Before voting — show option buttons
+    const isBinary = poll.type === 'binary';
+    return (
+      <div className={`mt-3 ${isBinary ? 'flex gap-2' : 'space-y-1.5'}`}>
+        {options.map((option, idx) => {
+          const colorClass = isBinary
+            ? idx === 0
+              ? 'border-green-400 text-green-700 hover:bg-green-50 focus:ring-green-300'
+              : 'border-red-400 text-red-600 hover:bg-red-50 focus:ring-red-300'
+            : 'border-blue-300 text-blue-700 hover:bg-blue-50 focus:ring-blue-300';
+          return (
+            <button
+              key={option.id}
+              type="button"
+              disabled={isInlineSubmitting}
+              onClick={(e) => handleInlineVote(e, option.id)}
+              className={`${isBinary ? 'flex-1' : 'w-full text-left'} px-3 py-1.5 rounded-lg border text-sm font-medium transition focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${colorClass}`}
+            >
+              {isInlineSubmitting ? '…' : option.text}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
+
   // Render poll info
   const pollInfoContent = (
     <>
@@ -236,23 +341,27 @@ export default function PollCard({ poll, variant = 'grid' }) {
         {formattedDate} {formattedTime}
       </div>
       
-      <div className="mt-4">
-        {isPollActive ? (
-          <Link
-            href={pollHref}
-            className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
-          >
-            Ψηφοφορία Τώρα
-          </Link>
-        ) : (
-          <Link
-            href={pollHref}
-            className="inline-block bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition text-sm font-medium"
-          >
-            Προβολή Αποτελεσμάτων
-          </Link>
-        )}
-      </div>
+      {isInlineVotable && !showResults ? (
+        renderInlineVoting()
+      ) : (
+        <div className="mt-4">
+          {isPollActive ? (
+            <Link
+              href={pollHref}
+              className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+            >
+              Ψηφοφορία Τώρα
+            </Link>
+          ) : (
+            <Link
+              href={pollHref}
+              className="inline-block bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition text-sm font-medium"
+            >
+              Προβολή Αποτελεσμάτων
+            </Link>
+          )}
+        </div>
+      )}
     </>
   );
   
@@ -271,7 +380,30 @@ export default function PollCard({ poll, variant = 'grid' }) {
     );
   }
   
-  // Render with image
+  // For inline-votable polls (not showing full results): render as a plain card
+  // (not wrapped in a link) so the vote buttons work without triggering navigation.
+  if (isInlineVotable && !showResults) {
+    return (
+      <Card hoverable className="overflow-hidden h-full">
+        <Link href={pollHref} className="block">
+          <img
+            src={pollImageUrl}
+            alt={`${poll.title} banner`}
+            className="w-full h-32 object-cover"
+            onError={(e) => { e.currentTarget.src = defaultPollImage; }}
+          />
+        </Link>
+        <div className="p-6">
+          <Link href={pollHref} className="block">
+            {badgesContent}
+          </Link>
+          {pollInfoContent}
+        </div>
+      </Card>
+    );
+  }
+
+  // Render with image (non-inline-votable)
   return (
     <ImageTopCard
       image={pollImageUrl}

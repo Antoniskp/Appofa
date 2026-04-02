@@ -11,6 +11,7 @@ import EmptyState from '@/components/EmptyState';
 import Pagination from '@/components/Pagination';
 import FilterBar from '@/components/FilterBar';
 import Badge from '@/components/Badge';
+import InlineSuggestionVote from '@/components/InlineSuggestionVote';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 
@@ -49,59 +50,55 @@ const STATUS_VARIANTS = {
   rejected: 'danger',
 };
 
-function VoteCounts({ upvotes, downvotes }) {
-  return (
-    <span className="flex items-center gap-1.5 text-xs text-gray-500">
-      <span className="text-green-600 font-semibold">👍 {upvotes ?? 0}</span>
-      <span className="text-red-500 font-semibold">👎 {downvotes ?? 0}</span>
-    </span>
-  );
-}
-
 function SuggestionCard({ suggestion }) {
   const TypeIcon = TYPE_ICONS[suggestion.type] || LightBulbIcon;
 
   return (
-    <Link
-      href={`/suggestions/${suggestion.id}`}
-      className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all duration-200"
-    >
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 mt-1">
-          <TypeIcon className="h-5 w-5 text-blue-500" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
-              {TYPE_LABELS[suggestion.type] || suggestion.type}
-            </Badge>
-            <Badge variant={STATUS_VARIANTS[suggestion.status] || 'default'}>
-              {STATUS_LABELS[suggestion.status] || suggestion.status}
-            </Badge>
-            {suggestion.location && (
-              <span className="text-xs text-gray-500 flex items-center gap-1">
-                <MapPinIcon className="h-3 w-3" />
-                {suggestion.location.name}
-              </span>
-            )}
+    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all duration-200">
+      <Link href={`/suggestions/${suggestion.id}`} className="block">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-1">
+            <TypeIcon className="h-5 w-5 text-blue-500" />
           </div>
-          <h3 className="text-base font-semibold text-gray-900 truncate">{suggestion.title}</h3>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{suggestion.body}</p>
-          <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-            {suggestion.author && (
-              <span>@{suggestion.author.username}</span>
-            )}
-            <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
-            <span className="flex items-center gap-1">
-              <VoteCounts upvotes={suggestion.upvotes} downvotes={suggestion.downvotes} />
-            </span>
-            {suggestion.solutions && (
-              <span>{suggestion.solutions?.length ?? 0} λύσεις</span>
-            )}
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
+                {TYPE_LABELS[suggestion.type] || suggestion.type}
+              </Badge>
+              <Badge variant={STATUS_VARIANTS[suggestion.status] || 'default'}>
+                {STATUS_LABELS[suggestion.status] || suggestion.status}
+              </Badge>
+              {suggestion.location && (
+                <span className="text-xs text-gray-500 flex items-center gap-1">
+                  <MapPinIcon className="h-3 w-3" />
+                  {suggestion.location.name}
+                </span>
+              )}
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 truncate">{suggestion.title}</h3>
+            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{suggestion.body}</p>
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
+              {suggestion.author && (
+                <span>@{suggestion.author.username}</span>
+              )}
+              <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
+              {suggestion.solutions && (
+                <span>{suggestion.solutions?.length ?? 0} λύσεις</span>
+              )}
+            </div>
           </div>
         </div>
+      </Link>
+      <div className="mt-3 flex justify-end">
+        <InlineSuggestionVote
+          suggestionId={suggestion.id}
+          type={suggestion.type}
+          initialUpvotes={suggestion.upvotes ?? 0}
+          initialDownvotes={suggestion.downvotes ?? 0}
+          initialMyVote={suggestion.myVote ?? null}
+        />
       </div>
-    </Link>
+    </div>
   );
 }
 
