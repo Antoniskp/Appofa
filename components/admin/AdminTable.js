@@ -5,10 +5,11 @@ import SkeletonLoader from '@/components/SkeletonLoader';
 
 /**
  * Reusable admin table component
- * @param {array} columns - Column definitions [{ key, header, render?, width? }]
+ * @param {array} columns - Column definitions [{ key, header|label, render?, width? }]
  * @param {array} data - Array of data objects to display
  * @param {function} onEdit - Edit handler (item) => void
  * @param {function} onDelete - Delete handler (item) => void
+ * @param {function} onRowClick - Row click handler (item) => void
  * @param {boolean} loading - Loading state
  * @param {string} emptyMessage - Message when no data
  * @param {string} keyField - Field to use as unique key (default: 'id')
@@ -19,12 +20,15 @@ export default function AdminTable({
   data = [],
   onEdit,
   onDelete,
+  onRowClick,
   loading = false,
   emptyMessage = 'No items found',
   keyField = 'id',
   rowClassName,
   actions = true,
 }) {
+  const getColumnTitle = (column) => column.header ?? column.label ?? column.key;
+
   if (loading) {
     return (
       <div className="bg-white shadow-md rounded-lg overflow-hidden">
@@ -37,7 +41,7 @@ export default function AdminTable({
                     key={column.key}
                     className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.width || ''}`}
                   >
-                    {column.header}
+                    {getColumnTitle(column)}
                   </th>
                 ))}
                 {actions && (onEdit || onDelete) && (
@@ -75,7 +79,7 @@ export default function AdminTable({
                   key={column.key}
                   className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${column.width || ''}`}
                 >
-                  {column.header}
+                  {getColumnTitle(column)}
                 </th>
               ))}
               {actions && (onEdit || onDelete) && (
@@ -86,30 +90,48 @@ export default function AdminTable({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {data.map((item) => (
-              <tr
-                key={item[keyField]}
-                className={rowClassName ? rowClassName(item) : 'hover:bg-gray-50'}
-              >
-                {columns.map((column) => (
-                  <td
-                    key={column.key}
-                    className={`px-6 py-4 text-sm text-gray-900 ${column.className || 'whitespace-nowrap'}`}
-                  >
-                    {column.render ? column.render(item) : item[column.key]}
-                  </td>
-                ))}
-                {actions && (onEdit || onDelete) && (
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <AdminTableActions
-                      item={item}
-                      onEdit={onEdit}
-                      onDelete={onDelete}
-                    />
-                  </td>
-                )}
-              </tr>
-            ))}
+            {data.map((item) => {
+              const interactiveRowClass = onRowClick
+                ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500'
+                : '';
+
+              return (
+                <tr
+                  key={item[keyField]}
+                  className={`${rowClassName ? rowClassName(item) : 'hover:bg-gray-50'} ${interactiveRowClass}`.trim()}
+                  onClick={onRowClick ? () => onRowClick(item) : undefined}
+                  onKeyDown={onRowClick ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      onRowClick(item);
+                    }
+                  } : undefined}
+                  tabIndex={onRowClick ? 0 : undefined}
+                >
+                  {columns.map((column) => (
+                    <td
+                      key={column.key}
+                      className={`px-6 py-4 text-sm text-gray-900 ${column.className || 'whitespace-nowrap'}`}
+                    >
+                      {column.render ? column.render(item) : item[column.key]}
+                    </td>
+                  ))}
+                  {actions && (onEdit || onDelete) && (
+                    <td
+                      className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                    >
+                      <AdminTableActions
+                        item={item}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                      />
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
