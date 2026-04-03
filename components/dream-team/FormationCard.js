@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserCircleIcon, PencilIcon, TrashIcon, ShareIcon, HeartIcon, LockClosedIcon, GlobeAltIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, PencilIcon, TrashIcon, ShareIcon, HeartIcon, LockClosedIcon, GlobeAltIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import ShareModal from './ShareModal';
 
@@ -21,12 +21,13 @@ const TOTAL_POSITIONS = 22;
  *   onEdit     – () => void
  *   onDelete   – () => void
  *   onLike     – () => void
+ *   onCompare  – () => void  (opens comparison tool with this formation pre-selected)
  *   onShareCopy – () => void  (legacy; kept for compat — ShareModal is now preferred)
  *   isOwner    – whether the current user owns this formation
  *   showToast  – optional toast function (used by ShareModal)
  *   onClick    – optional click handler for the card body
  */
-export default function FormationCard({ formation, onEdit, onDelete, onLike, onShareCopy, isOwner = false, showToast, onClick }) {
+export default function FormationCard({ formation, onEdit, onDelete, onLike, onCompare, onShareCopy, isOwner = false, showToast, onClick }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -150,6 +151,16 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onS
                 title="Κοινοποίηση"
               >
                 <ShareIcon className="h-4 w-4" />
+              </button>
+            )}
+            {onCompare && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onCompare(); }}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                aria-label="Σύγκριση"
+                title="Σύγκριση"
+              >
+                <ArrowsRightLeftIcon className="h-4 w-4" />
               </button>
             )}
             {isOwner && onEdit && (

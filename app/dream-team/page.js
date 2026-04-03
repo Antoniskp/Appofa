@@ -10,6 +10,10 @@ import SkeletonPositionCard from '@/components/dream-team/SkeletonPositionCard';
 import FormationList from '@/components/dream-team/FormationList';
 import ExploreFormations from '@/components/dream-team/ExploreFormations';
 import PopularPicks from '@/components/dream-team/PopularPicks';
+import FormationOfTheWeek from '@/components/dream-team/FormationOfTheWeek';
+import Leaderboard from '@/components/dream-team/Leaderboard';
+import ActivityFeed from '@/components/dream-team/ActivityFeed';
+import FormationComparison from '@/components/dream-team/FormationComparison';
 import EmptyState from '@/components/ui/EmptyState';
 
 const TABS = [
@@ -29,6 +33,13 @@ export default function DreamTeamPage() {
   const [activeTab, setActiveTab] = useState('vote');
   const [votingPosition, setVotingPosition] = useState(null);
   const [toast, setToast] = useState(null);
+  const [totalPublicFormations, setTotalPublicFormations] = useState(0);
+
+  // Comparison tool state
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareFormation, setCompareFormation] = useState(null);
+  const [publicFormationsForCompare, setPublicFormationsForCompare] = useState([]);
+  const [myFormationsForCompare, setMyFormationsForCompare] = useState([]);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -60,6 +71,14 @@ export default function DreamTeamPage() {
         } catch {
           // my-votes is not critical
         }
+      }
+
+      // Load total public formations count for the hero stat
+      try {
+        const pubRes = await dreamTeamAPI.getPublicFormations({ limit: 1 });
+        if (pubRes?.success) setTotalPublicFormations(pubRes.pagination?.total || 0);
+      } catch {
+        // Non-critical
       }
     } catch (err) {
       setError(err.message || 'Σφάλμα κατά τη φόρτωση δεδομένων');
@@ -124,6 +143,23 @@ export default function DreamTeamPage() {
     }
   }, [showToast]);
 
+  // Open comparison tool and lazily load formations for dropdowns
+  const openCompare = useCallback(async (formation = null) => {
+    setCompareFormation(formation);
+    setCompareOpen(true);
+    // Load options for comparison dropdowns
+    try {
+      const [pubRes, myRes] = await Promise.all([
+        dreamTeamAPI.getPublicFormations({ limit: 50, sort: 'popular' }),
+        user ? dreamTeamAPI.getMyFormations() : Promise.resolve(null),
+      ]);
+      if (pubRes?.success) setPublicFormationsForCompare(pubRes.data || []);
+      if (myRes?.success) setMyFormationsForCompare(myRes.data || []);
+    } catch {
+      // Non-critical
+    }
+  }, [user]);
+
   const totalVotes = positions.reduce((sum, p) => {
     return sum + (p.votes || []).reduce((s, v) => s + parseInt(v.voteCount, 10), 0);
   }, 0);
@@ -143,7 +179,11 @@ export default function DreamTeamPage() {
           </div>
         )}
 
-        <DreamTeamHero totalVotes={totalVotes} lastUpdated={new Date().toISOString()} />
+        <DreamTeamHero
+          totalVotes={totalVotes}
+          totalFormations={totalPublicFormations}
+          lastUpdated={new Date().toISOString()}
+        />
 
         {/* Tabs */}
         <div className="flex gap-1 bg-white rounded-xl p-1 shadow-sm border border-gray-100 mb-8 w-fit">
@@ -238,6 +278,7 @@ export default function DreamTeamPage() {
               user={user}
               communityResults={results}
               showToast={showToast}
+              onCompare={openCompare}
             />
           )
         )}
@@ -245,11 +286,36 @@ export default function DreamTeamPage() {
         {/* Explore Tab */}
         {activeTab === 'explore' && (
           <>
+            <FormationOfTheWeek
+              onLike={async (id) => {
+                if (!user) { showToast('Συνδεθείτε για να κάνετε like', 'error'); return; }
+                try {
+                  await dreamTeamAPI.likeFormation(id);
+                } catch { /* non-critical */ }
+              }}
+              onCompare={(f) => openCompare(f)}
+              showToast={showToast}
+            />
             <PopularPicks />
-            <ExploreFormations showToast={showToast} />
+            <Leaderboard currentUserId={user?.id} />
+            <ActivityFeed />
+            <ExploreFormations
+              showToast={showToast}
+              onCompare={openCompare}
+            />
           </>
         )}
       </div>
+
+      {/* Comparison Modal */}
+      {compareOpen && (
+        <FormationComparison
+          formationA={compareFormation}
+          publicFormations={publicFormationsForCompare}
+          myFormations={myFormationsForCompare}
+          onClose={() => { setCompareOpen(false); setCompareFormation(null); }}
+        />
+      )}
     </div>
   );
 }

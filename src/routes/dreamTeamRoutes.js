@@ -16,6 +16,10 @@ router.get('/my-votes', apiLimiter, authMiddleware, dreamTeamController.getMyVot
 // NOTE: specific routes must come before /:id to avoid param conflicts
 router.get('/formations/public', apiLimiter, optionalAuthMiddleware, dreamTeamController.getPublicFormations);
 router.get('/formations/popular-picks', apiLimiter, optionalAuthMiddleware, dreamTeamController.getPopularPicks);
+router.get('/formations/formation-of-the-week', apiLimiter, optionalAuthMiddleware, dreamTeamController.getFormationOfTheWeek);
+router.get('/formations/leaderboard', apiLimiter, optionalAuthMiddleware, dreamTeamController.getLeaderboard);
+router.get('/formations/my-stats', apiLimiter, authMiddleware, dreamTeamController.getMyStats);
+router.get('/formations/activity', apiLimiter, optionalAuthMiddleware, dreamTeamController.getActivityFeed);
 router.get('/formations/share/:slug', apiLimiter, optionalAuthMiddleware, dreamTeamController.getSharedFormation);
 router.get('/formations', apiLimiter, authMiddleware, dreamTeamController.getMyFormations);
 router.post('/formations', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.createFormation);

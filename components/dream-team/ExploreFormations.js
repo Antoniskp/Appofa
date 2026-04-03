@@ -27,8 +27,9 @@ const PAGE_SIZE = 12;
  *
  * Props:
  *   showToast(msg, type) – notification handler
+ *   onCompare(formation) – open comparison tool with this formation pre-selected
  */
-export default function ExploreFormations({ showToast }) {
+export default function ExploreFormations({ showToast, onCompare }) {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -184,6 +185,7 @@ export default function ExploreFormations({ showToast }) {
                 formation={formation}
                 isOwner={false}
                 onLike={() => handleLike(formation)}
+                onCompare={onCompare ? () => onCompare(formation) : undefined}
                 showToast={showToast}
                 onClick={() => handleCardClick(formation)}
               />

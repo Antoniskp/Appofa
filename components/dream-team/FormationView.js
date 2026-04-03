@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { UserCircleIcon, ArrowLeftIcon, ShareIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, ArrowLeftIcon, ShareIcon, HeartIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import positionsData from '@/config/governmentPositions.json';
 import ShareModal from './ShareModal';
@@ -56,9 +56,10 @@ function PickCard({ position, pick }) {
  *   onBack()   – navigate back (optional, not shown on standalone page)
  *   showToast  – optional toast function
  *   onLike()   – optional like handler (for logged-in users)
+ *   onCompare() – optional compare handler
  *   isOwner    – whether the current user owns this formation
  */
-export default function FormationView({ formation, onBack, showToast, onLike, isOwner }) {
+export default function FormationView({ formation, onBack, showToast, onLike, onCompare, isOwner }) {
   const [shareOpen, setShareOpen] = useState(false);
 
   if (!formation) {
@@ -149,6 +150,17 @@ export default function FormationView({ formation, onBack, showToast, onLike, is
               <ShareIcon className="h-4 w-4" />
               Κοινοποίηση
             </button>
+
+            {/* Compare button */}
+            {onCompare && (
+              <button
+                onClick={onCompare}
+                className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 rounded-xl text-sm font-medium transition-colors"
+              >
+                <ArrowsRightLeftIcon className="h-4 w-4" />
+                Σύγκριση
+              </button>
+            )}
           </div>
         </div>
 

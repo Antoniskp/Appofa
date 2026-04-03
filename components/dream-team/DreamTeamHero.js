@@ -1,6 +1,6 @@
 'use client';
 
-export default function DreamTeamHero({ totalVotes = 0, lastUpdated = null }) {
+export default function DreamTeamHero({ totalVotes = 0, totalFormations = 0, lastUpdated = null }) {
   const formattedDate = lastUpdated
     ? new Date(lastUpdated).toLocaleDateString('el-GR', {
         day: 'numeric',
@@ -47,6 +47,12 @@ export default function DreamTeamHero({ totalVotes = 0, lastUpdated = null }) {
             <span className="text-2xl font-bold">{totalVotes.toLocaleString('el-GR')}</span>
             <span className="text-blue-100 text-sm">Συνολικές Ψήφοι</span>
           </div>
+          {totalFormations > 0 && (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 flex items-center gap-3">
+              <span className="text-2xl font-bold">{totalFormations.toLocaleString('el-GR')}</span>
+              <span className="text-blue-100 text-sm">📋 Δημόσιες Συνθέσεις</span>
+            </div>
+          )}
           {formattedDate && (
             <div className="bg-white/10 backdrop-blur-sm rounded-xl px-5 py-3 flex items-center gap-3">
               <span className="text-sm text-blue-100">
