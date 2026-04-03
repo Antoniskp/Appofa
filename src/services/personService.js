@@ -35,9 +35,9 @@ async function ensureUniqueSlug(base) {
 
   let counter = 2;
   while (true) {
-    const candidate = `${base}-${counter}`;
-    const conflict = await PublicPersonProfile.findOne({ where: { slug: candidate } });
-    if (!conflict) return candidate;
+    const slugCandidate = `${base}-${counter}`;
+    const conflict = await PublicPersonProfile.findOne({ where: { slug: slugCandidate } });
+    if (!conflict) return slugCandidate;
     counter++;
   }
 }
@@ -65,7 +65,7 @@ const SAFE_USER_ATTRS = ['id', 'username', 'firstName', 'lastName', 'avatar', 'e
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
-async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus, position, expertiseArea } = {}) {
+async function getPersons({ page = 1, limit = 12, constituencyId, search, claimStatus, position, expertiseArea } = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
   const offset = (pageNum - 1) * limitNum;
@@ -115,20 +115,20 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
   };
 }
 
-async function getCandidateBySlug(slug) {
+async function getPersonBySlug(slug) {
   const profile = await PublicPersonProfile.findOne({
     where: { slug },
     include: PROFILE_INCLUDE
   });
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   return profile;
 }
 
-async function getCandidateById(id) {
+async function getPersonById(id) {
   const profile = await PublicPersonProfile.findByPk(id, {
     include: PROFILE_INCLUDE
   });
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   return profile;
 }
 
@@ -156,7 +156,7 @@ function validatePartyId(partyId) {
 
 async function createProfile(moderatorUserId, moderatorRole, data) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can create candidate profiles.');
+    throw new ServiceError(403, 'Only admins and moderators can create person profiles.');
   }
 
   const { firstName, lastName, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId } = data;
@@ -192,13 +192,13 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   return profile;
 }
 
-async function submitClaim(userId, candidateProfileId, supportingStatement) {
+async function submitClaim(userId, profileId, supportingStatement) {
   if (!supportingStatement || !supportingStatement.trim()) {
     throw new ServiceError(400, 'Supporting statement is required.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus === 'claimed') throw new ServiceError(400, 'This profile has already been claimed.');
   if (profile.claimStatus === 'pending') throw new ServiceError(409, 'A claim is already pending for this profile.');
 
@@ -216,13 +216,13 @@ async function submitClaim(userId, candidateProfileId, supportingStatement) {
   return profile;
 }
 
-async function approveClaim(moderatorUserId, moderatorRole, candidateProfileId) {
+async function approveClaim(moderatorUserId, moderatorRole, profileId) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
     throw new ServiceError(403, 'Only admins and moderators can approve claims.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
 
   await profile.update({
@@ -236,13 +236,13 @@ async function approveClaim(moderatorUserId, moderatorRole, candidateProfileId) 
   return profile;
 }
 
-async function rejectClaim(moderatorUserId, moderatorRole, candidateProfileId, reason) {
+async function rejectClaim(moderatorUserId, moderatorRole, profileId, reason) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
     throw new ServiceError(403, 'Only admins and moderators can reject claims.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
 
   await profile.update({
@@ -256,9 +256,9 @@ async function rejectClaim(moderatorUserId, moderatorRole, candidateProfileId, r
   return profile;
 }
 
-async function updateProfile(requestingUserId, requestingRole, candidateProfileId, data) {
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+async function updateProfile(requestingUserId, requestingRole, profileId, data) {
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
 
   const isOwner = profile.claimedByUserId === requestingUserId;
   const isModerator = ['admin', 'moderator'].includes(requestingRole);
@@ -287,13 +287,13 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
   return profile;
 }
 
-async function deleteProfile(requestingUserId, requestingRole, candidateProfileId) {
+async function deleteProfile(requestingUserId, requestingRole, profileId) {
   if (!['admin', 'moderator'].includes(requestingRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can delete candidate profiles.');
+    throw new ServiceError(403, 'Only admins and moderators can delete person profiles.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
 
   if (requestingRole === 'moderator' && profile.claimStatus !== 'unclaimed') {
     throw new ServiceError(403, 'Moderators can only delete unclaimed profiles.');
@@ -337,9 +337,9 @@ async function getPendingClaims(moderatorUserId, moderatorRole, { page = 1, limi
 }
 
 module.exports = {
-  getCandidates,
-  getCandidateBySlug,
-  getCandidateById,
+  getPersons,
+  getPersonBySlug,
+  getPersonById,
   createProfile,
   submitClaim,
   approveClaim,

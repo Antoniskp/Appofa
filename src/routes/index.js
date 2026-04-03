@@ -37,6 +37,7 @@ const routes = [
   { prefix: '/api/solutions', router: solutionRoutes },
   { prefix: '/api/link-preview', router: linkPreviewRoutes },
   { prefix: '/api/persons', router: personRoutes },
+  // Backward-compat alias — kept until all clients migrate to /api/persons
   { prefix: '/api/candidates', router: personRoutes },
   { prefix: '/api/person-removal-requests', router: personRemovalRequestRoutes },
   { prefix: '/api/reports', router: reportRoutes },

@@ -8,7 +8,7 @@ const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
 // ─── Public ──────────────────────────────────────────────────────────────────
-router.get('/', apiLimiter, personController.getCandidates);
+router.get('/', apiLimiter, personController.getPersons);
 
 // ─── Authenticated — specific routes BEFORE parameterized routes ─────────────
 
@@ -34,7 +34,7 @@ router.put('/:id', apiLimiter, authMiddleware, csrfProtection, personController.
 // Admin: get profile by numeric id (must be before /:slug catch-all)
 router.get('/profile/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.getProfileById);
 
-// Public: get candidate by slug (last, catches all unmatched GET /:param)
-router.get('/:slug', apiLimiter, optionalAuthMiddleware, personController.getCandidateBySlug);
+// Public: get person by slug (last, catches all unmatched GET /:param)
+router.get('/:slug', apiLimiter, optionalAuthMiddleware, personController.getPersonBySlug);
 
 module.exports = router;

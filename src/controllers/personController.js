@@ -2,39 +2,39 @@ const personService = require('../services/personService');
 
 const personController = {
   // GET /api/persons
-  getCandidates: async (req, res) => {
+  getPersons: async (req, res) => {
     try {
       const { page, limit, constituencyId, search, claimStatus, expertiseArea } = req.query;
-      const data = await personService.getCandidates({ page, limit, constituencyId, search, claimStatus, expertiseArea });
+      const data = await personService.getPersons({ page, limit, constituencyId, search, claimStatus, expertiseArea });
       return res.status(200).json({ success: true, data });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
-      console.error('getCandidates error:', error);
-      return res.status(500).json({ success: false, message: 'Error fetching candidates.' });
+      console.error('getPersons error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching persons.' });
     }
   },
 
   // GET /api/persons/profile/:id
   getProfileById: async (req, res) => {
     try {
-      const profile = await personService.getCandidateById(parseInt(req.params.id, 10));
+      const profile = await personService.getPersonById(parseInt(req.params.id, 10));
       return res.status(200).json({ success: true, data: { profile } });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
       console.error('getProfileById error:', error);
-      return res.status(500).json({ success: false, message: 'Error fetching candidate profile.' });
+      return res.status(500).json({ success: false, message: 'Error fetching person profile.' });
     }
   },
 
   // GET /api/persons/:slug
-  getCandidateBySlug: async (req, res) => {
+  getPersonBySlug: async (req, res) => {
     try {
-      const profile = await personService.getCandidateBySlug(req.params.slug);
+      const profile = await personService.getPersonBySlug(req.params.slug);
       return res.status(200).json({ success: true, data: { profile } });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
-      console.error('getCandidateBySlug error:', error);
-      return res.status(500).json({ success: false, message: 'Error fetching candidate.' });
+      console.error('getPersonBySlug error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching person.' });
     }
   },
 
@@ -46,7 +46,7 @@ const personController = {
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
       console.error('createProfile error:', error);
-      return res.status(500).json({ success: false, message: 'Error creating candidate profile.' });
+      return res.status(500).json({ success: false, message: 'Error creating person profile.' });
     }
   },
 
@@ -58,7 +58,7 @@ const personController = {
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
       console.error('updateProfile error:', error);
-      return res.status(500).json({ success: false, message: 'Error updating candidate profile.' });
+      return res.status(500).json({ success: false, message: 'Error updating person profile.' });
     }
   },
 
@@ -70,7 +70,7 @@ const personController = {
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
       console.error('deleteProfile error:', error);
-      return res.status(500).json({ success: false, message: 'Error deleting candidate profile.' });
+      return res.status(500).json({ success: false, message: 'Error deleting person profile.' });
     }
   },
 
