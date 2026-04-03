@@ -207,6 +207,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
             <PersonSearch
               placeholder="Αναζητήστε πρόσωπο..."
               showTopSuggestions
+              includeUsers
               onSelect={(person) => handlePickSelect(position.slug, person)}
             />
           )}
