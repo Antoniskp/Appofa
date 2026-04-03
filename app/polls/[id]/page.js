@@ -27,6 +27,7 @@ import { useToast } from '@/components/ToastProvider';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import ReportButton from '@/components/ReportButton';
+import ShareModal from '@/components/ui/ShareModal';
 
 export default function PollDetailPage() {
   const params = useParams();
@@ -41,6 +42,7 @@ export default function PollDetailPage() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // Support both numeric IDs and slug-prefixed IDs like "42-my-poll-title"
   const pollId = parseInt(params.id, 10);
@@ -82,31 +84,12 @@ export default function PollDetailPage() {
   };
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: poll?.title,
-        text: poll?.description || '',
-        url: window.location.href
-      }).catch(err => {
-        if (err.name !== 'AbortError') {
-          addToast('Αποτυχία κοινοποίησης', { type: 'error' });
-        }
-      });
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href)
-        .then(() => {
-          addToast('Ο σύνδεσμος αντιγράφηκε στο πρόχειρο!', { type: 'success' });
-        })
-        .catch(() => {
-          addToast('Αποτυχία αντιγραφής συνδέσμου', { type: 'error' });
-        });
-    }
+    setShowShareModal(true);
   };
 
   const handleBookmark = () => {
     if (!user) {
-      addToast('Please log in to bookmark polls.', { type: 'info' });
+      addToast('Συνδεθείτε για να αποθηκεύσετε δημοσκοπήσεις.', { type: 'info' });
       return;
     }
 
@@ -120,12 +103,12 @@ export default function PollDetailPage() {
           response.data?.bookmarked ? prev + 1 : Math.max(prev - 1, 0)
         ));
         addToast(
-          response.data?.bookmarked ? 'Poll bookmarked.' : 'Bookmark removed.',
+          response.data?.bookmarked ? 'Η δημοσκόπηση αποθηκεύτηκε.' : 'Ο σελιδοδείκτης αφαιρέθηκε.',
           { type: 'success' }
         );
       })
       .catch((err) => {
-        addToast(err.message || 'Failed to update bookmark.', { type: 'error' });
+        addToast(err.message || 'Σφάλμα κατά την ενημέρωση σελιδοδείκτη.', { type: 'error' });
       })
       .finally(() => {
         setBookmarkLoading(false);
@@ -232,6 +215,7 @@ export default function PollDetailPage() {
   }
 
   return (
+    <>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-4xl">
         {/* Header */}
@@ -380,5 +364,14 @@ export default function PollDetailPage() {
       </div>
 
     </div>
+      {showShareModal && (
+        <ShareModal
+          url={typeof window !== 'undefined' ? window.location.href : ''}
+          title={poll.title}
+          shareText="Δείτε αυτή τη δημοσκόπηση στο Appofa! 📊"
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+    </>
   );
 }
