@@ -15,6 +15,20 @@ const {
   FormationLike,
 } = require('../models');
 
+/**
+ * Generate a unique shareSlug for a Formation row.
+ * Tries up to 5 random 8-byte hex candidates; falls back to 16 bytes on collisions.
+ */
+async function generateShareSlug() {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const candidate = crypto.randomBytes(8).toString('hex');
+    // eslint-disable-next-line no-await-in-loop
+    const existing = await Formation.findOne({ where: { shareSlug: candidate }, attributes: ['id'] });
+    if (!existing) return candidate;
+  }
+  return crypto.randomBytes(16).toString('hex');
+}
+
 const dreamTeamController = {
   // GET /api/dream-team/positions
   getPositionsWithData: async (req, res) => {
@@ -719,13 +733,29 @@ const dreamTeamController = {
       }));
     }
 
+    // Lazy backfill: if this formation has no shareSlug, generate and persist one now.
+    // If two concurrent requests race on the same formation both will generate distinct
+    // valid slugs; the WHERE condition ensures only the first writer wins.
+    let { shareSlug } = formation;
+    if (!shareSlug) {
+      shareSlug = await generateShareSlug();
+      if (shareSlug) {
+        try {
+          await Formation.update({ shareSlug }, { where: { id: formation.id, shareSlug: null } });
+        } catch (backfillErr) {
+          // Another concurrent request may have already persisted a slug — that's fine.
+          console.warn(`dreamTeamController._serializeFormation: backfill shareSlug failed for formation ${formation.id}:`, String(backfillErr));
+        }
+      }
+    }
+
     return {
       id: formation.id,
       name: formation.name,
       description: formation.description,
       category: formation.category,
       isPublic: formation.isPublic,
-      shareSlug: formation.shareSlug,
+      shareSlug,
       likeCount: formation.likeCount,
       likedByMe,
       authorName: formation.author
@@ -774,16 +804,7 @@ const dreamTeamController = {
         return res.status(400).json({ success: false, message: 'Μη έγκυρη κατηγορία.' });
       }
 
-      const shareSlug = await (async () => {
-        // Generate a unique slug with retry on collision
-        for (let attempt = 0; attempt < 5; attempt++) {
-          const candidate = crypto.randomBytes(8).toString('hex');
-          const existing = await Formation.findOne({ where: { shareSlug: candidate }, attributes: ['id'] });
-          if (!existing) return candidate;
-        }
-        // Fallback to a longer slug if still colliding
-        return crypto.randomBytes(16).toString('hex');
-      })();
+      const shareSlug = await generateShareSlug();
 
       const formation = await Formation.create({
         userId,

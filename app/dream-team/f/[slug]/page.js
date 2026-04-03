@@ -25,6 +25,14 @@ export default function SharedFormationPage({ params }) {
         const res = await dreamTeamAPI.getSharedFormation(slug);
         if (res?.success) {
           setFormation(res.data);
+        } else if (/^\d+$/.test(slug)) {
+          // Fallback: slug looks like a numeric ID — try fetching by primary key
+          const fallback = await dreamTeamAPI.getFormation(slug);
+          if (fallback?.success) {
+            setFormation(fallback.data);
+          } else {
+            setError(fallback?.message || 'Η σύνθεση δεν βρέθηκε');
+          }
         } else {
           setError(res?.message || 'Η σύνθεση δεν βρέθηκε');
         }
