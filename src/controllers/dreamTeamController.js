@@ -209,6 +209,39 @@ const dreamTeamController = {
         personName = (`${candidateUser.firstName || ''} ${candidateUser.lastName || ''}`.trim()) || candidateUser.username;
       }
 
+      // Check if the same person is already voted for in a different position
+      if (personId) {
+        const duplicateVote = await DreamTeamVote.findOne({
+          where: {
+            userId: req.user.id,
+            personId,
+            positionId: { [Op.ne]: positionId },
+          },
+          include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
+        });
+        if (duplicateVote) {
+          return res.status(400).json({
+            success: false,
+            message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
+          });
+        }
+      } else if (candidateUserId) {
+        const duplicateVote = await DreamTeamVote.findOne({
+          where: {
+            userId: req.user.id,
+            candidateUserId,
+            positionId: { [Op.ne]: positionId },
+          },
+          include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
+        });
+        if (duplicateVote) {
+          return res.status(400).json({
+            success: false,
+            message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
+          });
+        }
+      }
+
       const existing = await DreamTeamVote.findOne({
         where: { userId: req.user.id, positionId },
       });
@@ -942,12 +975,25 @@ const dreamTeamController = {
         return res.status(400).json({ success: false, message: 'Το πεδίο picks πρέπει να είναι πίνακας.' });
       }
 
-      // Replace all picks for this formation
-      await FormationPick.destroy({ where: { formationId: formation.id } });
-
       const validPicks = picks.filter(
         (p) => p.positionSlug && (p.personName || p.personId || p.candidateUserId),
       );
+
+      // Check for duplicate personId or candidateUserId across picks
+      const pickedPersonIds = validPicks.map((p) => p.personId).filter((id) => id != null);
+      const pickedCandidateUserIds = validPicks.map((p) => p.candidateUserId).filter((id) => id != null);
+      if (
+        new Set(pickedPersonIds).size < pickedPersonIds.length ||
+        new Set(pickedCandidateUserIds).size < pickedCandidateUserIds.length
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Το ίδιο πρόσωπο δεν μπορεί να τοποθετηθεί σε πολλαπλές θέσεις.',
+        });
+      }
+
+      // Replace all picks for this formation
+      await FormationPick.destroy({ where: { formationId: formation.id } });
 
       if (validPicks.length > 0) {
         await FormationPick.bulkCreate(
