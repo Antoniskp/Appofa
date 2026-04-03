@@ -28,6 +28,10 @@ Welcome to the Appofa News Application documentation. All documentation files li
 | [MESSAGE_SYSTEM_IMPLEMENTATION.md](MESSAGE_SYSTEM_IMPLEMENTATION.md) | User-to-user messaging feature implementation |
 | [VIDEO_EMBEDS.md](VIDEO_EMBEDS.md) | YouTube/TikTok video embed feature: usage, API, security |
 | [FAST_VIDEO_POST.md](FAST_VIDEO_POST.md) | Fast Video Post: one-paste video posting with auto-fill metadata |
+| [SUGGESTIONS_FEATURE.md](SUGGESTIONS_FEATURE.md) | Suggestions & Solutions: idea/problem submission with upvote/downvote voting |
+| [CATEGORIES.md](CATEGORIES.md) | Static categories page, JSON schema, and how to suggest or submit category changes |
+| [ARTICLE_TYPES_TESTING.md](ARTICLE_TYPES_TESTING.md) | Article type system: types, categories, dependent dropdowns (see also Development & Testing) |
+| [SEO.md](SEO.md) | SEO configuration: canonical URLs, sitemap, robots.txt, OpenGraph/Twitter meta tags, JSON-LD |
 
 ---
 
@@ -36,7 +40,7 @@ Welcome to the Appofa News Application documentation. All documentation files li
 | File | Description |
 |------|-------------|
 | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) | Local, Docker, Heroku, and AWS deployment |
-| [VPS_SETUP.md](VPS_SETUP.md) | Complete VPS deployment guide (Ubuntu/Debian, PM2, Nginx, SSL) |
+| [VPS_SETUP.md](VPS_SETUP.md) | Complete VPS deployment guide (Ubuntu/Debian, PM2, Nginx, SSL, deploy.sh) |
 | [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md) | Application migration and upgrade procedures |
 | [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md) | Google OAuth database migration guide |
 | [MIGRATIONS.md](MIGRATIONS.md) | Database migration reference and commands |
@@ -51,9 +55,8 @@ Welcome to the Appofa News Application documentation. All documentation files li
 |------|-------------|
 | [API_TESTING.md](API_TESTING.md) | API usage and testing examples (curl) |
 | [POLL_TESTING.md](POLL_TESTING.md) | Poll system testing checklist |
-| [POLL_EXPORT_AUDIT.md](POLL_EXPORT_AUDIT.md) | Poll audit export testing |
 | [MESSAGE_SYSTEM_TESTING.md](MESSAGE_SYSTEM_TESTING.md) | Message system testing guide |
-| [ARTICLE_TYPES_TESTING.md](ARTICLE_TYPES_TESTING.md) | Article type system testing |
+| [ARTICLE_TYPES_TESTING.md](ARTICLE_TYPES_TESTING.md) | Article type system testing (see also Features section) |
 | [DEPENDENCY_UPDATES.md](DEPENDENCY_UPDATES.md) | Dependency management and security audit history |
 | [COPILOT_AGENTS.md](COPILOT_AGENTS.md) | AI Copilot agent configuration |
 

@@ -5,29 +5,29 @@
 ### Project Summary
 - News application — Node.js/Express backend, Next.js frontend, PostgreSQL via Sequelize ORM
 - Authentication: JWT with HttpOnly cookies + bcryptjs
-- Node.js v18+ required
+- Node.js v22+ required
 
 ### Technology Stack
 | Layer | Technology |
 |---|---|
-| Frontend | Next.js 15.x (App Router), React 19.x, Tailwind CSS |
+| Frontend | Next.js 16.x (App Router), React 19.x, Tailwind CSS |
 | Backend | Express 5.x, Sequelize ORM |
 | Database | PostgreSQL (production), SQLite (tests) |
 | Testing | Jest |
 
 ### Key Architectural Decisions
 - Next.js App Router with `'use client'` / server component separation
-- Centralized API client (`lib/api.js`) with automatic CSRF injection
+- Centralized API client (`lib/api/`) with automatic CSRF injection
 - Middleware chains: CSRF → Auth → Rate Limiting
-- Role-based access control: `admin`, `editor`, `viewer`
+- Role-based access control: `admin`, `moderator`, `editor`, `viewer`
 - Hierarchical location system with polymorphic relationships
 
 ### Key Documentation
 - **README.md** — Setup and API overview
 - **doc/ARCHITECTURE.md** — System architecture and middleware stack
 - **doc/SECURITY.md** — Security guidelines
-- **doc/DEPLOYMENT.md** / **doc/VPS_DEPLOYMENT.md** — Deployment guides
-- **doc/LOCATIONS_ARCHITECTURE.md** — Location feature details
+- **DEPLOYMENT.md** / **doc/VPS_SETUP.md** — Deployment guides
+- **doc/LOCATION_MODEL.md** — Location feature details
 - **doc/API_TESTING.md** — API testing guide
 - **doc/PROJECT_SUMMARY.md** — Holistic overview
 
@@ -54,7 +54,7 @@ https://appofasi.gr
 - **useAuth** (via `lib/auth-context.js`) — Auth state and methods
 
 ### Shared Utilities
-- **lib/api.js** — Centralized API client (CSRF, error handling, response transformation)
+- **lib/api/** — Centralized API client (CSRF, error handling, response transformation)
 - **lib/utils/articleTypes.js** — Article type/category helpers
 - **lib/auth-context.js** — Auth context provider
 - **config/articleCategories.json** — Article type/category configuration
@@ -92,14 +92,14 @@ Use `'use client'` for state, effects, event handlers, browser APIs, or context 
 ### Anti-patterns to Avoid
 - ❌ Duplicate form logic across create/edit pages → ✅ Use `ArticleForm` with a `mode` prop
 - ❌ Inline `useEffect` + `fetch` → ✅ Use `useAsyncData`
-- ❌ Direct `fetch()` calls → ✅ Use `lib/api.js` methods
+- ❌ Direct `fetch()` calls → ✅ Use `lib/api/` methods
 - ❌ Missing loading/error states → ✅ Always render `<SkeletonLoader>` and `<AlertMessage>`
 
 ---
 
 ## Section 5: API Integration Patterns
 
-**Always use `lib/api.js`** — never call `fetch()` directly in components.
+**Always use `lib/api/`** — never call `fetch()` directly in components.
 
 ### Available API Modules
 | Module | Key Methods |
@@ -108,6 +108,23 @@ Use `'use client'` for state, effects, event handlers, browser APIs, or context 
 | `articleAPI` | `getAll(params)`, `getById`, `create`, `update`, `delete`, `approveNews` |
 | `locationAPI` | `getAll(params)`, `getById`, `create`, `update`, `delete`, `search` |
 | `adminAPI` | `getUsers`, `updateUserRole`, `deleteUser` |
+| `pollAPI` | `getAll`, `getById`, `create`, `update`, `delete`, `vote`, `getResults` |
+| `commentsAPI` | `getByArticle`, `create`, `update`, `delete` |
+| `suggestionsAPI` | `getAll`, `getById`, `create`, `update`, `delete`, `vote` |
+| `bookmarksAPI` | `getAll`, `add`, `remove`, `check` |
+| `candidatesAPI` | `getAll`, `getById`, `apply`, `create`, `approve`, `claim` |
+| `endorsementsAPI` | `get`, `endorse`, `removeEndorsement` |
+| `messagesAPI` | `getConversations`, `getMessages`, `send`, `delete` |
+| `personsAPI` | `getAll`, `getById`, `create`, `update`, `delete` |
+| `reportsAPI` | `create`, `getAll`, `resolve` |
+| `tagsAPI` | `getAll`, `search` |
+| `statsAPI` | `getSiteStats`, `getUserStats` |
+| `dreamTeamAPI` | `getAll`, `add`, `remove` |
+| `heroSettingsAPI` | `get`, `update` |
+| `linkPreviewAPI` | `fetch` |
+| `personRemovalRequestsAPI` | `create`, `getAll`, `resolve` |
+
+All modules are barrel-exported from `lib/api/index.js`.
 
 ### Error Handling
 Wrap API calls in `try/catch`. On error, set error string in state and show `<AlertMessage tone="error">`. Always use `finally` to clear loading state. See any page in `app/` for reference.
@@ -223,8 +240,7 @@ src/
 ├── migrations/    # YYYYMMDDHHMMSS-name.js
 ├── config/        # database.js, securityHeaders.js
 ├── utils/
-├── app.js
-└── server.js
+└── index.js
 ```
 
 ### Frontend
@@ -237,7 +253,7 @@ app/               # Next.js App Router pages
 
 components/        # ArticleCard, AlertMessage, EmptyState, SkeletonLoader,
                    # LocationSelector, ProtectedRoute, Pagination, AdminTable, …
-lib/               # api.js (CRITICAL), auth-context.js, utils/articleTypes.js
+lib/               # api/ (CRITICAL), auth-context.js, utils/articleTypes.js
 hooks/             # useAsyncData.js, useFilters.js
 config/            # articleCategories.json
 __tests__/         # components/, hooks/, api/, security/, migrations/
@@ -256,7 +272,7 @@ __tests__/         # components/, hooks/, api/, security/, migrations/
 ### Adding a New API Endpoint
 1. **Route** — `src/routes/`: apply rate limiter → auth → CSRF → controller
 2. **Controller** — `src/controllers/`: validate → authorize → logic → `{ success, data }`
-3. **API client** — add method to `lib/api.js` using the `apiRequest` helper
+3. **API client** — add method to the appropriate module in `lib/api/` using the `apiRequest` helper
 4. **Tests** — `__tests__/api/`: cover success, auth failure, and validation error
 5. **Docs** — update `README.md` or relevant `doc/` file for public-facing endpoints
 
@@ -278,8 +294,8 @@ __tests__/         # components/, hooks/, api/, security/, migrations/
 ### Locations Feature
 - Hierarchy: Country → Prefecture → Municipality
 - Polymorphic links to articles and users via `LocationLink`
-- Files: `src/models/Location.js`, `LocationLink.js`, `components/LocationSelector.js`, `lib/api.js` (`locationAPI`)
-- See `doc/LOCATIONS_ARCHITECTURE.md`
+- Files: `src/models/Location.js`, `LocationLink.js`, `components/ui/LocationSelector.js`, `lib/api/` (`locationAPI`)
+- See `doc/LOCATION_MODEL.md`
 
 ### Article System
 - **Types**: `personal` (creator-only) · `articles` (public educational) · `news` (requires admin approval)
@@ -348,7 +364,7 @@ npm run seed                 # Seed initial data
 3. Review security implications
 
 ### When Making Changes
-✅ Follow existing patterns · Use reusable components and hooks · Use `lib/api.js` for all API calls · Include loading and error states · Apply auth/CSRF/rate-limiting middleware · Write tests · Update docs
+✅ Follow existing patterns · Use reusable components and hooks · Use `lib/api/` for all API calls · Include loading and error states · Apply auth/CSRF/rate-limiting middleware · Write tests · Update docs
 
 ❌ Don't add unnecessary dependencies · Don't duplicate logic · Don't call `fetch()` directly · Don't skip error/loading states · Don't bypass security middleware
 

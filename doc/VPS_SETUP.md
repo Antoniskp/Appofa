@@ -271,6 +271,16 @@ sudo rm -f /etc/nginx/sites-enabled/default
 
 ### 2. Create Nginx Configuration
 
+A ready-to-use Nginx config template is located at [`config/nginx/appofasi.gr.conf`](../config/nginx/appofasi.gr.conf). You can copy and adapt it for your server:
+
+```bash
+sudo cp config/nginx/appofasi.gr.conf /etc/nginx/sites-available/newsapp
+# Edit the file to replace domain name and IP
+sudo nano /etc/nginx/sites-available/newsapp
+```
+
+Or create the configuration manually:
+
 ```bash
 sudo nano /etc/nginx/sites-available/newsapp
 ```
@@ -857,6 +867,45 @@ sudo nginx -t && sudo systemctl reload nginx
 ```
 
 If both ports respond but nginx still returns 502, verify the upstream addresses in `/etc/nginx/sites-available/newsapp` match the ports above.
+
+---
+
+## Automated Deployment with `scripts/deploy.sh`
+
+**Always use `scripts/deploy.sh`** after pulling new code. Do not restart PM2 manually without rebuilding, as this can leave stale Next.js build artifacts causing "Failed to find Server Action" errors.
+
+```bash
+bash scripts/deploy.sh
+```
+
+The script:
+1. Stops PM2 processes
+2. Pulls the latest code from Git (`main` branch)
+3. Installs/updates Node.js dependencies
+4. Runs database migrations
+5. **Cleans the `.next` build directory** (`rm -rf .next`) — prevents stale Server Action manifest errors
+6. Builds the Next.js frontend (`npm run frontend:build`)
+7. Restarts PM2 processes (`newsapp-backend`, `newsapp-frontend`)
+
+### deploy.sh Environment Variables
+
+```bash
+APP_DIR=/var/www/Appofa   # Application directory (default)
+BRANCH=main               # Git branch to deploy
+SKIP_GIT_PULL=0           # Set to 1 to skip git pull
+RUN_SEEDS=0               # Set to 1 to run database seeds
+FAST_STARTUP=0            # Set to 1 to skip npm ci when package-lock is unchanged
+```
+
+### Why `.next` Must Be Cleaned Before Rebuilding
+
+Next.js Server Actions are identified by a hash computed at build time. When the application is redeployed without cleaning the old `.next` directory, the running server may serve pages referencing Server Action hashes from the **previous** build. Any browser tab that was open before the redeploy will send requests for those old hashes, causing:
+
+```
+Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
+```
+
+This also causes the PM2 `newsapp-frontend` process to restart repeatedly (potentially hundreds of times). Removing `.next` before every build ensures a clean, consistent manifest.
 
 ---
 

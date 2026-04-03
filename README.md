@@ -37,13 +37,14 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 - [Locations Model](doc/LOCATION_MODEL.md) - Hierarchical locations system
 - [OAuth Integration](doc/OAUTH.md) - GitHub OAuth setup and usage
 - [Google Analytics](doc/GOOGLE_ANALYTICS.md) - Analytics integration guide
-- [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system
+- [Article Types & Categories](doc/ARTICLE_TYPES_TESTING.md) - Article type system and testing
 - [Categories](doc/CATEGORIES.md) - Static categories page, JSON schema, and how to suggest or submit category changes
 - [Message System](doc/MESSAGE_SYSTEM_IMPLEMENTATION.md) - User messaging feature
+- [Location Sections](doc/LOCATION_SECTIONS.md) - Location section types, JSON shapes, and moderator management
 
 ### Deployment & Operations
-- [Deployment](DEPLOYMENT.md) - **Nginx config, deployment process, port layout, and build artifact notes**
-- [VPS Setup Guide](doc/VPS_SETUP.md) - **Complete VPS deployment guide** (Ubuntu/Debian)
+- [Deployment](DEPLOYMENT.md) - **Quick pointer to deployment guides**
+- [VPS Setup Guide](doc/VPS_SETUP.md) - **Complete VPS deployment guide** including Nginx config, PM2, `scripts/deploy.sh`, and deployment notes
 - [Deployment Guide](doc/DEPLOYMENT_GUIDE.md) - Local, Docker, and cloud platform deployments
 - [Upgrade Guide](doc/UPGRADE_GUIDE.md) - Migration and upgrade instructions
 - [Migration Guide](doc/MIGRATION_GUIDE.md) - Google OAuth migration guide
@@ -55,7 +56,7 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 - [API Testing Examples](doc/API_TESTING.md) - API usage and testing with curl
 - [Poll Testing](doc/POLL_TESTING.md) - Poll system testing checklist
 - [Message System Testing](doc/MESSAGE_SYSTEM_TESTING.md) - Message system testing guide
-- [Article Types Testing](doc/ARTICLE_TYPES_TESTING.md) - Article type system testing
+- [Article Types Testing](doc/ARTICLE_TYPES_TESTING.md) - Article type system testing (see also Features above)
 - [Dependency Updates](doc/DEPENDENCY_UPDATES.md) - Dependency management and security audits
 - [Copilot Agents](doc/COPILOT_AGENTS.md) - AI agent configuration
 - [Postman Collection](doc/postman_collection.json) - API testing collection
@@ -102,67 +103,7 @@ The application will automatically track page views and provides utilities for t
 
 ### SEO Configuration
 
-The application includes built-in SEO support: `robots.txt`, dynamic `sitemap.xml`, canonical URLs, OpenGraph/Twitter meta tags, and JSON-LD structured data.
-
-#### Canonical Base URL (`SITE_URL`)
-
-Set the `SITE_URL` environment variable to your production domain. It defaults to `https://appofasi.gr` if not set.
-
-```
-SITE_URL=https://appofasi.gr
-```
-
-This value is used in:
-- `/robots.txt` – Sitemap reference URL
-- `/sitemap.xml` – All canonical URLs in the sitemap
-- Page `<link rel="canonical">` tags
-- OpenGraph `og:url` and Twitter card meta tags
-- JSON-LD structured data
-
-#### Sitemap Generation (`/sitemap.xml`)
-
-The sitemap is generated dynamically by the Next.js frontend at runtime. It:
-- Includes core static routes: `/`, `/news`, `/articles`, `/polls`
-- Fetches all published articles from the Express API and adds their canonical slug URLs
-- Revalidates every hour (configurable in `app/sitemap.js`)
-
-To verify the sitemap is working correctly:
-```bash
-# In development (frontend on port 3001)
-curl http://localhost:3001/sitemap.xml
-
-# In production
-curl https://appofasi.gr/sitemap.xml
-```
-
-#### robots.txt (`/robots.txt`)
-
-Served automatically by Next.js from `app/robots.js`. Allows all crawlers and references the sitemap URL.
-
-To verify:
-```bash
-curl http://localhost:3001/robots.txt
-```
-
-#### OpenGraph / Twitter Meta Tags
-
-Meta tags are injected server-side for all pages:
-- **Home page**: Uses site-level defaults from `app/layout.js`
-- **Article/News detail pages**: Uses article-specific title, description, image, and canonical URL
-
-#### JSON-LD Structured Data
-
-Article and news detail pages include JSON-LD (`schema.org/Article` and `schema.org/NewsArticle`) with:
-- `headline`, `description`, `image`
-- `datePublished`, `dateModified`
-- `author` (if not anonymous)
-- `url`, `mainEntityOfPage`
-
-To verify JSON-LD on an article page:
-```bash
-# Fetch the HTML and look for the script tag
-curl http://localhost:3001/news/1-sample-article | grep -A5 'application/ld+json'
-```
+See [doc/SEO.md](doc/SEO.md) for SEO setup including canonical URLs, sitemap, robots.txt, OpenGraph/Twitter meta tags, and JSON-LD structured data.
 
 ### Start the Application
 Start the API:
