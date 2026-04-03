@@ -1,5 +1,14 @@
 [
   {
+    "slug": "verified",
+    "name": "Επαληθευμένος",
+    "description": "Επαληθευμένος χρήστης της πλατφόρμας",
+    "category": "verification",
+    "tiers": [
+      { "tier": "gold", "label": "Επαληθευμένος", "criteria": "Επαληθευμένος από διαχειριστή", "threshold": 1 }
+    ]
+  },
+  {
     "slug": "article-writer",
     "name": "Αρθρογράφος",
     "description": "Δημοσιεύστε άρθρα στην πλατφόρμα",

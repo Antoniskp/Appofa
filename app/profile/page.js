@@ -67,6 +67,8 @@ function ProfileContent() {
   const [showHomeLocation, setShowHomeLocation] = useState(false);
   const [badgeProgress, setBadgeProgress] = useState(null);
   const [badgeEvaluating, setBadgeEvaluating] = useState(false);
+  const [displayBadge, setDisplayBadge] = useState({ slug: null, tier: null });
+  const [savingDisplayBadge, setSavingDisplayBadge] = useState(false);
   const [interactionSettings, setInteractionSettings] = useState({
     profileCommentsEnabled: true,
     profileCommentsLocked: false,
@@ -114,7 +116,7 @@ function ProfileContent() {
       onSuccess: async (userData) => {
         const { username, firstName, lastName, githubId, googleId, avatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
-          dateOfBirth, professions, interests, expertiseArea } = userData;
+          dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier } = userData;
         setProfileData({
           username: username || '',
           firstName: firstName || '',
@@ -130,6 +132,7 @@ function ProfileContent() {
           interests: interests || [],
           expertiseArea: expertiseArea || [],
         });
+        setDisplayBadge({ slug: displayBadgeSlug || null, tier: displayBadgeTier || null });
         setInteractionSettings({
           profileCommentsEnabled: profileCommentsEnabled !== undefined ? profileCommentsEnabled : true,
           profileCommentsLocked: profileCommentsLocked !== undefined ? profileCommentsLocked : false,
@@ -204,6 +207,36 @@ function ProfileContent() {
       // ignore
     } finally {
       setBadgeEvaluating(false);
+    }
+  };
+
+  const handleSelectDisplayBadge = async (slug, tier) => {
+    setSavingDisplayBadge(true);
+    try {
+      const res = await badgeAPI.setDisplayBadge(slug, tier);
+      if (res?.success) {
+        setDisplayBadge({ slug, tier });
+        success('Εμφάνιση badge ενημερώθηκε!');
+      }
+    } catch (_err) {
+      error('Αποτυχία ενημέρωσης badge εμφάνισης.');
+    } finally {
+      setSavingDisplayBadge(false);
+    }
+  };
+
+  const handleClearDisplayBadge = async () => {
+    setSavingDisplayBadge(true);
+    try {
+      const res = await badgeAPI.clearDisplayBadge();
+      if (res?.success) {
+        setDisplayBadge({ slug: null, tier: null });
+        success('Η επιλογή badge αφαιρέθηκε.');
+      }
+    } catch (_err) {
+      error('Αποτυχία αφαίρεσης badge εμφάνισης.');
+    } finally {
+      setSavingDisplayBadge(false);
     }
   };
 
@@ -378,6 +411,13 @@ function ProfileContent() {
     } else {
       setHomeLocation(null);
     }
+  };
+
+  const getEarnedBadges = (progress) => {
+    if (!progress) return [];
+    return progress.flatMap(b =>
+      b.tiers.filter(t => t.earned).map(t => ({ slug: b.slug, tier: t.tier, name: b.name, label: t.label }))
+    );
   };
 
   if (loading) {
@@ -768,6 +808,49 @@ function ProfileContent() {
             <p className="text-sm text-gray-500">Φόρτωση badges...</p>
           ) : (
             <div className="space-y-6">
+              {/* Display badge selection */}
+              {(() => {
+                const allEarned = getEarnedBadges(badgeProgress);
+                const isSelected = (slug, tier) => displayBadge.slug === slug && displayBadge.tier === tier;
+                if (allEarned.length === 0) return null;
+                return (
+                  <div className="border border-blue-100 bg-blue-50 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Εμφάνιση στο avatar</p>
+                    <p className="text-xs text-gray-500 mb-3">Επίλεξε ποιο badge να εμφανίζεται στο avatar σου.</p>
+                    <div className="flex flex-wrap gap-2">
+                      {allEarned.map(({ slug, tier, name, label }) => (
+                        <button
+                          key={`${slug}:${tier}`}
+                          type="button"
+                          disabled={savingDisplayBadge}
+                          onClick={() => isSelected(slug, tier) ? handleClearDisplayBadge() : handleSelectDisplayBadge(slug, tier)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-medium transition ${
+                            isSelected(slug, tier)
+                              ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300'
+                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
+                          } disabled:opacity-50`}
+                          title={isSelected(slug, tier) ? 'Κλικ για αφαίρεση' : 'Επιλογή για avatar'}
+                        >
+                          <BadgeTierImage slug={slug} tier={tier} size="w-4 h-4" />
+                          <span>{name} · {label || tier}</span>
+                          {isSelected(slug, tier) && <span className="ml-0.5">✓</span>}
+                        </button>
+                      ))}
+                      {displayBadge.slug && (
+                        <button
+                          type="button"
+                          disabled={savingDisplayBadge}
+                          onClick={handleClearDisplayBadge}
+                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-red-200 text-xs text-red-500 hover:bg-red-50 transition disabled:opacity-50"
+                        >
+                          ✕ Καθαρισμός επιλογής
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {Object.entries(
                 badgeProgress.reduce((acc, badge) => {
                   const cat = badge.category || 'other';

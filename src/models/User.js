@@ -179,6 +179,14 @@ const User = sequelize.define('User', {
   verifiedScopeLocationId: {
     type: DataTypes.INTEGER,
     allowNull: true
+  },
+  displayBadgeSlug: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  displayBadgeTier: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true,
