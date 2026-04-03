@@ -20,7 +20,9 @@ export default function ShareModal({ url, title, shareText, onClose, showToast }
   const [copied, setCopied] = useState(false);
 
   const shareUrl = url || (typeof window !== 'undefined' ? window.location.href : '');
-  const encodedText = encodeURIComponent(`${shareText || ''}\n${shareUrl}`);
+  const encodedText = shareText
+    ? encodeURIComponent(`${shareText}\n${shareUrl}`)
+    : encodeURIComponent(shareUrl);
   const encodedUrl = encodeURIComponent(shareUrl);
   const encodedShareText = encodeURIComponent(shareText || '');
 
