@@ -1,7 +1,7 @@
 // Basic tests for ConfirmDialog component
 // Tests the component by importing and verifying its structure
 
-const ConfirmDialog = require('../components/ConfirmDialog');
+const ConfirmDialog = require('../components/ui/ConfirmDialog');
 
 describe('ConfirmDialog', () => {
   it('should export ConfirmDialog component', () => {

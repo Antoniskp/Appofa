@@ -1,6 +1,6 @@
 'use client';
 
-import FormInput from '@/components/FormInput';
+import FormInput from '@/components/ui/FormInput';
 
 // GitHub SVG icon
 function GithubIcon({ className }) {

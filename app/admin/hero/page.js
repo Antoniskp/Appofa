@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import AlertMessage from '@/components/AlertMessage';
+import AlertMessage from '@/components/ui/AlertMessage';
 import { heroSettingsAPI } from '@/lib/api';
 
 function HeroSettingsContent() {

@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Badge from '@/components/Badge';
+import Badge from '@/components/ui/Badge';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import LocationSections from '@/components/LocationSections';
 

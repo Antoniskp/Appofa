@@ -1,7 +1,7 @@
 // Basic tests for FilterBar component
 // Tests the component by importing and verifying its structure
 
-const FilterBar = require('../components/FilterBar');
+const FilterBar = require('../components/ui/FilterBar');
 
 describe('FilterBar', () => {
   it('should export FilterBar component', () => {

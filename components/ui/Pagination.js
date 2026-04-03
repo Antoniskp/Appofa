@@ -1,7 +1,7 @@
 'use client';
 
-import Button from '@/components/Button';
-import Tooltip from '@/components/Tooltip';
+import Button from '@/components/ui/Button';
+import Tooltip from '@/components/ui/Tooltip';
 
 /**
  * Reusable pagination component

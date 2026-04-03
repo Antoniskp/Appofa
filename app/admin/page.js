@@ -7,15 +7,15 @@ import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupI
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Card, { StatsCard } from '@/components/Card';
-import Badge, { StatusBadge } from '@/components/Badge';
+import Card, { StatsCard } from '@/components/ui/Card';
+import Badge, { StatusBadge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import AdminTable from '@/components/admin/AdminTable';
-import { ConfirmDialog } from '@/components/Modal';
-import { TooltipIconButton } from '@/components/Tooltip';
-import Tooltip from '@/components/Tooltip';
-import Pagination from '@/components/Pagination';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import { TooltipIconButton } from '@/components/ui/Tooltip';
+import Tooltip from '@/components/ui/Tooltip';
+import Pagination from '@/components/ui/Pagination';
 import articleCategories from '@/config/articleCategories.json';
 
 function AdminDashboardContent() {

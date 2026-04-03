@@ -4,10 +4,10 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { articleAPI, pollAPI, suggestionAPI } from '@/lib/api';
 import HomeHero from '@/components/HomeHero';
-import ArticleCard from '@/components/ArticleCard';
-import PollCard from '@/components/PollCard';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
+import ArticleCard from '@/components/articles/ArticleCard';
+import PollCard from '@/components/polls/PollCard';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
 import VideoThumbnailCard from '@/components/articles/VideoThumbnailCard';
 import SuggestionCard from '@/components/SuggestionCard';
 

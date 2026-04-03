@@ -1,7 +1,7 @@
 {
-  "name": "appofasiv8",
+  "name": "appofa",
   "version": "1.0.0",
-  "description": "Application for news",
+  "description": "Application for news, education and polls",
   "main": "src/index.js",
   "scripts": {
     "lint": "eslint src",

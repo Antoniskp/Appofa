@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import Badge from '@/components/Badge';
+import Badge from '@/components/ui/Badge';
 import InlineSuggestionVote from '@/components/InlineSuggestionVote';
 
 const TYPE_LABELS = {

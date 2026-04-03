@@ -1,7 +1,7 @@
 // Basic tests for Pagination component
 // Tests the component by importing and verifying its structure
 
-const Pagination = require('../components/Pagination');
+const Pagination = require('../components/ui/Pagination');
 
 describe('Pagination', () => {
   it('should export Pagination component', () => {

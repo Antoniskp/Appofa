@@ -6,7 +6,7 @@ import { CheckCircleIcon, ClockIcon, XCircleIcon } from '@heroicons/react/24/sol
 import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 function StatusBadge({ status }) {
   if (status === 'pending') return (

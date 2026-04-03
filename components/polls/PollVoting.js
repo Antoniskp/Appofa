@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { CheckCircleIcon, LinkIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import AlertMessage from '@/components/AlertMessage';
+import AlertMessage from '@/components/ui/AlertMessage';
 
 /**
  * Poll voting interface component

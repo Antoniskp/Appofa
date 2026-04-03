@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import FormInput from '@/components/FormInput';
+import FormInput from '@/components/ui/FormInput';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 

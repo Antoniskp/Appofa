@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ConfirmDialog } from '@/components/Modal';
+import { ConfirmDialog } from '@/components/ui/Modal';
 
 /**
  * Reusable action buttons for admin tables

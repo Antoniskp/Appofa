@@ -22,9 +22,9 @@ import {
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import DropdownMenu from '@/components/DropdownMenu';
-import Tooltip from '@/components/Tooltip';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import DropdownMenu from '@/components/ui/DropdownMenu';
+import Tooltip from '@/components/ui/Tooltip';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();

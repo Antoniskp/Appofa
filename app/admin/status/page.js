@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { adminAPI } from '@/lib/api';
-import Badge from '@/components/Badge';
+import Badge from '@/components/ui/Badge';
 
 const statusStyles = {
   healthy: 'bg-green-50 border-green-200 text-green-800',

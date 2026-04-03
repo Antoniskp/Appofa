@@ -7,7 +7,7 @@ import DreamTeamHero from '@/components/dream-team/DreamTeamHero';
 import PositionCard from '@/components/dream-team/PositionCard';
 import DreamTeamResults from '@/components/dream-team/DreamTeamResults';
 import SkeletonPositionCard from '@/components/dream-team/SkeletonPositionCard';
-import EmptyState from '@/components/EmptyState';
+import EmptyState from '@/components/ui/EmptyState';
 
 const TABS = [
   { id: 'vote', label: '🗳️ Ψηφίστε' },

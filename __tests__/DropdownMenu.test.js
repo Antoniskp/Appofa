@@ -1,7 +1,7 @@
 // Tests for DropdownMenu component
 // Verifies component structure and basic functionality
 
-const DropdownMenu = require('../components/DropdownMenu');
+const DropdownMenu = require('../components/ui/DropdownMenu');
 
 describe('DropdownMenu', () => {
   it('should export DropdownMenu component', () => {

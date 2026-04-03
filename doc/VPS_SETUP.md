@@ -31,6 +31,18 @@ The Appofa News Application uses a split architecture:
 
 Both components must be running for the application to function correctly.
 
+### Port Layout
+
+| Service | Port | PM2 name |
+|---|---|---|
+| Express API (backend) | 3000 | `newsapp-backend` |
+| Next.js frontend | 3001 | `newsapp-frontend` |
+
+Nginx listens on ports 80 and 443 and reverse-proxies to these two services:
+- `location /api/` → `http://localhost:3000` (Express backend)
+- `location /` → `http://localhost:3001` (Next.js frontend)
+- HTTP (port 80) redirects to HTTPS (port 443) after SSL setup
+
 ---
 
 ## Prerequisites
@@ -258,6 +270,8 @@ pm2 status
 ---
 
 ## Nginx Reverse Proxy Setup
+
+> **Tip:** A production-ready Nginx config template is provided at [`config/nginx/appofasi.gr.conf`](../config/nginx/appofasi.gr.conf). You can copy and adapt it instead of creating the config from scratch.
 
 ### 1. Install Nginx
 
@@ -491,11 +505,20 @@ pm2 logs --err --lines 50
 
 ### 4. Test Endpoints
 ```bash
-# Test backend (API health check)
-curl http://localhost:3000/api/health || curl http://localhost:3000
+# Test backend health check (direct, bypassing Nginx)
+curl http://localhost:3000/api/health
+# Expected: {"status":"ok","timestamp":"..."}
 
 # Test frontend
 curl http://localhost:3001
+
+# Test via Nginx (after Nginx is configured)
+curl https://your-domain.com/api/health
+# Same expected response: {"status":"ok","timestamp":"..."}
+
+# If the direct call succeeds but the Nginx call returns 502,
+# the issue is in the Nginx `location /api/` block — verify the
+# config matches config/nginx/appofasi.gr.conf.
 
 # Test from external IP (replace with your IP)
 curl http://YOUR_SERVER_IP:3000
@@ -566,6 +589,43 @@ pm2 save
 > - **Frontend rebuild** (`rm -rf .next` then `npm run frontend:build`) is required whenever code, components, or dependencies change — especially when the Next.js version is bumped. Serving a stale `.next` build after a version upgrade causes the frontend process to fail, which makes nginx return 502 for every page.
 >
 > Use `scripts/deploy.sh` (which covers all these steps automatically) for a reliable one-command update.
+
+### Using deploy.sh
+
+**Always use `scripts/deploy.sh`** after pulling new code. Do not restart PM2 manually without rebuilding, as this can leave stale Next.js build artifacts causing "Failed to find Server Action" errors.
+
+```bash
+bash scripts/deploy.sh
+```
+
+The script:
+1. Stops PM2 processes
+2. Pulls the latest code from Git (`main` branch)
+3. Installs/updates Node.js dependencies
+4. Runs database migrations
+5. **Cleans the `.next` build directory** (`rm -rf .next`) — prevents stale Server Action manifest errors
+6. Builds the Next.js frontend (`npm run frontend:build`)
+7. Restarts PM2 processes (`newsapp-backend`, `newsapp-frontend`)
+
+Available environment variables for the script:
+
+```bash
+APP_DIR=/var/www/Appofa   # Application directory (default)
+BRANCH=main               # Git branch to deploy
+SKIP_GIT_PULL=0           # Set to 1 to skip git pull
+RUN_SEEDS=0               # Set to 1 to run database seeds
+FAST_STARTUP=0            # Set to 1 to skip npm ci when package-lock is unchanged
+```
+
+#### Why `.next` must be cleaned before rebuilding
+
+Next.js Server Actions are identified by a hash computed at build time. When the application is redeployed without cleaning the old `.next` directory, the running server may serve pages referencing Server Action hashes from the **previous** build. Any browser tab open before the redeploy will send requests for those old hashes, causing:
+
+```
+Error: Failed to find Server Action "x". This request might be from an older or newer deployment.
+```
+
+This also causes the PM2 `newsapp-frontend` process to restart repeatedly (potentially hundreds of times). Removing `.next` before every build ensures a clean, consistent manifest.
 
 ### Clean Update Workflow
 

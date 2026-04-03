@@ -1,7 +1,7 @@
 // Basic tests for Tooltip component
 // Tests the component by importing and verifying its structure
 
-const Tooltip = require('../components/Tooltip');
+const Tooltip = require('../components/ui/Tooltip');
 
 describe('Tooltip', () => {
   it('should export Tooltip component', () => {

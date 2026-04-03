@@ -1,7 +1,7 @@
 // Tests for SkeletonLoader component
 // Verifies all skeleton types and component structure
 
-const SkeletonLoader = require('../components/SkeletonLoader');
+const SkeletonLoader = require('../components/ui/SkeletonLoader');
 
 describe('SkeletonLoader', () => {
   it('should export SkeletonLoader component', () => {

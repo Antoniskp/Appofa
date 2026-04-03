@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { reportAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Modal from '@/components/Modal';
+import Modal from '@/components/ui/Modal';
 
 const CATEGORIES = [
   { value: 'misinformation', label: 'Misinformation' },

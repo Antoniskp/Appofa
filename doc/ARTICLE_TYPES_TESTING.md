@@ -1,5 +1,7 @@
 # Article Types and Categories Feature - Testing Guide
 
+> **Note:** This document serves a dual purpose — it describes the article type feature (also listed under [Features in doc/INDEX.md](INDEX.md)) and provides a testing guide (listed under Development & Testing).
+
 ## Overview
 This guide helps you test the article types and categories feature.
 
