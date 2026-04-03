@@ -237,7 +237,6 @@ PublicPersonProfile.hasMany(PersonRemovalRequest, { foreignKey: 'publicPersonPro
 // PersonRemovalRequest associations
 PersonRemovalRequest.belongsTo(PublicPersonProfile, { foreignKey: 'publicPersonProfileId', as: 'publicPersonProfile' });
 PersonRemovalRequest.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
-PublicPersonProfile.hasMany(PersonRemovalRequest, { foreignKey: 'publicPersonProfileId', as: 'removalRequests' });
 User.hasMany(PersonRemovalRequest, { foreignKey: 'reviewedBy', as: 'reviewedRemovalRequests' });
 
 // Report associations
