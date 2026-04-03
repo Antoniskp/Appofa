@@ -81,6 +81,10 @@ describe('PublicPersonProfile Model', () => {
     expect(assoc.target.name).toBe('Location');
   });
 
+  it('does not have an applications (CandidateApplication) association', () => {
+    expect(PublicPersonProfile.associations.applications).toBeUndefined();
+  });
+
   it('socialLinks getter parses JSON', () => {
     const inst = PublicPersonProfile.build({});
     inst.setDataValue('socialLinks', '{"twitter":"https://x.com"}');
