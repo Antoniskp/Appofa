@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
-import { LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
@@ -41,6 +41,15 @@ const sections = [
     Icon: LifebuoyIcon,
     color: 'text-green-700',
     bg: 'bg-green-50',
+  },
+  {
+    href: '/education',
+    title: 'Εκπαίδευση',
+    description:
+      'Πληροφορίες για το ελληνικό εκπαιδευτικό σύστημα, τις βαθμίδες εκπαίδευσης και προτάσεις βελτίωσης.',
+    Icon: AcademicCapIcon,
+    color: 'text-indigo-700',
+    bg: 'bg-indigo-50',
   },
 ];
 

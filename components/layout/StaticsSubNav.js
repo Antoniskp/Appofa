@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 
 const CITIZEN_HELP_PATHS = [
   '/consumer-rights', '/driving-license', '/dypa-unemployment',
@@ -19,6 +19,10 @@ const PLATFORM_PATHS = [
   '/contact', '/privacy', '/terms', '/platform',
 ];
 
+const EDUCATION_PATHS = [
+  '/education',
+];
+
 export default function StaticsSubNav() {
   const pathname = usePathname();
 
@@ -26,6 +30,9 @@ export default function StaticsSubNav() {
     (p) => pathname === p || pathname.startsWith(p + '/')
   );
   const isPlatformActive = PLATFORM_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
+  const isEducationActive = EDUCATION_PATHS.some(
     (p) => pathname === p || pathname.startsWith(p + '/')
   );
 
@@ -54,6 +61,14 @@ export default function StaticsSubNav() {
           >
             <WrenchScrewdriverIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             Πλατφόρμα
+          </Link>
+          <Link
+            href="/education"
+            aria-current={isEducationActive ? 'page' : undefined}
+            className={`flex items-center gap-1.5 px-4 py-3 text-sm transition-colors ${isEducationActive ? activeTabClass : inactiveTabClass}`}
+          >
+            <AcademicCapIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Εκπαίδευση
           </Link>
         </div>
       </div>
