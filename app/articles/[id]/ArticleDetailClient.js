@@ -18,6 +18,7 @@ import { TooltipIconButton } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import VideoEmbed from '@/components/articles/VideoEmbed';
 import ReportButton from '@/components/ReportButton';
+import ShareModal from '@/components/ui/ShareModal';
 
 export default function ArticleDetailPage() {
   const params = useParams();
@@ -31,6 +32,7 @@ export default function ArticleDetailPage() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [commentSettings, setCommentSettings] = useState({
     commentsEnabled: true,
     commentsLocked: false,
@@ -42,22 +44,12 @@ export default function ArticleDetailPage() {
   const breadcrumbHref = isVideo ? '/videos' : (isNews ? '/news' : '/articles');
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: article?.title,
-        text: article?.summary || article?.content?.substring(0, 200),
-        url: window.location.href
-      }).catch(err => console.log('Error sharing:', err));
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      addToast('Link copied to clipboard!', { type: 'success' });
-    }
+    setShowShareModal(true);
   };
 
   const handleBookmark = () => {
     if (!user) {
-      addToast('Please log in to bookmark articles.', { type: 'info' });
+      addToast('Συνδεθείτε για να αποθηκεύσετε άρθρα.', { type: 'info' });
       return;
     }
 
@@ -71,12 +63,12 @@ export default function ArticleDetailPage() {
           response.data?.bookmarked ? prev + 1 : Math.max(prev - 1, 0)
         ));
         addToast(
-          response.data?.bookmarked ? 'Article bookmarked.' : 'Bookmark removed.',
+          response.data?.bookmarked ? 'Το άρθρο αποθηκεύτηκε.' : 'Ο σελιδοδείκτης αφαιρέθηκε.',
           { type: 'success' }
         );
       })
       .catch((err) => {
-        addToast(err.message || 'Failed to update bookmark.', { type: 'error' });
+        addToast(err.message || 'Σφάλμα κατά την ενημέρωση σελιδοδείκτη.', { type: 'error' });
       })
       .finally(() => {
         setBookmarkLoading(false);
@@ -193,6 +185,7 @@ export default function ArticleDetailPage() {
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
 
   return (
+    <>
     <div className="bg-gray-50 min-h-screen py-8">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" className="mb-6">
@@ -323,5 +316,14 @@ export default function ArticleDetailPage() {
       </article>
 
     </div>
+      {showShareModal && (
+        <ShareModal
+          url={typeof window !== 'undefined' ? window.location.href : ''}
+          title={article.title}
+          shareText="Δείτε αυτό το άρθρο στο Appofa! 📰"
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+    </>
   );
 }

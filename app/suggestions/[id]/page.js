@@ -12,6 +12,7 @@ import {
   ExclamationTriangleIcon,
   PencilSquareIcon,
   TrashIcon,
+  ShareIcon,
 } from '@heroicons/react/24/outline';
 import {
   HandThumbUpIcon as HandThumbUpSolid,
@@ -25,6 +26,8 @@ import EmptyState from '@/components/ui/EmptyState';
 import Badge from '@/components/ui/Badge';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { TooltipIconButton } from '@/components/ui/Tooltip';
+import ShareModal from '@/components/ui/ShareModal';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -186,6 +189,7 @@ export default function SuggestionDetailPage() {
   const [solutionError, setSolutionError] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const fetchSuggestion = useCallback(async () => {
     const res = await suggestionAPI.getById(suggestionId);
@@ -395,6 +399,11 @@ export default function SuggestionDetailPage() {
                   Διαγραφή
                 </button>
               )}
+              <TooltipIconButton
+                icon={ShareIcon}
+                tooltip="Κοινοποίηση πρότασης"
+                onClick={() => setShowShareModal(true)}
+              />
             </div>
 
             <VoteButtons
@@ -502,6 +511,14 @@ export default function SuggestionDetailPage() {
       destructive
       loading={isDeleting}
     />
+    {showShareModal && (
+      <ShareModal
+        url={typeof window !== 'undefined' ? window.location.href : ''}
+        title={suggestion.title}
+        shareText="Δείτε αυτή την πρόταση στο Appofa! 💡"
+        onClose={() => setShowShareModal(false)}
+      />
+    )}
     </>
   );
 }

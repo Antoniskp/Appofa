@@ -18,6 +18,7 @@ import { idSlug } from '@/lib/utils/slugify';
 import CommentsThread from '@/components/comments/CommentsThread';
 import VideoEmbed from '@/components/articles/VideoEmbed';
 import ReportButton from '@/components/ReportButton';
+import ShareModal from '@/components/ui/ShareModal';
 
 export default function NewsDetailPage() {
   const params = useParams();
@@ -30,24 +31,15 @@ export default function NewsDetailPage() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: article?.title,
-        text: article?.summary || article?.content?.substring(0, 200),
-        url: window.location.href
-      }).catch(err => console.log('Error sharing:', err));
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      addToast('Link copied to clipboard!', { type: 'success' });
-    }
+    setShowShareModal(true);
   };
 
   const handleBookmark = () => {
     if (!user) {
-      addToast('Please log in to bookmark news.', { type: 'info' });
+      addToast('Συνδεθείτε για να αποθηκεύσετε ειδήσεις.', { type: 'info' });
       return;
     }
 
@@ -61,12 +53,12 @@ export default function NewsDetailPage() {
           response.data?.bookmarked ? prev + 1 : Math.max(prev - 1, 0)
         ));
         addToast(
-          response.data?.bookmarked ? 'News bookmarked.' : 'Bookmark removed.',
+          response.data?.bookmarked ? 'Η είδηση αποθηκεύτηκε.' : 'Ο σελιδοδείκτης αφαιρέθηκε.',
           { type: 'success' }
         );
       })
       .catch((err) => {
-        addToast(err.message || 'Failed to update bookmark.', { type: 'error' });
+        addToast(err.message || 'Σφάλμα κατά την ενημέρωση σελιδοδείκτη.', { type: 'error' });
       })
       .finally(() => {
         setBookmarkLoading(false);
@@ -176,6 +168,7 @@ export default function NewsDetailPage() {
     !!(article.embedUrl || article.embedHtml || article.sourceUrl);
 
   return (
+    <>
     <div className="bg-gray-50 min-h-screen py-8">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav aria-label="Breadcrumb" className="mb-6">
@@ -310,5 +303,14 @@ export default function NewsDetailPage() {
       </div>
 
     </div>
+      {showShareModal && (
+        <ShareModal
+          url={typeof window !== 'undefined' ? window.location.href : ''}
+          title={article.title}
+          shareText="Δείτε αυτή την είδηση στο Appofa! 📰"
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+    </>
   );
 }
