@@ -50,6 +50,12 @@ const PROFILE_INCLUDE = [
     as: 'claimedBy',
     attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
     required: false
+  },
+  {
+    model: User,
+    as: 'createdBy',
+    attributes: ['id', 'username'],
+    required: false
   }
 ];
 
