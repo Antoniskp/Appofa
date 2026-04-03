@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
 
-export const alt = 'Ονειρεμένη Κυβέρνηση - Απόφαση';
+export const alt = 'Ιδανική Κυβέρνηση - Απόφαση';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -42,7 +42,7 @@ export default function Image() {
         </div>
 
         <div style={{ fontSize: 64, fontWeight: 800, marginBottom: '16px' }}>
-          🏛️ Ονειρεμένη Κυβέρνηση
+          🏛️ Ιδανική Κυβέρνηση
         </div>
 
         <div

@@ -13,9 +13,9 @@ export async function generateMetadata({ params }) {
       const data = await res.json();
       const formation = data?.data;
       if (formation) {
-        const title = `${formation.name} — Ονειρεμένη Κυβέρνηση`;
+        const title = `${formation.name} — Ιδανική Κυβέρνηση`;
         const description = formation.description
-          || `Δείτε την ονειρεμένη κυβέρνηση του ${formation.authorName || 'χρήστη'} στο Appofa.`;
+          || `Δείτε την ιδανική κυβέρνηση του ${formation.authorName || 'χρήστη'} στο Appofa.`;
         return {
           title,
           description,
@@ -38,8 +38,8 @@ export async function generateMetadata({ params }) {
   }
 
   return {
-    title: 'Ονειρεμένη Κυβέρνηση — Appofa',
-    description: 'Δείτε μια ονειρεμένη κυβέρνηση στο Appofa.',
+    title: 'Ιδανική Κυβέρνηση — Appofa',
+    description: 'Δείτε μια ιδανική κυβέρνηση στο Appofa.',
   };
 }
 

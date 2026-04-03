@@ -209,7 +209,7 @@ export default function FormationView({ formation, onBack, showToast, onLike, on
       {/* Create your own CTA */}
       <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100 p-6 text-center">
         <p className="text-lg font-bold text-gray-800 mb-1">Φτιάξτε τη δική σας σύνθεση!</p>
-        <p className="text-sm text-gray-500 mb-4">Επιλέξτε ποιοι θα κυβερνούν στην ονειρεμένη σας κυβέρνηση.</p>
+        <p className="text-sm text-gray-500 mb-4">Επιλέξτε ποιοι θα κυβερνούν στην ιδανική σας κυβέρνηση.</p>
         <a
           href="/dream-team"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors"

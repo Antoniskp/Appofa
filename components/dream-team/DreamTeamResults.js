@@ -97,7 +97,7 @@ export default function DreamTeamResults({ results = [] }) {
       <div className="text-center py-16 text-gray-400">
         <span className="text-4xl mb-4 block">🏛️</span>
         <p className="text-lg font-medium">Δεν υπάρχουν αποτελέσματα ακόμα</p>
-        <p className="text-sm mt-1">Ψηφίστε για να δείτε την ονειρεμένη κυβέρνηση</p>
+        <p className="text-sm mt-1">Ψηφίστε για να δείτε την ιδανική κυβέρνηση</p>
       </div>
     );
   }

@@ -152,7 +152,7 @@ export default function FormationList({ user, communityResults = [], showToast, 
         <div>
           <h2 className="text-xl font-bold text-gray-900">Οι Συνθέσεις μου</h2>
           <p className="text-sm text-gray-400 mt-0.5">
-            Δημιουργήστε τις δικές σας ονειρεμένες κυβερνήσεις
+            Δημιουργήστε τις δικές σας ιδανικές κυβερνήσεις
           </p>
         </div>
         <button
@@ -189,7 +189,7 @@ export default function FormationList({ user, communityResults = [], showToast, 
               <p className="font-semibold text-base">+ Νέα Σύνθεση</p>
               <p className="text-sm mt-1">
                 Δεν έχετε δημιουργήσει σύνθεση ακόμα!<br />
-                Φτιάξτε την πρώτη σας ονειρεμένη κυβέρνηση.
+                Φτιάξτε την πρώτη σας ιδανική κυβέρνηση.
               </p>
             </div>
           </button>
