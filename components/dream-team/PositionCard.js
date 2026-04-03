@@ -160,34 +160,28 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
             Η ψήφος μου
           </p>
 
-          {myVote && (
-            <div className="flex items-center justify-between mb-2 p-2 bg-green-50 rounded-lg border border-green-200">
-              <div className="flex items-center gap-2">
-                <CheckCircleSolid className="h-4 w-4 text-green-500 flex-shrink-0" />
-                <span className="text-sm text-green-700 font-medium">{myVote.personName}</span>
-              </div>
+          <div className="relative">
+            <PersonSearch
+              onSelect={handleSelectPerson}
+              includeUsers={!!onVote}
+              showTopSuggestions={true}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Αναζητήστε πρόσωπο..."
+            />
+            {searchQuery && (
               <button
                 onClick={() => {
                   setSelectedPerson(null);
                   setSearchQuery('');
                 }}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors ml-2 flex-shrink-0"
-                title="Αλλαγή ψήφου"
-                aria-label="Αλλαγή ψήφου"
+                className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors z-10"
+                aria-label="Καθαρισμός αναζήτησης"
               >
                 ✕
               </button>
-            </div>
-          )}
-
-          <PersonSearch
-            onSelect={handleSelectPerson}
-            includeUsers={!!onVote}
-            showTopSuggestions={true}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Αναζητήστε πρόσωπο..."
-          />
+            )}
+          </div>
         </div>
 
         {/* Vote Results */}
@@ -293,11 +287,18 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
           )}
         </button>
 
+        {myVote && !isVoteChanged && (
+          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">
+            <CheckCircleSolid className="h-4 w-4 text-green-500 flex-shrink-0" />
+            <span className="text-sm text-green-700 font-medium">{myVote.personName}</span>
+          </div>
+        )}
+
         {myVote && onDeleteVote && !isVoteChanged && (
           <button
             onClick={() => onDeleteVote(position.id)}
             disabled={loading}
-            className="w-full mt-2 text-xs text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+            className="w-full mt-2 text-xs text-red-300 hover:text-red-500 transition-colors disabled:opacity-50"
             aria-label={`Διαγραφή ψήφου για ${position.title}`}
           >
             🗑 Διαγραφή ψήφου
