@@ -7,11 +7,13 @@ import DreamTeamHero from '@/components/dream-team/DreamTeamHero';
 import PositionCard from '@/components/dream-team/PositionCard';
 import DreamTeamResults from '@/components/dream-team/DreamTeamResults';
 import SkeletonPositionCard from '@/components/dream-team/SkeletonPositionCard';
+import FormationList from '@/components/dream-team/FormationList';
 import EmptyState from '@/components/ui/EmptyState';
 
 const TABS = [
   { id: 'vote', label: '🗳️ Ψηφίστε' },
   { id: 'results', label: '🏆 Ονειρεμένη Κυβέρνηση' },
+  { id: 'formations', label: '📋 Οι Συνθέσεις μου' },
 ];
 
 export default function DreamTeamPage() {
@@ -215,6 +217,25 @@ export default function DreamTeamPage() {
             </div>
           ) : (
             <DreamTeamResults results={results} />
+          )
+        )}
+
+        {/* Formations Tab */}
+        {activeTab === 'formations' && (
+          !user ? (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
+              <span className="text-4xl mb-4 block">🔒</span>
+              <p className="text-lg font-bold text-gray-800 mb-2">Συνδεθείτε για να δείτε τις συνθέσεις σας</p>
+              <p className="text-sm text-gray-500">
+                Δημιουργήστε και διαχειριστείτε τις δικές σας ονειρεμένες κυβερνήσεις.
+              </p>
+            </div>
+          ) : (
+            <FormationList
+              user={user}
+              communityResults={results}
+              showToast={showToast}
+            />
           )
         )}
       </div>
