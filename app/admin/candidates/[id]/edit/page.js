@@ -18,7 +18,7 @@ const SOCIAL_LINK_KEYS = [
   { key: 'tiktok', label: 'TikTok' },
 ];
 
-export default function EditAdminCandidatePage({ params }) {
+export default function EditAdminPersonPage({ params }) {
   const { id } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -160,8 +160,8 @@ export default function EditAdminCandidatePage({ params }) {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-2xl mx-auto">
-        <Link href="/admin/candidates" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Προφίλ</Link>
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Επεξεργασία Προφίλ Υποψηφίου</h1>
+        <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Προφίλ</Link>
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Επεξεργασία Προφίλ Προσώπου</h1>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
           {/* Name fields */}

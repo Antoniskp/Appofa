@@ -4,13 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-import { candidateAPI } from '@/lib/api';
+import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
-function CandidateAvatar({ photo, name }) {
+function PersonAvatar({ photo, name }) {
   const [imgError, setImgError] = useState(false);
   if (photo && !imgError) {
     return (
@@ -40,7 +40,7 @@ function ClaimBadge({ status }) {
 }
 
 
-export default function AdminCandidatesPage() {
+export default function AdminPersonsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [page, setPage] = useState(1);
@@ -48,7 +48,7 @@ export default function AdminCandidatesPage() {
 
   const { data: profiles, loading, error, refetch } = useAsyncData(
     async () => {
-      const res = await candidateAPI.getAll({ page, limit: 20 });
+      const res = await personAPI.getAll({ page, limit: 20 });
       if (res.success) {
         setTotalPages(res.data?.pagination?.totalPages || 1);
         return res.data?.profiles || [];
@@ -65,9 +65,9 @@ export default function AdminCandidatesPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this candidate profile?')) return;
+    if (!window.confirm('Delete this person profile?')) return;
     try {
-      await candidateAPI.deleteProfile(id);
+      await personAPI.deleteProfile(id);
       refetch?.();
     } catch (err) {
       alert(err.message || 'Failed to delete profile.');
@@ -78,12 +78,12 @@ export default function AdminCandidatesPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Candidate Profiles</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Person Profiles</h1>
           <div className="flex gap-2">
-            <Link href="/admin/candidates/claims" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+            <Link href="/admin/persons/claims" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
               <CheckBadgeIcon className="h-4 w-4" /> Claims
             </Link>
-            <Link href="/admin/candidates/new" className="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+            <Link href="/admin/persons/create" className="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
               <PlusIcon className="h-4 w-4" /> New Profile
             </Link>
           </div>
@@ -93,7 +93,7 @@ export default function AdminCandidatesPage() {
         {error && <p className="text-red-500">Failed to load profiles.</p>}
 
         {!loading && profiles.length === 0 && (
-          <div className="text-center py-12 text-gray-500">No candidate profiles yet.</div>
+          <div className="text-center py-12 text-gray-500">No person profiles yet.</div>
         )}
 
         {!loading && profiles.length > 0 && (
@@ -113,9 +113,9 @@ export default function AdminCandidatesPage() {
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <CandidateAvatar photo={p.photo} name={p.fullName} />
+                        <PersonAvatar photo={p.photo} name={p.fullName} />
                         <div>
-                          <Link href={`/admin/candidates/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">{p.fullName}</Link>
+                          <Link href={`/admin/persons/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">{p.fullName}</Link>
                           <p className="text-xs text-gray-400">/{p.slug}</p>
                         </div>
                       </div>
@@ -125,7 +125,7 @@ export default function AdminCandidatesPage() {
                     <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/candidates/${p.id}/edit`} className="p-1.5 text-gray-500 hover:text-blue-600 rounded">
+                        <Link href={`/admin/persons/${p.id}/edit`} className="p-1.5 text-gray-500 hover:text-blue-600 rounded">
                           <PencilSquareIcon className="h-4 w-4" />
                         </Link>
                         {user?.role === 'admin' && (

@@ -36,7 +36,7 @@ function ClaimStatusBadge({ status }) {
   return null;
 }
 
-function CandidateCard({ profile }) {
+function PersonCard({ profile }) {
   return (
     <Link href={`/persons/${profile.slug}`} className="block bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
       <div className="p-5">
@@ -67,7 +67,7 @@ function CandidateCard({ profile }) {
   );
 }
 
-export default function CandidatesPage() {
+export default function PersonsPage() {
   const {
     filters,
     page,
@@ -88,7 +88,7 @@ export default function CandidatesPage() {
     { initialData: [] }
   );
 
-  const { data: candidates, loading, error } = useAsyncData(
+  const { data: persons, loading, error } = useAsyncData(
     async () => {
       const params = { page, limit: 12 };
       if (filters.search) params.search = filters.search;
@@ -112,8 +112,8 @@ export default function CandidatesPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Independent Candidates</h1>
-          <p className="mt-1 text-gray-500">Browse and discover independent parliamentary candidates.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Public Person Profiles</h1>
+          <p className="mt-1 text-gray-500">Browse and discover public person profiles.</p>
         </div>
 
         {/* Filters */}
@@ -151,16 +151,16 @@ export default function CandidatesPage() {
         </div>
 
         {loading && <SkeletonLoader count={6} type="card" />}
-        {error && <p className="text-red-500 text-center py-8">Failed to load candidates.</p>}
+        {error && <p className="text-red-500 text-center py-8">Failed to load persons.</p>}
 
-        {!loading && !error && candidates.length === 0 && (
-          <EmptyState message="No candidates found." />
+        {!loading && !error && persons.length === 0 && (
+          <EmptyState message="No persons found." />
         )}
 
-        {!loading && candidates.length > 0 && (
+        {!loading && persons.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {candidates.map((profile) => (
-              <CandidateCard key={profile.id} profile={profile} />
+            {persons.map((profile) => (
+              <PersonCard key={profile.id} profile={profile} />
             ))}
           </div>
         )}

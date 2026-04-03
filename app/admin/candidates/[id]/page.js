@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { candidateAPI } from '@/lib/api';
+import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 
@@ -20,7 +20,7 @@ function ClaimBadge({ status }) {
   );
 }
 
-export default function AdminCandidateDetailPage() {
+export default function AdminPersonDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -29,7 +29,7 @@ export default function AdminCandidateDetailPage() {
   const { data: profile, loading, error } = useAsyncData(
     async () => {
       if (!id) return null;
-      const res = await candidateAPI.getById(id);
+      const res = await personAPI.getById(id);
       return res.data?.profile || null;
     },
     [id],
@@ -55,8 +55,8 @@ export default function AdminCandidateDetailPage() {
     return (
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-3xl mx-auto">
-          <Link href="/admin/candidates" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
-          <p className="text-red-500">Failed to load candidate profile.</p>
+          <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
+          <p className="text-red-500">Failed to load person profile.</p>
         </div>
       </div>
     );
@@ -65,7 +65,7 @@ export default function AdminCandidateDetailPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-3xl mx-auto">
-        <Link href="/admin/candidates" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
+        <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-start gap-4">
