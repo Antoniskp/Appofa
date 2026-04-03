@@ -7,6 +7,7 @@ import { personAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
+import { getAllParties } from '@/lib/utils/politicalParties';
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -48,6 +49,7 @@ export default function EditPersonProfilePage({ params }) {
   const [candidateForm, setCandidateForm] = useState({
     position: '',
     manifesto: '',
+    partyId: '',
   });
   const [politicalPositions, setPoliticalPositions] = useState([{ key: '', value: '' }]);
 
@@ -139,6 +141,7 @@ export default function EditPersonProfilePage({ params }) {
     setCandidateForm({
       position: profile.position || '',
       manifesto: profile.manifesto || '',
+      partyId: profile.partyId || '',
     });
     if (profile.constituencyId) {
       setConstituencyId(String(profile.constituencyId));
@@ -212,6 +215,7 @@ export default function EditPersonProfilePage({ params }) {
       // Candidate section
       if (showCandidateSection) {
         if (candidateForm.position) payload.position = candidateForm.position;
+        payload.partyId = candidateForm.partyId || null;
         const constId = constituencyId || constSelectedPrefectureId || undefined;
         if (constId) payload.constituencyId = parseInt(constId, 10);
         if (candidateForm.manifesto) payload.manifesto = candidateForm.manifesto;
@@ -219,6 +223,7 @@ export default function EditPersonProfilePage({ params }) {
         if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
       } else {
         payload.position = null;
+        payload.partyId = null;
         payload.constituencyId = null;
         payload.manifesto = null;
         payload.politicalPositions = {};
@@ -409,6 +414,20 @@ export default function EditPersonProfilePage({ params }) {
                     <option value="mayor">Δήμαρχος</option>
                     <option value="prefect">Περιφερειάρχης</option>
                     <option value="parliamentary">Βουλευτής</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
+                  <select
+                    value={candidateForm.partyId}
+                    onChange={(e) => handleCandidateChange('partyId', e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Κανένα / Ανεξάρτητος</option>
+                    {getAllParties().map((party) => (
+                      <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
+                    ))}
                   </select>
                 </div>
 

@@ -96,6 +96,10 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
       this.setDataValue('expertiseArea', value && value.length > 0 ? JSON.stringify(value) : null);
     }
   },
+  partyId: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
   fullName: {
     type: DataTypes.VIRTUAL,
     get() {

@@ -163,6 +163,10 @@ const User = sequelize.define('User', {
       this.setDataValue('expertiseArea', val && val.length > 0 ? JSON.stringify(val) : null);
     }
   },
+  partyId: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
   isVerified: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

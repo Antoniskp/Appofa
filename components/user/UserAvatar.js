@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import VerifiedBadge from '@/components/VerifiedBadge';
+import PartyBadge from '@/components/PartyBadge';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 
@@ -82,6 +83,9 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
           className="absolute bottom-0 right-0 h-4 w-4"
         />
       ) : null}
+      {user.partyId && (
+        <PartyBadge partyId={user.partyId} className="absolute -top-1 -right-1 h-5 w-5" />
+      )}
     </div>
   );
 }

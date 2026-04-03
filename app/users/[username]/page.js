@@ -17,6 +17,7 @@ import ArticleCard from '@/components/articles/ArticleCard';
 import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
+import { getPartyById } from '@/lib/utils/politicalParties';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -324,6 +325,20 @@ export default function PublicUserProfilePage() {
                         {user.role}
                       </Badge>
                     )}
+                    {user.partyId && (() => {
+                      const party = getPartyById(user.partyId);
+                      return party ? (
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${party.colorLight}`}
+                        >
+                          <span
+                            className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: party.color }}
+                          />
+                          {party.abbreviation}
+                        </span>
+                      ) : null;
+                    })()}
                     <FollowButton
                       targetUserId={user.id}
                       onCountChange={() => setCountsKey((k) => k + 1)}

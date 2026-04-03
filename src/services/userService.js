@@ -10,6 +10,7 @@ const { getDescendantLocationIds } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
+const politicalParties = require('../../config/politicalParties.json');
 
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
@@ -20,6 +21,7 @@ const PASSWORD_MIN_LENGTH = 6;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
 const VALID_EXPERTISE_AREAS = new Set(EXPERTISE_AREAS);
+const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
 const MAX_PROFESSIONS = 5;
 const MAX_INTERESTS = 10;
 const MAX_EXPERTISE_AREAS = 5;
@@ -132,7 +134,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea } = data;
+  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -365,6 +367,16 @@ async function updateUserProfile(userId, data) {
     }
   }
 
+  if (partyId !== undefined) {
+    if (partyId === null || partyId === '') {
+      user.partyId = null;
+    } else if (!VALID_PARTY_IDS.has(partyId)) {
+      throw new ServiceError(400, 'Invalid political party.');
+    } else {
+      user.partyId = partyId;
+    }
+  }
+
   await user.save();
 
   const updatedUser = await User.findByPk(user.id, {
@@ -429,7 +441,8 @@ async function deleteUserAccount(userId, password, mode) {
       googleAccessToken: null,
       professions: null,
       interests: null,
-      dateOfBirth: null
+      dateOfBirth: null,
+      partyId: null
     }, { where: { id: user.id }, individualHooks: false });
   }
 }
@@ -678,7 +691,7 @@ async function getPublicUserProfile(userId) {
 
   const user = await User.findOne({
     where: { id: userId, searchable: true },
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier']
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -692,7 +705,7 @@ async function getPublicUserProfileByUsername(username) {
 
   const user = await User.findOne({
     where: { username: username.trim(), searchable: true },
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier']
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -734,7 +747,7 @@ async function searchUsers(search, page, limit, expertiseArea) {
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'isVerified', 'expertiseArea', 'createdAt'],
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'isVerified', 'expertiseArea', 'partyId', 'createdAt'],
     order: [['username', 'ASC']],
     limit: limitNum,
     offset

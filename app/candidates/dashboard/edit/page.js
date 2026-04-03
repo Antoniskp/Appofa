@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { getAllParties } from '@/lib/utils/politicalParties';
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -29,6 +30,7 @@ export default function EditCandidateProfilePage() {
     photo: '',
     contactEmail: '',
     manifesto: '',
+    partyId: '',
   });
   const [socialLinks, setSocialLinks] = useState(
     Object.fromEntries(SOCIAL_LINK_KEYS.map(({ key }) => [key, '']))
@@ -81,6 +83,7 @@ export default function EditCandidateProfilePage() {
         photo: profile.photo || '',
         contactEmail: profile.contactEmail || '',
         manifesto: profile.manifesto || '',
+        partyId: profile.partyId || '',
       });
 
       // Social links
@@ -134,6 +137,7 @@ export default function EditCandidateProfilePage() {
         photo: form.photo || undefined,
         contactEmail: form.contactEmail || undefined,
         manifesto: form.manifesto || undefined,
+        partyId: form.partyId || null,
       };
       if (locationId) payload.locationId = parseInt(locationId, 10);
 
@@ -271,6 +275,20 @@ export default function EditCandidateProfilePage() {
               rows={5}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
+            <select
+              value={form.partyId}
+              onChange={(e) => handleChange('partyId', e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Κανένα / Ανεξάρτητος</option>
+              {getAllParties().map((party) => (
+                <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
+              ))}
+            </select>
           </div>
 
           {/* Political Positions key-value UI */}

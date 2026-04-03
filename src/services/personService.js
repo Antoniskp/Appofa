@@ -4,9 +4,11 @@ const { PublicPersonProfile, CandidateApplication, User, Location } = require('.
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
+const politicalParties = require('../../config/politicalParties.json');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
 const VALID_EXPERTISE_AREAS = new Set(EXPERTISE_AREAS);
+const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -300,6 +302,14 @@ function validateExpertiseArea(expertiseArea) {
   return expertiseArea.length > 0 ? expertiseArea : null;
 }
 
+// ─── Party ID validation helper ──────────────────────────────────────────────
+
+function validatePartyId(partyId) {
+  if (partyId === undefined || partyId === null || partyId === '') return null;
+  if (!VALID_PARTY_IDS.has(partyId)) throw new ServiceError(400, 'Invalid political party.');
+  return partyId;
+}
+
 // ─── Path B — Moderator Creates / Claim Flow ─────────────────────────────────
 
 async function createProfile(moderatorUserId, moderatorRole, data) {
@@ -307,11 +317,12 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     throw new ServiceError(403, 'Only admins and moderators can create candidate profiles.');
   }
 
-  const { firstName, lastName, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea } = data;
+  const { firstName, lastName, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId } = data;
   if (!firstName || !firstName.trim()) throw new ServiceError(400, 'First name is required.');
   if (!lastName || !lastName.trim()) throw new ServiceError(400, 'Last name is required.');
 
   const validatedExpertiseArea = validateExpertiseArea(expertiseArea);
+  const validatedPartyId = validatePartyId(partyId);
 
   const base = generateSlug(firstName.trim(), lastName.trim());
   const slug = await ensureUniqueSlug(base);
@@ -330,6 +341,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     manifesto: manifesto || null,
     position: position || null,
     expertiseArea: validatedExpertiseArea,
+    partyId: validatedPartyId,
     claimStatus: 'unclaimed',
     createdByUserId: moderatorUserId,
     source: 'moderator'
@@ -425,6 +437,10 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
 
   if (data.expertiseArea !== undefined) {
     updates.expertiseArea = validateExpertiseArea(data.expertiseArea);
+  }
+
+  if (data.partyId !== undefined) {
+    updates.partyId = validatePartyId(data.partyId);
   }
 
   if (isModerator && data.isActiveCandidate === false) {

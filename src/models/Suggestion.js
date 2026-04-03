@@ -49,6 +49,10 @@ const Suggestion = sequelize.define('Suggestion', {
   category: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  partyId: {
+    type: DataTypes.STRING(50),
+    allowNull: true
   }
 }, {
   timestamps: true,
