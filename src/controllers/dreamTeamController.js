@@ -1145,6 +1145,204 @@ const dreamTeamController = {
       return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
     }
   },
+
+  // GET /api/dream-team/formations/formation-of-the-week
+  getFormationOfTheWeek: async (req, res) => {
+    try {
+      const requestUserId = req.user?.id;
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const formation = await Formation.findOne({
+        where: {
+          isPublic: true,
+          createdAt: { [Op.gte]: sevenDaysAgo },
+          likeCount: { [Op.gt]: 0 },
+        },
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+        order: [['likeCount', 'DESC'], ['createdAt', 'DESC']],
+      });
+
+      if (!formation) {
+        return res.json({ success: true, data: null });
+      }
+
+      const data = await dreamTeamController._serializeFormation(formation, requestUserId);
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.getFormationOfTheWeek error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/formations/leaderboard
+  getLeaderboard: async (req, res) => {
+    try {
+      const requestUserId = req.user?.id;
+      const { limit = 10, offset = 0 } = req.query;
+
+      // Aggregate total likes and public formation count per user
+      const rows = await Formation.findAll({
+        where: { isPublic: true },
+        attributes: [
+          'userId',
+          [sequelize.fn('SUM', sequelize.col('likeCount')), 'totalLikes'],
+          [sequelize.fn('COUNT', sequelize.col('Formation.id')), 'publicFormations'],
+        ],
+        include: [
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+        group: ['userId', 'author.id'],
+        order: [[sequelize.literal('"totalLikes"'), 'DESC']],
+        limit: parseInt(limit, 10) + 1,
+        offset: parseInt(offset, 10),
+        subQuery: false,
+      });
+
+      const hasMore = rows.length > parseInt(limit, 10);
+      const leaderboard = rows.slice(0, parseInt(limit, 10)).map((row, idx) => ({
+        rank: parseInt(offset, 10) + idx + 1,
+        userId: row.userId,
+        username: row.author
+          ? (`${row.author.firstName || ''} ${row.author.lastName || ''}`.trim() || row.author.username)
+          : 'Άγνωστος',
+        avatar: row.author?.avatar || null,
+        totalLikes: parseInt(row.dataValues.totalLikes, 10) || 0,
+        publicFormations: parseInt(row.dataValues.publicFormations, 10) || 0,
+        isCurrentUser: row.userId === requestUserId,
+      }));
+
+      // If user is logged in and not in top list, find their rank
+      let currentUserRank = null;
+      if (requestUserId && !leaderboard.some((r) => r.isCurrentUser)) {
+        const allRanked = await Formation.findAll({
+          where: { isPublic: true },
+          attributes: [
+            'userId',
+            [sequelize.fn('SUM', sequelize.col('likeCount')), 'totalLikes'],
+          ],
+          group: ['userId'],
+          order: [[sequelize.literal('"totalLikes"'), 'DESC']],
+          subQuery: false,
+        });
+        const userIdx = allRanked.findIndex((r) => r.userId === requestUserId);
+        if (userIdx >= 0) {
+          const userRow = allRanked[userIdx];
+          currentUserRank = {
+            rank: userIdx + 1,
+            totalLikes: parseInt(userRow.dataValues.totalLikes, 10) || 0,
+          };
+        }
+      }
+
+      return res.json({ success: true, data: leaderboard, hasMore, currentUserRank });
+    } catch (error) {
+      console.error('dreamTeamController.getLeaderboard error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/formations/my-stats
+  getMyStats: async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      const formations = await Formation.findAll({
+        where: { userId },
+        include: [{ model: FormationPick, as: 'picks' }],
+        attributes: ['id', 'isPublic', 'shareSlug', 'likeCount'],
+      });
+
+      const formationCount = formations.length;
+      const totalLikes = formations.reduce((sum, f) => sum + (f.likeCount || 0), 0);
+      const hasFullCabinet = formations.some((f) => {
+        const filledPicks = (f.picks || []).filter(
+          (p) => p.personId || p.candidateUserId || p.personName,
+        );
+        return filledPicks.length >= 22;
+      });
+      const hasPublicFormation = formations.some((f) => f.isPublic);
+      const hasShared = formations.some((f) => f.shareSlug);
+
+      // Rank: count users with more total likes
+      const allUsers = await Formation.findAll({
+        where: { isPublic: true },
+        attributes: ['userId', [sequelize.fn('SUM', sequelize.col('likeCount')), 'totalLikes']],
+        group: ['userId'],
+        order: [[sequelize.literal('"totalLikes"'), 'DESC']],
+        subQuery: false,
+      });
+      const rankIndex = allUsers.findIndex((r) => r.userId === userId);
+      const rank = rankIndex >= 0 ? rankIndex + 1 : null;
+
+      const avgCompletion = formationCount === 0 ? 0 : Math.round(
+        formations.reduce((sum, f) => {
+          const filled = (f.picks || []).filter((p) => p.personId || p.candidateUserId || p.personName).length;
+          return sum + (filled / 22) * 100;
+        }, 0) / formationCount,
+      );
+
+      return res.json({
+        success: true,
+        data: {
+          formationCount,
+          totalLikes,
+          hasFullCabinet,
+          hasPublicFormation,
+          hasShared,
+          rank,
+          avgCompletion,
+        },
+      });
+    } catch (error) {
+      console.error('dreamTeamController.getMyStats error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/formations/activity
+  getActivityFeed: async (req, res) => {
+    try {
+      const { limit = 15 } = req.query;
+
+      // Recent public formations created
+      const recentFormations = await Formation.findAll({
+        where: { isPublic: true },
+        include: [
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+        order: [['createdAt', 'DESC']],
+        limit: parseInt(limit, 10),
+        attributes: ['id', 'name', 'shareSlug', 'likeCount', 'createdAt', 'userId'],
+      });
+
+      const activities = recentFormations.map((f) => {
+        const authorName = f.author
+          ? (`${f.author.firstName || ''} ${f.author.lastName || ''}`.trim() || f.author.username)
+          : 'Κάποιος χρήστης';
+        const authorAvatar = f.author?.avatar || null;
+
+        return {
+          id: `formation-${f.id}`,
+          type: 'new_formation',
+          emoji: '🏛️',
+          authorName,
+          authorAvatar,
+          formationName: f.name,
+          formationSlug: f.shareSlug,
+          likeCount: f.likeCount || 0,
+          timestamp: f.createdAt,
+        };
+      });
+
+      return res.json({ success: true, data: activities });
+    } catch (error) {
+      console.error('dreamTeamController.getActivityFeed error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
 };
 
 module.exports = dreamTeamController;

@@ -6,6 +6,8 @@ import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import FormationCard from './FormationCard';
 import FormationBuilder from './FormationBuilder';
 import SkeletonPositionCard from './SkeletonPositionCard';
+import UserStatsDashboard from './UserStatsDashboard';
+import AchievementBadges from './AchievementBadges';
 
 /**
  * FormationList — manages the list/builder flow for a user's formations.
@@ -14,12 +16,15 @@ import SkeletonPositionCard from './SkeletonPositionCard';
  *   user             – current user object (from useAuth)
  *   communityResults – array of community results (for quick-fill in builder)
  *   showToast(msg, type) – show a notification
+ *   onCompare(formation) – open comparison tool with this formation pre-selected
  */
-export default function FormationList({ user, communityResults = [], showToast }) {
+export default function FormationList({ user, communityResults = [], showToast, onCompare }) {
   const [formations, setFormations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('list'); // 'list' | 'builder'
   const [editingFormation, setEditingFormation] = useState(null);
+  const [stats, setStats] = useState({});
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const loadFormations = useCallback(async () => {
     setLoading(true);
@@ -35,9 +40,24 @@ export default function FormationList({ user, communityResults = [], showToast }
     }
   }, []);
 
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const res = await dreamTeamAPI.getUserStats();
+      if (res?.success) setStats(res.data || {});
+    } catch {
+      // Non-critical
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    if (user) loadFormations();
-  }, [user, loadFormations]);
+    if (user) {
+      loadFormations();
+      loadStats();
+    }
+  }, [user, loadFormations, loadStats]);
 
   const handleNewFormation = () => {
     setEditingFormation(null);
@@ -61,6 +81,8 @@ export default function FormationList({ user, communityResults = [], showToast }
     });
     setView('list');
     setEditingFormation(null);
+    // Refresh stats after save
+    loadStats();
   };
 
   const handleBack = () => {
@@ -74,13 +96,14 @@ export default function FormationList({ user, communityResults = [], showToast }
       if (res?.success) {
         setFormations((prev) => prev.filter((f) => f.id !== id));
         showToast('Η σύνθεση διαγράφηκε.');
+        loadStats();
       } else {
         throw new Error(res?.message);
       }
     } catch (err) {
       showToast(err.message || 'Σφάλμα κατά τη διαγραφή', 'error');
     }
-  }, [showToast]);
+  }, [showToast, loadStats]);
 
   const handleLike = useCallback(async (id) => {
     try {
@@ -141,6 +164,12 @@ export default function FormationList({ user, communityResults = [], showToast }
         </button>
       </div>
 
+      {/* Stats Dashboard */}
+      <UserStatsDashboard stats={stats} loading={statsLoading} />
+
+      {/* Achievement Badges */}
+      <AchievementBadges stats={stats} />
+
       {/* Loading */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -187,6 +216,7 @@ export default function FormationList({ user, communityResults = [], showToast }
               onEdit={() => handleEdit(formation)}
               onDelete={() => handleDelete(formation.id)}
               onLike={() => handleLike(formation.id)}
+              onCompare={onCompare ? () => onCompare(formation) : undefined}
               onShareCopy={() => handleShareCopy(formation)}
               showToast={showToast}
             />
