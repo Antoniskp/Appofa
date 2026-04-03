@@ -65,7 +65,7 @@ export default function PersonProfilePage({ params }) {
               <p className="text-sm font-medium text-yellow-800">Είστε εσείς; Διεκδικήστε αυτό το προφίλ →</p>
             </div>
             <Link
-              href={`/candidates/${profile.slug}/claim`}
+              href={`/persons/${profile.slug}/claim`}
               className="inline-flex items-center px-3 py-1.5 bg-yellow-500 text-white text-sm font-medium rounded-lg hover:bg-yellow-600 transition-colors"
             >
               Διεκδίκηση Προφίλ

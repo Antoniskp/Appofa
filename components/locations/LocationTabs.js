@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { idSlug } from '@/lib/utils/slugify';
-import { positionLabel } from '@/lib/utils/candidatePositions';
 import UserRow from '@/components/user/UserRow';
 
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'candidates'];
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'persons'];
 
 export default function LocationTabs({
   activeTab,
@@ -13,7 +12,7 @@ export default function LocationTabs({
   regularArticles,
   entities,
   suggestions,
-  candidates,
+  persons,
   isAuthenticated,
   TAB_LABELS,
 }) {
@@ -262,29 +261,29 @@ export default function LocationTabs({
           )}
         </div>
 
-        {/* Candidates tab */}
+        {/* Persons tab */}
         <div
-          id="tabpanel-candidates"
+          id="tabpanel-persons"
           role="tabpanel"
-          aria-labelledby="tab-candidates"
-          hidden={activeTab !== 'candidates'}
+          aria-labelledby="tab-persons"
+          hidden={activeTab !== 'persons'}
         >
-          {candidates.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν υποψήφιοι για αυτή την περιφέρεια.</p>
+          {persons.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν πρόσωπα για αυτή την περιφέρεια.</p>
           ) : (
             <div className="space-y-3">
-              {candidates.map(candidate => (
+              {persons.map(person => (
                 <Link
-                  key={candidate.id}
-                  href={`/candidates/${candidate.slug}`}
+                  key={person.id}
+                  href={`/persons/${person.slug}`}
                   className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
                 >
                   <div className="flex items-center gap-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900">{candidate.fullName}</h3>
-                      {candidate.position && (
+                      <h3 className="font-medium text-gray-900">{person.fullName}</h3>
+                      {person.position && (
                         <p className="text-sm text-gray-500">
-                          {positionLabel(candidate.position)}
+                          {person.position}
                         </p>
                       )}
                     </div>

@@ -42,9 +42,9 @@ export default function CreatePersonProfilePage() {
   const [personSelectedPrefectureId, setPersonSelectedPrefectureId] = useState('');
   const [personSelectedMunicipalityId, setPersonSelectedMunicipalityId] = useState('');
 
-  // Section 2 — Candidate fields (collapsible)
-  const [isCandidate, setIsCandidate] = useState(false);
-  const [candidateForm, setCandidateForm] = useState({
+  // Section 2 — Political fields (collapsible)
+  const [hasPoliticalInfo, setHasPoliticalInfo] = useState(false);
+  const [politicalForm, setPoliticalForm] = useState({
     position: '',
     manifesto: '',
     partyId: '',
@@ -75,13 +75,13 @@ export default function CreatePersonProfilePage() {
       .catch(() => {});
   }, [personSelectedPrefectureId]);
 
-  // Load constituency prefectures when candidate section enabled
+  // Load constituency prefectures when political section enabled
   useEffect(() => {
-    if (!isCandidate) return;
+    if (!hasPoliticalInfo) return;
     locationAPI.getAll({ type: 'prefecture', limit: 500 })
       .then((res) => setConstPrefectures(res.locations || []))
       .catch(() => {});
-  }, [isCandidate]);
+  }, [hasPoliticalInfo]);
 
   // Load constituency municipalities when prefecture changes
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function CreatePersonProfilePage() {
   }
 
   const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-  const handleCandidateChange = (field, value) => setCandidateForm((prev) => ({ ...prev, [field]: value }));
+  const handlePoliticalChange = (field, value) => setPoliticalForm((prev) => ({ ...prev, [field]: value }));
 
   const handlePairChange = (index, field, value) => {
     setPoliticalPositions((prev) => {
@@ -142,13 +142,13 @@ export default function CreatePersonProfilePage() {
 
       if (expertiseArea.length > 0) payload.expertiseArea = expertiseArea;
 
-      // Candidate section
-      if (isCandidate) {
-        if (candidateForm.position) payload.position = candidateForm.position;
-        if (candidateForm.partyId) payload.partyId = candidateForm.partyId;
+      // Political section
+      if (hasPoliticalInfo) {
+        if (politicalForm.position) payload.position = politicalForm.position;
+        if (politicalForm.partyId) payload.partyId = politicalForm.partyId;
         const constId = constituencyId || constSelectedPrefectureId || undefined;
         if (constId) payload.constituencyId = parseInt(constId, 10);
-        if (candidateForm.manifesto) payload.manifesto = candidateForm.manifesto;
+        if (politicalForm.manifesto) payload.manifesto = politicalForm.manifesto;
         const ppObj = pairsToObject(politicalPositions);
         if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
       }
@@ -310,28 +310,28 @@ export default function CreatePersonProfilePage() {
             </div>
           </div>
 
-          {/* Section 2 — Candidate Info (collapsible) */}
+          {/* Section 2 — Political Info (collapsible) */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
             <label className="flex items-center gap-3 cursor-pointer">
               <input
                 type="checkbox"
-                checked={isCandidate}
-                onChange={(e) => setIsCandidate(e.target.checked)}
+                checked={hasPoliticalInfo}
+                onChange={(e) => setHasPoliticalInfo(e.target.checked)}
                 className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-lg font-semibold text-gray-900">Ορισμός ως Υποψήφιος</span>
+              <span className="text-lg font-semibold text-gray-900">Πολιτικά Στοιχεία</span>
             </label>
-            <p className="text-sm text-gray-500 -mt-3">Ενεργοποιήστε για να συμπεριλάβετε στοιχεία υποψηφιότητας.</p>
+            <p className="text-sm text-gray-500 -mt-3">Ενεργοποιήστε για να συμπεριλάβετε πολιτικά στοιχεία.</p>
 
-            {isCandidate && (
+            {hasPoliticalInfo && (
               <div className="space-y-5 pt-2 border-t border-gray-100">
-                <h3 className="text-base font-medium text-gray-800">Στοιχεία Υποψηφιότητας</h3>
+                <h3 className="text-base font-medium text-gray-800">Πολιτικά Στοιχεία</h3>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Θέση</label>
                   <select
-                    value={candidateForm.position}
-                    onChange={(e) => handleCandidateChange('position', e.target.value)}
+                    value={politicalForm.position}
+                    onChange={(e) => handlePoliticalChange('position', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Επιλέξτε...</option>
@@ -344,8 +344,8 @@ export default function CreatePersonProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
                   <select
-                    value={candidateForm.partyId}
-                    onChange={(e) => handleCandidateChange('partyId', e.target.value)}
+                    value={politicalForm.partyId}
+                    onChange={(e) => handlePoliticalChange('partyId', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Κανένα / Ανεξάρτητος</option>
@@ -390,8 +390,8 @@ export default function CreatePersonProfilePage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Πρόγραμμα</label>
                   <textarea
-                    value={candidateForm.manifesto}
-                    onChange={(e) => handleCandidateChange('manifesto', e.target.value)}
+                    value={politicalForm.manifesto}
+                    onChange={(e) => handlePoliticalChange('manifesto', e.target.value)}
                     rows={5}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />

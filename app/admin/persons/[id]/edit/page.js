@@ -45,7 +45,7 @@ export default function EditPersonProfilePage({ params }) {
   const [personSelectedMunicipalityId, setPersonSelectedMunicipalityId] = useState('');
 
   // Section 2 — Political fields
-  const [candidateForm, setCandidateForm] = useState({
+  const [politicalForm, setPoliticalForm] = useState({
     manifesto: '',
     partyId: '',
   });
@@ -126,8 +126,8 @@ export default function EditPersonProfilePage({ params }) {
     const ppPairs = Object.entries(pp).map(([k, v]) => ({ key: k, value: v }));
     setPoliticalPositions(ppPairs.length > 0 ? ppPairs : [{ key: '', value: '' }]);
 
-    // Candidate fields
-    setCandidateForm({
+    // Political fields
+    setPoliticalForm({
       manifesto: profile.manifesto || '',
       partyId: profile.partyId || '',
     });
@@ -142,7 +142,7 @@ export default function EditPersonProfilePage({ params }) {
   }
 
   const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
-  const handleCandidateChange = (field, value) => setCandidateForm((prev) => ({ ...prev, [field]: value }));
+  const handlePoliticalChange = (field, value) => setPoliticalForm((prev) => ({ ...prev, [field]: value }));
 
   const handlePairChange = (index, field, value) => {
     setPoliticalPositions((prev) => {
@@ -201,10 +201,10 @@ export default function EditPersonProfilePage({ params }) {
       payload.expertiseArea = expertiseArea;
 
       // Political fields
-      payload.partyId = candidateForm.partyId || null;
+      payload.partyId = politicalForm.partyId || null;
       const constId = constituencyId || constSelectedPrefectureId || undefined;
       if (constId) payload.constituencyId = parseInt(constId, 10);
-      if (candidateForm.manifesto) payload.manifesto = candidateForm.manifesto;
+      if (politicalForm.manifesto) payload.manifesto = politicalForm.manifesto;
       const ppObj = pairsToObject(politicalPositions);
       if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
 
@@ -374,8 +374,8 @@ export default function EditPersonProfilePage({ params }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
               <select
-                value={candidateForm.partyId}
-                onChange={(e) => handleCandidateChange('partyId', e.target.value)}
+                value={politicalForm.partyId}
+                onChange={(e) => handlePoliticalChange('partyId', e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Κανένα / Ανεξάρτητος</option>
@@ -420,8 +420,8 @@ export default function EditPersonProfilePage({ params }) {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Πρόγραμμα</label>
               <textarea
-                value={candidateForm.manifesto}
-                onChange={(e) => handleCandidateChange('manifesto', e.target.value)}
+                value={politicalForm.manifesto}
+                onChange={(e) => handlePoliticalChange('manifesto', e.target.value)}
                 rows={5}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />

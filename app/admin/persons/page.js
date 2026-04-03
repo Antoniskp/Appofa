@@ -71,7 +71,7 @@ export default function AdminPersonsPage() {
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Δημόσια Προφίλ Προσώπων</h1>
           <div className="flex gap-2">
-            <Link href="/admin/candidates/claims" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
+            <Link href="/admin/persons/claims" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
               <CheckBadgeIcon className="h-4 w-4" /> Διεκδικήσεις
             </Link>
             <Link href="/admin/persons/create" className="inline-flex items-center gap-1 px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">

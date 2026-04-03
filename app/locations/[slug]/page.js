@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI, locationSectionAPI, suggestionAPI, candidateAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI, suggestionAPI, personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -14,7 +14,7 @@ import LocationHeader from '@/components/locations/LocationHeader';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'candidates'];
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'persons'];
 const DEFAULT_TAB = 'polls';
 const HEADER_SECTION_TYPES = ['official_links', 'contacts', 'webcams'];
 
@@ -28,7 +28,7 @@ export default function LocationDetailPage() {
   const isAuthenticated = !authLoading && !!user;
   const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0 });
   const [suggestions, setSuggestions] = useState([]);
-  const [candidates, setCandidates] = useState([]);
+  const [persons, setPersons] = useState([]);
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [homeBreadcrumb, setHomeBreadcrumb] = useState([]);
@@ -62,7 +62,7 @@ export default function LocationDetailPage() {
         // Reset secondary state to prevent stale data from previous location
         setEntities({ articles: [], users: [], polls: [], usersCount: 0 });
         setSuggestions([]);
-        setCandidates([]);
+        setPersons([]);
         setChildren([]);
         setSections([]);
         setImageError(false);
@@ -97,7 +97,7 @@ export default function LocationDetailPage() {
             locationAPI.getAll({ parent_id: locId }),
             locationSectionAPI.getSections(locId),
             suggestionAPI.getAll({ locationId: locId, limit: 50 }),
-            candidateAPI.getAll({ constituencyId: locId, limit: 50 }),
+            personAPI.getAll({ constituencyId: locId, limit: 50 }),
           ]);
 
         if (entitiesRes.status === 'fulfilled' && entitiesRes.value.success) {
@@ -130,9 +130,9 @@ export default function LocationDetailPage() {
         }
 
         if (candidatesRes.status === 'fulfilled' && candidatesRes.value.success) {
-          setCandidates(candidatesRes.value.data?.profiles || []);
+          setPersons(candidatesRes.value.data?.profiles || []);
         } else if (candidatesRes.status === 'rejected') {
-          console.error('Failed to load candidates:', candidatesRes.reason);
+          console.error('Failed to load persons:', candidatesRes.reason);
         }
       },
       onError: (err) => {
@@ -302,7 +302,7 @@ export default function LocationDetailPage() {
     articles: `Articles${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
     users: `Users${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
     suggestions: `Suggestions${suggestions.length ? ` (${suggestions.length})` : ''}`,
-    candidates: `Υποψήφιοι${candidates.length ? ` (${candidates.length})` : ''}`,
+    persons: `Πρόσωπα${persons.length ? ` (${persons.length})` : ''}`,
   };
 
   const bodySections = sections.filter(s => s.isPublished && !HEADER_SECTION_TYPES.includes(s.type));
@@ -358,7 +358,7 @@ export default function LocationDetailPage() {
             regularArticles={regularArticles}
             entities={entities}
             suggestions={suggestions}
-            candidates={candidates}
+            persons={persons}
             isAuthenticated={isAuthenticated}
             TAB_LABELS={TAB_LABELS}
           />
