@@ -138,6 +138,14 @@ export default function PersonProfilePage({ params }) {
                     <a href={`mailto:${profile.contactEmail}`} className="hover:text-blue-600">{profile.contactEmail}</a>
                   </p>
                 )}
+                {profile.claimStatus === 'unclaimed' && profile.createdBy && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    Δημιουργήθηκε από{' '}
+                    <Link href={`/users/${profile.createdBy.username}`} className="text-blue-600 hover:underline">
+                      @{profile.createdBy.username}
+                    </Link>
+                  </p>
+                )}
               </div>
             </div>
 
