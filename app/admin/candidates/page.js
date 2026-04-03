@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, ClockIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -39,11 +39,6 @@ function ClaimBadge({ status }) {
   );
 }
 
-function ActiveBadge({ isActive }) {
-  return isActive
-    ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Active</span>
-    : <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Not Active</span>;
-}
 
 export default function AdminCandidatesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -85,9 +80,6 @@ export default function AdminCandidatesPage() {
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Candidate Profiles</h1>
           <div className="flex gap-2">
-            <Link href="/admin/candidates/applications" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-              <ClockIcon className="h-4 w-4" /> Applications
-            </Link>
             <Link href="/admin/candidates/claims" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
               <CheckBadgeIcon className="h-4 w-4" /> Claims
             </Link>
@@ -112,7 +104,6 @@ export default function AdminCandidatesPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Name</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Constituency</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Active</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Source</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                 </tr>
@@ -131,7 +122,6 @@ export default function AdminCandidatesPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
                     <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
-                    <td className="px-4 py-3"><ActiveBadge isActive={p.isActiveCandidate} /></td>
                     <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">

@@ -77,7 +77,7 @@ export default function CandidatesPage() {
     nextPage,
     prevPage,
     goToPage
-  } = useFilters({ search: '', constituencyId: '', claimStatus: '', position: '' });
+  } = useFilters({ search: '', constituencyId: '', claimStatus: '' });
 
   const { data: locations } = useAsyncData(
     async () => {
@@ -94,7 +94,6 @@ export default function CandidatesPage() {
       if (filters.search) params.search = filters.search;
       if (filters.constituencyId) params.constituencyId = filters.constituencyId;
       if (filters.claimStatus) params.claimStatus = filters.claimStatus;
-      if (filters.position) params.position = filters.position;
       const res = await personAPI.getAll(params);
       if (res.success) return res;
       return { data: { profiles: [], pagination: { totalPages: 1 } } };
@@ -149,27 +148,6 @@ export default function CandidatesPage() {
             <option value="pending">Claim Pending</option>
             <option value="claimed">Verified</option>
           </select>
-          <select
-            value={filters.position}
-            onChange={(e) => handleFilterChange('position', e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Όλες οι θέσεις</option>
-            <option value="parliamentary">Βουλευτής</option>
-            <option value="prefect">Περιφερειάρχης</option>
-            <option value="mayor">Δήμαρχος</option>
-          </select>
-        </div>
-
-        {/* Become a Candidate CTA */}
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <p className="font-semibold text-blue-900">Are you running for parliament?</p>
-            <p className="text-sm text-blue-700">Apply to become a candidate on this platform.</p>
-          </div>
-          <Link href="/become-a-candidate" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            Become a Candidate
-          </Link>
         </div>
 
         {loading && <SkeletonLoader count={6} type="card" />}

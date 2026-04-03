@@ -21,8 +21,6 @@ const Suggestion = require('./Suggestion');
 const Solution = require('./Solution');
 const SuggestionVote = require('./SuggestionVote');
 const LinkPreviewCache = require('./LinkPreviewCache');
-const CandidateProfile = require('./CandidateProfile');
-const CandidateApplication = require('./CandidateApplication');
 const PublicPersonProfile = require('./PublicPersonProfile');
 const PersonRemovalRequest = require('./PersonRemovalRequest');
 const Report = require('./Report');
@@ -227,32 +225,14 @@ User.hasMany(Solution, { foreignKey: 'authorId', as: 'solutions' });
 SuggestionVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
 User.hasMany(SuggestionVote, { foreignKey: 'userId', as: 'suggestionVotes' });
 
-// CandidateProfile associations (legacy)
-CandidateProfile.belongsTo(Location, { foreignKey: 'constituencyId', as: 'constituency' });
-CandidateProfile.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
-CandidateProfile.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
-CandidateProfile.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
-CandidateProfile.belongsTo(User, { foreignKey: 'appointedByUserId', as: 'appointedBy' });
-CandidateProfile.hasMany(CandidateApplication, { foreignKey: 'candidateProfileId', as: 'applications' });
-User.hasOne(CandidateProfile, { foreignKey: 'claimedByUserId', as: 'candidateProfile' });
-
-// CandidateApplication associations
-CandidateApplication.belongsTo(User, { foreignKey: 'applicantUserId', as: 'applicant' });
-CandidateApplication.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'reviewer' });
-CandidateApplication.belongsTo(Location, { foreignKey: 'constituencyId', as: 'constituency' });
-CandidateApplication.belongsTo(CandidateProfile, { foreignKey: 'candidateProfileId', as: 'candidateProfile' });
-CandidateApplication.belongsTo(PublicPersonProfile, { foreignKey: 'publicPersonProfileId', as: 'publicPersonProfile' });
-User.hasMany(CandidateApplication, { foreignKey: 'applicantUserId', as: 'candidateApplications' });
-
 // PublicPersonProfile associations
 PublicPersonProfile.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
 PublicPersonProfile.belongsTo(Location, { foreignKey: 'constituencyId', as: 'constituency' });
 PublicPersonProfile.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
 PublicPersonProfile.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
 PublicPersonProfile.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
-PublicPersonProfile.belongsTo(User, { foreignKey: 'appointedByUserId', as: 'appointedBy' });
-PublicPersonProfile.hasMany(CandidateApplication, { foreignKey: 'publicPersonProfileId', as: 'applications' });
 User.hasOne(PublicPersonProfile, { foreignKey: 'claimedByUserId', as: 'publicPersonProfile' });
+PublicPersonProfile.hasMany(PersonRemovalRequest, { foreignKey: 'publicPersonProfileId', as: 'removalRequests' });
 
 // PersonRemovalRequest associations
 PersonRemovalRequest.belongsTo(PublicPersonProfile, { foreignKey: 'publicPersonProfileId', as: 'publicPersonProfile' });
@@ -326,8 +306,6 @@ module.exports = {
   Solution,
   SuggestionVote,
   LinkPreviewCache,
-  CandidateProfile,
-  CandidateApplication,
   PublicPersonProfile,
   PersonRemovalRequest,
   Report,

@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect, useRef } from 'react';
+import { use, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
@@ -44,10 +44,8 @@ export default function EditPersonProfilePage({ params }) {
   const [personSelectedPrefectureId, setPersonSelectedPrefectureId] = useState('');
   const [personSelectedMunicipalityId, setPersonSelectedMunicipalityId] = useState('');
 
-  // Section 2 — Candidate fields (collapsible)
-  const [showCandidateSection, setShowCandidateSection] = useState(false);
+  // Section 2 — Political fields
   const [candidateForm, setCandidateForm] = useState({
-    position: '',
     manifesto: '',
     partyId: '',
   });
@@ -58,8 +56,6 @@ export default function EditPersonProfilePage({ params }) {
   const [constMunicipalities, setConstMunicipalities] = useState([]);
   const [constSelectedPrefectureId, setConstSelectedPrefectureId] = useState('');
   const [constituencyId, setConstituencyId] = useState('');
-
-  const hasInitializedCandidate = useRef(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -92,13 +88,12 @@ export default function EditPersonProfilePage({ params }) {
       .catch(() => {});
   }, [personSelectedPrefectureId]);
 
-  // Load constituency prefectures when candidate section shown
+  // Load constituency prefectures on mount
   useEffect(() => {
-    if (!showCandidateSection) return;
     locationAPI.getAll({ type: 'prefecture', limit: 500 })
       .then((res) => setConstPrefectures(res.locations || []))
       .catch(() => {});
-  }, [showCandidateSection]);
+  }, []);
 
   // Load constituency municipalities when prefecture changes
   useEffect(() => {
@@ -132,14 +127,7 @@ export default function EditPersonProfilePage({ params }) {
     setPoliticalPositions(ppPairs.length > 0 ? ppPairs : [{ key: '', value: '' }]);
 
     // Candidate fields
-    if (!hasInitializedCandidate.current) {
-      if (profile.position || profile.isActiveCandidate) {
-        setShowCandidateSection(true);
-      }
-      hasInitializedCandidate.current = true;
-    }
     setCandidateForm({
-      position: profile.position || '',
       manifesto: profile.manifesto || '',
       partyId: profile.partyId || '',
     });
@@ -212,23 +200,13 @@ export default function EditPersonProfilePage({ params }) {
       // Expertise area
       payload.expertiseArea = expertiseArea;
 
-      // Candidate section
-      if (showCandidateSection) {
-        if (candidateForm.position) payload.position = candidateForm.position;
-        payload.partyId = candidateForm.partyId || null;
-        const constId = constituencyId || constSelectedPrefectureId || undefined;
-        if (constId) payload.constituencyId = parseInt(constId, 10);
-        if (candidateForm.manifesto) payload.manifesto = candidateForm.manifesto;
-        const ppObj = pairsToObject(politicalPositions);
-        if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
-      } else {
-        payload.position = null;
-        payload.partyId = null;
-        payload.constituencyId = null;
-        payload.manifesto = null;
-        payload.politicalPositions = {};
-        payload.isActiveCandidate = false;
-      }
+      // Political fields
+      payload.partyId = candidateForm.partyId || null;
+      const constId = constituencyId || constSelectedPrefectureId || undefined;
+      if (constId) payload.constituencyId = parseInt(constId, 10);
+      if (candidateForm.manifesto) payload.manifesto = candidateForm.manifesto;
+      const ppObj = pairsToObject(politicalPositions);
+      if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
 
       await personAPI.updateProfile(id, payload);
       setSuccess(true);
@@ -389,130 +367,104 @@ export default function EditPersonProfilePage({ params }) {
             </div>
           </div>
 
-          {/* Section 2 — Candidate fields */}
+          {/* Section 2 — Political fields */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            <label className="flex items-center gap-3 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={showCandidateSection}
-                onChange={(e) => setShowCandidateSection(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-3">Πολιτικά Στοιχεία</h2>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
+              <select
+                value={candidateForm.partyId}
+                onChange={(e) => handleCandidateChange('partyId', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Κανένα / Ανεξάρτητος</option>
+                {getAllParties().map((party) => (
+                  <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Constituency cascading picker */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
+              <div className="space-y-2">
+                <select
+                  value={constSelectedPrefectureId}
+                  onChange={(e) => {
+                    setConstSelectedPrefectureId(e.target.value);
+                    setConstituencyId('');
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Επιλέξτε Περιφέρεια</option>
+                  {constPrefectures.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+                {constSelectedPrefectureId && (
+                  <select
+                    value={constituencyId}
+                    onChange={(e) => setConstituencyId(e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Επιλέξτε Δήμο (προαιρετικό)</option>
+                    {constMunicipalities.map((loc) => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Πρόγραμμα</label>
+              <textarea
+                value={candidateForm.manifesto}
+                onChange={(e) => handleCandidateChange('manifesto', e.target.value)}
+                rows={5}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
-              <span className="text-lg font-semibold text-gray-900">Στοιχεία Υποψηφιότητας</span>
-            </label>
+            </div>
 
-            {showCandidateSection && (
-              <div className="space-y-5 pt-2 border-t border-gray-100">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Θέση</label>
-                  <select
-                    value={candidateForm.position}
-                    onChange={(e) => handleCandidateChange('position', e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Επιλέξτε...</option>
-                    <option value="mayor">Δήμαρχος</option>
-                    <option value="prefect">Περιφερειάρχης</option>
-                    <option value="parliamentary">Βουλευτής</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
-                  <select
-                    value={candidateForm.partyId}
-                    onChange={(e) => handleCandidateChange('partyId', e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Κανένα / Ανεξάρτητος</option>
-                    {getAllParties().map((party) => (
-                      <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Constituency cascading picker */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
-                  <div className="space-y-2">
-                    <select
-                      value={constSelectedPrefectureId}
-                      onChange={(e) => {
-                        setConstSelectedPrefectureId(e.target.value);
-                        setConstituencyId('');
-                      }}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Επιλέξτε Περιφέρεια</option>
-                      {constPrefectures.map((loc) => (
-                        <option key={loc.id} value={loc.id}>{loc.name}</option>
-                      ))}
-                    </select>
-                    {constSelectedPrefectureId && (
-                      <select
-                        value={constituencyId}
-                        onChange={(e) => setConstituencyId(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        <option value="">Επιλέξτε Δήμο (προαιρετικό)</option>
-                        {constMunicipalities.map((loc) => (
-                          <option key={loc.id} value={loc.id}>{loc.name}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Πρόγραμμα</label>
-                  <textarea
-                    value={candidateForm.manifesto}
-                    onChange={(e) => handleCandidateChange('manifesto', e.target.value)}
-                    rows={5}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Πολιτικές Θέσεις</label>
-                  <div className="space-y-2">
-                    {politicalPositions.map((pair, index) => (
-                      <div key={index} className="flex gap-2 items-center">
-                        <input
-                          type="text"
-                          value={pair.key}
-                          onChange={(e) => handlePairChange(index, 'key', e.target.value)}
-                          placeholder="π.χ. Οικονομία"
-                          className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <input
-                          type="text"
-                          value={pair.value}
-                          onChange={(e) => handlePairChange(index, 'value', e.target.value)}
-                          placeholder="..."
-                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setPoliticalPositions((prev) => prev.filter((_, i) => i !== index))}
-                          disabled={politicalPositions.length === 1}
-                          className="text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-1 text-lg"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Πολιτικές Θέσεις</label>
+              <div className="space-y-2">
+                {politicalPositions.map((pair, index) => (
+                  <div key={index} className="flex gap-2 items-center">
+                    <input
+                      type="text"
+                      value={pair.key}
+                      onChange={(e) => handlePairChange(index, 'key', e.target.value)}
+                      placeholder="π.χ. Οικονομία"
+                      className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <input
+                      type="text"
+                      value={pair.value}
+                      onChange={(e) => handlePairChange(index, 'value', e.target.value)}
+                      placeholder="..."
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                     <button
                       type="button"
-                      onClick={() => setPoliticalPositions((prev) => [...prev, { key: '', value: '' }])}
-                      className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                      onClick={() => setPoliticalPositions((prev) => prev.filter((_, i) => i !== index))}
+                      disabled={politicalPositions.length === 1}
+                      className="text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-1 text-lg"
                     >
-                      + Προσθήκη
+                      ×
                     </button>
                   </div>
-                </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPoliticalPositions((prev) => [...prev, { key: '', value: '' }])}
+                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
+                >
+                  + Προσθήκη
+                </button>
               </div>
-            )}
+            </div>
           </div>
 
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}

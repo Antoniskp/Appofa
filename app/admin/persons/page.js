@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon } from '@heroicons/react/24/outline';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -30,11 +30,6 @@ function ClaimBadge({ status }) {
   );
 }
 
-function ActiveBadge({ isActive }) {
-  return isActive
-    ? <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Ενεργός</span>
-    : <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">Μη Ενεργός</span>;
-}
 
 export default function AdminPersonsPage() {
   const { user, loading: authLoading } = useAuth();
@@ -76,9 +71,6 @@ export default function AdminPersonsPage() {
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Δημόσια Προφίλ Προσώπων</h1>
           <div className="flex gap-2">
-            <Link href="/admin/candidates/applications" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
-              <ClockIcon className="h-4 w-4" /> Αιτήσεις
-            </Link>
             <Link href="/admin/candidates/claims" className="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors">
               <CheckBadgeIcon className="h-4 w-4" /> Διεκδικήσεις
             </Link>
@@ -104,7 +96,6 @@ export default function AdminPersonsPage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Τοποθεσία</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Εκλογική Περιφέρεια</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Κατάσταση</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ενεργός</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Πηγή</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Ενέργειες</th>
                 </tr>
@@ -121,7 +112,6 @@ export default function AdminPersonsPage() {
                     <td className="px-4 py-3 text-sm text-gray-600">{p.location?.name || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
                     <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
-                    <td className="px-4 py-3"><ActiveBadge isActive={p.isActiveCandidate} /></td>
                     <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
