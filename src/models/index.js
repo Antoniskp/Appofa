@@ -29,6 +29,7 @@ const Report = require('./Report');
 const Formation = require('./Formation');
 const FormationPick = require('./FormationPick');
 const FormationLike = require('./FormationLike');
+const UserBadge = require('./UserBadge');
 
 // Define associations
 User.hasMany(Article, {
@@ -301,6 +302,10 @@ FormationLike.belongsTo(Formation, { foreignKey: 'formationId', as: 'formation' 
 FormationLike.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(FormationLike, { foreignKey: 'userId', as: 'formationLikes' });
 
+// UserBadge associations
+User.hasMany(UserBadge, { foreignKey: 'userId', as: 'badges' });
+UserBadge.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 module.exports = {
   sequelize,
   User,
@@ -333,4 +338,5 @@ module.exports = {
   Formation,
   FormationPick,
   FormationLike,
+  UserBadge,
 };

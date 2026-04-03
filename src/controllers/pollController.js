@@ -1,6 +1,7 @@
 'use strict';
 
 const pollService = require('../services/pollService');
+const badgeService = require('../services/badgeService');
 
 // ---------------------------------------------------------------------------
 // Request helpers (stay in the controller — they read from req)
@@ -36,6 +37,7 @@ const pollController = {
       });
     }
     const responsePoll = pollService.sanitizePoll(result.data, toUserObj(req.user));
+    badgeService.evaluate(req.user.id).catch(err => console.error('Badge evaluation error:', err));
     return res.status(201).json({
       success: true,
       message: 'Poll created successfully.',
@@ -131,6 +133,9 @@ const pollController = {
         message: result.message,
         ...(result.error !== undefined && { error: result.error })
       });
+    }
+    if (userId) {
+      badgeService.evaluate(userId).catch(err => console.error('Badge evaluation error:', err));
     }
     return res.status(200).json({
       success: true,

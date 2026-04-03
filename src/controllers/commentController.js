@@ -1,4 +1,5 @@
 const { Comment, User, Article, Poll } = require('../models');
+const badgeService = require('../services/badgeService');
 
 const MAX_DEPTH = 5;
 
@@ -168,6 +169,8 @@ const commentController = {
       const created = await Comment.findByPk(comment.id, {
         include: [{ model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] }]
       });
+
+      badgeService.evaluate(req.user.id).catch(err => console.error('Badge evaluation error:', err));
 
       return res.status(201).json({ success: true, message: 'Comment created successfully.', data: { comment: created } });
     } catch (error) {

@@ -14,6 +14,7 @@ const {
   FormationPick,
   FormationLike,
 } = require('../models');
+const badgeService = require('../services/badgeService');
 
 /**
  * Generate a unique shareSlug for a Formation row.
@@ -824,6 +825,7 @@ const dreamTeamController = {
       });
 
       const data = await dreamTeamController._serializeFormation(full, userId);
+      badgeService.evaluate(userId).catch(err => console.error('Badge evaluation error:', err));
       return res.status(201).json({ success: true, data });
     } catch (error) {
       console.error('dreamTeamController.createFormation error:', error);

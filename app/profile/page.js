@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI, locationAPI, commentAPI } from '@/lib/api';
+import { authAPI, locationAPI, commentAPI, badgeAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import Card from '@/components/ui/Card';
@@ -48,6 +48,8 @@ function ProfileContent() {
   });
   const [homeLocation, setHomeLocation] = useState(null);
   const [showHomeLocation, setShowHomeLocation] = useState(false);
+  const [badgeProgress, setBadgeProgress] = useState(null);
+  const [badgeEvaluating, setBadgeEvaluating] = useState(false);
   const [interactionSettings, setInteractionSettings] = useState({
     profileCommentsEnabled: true,
     profileCommentsLocked: false,
@@ -167,7 +169,26 @@ function ProfileContent() {
     }
   }, [searchParams, success, error, pathname, router]);
 
-  const handleProfileChange = (event) => {
+  useEffect(() => {
+    badgeAPI.getMyProgress()
+      .then((res) => {
+        if (res?.data?.badges) setBadgeProgress(res.data.badges);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleEvaluateBadges = async () => {
+    setBadgeEvaluating(true);
+    try {
+      await badgeAPI.evaluate();
+      const res = await badgeAPI.getMyProgress();
+      if (res?.data?.badges) setBadgeProgress(res.data.badges);
+    } catch (_err) {
+      // ignore
+    } finally {
+      setBadgeEvaluating(false);
+    }
+  };
     const { name, value } = event.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
@@ -704,6 +725,89 @@ function ProfileContent() {
             onLinkGoogle={handleLinkGoogle}
             onUnlinkGoogle={handleUnlinkGoogle}
           />
+        </Card>
+
+        {/* Τα Badges μου */}
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Τα Badges μου</h2>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleEvaluateBadges}
+                disabled={badgeEvaluating}
+                className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition disabled:opacity-50"
+              >
+                {badgeEvaluating ? 'Αξιολόγηση...' : 'Αξιολόγηση τώρα'}
+              </button>
+              <Link href="/platform/badges" className="text-xs text-blue-600 hover:underline">
+                Πληροφορίες →
+              </Link>
+            </div>
+          </div>
+          {badgeProgress === null ? (
+            <p className="text-sm text-gray-500">Φόρτωση badges...</p>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(
+                badgeProgress.reduce((acc, badge) => {
+                  const cat = badge.category || 'other';
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(badge);
+                  return acc;
+                }, {})
+              ).map(([category, categoryBadges]) => (
+                <div key={category}>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 capitalize">{category}</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {categoryBadges.map((badge) => (
+                      <div key={badge.slug} className="border border-gray-100 rounded-lg p-3">
+                        <p className="text-sm font-medium text-gray-800 mb-2">{badge.name}</p>
+                        <div className="space-y-1.5">
+                          {badge.tiers.map((t) => (
+                            <div key={t.tier} className={`flex items-center gap-2 ${t.earned ? '' : 'opacity-60'}`}>
+                              <img
+                                src={`/images/badges/${badge.slug}-${t.tier}.svg`}
+                                alt={`${badge.slug} ${t.tier}`}
+                                className="w-6 h-6 object-contain"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                  e.target.nextSibling.style.display = 'inline';
+                                }}
+                              />
+                              <span className="hidden text-base">
+                                {t.tier === 'bronze' ? '🥉' : t.tier === 'silver' ? '🥈' : '🥇'}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs text-gray-700 capitalize">{t.label || t.tier}</span>
+                                  {t.earned ? (
+                                    <span className="text-xs text-green-600 font-medium">
+                                      ✓ {t.earnedAt ? new Date(t.earnedAt).toLocaleDateString('el-GR') : ''}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-400">{t.progress}%</span>
+                                  )}
+                                </div>
+                                {!t.earned && (
+                                  <div className="mt-0.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                    <div
+                                      className="h-full bg-blue-400 rounded-full"
+                                      style={{ width: `${t.progress}%` }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </Card>
 
         {/* Danger Zone: account deletion */}
