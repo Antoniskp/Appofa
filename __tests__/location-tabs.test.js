@@ -1,6 +1,6 @@
 // Tests for Location page tab navigation logic
 
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions'];
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'candidates'];
 const DEFAULT_TAB = 'polls';
 
 /**
@@ -33,8 +33,12 @@ describe('Location page tab navigation', () => {
       expect(VALID_TABS[4]).toBe('suggestions');
     });
 
-    it('should contain exactly five tabs', () => {
-      expect(VALID_TABS).toHaveLength(5);
+    it('should have candidates as the sixth tab', () => {
+      expect(VALID_TABS[5]).toBe('candidates');
+    });
+
+    it('should contain exactly six tabs', () => {
+      expect(VALID_TABS).toHaveLength(6);
     });
   });
 
@@ -63,6 +67,10 @@ describe('Location page tab navigation', () => {
 
     it('should resolve a valid "suggestions" param to "suggestions"', () => {
       expect(resolveTab('suggestions')).toBe('suggestions');
+    });
+
+    it('should resolve a valid "candidates" param to "candidates"', () => {
+      expect(resolveTab('candidates')).toBe('candidates');
     });
 
     it('should fall back to default for an unknown tab param', () => {

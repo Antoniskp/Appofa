@@ -1,0 +1,300 @@
+import Link from 'next/link';
+import { idSlug } from '@/lib/utils/slugify';
+import { positionLabel } from '@/lib/utils/candidatePositions';
+import UserRow from '@/components/user/UserRow';
+
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'candidates'];
+
+export default function LocationTabs({
+  activeTab,
+  onTabChange,
+  activePolls,
+  newsArticles,
+  regularArticles,
+  entities,
+  suggestions,
+  candidates,
+  isAuthenticated,
+  TAB_LABELS,
+}) {
+  return (
+    <div className="bg-white rounded-lg shadow-md">
+      {/* Tab bar */}
+      <div
+        className="flex border-b border-gray-200 overflow-x-auto"
+        role="tablist"
+        aria-label="Location content tabs"
+      >
+        {VALID_TABS.map((tab) => (
+          <button
+            key={tab}
+            role="tab"
+            aria-selected={activeTab === tab}
+            aria-controls={`tabpanel-${tab}`}
+            id={`tab-${tab}`}
+            onClick={() => onTabChange(tab)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onTabChange(tab);
+              }
+              if (e.key === 'ArrowRight') {
+                const next = VALID_TABS[(VALID_TABS.indexOf(tab) + 1) % VALID_TABS.length];
+                onTabChange(next);
+              }
+              if (e.key === 'ArrowLeft') {
+                const prev = VALID_TABS[(VALID_TABS.indexOf(tab) - 1 + VALID_TABS.length) % VALID_TABS.length];
+                onTabChange(prev);
+              }
+            }}
+            className={`flex-shrink-0 px-5 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+              activeTab === tab
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            {TAB_LABELS[tab]}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab panels */}
+      <div className="p-6">
+        {/* Polls tab */}
+        <div
+          id="tabpanel-polls"
+          role="tabpanel"
+          aria-labelledby="tab-polls"
+          hidden={activeTab !== 'polls'}
+        >
+          {activePolls.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No polls linked to this location yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {activePolls.map(poll => (
+                <Link
+                  key={poll.id}
+                  href={`/polls/${idSlug(poll.id, poll.title)}`}
+                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                >
+                  <h3 className="font-medium text-gray-900 mb-1">{poll.title}</h3>
+                  {poll.description && (
+                    <p className="text-sm text-gray-600 line-clamp-2">{poll.description}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                    <span className="capitalize">{poll.status}</span>
+                    {(poll.hideCreator ? 'Anonymous' : poll.creator?.username) && (
+                      <>
+                        <span>•</span>
+                        <span>by {poll.hideCreator ? 'Anonymous' : poll.creator?.username}</span>
+                      </>
+                    )}
+                    {poll.createdAt && (
+                      <>
+                        <span>•</span>
+                        <span>{new Date(poll.createdAt).toLocaleDateString()}</span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* News tab */}
+        <div
+          id="tabpanel-news"
+          role="tabpanel"
+          aria-labelledby="tab-news"
+          hidden={activeTab !== 'news'}
+        >
+          {newsArticles.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No news linked to this location yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {newsArticles.map(article => (
+                <Link
+                  key={article.id}
+                  href={`/news/${idSlug(article.id, article.title)}`}
+                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                >
+                  <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
+                  {article.summary && (
+                    <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                    {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
+                      <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
+                    )}
+                    {article.createdAt && (
+                      <>
+                        <span>•</span>
+                        <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Articles tab */}
+        <div
+          id="tabpanel-articles"
+          role="tabpanel"
+          aria-labelledby="tab-articles"
+          hidden={activeTab !== 'articles'}
+        >
+          {regularArticles.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No articles linked to this location yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {regularArticles.map(article => (
+                <Link
+                  key={article.id}
+                  href={`/articles/${idSlug(article.id, article.title)}`}
+                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                >
+                  <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
+                  {article.summary && (
+                    <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                    <span>{article.type}</span>
+                    {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
+                      <>
+                        <span>•</span>
+                        <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Users tab */}
+        <div
+          id="tabpanel-users"
+          role="tabpanel"
+          aria-labelledby="tab-users"
+          hidden={activeTab !== 'users'}
+        >
+          {entities.usersCount === 0 ? (
+            <p className="text-center text-gray-500 py-8">No users linked to this location yet.</p>
+          ) : isAuthenticated ? (
+            entities.users.length > 0 ? (
+              <div className="space-y-1 border border-gray-200 rounded-md divide-y divide-gray-100">
+                {entities.users.map(u => (
+                  <UserRow key={u.id} user={u} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">No visible users to display.</p>
+            )
+          ) : (
+            <div className="py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Sign in or register to view {entities.usersCount} users from this location.
+              </p>
+              <div className="flex gap-3">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                >
+                  Register
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Suggestions tab */}
+        <div
+          id="tabpanel-suggestions"
+          role="tabpanel"
+          aria-labelledby="tab-suggestions"
+          hidden={activeTab !== 'suggestions'}
+        >
+          {suggestions.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No suggestions linked to this location yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {suggestions.map(suggestion => (
+                <Link
+                  key={suggestion.id}
+                  href={`/suggestions/${suggestion.id}`}
+                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                >
+                  <h3 className="font-medium text-gray-900 mb-1">{suggestion.title}</h3>
+                  {suggestion.body && (
+                    <p className="text-sm text-gray-600 line-clamp-2">{suggestion.body}</p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
+                    <span className="capitalize">{suggestion.type?.replace('_', ' ')}</span>
+                    <span>•</span>
+                    <span className="capitalize">{suggestion.status?.replace('_', ' ')}</span>
+                    {suggestion.author?.username && (
+                      <>
+                        <span>•</span>
+                        <span>by {suggestion.author.username}</span>
+                      </>
+                    )}
+                    {suggestion.createdAt && (
+                      <>
+                        <span>•</span>
+                        <span>{new Date(suggestion.createdAt).toLocaleDateString()}</span>
+                      </>
+                    )}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Candidates tab */}
+        <div
+          id="tabpanel-candidates"
+          role="tabpanel"
+          aria-labelledby="tab-candidates"
+          hidden={activeTab !== 'candidates'}
+        >
+          {candidates.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν υποψήφιοι για αυτή την περιφέρεια.</p>
+          ) : (
+            <div className="space-y-3">
+              {candidates.map(candidate => (
+                <Link
+                  key={candidate.id}
+                  href={`/candidates/${candidate.slug}`}
+                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-gray-900">{candidate.fullName}</h3>
+                      {candidate.position && (
+                        <p className="text-sm text-gray-500">
+                          {positionLabel(candidate.position)}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
