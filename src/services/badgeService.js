@@ -14,7 +14,32 @@ const badgeService = {
     const newBadges = [];
     const toCreate = [];
 
+    // Always evaluate the verified badge first
+    const verifiedBadgeDef = badges.find(b => b.slug === 'verified');
+    if (verifiedBadgeDef) {
+      const value = this.getMetricValue('verified', stats);
+      for (const tierDef of verifiedBadgeDef.tiers) {
+        const key = `verified:${tierDef.tier}`;
+        if (!existingSet.has(key) && value >= tierDef.threshold) {
+          toCreate.push({ userId, badgeSlug: 'verified', tier: tierDef.tier, earnedAt: new Date() });
+          newBadges.push({ slug: 'verified', tier: tierDef.tier, name: verifiedBadgeDef.name, label: tierDef.label });
+          existingSet.add(key);
+        }
+      }
+    }
+
+    // Gateway: if user is not verified, skip all other badge evaluations
+    const isVerifiedEarned = existingSet.has('verified:gold');
+    if (!isVerifiedEarned) {
+      if (toCreate.length > 0) {
+        await UserBadge.bulkCreate(toCreate, { ignoreDuplicates: true });
+      }
+      return newBadges;
+    }
+
     for (const badge of badges) {
+      if (badge.slug === 'verified') continue;
+
       const value = this.getMetricValue(badge.slug, stats);
 
       for (const tierDef of badge.tiers) {
@@ -91,6 +116,7 @@ const badgeService = {
       formationCount,
       profileScore,
       totalViews,
+      isVerified: user ? !!user.isVerified : false,
     };
   },
 
@@ -99,6 +125,7 @@ const badgeService = {
    */
   getMetricValue(slug, stats) {
     const mapping = {
+      'verified': stats.isVerified ? 1 : 0,
       'article-writer': stats.articleCount,
       'pollster': stats.pollCount,
       'profile-complete': stats.profileScore,

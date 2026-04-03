@@ -442,6 +442,8 @@ const authController = {
         targetId,
         isVerified
       );
+      // Trigger badge evaluation so the verified badge is auto-awarded immediately
+      badgeService.evaluate(targetId).catch(err => console.error('Badge evaluation error after verify:', err));
       return res.status(200).json({
         success: true,
         message: isVerified ? 'User verified successfully.' : 'User unverified successfully.',
