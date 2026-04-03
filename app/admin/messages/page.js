@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import Card from '@/components/Card';
+import Card from '@/components/ui/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { messageAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';

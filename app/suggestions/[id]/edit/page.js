@@ -8,9 +8,9 @@ import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import articleCategories from '@/config/articleCategories.json';
 
 const SUGGESTION_TYPES = [

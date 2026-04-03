@@ -20,10 +20,10 @@ import {
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import Badge from '@/components/Badge';
-import ConfirmDialog from '@/components/ConfirmDialog';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import Badge from '@/components/ui/Badge';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useAsyncData } from '@/hooks/useAsyncData';
 
 // ─── Constants ────────────────────────────────────────────────────────────────

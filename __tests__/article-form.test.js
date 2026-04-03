@@ -88,7 +88,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('renders form in create mode (article=null)', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
 
@@ -119,7 +119,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('renders form in edit mode (article provided)', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
 
@@ -161,7 +161,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('calls onSubmit with form data when submitted', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
 
@@ -200,7 +200,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('calls onCancel when cancel button is clicked', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
 
@@ -228,7 +228,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('displays submit error when provided', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
     const errorMessage = 'Failed to create article';
@@ -249,7 +249,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('disables submit button when isSubmitting is true', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
 
@@ -273,7 +273,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('type and status selects do not render placeholder option', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
 
@@ -304,7 +304,7 @@ describe('ArticleForm Component', () => {
   });
 
   test('banner image URL input accepts relative paths', async () => {
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
     const onSubmit = jest.fn();
     const onCancel = jest.fn();
 
@@ -332,7 +332,7 @@ describe('ArticleForm Component', () => {
 
   test('approved checkbox is NOT shown for regular viewers', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 1, role: 'viewer' } });
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
 
     const { container, root } = await renderComponent(ArticleForm, {
       article: null,
@@ -349,7 +349,7 @@ describe('ArticleForm Component', () => {
 
   test('approved checkbox is shown for admin users', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 1, role: 'admin' } });
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
 
     const { container, root } = await renderComponent(ArticleForm, {
       article: null,
@@ -369,7 +369,7 @@ describe('ArticleForm Component', () => {
 
   test('approved checkbox is shown for moderator users', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 2, role: 'moderator' } });
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
 
     const { container, root } = await renderComponent(ArticleForm, {
       article: null,
@@ -388,7 +388,7 @@ describe('ArticleForm Component', () => {
 
   test('approved checkbox is pre-checked when article is already approved', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 1, role: 'admin' } });
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
 
     const article = {
       id: 5,
@@ -419,7 +419,7 @@ describe('ArticleForm Component', () => {
 
   test('approved checkbox is unchecked when article is not approved', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 1, role: 'admin' } });
-    const ArticleForm = require('../components/ArticleForm').default;
+    const ArticleForm = require('../components/articles/ArticleForm').default;
 
     const article = {
       id: 6,

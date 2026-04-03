@@ -3,12 +3,12 @@
 import { authAPI, personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import UserCard from '@/components/UserCard';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
-import Pagination from '@/components/Pagination';
-import FilterBar from '@/components/FilterBar';
+import Pagination from '@/components/ui/Pagination';
+import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 

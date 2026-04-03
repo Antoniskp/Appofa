@@ -5,12 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
-import FormInput from '@/components/FormInput';
-import OAuthButtons from '@/components/OAuthButtons';
-import AuthDivider from '@/components/AuthDivider';
+import FormInput from '@/components/ui/FormInput';
+import OAuthButtons from '@/components/ui/OAuthButtons';
+import AuthDivider from '@/components/ui/AuthDivider';
 import { authAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 
 export default function RegisterPage() {
   const router = useRouter();

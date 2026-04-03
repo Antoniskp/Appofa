@@ -5,14 +5,14 @@ import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
-import ArticleCard from '@/components/ArticleCard';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
+import ArticleCard from '@/components/articles/ArticleCard';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
-import Pagination from '@/components/Pagination';
-import SearchInput from '@/components/SearchInput';
-import CategoryPills from '@/components/CategoryPills';
+import Pagination from '@/components/ui/Pagination';
+import SearchInput from '@/components/ui/SearchInput';
+import CategoryPills from '@/components/ui/CategoryPills';
 import { useAuth } from '@/lib/auth-context';
 
 export default function ArticlesPage() {

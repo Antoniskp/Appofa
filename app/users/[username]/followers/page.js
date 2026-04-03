@@ -5,10 +5,10 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { authAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import Card from '@/components/Card';
-import EmptyState from '@/components/EmptyState';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import Pagination from '@/components/Pagination';
+import Card from '@/components/ui/Card';
+import EmptyState from '@/components/ui/EmptyState';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import Pagination from '@/components/ui/Pagination';
 import { useAuth } from '@/lib/auth-context';
 import UserRow from '@/components/user/UserRow';
 

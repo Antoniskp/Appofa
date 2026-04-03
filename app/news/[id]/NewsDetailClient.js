@@ -7,13 +7,13 @@ import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroico
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { bookmarkAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
+import Badge, { StatusBadge, TypeBadge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
 import RichArticleContent from '@/components/RichArticleContent';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import { TooltipIconButton } from '@/components/Tooltip';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { TooltipIconButton } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import CommentsThread from '@/components/comments/CommentsThread';
 import VideoEmbed from '@/components/articles/VideoEmbed';

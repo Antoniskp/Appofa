@@ -7,8 +7,8 @@ import { CheckBadgeIcon, ExclamationTriangleIcon, ClockIcon } from '@heroicons/r
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
 import { positionLabel } from '@/lib/utils/candidatePositions';
 import ReportButton from '@/components/ReportButton';
 

@@ -1,8 +1,8 @@
 'use client';
 
-import { ImageCard, ImageTopCard } from '@/components/Card';
-import Badge, { TypeBadge } from '@/components/Badge';
-import { TruncatedTextTooltip } from '@/components/Tooltip';
+import { ImageCard, ImageTopCard } from '@/components/ui/Card';
+import Badge, { TypeBadge } from '@/components/ui/Badge';
+import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import { FilmIcon } from '@heroicons/react/24/outline';
 

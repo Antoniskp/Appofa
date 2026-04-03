@@ -7,9 +7,9 @@ import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
-import FormInput from '@/components/FormInput';
-import FormSelect from '@/components/FormSelect';
-import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import FormInput from '@/components/ui/FormInput';
+import FormSelect from '@/components/ui/FormSelect';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import articleCategories from '@/config/articleCategories.json';
 
 const SUGGESTION_TYPES = [

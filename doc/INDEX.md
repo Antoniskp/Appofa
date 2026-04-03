@@ -21,6 +21,8 @@ Welcome to the Appofa News Application documentation. All documentation files li
 |------|-------------|
 | [POLL_FEATURE.md](POLL_FEATURE.md) | Poll system: simple/complex polls, voting, Chart.js visualizations |
 | [POLL_EXPORT_AUDIT.md](POLL_EXPORT_AUDIT.md) | Privacy-preserving poll data export endpoint |
+| [CATEGORIES.md](CATEGORIES.md) | Static categories page, JSON schema, and category contribution guide |
+| [SUGGESTIONS_FEATURE.md](SUGGESTIONS_FEATURE.md) | Suggestions & Solutions: idea/problem submission with upvote/downvote voting |
 | [LOCATION_MODEL.md](LOCATION_MODEL.md) | Hierarchical location system (International → Municipality) |
 | [LOCATION_SECTIONS.md](LOCATION_SECTIONS.md) | Location Sections: section types, JSON shapes, moderator management, and extending |
 | [OAUTH.md](OAUTH.md) | GitHub OAuth setup, account linking, and usage |
@@ -28,6 +30,7 @@ Welcome to the Appofa News Application documentation. All documentation files li
 | [MESSAGE_SYSTEM_IMPLEMENTATION.md](MESSAGE_SYSTEM_IMPLEMENTATION.md) | User-to-user messaging feature implementation |
 | [VIDEO_EMBEDS.md](VIDEO_EMBEDS.md) | YouTube/TikTok video embed feature: usage, API, security |
 | [FAST_VIDEO_POST.md](FAST_VIDEO_POST.md) | Fast Video Post: one-paste video posting with auto-fill metadata |
+| [SEO.md](SEO.md) | SEO configuration: `SITE_URL`, sitemap, robots.txt, OpenGraph, and JSON-LD |
 
 ---
 
@@ -51,9 +54,8 @@ Welcome to the Appofa News Application documentation. All documentation files li
 |------|-------------|
 | [API_TESTING.md](API_TESTING.md) | API usage and testing examples (curl) |
 | [POLL_TESTING.md](POLL_TESTING.md) | Poll system testing checklist |
-| [POLL_EXPORT_AUDIT.md](POLL_EXPORT_AUDIT.md) | Poll audit export testing |
 | [MESSAGE_SYSTEM_TESTING.md](MESSAGE_SYSTEM_TESTING.md) | Message system testing guide |
-| [ARTICLE_TYPES_TESTING.md](ARTICLE_TYPES_TESTING.md) | Article type system testing |
+| [ARTICLE_TYPES_TESTING.md](ARTICLE_TYPES_TESTING.md) | Article type system testing (also listed in Features) |
 | [DEPENDENCY_UPDATES.md](DEPENDENCY_UPDATES.md) | Dependency management and security audit history |
 | [COPILOT_AGENTS.md](COPILOT_AGENTS.md) | AI Copilot agent configuration |
 

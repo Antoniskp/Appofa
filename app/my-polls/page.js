@@ -7,15 +7,15 @@ import { EyeIcon, PlusCircleIcon, TrashIcon } from '@heroicons/react/24/outline'
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Card from '@/components/Card';
-import Badge from '@/components/Badge';
+import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import Button from '@/components/Button';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import { ConfirmDialog } from '@/components/Modal';
-import { TooltipIconButton } from '@/components/Tooltip';
+import Button from '@/components/ui/Button';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import { TooltipIconButton } from '@/components/ui/Tooltip';
 
 const TABS = [
   { id: 'created', label: 'Δημιουργημένες' },

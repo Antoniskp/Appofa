@@ -7,7 +7,7 @@ import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 export default function CandidateDashboardPage() {
   const { user, loading: authLoading } = useAuth();

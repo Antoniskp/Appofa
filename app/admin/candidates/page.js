@@ -7,8 +7,8 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, ClockIcon, UserC
 import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import Pagination from '@/components/Pagination';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import Pagination from '@/components/ui/Pagination';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 function CandidateAvatar({ photo, name }) {
   const [imgError, setImgError] = useState(false);

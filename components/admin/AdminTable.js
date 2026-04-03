@@ -1,7 +1,7 @@
 'use client';
 
 import AdminTableActions from './AdminTableActions';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 /**
  * Reusable admin table component

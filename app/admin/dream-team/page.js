@@ -12,7 +12,7 @@ import {
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import PersonSearch from '@/components/dream-team/PersonSearch';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';

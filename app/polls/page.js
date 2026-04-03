@@ -6,15 +6,15 @@ import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import PollCard from '@/components/PollCard';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
+import PollCard from '@/components/polls/PollCard';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
-import Pagination from '@/components/Pagination';
-import SearchInput from '@/components/SearchInput';
-import CategoryPills from '@/components/CategoryPills';
-import FilterBar from '@/components/FilterBar';
+import Pagination from '@/components/ui/Pagination';
+import SearchInput from '@/components/ui/SearchInput';
+import CategoryPills from '@/components/ui/CategoryPills';
+import FilterBar from '@/components/ui/FilterBar';
 import articleCategories from '@/config/articleCategories.json';
 
 export default function PollsPage() {

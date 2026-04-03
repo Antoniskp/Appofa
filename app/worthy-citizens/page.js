@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { endorsementAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import Pagination from '@/components/Pagination';
-import Badge from '@/components/Badge';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import Pagination from '@/components/ui/Pagination';
+import Badge from '@/components/ui/Badge';
 import Link from 'next/link';
 
 const TOPICS = [

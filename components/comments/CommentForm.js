@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { commentAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Button from '@/components/Button';
+import Button from '@/components/ui/Button';
 
 export default function CommentForm({
   entityType,

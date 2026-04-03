@@ -88,7 +88,7 @@ describe('TagInput Component', () => {
   });
 
   test('renders with a label and help text', async () => {
-    const TagInput = require('../components/TagInput').default;
+    const TagInput = require('../components/ui/TagInput').default;
 
     const { container, root } = await renderComponent(TagInput, {
       value: [],
@@ -104,7 +104,7 @@ describe('TagInput Component', () => {
   });
 
   test('renders existing tags as chip elements', async () => {
-    const TagInput = require('../components/TagInput').default;
+    const TagInput = require('../components/ui/TagInput').default;
 
     const { container, root } = await renderComponent(TagInput, {
       value: ['react', 'node'],
@@ -118,7 +118,7 @@ describe('TagInput Component', () => {
   });
 
   test('calls onChange with tag removed when X button is clicked', async () => {
-    const TagInput = require('../components/TagInput').default;
+    const TagInput = require('../components/ui/TagInput').default;
     const onChange = jest.fn();
 
     const { container, root } = await renderComponent(TagInput, {
@@ -140,7 +140,7 @@ describe('TagInput Component', () => {
   });
 
   test('shows placeholder text when no tags are present', async () => {
-    const TagInput = require('../components/TagInput').default;
+    const TagInput = require('../components/ui/TagInput').default;
 
     const { container, root } = await renderComponent(TagInput, {
       value: [],
@@ -156,7 +156,7 @@ describe('TagInput Component', () => {
   });
 
   test('has combobox role and ARIA attributes on input', async () => {
-    const TagInput = require('../components/TagInput').default;
+    const TagInput = require('../components/ui/TagInput').default;
 
     const { container, root } = await renderComponent(TagInput, {
       value: [],

@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Card from '@/components/Card';
-import { ImageTopCard } from '@/components/Card';
-import Badge from '@/components/Badge';
-import { TruncatedTextTooltip } from '@/components/Tooltip';
+import Card from '@/components/ui/Card';
+import { ImageTopCard } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import { ChartBarIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';

@@ -2,18 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { InformationCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
-import { ConfirmDialog } from '@/components/Modal';
-import Badge from '@/components/Badge';
-import AlertMessage from '@/components/AlertMessage';
-import FormInput from '@/components/FormInput';
-import FormSelect from '@/components/FormSelect';
-import CascadingLocationSelector from '@/components/CascadingLocationSelector';
-import TagInput from '@/components/TagInput';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import Badge from '@/components/ui/Badge';
+import AlertMessage from '@/components/ui/AlertMessage';
+import FormInput from '@/components/ui/FormInput';
+import FormSelect from '@/components/ui/FormSelect';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
+import TagInput from '@/components/ui/TagInput';
 import VideoEmbedField from '@/components/articles/VideoEmbedField';
 import { locationAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
-import Tooltip from '@/components/Tooltip';
+import Tooltip from '@/components/ui/Tooltip';
 import { useAuth } from '@/lib/auth-context';
 
 export default function ArticleForm({
