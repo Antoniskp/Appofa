@@ -10,6 +10,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import { positionLabel } from '@/lib/utils/candidatePositions';
+import { getPartyById } from '@/lib/utils/politicalParties';
 import ReportButton from '@/components/ReportButton';
 
 const SOCIAL_LINK_LABELS = {
@@ -123,6 +124,20 @@ export default function PersonProfilePage({ params }) {
                     {positionLabel(profile.position)}
                   </p>
                 )}
+                {profile.partyId && (() => {
+                  const party = getPartyById(profile.partyId);
+                  return party ? (
+                    <span
+                      className={`mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${party.colorLight}`}
+                    >
+                      <span
+                        className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: party.color }}
+                      />
+                      {party.name}
+                    </span>
+                  ) : null;
+                })()}
                 {profile.expertiseArea && profile.expertiseArea.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {profile.expertiseArea.map((area) => (

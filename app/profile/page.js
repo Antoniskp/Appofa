@@ -21,6 +21,7 @@ import Link from 'next/link';
 import professionsData from '@/src/data/professions.json';
 import interestsData from '@/src/data/interests.json';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
+import { getAllParties } from '@/lib/utils/politicalParties';
 
 const SOCIAL_LINK_KEYS = ['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok'];
 
@@ -62,6 +63,7 @@ function ProfileContent() {
     professions: [],
     interests: [],
     expertiseArea: [],
+    partyId: null,
   });
   const [homeLocation, setHomeLocation] = useState(null);
   const [showHomeLocation, setShowHomeLocation] = useState(false);
@@ -131,6 +133,7 @@ function ProfileContent() {
           professions: professions || [],
           interests: interests || [],
           expertiseArea: expertiseArea || [],
+          partyId: userData.partyId || null,
         });
         setDisplayBadge({ slug: displayBadgeSlug || null, tier: displayBadgeTier || null });
         setInteractionSettings({
@@ -534,6 +537,22 @@ function ProfileContent() {
               {profileData.dateOfBirth && calculateAge(profileData.dateOfBirth) !== null && (
                 <p className="text-xs text-gray-500 mt-1">Age: {calculateAge(profileData.dateOfBirth)}</p>
               )}
+            </div>
+            <div>
+              <label htmlFor="partyId" className="block text-sm font-medium text-gray-700 mb-1">
+                Πολιτική Τοποθέτηση <span className="text-gray-400 text-xs">(προαιρετικό)</span>
+              </label>
+              <select
+                id="partyId"
+                value={profileData.partyId || ''}
+                onChange={(e) => setProfileData((prev) => ({ ...prev, partyId: e.target.value || null }))}
+                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">Κανένα / Δεν επιθυμώ</option>
+                {getAllParties().map((party) => (
+                  <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
+                ))}
+              </select>
             </div>
             <div>
               <p className="block text-sm font-medium text-gray-700 mb-2">Social links</p>
