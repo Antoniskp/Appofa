@@ -26,6 +26,21 @@ const TABS = [
 
 const TIER_EMOJI = { bronze: '🥉', silver: '🥈', gold: '🥇' };
 
+function BadgeImage({ slug, tier }) {
+  const [imgError, setImgError] = useState(false);
+  if (imgError) {
+    return <span className="text-2xl">{TIER_EMOJI[tier] || '🏅'}</span>;
+  }
+  return (
+    <img
+      src={`/images/badges/${slug}-${tier}.svg`}
+      alt={`${slug} ${tier}`}
+      className="w-10 h-10 object-contain"
+      onError={() => setImgError(true)}
+    />
+  );
+}
+
 function UserBadgesSection({ userId }) {
   const [badges, setBadges] = useState(null);
 
@@ -59,16 +74,7 @@ function UserBadgesSection({ userId }) {
               className="flex flex-col items-center gap-1 min-w-[64px]"
               title={`${b.badgeSlug} — ${b.tier}`}
             >
-              <img
-                src={`/images/badges/${b.badgeSlug}-${b.tier}.svg`}
-                alt={`${b.badgeSlug} ${b.tier}`}
-                className="w-10 h-10 object-contain"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'block';
-                }}
-              />
-              <span className="hidden text-2xl">{TIER_EMOJI[b.tier] || '🏅'}</span>
+              <BadgeImage slug={b.badgeSlug} tier={b.tier} />
               <span className="text-xs text-gray-600 text-center leading-tight">{b.badgeSlug}</span>
               <span className="text-xs text-gray-400 capitalize">{b.tier}</span>
             </div>

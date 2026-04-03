@@ -12,6 +12,7 @@ const badgeService = {
     const existingSet = new Set(existing.map(b => `${b.badgeSlug}:${b.tier}`));
 
     const newBadges = [];
+    const toCreate = [];
 
     for (const badge of badges) {
       const value = this.getMetricValue(badge.slug, stats);
@@ -19,7 +20,7 @@ const badgeService = {
       for (const tierDef of badge.tiers) {
         const key = `${badge.slug}:${tierDef.tier}`;
         if (!existingSet.has(key) && value >= tierDef.threshold) {
-          await UserBadge.create({
+          toCreate.push({
             userId,
             badgeSlug: badge.slug,
             tier: tierDef.tier,
@@ -28,6 +29,10 @@ const badgeService = {
           newBadges.push({ slug: badge.slug, tier: tierDef.tier, name: badge.name, label: tierDef.label });
         }
       }
+    }
+
+    if (toCreate.length > 0) {
+      await UserBadge.bulkCreate(toCreate, { ignoreDuplicates: true });
     }
 
     return newBadges;
@@ -60,10 +65,10 @@ const badgeService = {
     // Profile completeness score
     let profileScore = 0;
     if (user) {
-      // Level 1: basic info (firstName OR lastName filled in)
-      if (user.firstName || user.lastName) profileScore = 1;
+      // Level 1: basic info (firstName OR lastName with meaningful content)
+      if ((user.firstName && user.firstName.trim()) || (user.lastName && user.lastName.trim())) profileScore = 1;
       // Level 2: avatar + bio
-      if (profileScore >= 1 && user.avatar && user.bio) profileScore = 2;
+      if (profileScore >= 1 && user.avatar && user.bio && user.bio.trim()) profileScore = 2;
       // Level 3: all sections (socialLinks, homeLocationId, professions or interests)
       if (profileScore >= 2 && user.socialLinks && user.homeLocationId &&
           ((user.professions && user.professions.length > 0) || (user.interests && user.interests.length > 0))) {

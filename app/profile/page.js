@@ -24,6 +24,23 @@ import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 
 const SOCIAL_LINK_KEYS = ['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok'];
 
+const BADGE_TIER_EMOJI = { bronze: '🥉', silver: '🥈', gold: '🥇' };
+
+function BadgeTierImage({ slug, tier, size = 'w-6 h-6' }) {
+  const [imgError, setImgError] = useState(false);
+  if (imgError) {
+    return <span className="text-base">{BADGE_TIER_EMOJI[tier] || '🏅'}</span>;
+  }
+  return (
+    <img
+      src={`/images/badges/${slug}-${tier}.svg`}
+      alt={`${slug} ${tier}`}
+      className={`${size} object-contain`}
+      onError={() => setImgError(true)}
+    />
+  );
+}
+
 function ProfileContent() {
   const { user, updateProfile, deleteAccount } = useAuth();
   const { success, error } = useToast();
@@ -189,6 +206,8 @@ function ProfileContent() {
       setBadgeEvaluating(false);
     }
   };
+
+  const handleProfileChange = (event) => {
     const { name, value } = event.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
   };
@@ -766,18 +785,7 @@ function ProfileContent() {
                         <div className="space-y-1.5">
                           {badge.tiers.map((t) => (
                             <div key={t.tier} className={`flex items-center gap-2 ${t.earned ? '' : 'opacity-60'}`}>
-                              <img
-                                src={`/images/badges/${badge.slug}-${t.tier}.svg`}
-                                alt={`${badge.slug} ${t.tier}`}
-                                className="w-6 h-6 object-contain"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                  e.target.nextSibling.style.display = 'inline';
-                                }}
-                              />
-                              <span className="hidden text-base">
-                                {t.tier === 'bronze' ? '🥉' : t.tier === 'silver' ? '🥈' : '🥇'}
-                              </span>
+                              <BadgeTierImage slug={badge.slug} tier={t.tier} />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between">
                                   <span className="text-xs text-gray-700 capitalize">{t.label || t.tier}</span>
