@@ -94,6 +94,25 @@ export default function DreamTeamPage() {
   const handleVote = useCallback(async (positionId, personId, candidateUserId) => {
     setVotingPosition(positionId);
     try {
+      // Check if this person is already voted for in a different position
+      if (personId) {
+        const conflict = Object.values(myVotesMap).find(
+          (v) => v.personId === personId && v.positionId !== positionId,
+        );
+        if (conflict) {
+          showToast('Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση. Αφαιρέστε το πρώτα από εκείνη τη θέση.', 'error');
+          return;
+        }
+      } else if (candidateUserId) {
+        const conflict = Object.values(myVotesMap).find(
+          (v) => v.candidateUserId === candidateUserId && v.positionId !== positionId,
+        );
+        if (conflict) {
+          showToast('Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση. Αφαιρέστε το πρώτα από εκείνη τη θέση.', 'error');
+          return;
+        }
+      }
+
       const res = await dreamTeamAPI.vote(positionId, personId, candidateUserId);
       if (res?.success) {
         showToast(res.message || 'Ψήφος καταγράφηκε!');
@@ -118,7 +137,7 @@ export default function DreamTeamPage() {
     } finally {
       setVotingPosition(null);
     }
-  }, [showToast]);
+  }, [showToast, myVotesMap]);
 
   const handleDeleteVote = useCallback(async (positionId) => {
     setVotingPosition(positionId);

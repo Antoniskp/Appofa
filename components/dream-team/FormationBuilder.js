@@ -68,6 +68,25 @@ export default function FormationBuilder({ formation, communityResults = [], onS
       });
       return;
     }
+
+    // Check if this person is already assigned to a different position
+    const incomingPersonId = person.type === 'profile' ? person.id : null;
+    const incomingCandidateUserId = person.type === 'user' ? person.id : null;
+    const conflictEntry = Object.entries(picks).find(([existingSlug, pick]) => {
+      if (existingSlug === slug || !pick) return false;
+      if (incomingPersonId && pick.personId === incomingPersonId) return true;
+      if (incomingCandidateUserId && pick.candidateUserId === incomingCandidateUserId) return true;
+      return false;
+    });
+    if (conflictEntry) {
+      const conflictPosition = ALL_POSITIONS.find((p) => p.slug === conflictEntry[0]);
+      showToast(
+        `Αυτό το πρόσωπο έχει ήδη επιλεγεί${conflictPosition ? ` ως ${conflictPosition.title}` : ' σε άλλη θέση'}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
+        'error',
+      );
+      return;
+    }
+
     const displayName = person.type === 'user'
       ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
       : `${person.firstName} ${person.lastName}`;
@@ -82,7 +101,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
         avatar: person.avatar || null,
       },
     }));
-  }, []);
+  }, [picks, showToast]);
 
   const handleRemovePick = useCallback((slug) => {
     setPicks((prev) => {
@@ -103,10 +122,21 @@ export default function FormationBuilder({ formation, communityResults = [], onS
       communityResults.forEach((result) => {
         if (result.winner && result.position?.slug) {
           const slug = result.position.slug;
+          const { personId, candidateUserId } = result.winner;
+
+          // Skip if this person is already assigned to a different position
+          const isDuplicate = Object.entries(newPicks).some(([existingSlug, pick]) => {
+            if (existingSlug === slug || !pick) return false;
+            if (personId && pick.personId === personId) return true;
+            if (candidateUserId && pick.candidateUserId === candidateUserId) return true;
+            return false;
+          });
+          if (isDuplicate) return;
+
           newPicks[slug] = {
             positionSlug: slug,
-            personId: result.winner.personId || null,
-            candidateUserId: result.winner.candidateUserId || null,
+            personId: personId || null,
+            candidateUserId: candidateUserId || null,
             personName: result.winner.personName,
             photo: result.winner.photo || null,
             avatar: result.winner.avatar || null,
