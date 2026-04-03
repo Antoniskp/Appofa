@@ -1,6 +1,7 @@
 const authService = require('../services/authService');
 const oauthService = require('../services/oauthService');
 const userService = require('../services/userService');
+const badgeService = require('../services/badgeService');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 require('dotenv').config();
@@ -126,6 +127,7 @@ const authController = {
   updateProfile: async (req, res) => {
     try {
       const updatedUser = await userService.updateUserProfile(req.user.id, req.body);
+      badgeService.evaluate(req.user.id).catch(err => console.error('Badge evaluation error:', err));
       res.status(200).json({
         success: true,
         message: 'Profile updated successfully.',

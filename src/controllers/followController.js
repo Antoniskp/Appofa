@@ -1,5 +1,6 @@
 const { Follow, User } = require('../models');
 const { normalizeInteger } = require('../utils/validators');
+const badgeService = require('../services/badgeService');
 
 const FOLLOW_LIST_LIMIT = 20;
 
@@ -31,6 +32,9 @@ const followController = {
       const [, created] = await Follow.findOrCreate({
         where: { followerId: req.user.id, followingId: target.id }
       });
+
+      // Evaluate badges for the followed user (they gained a follower)
+      badgeService.evaluate(target.id).catch(err => console.error('Badge evaluation error:', err));
 
       return res.status(200).json({
         success: true,

@@ -1,6 +1,7 @@
 'use strict';
 
 const articleService = require('../services/articleService');
+const badgeService = require('../services/badgeService');
 
 const toUserObj = (reqUser) =>
   reqUser ? { id: reqUser.id, role: reqUser.role } : null;
@@ -13,6 +14,9 @@ const articleController = {
       return res.status(result.status).json({ success: false, message: result.message });
     }
     const responseArticle = articleService.sanitizeArticle(result.data.article, toUserObj(req.user));
+    if (result.data.article.status === 'published') {
+      badgeService.evaluate(req.user.id).catch(err => console.error('Badge evaluation error:', err));
+    }
     return res.status(201).json({
       success: true,
       message: 'Article created successfully.',
@@ -45,6 +49,9 @@ const articleController = {
       return res.status(result.status).json({ success: false, message: result.message });
     }
     const responseArticle = articleService.sanitizeArticle(result.data.article, toUserObj(req.user));
+    if (result.data.article.status === 'published') {
+      badgeService.evaluate(req.user.id).catch(err => console.error('Badge evaluation error:', err));
+    }
     return res.status(200).json({
       success: true,
       message: 'Article updated successfully.',

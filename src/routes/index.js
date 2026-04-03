@@ -18,6 +18,7 @@ const personRemovalRequestRoutes = require('./personRemovalRequestRoutes');
 const reportRoutes = require('./reportRoutes');
 const dreamTeamRoutes = require('./dreamTeamRoutes');
 const heroSettingsRoutes = require('./heroSettingsRoutes');
+const badgeRoutes = require('./badges');
 
 const routes = [
   { prefix: '/api/auth', router: authRoutes },
@@ -41,6 +42,7 @@ const routes = [
   { prefix: '/api/reports', router: reportRoutes },
   { prefix: '/api/dream-team', router: dreamTeamRoutes },
   { prefix: '/api/hero-settings', router: heroSettingsRoutes },
+  { prefix: '/api/badges', router: badgeRoutes },
 ];
 
 function registerRoutes(app) {

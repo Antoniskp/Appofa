@@ -1,6 +1,7 @@
 const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeOptionalText, normalizeEnum, normalizeInteger } = require('../utils/validators');
+const badgeService = require('../services/badgeService');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
@@ -526,6 +527,7 @@ async function handleVote(req, res, targetType, targetId) {
     // No existing vote → create
     await SuggestionVote.create({ userId, targetType, targetId, value });
     const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+    badgeService.evaluate(userId).catch(err => console.error('Badge evaluation error:', err));
     return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote recorded.' });
   }
 }
