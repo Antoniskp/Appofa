@@ -72,11 +72,11 @@ function UserBadgesSection({ userId }) {
             <div
               key={`${b.badgeSlug}-${b.tier}`}
               className="flex flex-col items-center gap-1 min-w-[64px]"
-              title={`${b.badgeSlug} — ${b.tier}`}
+              title={`${b.name || b.badgeSlug} — ${b.label || b.tier}`}
             >
               <BadgeImage slug={b.badgeSlug} tier={b.tier} />
-              <span className="text-xs text-gray-600 text-center leading-tight">{b.badgeSlug}</span>
-              <span className="text-xs text-gray-400 capitalize">{b.tier}</span>
+              <span className="text-xs text-gray-600 text-center leading-tight">{b.name || b.badgeSlug}</span>
+              <span className="text-xs text-gray-400 capitalize">{b.label || b.tier}</span>
             </div>
           ))}
         </div>

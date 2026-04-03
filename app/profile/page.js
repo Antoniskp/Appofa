@@ -790,7 +790,7 @@ function ProfileContent() {
                                 <div className="flex items-center justify-between">
                                   <span className="text-xs text-gray-700 capitalize">{t.label || t.tier}</span>
                                   {t.earned ? (
-                                    <span className="text-xs text-green-600 font-medium">
+                                    <span className="text-xs text-green-600 font-medium" aria-label="Κερδηθηκε">
                                       ✓ {t.earnedAt ? new Date(t.earnedAt).toLocaleDateString('el-GR') : ''}
                                     </span>
                                   ) : (

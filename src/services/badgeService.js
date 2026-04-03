@@ -76,14 +76,11 @@ const badgeService = {
       }
     }
 
-    // Article model has no views column — use 0 as fallback
-    let totalViews = 0;
-    try {
-      const viewsResult = await Article.sum('views', { where: { authorId: userId, status: 'published' } });
-      totalViews = viewsResult || 0;
-    } catch (_err) {
-      totalViews = 0;
-    }
+    // Article model has no views column — totalViews is always 0.
+    // When a views column is added, replace this with:
+    //   const viewsResult = await Article.sum('views', { where: { authorId: userId, status: 'published' } });
+    //   totalViews = viewsResult || 0;
+    const totalViews = 0;
 
     return {
       articleCount,
@@ -116,11 +113,24 @@ const badgeService = {
 
   /**
    * Get all earned badges for a user (for profile display)
+   * Returns enriched data including badge name and tier label from config.
    */
   async getUserBadges(userId) {
-    return UserBadge.findAll({
+    const earned = await UserBadge.findAll({
       where: { userId },
       order: [['earnedAt', 'ASC']],
+    });
+
+    // Enrich with human-readable names from badge config
+    const badgeMap = new Map(badges.map(b => [b.slug, b]));
+    return earned.map(record => {
+      const badgeDef = badgeMap.get(record.badgeSlug);
+      const tierDef = badgeDef?.tiers.find(t => t.tier === record.tier);
+      return {
+        ...record.toJSON(),
+        name: badgeDef?.name || record.badgeSlug,
+        label: tierDef?.label || record.tier,
+      };
     });
   },
 
