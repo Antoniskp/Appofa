@@ -45,15 +45,6 @@ const TIER_EMOJIS = {
   gold: '🥇',
 };
 
-function badgeImageExists(slug, tier) {
-  try {
-    const imagePath = path.join(process.cwd(), 'public', 'images', 'badges', `${slug}-${tier}.svg`);
-    return fs.existsSync(imagePath);
-  } catch {
-    return false;
-  }
-}
-
 function groupByCategory(badgeList) {
   const grouped = {};
   for (const badge of badgeList) {
@@ -64,6 +55,24 @@ function groupByCategory(badgeList) {
   }
   return grouped;
 }
+
+function buildBadgeImageMap(badgeList) {
+  const map = {};
+  for (const badge of badgeList) {
+    for (const { tier } of badge.tiers) {
+      const key = `${badge.slug}-${tier}`;
+      try {
+        const imagePath = path.join(process.cwd(), 'public', 'images', 'badges', `${key}.svg`);
+        map[key] = fs.existsSync(imagePath);
+      } catch {
+        map[key] = false;
+      }
+    }
+  }
+  return map;
+}
+
+const badgeImageMap = buildBadgeImageMap(badges);
 
 export default function BadgesPage() {
   const grouped = groupByCategory(badges);
@@ -167,7 +176,7 @@ export default function BadgesPage() {
                     </div>
                     <div className="flex gap-3">
                       {badge.tiers.map((t) => {
-                        const hasImage = badgeImageExists(badge.slug, t.tier);
+                        const hasImage = badgeImageMap[`${badge.slug}-${t.tier}`];
                         return (
                           <div key={t.tier} className="flex-1 flex flex-col items-center text-center gap-1">
                             {hasImage ? (
