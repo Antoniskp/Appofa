@@ -1,5 +1,5 @@
 export async function generateMetadata({ params }) {
-  const { slug } = params;
+  const { slug } = await params;
 
   // Attempt to fetch formation metadata for OG tags.
   // Falls back to generic metadata if fetch fails or backend is unavailable.

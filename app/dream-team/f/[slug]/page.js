@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, use } from 'react';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAuth } from '@/lib/auth-context';
 import FormationView from '@/components/dream-team/FormationView';
 import SkeletonPositionCard from '@/components/dream-team/SkeletonPositionCard';
 
 export default function SharedFormationPage({ params }) {
-  const { slug } = params;
+  const { slug } = use(params);
   const { user } = useAuth();
   const [formation, setFormation] = useState(null);
   const [loading, setLoading] = useState(true);
