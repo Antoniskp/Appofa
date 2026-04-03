@@ -35,11 +35,11 @@ export default function DreamTeamHero({ totalVotes = 0, totalFormations = 0, las
         </div>
 
         <h1 className="text-3xl md:text-5xl font-extrabold mb-3 leading-tight">
-          🏛️ Ονειρεμένη Κυβέρνηση
+          🏛️ Ιδανική Κυβέρνηση
         </h1>
         <p className="text-lg md:text-xl text-blue-100 mb-6 max-w-2xl">
           Ψηφίστε τους ανθρώπους που θέλετε σε κάθε θέση της κυβέρνησης και δείτε
-          ποια ονειρεμένη κυβέρνηση επιλέγει η κοινότητα.
+          ποια ιδανική κυβέρνηση επιλέγει η κοινότητα.
         </p>
 
         <div className="flex flex-wrap gap-6">

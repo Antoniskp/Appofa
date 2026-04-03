@@ -18,7 +18,7 @@ import EmptyState from '@/components/ui/EmptyState';
 
 const TABS = [
   { id: 'vote', label: '🗳️ Ψηφίστε' },
-  { id: 'results', label: '🏆 Ονειρεμένη Κυβέρνηση' },
+  { id: 'results', label: '🏆 Ιδανική Κυβέρνηση' },
   { id: 'formations', label: '📋 Οι Συνθέσεις μου' },
   { id: 'explore', label: '🌍 Εξερεύνηση' },
 ];
@@ -218,7 +218,7 @@ export default function DreamTeamPage() {
           <>
             {!user && (
               <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
-                💡 <strong>Συνδεθείτε</strong> για να καταγράψετε τις ψήφους σας και να συμβάλετε στη διαμόρφωση της ονειρεμένης κυβέρνησης.
+                💡 <strong>Συνδεθείτε</strong> για να καταγράψετε τις ψήφους σας και να συμβάλετε στη διαμόρφωση της ιδανικής κυβέρνησης.
               </div>
             )}
             {loading ? (
@@ -270,7 +270,7 @@ export default function DreamTeamPage() {
               <span className="text-4xl mb-4 block">🔒</span>
               <p className="text-lg font-bold text-gray-800 mb-2">Συνδεθείτε για να δείτε τις συνθέσεις σας</p>
               <p className="text-sm text-gray-500">
-                Δημιουργήστε και διαχειριστείτε τις δικές σας ονειρεμένες κυβερνήσεις.
+                Δημιουργήστε και διαχειριστείτε τις δικές σας ιδανικές κυβερνήσεις.
               </p>
             </div>
           ) : (

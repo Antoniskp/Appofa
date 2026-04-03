@@ -108,7 +108,7 @@ export default function ExploreFormations({ showToast, onCompare }) {
       {/* Header */}
       <div>
         <h2 className="text-xl font-bold text-gray-900">🌍 Εξερεύνηση</h2>
-        <p className="text-sm text-gray-400 mt-0.5">Δείτε δημόσιες ονειρεμένες κυβερνήσεις από άλλους χρήστες</p>
+        <p className="text-sm text-gray-400 mt-0.5">Δείτε δημόσιες ιδανικές κυβερνήσεις από άλλους χρήστες</p>
       </div>
 
       {/* Filter & Sort bar */}

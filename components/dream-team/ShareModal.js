@@ -2,7 +2,7 @@
 
 import GenericShareModal from '@/components/ui/ShareModal';
 
-const SHARE_TEXT = 'Δες την ονειρεμένη κυβέρνησή μου στο Appofa! 🏛️';
+const SHARE_TEXT = 'Δες την ιδανική κυβέρνησή μου στο Appofa! 🏛️';
 
 /**
  * ShareModal — sharing modal for a formation.
