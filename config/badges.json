@@ -1,0 +1,90 @@
+[
+  {
+    "slug": "article-writer",
+    "name": "Αρθρογράφος",
+    "description": "Δημοσιεύστε άρθρα στην πλατφόρμα",
+    "category": "content",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Δημοσιεύστε 1 άρθρο", "threshold": 1 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Δημοσιεύστε 10 άρθρα", "threshold": 10 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Δημοσιεύστε 50 άρθρα", "threshold": 50 }
+    ]
+  },
+  {
+    "slug": "pollster",
+    "name": "Δημοσκόπος",
+    "description": "Δημιουργήστε δημοσκοπήσεις στην πλατφόρμα",
+    "category": "content",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Δημιουργήστε 1 δημοσκόπηση", "threshold": 1 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Δημιουργήστε 5 δημοσκοπήσεις", "threshold": 5 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Δημιουργήστε 20 δημοσκοπήσεις", "threshold": 20 }
+    ]
+  },
+  {
+    "slug": "profile-complete",
+    "name": "Πλήρες Προφίλ",
+    "description": "Συμπληρώστε το προφίλ σας",
+    "category": "profile",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Συμπληρώστε τα βασικά στοιχεία", "threshold": 1 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Προσθέστε avatar και bio", "threshold": 2 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Συμπληρώστε όλα τα πεδία προφίλ", "threshold": 3 }
+    ]
+  },
+  {
+    "slug": "popular",
+    "name": "Δημοφιλής",
+    "description": "Κερδίστε views στα άρθρα σας",
+    "category": "popularity",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "100 συνολικά views", "threshold": 100 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "1.000 συνολικά views", "threshold": 1000 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "10.000 συνολικά views", "threshold": 10000 }
+    ]
+  },
+  {
+    "slug": "commenter",
+    "name": "Σχολιαστής",
+    "description": "Σχολιάστε σε περιεχόμενο της πλατφόρμας",
+    "category": "community",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Γράψτε 5 σχόλια", "threshold": 5 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Γράψτε 25 σχόλια", "threshold": 25 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Γράψτε 100 σχόλια", "threshold": 100 }
+    ]
+  },
+  {
+    "slug": "voter",
+    "name": "Ψηφοφόρος",
+    "description": "Ψηφίστε σε δημοσκοπήσεις και προτάσεις",
+    "category": "community",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Ψηφίστε 10 φορές", "threshold": 10 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Ψηφίστε 50 φορές", "threshold": 50 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Ψηφίστε 200 φορές", "threshold": 200 }
+    ]
+  },
+  {
+    "slug": "followed",
+    "name": "Ακόλουθος",
+    "description": "Αποκτήστε followers στο προφίλ σας",
+    "category": "community",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Αποκτήστε 5 followers", "threshold": 5 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Αποκτήστε 25 followers", "threshold": 25 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Αποκτήστε 100 followers", "threshold": 100 }
+    ]
+  },
+  {
+    "slug": "strategist",
+    "name": "Στρατηγός",
+    "description": "Δημιουργήστε συνθέσεις στο Dream Team",
+    "category": "dream-team",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Δημιουργήστε 1 σύνθεση", "threshold": 1 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Δημιουργήστε 3 συνθέσεις", "threshold": 3 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Δημιουργήστε 10 συνθέσεις", "threshold": 10 }
+    ]
+  }
+]
