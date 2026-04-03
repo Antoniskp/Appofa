@@ -34,10 +34,14 @@ export default function DreamTeamPage() {
   const [votingPosition, setVotingPosition] = useState(null);
   const [toast, setToast] = useState(null);
   const [totalPublicFormations, setTotalPublicFormations] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
   // Keep a ref to myVotesMap so handleVote always reads the latest value (avoids stale closure)
   const myVotesMapRef = useRef({});
   useEffect(() => { myVotesMapRef.current = myVotesMap; }, [myVotesMap]);
+
+  // Set lastUpdated only on the client to avoid SSR/hydration mismatch
+  useEffect(() => { setLastUpdated(new Date().toISOString()); }, []);
 
   // Comparison tool state
   const [compareOpen, setCompareOpen] = useState(false);
@@ -205,7 +209,7 @@ export default function DreamTeamPage() {
         <DreamTeamHero
           totalVotes={totalVotes}
           totalFormations={totalPublicFormations}
-          lastUpdated={new Date().toISOString()}
+          lastUpdated={lastUpdated}
         />
 
         {/* Tabs */}
