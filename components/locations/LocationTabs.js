@@ -4,6 +4,12 @@ import UserRow from '@/components/user/UserRow';
 
 const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'persons'];
 
+const POSITION_LABELS = {
+  mayor: 'Δήμαρχος',
+  prefect: 'Περιφερειάρχης',
+  parliamentary: 'Βουλευτής',
+};
+
 export default function LocationTabs({
   activeTab,
   onTabChange,
@@ -283,7 +289,7 @@ export default function LocationTabs({
                       <h3 className="font-medium text-gray-900">{person.fullName}</h3>
                       {person.position && (
                         <p className="text-sm text-gray-500">
-                          {person.position}
+                          {POSITION_LABELS[person.position] || person.position}
                         </p>
                       )}
                     </div>

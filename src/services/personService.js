@@ -35,9 +35,9 @@ async function ensureUniqueSlug(base) {
 
   let counter = 2;
   while (true) {
-    const slugCandidate = `${base}-${counter}`;
-    const conflict = await PublicPersonProfile.findOne({ where: { slug: slugCandidate } });
-    if (!conflict) return slugCandidate;
+    const nextSlug = `${base}-${counter}`;
+    const conflict = await PublicPersonProfile.findOne({ where: { slug: nextSlug } });
+    if (!conflict) return nextSlug;
     counter++;
   }
 }

@@ -27,6 +27,11 @@ function ClaimBadge({ status }) {
 }
 
 export default function AdminPersonDetailPage() {
+  const POSITION_LABELS = {
+    mayor: 'Δήμαρχος',
+    prefect: 'Περιφερειάρχης',
+    parliamentary: 'Βουλευτής',
+  };
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
@@ -121,7 +126,7 @@ export default function AdminPersonDetailPage() {
             {profile.position && (
               <div>
                 <span className="text-gray-500">Θέση:</span>{' '}
-                <span className="text-gray-800">{positionLabels[profile.position] || profile.position}</span>
+                <span className="text-gray-800">{POSITION_LABELS[profile.position] || profile.position}</span>
               </div>
             )}
             {profile.contactEmail && (
