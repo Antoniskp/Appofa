@@ -148,6 +148,21 @@ const User = sequelize.define('User', {
       this.setDataValue('interests', val && val.length > 0 ? JSON.stringify(val) : null);
     }
   },
+  expertiseArea: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('expertiseArea');
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch (err) {
+        console.error('Failed to parse expertiseArea JSON:', err.message);
+        return [];
+      }
+    },
+    set(val) {
+      this.setDataValue('expertiseArea', val && val.length > 0 ? JSON.stringify(val) : null);
+    }
+  },
   isVerified: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -32,6 +33,7 @@ export default function CreatePersonProfilePage() {
   const [socialLinks, setSocialLinks] = useState(
     Object.fromEntries(SOCIAL_LINK_KEYS.map(({ key }) => [key, '']))
   );
+  const [expertiseArea, setExpertiseArea] = useState([]);
 
   // Person location cascading picker
   const [personPrefectures, setPersonPrefectures] = useState([]);
@@ -135,6 +137,8 @@ export default function CreatePersonProfilePage() {
         if (socialLinks[key]) slObj[key] = socialLinks[key];
       });
       if (Object.keys(slObj).length > 0) payload.socialLinks = slObj;
+
+      if (expertiseArea.length > 0) payload.expertiseArea = expertiseArea;
 
       // Candidate section
       if (isCandidate) {
@@ -268,6 +272,36 @@ export default function CreatePersonProfilePage() {
                       className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Expertise Area */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Τομέας Εξειδίκευσης</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {expertiseArea.map((area) => (
+                  <span key={area} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                    {area}
+                    <button
+                      type="button"
+                      onClick={() => setExpertiseArea((prev) => prev.filter((a) => a !== area))}
+                      className="ml-1 text-purple-600 hover:text-purple-900 font-bold leading-none"
+                      aria-label={`Remove ${area}`}
+                    >✕</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {EXPERTISE_AREAS.filter((area) => !expertiseArea.includes(area)).map((area) => (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => setExpertiseArea((prev) => [...prev, area])}
+                    className="inline-flex items-center px-3 py-1 rounded-full border border-purple-300 text-xs text-purple-700 hover:bg-purple-50 transition"
+                  >
+                    + {area}
+                  </button>
                 ))}
               </div>
             </div>

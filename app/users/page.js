@@ -11,6 +11,7 @@ import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
+import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -27,6 +28,7 @@ export default function UsersPage() {
     goToPage,
   } = useFilters({
     search: '',
+    expertiseArea: '',
   });
 
   const { data: usersData, loading, error } = useAsyncData(
@@ -259,6 +261,16 @@ export default function UsersPage() {
                   label: 'Αναζήτηση',
                   type: 'text',
                   placeholder: 'Αναζήτηση χρηστών...',
+                },
+                {
+                  name: 'expertiseArea',
+                  label: 'Τομέας',
+                  type: 'select',
+                  placeholder: 'Όλοι οι τομείς',
+                  options: [
+                    { value: '', label: 'Όλοι οι τομείς' },
+                    ...EXPERTISE_AREAS.map((area) => ({ value: area, label: area })),
+                  ],
                 },
               ]}
               className="mb-8"

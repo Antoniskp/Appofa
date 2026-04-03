@@ -10,6 +10,7 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
+import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 
 function ClaimStatusBadge({ status }) {
   if (status === 'unclaimed') {
@@ -62,6 +63,15 @@ function PersonCard({ profile }) {
                 {profile.location.name}
               </p>
             )}
+            {profile.expertiseArea && profile.expertiseArea.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {profile.expertiseArea.map((area) => (
+                  <span key={area} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                    {area}
+                  </span>
+                ))}
+              </div>
+            )}
             {profile.bio && (
               <p className="mt-2 text-sm text-gray-600 line-clamp-2">{profile.bio}</p>
             )}
@@ -82,12 +92,13 @@ export default function PersonsPage() {
     nextPage,
     prevPage,
     goToPage
-  } = useFilters({ search: '' });
+  } = useFilters({ search: '', expertiseArea: '' });
 
   const { data: persons, loading, error } = useAsyncData(
     async () => {
       const params = { page, limit: 12 };
       if (filters.search) params.search = filters.search;
+      if (filters.expertiseArea) params.expertiseArea = filters.expertiseArea;
       const res = await personAPI.getAll(params);
       if (res.success) return res;
       return { data: { profiles: [], pagination: { totalPages: 1 } } };
@@ -121,6 +132,18 @@ export default function PersonsPage() {
               onChange={(e) => handleFilterChange('search', e.target.value)}
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+          <div className="min-w-[200px]">
+            <select
+              value={filters.expertiseArea}
+              onChange={(e) => handleFilterChange('expertiseArea', e.target.value)}
+              className="w-full py-2 px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Όλοι οι τομείς εξειδίκευσης</option>
+              {EXPERTISE_AREAS.map((area) => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
           </div>
         </div>
 

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -34,6 +35,7 @@ export default function EditPersonProfilePage({ params }) {
   const [socialLinks, setSocialLinks] = useState(
     Object.fromEntries(SOCIAL_LINK_KEYS.map(({ key }) => [key, '']))
   );
+  const [expertiseArea, setExpertiseArea] = useState([]);
 
   // Person location cascading picker
   const [personPrefectures, setPersonPrefectures] = useState([]);
@@ -119,6 +121,9 @@ export default function EditPersonProfilePage({ params }) {
     const sl = profile.socialLinks || {};
     setSocialLinks(Object.fromEntries(SOCIAL_LINK_KEYS.map(({ key }) => [key, sl[key] || ''])));
 
+    // Expertise area
+    setExpertiseArea(Array.isArray(profile.expertiseArea) ? profile.expertiseArea : []);
+
     // Political positions
     const pp = profile.politicalPositions || {};
     const ppPairs = Object.entries(pp).map(([k, v]) => ({ key: k, value: v }));
@@ -200,6 +205,9 @@ export default function EditPersonProfilePage({ params }) {
         if (socialLinks[key]) slObj[key] = socialLinks[key];
       });
       payload.socialLinks = slObj;
+
+      // Expertise area
+      payload.expertiseArea = expertiseArea;
 
       // Candidate section
       if (showCandidateSection) {
@@ -341,6 +349,36 @@ export default function EditPersonProfilePage({ params }) {
                       className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Expertise Area */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Τομέας Εξειδίκευσης</label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {expertiseArea.map((area) => (
+                  <span key={area} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                    {area}
+                    <button
+                      type="button"
+                      onClick={() => setExpertiseArea((prev) => prev.filter((a) => a !== area))}
+                      className="ml-1 text-purple-600 hover:text-purple-900 font-bold leading-none"
+                      aria-label={`Remove ${area}`}
+                    >✕</button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {EXPERTISE_AREAS.filter((area) => !expertiseArea.includes(area)).map((area) => (
+                  <button
+                    key={area}
+                    type="button"
+                    onClick={() => setExpertiseArea((prev) => [...prev, area])}
+                    className="inline-flex items-center px-3 py-1 rounded-full border border-purple-300 text-xs text-purple-700 hover:bg-purple-50 transition"
+                  >
+                    + {area}
+                  </button>
                 ))}
               </div>
             </div>

@@ -80,6 +80,22 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  expertiseArea: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('expertiseArea');
+      if (!raw) return [];
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return [];
+      }
+    },
+    set(value) {
+      this.setDataValue('expertiseArea', value && value.length > 0 ? JSON.stringify(value) : null);
+    }
+  },
   fullName: {
     type: DataTypes.VIRTUAL,
     get() {
