@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { locationAPI, locationSectionAPI, suggestionAPI, candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Badge from '@/components/Badge';
+import Badge from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';

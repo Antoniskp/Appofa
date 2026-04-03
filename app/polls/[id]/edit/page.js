@@ -6,9 +6,9 @@ import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import PollForm from '@/components/PollForm';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
+import PollForm from '@/components/polls/PollForm';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
 
 function EditPollContent() {
   const params = useParams();

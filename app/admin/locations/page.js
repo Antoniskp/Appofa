@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { locationAPI, locationRequestAPI } from '@/lib/api';
-import Badge from '@/components/Badge';
+import Badge from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import AdminTable from '@/components/admin/AdminTable';
 import AdminHeader from '@/components/admin/AdminHeader';
-import Modal from '@/components/Modal';
-import Button from '@/components/Button';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
 

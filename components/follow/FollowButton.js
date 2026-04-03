@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Button from '@/components/Button';
-import Tooltip from '@/components/Tooltip';
+import Button from '@/components/ui/Button';
+import Tooltip from '@/components/ui/Tooltip';
 import { useToast } from '@/components/ToastProvider';
 
 /**

@@ -1,6 +1,6 @@
 'use client';
 
-import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 
 /**
  * Collapsible section for viewing and editing the user's home location.

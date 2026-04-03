@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import FormInput from '@/components/FormInput';
-import LocationSelector from '@/components/LocationSelector';
+import FormInput from '@/components/ui/FormInput';
+import LocationSelector from '@/components/ui/LocationSelector';
 import { messageAPI } from '@/lib/api';
 
 export default function ContactForm({ 

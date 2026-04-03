@@ -6,12 +6,12 @@ import { EyeIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Card from '@/components/Card';
-import Badge from '@/components/Badge';
+import Card from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import { TooltipIconButton } from '@/components/Tooltip';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import { TooltipIconButton } from '@/components/ui/Tooltip';
 
 function PollStatusBadge({ status }) {
   const variants = { active: 'success', closed: 'secondary', archived: 'secondary' };

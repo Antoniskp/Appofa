@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { pollAPI } from '@/lib/api';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import PollForm from '@/components/PollForm';
+import PollForm from '@/components/polls/PollForm';
 
 function CreatePollContent() {
   const router = useRouter();

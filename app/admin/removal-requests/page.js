@@ -5,7 +5,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { personRemovalRequestAPI } from '@/lib/api';
 import AdminTable from '@/components/admin/AdminTable';
-import Pagination from '@/components/Pagination';
+import Pagination from '@/components/ui/Pagination';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',

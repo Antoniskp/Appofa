@@ -7,16 +7,16 @@ import { EyeIcon, TrashIcon, PencilIcon, PlusCircleIcon } from '@heroicons/react
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Card from '@/components/Card';
-import Badge, { StatusBadge, TypeBadge } from '@/components/Badge';
+import Card from '@/components/ui/Card';
+import Badge, { StatusBadge, TypeBadge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
-import ArticleForm from '@/components/ArticleForm';
+import ArticleForm from '@/components/articles/ArticleForm';
 import { usePermissions } from '@/hooks/usePermissions';
-import Button from '@/components/Button';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import { ConfirmDialog } from '@/components/Modal';
-import { TooltipIconButton } from '@/components/Tooltip';
+import Button from '@/components/ui/Button';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import { TooltipIconButton } from '@/components/ui/Tooltip';
 
 const PAGE_LIMIT = 10;
 

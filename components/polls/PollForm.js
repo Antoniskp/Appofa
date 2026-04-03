@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { PlusIcon, TrashIcon, InformationCircleIcon, PhotoIcon } from '@heroicons/react/24/outline';
-import AlertMessage from '@/components/AlertMessage';
-import FormInput from '@/components/FormInput';
-import FormSelect from '@/components/FormSelect';
-import CascadingLocationSelector from '@/components/CascadingLocationSelector';
-import TagInput from '@/components/TagInput';
-import Tooltip from '@/components/Tooltip';
-import ConfirmDialog from '@/components/ConfirmDialog';
+import AlertMessage from '@/components/ui/AlertMessage';
+import FormInput from '@/components/ui/FormInput';
+import FormSelect from '@/components/ui/FormSelect';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
+import TagInput from '@/components/ui/TagInput';
+import Tooltip from '@/components/ui/Tooltip';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 

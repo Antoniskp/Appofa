@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 export default function ApplicationDetailPage({ params }) {
   const { id } = use(params);

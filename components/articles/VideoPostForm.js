@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import VideoEmbedField from '@/components/articles/VideoEmbedField';
-import CascadingLocationSelector from '@/components/CascadingLocationSelector';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import { articleAPI, locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import categoriesConfig from '@/config/articleCategories.json';

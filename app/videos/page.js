@@ -6,9 +6,9 @@ import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import VideoThumbnailCard from '@/components/articles/VideoThumbnailCard';
-import EmptyState from '@/components/EmptyState';
-import SearchInput from '@/components/SearchInput';
-import CategoryPills from '@/components/CategoryPills';
+import EmptyState from '@/components/ui/EmptyState';
+import SearchInput from '@/components/ui/SearchInput';
+import CategoryPills from '@/components/ui/CategoryPills';
 import { useAuth } from '@/lib/auth-context';
 
 const PAGE_SIZE = 18;

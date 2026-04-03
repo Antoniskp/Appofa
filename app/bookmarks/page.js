@@ -4,12 +4,12 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { bookmarkAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
-import FilterBar from '@/components/FilterBar';
-import Pagination from '@/components/Pagination';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
-import ArticleCard from '@/components/ArticleCard';
-import PollCard from '@/components/PollCard';
+import FilterBar from '@/components/ui/FilterBar';
+import Pagination from '@/components/ui/Pagination';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import ArticleCard from '@/components/articles/ArticleCard';
+import PollCard from '@/components/polls/PollCard';
 
 export default function BookmarksPage() {
   const {

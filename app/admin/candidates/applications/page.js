@@ -7,8 +7,8 @@ import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { candidateAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import Pagination from '@/components/Pagination';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import Pagination from '@/components/ui/Pagination';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 export default function AdminApplicationsPage() {
   const { user, loading: authLoading } = useAuth();

@@ -7,8 +7,8 @@ import { PlusIcon, PencilSquareIcon, TrashIcon, CheckBadgeIcon, ClockIcon } from
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import Pagination from '@/components/Pagination';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import Pagination from '@/components/ui/Pagination';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 function ClaimBadge({ status }) {
   const labels = {

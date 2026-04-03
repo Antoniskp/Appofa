@@ -7,9 +7,9 @@ import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { personAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
-import Pagination from '@/components/Pagination';
-import SkeletonLoader from '@/components/SkeletonLoader';
-import EmptyState from '@/components/EmptyState';
+import Pagination from '@/components/ui/Pagination';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
 
 function ClaimStatusBadge({ status }) {
   if (status === 'unclaimed') {
