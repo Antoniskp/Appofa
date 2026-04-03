@@ -1,7 +1,7 @@
 /**
  * PublicPersonProfile model tests
  */
-const { PublicPersonProfile, User, Location, CandidateApplication } = require('../index');
+const { PublicPersonProfile, User, Location } = require('../index');
 
 describe('PublicPersonProfile Model', () => {
   it('has all required fields defined', () => {
@@ -81,10 +81,8 @@ describe('PublicPersonProfile Model', () => {
     expect(assoc.target.name).toBe('Location');
   });
 
-  it('applications association is HasMany CandidateApplication', () => {
-    const assoc = PublicPersonProfile.associations.applications;
-    expect(assoc.associationType).toBe('HasMany');
-    expect(assoc.target.name).toBe('CandidateApplication');
+  it('does not have an applications association', () => {
+    expect(PublicPersonProfile.associations.applications).toBeUndefined();
   });
 
   it('socialLinks getter parses JSON', () => {

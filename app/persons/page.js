@@ -51,11 +51,6 @@ function PersonCard({ profile }) {
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-semibold text-gray-900 truncate">{profile.firstName} {profile.lastName}</h2>
               <ClaimStatusBadge status={profile.claimStatus} />
-              {profile.isActiveCandidate && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                  Υποψήφιος
-                </span>
-              )}
             </div>
             {profile.location && (
               <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">

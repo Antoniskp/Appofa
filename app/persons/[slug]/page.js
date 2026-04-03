@@ -9,7 +9,6 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
-import { positionLabel } from '@/lib/utils/candidatePositions';
 import { getPartyById } from '@/lib/utils/politicalParties';
 import ReportButton from '@/components/ReportButton';
 
@@ -66,7 +65,7 @@ export default function PersonProfilePage({ params }) {
               <p className="text-sm font-medium text-yellow-800">Είστε εσείς; Διεκδικήστε αυτό το προφίλ →</p>
             </div>
             <Link
-              href={`/candidates/${profile.slug}/claim`}
+              href={`/persons/${profile.slug}/claim`}
               className="inline-flex items-center px-3 py-1.5 bg-yellow-500 text-white text-sm font-medium rounded-lg hover:bg-yellow-600 transition-colors"
             >
               Διεκδίκηση Προφίλ
@@ -113,15 +112,10 @@ export default function PersonProfilePage({ params }) {
                     Τοποθεσία: {profile.location.name}
                   </p>
                 )}
-                {profile.isActiveCandidate && profile.constituency && (
+                {profile.constituency && (
                   <p className="mt-1 flex items-center gap-1 text-gray-500">
                     <BuildingLibraryIcon className="h-4 w-4 flex-shrink-0" />
                     Εκλογική Περιφέρεια: {profile.constituency.name}
-                  </p>
-                )}
-                {profile.isActiveCandidate && profile.position && (
-                  <p className="mt-1 text-sm font-medium text-blue-700">
-                    {positionLabel(profile.position)}
                   </p>
                 )}
                 {profile.partyId && (() => {
@@ -172,8 +166,8 @@ export default function PersonProfilePage({ params }) {
               </div>
             )}
 
-            {/* Political Positions — only if active candidate */}
-            {profile.isActiveCandidate && politicalPositions && Object.keys(politicalPositions).length > 0 && (
+            {/* Political Positions */}
+            {politicalPositions && Object.keys(politicalPositions).length > 0 && (
               <div className="mt-5">
                 <h2 className="text-base font-semibold text-gray-900 mb-3">Πολιτικές Θέσεις</h2>
                 <div className="space-y-3">
@@ -187,8 +181,8 @@ export default function PersonProfilePage({ params }) {
               </div>
             )}
 
-            {/* Manifesto — only if active candidate */}
-            {profile.isActiveCandidate && profile.manifesto && (
+            {/* Manifesto */}
+            {profile.manifesto && (
               <div className="mt-5">
                 <h2 className="text-base font-semibold text-gray-900 mb-2">Πολιτικό Πρόγραμμα</h2>
                 <p className="text-gray-700 whitespace-pre-line">{profile.manifesto}</p>

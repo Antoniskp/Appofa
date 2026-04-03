@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import { candidateAPI } from '@/lib/api';
+import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Pagination from '@/components/ui/Pagination';
@@ -18,7 +18,7 @@ export default function AdminClaimsPage() {
 
   const { data: claims, loading, error, refetch } = useAsyncData(
     async () => {
-      const res = await candidateAPI.getPendingClaims({ page, limit: 20 });
+      const res = await personAPI.getPendingClaims({ page, limit: 20 });
       if (res.success) {
         setTotalPages(res.data?.pagination?.totalPages || 1);
         return res.data?.profiles || [];
@@ -34,15 +34,15 @@ export default function AdminClaimsPage() {
   }
 
   const handleApprove = async (id) => {
-    if (!window.confirm('Approve this claim? The user will become a candidate.')) return;
-    try { await candidateAPI.approveClaim(id); refetch?.(); }
+    if (!window.confirm('Approve this claim? The profile will be marked as claimed.')) return;
+    try { await personAPI.approveClaim(id); refetch?.(); }
     catch (err) { alert(err.message || 'Failed to approve claim.'); }
   };
 
   const handleReject = async (id) => {
     const reason = window.prompt('Rejection reason (optional):');
     if (reason === null) return;
-    try { await candidateAPI.rejectClaim(id, { reason }); refetch?.(); }
+    try { await personAPI.rejectClaim(id, { reason }); refetch?.(); }
     catch (err) { alert(err.message || 'Failed to reject claim.'); }
   };
 
@@ -51,7 +51,7 @@ export default function AdminClaimsPage() {
       <div className="app-container">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <h1 className="text-2xl font-bold text-gray-900">Pending Profile Claims</h1>
-          <Link href="/admin/candidates" className="text-sm text-blue-600 hover:underline">← All Profiles</Link>
+          <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline">← All Profiles</Link>
         </div>
 
         {loading && <SkeletonLoader count={5} type="card" />}
@@ -77,7 +77,7 @@ export default function AdminClaimsPage() {
                 {claims.map((profile) => (
                   <tr key={profile.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <Link href={`/candidates/${profile.slug}`} className="font-medium text-blue-600 hover:underline">{profile.fullName}</Link>
+                      <Link href={`/persons/${profile.slug}`} className="font-medium text-blue-600 hover:underline">{profile.fullName}</Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">{profile.claimedBy?.username || '—'}</td>
                     <td className="px-4 py-3 text-sm text-gray-500">{profile.constituency?.name || '—'}</td>
@@ -90,7 +90,7 @@ export default function AdminClaimsPage() {
                         <button onClick={() => handleReject(profile.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Reject">
                           <XMarkIcon className="h-4 w-4" />
                         </button>
-                        <Link href={`/admin/candidates/claims/${profile.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                        <Link href={`/admin/persons/claims/${profile.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
                       </div>
                     </td>
                   </tr>

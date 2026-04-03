@@ -109,7 +109,7 @@ Use `'use client'` for state, effects, event handlers, browser APIs, or context 
 | `locationAPI` | `getAll(params)`, `getById`, `create`, `update`, `delete`, `search` |
 | `adminAPI` | `getUsers`, `updateUserRole`, `deleteUser` |
 | `bookmarkAPI` | Bookmark management |
-| `candidateAPI` | Candidate applications and claims |
+| `personAPI` | Person profiles and claims |
 | `commentAPI` | Article/news comments |
 | `dreamTeamAPI` | Dream team nominations |
 | `endorsementAPI` | User endorsements |

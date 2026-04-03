@@ -36,7 +36,7 @@ function ClaimStatusBadge({ status }) {
   return null;
 }
 
-function CandidateCard({ profile }) {
+function PersonCard({ profile }) {
   return (
     <Link href={`/persons/${profile.slug}`} className="block bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
       <div className="p-5">
@@ -67,7 +67,7 @@ function CandidateCard({ profile }) {
   );
 }
 
-export default function CandidatesPage() {
+export default function PersonsPage() {
   const {
     filters,
     page,
@@ -77,7 +77,7 @@ export default function CandidatesPage() {
     nextPage,
     prevPage,
     goToPage
-  } = useFilters({ search: '', constituencyId: '', claimStatus: '', position: '' });
+  } = useFilters({ search: '', constituencyId: '', claimStatus: '' });
 
   const { data: locations } = useAsyncData(
     async () => {
@@ -88,13 +88,12 @@ export default function CandidatesPage() {
     { initialData: [] }
   );
 
-  const { data: candidates, loading, error } = useAsyncData(
+  const { data: persons, loading, error } = useAsyncData(
     async () => {
       const params = { page, limit: 12 };
       if (filters.search) params.search = filters.search;
       if (filters.constituencyId) params.constituencyId = filters.constituencyId;
       if (filters.claimStatus) params.claimStatus = filters.claimStatus;
-      if (filters.position) params.position = filters.position;
       const res = await personAPI.getAll(params);
       if (res.success) return res;
       return { data: { profiles: [], pagination: { totalPages: 1 } } };
@@ -113,8 +112,8 @@ export default function CandidatesPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Independent Candidates</h1>
-          <p className="mt-1 text-gray-500">Browse and discover independent parliamentary candidates.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Public Person Profiles</h1>
+          <p className="mt-1 text-gray-500">Browse and discover public person profiles.</p>
         </div>
 
         {/* Filters */}
@@ -149,40 +148,19 @@ export default function CandidatesPage() {
             <option value="pending">Claim Pending</option>
             <option value="claimed">Verified</option>
           </select>
-          <select
-            value={filters.position}
-            onChange={(e) => handleFilterChange('position', e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Όλες οι θέσεις</option>
-            <option value="parliamentary">Βουλευτής</option>
-            <option value="prefect">Περιφερειάρχης</option>
-            <option value="mayor">Δήμαρχος</option>
-          </select>
-        </div>
-
-        {/* Become a Candidate CTA */}
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <p className="font-semibold text-blue-900">Are you running for parliament?</p>
-            <p className="text-sm text-blue-700">Apply to become a candidate on this platform.</p>
-          </div>
-          <Link href="/become-a-candidate" className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
-            Become a Candidate
-          </Link>
         </div>
 
         {loading && <SkeletonLoader count={6} type="card" />}
-        {error && <p className="text-red-500 text-center py-8">Failed to load candidates.</p>}
+        {error && <p className="text-red-500 text-center py-8">Failed to load persons.</p>}
 
-        {!loading && !error && candidates.length === 0 && (
-          <EmptyState message="No candidates found." />
+        {!loading && !error && persons.length === 0 && (
+          <EmptyState message="No persons found." />
         )}
 
-        {!loading && candidates.length > 0 && (
+        {!loading && persons.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {candidates.map((profile) => (
-              <CandidateCard key={profile.id} profile={profile} />
+            {persons.map((profile) => (
+              <PersonCard key={profile.id} profile={profile} />
             ))}
           </div>
         )}

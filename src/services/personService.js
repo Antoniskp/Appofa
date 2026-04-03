@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { PublicPersonProfile, CandidateApplication, User, Location } = require('../models');
+const { PublicPersonProfile, User, Location } = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
@@ -35,9 +35,9 @@ async function ensureUniqueSlug(base) {
 
   let counter = 2;
   while (true) {
-    const candidate = `${base}-${counter}`;
-    const conflict = await PublicPersonProfile.findOne({ where: { slug: candidate } });
-    if (!conflict) return candidate;
+    const nextSlug = `${base}-${counter}`;
+    const conflict = await PublicPersonProfile.findOne({ where: { slug: nextSlug } });
+    if (!conflict) return nextSlug;
     counter++;
   }
 }
@@ -65,7 +65,7 @@ const SAFE_USER_ATTRS = ['id', 'username', 'firstName', 'lastName', 'avatar', 'e
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
-async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus, position, activeOnly, expertiseArea } = {}) {
+async function getPersons({ page = 1, limit = 12, constituencyId, search, claimStatus, position, expertiseArea } = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
   const offset = (pageNum - 1) * limitNum;
@@ -90,7 +90,6 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
     }
     where[Op.or] = conditions;
   }
-  if (activeOnly === 'true') where.isActiveCandidate = true;
   if (expertiseArea && typeof expertiseArea === 'string') {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
@@ -116,178 +115,21 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
   };
 }
 
-async function getCandidateBySlug(slug) {
+async function getPersonBySlug(slug) {
   const profile = await PublicPersonProfile.findOne({
     where: { slug },
     include: PROFILE_INCLUDE
   });
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   return profile;
 }
 
-async function getCandidateById(id) {
+async function getPersonById(id) {
   const profile = await PublicPersonProfile.findByPk(id, {
-    include: [
-      ...PROFILE_INCLUDE,
-      { model: User, as: 'appointedBy', attributes: ['id', 'username', 'firstName', 'lastName'], required: false }
-    ]
+    include: PROFILE_INCLUDE
   });
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   return profile;
-}
-
-// ─── Appointment ─────────────────────────────────────────────────────────────
-
-async function appointAsCandidate(moderatorUserId, moderatorRole, candidateProfileId, data) {
-  if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can appoint candidates.');
-  }
-
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
-
-  if (!data.position || !['mayor', 'prefect', 'parliamentary'].includes(data.position)) {
-    throw new ServiceError(400, 'A valid position is required (mayor, prefect, or parliamentary).');
-  }
-
-  const updates = {
-    isActiveCandidate: true,
-    appointedAt: new Date(),
-    appointedByUserId: moderatorUserId,
-    position: data.position,
-    retiredAt: null
-  };
-  if (data.constituencyId !== undefined) updates.constituencyId = data.constituencyId || null;
-
-  await profile.update(updates);
-  return profile;
-}
-
-async function retireCandidate(moderatorUserId, moderatorRole, candidateProfileId) {
-  if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can retire candidates.');
-  }
-
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
-  if (!profile.isActiveCandidate) throw new ServiceError(400, 'Profile is not an active candidate.');
-
-  await profile.update({ isActiveCandidate: false, retiredAt: new Date() });
-  return profile;
-}
-
-// ─── Path A — User Application ───────────────────────────────────────────────
-
-async function submitApplication(applicantUserId, data) {
-  const { firstName, lastName, locationId, supportingStatement, constituencyId, bio, contactEmail, socialLinks, politicalPositions, manifesto, position } = data;
-
-  if (!firstName || !firstName.trim()) throw new ServiceError(400, 'First name is required.');
-  if (!lastName || !lastName.trim()) throw new ServiceError(400, 'Last name is required.');
-  if (!supportingStatement || !supportingStatement.trim()) throw new ServiceError(400, 'Supporting statement is required.');
-
-  const existing = await CandidateApplication.findOne({
-    where: {
-      applicantUserId,
-      status: { [Op.in]: ['pending', 'approved'] }
-    }
-  });
-  if (existing) throw new ServiceError(409, 'You already have a pending or approved application.');
-
-  const application = await CandidateApplication.create({
-    applicantUserId,
-    firstName: firstName.trim(),
-    lastName: lastName.trim(),
-    locationId: locationId || null,
-    supportingStatement: supportingStatement.trim(),
-    constituencyId: constituencyId || null,
-    bio: bio || null,
-    contactEmail: contactEmail || null,
-    socialLinks: socialLinks || null,
-    politicalPositions: politicalPositions || null,
-    manifesto: manifesto || null,
-    position: position || null,
-    status: 'pending'
-  });
-
-  return application;
-}
-
-async function getMyApplication(userId) {
-  const application = await CandidateApplication.findOne({
-    where: { applicantUserId: userId },
-    order: [['createdAt', 'DESC']],
-    include: [
-      { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] },
-      { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'slug', 'firstName', 'lastName'] }
-    ]
-  });
-  if (!application) throw new ServiceError(404, 'No application found.');
-  return application;
-}
-
-async function approveApplication(moderatorUserId, moderatorRole, applicationId) {
-  if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can approve applications.');
-  }
-
-  const application = await CandidateApplication.findByPk(applicationId, {
-    include: [{ model: User, as: 'applicant', attributes: SAFE_USER_ATTRS }]
-  });
-  if (!application) throw new ServiceError(404, 'Application not found.');
-  if (application.status !== 'pending') throw new ServiceError(400, 'Application is not pending.');
-
-  const base = generateSlug(application.firstName, application.lastName);
-  const slug = await ensureUniqueSlug(base);
-
-  const profile = await PublicPersonProfile.create({
-    slug,
-    firstName: application.firstName,
-    lastName: application.lastName,
-    locationId: application.locationId || null,
-    constituencyId: application.constituencyId || null,
-    bio: application.bio || null,
-    contactEmail: application.contactEmail || null,
-    socialLinks: application.socialLinks || null,
-    politicalPositions: application.politicalPositions || null,
-    manifesto: application.manifesto || null,
-    position: application.position || null,
-    claimStatus: 'claimed',
-    claimedByUserId: application.applicantUserId,
-    claimVerifiedAt: new Date(),
-    claimVerifiedByUserId: moderatorUserId,
-    createdByUserId: moderatorUserId,
-    source: 'application'
-  });
-
-  await application.update({
-    status: 'approved',
-    reviewedByUserId: moderatorUserId,
-    reviewedAt: new Date(),
-    publicPersonProfileId: profile.id
-  });
-
-  await User.update({ role: 'candidate' }, { where: { id: application.applicantUserId } });
-
-  return { application, profile };
-}
-
-async function rejectApplication(moderatorUserId, moderatorRole, applicationId, rejectionReason) {
-  if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can reject applications.');
-  }
-
-  const application = await CandidateApplication.findByPk(applicationId);
-  if (!application) throw new ServiceError(404, 'Application not found.');
-  if (application.status !== 'pending') throw new ServiceError(400, 'Application is not pending.');
-
-  await application.update({
-    status: 'rejected',
-    reviewedByUserId: moderatorUserId,
-    reviewedAt: new Date(),
-    rejectionReason: rejectionReason || null
-  });
-
-  return application;
 }
 
 // ─── Expertise area validation helper ────────────────────────────────────────
@@ -314,7 +156,7 @@ function validatePartyId(partyId) {
 
 async function createProfile(moderatorUserId, moderatorRole, data) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can create candidate profiles.');
+    throw new ServiceError(403, 'Only admins and moderators can create person profiles.');
   }
 
   const { firstName, lastName, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId } = data;
@@ -350,13 +192,13 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   return profile;
 }
 
-async function submitClaim(userId, candidateProfileId, supportingStatement) {
+async function submitClaim(userId, profileId, supportingStatement) {
   if (!supportingStatement || !supportingStatement.trim()) {
     throw new ServiceError(400, 'Supporting statement is required.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus === 'claimed') throw new ServiceError(400, 'This profile has already been claimed.');
   if (profile.claimStatus === 'pending') throw new ServiceError(409, 'A claim is already pending for this profile.');
 
@@ -374,13 +216,13 @@ async function submitClaim(userId, candidateProfileId, supportingStatement) {
   return profile;
 }
 
-async function approveClaim(moderatorUserId, moderatorRole, candidateProfileId) {
+async function approveClaim(moderatorUserId, moderatorRole, profileId) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
     throw new ServiceError(403, 'Only admins and moderators can approve claims.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
 
   await profile.update({
@@ -391,18 +233,16 @@ async function approveClaim(moderatorUserId, moderatorRole, candidateProfileId) 
     claimTokenExpiresAt: null
   });
 
-  await User.update({ role: 'candidate' }, { where: { id: profile.claimedByUserId } });
-
   return profile;
 }
 
-async function rejectClaim(moderatorUserId, moderatorRole, candidateProfileId, reason) {
+async function rejectClaim(moderatorUserId, moderatorRole, profileId, reason) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
     throw new ServiceError(403, 'Only admins and moderators can reject claims.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
 
   await profile.update({
@@ -416,9 +256,9 @@ async function rejectClaim(moderatorUserId, moderatorRole, candidateProfileId, r
   return profile;
 }
 
-async function updateProfile(requestingUserId, requestingRole, candidateProfileId, data) {
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+async function updateProfile(requestingUserId, requestingRole, profileId, data) {
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
 
   const isOwner = profile.claimedByUserId === requestingUserId;
   const isModerator = ['admin', 'moderator'].includes(requestingRole);
@@ -428,7 +268,7 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
   }
 
   const allowedFields = ['firstName', 'lastName', 'locationId', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position'];
-  if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug', 'isActiveCandidate');
+  if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug');
 
   const updates = {};
   allowedFields.forEach((field) => {
@@ -443,23 +283,17 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
     updates.partyId = validatePartyId(data.partyId);
   }
 
-  if (isModerator && data.isActiveCandidate === false) {
-    updates.retiredAt = new Date();
-  } else if (isModerator && data.isActiveCandidate === true) {
-    updates.retiredAt = null;
-  }
-
   await profile.update(updates);
   return profile;
 }
 
-async function deleteProfile(requestingUserId, requestingRole, candidateProfileId) {
+async function deleteProfile(requestingUserId, requestingRole, profileId) {
   if (!['admin', 'moderator'].includes(requestingRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can delete candidate profiles.');
+    throw new ServiceError(403, 'Only admins and moderators can delete person profiles.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(candidateProfileId);
-  if (!profile) throw new ServiceError(404, 'Candidate profile not found.');
+  const profile = await PublicPersonProfile.findByPk(profileId);
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
 
   if (requestingRole === 'moderator' && profile.claimStatus !== 'unclaimed') {
     throw new ServiceError(403, 'Moderators can only delete unclaimed profiles.');
@@ -470,54 +304,6 @@ async function deleteProfile(requestingUserId, requestingRole, candidateProfileI
 }
 
 // ─── Moderator Review ────────────────────────────────────────────────────────
-
-async function getPendingApplications(moderatorUserId, moderatorRole, { page = 1, limit = 20 } = {}) {
-  if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can view pending applications.');
-  }
-
-  const pageNum = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
-  const offset = (pageNum - 1) * limitNum;
-
-  const { count, rows } = await CandidateApplication.findAndCountAll({
-    where: { status: 'pending' },
-    include: [
-      { model: User, as: 'applicant', attributes: SAFE_USER_ATTRS },
-      { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] }
-    ],
-    limit: limitNum,
-    offset,
-    order: [['createdAt', 'ASC']]
-  });
-
-  return {
-    applications: rows,
-    pagination: {
-      currentPage: pageNum,
-      totalPages: Math.ceil(count / limitNum),
-      totalItems: count,
-      itemsPerPage: limitNum
-    }
-  };
-}
-
-async function getApplicationById(moderatorUserId, moderatorRole, applicationId) {
-  if (!['admin', 'moderator'].includes(moderatorRole)) {
-    throw new ServiceError(403, 'Only admins and moderators can view applications.');
-  }
-
-  const application = await CandidateApplication.findByPk(applicationId, {
-    include: [
-      { model: User, as: 'applicant', attributes: SAFE_USER_ATTRS },
-      { model: User, as: 'reviewer', attributes: SAFE_USER_ATTRS },
-      { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] },
-      { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'slug', 'firstName', 'lastName'] }
-    ]
-  });
-  if (!application) throw new ServiceError(404, 'Application not found.');
-  return application;
-}
 
 async function getPendingClaims(moderatorUserId, moderatorRole, { page = 1, limit = 20 } = {}) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
@@ -550,37 +336,17 @@ async function getPendingClaims(moderatorUserId, moderatorRole, { page = 1, limi
   };
 }
 
-async function getDashboard(candidateUserId) {
-  const profile = await PublicPersonProfile.findOne({
-    where: { claimedByUserId: candidateUserId, claimStatus: 'claimed' },
-    include: [
-      { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] }
-    ]
-  });
-  if (!profile) throw new ServiceError(404, 'No candidate profile found for this user.');
-  return profile;
-}
-
 module.exports = {
-  getCandidates,
-  getCandidateBySlug,
-  getCandidateById,
-  submitApplication,
-  getMyApplication,
-  approveApplication,
-  rejectApplication,
+  getPersons,
+  getPersonBySlug,
+  getPersonById,
   createProfile,
   submitClaim,
   approveClaim,
   rejectClaim,
   updateProfile,
   deleteProfile,
-  getPendingApplications,
-  getApplicationById,
   getPendingClaims,
-  getDashboard,
-  appointAsCandidate,
-  retireCandidate,
   // Export for testing
   generateSlug
 };

@@ -1,9 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { candidateAPI, locationAPI } from '@/lib/api';
+import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 
@@ -21,75 +20,26 @@ function ClaimBadge({ status }) {
   );
 }
 
-export default function AdminCandidateDetailPage() {
+export default function AdminPersonDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const params = useParams();
   const id = params?.id;
 
-  const [appointForm, setAppointForm] = useState({ position: '', constituencyId: '' });
-  const [actionLoading, setActionLoading] = useState(false);
-  const [actionError, setActionError] = useState('');
-  const [actionSuccess, setActionSuccess] = useState('');
-
-  const { data: profile, loading, error, refetch } = useAsyncData(
+  const { data: profile, loading, error } = useAsyncData(
     async () => {
       if (!id) return null;
-      const res = await candidateAPI.getById(id);
+      const res = await personAPI.getById(id);
       return res.data?.profile || null;
     },
     [id],
     { initialData: null }
   );
 
-  const { data: locations } = useAsyncData(
-    async () => {
-      const res = await locationAPI.getAll({ limit: 200 });
-      return res.data || [];
-    },
-    [],
-    { initialData: [] }
-  );
-
   if (!authLoading && user && !['admin', 'moderator'].includes(user.role)) {
     router.replace('/');
     return null;
   }
-
-  const handleAppoint = async (e) => {
-    e.preventDefault();
-    setActionError('');
-    setActionSuccess('');
-    setActionLoading(true);
-    try {
-      const payload = { position: appointForm.position };
-      if (appointForm.constituencyId) payload.constituencyId = parseInt(appointForm.constituencyId, 10);
-      await candidateAPI.appointAsCandidate(id, payload);
-      setActionSuccess('Candidate appointed successfully.');
-      setAppointForm({ position: '', constituencyId: '' });
-      refetch?.();
-    } catch (err) {
-      setActionError(err.message || 'Failed to appoint candidate.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleRetire = async () => {
-    if (!window.confirm('Retire this candidate? They will no longer appear as an active candidate.')) return;
-    setActionError('');
-    setActionSuccess('');
-    setActionLoading(true);
-    try {
-      await candidateAPI.retireCandidate(id);
-      setActionSuccess('Candidate retired successfully.');
-      refetch?.();
-    } catch (err) {
-      setActionError(err.message || 'Failed to retire candidate.');
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   if (authLoading || loading) {
     return (
@@ -105,8 +55,8 @@ export default function AdminCandidateDetailPage() {
     return (
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-3xl mx-auto">
-          <Link href="/admin/candidates" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
-          <p className="text-red-500">Failed to load candidate profile.</p>
+          <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
+          <p className="text-red-500">Failed to load person profile.</p>
         </div>
       </div>
     );
@@ -115,7 +65,7 @@ export default function AdminCandidateDetailPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-3xl mx-auto">
-        <Link href="/admin/candidates" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
+        <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Profiles</Link>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-start gap-4">
@@ -165,91 +115,6 @@ export default function AdminCandidateDetailPage() {
           </div>
         </div>
 
-        {/* Appointment status */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Candidate Status</h2>
-
-          {actionError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">{actionError}</p>
-          )}
-          {actionSuccess && (
-            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 mb-4">{actionSuccess}</p>
-          )}
-
-          {profile.isActiveCandidate ? (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
-                  Active Candidate
-                </span>
-                {profile.appointedAt && (
-                  <span className="text-sm text-gray-500">
-                    Appointed {new Date(profile.appointedAt).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              <button
-                onClick={handleRetire}
-                disabled={actionLoading}
-                className="px-4 py-2 border border-red-300 text-red-600 text-sm font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
-              >
-                {actionLoading ? 'Processing...' : 'Retire Candidate'}
-              </button>
-            </div>
-          ) : (
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-500">
-                  Not Active
-                </span>
-                {profile.retiredAt && (
-                  <span className="text-sm text-gray-500">
-                    Retired {new Date(profile.retiredAt).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Appoint as Candidate</h3>
-              <form onSubmit={handleAppoint} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Position <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={appointForm.position}
-                    onChange={(e) => setAppointForm((prev) => ({ ...prev, position: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  >
-                    <option value="">Select position</option>
-                    <option value="mayor">Mayor</option>
-                    <option value="prefect">Prefect</option>
-                    <option value="parliamentary">Parliamentary</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Constituency (optional)</label>
-                  <select
-                    value={appointForm.constituencyId}
-                    onChange={(e) => setAppointForm((prev) => ({ ...prev, constituencyId: e.target.value }))}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="">Keep existing / none</option>
-                    {locations.map((loc) => (
-                      <option key={loc.id} value={loc.id}>{loc.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                >
-                  {actionLoading ? 'Processing...' : 'Appoint'}
-                </button>
-              </form>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

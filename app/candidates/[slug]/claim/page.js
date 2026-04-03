@@ -4,7 +4,7 @@ import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
-import { candidateAPI } from '@/lib/api';
+import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 
@@ -19,7 +19,7 @@ export default function ClaimProfilePage({ params }) {
 
   const { data: profile, loading } = useAsyncData(
     async () => {
-      const res = await candidateAPI.getBySlug(slug);
+      const res = await personAPI.getBySlug(slug);
       return res.data?.profile || null;
     },
     [slug],
@@ -27,7 +27,7 @@ export default function ClaimProfilePage({ params }) {
   );
 
   if (!authLoading && !user) {
-    router.replace(`/login?redirect=/candidates/${slug}/claim`);
+    router.replace(`/login?redirect=/persons/${slug}/claim`);
     return null;
   }
 
@@ -40,8 +40,8 @@ export default function ClaimProfilePage({ params }) {
     setSubmitting(true);
     setSubmitError('');
     try {
-      await candidateAPI.submitClaim(profile.id, { supportingStatement });
-      router.push(`/candidates/${slug}?claimed=1`);
+      await personAPI.submitClaim(profile.id, { supportingStatement });
+      router.push(`/persons/${slug}?claimed=1`);
     } catch (err) {
       setSubmitError(err.message || 'Failed to submit claim. Please try again.');
       setSubmitting(false);
@@ -55,8 +55,8 @@ export default function ClaimProfilePage({ params }) {
   if (!profile) {
     return (
       <div className="app-container py-10 text-center">
-        <p className="text-red-500">Candidate not found.</p>
-        <Link href="/candidates" className="mt-4 inline-block text-blue-600 hover:underline">← Back</Link>
+        <p className="text-red-500">Person not found.</p>
+        <Link href="/persons" className="mt-4 inline-block text-blue-600 hover:underline">← Back</Link>
       </div>
     );
   }
@@ -65,7 +65,7 @@ export default function ClaimProfilePage({ params }) {
     return (
       <div className="app-container py-10 text-center">
         <p className="text-gray-700">This profile is not available for claiming.</p>
-        <Link href={`/candidates/${slug}`} className="mt-4 inline-block text-blue-600 hover:underline">← Back to profile</Link>
+        <Link href={`/persons/${slug}`} className="mt-4 inline-block text-blue-600 hover:underline">← Back to profile</Link>
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function ClaimProfilePage({ params }) {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-xl mx-auto">
-        <Link href={`/candidates/${slug}`} className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Back to profile</Link>
+        <Link href={`/persons/${slug}`} className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Back to profile</Link>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h1 className="text-xl font-bold text-gray-900 mb-1">Claim this Profile</h1>
@@ -100,7 +100,7 @@ export default function ClaimProfilePage({ params }) {
                 value={supportingStatement}
                 onChange={(e) => setSupportingStatement(e.target.value)}
                 rows={5}
-                placeholder="Provide evidence that you are this candidate (e.g., your public social media, party affiliation, etc.)"
+                placeholder="Provide evidence that you are this person (e.g., your public social media, party affiliation, etc.)"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 required
               />

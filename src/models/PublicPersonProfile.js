@@ -149,25 +149,6 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
     type: DataTypes.ENUM('moderator', 'application', 'self'),
     defaultValue: 'moderator',
     allowNull: false
-  },
-  isActiveCandidate: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false
-  },
-  appointedAt: {
-    type: DataTypes.DATE,
-    allowNull: true
-  },
-  appointedByUserId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: { model: 'Users', key: 'id' },
-    onDelete: 'SET NULL'
-  },
-  retiredAt: {
-    type: DataTypes.DATE,
-    allowNull: true
   }
 }, {
   tableName: 'PublicPersonProfiles',

@@ -398,10 +398,10 @@ function AdminDashboardContent() {
               Manage Messages
             </Link>
             <Link
-              href="/admin/candidates"
+              href="/admin/persons"
               className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition"
             >
-              Manage Candidates
+              Manage Persons
             </Link>
             <Link
               href="/admin/removal-requests"

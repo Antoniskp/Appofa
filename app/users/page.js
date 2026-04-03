@@ -207,48 +207,7 @@ export default function UsersPage() {
                 </div>
               )}
 
-              {/* Candidate dashboard banner — shown only to users with candidate role */}
-              {user?.role === 'candidate' && (
-                <div className="bg-white rounded-lg shadow-sm border border-green-200 px-4 py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🏛️</span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">Πίνακας Υποψηφίου</p>
-                      <p className="text-xs text-gray-500">Διαχειριστείτε το προφίλ σας ως ανεξάρτητος υποψήφιος.</p>
-                    </div>
-                  </div>
-                  <Link
-                    href="/candidates/dashboard"
-                    className="inline-flex items-center px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-                  >
-                    Πίνακας →
-                  </Link>
-                </div>
-              )}
 
-              {/* Become a candidate banner — shown to authenticated users who are not yet candidates */}
-              {!['candidate', 'admin', 'moderator'].includes(user?.role) && (
-                <div className="bg-white rounded-lg shadow-sm border border-blue-200 px-4 py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🗳️</span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">Γίνετε Ανεξάρτητος Υποψήφιος</p>
-                      <p className="text-xs text-gray-500">Υποβάλετε αίτηση για να συμμετάσχετε ως υποψήφιος.</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    <Link
-                      href="/become-a-candidate"
-                      className="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-                    >
-                      Υποβολή →
-                    </Link>
-                    <Link href="/my-application" className="text-xs text-blue-500 hover:underline" aria-label="Δείτε την κατάσταση της αίτησής σας">
-                       Δείτε την αίτησή σας →
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Search using FilterBar */}

@@ -3,7 +3,7 @@
 import { use, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { candidateAPI } from '@/lib/api';
+import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -18,7 +18,7 @@ export default function ClaimDetailPage({ params }) {
 
   const { data: profile, loading, error, refetch } = useAsyncData(
     async () => {
-      const res = await candidateAPI.getAll({ limit: 200 });
+      const res = await personAPI.getAll({ limit: 200 });
       return (res.data?.profiles || []).find((p) => p.id === parseInt(id, 10)) || null;
     },
     [id],
@@ -30,16 +30,16 @@ export default function ClaimDetailPage({ params }) {
   }
 
   const handleApprove = async () => {
-    if (!window.confirm('Approve this claim? The user will become a verified candidate.')) return;
+    if (!window.confirm('Approve this claim? The profile will be marked as verified.')) return;
     setProcessing(true); setActionError('');
-    try { await candidateAPI.approveClaim(id); refetch?.(); }
+    try { await personAPI.approveClaim(id); refetch?.(); }
     catch (err) { setActionError(err.message || 'Failed to approve.'); }
     finally { setProcessing(false); }
   };
 
   const handleReject = async () => {
     setProcessing(true); setActionError('');
-    try { await candidateAPI.rejectClaim(id, { reason }); refetch?.(); }
+    try { await personAPI.rejectClaim(id, { reason }); refetch?.(); }
     catch (err) { setActionError(err.message || 'Failed to reject.'); }
     finally { setProcessing(false); }
   };
@@ -50,7 +50,7 @@ export default function ClaimDetailPage({ params }) {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-2xl mx-auto">
-        <Link href="/admin/candidates/claims" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Claims</Link>
+        <Link href="/admin/persons/claims" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← All Claims</Link>
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Claim Review: {profile.fullName}</h1>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4 mb-4">
