@@ -81,7 +81,7 @@ describe('PublicPersonProfile Model', () => {
     expect(assoc.target.name).toBe('Location');
   });
 
-  it('does not have an applications (CandidateApplication) association', () => {
+  it('does not have an applications association', () => {
     expect(PublicPersonProfile.associations.applications).toBeUndefined();
   });
 

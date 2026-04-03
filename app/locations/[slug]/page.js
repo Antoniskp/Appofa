@@ -91,7 +91,7 @@ export default function LocationDetailPage() {
         const locId = loc.id;
 
         // Fetch all secondary data in parallel
-        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, candidatesRes] =
+        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, personsRes] =
           await Promise.allSettled([
             locationAPI.getLocationEntities(locId),
             locationAPI.getAll({ parent_id: locId }),
@@ -129,10 +129,10 @@ export default function LocationDetailPage() {
           console.error('Failed to load suggestions:', suggestionsRes.reason);
         }
 
-        if (candidatesRes.status === 'fulfilled' && candidatesRes.value.success) {
-          setPersons(candidatesRes.value.data?.profiles || []);
-        } else if (candidatesRes.status === 'rejected') {
-          console.error('Failed to load persons:', candidatesRes.reason);
+        if (personsRes.status === 'fulfilled' && personsRes.value.success) {
+          setPersons(personsRes.value.data?.profiles || []);
+        } else if (personsRes.status === 'rejected') {
+          console.error('Failed to load persons:', personsRes.reason);
         }
       },
       onError: (err) => {
