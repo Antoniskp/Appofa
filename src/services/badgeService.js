@@ -29,7 +29,9 @@ const badgeService = {
     }
 
     // Gateway: if user is not verified, skip all other badge evaluations
-    const isVerifiedEarned = existingSet.has('verified:gold');
+    const isVerifiedEarned = verifiedBadgeDef
+      ? verifiedBadgeDef.tiers.some(t => existingSet.has(`verified:${t.tier}`))
+      : false;
     if (!isVerifiedEarned) {
       if (toCreate.length > 0) {
         await UserBadge.bulkCreate(toCreate, { ignoreDuplicates: true });

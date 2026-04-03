@@ -55,7 +55,7 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
     setAvatarLoadError(false);
   }, [user?.avatar]);
 
-  const hasDisplayBadge = user.displayBadgeSlug && user.displayBadgeTier;
+  const hasDisplayBadge = user?.displayBadgeSlug && user?.displayBadgeTier;
 
   return (
     <div className="relative inline-flex flex-shrink-0">

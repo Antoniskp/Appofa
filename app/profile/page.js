@@ -413,6 +413,13 @@ function ProfileContent() {
     }
   };
 
+  const getEarnedBadges = (progress) => {
+    if (!progress) return [];
+    return progress.flatMap(b =>
+      b.tiers.filter(t => t.earned).map(t => ({ slug: b.slug, tier: t.tier, name: b.name, label: t.label }))
+    );
+  };
+
   if (loading) {
     return (
       <div className="bg-gray-50 min-h-screen py-10">
@@ -803,7 +810,7 @@ function ProfileContent() {
             <div className="space-y-6">
               {/* Display badge selection */}
               {(() => {
-                const allEarned = badgeProgress.flatMap(b => b.tiers.filter(t => t.earned).map(t => ({ slug: b.slug, tier: t.tier, name: b.name, label: t.label })));
+                const allEarned = getEarnedBadges(badgeProgress);
                 const isSelected = (slug, tier) => displayBadge.slug === slug && displayBadge.tier === tier;
                 if (allEarned.length === 0) return null;
                 return (
