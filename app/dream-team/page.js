@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAuth } from '@/lib/auth-context';
 import DreamTeamHero from '@/components/dream-team/DreamTeamHero';
@@ -34,6 +34,10 @@ export default function DreamTeamPage() {
   const [votingPosition, setVotingPosition] = useState(null);
   const [toast, setToast] = useState(null);
   const [totalPublicFormations, setTotalPublicFormations] = useState(0);
+
+  // Keep a ref to myVotesMap so handleVote always reads the latest value (avoids stale closure)
+  const myVotesMapRef = useRef({});
+  useEffect(() => { myVotesMapRef.current = myVotesMap; }, [myVotesMap]);
 
   // Comparison tool state
   const [compareOpen, setCompareOpen] = useState(false);
@@ -96,7 +100,7 @@ export default function DreamTeamPage() {
     try {
       // Check if this person is already voted for in a different position
       if (personId) {
-        const conflict = Object.values(myVotesMap).find(
+        const conflict = Object.values(myVotesMapRef.current).find(
           (v) => v.personId === personId && v.positionId !== positionId,
         );
         if (conflict) {
@@ -104,7 +108,7 @@ export default function DreamTeamPage() {
           return;
         }
       } else if (candidateUserId) {
-        const conflict = Object.values(myVotesMap).find(
+        const conflict = Object.values(myVotesMapRef.current).find(
           (v) => v.candidateUserId === candidateUserId && v.positionId !== positionId,
         );
         if (conflict) {
@@ -137,7 +141,7 @@ export default function DreamTeamPage() {
     } finally {
       setVotingPosition(null);
     }
-  }, [showToast, myVotesMap]);
+  }, [showToast]);
 
   const handleDeleteVote = useCallback(async (positionId) => {
     setVotingPosition(positionId);
