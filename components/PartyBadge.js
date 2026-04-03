@@ -13,7 +13,7 @@ export default function PartyBadge({ partyId, className = '' }) {
       style={{ backgroundColor: party.color }}
     >
       {party.logo ? (
-        <img src={party.logo} alt={party.abbreviation} className="h-full w-full rounded-full object-cover" />
+        <img src={party.logo} alt={party.name} className="h-full w-full rounded-full object-cover" />
       ) : (
         <span className="text-white text-[8px] font-bold leading-none">{party.abbreviation.charAt(0)}</span>
       )}
