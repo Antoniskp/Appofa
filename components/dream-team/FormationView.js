@@ -1,7 +1,10 @@
 'use client';
 
-import { UserCircleIcon, ArrowLeftIcon, ShareIcon } from '@heroicons/react/24/outline';
+import { useState } from 'react';
+import { UserCircleIcon, ArrowLeftIcon, ShareIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolid } from '@heroicons/react/24/solid';
 import positionsData from '@/config/governmentPositions.json';
+import ShareModal from './ShareModal';
 
 const FORMATION_CATEGORIES = [
   { id: 'serious', label: 'Σοβαρή', emoji: '🎯', color: 'bg-blue-100 text-blue-700' },
@@ -52,8 +55,12 @@ function PickCard({ position, pick }) {
  *   formation  – formation object with picks array
  *   onBack()   – navigate back (optional, not shown on standalone page)
  *   showToast  – optional toast function
+ *   onLike()   – optional like handler (for logged-in users)
+ *   isOwner    – whether the current user owns this formation
  */
-export default function FormationView({ formation, onBack, showToast }) {
+export default function FormationView({ formation, onBack, showToast, onLike, isOwner }) {
+  const [shareOpen, setShareOpen] = useState(false);
+
   if (!formation) {
     return (
       <div className="text-center py-16 text-gray-400">
@@ -70,15 +77,6 @@ export default function FormationView({ formation, onBack, showToast }) {
     picksMap[p.positionSlug || p.slug] = p;
   });
   const filledCount = picks.filter((p) => p.personId || p.candidateUserId || p.personName).length;
-
-  const handleShare = () => {
-    const url = `${window.location.origin}/dream-team/f/${formation.shareSlug || formation.id}`;
-    navigator.clipboard.writeText(url).then(() => {
-      if (showToast) showToast('Ο σύνδεσμος αντιγράφηκε!');
-    }).catch(() => {
-      if (showToast) showToast('Αδυναμία αντιγραφής', 'error');
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -103,20 +101,55 @@ export default function FormationView({ formation, onBack, showToast }) {
                 {category.emoji} {category.label}
               </span>
             </div>
+
+            {/* Author */}
             {formation.authorName && (
-              <p className="text-sm text-gray-500">από <span className="font-medium">{formation.authorName}</span></p>
+              <div className="flex items-center gap-2 mt-1">
+                {formation.authorAvatar ? (
+                  <img
+                    src={formation.authorAvatar}
+                    alt={formation.authorName}
+                    className="h-6 w-6 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-6 w-6 rounded-full bg-blue-100 flex items-center justify-center">
+                    <UserCircleIcon className="h-4 w-4 text-blue-400" />
+                  </div>
+                )}
+                <p className="text-sm text-gray-500">από <span className="font-medium text-gray-700">{formation.authorName}</span></p>
+              </div>
             )}
+
             {formation.description && (
               <p className="text-sm text-gray-600 mt-2 leading-relaxed">{formation.description}</p>
             )}
           </div>
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-sm font-medium transition-colors flex-shrink-0"
-          >
-            <ShareIcon className="h-4 w-4" />
-            Κοινοποίηση
-          </button>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Like button — shown to non-owners if onLike provided */}
+            {onLike && !isOwner && (
+              <button
+                onClick={onLike}
+                className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-red-50 text-gray-600 hover:text-red-500 rounded-xl text-sm font-medium transition-colors"
+                aria-label={formation.likedByMe ? 'Αφαίρεση like' : 'Μου αρέσει'}
+              >
+                {formation.likedByMe
+                  ? <HeartSolid className="h-4 w-4 text-red-500" />
+                  : <HeartIcon className="h-4 w-4" />}
+                <span>{formation.likeCount || 0}</span>
+              </button>
+            )}
+
+            {/* Share button */}
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-sm font-medium transition-colors"
+            >
+              <ShareIcon className="h-4 w-4" />
+              Κοινοποίηση
+            </button>
+          </div>
         </div>
 
         {/* Progress */}
@@ -169,9 +202,18 @@ export default function FormationView({ formation, onBack, showToast }) {
           href="/dream-team"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 transition-colors"
         >
-          🏛️ Πηγαίνετε στο Dream Team
+          🏛️ Δημιουργήστε τη δική σας σύνθεση →
         </a>
       </div>
+
+      {/* Share Modal */}
+      {shareOpen && (
+        <ShareModal
+          formation={formation}
+          onClose={() => setShareOpen(false)}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { ArrowLeftIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, CheckIcon, GlobeAltIcon, LockClosedIcon, ShareIcon } from '@heroicons/react/24/outline';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import PersonSearch from './PersonSearch';
+import ShareModal from './ShareModal';
 import positionsData from '@/config/governmentPositions.json';
 
 const FORMATION_CATEGORIES = [
@@ -38,6 +39,9 @@ export default function FormationBuilder({ formation, communityResults = [], onS
   const [name, setName] = useState(formation?.name || '');
   const [category, setCategory] = useState(formation?.category || 'serious');
   const [description, setDescription] = useState(formation?.description || '');
+  const [isPublic, setIsPublic] = useState(formation?.isPublic ?? false);
+  const [savedFormationData, setSavedFormationData] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   // picks: { [positionSlug]: { personId, candidateUserId, personName, photo, avatar } }
   const [picks, setPicks] = useState(() => {
@@ -127,33 +131,43 @@ export default function FormationBuilder({ formation, communityResults = [], onS
         (p) => p && (p.personId || p.candidateUserId || p.personName),
       );
 
-      let savedFormation;
+      let saved;
       if (isNew) {
-        const res = await dreamTeamAPI.createFormation({ name: name.trim(), category, description });
+        const res = await dreamTeamAPI.createFormation({ name: name.trim(), category, description, isPublic });
         if (!res?.success) throw new Error(res?.message || 'Σφάλμα δημιουργίας');
-        savedFormation = res.data;
+        saved = res.data;
       } else {
         const res = await dreamTeamAPI.updateFormation(formation.id, {
           name: name.trim(),
           category,
           description,
+          isPublic,
         });
         if (!res?.success) throw new Error(res?.message || 'Σφάλμα ενημέρωσης');
-        savedFormation = res.data;
+        saved = res.data;
       }
 
       // Update picks
-      const picksRes = await dreamTeamAPI.updateFormationPicks(savedFormation.id, picksArray);
+      const picksRes = await dreamTeamAPI.updateFormationPicks(saved.id, picksArray);
       if (!picksRes?.success) throw new Error(picksRes?.message || 'Σφάλμα αποθήκευσης επιλογών');
 
+      const fullFormation = { ...saved, picks: picksRes.data?.picks || picksArray };
+      setSavedFormationData(fullFormation);
+
       showToast(isNew ? 'Η σύνθεση δημιουργήθηκε!' : 'Η σύνθεση αποθηκεύτηκε!');
-      onSave({ ...savedFormation, picks: picksRes.data || picksArray });
+
+      // If public, automatically open the share modal so the user can share right away
+      if (isPublic) {
+        setShareOpen(true);
+      }
+
+      onSave(fullFormation);
     } catch (err) {
       showToast(err.message || 'Σφάλμα κατά την αποθήκευση', 'error');
     } finally {
       setSaving(false);
     }
-  }, [name, category, description, picks, isNew, formation?.id, showToast, onSave]);
+  }, [name, category, description, isPublic, picks, isNew, formation?.id, showToast, onSave]);
 
   const renderPositionRow = (position) => {
     const pick = picks[position.slug];
@@ -215,13 +229,24 @@ export default function FormationBuilder({ formation, communityResults = [], onS
         <h2 className="text-xl font-bold text-gray-900 flex-1">
           {isNew ? '✨ Νέα Σύνθεση' : '✏️ Επεξεργασία Σύνθεσης'}
         </h2>
-        <button
-          onClick={handleSave}
-          disabled={saving || !name.trim()}
-          className="px-5 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {saving ? 'Αποθήκευση…' : '💾 Αποθήκευση'}
-        </button>
+        <div className="flex items-center gap-2">
+          {savedFormationData && (
+            <button
+              onClick={() => setShareOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-sm font-medium transition-colors"
+            >
+              <ShareIcon className="h-4 w-4" />
+              Κοινοποίηση
+            </button>
+          )}
+          <button
+            onClick={handleSave}
+            disabled={saving || !name.trim()}
+            className="px-5 py-2 bg-blue-600 text-white rounded-xl font-semibold text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {saving ? 'Αποθήκευση…' : '💾 Αποθήκευση'}
+          </button>
+        </div>
       </div>
 
       {/* Formation metadata */}
@@ -276,6 +301,42 @@ export default function FormationBuilder({ formation, communityResults = [], onS
             maxLength={300}
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
           />
+        </div>
+
+        {/* Public / Private toggle */}
+        <div>
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+            Ορατότητα
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsPublic(false)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                !isPublic
+                  ? 'bg-gray-100 border-gray-400 text-gray-700'
+                  : 'border-gray-200 text-gray-400 hover:border-gray-300'
+              }`}
+            >
+              <LockClosedIcon className="h-3.5 w-3.5" />
+              Ιδιωτική
+            </button>
+            <button
+              onClick={() => setIsPublic(true)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                isPublic
+                  ? 'bg-green-100 border-green-400 text-green-700'
+                  : 'border-gray-200 text-gray-400 hover:border-gray-300'
+              }`}
+            >
+              <GlobeAltIcon className="h-3.5 w-3.5" />
+              Δημόσια
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            {isPublic
+              ? 'Ορατή στην Εξερεύνηση — μπορεί να τη δει οποιοσδήποτε με τον σύνδεσμο.'
+              : 'Ορατή μόνο σε όσους έχουν τον σύνδεσμο.'}
+          </p>
         </div>
       </div>
 
@@ -340,6 +401,16 @@ export default function FormationBuilder({ formation, communityResults = [], onS
           {saving ? 'Αποθήκευση…' : '💾 Αποθήκευση Σύνθεσης'}
         </button>
       </div>
+
+      {/* Share Modal */}
+      {shareOpen && savedFormationData && (
+        <ShareModal
+          formation={savedFormationData}
+          onClose={() => setShareOpen(false)}
+          showToast={showToast}
+        />
+      )}
     </div>
   );
 }
+
