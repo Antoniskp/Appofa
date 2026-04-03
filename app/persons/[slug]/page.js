@@ -123,6 +123,15 @@ export default function PersonProfilePage({ params }) {
                     {positionLabel(profile.position)}
                   </p>
                 )}
+                {profile.expertiseArea && profile.expertiseArea.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {profile.expertiseArea.map((area) => (
+                      <span key={area} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                        {area}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {profile.contactEmail && (
                   <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
                     <EnvelopeIcon className="h-4 w-4 flex-shrink-0" />

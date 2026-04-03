@@ -9,6 +9,7 @@ const {
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
+const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
 
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
@@ -18,8 +19,10 @@ const BIO_MAX_LENGTH = 280;
 const PASSWORD_MIN_LENGTH = 6;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
+const VALID_EXPERTISE_AREAS = new Set(EXPERTISE_AREAS);
 const MAX_PROFESSIONS = 5;
 const MAX_INTERESTS = 10;
+const MAX_EXPERTISE_AREAS = 5;
 const DAYS_PER_YEAR = 365.25;
 
 class ServiceError extends Error {
@@ -129,7 +132,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests } = data;
+  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -343,6 +346,22 @@ async function updateUserProfile(userId, data) {
         if (!item.interestId || typeof item.interestId !== 'string') throw new ServiceError(400, 'Each interest must have an interestId.');
       }
       user.interests = interests.length > 0 ? interests : null;
+    }
+  }
+
+  if (expertiseArea !== undefined) {
+    if (expertiseArea === null) {
+      user.expertiseArea = null;
+    } else if (!Array.isArray(expertiseArea)) {
+      throw new ServiceError(400, 'Expertise area must be an array.');
+    } else if (expertiseArea.length > MAX_EXPERTISE_AREAS) {
+      throw new ServiceError(400, `You can add at most ${MAX_EXPERTISE_AREAS} expertise areas.`);
+    } else {
+      for (const area of expertiseArea) {
+        if (typeof area !== 'string') throw new ServiceError(400, 'Each expertise area must be a string.');
+        if (!VALID_EXPERTISE_AREAS.has(area)) throw new ServiceError(400, `Invalid expertise area: "${area}".`);
+      }
+      user.expertiseArea = expertiseArea.length > 0 ? expertiseArea : null;
     }
   }
 
@@ -680,7 +699,7 @@ async function getPublicUserProfileByUsername(username) {
   return user;
 }
 
-async function searchUsers(search, page, limit) {
+async function searchUsers(search, page, limit, expertiseArea) {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
@@ -707,9 +726,15 @@ async function searchUsers(search, page, limit) {
     whereClause[Op.or] = conditions;
   }
 
+  if (expertiseArea && typeof expertiseArea === 'string') {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    whereClause.expertiseArea = { [likeOp]: `%${expertiseArea.replace(/[%_\\]/g, '\\$&')}%` };
+  }
+
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'isVerified', 'createdAt'],
+    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'isVerified', 'expertiseArea', 'createdAt'],
     order: [['username', 'ASC']],
     limit: limitNum,
     offset

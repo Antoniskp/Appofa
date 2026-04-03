@@ -20,6 +20,7 @@ import Link from 'next/link';
 
 import professionsData from '@/src/data/professions.json';
 import interestsData from '@/src/data/interests.json';
+import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 
 const SOCIAL_LINK_KEYS = ['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok'];
 
@@ -43,6 +44,7 @@ function ProfileContent() {
     dateOfBirth: '',
     professions: [],
     interests: [],
+    expertiseArea: [],
   });
   const [homeLocation, setHomeLocation] = useState(null);
   const [showHomeLocation, setShowHomeLocation] = useState(false);
@@ -93,7 +95,7 @@ function ProfileContent() {
       onSuccess: async (userData) => {
         const { username, firstName, lastName, githubId, googleId, avatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
-          dateOfBirth, professions, interests } = userData;
+          dateOfBirth, professions, interests, expertiseArea } = userData;
         setProfileData({
           username: username || '',
           firstName: firstName || '',
@@ -107,6 +109,7 @@ function ProfileContent() {
           dateOfBirth: dateOfBirth || '',
           professions: professions || [],
           interests: interests || [],
+          expertiseArea: expertiseArea || [],
         });
         setInteractionSettings({
           profileCommentsEnabled: profileCommentsEnabled !== undefined ? profileCommentsEnabled : true,
@@ -630,6 +633,46 @@ function ProfileContent() {
                 Save changes
               </button>
             </div>
+          </div>
+        </Card>
+
+        {/* Expertise Area */}
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Expertise Area <span className="text-gray-400 text-xs font-normal">(select up to 5)</span></h2>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2">
+              {(profileData.expertiseArea || []).map((area) => (
+                <span key={area} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                  {area}
+                  <button
+                    type="button"
+                    onClick={() => setProfileData((prev) => ({ ...prev, expertiseArea: prev.expertiseArea.filter((a) => a !== area) }))}
+                    className="ml-1 text-purple-600 hover:text-purple-900 font-bold leading-none"
+                    aria-label={`Remove ${area}`}
+                  >✕</button>
+                </span>
+              ))}
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {EXPERTISE_AREAS.filter((area) => !(profileData.expertiseArea || []).includes(area)).map((area) => (
+                <button
+                  key={area}
+                  type="button"
+                  disabled={(profileData.expertiseArea || []).length >= 5}
+                  onClick={() => setProfileData((prev) => ({ ...prev, expertiseArea: [...(prev.expertiseArea || []), area] }))}
+                  className="inline-flex items-center px-3 py-1 rounded-full border border-purple-300 text-xs text-purple-700 hover:bg-purple-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  + {area}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handleProfileSubmit}
+              className="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 transition"
+            >
+              Save changes
+            </button>
           </div>
         </Card>
 

@@ -3,8 +3,10 @@ const { Op } = require('sequelize');
 const { PublicPersonProfile, CandidateApplication, User, Location } = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
+const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const VALID_EXPERTISE_AREAS = new Set(EXPERTISE_AREAS);
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -55,7 +57,7 @@ const SAFE_USER_ATTRS = ['id', 'username', 'firstName', 'lastName', 'avatar', 'e
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
-async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus, position, activeOnly } = {}) {
+async function getCandidates({ page = 1, limit = 12, constituencyId, search, claimStatus, position, activeOnly, expertiseArea } = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
   const offset = (pageNum - 1) * limitNum;
@@ -81,6 +83,11 @@ async function getCandidates({ page = 1, limit = 12, constituencyId, search, cla
     where[Op.or] = conditions;
   }
   if (activeOnly === 'true') where.isActiveCandidate = true;
+  if (expertiseArea && typeof expertiseArea === 'string') {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    where.expertiseArea = { [likeOp]: `%${expertiseArea.replace(/[%_\\]/g, '\\$&')}%` };
+  }
 
   const { count, rows } = await PublicPersonProfile.findAndCountAll({
     where,
@@ -275,6 +282,18 @@ async function rejectApplication(moderatorUserId, moderatorRole, applicationId, 
   return application;
 }
 
+// ─── Expertise area validation helper ────────────────────────────────────────
+
+function validateExpertiseArea(expertiseArea) {
+  if (expertiseArea === undefined || expertiseArea === null) return null;
+  if (!Array.isArray(expertiseArea)) throw new ServiceError(400, 'Expertise area must be an array.');
+  for (const area of expertiseArea) {
+    if (typeof area !== 'string') throw new ServiceError(400, 'Each expertise area must be a string.');
+    if (!VALID_EXPERTISE_AREAS.has(area)) throw new ServiceError(400, `Invalid expertise area: "${area}".`);
+  }
+  return expertiseArea.length > 0 ? expertiseArea : null;
+}
+
 // ─── Path B — Moderator Creates / Claim Flow ─────────────────────────────────
 
 async function createProfile(moderatorUserId, moderatorRole, data) {
@@ -282,9 +301,11 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     throw new ServiceError(403, 'Only admins and moderators can create candidate profiles.');
   }
 
-  const { firstName, lastName, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position } = data;
+  const { firstName, lastName, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea } = data;
   if (!firstName || !firstName.trim()) throw new ServiceError(400, 'First name is required.');
   if (!lastName || !lastName.trim()) throw new ServiceError(400, 'Last name is required.');
+
+  const validatedExpertiseArea = validateExpertiseArea(expertiseArea);
 
   const base = generateSlug(firstName.trim(), lastName.trim());
   const slug = await ensureUniqueSlug(base);
@@ -302,6 +323,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     politicalPositions: politicalPositions || null,
     manifesto: manifesto || null,
     position: position || null,
+    expertiseArea: validatedExpertiseArea,
     claimStatus: 'unclaimed',
     createdByUserId: moderatorUserId,
     source: 'moderator'
@@ -394,6 +416,10 @@ async function updateProfile(requestingUserId, requestingRole, candidateProfileI
   allowedFields.forEach((field) => {
     if (data[field] !== undefined) updates[field] = data[field];
   });
+
+  if (data.expertiseArea !== undefined) {
+    updates.expertiseArea = validateExpertiseArea(data.expertiseArea);
+  }
 
   if (isModerator && data.isActiveCandidate === false) {
     updates.retiredAt = new Date();
