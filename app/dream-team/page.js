@@ -8,12 +8,15 @@ import PositionCard from '@/components/dream-team/PositionCard';
 import DreamTeamResults from '@/components/dream-team/DreamTeamResults';
 import SkeletonPositionCard from '@/components/dream-team/SkeletonPositionCard';
 import FormationList from '@/components/dream-team/FormationList';
+import ExploreFormations from '@/components/dream-team/ExploreFormations';
+import PopularPicks from '@/components/dream-team/PopularPicks';
 import EmptyState from '@/components/ui/EmptyState';
 
 const TABS = [
   { id: 'vote', label: '🗳️ Ψηφίστε' },
   { id: 'results', label: '🏆 Ονειρεμένη Κυβέρνηση' },
   { id: 'formations', label: '📋 Οι Συνθέσεις μου' },
+  { id: 'explore', label: '🌍 Εξερεύνηση' },
 ];
 
 export default function DreamTeamPage() {
@@ -237,6 +240,14 @@ export default function DreamTeamPage() {
               showToast={showToast}
             />
           )
+        )}
+
+        {/* Explore Tab */}
+        {activeTab === 'explore' && (
+          <>
+            <PopularPicks />
+            <ExploreFormations showToast={showToast} />
+          </>
         )}
       </div>
     </div>

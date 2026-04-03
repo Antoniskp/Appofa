@@ -188,6 +188,7 @@ export default function FormationList({ user, communityResults = [], showToast }
               onDelete={() => handleDelete(formation.id)}
               onLike={() => handleLike(formation.id)}
               onShareCopy={() => handleShareCopy(formation)}
+              showToast={showToast}
             />
           ))}
         </div>

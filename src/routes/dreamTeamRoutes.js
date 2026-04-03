@@ -12,4 +12,17 @@ router.delete('/vote/:positionId', apiLimiter, authMiddleware, csrfProtection, d
 router.get('/results', apiLimiter, optionalAuthMiddleware, dreamTeamController.getResults);
 router.get('/my-votes', apiLimiter, authMiddleware, dreamTeamController.getMyVotes);
 
+// ── Formations ──────────────────────────────────────────────────────────────
+// NOTE: specific routes must come before /:id to avoid param conflicts
+router.get('/formations/public', apiLimiter, optionalAuthMiddleware, dreamTeamController.getPublicFormations);
+router.get('/formations/popular-picks', apiLimiter, optionalAuthMiddleware, dreamTeamController.getPopularPicks);
+router.get('/formations/share/:slug', apiLimiter, optionalAuthMiddleware, dreamTeamController.getSharedFormation);
+router.get('/formations', apiLimiter, authMiddleware, dreamTeamController.getMyFormations);
+router.post('/formations', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.createFormation);
+router.get('/formations/:id', apiLimiter, optionalAuthMiddleware, dreamTeamController.getFormation);
+router.put('/formations/:id', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.updateFormation);
+router.delete('/formations/:id', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.deleteFormation);
+router.post('/formations/:id/picks', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.updateFormationPicks);
+router.post('/formations/:id/like', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.likeFormation);
+
 module.exports = router;

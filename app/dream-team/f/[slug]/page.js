@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
+import { useAuth } from '@/lib/auth-context';
 import FormationView from '@/components/dream-team/FormationView';
 import SkeletonPositionCard from '@/components/dream-team/SkeletonPositionCard';
 
 export default function SharedFormationPage({ params }) {
   const { slug } = params;
+  const { user } = useAuth();
   const [formation, setFormation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -35,6 +37,24 @@ export default function SharedFormationPage({ params }) {
     load();
   }, [slug]);
 
+  const handleLike = useCallback(async () => {
+    if (!formation) return;
+    try {
+      const res = await dreamTeamAPI.likeFormation(formation.id);
+      if (res?.success) {
+        setFormation((prev) => ({
+          ...prev,
+          likedByMe: res.data?.likedByMe,
+          likeCount: res.data?.likeCount ?? prev.likeCount,
+        }));
+      }
+    } catch {
+      showToast('Σφάλμα κατά την καταγραφή like', 'error');
+    }
+  }, [formation]);
+
+  const isOwner = user && formation && user.id === formation.userId;
+
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
@@ -56,7 +76,7 @@ export default function SharedFormationPage({ params }) {
             href="/dream-team"
             className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
-            ← Dream Team
+            ← Πίσω στο Dream Team
           </a>
         </div>
 
@@ -81,7 +101,12 @@ export default function SharedFormationPage({ params }) {
             </a>
           </div>
         ) : (
-          <FormationView formation={formation} showToast={showToast} />
+          <FormationView
+            formation={formation}
+            showToast={showToast}
+            onLike={user && !isOwner ? handleLike : undefined}
+            isOwner={isOwner}
+          />
         )}
       </div>
     </div>

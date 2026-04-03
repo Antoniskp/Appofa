@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
 const {
@@ -9,6 +10,9 @@ const {
   DreamTeamVote,
   PublicPersonProfile,
   User,
+  Formation,
+  FormationPick,
+  FormationLike,
 } = require('../models');
 
 const dreamTeamController = {
@@ -691,6 +695,453 @@ const dreamTeamController = {
       return res.status(200).json({ success: true, message: 'Ο κάτοχος διαγράφηκε.' });
     } catch (error) {
       console.error('dreamTeamController.adminDeleteHolder error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // ── Formations ──────────────────────────────────────────────────────────────
+
+  // Helper to serialise a formation for the API response
+  _serializeFormation: async (formation, requestUserId) => {
+    const picks = (formation.picks || []).map((p) => ({
+      positionSlug: p.positionSlug,
+      personId: p.personId,
+      candidateUserId: p.candidateUserId,
+      personName: p.personName,
+      photo: p.photo,
+      avatar: p.avatar,
+    }));
+
+    let likedByMe = false;
+    if (requestUserId) {
+      likedByMe = !!(await FormationLike.findOne({
+        where: { formationId: formation.id, userId: requestUserId },
+      }));
+    }
+
+    return {
+      id: formation.id,
+      name: formation.name,
+      description: formation.description,
+      category: formation.category,
+      isPublic: formation.isPublic,
+      shareSlug: formation.shareSlug,
+      likeCount: formation.likeCount,
+      likedByMe,
+      authorName: formation.author
+        ? (`${formation.author.firstName || ''} ${formation.author.lastName || ''}`.trim() || formation.author.username)
+        : null,
+      authorAvatar: formation.author?.avatar || null,
+      picks,
+      createdAt: formation.createdAt,
+      updatedAt: formation.updatedAt,
+    };
+  },
+
+  // GET /api/dream-team/formations
+  getMyFormations: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const formations = await Formation.findAll({
+        where: { userId },
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+        order: [['updatedAt', 'DESC']],
+      });
+
+      const data = await Promise.all(
+        formations.map((f) => dreamTeamController._serializeFormation(f, userId)),
+      );
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.getMyFormations error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // POST /api/dream-team/formations
+  createFormation: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { name, description, category, isPublic } = req.body;
+
+      if (!name || !name.trim()) {
+        return res.status(400).json({ success: false, message: 'Το όνομα είναι υποχρεωτικό.' });
+      }
+      if (category && !['serious', 'fun', 'custom'].includes(category)) {
+        return res.status(400).json({ success: false, message: 'Μη έγκυρη κατηγορία.' });
+      }
+
+      const shareSlug = await (async () => {
+        // Generate a unique slug with retry on collision
+        for (let attempt = 0; attempt < 5; attempt++) {
+          const candidate = crypto.randomBytes(8).toString('hex');
+          const existing = await Formation.findOne({ where: { shareSlug: candidate }, attributes: ['id'] });
+          if (!existing) return candidate;
+        }
+        // Fallback to a longer slug if still colliding
+        return crypto.randomBytes(16).toString('hex');
+      })();
+
+      const formation = await Formation.create({
+        userId,
+        name: name.trim(),
+        description: description?.trim() || null,
+        category: category || 'serious',
+        isPublic: !!isPublic,
+        shareSlug,
+        likeCount: 0,
+      });
+
+      const full = await Formation.findByPk(formation.id, {
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+      });
+
+      const data = await dreamTeamController._serializeFormation(full, userId);
+      return res.status(201).json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.createFormation error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/formations/:id
+  getFormation: async (req, res) => {
+    try {
+      const requestUserId = req.user?.id;
+      const formation = await Formation.findByPk(req.params.id, {
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+      });
+
+      if (!formation) {
+        return res.status(404).json({ success: false, message: 'Η σύνθεση δεν βρέθηκε.' });
+      }
+      if (!formation.isPublic && formation.userId !== requestUserId) {
+        return res.status(403).json({ success: false, message: 'Δεν έχετε πρόσβαση σε αυτή τη σύνθεση.' });
+      }
+
+      const data = await dreamTeamController._serializeFormation(formation, requestUserId);
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.getFormation error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // PUT /api/dream-team/formations/:id
+  updateFormation: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const formation = await Formation.findByPk(req.params.id);
+
+      if (!formation) {
+        return res.status(404).json({ success: false, message: 'Η σύνθεση δεν βρέθηκε.' });
+      }
+      if (formation.userId !== userId) {
+        return res.status(403).json({ success: false, message: 'Δεν έχετε δικαίωμα επεξεργασίας.' });
+      }
+
+      const { name, description, category, isPublic } = req.body;
+
+      if (name !== undefined && !name.trim()) {
+        return res.status(400).json({ success: false, message: 'Το όνομα δεν μπορεί να είναι κενό.' });
+      }
+      if (category !== undefined && !['serious', 'fun', 'custom'].includes(category)) {
+        return res.status(400).json({ success: false, message: 'Μη έγκυρη κατηγορία.' });
+      }
+
+      await formation.update({
+        ...(name !== undefined && { name: name.trim() }),
+        ...(description !== undefined && { description: description?.trim() || null }),
+        ...(category !== undefined && { category }),
+        ...(isPublic !== undefined && { isPublic: !!isPublic }),
+      });
+
+      const full = await Formation.findByPk(formation.id, {
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+      });
+
+      const data = await dreamTeamController._serializeFormation(full, userId);
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.updateFormation error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // DELETE /api/dream-team/formations/:id
+  deleteFormation: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const formation = await Formation.findByPk(req.params.id);
+
+      if (!formation) {
+        return res.status(404).json({ success: false, message: 'Η σύνθεση δεν βρέθηκε.' });
+      }
+      if (formation.userId !== userId) {
+        return res.status(403).json({ success: false, message: 'Δεν έχετε δικαίωμα διαγραφής.' });
+      }
+
+      await formation.destroy();
+      return res.json({ success: true, message: 'Η σύνθεση διαγράφηκε.' });
+    } catch (error) {
+      console.error('dreamTeamController.deleteFormation error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // POST /api/dream-team/formations/:id/picks
+  updateFormationPicks: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const formation = await Formation.findByPk(req.params.id);
+
+      if (!formation) {
+        return res.status(404).json({ success: false, message: 'Η σύνθεση δεν βρέθηκε.' });
+      }
+      if (formation.userId !== userId) {
+        return res.status(403).json({ success: false, message: 'Δεν έχετε δικαίωμα επεξεργασίας.' });
+      }
+
+      const { picks } = req.body;
+      if (!Array.isArray(picks)) {
+        return res.status(400).json({ success: false, message: 'Το πεδίο picks πρέπει να είναι πίνακας.' });
+      }
+
+      // Replace all picks for this formation
+      await FormationPick.destroy({ where: { formationId: formation.id } });
+
+      const validPicks = picks.filter(
+        (p) => p.positionSlug && (p.personName || p.personId || p.candidateUserId),
+      );
+
+      if (validPicks.length > 0) {
+        await FormationPick.bulkCreate(
+          validPicks.map((p) => ({
+            formationId: formation.id,
+            positionSlug: p.positionSlug,
+            personId: p.personId || null,
+            candidateUserId: p.candidateUserId || null,
+            personName: p.personName || null,
+            photo: p.photo || null,
+            avatar: p.avatar || null,
+          })),
+        );
+      }
+
+      // Touch updatedAt
+      await formation.update({ updatedAt: new Date() });
+
+      const full = await Formation.findByPk(formation.id, {
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+      });
+
+      const data = await dreamTeamController._serializeFormation(full, userId);
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.updateFormationPicks error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/formations/public
+  getPublicFormations: async (req, res) => {
+    try {
+      const requestUserId = req.user?.id;
+      const { category, sort = 'popular', page = 1, limit = 12 } = req.query;
+
+      const where = { isPublic: true };
+      if (category && ['serious', 'fun', 'custom'].includes(category)) {
+        where.category = category;
+      }
+
+      const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+
+      // For 'completed' sort, compute pick count at database level via a subquery
+      let order;
+      let attributes = undefined;
+      if (sort === 'completed') {
+        const pickCountSubquery = `(
+          SELECT COUNT(*) FROM "FormationPicks" AS fp
+          WHERE fp."formationId" = "Formation"."id"
+            AND (fp."personName" IS NOT NULL OR fp."personId" IS NOT NULL OR fp."candidateUserId" IS NOT NULL)
+        )`;
+        attributes = {
+          include: [[sequelize.literal(pickCountSubquery), 'filledCount']],
+        };
+        order = [[sequelize.literal('"filledCount"'), 'DESC'], ['createdAt', 'DESC']];
+      } else if (sort === 'newest') {
+        order = [['createdAt', 'DESC']];
+      } else {
+        // popular (default)
+        order = [['likeCount', 'DESC'], ['createdAt', 'DESC']];
+      }
+
+      const { count, rows } = await Formation.findAndCountAll({
+        where,
+        attributes,
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+        order,
+        limit: parseInt(limit, 10),
+        offset,
+        distinct: true,
+        subQuery: false,
+      });
+
+      const data = await Promise.all(
+        rows.map((f) => dreamTeamController._serializeFormation(f, requestUserId)),
+      );
+
+      return res.json({
+        success: true,
+        data,
+        pagination: {
+          total: count,
+          page: parseInt(page, 10),
+          limit: parseInt(limit, 10),
+          totalPages: Math.ceil(count / parseInt(limit, 10)),
+        },
+      });
+    } catch (error) {
+      console.error('dreamTeamController.getPublicFormations error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // POST /api/dream-team/formations/:id/like
+  likeFormation: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const formation = await Formation.findByPk(req.params.id);
+
+      if (!formation) {
+        return res.status(404).json({ success: false, message: 'Η σύνθεση δεν βρέθηκε.' });
+      }
+      if (!formation.isPublic && formation.userId !== userId) {
+        return res.status(403).json({ success: false, message: 'Δεν έχετε πρόσβαση σε αυτή τη σύνθεση.' });
+      }
+
+      const existing = await FormationLike.findOne({
+        where: { formationId: formation.id, userId },
+      });
+
+      let likedByMe;
+      if (existing) {
+        await existing.destroy();
+        await formation.decrement('likeCount');
+        likedByMe = false;
+      } else {
+        await FormationLike.create({ formationId: formation.id, userId });
+        await formation.increment('likeCount');
+        likedByMe = true;
+      }
+
+      await formation.reload();
+      return res.json({ success: true, data: { likedByMe, likeCount: formation.likeCount } });
+    } catch (error) {
+      console.error('dreamTeamController.likeFormation error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/formations/share/:slug
+  getSharedFormation: async (req, res) => {
+    try {
+      const requestUserId = req.user?.id;
+      const formation = await Formation.findOne({
+        where: { shareSlug: req.params.slug },
+        include: [
+          { model: FormationPick, as: 'picks' },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+        ],
+      });
+
+      if (!formation) {
+        return res.status(404).json({ success: false, message: 'Η σύνθεση δεν βρέθηκε.' });
+      }
+      if (!formation.isPublic && formation.userId !== requestUserId) {
+        return res.status(403).json({ success: false, message: 'Αυτή η σύνθεση είναι ιδιωτική.' });
+      }
+
+      const data = await dreamTeamController._serializeFormation(formation, requestUserId);
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.getSharedFormation error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/formations/popular-picks
+  getPopularPicks: async (req, res) => {
+    try {
+      const topSlugs = ['prothypoyrgos', 'proedros-dimokratias', 'proedros-voulis'];
+
+      const results = await Promise.all(
+        topSlugs.map(async (slug) => {
+          const picks = await FormationPick.findAll({
+            where: {
+              positionSlug: slug,
+              [Op.or]: [
+                { personName: { [Op.ne]: null } },
+                { personId: { [Op.ne]: null } },
+                { candidateUserId: { [Op.ne]: null } },
+              ],
+            },
+            include: [
+              {
+                model: Formation,
+                as: 'formation',
+                where: { isPublic: true },
+                attributes: [],
+              },
+            ],
+            attributes: [
+              'personName',
+              'personId',
+              'candidateUserId',
+              'photo',
+              'avatar',
+              [sequelize.fn('COUNT', sequelize.col('FormationPick.id')), 'count'],
+            ],
+            group: ['personName', 'personId', 'candidateUserId', 'photo', 'avatar'],
+            order: [[sequelize.literal('"count"'), 'DESC']],
+            limit: 1,
+            subQuery: false,
+          });
+
+          const top = picks[0];
+          return {
+            positionSlug: slug,
+            personName: top?.personName || null,
+            personId: top?.personId || null,
+            candidateUserId: top?.candidateUserId || null,
+            photo: top?.photo || null,
+            avatar: top?.avatar || null,
+            count: top ? parseInt(top.dataValues.count, 10) : 0,
+          };
+        }),
+      );
+
+      return res.json({ success: true, data: results });
+    } catch (error) {
+      console.error('dreamTeamController.getPopularPicks error:', error);
       return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
     }
   },

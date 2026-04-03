@@ -26,6 +26,9 @@ const CandidateApplication = require('./CandidateApplication');
 const PublicPersonProfile = require('./PublicPersonProfile');
 const PersonRemovalRequest = require('./PersonRemovalRequest');
 const Report = require('./Report');
+const Formation = require('./Formation');
+const FormationPick = require('./FormationPick');
+const FormationLike = require('./FormationLike');
 
 // Define associations
 User.hasMany(Article, {
@@ -286,6 +289,18 @@ DreamTeamVote.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'pers
 DreamTeamVote.belongsTo(User, { foreignKey: 'candidateUserId', as: 'candidateUser' });
 User.hasMany(DreamTeamVote, { foreignKey: 'userId', as: 'dreamTeamVotes' });
 
+// Formation associations
+User.hasMany(Formation, { foreignKey: 'userId', as: 'formations' });
+Formation.belongsTo(User, { foreignKey: 'userId', as: 'author' });
+Formation.hasMany(FormationPick, { foreignKey: 'formationId', as: 'picks' });
+FormationPick.belongsTo(Formation, { foreignKey: 'formationId', as: 'formation' });
+FormationPick.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
+FormationPick.belongsTo(User, { foreignKey: 'candidateUserId', as: 'candidateUser' });
+Formation.hasMany(FormationLike, { foreignKey: 'formationId', as: 'likes' });
+FormationLike.belongsTo(Formation, { foreignKey: 'formationId', as: 'formation' });
+FormationLike.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(FormationLike, { foreignKey: 'userId', as: 'formationLikes' });
+
 module.exports = {
   sequelize,
   User,
@@ -315,4 +330,7 @@ module.exports = {
   GovernmentCurrentHolder,
   GovernmentPositionSuggestion,
   DreamTeamVote,
+  Formation,
+  FormationPick,
+  FormationLike,
 };
