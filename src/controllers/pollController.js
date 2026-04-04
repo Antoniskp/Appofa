@@ -146,13 +146,14 @@ const pollController = {
 
   // Add a user-contributed option to a poll
   addPollOption: async (req, res) => {
-    const { text, photoUrl, linkUrl, displayText, answerType } = req.body;
+    const { text, photoUrl, linkUrl, displayText, answerType, color } = req.body;
     const result = await pollService.addPollOption(req.params.id, req.user.id, {
       text,
       photoUrl,
       linkUrl,
       displayText,
-      answerType
+      answerType,
+      color
     });
     if (!result.success) {
       return res.status(result.status).json({

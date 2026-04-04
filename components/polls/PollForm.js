@@ -38,6 +38,8 @@ export default function PollForm({
     tags: [],
     type: 'simple',
     binaryStyle: 'yes_no',
+    useCustomColors: false,
+    binaryColors: ['#10B981', '#EF4444'],
     visibility: 'public',
     resultsVisibility: 'after_vote',
     allowUserContributions: false,
@@ -52,8 +54,8 @@ export default function PollForm({
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const [options, setOptions] = useState([
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
+    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: null },
+    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: null },
   ]);
 
   const [imageErrors, setImageErrors] = useState({});
@@ -62,6 +64,8 @@ export default function PollForm({
   // Initialize form data from poll prop (edit mode)
   useEffect(() => {
     if (poll) {
+      const hasCustomColors = Array.isArray(poll.options) &&
+        poll.options.some(opt => opt.color != null);
       setFormData({
         title: poll.title || '',
         description: poll.description || '',
@@ -69,6 +73,10 @@ export default function PollForm({
         tags: Array.isArray(poll.tags) ? poll.tags : [],
         type: poll.type || 'simple',
         binaryStyle: 'yes_no',
+        useCustomColors: hasCustomColors,
+        binaryColors: Array.isArray(poll.options) && poll.options.length >= 2
+          ? [poll.options[0].color || '#10B981', poll.options[1].color || '#EF4444']
+          : ['#10B981', '#EF4444'],
         visibility: poll.visibility || 'public',
         resultsVisibility: poll.resultsVisibility || 'after_vote',
         allowUserContributions: Boolean(poll.allowUserContributions),
@@ -87,6 +95,7 @@ export default function PollForm({
           linkUrl: opt.linkUrl || '',
           displayText: opt.displayText || '',
           answerType: opt.answerType || 'custom',
+          color: opt.color || null,
         })));
       }
     }
@@ -103,10 +112,15 @@ export default function PollForm({
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value,
+      [name]: newValue,
     }));
+    // When unchecking custom colours, clear all option colours
+    if (name === 'useCustomColors' && !checked) {
+      setOptions(prev => prev.map(opt => ({ ...opt, color: null })));
+    }
   };
 
   const handleOptionChange = (index, field, value) => {
@@ -123,7 +137,8 @@ export default function PollForm({
       photoUrl: '',
       linkUrl: '',
       displayText: '',
-      answerType: 'custom'
+      answerType: 'custom',
+      color: null
     }]);
   };
 
@@ -185,10 +200,15 @@ export default function PollForm({
       }
     }
     
-    // Parse tags from comma-separated string to array
     const payload = {
       ...formData,
-      options: validOptions,
+      options: validOptions.map(opt => ({
+        ...opt,
+        color: formData.useCustomColors ? (opt.color || null) : null,
+      })),
+      binaryColors: formData.type === 'binary' && formData.useCustomColors
+        ? formData.binaryColors
+        : null,
       deadline: formData.deadline || null,
     };
     
@@ -390,6 +410,53 @@ export default function PollForm({
               Κλείδωμα σχολίων (δεν επιτρέπονται νέα σχόλια)
             </span>
           </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="useCustomColors"
+              checked={formData.useCustomColors}
+              onChange={handleInputChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Προσαρμοσμένα χρώματα απαντήσεων
+            </span>
+          </label>
+
+          {/* Binary colour pickers */}
+          {formData.type === 'binary' && formData.useCustomColors && (
+            <div className="ml-6 flex gap-6 items-center">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Επιλογή 1:</label>
+                <input
+                  type="color"
+                  value={formData.binaryColors[0]}
+                  onChange={(e) =>
+                    setFormData(prev => ({
+                      ...prev,
+                      binaryColors: [e.target.value, prev.binaryColors[1]]
+                    }))
+                  }
+                  className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-700">Επιλογή 2:</label>
+                <input
+                  type="color"
+                  value={formData.binaryColors[1]}
+                  onChange={(e) =>
+                    setFormData(prev => ({
+                      ...prev,
+                      binaryColors: [prev.binaryColors[0], e.target.value]
+                    }))
+                  }
+                  className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
@@ -442,6 +509,18 @@ export default function PollForm({
                 required
                 placeholder="Εισαγάγετε το κείμενο της επιλογής"
               />
+
+              {formData.useCustomColors && (
+                <div className="flex items-center gap-2 mt-2">
+                  <label className="text-sm text-gray-700">Χρώμα:</label>
+                  <input
+                    type="color"
+                    value={option.color || '#3B82F6'}
+                    onChange={(e) => handleOptionChange(index, 'color', e.target.value)}
+                    className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                  />
+                </div>
+              )}
 
               {formData.type === 'complex' && (
                 <>

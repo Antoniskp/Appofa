@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Bar, Pie, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -26,6 +26,42 @@ ChartJS.register(
   Legend
 );
 
+// Default 8-colour palette (used when no custom colour is set)
+const DEFAULT_PALETTE = [
+  '#3B82F6', // blue-600
+  '#10B981', // green-600
+  '#F97316', // orange-600
+  '#8B5CF6', // purple-600
+  '#EC4899', // pink-600
+  '#F59E0B', // amber-600
+  '#14B8A6', // teal-600
+  '#EF4444', // red-600
+];
+
+// Binary poll defaults
+const BINARY_GREEN = '#10B981';
+const BINARY_RED   = '#EF4444';
+
+/**
+ * Resolve the display colour for a single option following the priority rules:
+ * 1. option.color (custom)
+ * 2. binary defaults (green/red by index)
+ * 3. palette cycling
+ */
+function resolveOptionColor(option, index, isBinary) {
+  if (option.color) return option.color;
+  if (isBinary) return index === 0 ? BINARY_GREEN : BINARY_RED;
+  return DEFAULT_PALETTE[index % DEFAULT_PALETTE.length];
+}
+
+/** Convert a hex colour to rgba with the given alpha. */
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 /**
  * Poll results visualization component with Chart.js
  * @param {Object} poll - Poll object with options and vote counts
@@ -36,6 +72,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   const [chartType, setChartType] = useState('bar'); // 'bar', 'pie', 'doughnut'
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isExportingJson, setIsExportingJson] = useState(false);
+  const chartRef = useRef(null);
   
   if (!canView) {
     return (
@@ -49,44 +86,29 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   
   // Calculate vote counts and percentages
   const options = poll.options || [];
+  const isBinary = poll.type === 'binary';
   const totalVotes = options.reduce((sum, opt) => sum + (opt.voteCount || 0), 0);
-  
-  const optionsWithStats = options.map(option => ({
+
+  // Assign colours BEFORE sorting so each option keeps its intended colour
+  const optionsWithStats = options.map((option, index) => ({
     ...option,
     voteCount: option.voteCount || 0,
     percentage: totalVotes > 0 ? ((option.voteCount || 0) / totalVotes * 100).toFixed(1) : 0,
+    resolvedColor: resolveOptionColor(option, index, isBinary),
   }));
   
-  // Sort by vote count descending
+  // Sort by vote count descending (colours stay with their option)
   optionsWithStats.sort((a, b) => b.voteCount - a.voteCount);
   
-  // Chart data
+  // Chart data — build colour arrays from per-option resolved colours
   const chartData = {
     labels: optionsWithStats.map(opt => opt.text),
     datasets: [
       {
         label: 'Ψήφοι',
         data: optionsWithStats.map(opt => opt.voteCount),
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',   // blue-600
-          'rgba(16, 185, 129, 0.8)',   // green-600
-          'rgba(251, 146, 60, 0.8)',   // orange-600
-          'rgba(139, 92, 246, 0.8)',   // purple-600
-          'rgba(236, 72, 153, 0.8)',   // pink-600
-          'rgba(245, 158, 11, 0.8)',   // amber-600
-          'rgba(20, 184, 166, 0.8)',   // teal-600
-          'rgba(239, 68, 68, 0.8)',    // red-600
-        ],
-        borderColor: [
-          'rgba(59, 130, 246, 1)',
-          'rgba(16, 185, 129, 1)',
-          'rgba(251, 146, 60, 1)',
-          'rgba(139, 92, 246, 1)',
-          'rgba(236, 72, 153, 1)',
-          'rgba(245, 158, 11, 1)',
-          'rgba(20, 184, 166, 1)',
-          'rgba(239, 68, 68, 1)',
-        ],
+        backgroundColor: optionsWithStats.map(opt => hexToRgba(opt.resolvedColor, 0.8)),
+        borderColor: optionsWithStats.map(opt => opt.resolvedColor),
         borderWidth: 2,
       },
     ],
@@ -159,7 +181,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   };
   
   const handleExportChart = () => {
-    const canvas = document.querySelector('canvas');
+    const canvas = chartRef.current?.querySelector('canvas');
     if (canvas) {
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -276,7 +298,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       
       {/* Chart Display */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div style={{ height: '400px' }}>
+        <div ref={chartRef} style={{ height: '400px' }}>
           {chartType === 'bar' && <Bar data={chartData} options={barOptions} />}
           {chartType === 'pie' && <Pie data={chartData} options={pieOptions} />}
           {chartType === 'doughnut' && <Doughnut data={chartData} options={pieOptions} />}
@@ -294,7 +316,10 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
             <div key={option.id} className="px-6 py-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                  <span
+                    className="flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm text-white"
+                    style={{ backgroundColor: option.resolvedColor }}
+                  >
                     {index + 1}
                   </span>
                   <span className="font-medium text-gray-900">{option.text}</span>
@@ -308,8 +333,8 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
               {/* Progress bar */}
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
-                  className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${option.percentage}%` }}
+                  className="h-3 rounded-full transition-all duration-500"
+                  style={{ width: `${option.percentage}%`, backgroundColor: option.resolvedColor }}
                 ></div>
               </div>
             </div>
@@ -353,27 +378,31 @@ function BinarySplitBar({ options, totalVotes }) {
   const pct1 = totalVotes > 0 ? parseFloat(opt1.percentage) : 50;
   const pct2 = totalVotes > 0 ? parseFloat(opt2.percentage) : 50;
 
+  // Use resolved colours (already set on each option by the parent)
+  const color1 = opt1.resolvedColor || BINARY_GREEN;
+  const color2 = opt2.resolvedColor || BINARY_RED;
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <h3 className="text-base font-semibold text-gray-700 mb-4 text-center">Αποτέλεσμα</h3>
 
       {/* Labels */}
       <div className="flex justify-between text-sm font-medium mb-2">
-        <span className="text-green-600">{opt1.text}</span>
-        <span className="text-red-600">{opt2.text}</span>
+        <span style={{ color: color1 }}>{opt1.text}</span>
+        <span style={{ color: color2 }}>{opt2.text}</span>
       </div>
 
       {/* Split bar */}
       <div className="flex w-full h-8 rounded-full overflow-hidden">
         <div
-          className="bg-green-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
-          style={{ width: `${pct1}%` }}
+          className="flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
+          style={{ width: `${pct1}%`, backgroundColor: color1 }}
         >
           {pct1 > 8 && `${pct1}%`}
         </div>
         <div
-          className="bg-red-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
-          style={{ width: `${pct2}%` }}
+          className="flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
+          style={{ width: `${pct2}%`, backgroundColor: color2 }}
         >
           {pct2 > 8 && `${pct2}%`}
         </div>
@@ -381,8 +410,8 @@ function BinarySplitBar({ options, totalVotes }) {
 
       {/* Percentages below */}
       <div className="flex justify-between text-sm mt-2">
-        <span className="font-bold text-green-600">{pct1}%</span>
-        <span className="font-bold text-red-600">{pct2}%</span>
+        <span className="font-bold" style={{ color: color1 }}>{pct1}%</span>
+        <span className="font-bold" style={{ color: color2 }}>{pct2}%</span>
       </div>
 
       {/* Total votes */}
@@ -392,3 +421,4 @@ function BinarySplitBar({ options, totalVotes }) {
     </div>
   );
 }
+

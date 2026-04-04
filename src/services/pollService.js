@@ -100,6 +100,7 @@ const createPoll = async (userId, pollData) => {
       tags,
       type,
       binaryStyle,
+      binaryColors,
       allowUserContributions,
       allowUnauthenticatedVotes,
       visibility,
@@ -109,6 +110,10 @@ const createPoll = async (userId, pollData) => {
       options,
       hideCreator
     } = pollData;
+
+    // Helper: validate a CSS hex colour string (#RRGGBB). Returns the value or null.
+    const sanitizeColor = (c) =>
+      typeof c === 'string' && /^#[0-9A-Fa-f]{6}$/.test(c.trim()) ? c.trim() : null;
 
     // Validate title
     const titleResult = normalizeRequiredText(title, 'Title', TITLE_MIN_LENGTH, TITLE_MAX_LENGTH);
@@ -263,9 +268,16 @@ const createPoll = async (userId, pollData) => {
         ? [{ text: 'Συμφωνώ', order: 0 }, { text: 'Διαφωνώ', order: 1 }]
         : [{ text: 'Ναι', order: 0 }, { text: 'Όχι', order: 1 }];
 
-      for (const opt of binaryOptions) {
+      const binaryColorsArr = Array.isArray(binaryColors) ? binaryColors : [];
+      for (let i = 0; i < binaryOptions.length; i++) {
+        const opt = binaryOptions[i];
         const pollOption = await PollOption.create(
-          { pollId: poll.id, text: opt.text, order: opt.order },
+          {
+            pollId: poll.id,
+            text: opt.text,
+            order: opt.order,
+            color: sanitizeColor(binaryColorsArr[i] ?? null)
+          },
           { transaction }
         );
         createdOptions.push(pollOption);
@@ -291,6 +303,7 @@ const createPoll = async (userId, pollData) => {
             {
               pollId: poll.id,
               text: optionTextResult.value,
+              color: sanitizeColor(option.color ?? null),
               order: i
             },
             { transaction }
@@ -317,6 +330,7 @@ const createPoll = async (userId, pollData) => {
               linkUrl: option.linkUrl || null,
               displayText: option.displayText || null,
               answerType: answerTypeValue,
+              color: sanitizeColor(option.color ?? null),
               order: i
             },
             { transaction }
@@ -352,7 +366,7 @@ const createPoll = async (userId, pollData) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order']
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'color', 'order']
         }
       ]
     });
@@ -500,7 +514,7 @@ const getAllPolls = async (filters, user) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'color', 'order'],
           include: [
             {
               model: PollVote,
@@ -605,7 +619,7 @@ const getPollById = async (pollId, user) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'color', 'order'],
           include: [
             {
               model: PollVote,
@@ -870,7 +884,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order']
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'color', 'order']
         }
       ],
       order: [[{ model: PollOption, as: 'options' }, 'order', 'ASC']]
@@ -1128,7 +1142,11 @@ const votePoll = async (pollId, optionId, userId, clientIp, userAgent) => {
  */
 const addPollOption = async (pollId, userId, optionData) => {
   try {
-    const { text, photoUrl, linkUrl, displayText, answerType } = optionData;
+    const { text, photoUrl, linkUrl, displayText, answerType, color } = optionData;
+
+    // Helper: validate a CSS hex colour string (#RRGGBB). Returns the value or null.
+    const sanitizeColor = (c) =>
+      typeof c === 'string' && /^#[0-9A-Fa-f]{6}$/.test(c.trim()) ? c.trim() : null;
 
     const poll = await Poll.findByPk(pollId, {
       include: [
@@ -1175,6 +1193,7 @@ const addPollOption = async (pollId, userId, optionData) => {
         return { success: false, status: 400, message: textResult.error };
       }
       newOptionData.text = textResult.value;
+      newOptionData.color = sanitizeColor(color ?? null);
     } else {
       // Complex poll - answerType is optional
       let answerTypeValue = null;
@@ -1191,6 +1210,7 @@ const addPollOption = async (pollId, userId, optionData) => {
       newOptionData.linkUrl = linkUrl || null;
       newOptionData.displayText = displayText || null;
       newOptionData.answerType = answerTypeValue;
+      newOptionData.color = sanitizeColor(color ?? null);
     }
 
     const option = await PollOption.create(newOptionData);
@@ -1227,7 +1247,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'color', 'order'],
           include: [
             {
               model: PollVote,
@@ -1391,7 +1411,7 @@ const getMyVotedPolls = async (userId, page, limit) => {
             {
               model: PollOption,
               as: 'options',
-              attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+              attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'color', 'order'],
               include: [
                 {
                   model: PollVote,
@@ -1475,7 +1495,7 @@ const exportPoll = async (pollId, userId, userRole) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'color', 'order'],
           include: [
             {
               model: PollVote,

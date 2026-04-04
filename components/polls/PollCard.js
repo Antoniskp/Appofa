@@ -93,6 +93,17 @@ export default function PollCard({ poll, variant = 'grid' }) {
     '#14B8A6', // teal-600
     '#EF4444', // red-600
   ];
+
+  const isBinaryPoll = poll.type === 'binary';
+  const BINARY_GREEN = '#10B981';
+  const BINARY_RED   = '#EF4444';
+
+  // Resolve display colour for a single option (mirrors PollResults priority logic)
+  const resolveOptionColor = (option, index) => {
+    if (option.color) return option.color;
+    if (isBinaryPoll) return index === 0 ? BINARY_GREEN : BINARY_RED;
+    return chartColors[index % chartColors.length];
+  };
   
   // Type badge variant mapping
   const getTypeBadge = (type) => {
@@ -175,7 +186,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
       
       return {
         path,
-        color: chartColors[index % chartColors.length],
+        color: resolveOptionColor(option, index),
         percentage: (percentage * 100).toFixed(0),
         label: option.text,
         votes: option.voteCount || 0,
@@ -262,9 +273,10 @@ export default function PollCard({ poll, variant = 'grid' }) {
       const total = counts.reduce((s, o) => s + (o.voteCount || 0), 0);
       return (
         <div className="mt-3 space-y-1.5">
-          {counts.map((option) => {
+          {counts.map((option, idx) => {
             const pct = total > 0 ? Math.round(((option.voteCount || 0) / total) * 100) : 0;
             const isVoted = option.id === inlineVotedId;
+            const optionColor = resolveOptionColor(option, idx);
             return (
               <div key={option.id} className="relative">
                 <div className="flex items-center justify-between text-xs mb-0.5">
@@ -276,8 +288,8 @@ export default function PollCard({ poll, variant = 'grid' }) {
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${isVoted ? 'bg-blue-500' : 'bg-gray-300'}`}
-                    style={{ width: `${pct}%` }}
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{ width: `${pct}%`, backgroundColor: optionColor }}
                   />
                 </div>
               </div>
