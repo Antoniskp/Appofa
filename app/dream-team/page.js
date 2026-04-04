@@ -498,7 +498,7 @@ function DreamTeamPageInner() {
 
 export default function DreamTeamPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <DreamTeamPageInner />
     </Suspense>
   );
