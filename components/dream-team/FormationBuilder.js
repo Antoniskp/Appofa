@@ -23,6 +23,10 @@ const MINISTER_POSITIONS = ALL_POSITIONS.filter(
   (p) => p.positionTypeKey === 'minister',
 );
 
+// Stable empty arrays used as default prop values to avoid unnecessary re-renders
+const EMPTY_POSITIONS = [];
+const EMPTY_VOTES = [];
+
 /**
  * FormationBuilder — full editor for creating/editing a formation.
  *
@@ -37,7 +41,7 @@ const MINISTER_POSITIONS = ALL_POSITIONS.filter(
  *   myVotes        – user's current votes array (only passed when isPrimary)
  *   onVotesChanged() – callback after picks→votes sync (only passed when isPrimary)
  */
-export default function FormationBuilder({ formation, communityResults = [], onSave, onBack, showToast, isPrimary = false, positions = [], myVotes = [], onVotesChanged }) {
+export default function FormationBuilder({ formation, communityResults = [], onSave, onBack, showToast, isPrimary = false, positions = EMPTY_POSITIONS, myVotes = EMPTY_VOTES, onVotesChanged }) {
   const isNew = !formation?.id;
 
   const [name, setName] = useState(formation?.name || '');

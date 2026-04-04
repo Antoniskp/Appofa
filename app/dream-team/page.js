@@ -338,7 +338,7 @@ export default function DreamTeamPage() {
             )}
             {user && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between gap-4">
-                <span>🔗 Οι ψήφοι σας συγχρονίζονται αυτόματα με την &quot;Η Κυβέρνησή μου&quot; στις Συνθέσεις σας.</span>
+                <span>🔗 Οι ψήφοι σας συγχρονίζονται αυτόματα με την &ldquo;Η Κυβέρνησή μου&rdquo; στις Συνθέσεις σας.</span>
                 <button
                   onClick={() => setActiveTab('formations')}
                   className="shrink-0 text-xs font-semibold underline hover:no-underline whitespace-nowrap"
