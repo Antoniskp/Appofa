@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { XMarkIcon } from '@heroicons/react/24/outline';
@@ -10,35 +10,16 @@ export default function LocationFilterBreadcrumb({ value, onChange }) {
   const [selections, setSelections] = useState([]);
   const [children, setChildren] = useState([]);
   const [childrenLoading, setChildrenLoading] = useState(false);
-  const initializedRef = useRef(false);
-  const onChangeRef = useRef(onChange);
 
-  // Keep onChange ref up-to-date without triggering effects
-  useEffect(() => { onChangeRef.current = onChange; });
-
-  // Auto-initialize from user's home location once auth has loaded
+  // Load children of the deepest selected location (only when there is a selection)
   useEffect(() => {
-    if (authLoading) return;
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
-    if (user?.homeLocation) {
-      const path = [];
-      let loc = user.homeLocation;
-      while (loc) {
-        path.unshift(loc);
-        loc = loc.parent;
-      }
-      setSelections(path);
-      onChangeRef.current(user.homeLocation.id);
+    if (selections.length === 0) {
+      setChildren([]);
+      return;
     }
-  }, [authLoading, user]);
-
-  // Load children of the deepest selected location
-  useEffect(() => {
-    const parentId = selections.length > 0 ? selections[selections.length - 1].id : null;
+    const parentId = selections[selections.length - 1].id;
     setChildrenLoading(true);
-    locationAPI.getAll({ parent_id: parentId ?? '', limit: 200 })
+    locationAPI.getAll({ parent_id: parentId, limit: 200 })
       .then(res => {
         if (res.success) setChildren(res.data || res.locations || []);
         else setChildren([]);

@@ -9,6 +9,7 @@ import VideoThumbnailCard from '@/components/articles/VideoThumbnailCard';
 import EmptyState from '@/components/ui/EmptyState';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
+import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import { useAuth } from '@/lib/auth-context';
 
 const PAGE_SIZE = 18;
@@ -32,6 +33,7 @@ export default function VideosPage() {
   // Filter state
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('');
+  const [locationId, setLocationId] = useState(null);
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
 
@@ -48,14 +50,14 @@ export default function VideosPage() {
   // Track in-flight request to avoid duplicate fetches
   const fetchingRef = useRef(false);
   // Track current filters so we can reset feed when they change
-  const filtersRef = useRef({ search, category });
+  const filtersRef = useRef({ search, category, locationId });
 
   const videoCategoryOptions = (articleCategories.articleTypes?.video?.categories ?? []).map(
     (cat) => (typeof cat === 'string' ? { value: cat, label: cat } : cat)
   );
 
   /** Fetch one page of videos and append (or replace on reset) */
-  const fetchPage = useCallback(async (pageNum, currentSearch, currentCategory, replace = false) => {
+  const fetchPage = useCallback(async (pageNum, currentSearch, currentCategory, currentLocationId, replace = false) => {
     if (fetchingRef.current) return;
     fetchingRef.current = true;
 
@@ -75,6 +77,7 @@ export default function VideosPage() {
       };
       if (currentSearch) params.search = currentSearch;
       if (currentCategory) params.category = currentCategory;
+      if (currentLocationId) params.locationId = currentLocationId;
 
       const response = await articleAPI.getAll(params);
       const articles = response?.data?.articles || [];
@@ -97,12 +100,12 @@ export default function VideosPage() {
 
   /** Initial load — runs when search or category filter changes */
   useEffect(() => {
-    filtersRef.current = { search, category };
+    filtersRef.current = { search, category, locationId };
     setPage(1);
     setHasMore(true);
     // fetchPage is a stable useCallback — safe to include in deps
-    fetchPage(1, search, category, true);
-  }, [search, category, fetchPage]);
+    fetchPage(1, search, category, locationId, true);
+  }, [search, category, locationId, fetchPage]);
 
   /** Fetch category counts once on mount */
   useEffect(() => {
@@ -122,7 +125,7 @@ export default function VideosPage() {
         if (entry.isIntersecting && hasMore && !fetchingRef.current) {
           setPage((prev) => {
             const next = prev + 1;
-            fetchPage(next, filtersRef.current.search, filtersRef.current.category, false);
+            fetchPage(next, filtersRef.current.search, filtersRef.current.category, filtersRef.current.locationId, false);
             return next;
           });
         }
@@ -139,6 +142,12 @@ export default function VideosPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        {/* Location Breadcrumb */}
+        <LocationFilterBreadcrumb
+          value={locationId}
+          onChange={(id) => setLocationId(id)}
+        />
+
         {/* Search and Category Pills */}
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex items-center gap-3">
@@ -190,7 +199,7 @@ export default function VideosPage() {
               text: 'Δοκιμάστε Ξανά',
               onClick: () => {
                 setError(null);
-                fetchPage(1, search, category, true);
+                fetchPage(1, search, category, locationId, true);
               },
             }}
           />
