@@ -1,26 +1,50 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { MapPinIcon, HomeIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
-export default function LocationFilterBreadcrumb({ value, onChange, showHomeShortcut = true }) {
-  const { user } = useAuth();
+export default function LocationFilterBreadcrumb({ value, onChange }) {
+  const { user, loading: authLoading } = useAuth();
   const [selections, setSelections] = useState([]);
   const [children, setChildren] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [childrenLoading, setChildrenLoading] = useState(false);
+  const initializedRef = useRef(false);
+  const onChangeRef = useRef(onChange);
 
-  // Load children of the deepest selected location (or root locations when nothing selected)
+  // Keep onChange ref up-to-date without triggering effects
+  useEffect(() => { onChangeRef.current = onChange; });
+
+  // Auto-initialize from user's home location once auth has loaded
+  useEffect(() => {
+    if (authLoading) return;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    if (user?.homeLocation) {
+      const path = [];
+      let loc = user.homeLocation;
+      while (loc) {
+        path.unshift(loc);
+        loc = loc.parent;
+      }
+      setSelections(path);
+      onChangeRef.current(user.homeLocation.id);
+    }
+  }, [authLoading, user]);
+
+  // Load children of the deepest selected location
   useEffect(() => {
     const parentId = selections.length > 0 ? selections[selections.length - 1].id : null;
-    setLoading(true);
+    setChildrenLoading(true);
     locationAPI.getAll({ parent_id: parentId ?? '', limit: 200 })
       .then(res => {
         if (res.success) setChildren(res.data || res.locations || []);
+        else setChildren([]);
       })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      .catch(() => setChildren([]))
+      .finally(() => setChildrenLoading(false));
   }, [selections]);
 
   const handleSelect = (location) => {
@@ -40,7 +64,7 @@ export default function LocationFilterBreadcrumb({ value, onChange, showHomeShor
     onChange(null);
   };
 
-  const handleHomeShortcut = () => {
+  const handleRestoreHome = () => {
     if (user?.homeLocation) {
       const path = [];
       let loc = user.homeLocation;
@@ -53,61 +77,73 @@ export default function LocationFilterBreadcrumb({ value, onChange, showHomeShor
     }
   };
 
-  const hasChildren = children.length > 0;
+  // Still loading auth — render nothing to avoid layout shift
+  if (authLoading) return null;
+
+  // No active selection — show a subtle prompt for users who have a home location
+  if (selections.length === 0) {
+    if (!user?.homeLocation) return null;
+    return (
+      <div className="mb-2">
+        <button
+          onClick={handleRestoreHome}
+          className="flex items-center gap-1 text-sm text-amber-600 hover:text-amber-800"
+        >
+          <span>🏠</span>
+          <span>Φιλτράρισμα για την τοποθεσία μου</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center flex-wrap gap-2 text-sm bg-white border border-gray-200 rounded-lg px-3 py-2">
-      <MapPinIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
-
-      {showHomeShortcut && user?.homeLocation && (
-        <button
-          onClick={handleHomeShortcut}
-          className="text-amber-600 hover:text-amber-800 flex-shrink-0"
-          title="Μετάβαση στην τοποθεσία μου"
-        >
-          <HomeIcon className="h-4 w-4" />
-        </button>
-      )}
-
-      {selections.map((sel, index) => (
-        <span key={sel.id} className="flex items-center gap-1">
-          {index > 0 && <span className="text-gray-400">/</span>}
+    <nav className="mb-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+      <ol className="flex items-center flex-wrap gap-1 text-sm">
+        <li className="flex items-center text-amber-700 font-semibold mr-1">🏠</li>
+        {selections.map((sel, index) => (
+          <li key={sel.id} className="flex items-center">
+            {index > 0 && <span className="mx-1 text-amber-400">/</span>}
+            <button
+              onClick={() => handleBreadcrumbClick(index)}
+              className={
+                index === selections.length - 1
+                  ? 'text-amber-700 font-semibold hover:text-amber-900'
+                  : 'text-amber-600 hover:text-amber-800'
+              }
+            >
+              {sel.name}
+            </button>
+          </li>
+        ))}
+        {children.length > 0 && (
+          <li className="flex items-center">
+            <span className="mx-1 text-amber-400">/</span>
+            <select
+              className="border-none bg-transparent text-amber-600 text-sm focus:ring-0 cursor-pointer py-0"
+              value=""
+              onChange={(e) => {
+                const loc = children.find(c => String(c.id) === e.target.value);
+                if (loc) handleSelect(loc);
+              }}
+              disabled={childrenLoading}
+            >
+              <option value="">{childrenLoading ? '...' : '▾'}</option>
+              {children.map(child => (
+                <option key={child.id} value={child.id}>{child.name}</option>
+              ))}
+            </select>
+          </li>
+        )}
+        <li className="ml-auto flex items-center">
           <button
-            onClick={() => handleBreadcrumbClick(index)}
-            className="text-blue-600 hover:text-blue-800 font-medium"
+            onClick={handleClear}
+            className="text-amber-400 hover:text-amber-600"
+            title="Εκκαθάριση φίλτρου τοποθεσίας"
           >
-            {sel.name}
+            <XMarkIcon className="h-4 w-4" />
           </button>
-        </span>
-      ))}
-
-      {hasChildren && (
-        <>
-          {selections.length > 0 && <span className="text-gray-400">/</span>}
-          <select
-            className="border-none bg-transparent text-gray-700 text-sm focus:ring-0 cursor-pointer py-0"
-            value=""
-            onChange={(e) => {
-              const loc = children.find(c => String(c.id) === e.target.value);
-              if (loc) handleSelect(loc);
-            }}
-            disabled={loading}
-          >
-            <option value="">
-              {selections.length === 0 ? 'Επιλέξτε τοποθεσία...' : 'Επιλέξτε...'}
-            </option>
-            {children.map(child => (
-              <option key={child.id} value={child.id}>{child.name}</option>
-            ))}
-          </select>
-        </>
-      )}
-
-      {selections.length > 0 && (
-        <button onClick={handleClear} className="ml-1 text-gray-400 hover:text-gray-600 flex-shrink-0" title="Εκκαθάριση φίλτρου τοποθεσίας">
-          <XMarkIcon className="h-4 w-4" />
-        </button>
-      )}
-    </div>
+        </li>
+      </ol>
+    </nav>
   );
 }

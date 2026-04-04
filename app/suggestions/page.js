@@ -165,6 +165,12 @@ function SuggestionsContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
+        {/* Location Breadcrumb */}
+        <LocationFilterBreadcrumb
+          value={filters.locationId}
+          onChange={(locationId) => updateFilter('locationId', locationId)}
+        />
+
         {/* Search, Filters, and action button */}
         <div className="flex flex-col gap-4 mb-8">
           <div className="flex items-center gap-3">
@@ -232,10 +238,6 @@ function SuggestionsContent() {
             onSelect={(cat) => updateFilter('category', cat)}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
-          />
-          <LocationFilterBreadcrumb
-            value={filters.locationId}
-            onChange={(locationId) => updateFilter('locationId', locationId)}
           />
         </div>
 
