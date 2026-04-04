@@ -14,6 +14,7 @@ import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
 import { useAuth } from '@/lib/auth-context';
+import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 
 export default function NewsPage() {
   const { user } = useAuth();
@@ -30,6 +31,7 @@ export default function NewsPage() {
   } = useFilters({
     category: '',
     search: '',
+    locationId: null,
   });
 
   const [categoryCounts, setCategoryCounts] = useState({});
@@ -116,6 +118,10 @@ export default function NewsPage() {
             onSelect={handleCategorySelect}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+          />
+          <LocationFilterBreadcrumb
+            value={filters.locationId}
+            onChange={(locationId) => updateFilter('locationId', locationId)}
           />
         </div>
 

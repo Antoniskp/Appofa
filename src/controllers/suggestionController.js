@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeOptionalText, normalizeEnum, normalizeInteger } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
@@ -70,7 +71,10 @@ const suggestionController = {
       }
       if (locationId) {
         const parsedLocationId = parseInt(locationId, 10);
-        if (!isNaN(parsedLocationId)) where.locationId = parsedLocationId;
+        if (!isNaN(parsedLocationId)) {
+          const locationIds = await getDescendantLocationIds(parsedLocationId, true);
+          where.locationId = { [Op.in]: locationIds };
+        }
       }
       if (authorId) {
         const parsedAuthorId = parseInt(authorId, 10);

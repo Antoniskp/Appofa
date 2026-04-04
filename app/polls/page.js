@@ -15,6 +15,7 @@ import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
 import FilterBar from '@/components/ui/FilterBar';
+import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import articleCategories from '@/config/articleCategories.json';
 
 export default function PollsPage() {
@@ -33,6 +34,7 @@ export default function PollsPage() {
     status: '',
     category: '',
     search: '',
+    locationId: null,
   });
 
   const [categoryCounts, setCategoryCounts] = useState({});
@@ -129,6 +131,10 @@ export default function PollsPage() {
             onSelect={(cat) => updateFilter('category', cat)}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+          />
+          <LocationFilterBreadcrumb
+            value={filters.locationId}
+            onChange={(locationId) => updateFilter('locationId', locationId)}
           />
         </div>
 

@@ -11,6 +11,7 @@ const {
   normalizeInteger,
   normalizeStringArray
 } = require('../utils/validators');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -389,7 +390,8 @@ const getAllPolls = async (filters, user) => {
       search,
       page = 1,
       limit = 10,
-      creatorId
+      creatorId,
+      locationId
     } = filters;
 
     const normalizedTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
@@ -468,6 +470,21 @@ const getAllPolls = async (filters, user) => {
       // When filtering by creator, include all statuses (not just active) if not specified
       if (!status) {
         delete where.status;
+      }
+    }
+
+    // Filter by location (and its descendants) via LocationLink
+    if (locationId) {
+      const parsedLocationId = parseInt(locationId, 10);
+      if (!isNaN(parsedLocationId)) {
+        const locationIds = await getDescendantLocationIds(parsedLocationId, true);
+        const linkedPollIds = await LocationLink.findAll({
+          where: { location_id: { [Op.in]: locationIds }, entity_type: 'poll' },
+          attributes: ['entity_id'],
+          raw: true
+        });
+        // Use -1 sentinel when no matches to ensure an empty result set without SQL errors
+        where.id = { [Op.in]: linkedPollIds.length > 0 ? linkedPollIds.map(l => l.entity_id) : [-1] };
       }
     }
 
