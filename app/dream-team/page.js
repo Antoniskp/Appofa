@@ -206,6 +206,7 @@ export default function DreamTeamPage() {
               personName: res.data?.personName || null,
             };
             syncPrimaryFormationPicks(primaryFormation, updatedPicks);
+            setPrimaryPicks(Object.values(updatedPicks));
           }
         }
       }
@@ -240,6 +241,7 @@ export default function DreamTeamPage() {
             const updatedPicks = buildPrimaryPicksMap(primaryFormation);
             delete updatedPicks[position.slug];
             syncPrimaryFormationPicks(primaryFormation, updatedPicks);
+            setPrimaryPicks(Object.values(updatedPicks));
           }
         }
       }
@@ -253,11 +255,30 @@ export default function DreamTeamPage() {
   // Called by FormationList when the Primary Formation saves picks → votes sync
   const handleVotesChanged = useCallback(async () => {
     try {
-      const votesRes = await dreamTeamAPI.getMyVotes();
+      const [votesRes, posRes, resRes] = await Promise.all([
+        dreamTeamAPI.getMyVotes(),
+        dreamTeamAPI.getPositions(),
+        dreamTeamAPI.getResults(),
+      ]);
       if (votesRes?.success) {
         const map = {};
         (votesRes.data || []).forEach((v) => { map[v.positionId] = v; });
         setMyVotesMap(map);
+      }
+      if (posRes?.success) setPositions(posRes.data || []);
+      if (resRes?.success) setResults(resRes.data || []);
+      // Refresh the primary formation ref so it stays current
+      try {
+        const formationsRes = await dreamTeamAPI.getMyFormations();
+        if (formationsRes?.success) {
+          const primary = (formationsRes.data || []).find(isPrimaryFormation);
+          if (primary) {
+            primaryFormationRef.current = primary;
+            setPrimaryPicks(primary.picks || []);
+          }
+        }
+      } catch {
+        // Non-critical
       }
     } catch {
       // Non-critical
