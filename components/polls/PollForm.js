@@ -13,6 +13,10 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 
+// Default colour shown in the colour picker before a user makes a selection.
+// Matches DEFAULT_PALETTE[0] in PollResults.js.
+const DEFAULT_PICKER_COLOR = '#3B82F6';
+
 /**
  * Unified poll form for create and edit modes
  * @param {Object} poll - Existing poll data (for edit mode)
@@ -65,7 +69,7 @@ export default function PollForm({
   useEffect(() => {
     if (poll) {
       const hasCustomColors = Array.isArray(poll.options) &&
-        poll.options.some(opt => opt.color != null);
+        poll.options.some(opt => opt.color !== null && opt.color !== undefined);
       setFormData({
         title: poll.title || '',
         description: poll.description || '',
@@ -515,7 +519,7 @@ export default function PollForm({
                   <label className="text-sm text-gray-700">Χρώμα:</label>
                   <input
                     type="color"
-                    value={option.color || '#3B82F6'}
+                    value={option.color || DEFAULT_PICKER_COLOR}
                     onChange={(e) => handleOptionChange(index, 'color', e.target.value)}
                     className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
                   />
