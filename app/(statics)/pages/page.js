@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
-import { AcademicCapIcon, LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, FlagIcon, LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
@@ -41,6 +41,15 @@ const sections = [
     Icon: LifebuoyIcon,
     color: 'text-green-700',
     bg: 'bg-green-50',
+  },
+  {
+    href: '/elections',
+    title: 'Εκλογές & Πολιτική',
+    description:
+      'Πολιτικά κόμματα, εκλογές, αξιωματούχοι και θεσμοί της Ελληνικής Δημοκρατίας.',
+    Icon: FlagIcon,
+    color: 'text-purple-700',
+    bg: 'bg-purple-50',
   },
   {
     href: '/education',

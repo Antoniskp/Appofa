@@ -2,7 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { AcademicCapIcon, LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+import { AcademicCapIcon, FlagIcon, LifebuoyIcon, WrenchScrewdriverIcon } from '@heroicons/react/24/outline';
+
+const ELECTIONS_PATHS = [
+  '/elections',
+  '/citizen-help/independent-candidate',
+  '/citizen-help/public-officials-salaries',
+  '/citizen-help/government-positions',
+  '/citizen-help/prefecture-seats',
+  '/citizen-help/regions-electoral-map',
+];
 
 const CITIZEN_HELP_PATHS = [
   '/consumer-rights', '/driving-license', '/dypa-unemployment',
@@ -10,7 +19,7 @@ const CITIZEN_HELP_PATHS = [
   '/taxation-guide', '/rental-guide', '/property-transfer',
   '/car-transfer', '/boat-transfer', '/start-business',
   '/price-comparison', '/digital-services', '/economy',
-  '/citizen-help', '/citizen-help/independent-candidate',
+  '/citizen-help',
 ];
 
 const PLATFORM_PATHS = [
@@ -26,7 +35,10 @@ const EDUCATION_PATHS = [
 export default function StaticsSubNav() {
   const pathname = usePathname();
 
-  const isCitizenHelpActive = CITIZEN_HELP_PATHS.some(
+  const isElectionsActive = ELECTIONS_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + '/')
+  );
+  const isCitizenHelpActive = !isElectionsActive && CITIZEN_HELP_PATHS.some(
     (p) => pathname === p || pathname.startsWith(p + '/')
   );
   const isPlatformActive = PLATFORM_PATHS.some(
@@ -53,6 +65,14 @@ export default function StaticsSubNav() {
           >
             <LifebuoyIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
             Βοήθεια Πολίτη
+          </Link>
+          <Link
+            href="/elections"
+            aria-current={isElectionsActive ? 'page' : undefined}
+            className={`flex items-center gap-1.5 px-4 py-3 text-sm transition-colors ${isElectionsActive ? activeTabClass : inactiveTabClass}`}
+          >
+            <FlagIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Εκλογές &amp; Πολιτική
           </Link>
           <Link
             href="/platform"

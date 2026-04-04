@@ -15,9 +15,6 @@ import {
   ChartBarIcon,
   ComputerDesktopIcon,
   CurrencyEuroIcon,
-  UserCircleIcon,
-  UserGroupIcon,
-  MapIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -75,41 +72,6 @@ const categories = [
     title: '🚀 Επιχειρηματικότητα',
     pages: [
       { href: '/start-business', label: 'Έναρξη Επιχείρησης', description: 'Πώς να ξεκινήσετε τη δική σας επιχείρηση', Icon: RocketLaunchIcon },
-    ],
-  },
-  {
-    title: '🗳️ Εκλογές & Πολιτική',
-    pages: [
-      {
-        href: '/citizen-help/independent-candidate',
-        label: 'Ανεξάρτητος Υποψήφιος',
-        description: 'Διαδικασίες & κόστη για υποψηφιότητα χωρίς κόμμα',
-        Icon: UserCircleIcon,
-      },
-      {
-        href: '/citizen-help/public-officials-salaries',
-        label: 'Αμοιβές Αξιωματούχων',
-        description: 'Μισθοί & παροχές ΠΜ, Υπουργών, Βουλευτών, Περιφερειαρχών, Δημάρχων',
-        Icon: CurrencyEuroIcon,
-      },
-      {
-        href: '/citizen-help/government-positions',
-        label: 'Κυβερνητικές Θέσεις',
-        description: 'Ποιος κατέχει ποια θέση — Πρόεδρος, ΠΜ, Υπουργοί',
-        Icon: UserGroupIcon,
-      },
-      {
-        href: '/citizen-help/prefecture-seats',
-        label: 'Έδρες ανά Περιφέρεια',
-        description: 'Πόσοι βουλευτές εκλέγονται σε κάθε εκλογική περιφέρεια',
-        Icon: MapIcon,
-      },
-      {
-        href: '/citizen-help/regions-electoral-map',
-        label: 'Περιφέρειες & Εκλογικές Περιφέρειες',
-        description: 'Χαρτογράφηση Περιφερειών με εκλογικές περιφέρειες & ανάλυση',
-        Icon: GlobeAltIcon,
-      },
     ],
   },
 ];

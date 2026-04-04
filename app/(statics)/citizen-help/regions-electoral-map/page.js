@@ -180,7 +180,7 @@ export default function RegionsElectoralMapPage() {
       title="Περιφέρειες & Εκλογικές Περιφέρειες"
       maxWidth="max-w-5xl"
       breadcrumb={
-        <Link href="/citizen-help" className="text-gray-500 hover:text-blue-600 transition-colors">
+        <Link href="/elections" className="text-gray-500 hover:text-blue-600 transition-colors">
           ← Εκλογές &amp; Πολιτική
         </Link>
       }
