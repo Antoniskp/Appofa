@@ -105,8 +105,8 @@ export default function GovernmentPositionsPage() {
       title="Κυβερνητικές Θέσεις & Αξιωματούχοι"
       maxWidth="max-w-5xl"
       breadcrumb={
-        <Link href="/citizen-help" className="text-gray-500 hover:text-blue-600 transition-colors">
-          ← Βοήθεια Πολίτη
+        <Link href="/elections" className="text-gray-500 hover:text-blue-600 transition-colors">
+          ← Εκλογές &amp; Πολιτική
         </Link>
       }
     >

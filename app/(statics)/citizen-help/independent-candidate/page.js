@@ -28,8 +28,8 @@ export default function IndependentCandidatePage() {
       title="Ανεξάρτητος Υποψήφιος — Διαδικασίες & Κόστη στην Ελλάδα"
       maxWidth="max-w-4xl"
       breadcrumb={
-        <Link href="/citizen-help" className="text-gray-500 hover:text-blue-600 transition-colors">
-          ← Βοήθεια Πολίτη
+        <Link href="/elections" className="text-gray-500 hover:text-blue-600 transition-colors">
+          ← Εκλογές &amp; Πολιτική
         </Link>
       }
     >
