@@ -34,6 +34,9 @@ router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin', 'moder
 router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.updateUserRole);
 router.put('/users/:id/verify', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.verifyUser);
 
+// Registered users only: check if a username is available
+router.get('/check-username', apiLimiter, authMiddleware, authController.checkUsernameAvailability);
+
 // Registered users only: search visible users
 router.get('/users/search', apiLimiter, authMiddleware, authController.searchUsers);
 

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-
-const DEFAULT_AVATAR_COLOR = '#64748b';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
 
 /**
- * Displays the user's avatar, username, and display name.
+ * Displays the user's avatar, username, display name, and header actions.
  *
  * @param {Object} props
  * @param {string} props.username
@@ -14,9 +14,15 @@ const DEFAULT_AVATAR_COLOR = '#64748b';
  * @param {string} [props.email]
  * @param {string} [props.avatar]
  * @param {string} [props.avatarColor]
+ * @param {number} [props.followersCount]
+ * @param {number} [props.followingCount]
  */
-export default function ProfileHeader({ username, firstName, lastName, email, avatar, avatarColor }) {
+export default function ProfileHeader({ username, firstName, lastName, email, avatar, avatarColor, followersCount, followingCount }) {
   const [avatarLoadError, setAvatarLoadError] = useState(false);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [avatar]);
 
   const displayName = firstName && lastName
     ? `${firstName} ${lastName}`
@@ -41,7 +47,7 @@ export default function ProfileHeader({ username, firstName, lastName, email, av
           <span>{initials}</span>
         )}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <h1 className="text-2xl font-bold text-gray-900 truncate">
           {username || email || 'My Profile'}
         </h1>
@@ -50,6 +56,30 @@ export default function ProfileHeader({ username, firstName, lastName, email, av
         )}
         {email && (
           <p className="text-xs text-gray-500 mt-1 truncate">{email}</p>
+        )}
+        {username && (
+          <div className="flex flex-wrap items-center gap-4 mt-2">
+            <Link
+              href={`/users/${username}/followers`}
+              className="text-sm text-gray-600 hover:text-blue-600 hover:underline"
+            >
+              {followersCount !== undefined ? `${followersCount} Followers` : 'Followers'}
+            </Link>
+            <Link
+              href={`/users/${username}/following`}
+              className="text-sm text-gray-600 hover:text-blue-600 hover:underline"
+            >
+              {followingCount !== undefined ? `${followingCount} Following` : 'Following'}
+            </Link>
+            <Link
+              href={`/users/${username}`}
+              className="text-sm text-blue-600 hover:underline font-medium"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View public profile →
+            </Link>
+          </div>
         )}
       </div>
     </div>

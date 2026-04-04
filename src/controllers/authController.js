@@ -456,7 +456,21 @@ const authController = {
       console.error('Verify user error:', error);
       return res.status(500).json({ success: false, message: 'Error updating verification status.' });
     }
-  }
+  },
+  // Check if a username is available (not taken by another user)
+  checkUsernameAvailability: async (req, res) => {
+    const { username } = req.query;
+    if (!username || typeof username !== 'string' || username.trim().length < 3) {
+      return res.status(400).json({ success: false, message: 'Invalid username.' });
+    }
+    try {
+      const available = await userService.isUsernameAvailable(username.trim(), req.user.id);
+      return res.status(200).json({ success: true, available });
+    } catch (error) {
+      console.error('Username availability check error:', error);
+      return res.status(500).json({ success: false, message: 'Error checking username.' });
+    }
+  },
 };
 
 module.exports = authController;
