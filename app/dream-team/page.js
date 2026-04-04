@@ -16,6 +16,40 @@ import ActivityFeed from '@/components/dream-team/ActivityFeed';
 import FormationComparison from '@/components/dream-team/FormationComparison';
 import EmptyState from '@/components/ui/EmptyState';
 
+/** Identifies a formation as the Primary Formation. */
+function isPrimaryFormation(f) {
+  return f?.isPrimary === true || (f?.name === 'Η Κυβέρνησή μου' && f?.category === 'serious');
+}
+
+/**
+ * Builds a slug-keyed map of the current picks for a formation.
+ * Used for background vote↔formation sync in handleVote / handleDeleteVote.
+ */
+function buildPrimaryPicksMap(formation) {
+  return (formation.picks || []).reduce((acc, p) => {
+    acc[p.positionSlug || p.slug] = p;
+    return acc;
+  }, {});
+}
+
+/**
+ * Fire-and-forget: persist a new picks map to the Primary Formation and update
+ * the ref if successful. Non-blocking — errors are silently swallowed.
+ */
+function syncPrimaryFormationPicks(formation, picksMap) {
+  const picksArray = Object.values(picksMap).filter(
+    (p) => p && (p.personId || p.candidateUserId || p.personName),
+  );
+  dreamTeamAPI.updateFormationPicks(formation.id, picksArray)
+    .then((res) => {
+      if (res?.success) {
+        // Mutate the ref directly since it is not React state
+        Object.assign(formation, { picks: res.data?.picks || picksArray });
+      }
+    })
+    .catch(() => {}); // Non-critical, fire-and-forget
+}
+
 const TABS = [
   { id: 'vote', label: '🗳️ Ψηφίστε' },
   { id: 'results', label: '🏆 Ιδανική Κυβέρνηση' },
@@ -36,9 +70,15 @@ export default function DreamTeamPage() {
   const [totalPublicFormations, setTotalPublicFormations] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Keep a ref to myVotesMap so handleVote always reads the latest value (avoids stale closure)
+  // Keep refs so callbacks always read latest values (avoid stale closures)
   const myVotesMapRef = useRef({});
   useEffect(() => { myVotesMapRef.current = myVotesMap; }, [myVotesMap]);
+
+  const positionsRef = useRef([]);
+  useEffect(() => { positionsRef.current = positions; }, [positions]);
+
+  // Holds the Primary Formation for background vote↔formation sync
+  const primaryFormationRef = useRef(null);
 
   // Set lastUpdated only on the client to avoid SSR/hydration mismatch
   useEffect(() => { setLastUpdated(new Date().toISOString()); }, []);
@@ -68,7 +108,10 @@ export default function DreamTeamPage() {
 
       if (user) {
         try {
-          const votesRes = await dreamTeamAPI.getMyVotes();
+          const [votesRes, formationsRes] = await Promise.all([
+            dreamTeamAPI.getMyVotes(),
+            dreamTeamAPI.getMyFormations(),
+          ]);
           if (votesRes?.success) {
             const map = {};
             (votesRes.data || []).forEach((v) => {
@@ -76,8 +119,12 @@ export default function DreamTeamPage() {
             });
             setMyVotesMap(map);
           }
+          if (formationsRes?.success) {
+            const primary = (formationsRes.data || []).find(isPrimaryFormation);
+            if (primary) primaryFormationRef.current = primary;
+          }
         } catch {
-          // my-votes is not critical
+          // my-votes / formations are not critical
         }
       }
 
@@ -139,6 +186,22 @@ export default function DreamTeamPage() {
         if (posRes?.success) setPositions(posRes.data || []);
         const resRes = await dreamTeamAPI.getResults();
         if (resRes?.success) setResults(resRes.data || []);
+
+        // Background sync: update the Primary Formation pick for this position
+        if (primaryFormationRef.current) {
+          const primaryFormation = primaryFormationRef.current;
+          const position = positionsRef.current.find((p) => p.id === positionId);
+          if (position) {
+            const updatedPicks = buildPrimaryPicksMap(primaryFormation);
+            updatedPicks[position.slug] = {
+              positionSlug: position.slug,
+              personId: personId || null,
+              candidateUserId: candidateUserId || null,
+              personName: res.data?.personName || null,
+            };
+            syncPrimaryFormationPicks(primaryFormation, updatedPicks);
+          }
+        }
       }
     } catch (err) {
       showToast(err.message || 'Σφάλμα κατά την καταγραφή ψήφου', 'error');
@@ -162,6 +225,17 @@ export default function DreamTeamPage() {
         if (posRes?.success) setPositions(posRes.data || []);
         const resRes = await dreamTeamAPI.getResults();
         if (resRes?.success) setResults(resRes.data || []);
+
+        // Background sync: remove the pick from the Primary Formation
+        if (primaryFormationRef.current) {
+          const primaryFormation = primaryFormationRef.current;
+          const position = positionsRef.current.find((p) => p.id === positionId);
+          if (position) {
+            const updatedPicks = buildPrimaryPicksMap(primaryFormation);
+            delete updatedPicks[position.slug];
+            syncPrimaryFormationPicks(primaryFormation, updatedPicks);
+          }
+        }
       }
     } catch (err) {
       showToast(err.message || 'Σφάλμα κατά τη διαγραφή ψήφου.', 'error');
@@ -169,6 +243,20 @@ export default function DreamTeamPage() {
       setVotingPosition(null);
     }
   }, [showToast]);
+
+  // Called by FormationList when the Primary Formation saves picks → votes sync
+  const handleVotesChanged = useCallback(async () => {
+    try {
+      const votesRes = await dreamTeamAPI.getMyVotes();
+      if (votesRes?.success) {
+        const map = {};
+        (votesRes.data || []).forEach((v) => { map[v.positionId] = v; });
+        setMyVotesMap(map);
+      }
+    } catch {
+      // Non-critical
+    }
+  }, []);
 
   // Open comparison tool and lazily load formations for dropdowns
   const openCompare = useCallback(async (formation = null) => {
@@ -248,6 +336,17 @@ export default function DreamTeamPage() {
                 💡 <strong>Συνδεθείτε</strong> για να καταγράψετε τις ψήφους σας και να συμβάλετε στη διαμόρφωση της ιδανικής κυβέρνησης.
               </div>
             )}
+            {user && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between gap-4">
+                <span>🔗 Οι ψήφοι σας συγχρονίζονται αυτόματα με την &ldquo;Η Κυβέρνησή μου&rdquo; στις Συνθέσεις σας.</span>
+                <button
+                  onClick={() => setActiveTab('formations')}
+                  className="shrink-0 text-xs font-semibold underline hover:no-underline whitespace-nowrap"
+                >
+                  Δείτε τη Σύνθεσή σας →
+                </button>
+              </div>
+            )}
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[...Array(6)].map((_, i) => (
@@ -306,6 +405,9 @@ export default function DreamTeamPage() {
               communityResults={results}
               showToast={showToast}
               onCompare={openCompare}
+              positions={positions}
+              myVotes={Object.values(myVotesMap)}
+              onVotesChanged={handleVotesChanged}
             />
           )
         )}

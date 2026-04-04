@@ -27,8 +27,11 @@ function isPrimaryFormation(f) {
  *   communityResults – array of community results (for quick-fill in builder)
  *   showToast(msg, type) – show a notification
  *   onCompare(formation) – open comparison tool with this formation pre-selected
+ *   positions        – positions array with id+slug (from getPositions API)
+ *   myVotes          – array of the user's current votes (from getMyVotes API)
+ *   onVotesChanged() – callback to refresh votes in the parent after formation→votes sync
  */
-export default function FormationList({ user, communityResults = [], showToast, onCompare }) {
+export default function FormationList({ user, communityResults = [], showToast, onCompare, positions = [], myVotes = [], onVotesChanged }) {
   const [formations, setFormations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('list'); // 'list' | 'builder'
@@ -175,6 +178,9 @@ export default function FormationList({ user, communityResults = [], showToast, 
         onBack={handleBack}
         showToast={showToast}
         isPrimary={isPrimary}
+        positions={isPrimary ? positions : undefined}
+        myVotes={isPrimary ? myVotes : undefined}
+        onVotesChanged={isPrimary ? onVotesChanged : undefined}
       />
     );
   }
@@ -233,7 +239,7 @@ export default function FormationList({ user, communityResults = [], showToast, 
                     <div className="min-w-0">
                       <h3 className="font-bold text-gray-900 text-base truncate">{primaryFormation.name}</h3>
                       <p className="text-xs text-indigo-500 mt-0.5 font-medium">
-                        Αυτή είναι η πραγματική σας επιλογή. Μόνο εσείς τη βλέπετε.
+                        Αυτή είναι η πραγματική σας επιλογή. Συγχρονίζεται με τις ψήφους σας.
                       </p>
                     </div>
                   </div>
