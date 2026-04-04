@@ -21,6 +21,35 @@ function isPrimaryFormation(f) {
   return f?.isPrimary === true || (f?.name === 'Η Κυβέρνησή μου' && f?.category === 'serious');
 }
 
+/**
+ * Builds a slug-keyed map of the current picks for a formation.
+ * Used for background vote↔formation sync in handleVote / handleDeleteVote.
+ */
+function buildPrimaryPicksMap(formation) {
+  return (formation.picks || []).reduce((acc, p) => {
+    acc[p.positionSlug || p.slug] = p;
+    return acc;
+  }, {});
+}
+
+/**
+ * Fire-and-forget: persist a new picks map to the Primary Formation and update
+ * the ref if successful. Non-blocking — errors are silently swallowed.
+ */
+function syncPrimaryFormationPicks(formation, picksMap) {
+  const picksArray = Object.values(picksMap).filter(
+    (p) => p && (p.personId || p.candidateUserId || p.personName),
+  );
+  dreamTeamAPI.updateFormationPicks(formation.id, picksArray)
+    .then((res) => {
+      if (res?.success) {
+        // Mutate the ref directly since it is not React state
+        Object.assign(formation, { picks: res.data?.picks || picksArray });
+      }
+    })
+    .catch(() => {}); // Non-critical, fire-and-forget
+}
+
 const TABS = [
   { id: 'vote', label: '🗳️ Ψηφίστε' },
   { id: 'results', label: '🏆 Ιδανική Κυβέρνηση' },
@@ -163,29 +192,14 @@ export default function DreamTeamPage() {
           const primaryFormation = primaryFormationRef.current;
           const position = positionsRef.current.find((p) => p.id === positionId);
           if (position) {
-            const existingPicks = (primaryFormation.picks || []).reduce((acc, p) => {
-              acc[p.positionSlug || p.slug] = p;
-              return acc;
-            }, {});
-            existingPicks[position.slug] = {
+            const updatedPicks = buildPrimaryPicksMap(primaryFormation);
+            updatedPicks[position.slug] = {
               positionSlug: position.slug,
               personId: personId || null,
               candidateUserId: candidateUserId || null,
               personName: res.data?.personName || null,
             };
-            const picksArray = Object.values(existingPicks).filter(
-              (p) => p && (p.personId || p.candidateUserId || p.personName),
-            );
-            dreamTeamAPI.updateFormationPicks(primaryFormation.id, picksArray)
-              .then((picksRes) => {
-                if (picksRes?.success) {
-                  primaryFormationRef.current = {
-                    ...primaryFormation,
-                    picks: picksRes.data?.picks || picksArray,
-                  };
-                }
-              })
-              .catch(() => {}); // Non-critical, fire-and-forget
+            syncPrimaryFormationPicks(primaryFormation, updatedPicks);
           }
         }
       }
@@ -217,24 +231,9 @@ export default function DreamTeamPage() {
           const primaryFormation = primaryFormationRef.current;
           const position = positionsRef.current.find((p) => p.id === positionId);
           if (position) {
-            const existingPicks = (primaryFormation.picks || []).reduce((acc, p) => {
-              acc[p.positionSlug || p.slug] = p;
-              return acc;
-            }, {});
-            delete existingPicks[position.slug];
-            const picksArray = Object.values(existingPicks).filter(
-              (p) => p && (p.personId || p.candidateUserId || p.personName),
-            );
-            dreamTeamAPI.updateFormationPicks(primaryFormation.id, picksArray)
-              .then((picksRes) => {
-                if (picksRes?.success) {
-                  primaryFormationRef.current = {
-                    ...primaryFormation,
-                    picks: picksRes.data?.picks || picksArray,
-                  };
-                }
-              })
-              .catch(() => {}); // Non-critical, fire-and-forget
+            const updatedPicks = buildPrimaryPicksMap(primaryFormation);
+            delete updatedPicks[position.slug];
+            syncPrimaryFormationPicks(primaryFormation, updatedPicks);
           }
         }
       }
