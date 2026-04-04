@@ -20,7 +20,7 @@ function DisplayBadgeOverlay({ slug, tier }) {
       <img
         src={`/images/badges/${slug}-${tier}.svg`}
         alt={`${slug} ${tier}`}
-        className="absolute bottom-0 right-0 h-4 w-4 object-contain"
+        className="absolute bottom-0 right-0 h-8 w-8 object-contain"
         onError={() => setImgError(true)}
       />
     );
@@ -28,11 +28,11 @@ function DisplayBadgeOverlay({ slug, tier }) {
 
   // Fallback: for the verified badge show the green checkmark; others show emoji
   if (slug === 'verified') {
-    return <VerifiedBadge overlay className="absolute bottom-0 right-0 h-4 w-4" />;
+    return <VerifiedBadge overlay className="absolute bottom-0 right-0 h-8 w-8" />;
   }
 
   return (
-    <span className="absolute bottom-0 right-0 text-xs leading-none">
+    <span className="absolute bottom-0 right-0 text-base leading-none">
       {BADGE_TIER_EMOJI[tier] || '🏅'}
     </span>
   );
@@ -80,7 +80,7 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
       ) : user.isVerified ? (
         <VerifiedBadge
           overlay
-          className="absolute bottom-0 right-0 h-4 w-4"
+          className="absolute bottom-0 right-0 h-8 w-8"
         />
       ) : null}
       {user.partyId && (
