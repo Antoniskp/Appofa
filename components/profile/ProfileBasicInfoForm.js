@@ -5,6 +5,8 @@ import FormInput from '@/components/ui/FormInput';
 import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
 import { authAPI } from '@/lib/api';
 
+const USERNAME_CHECK_DEBOUNCE_MS = 500;
+
 /**
  * Tries to detect if a string is a valid absolute URL (http/https).
  */
@@ -68,7 +70,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
       setUsernameStatus(null);
       return;
     }
-    debounceRef.current = setTimeout(() => checkUsername(value), 500);
+    debounceRef.current = setTimeout(() => checkUsername(value), USERNAME_CHECK_DEBOUNCE_MS);
   };
 
   useEffect(() => () => clearTimeout(debounceRef.current), []);

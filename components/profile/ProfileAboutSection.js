@@ -32,6 +32,8 @@ function calculateAge(dob) {
  * @param {Function} props.onSocialLinkChange
  */
 export default function ProfileAboutSection({ profileData, onChange, onSocialLinkChange }) {
+  const today = new Date().toISOString().split('T')[0];
+
   return (
     <div className="space-y-4">
       <div>
@@ -81,7 +83,7 @@ export default function ProfileAboutSection({ profileData, onChange, onSocialLin
           type="date"
           value={profileData.dateOfBirth || ''}
           onChange={onChange}
-          max={new Date().toISOString().split('T')[0]}
+          max={today}
           className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         />
         {profileData.dateOfBirth && calculateAge(profileData.dateOfBirth) !== null && (

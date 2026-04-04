@@ -803,7 +803,6 @@ async function getPublicUserStats() {
 async function isUsernameAvailable(username, excludeUserId) {
   const where = { username };
   if (excludeUserId) {
-    const { Op } = require('sequelize');
     where.id = { [Op.ne]: excludeUserId };
   }
   const existing = await User.findOne({ where, attributes: ['id'] });
