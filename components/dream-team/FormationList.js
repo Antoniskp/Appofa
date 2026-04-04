@@ -186,6 +186,7 @@ export default function FormationList({ user, communityResults = [], showToast, 
   }
 
   // ── Derived data ─────────────────────────────────────────────────────────────
+  const primaryFormation = formations.find(isPrimaryFormation);
   const otherFormations = formations.filter((f) => !isPrimaryFormation(f));
 
   // ── List view ───────────────────────────────────────────────────────────────
@@ -227,6 +228,18 @@ export default function FormationList({ user, communityResults = [], showToast, 
               <h3 className="text-sm font-semibold text-gray-500 mb-3">📋 Οι Συνθέσεις μου</h3>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Primary formation — always first, undeletable, name locked */}
+              {primaryFormation && (
+                <FormationCard
+                  formation={primaryFormation}
+                  isPrimary
+                  isOwner
+                  onEdit={() => handleEdit(primaryFormation)}
+                  onLike={() => handleLike(primaryFormation.id)}
+                  showToast={showToast}
+                />
+              )}
+
               {/* "New" creation card */}
               <button
                 onClick={handleNewFormation}

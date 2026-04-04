@@ -53,9 +53,9 @@ function syncPrimaryFormationPicks(formation, picksMap) {
 
 const TABS = [
   { id: 'vote', label: '🗳️ Ψηφίστε' },
-  { id: 'results', label: '🏆 Ιδανική Κυβέρνηση' },
   { id: 'formations', label: '📋 Οι Συνθέσεις μου' },
   { id: 'explore', label: '🌍 Εξερεύνηση' },
+  { id: 'results', label: '🏆 Ιδανική Κυβέρνηση' },
 ];
 
 const VALID_TABS = new Set(TABS.map((t) => t.id));
