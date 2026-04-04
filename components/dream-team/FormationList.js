@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { PlusIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import FormationCard from './FormationCard';
 import FormationBuilder from './FormationBuilder';
@@ -186,14 +186,7 @@ export default function FormationList({ user, communityResults = [], showToast, 
   }
 
   // ── Derived data ─────────────────────────────────────────────────────────────
-  const primaryFormation = formations.find(isPrimaryFormation) || null;
   const otherFormations = formations.filter((f) => !isPrimaryFormation(f));
-
-  // ── Primary Formation card props helpers ─────────────────────────────────────
-  const primaryFilledCount = primaryFormation
-    ? (primaryFormation.picks || []).filter((p) => p.personId || p.candidateUserId || p.personName).length
-    : 0;
-  const TOTAL_POSITIONS = 22;
 
   // ── List view ───────────────────────────────────────────────────────────────
   return (
@@ -228,57 +221,10 @@ export default function FormationList({ user, communityResults = [], showToast, 
         </div>
       ) : (
         <>
-          {/* Primary Formation — pinned special card */}
-          {primaryFormation && (
-            <div className="mb-2">
-              <div className="relative rounded-2xl border-2 border-indigo-200 bg-gradient-to-br from-indigo-50 to-white shadow-md p-5 flex flex-col gap-4">
-                {/* Shield badge */}
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <ShieldCheckIcon className="h-6 w-6 text-indigo-500 shrink-0" />
-                    <div className="min-w-0">
-                      <h3 className="font-bold text-gray-900 text-base truncate">{primaryFormation.name}</h3>
-                      <p className="text-xs text-indigo-500 mt-0.5 font-medium">
-                        Αυτή είναι η πραγματική σας επιλογή. Συγχρονίζεται με τις ψήφους σας.
-                      </p>
-                    </div>
-                  </div>
-                  <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 shrink-0">
-                    🛡️ Ιδιωτική
-                  </span>
-                </div>
-
-                {/* Progress */}
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-gray-500">{primaryFilledCount}/{TOTAL_POSITIONS} θέσεις</span>
-                    <span className="text-xs text-gray-400">{Math.round((primaryFilledCount / TOTAL_POSITIONS) * 100)}%</span>
-                  </div>
-                  <div className="h-1.5 bg-indigo-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-indigo-500 rounded-full transition-all"
-                      style={{ width: `${(primaryFilledCount / TOTAL_POSITIONS) * 100}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Edit button */}
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => handleEdit(primaryFormation)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-semibold hover:bg-indigo-700 transition-colors"
-                  >
-                    ✏️ Επεξεργασία
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Other Formations */}
+          {/* Formations */}
           <div>
             {otherFormations.length > 0 && (
-              <h3 className="text-sm font-semibold text-gray-500 mb-3">📋 Οι Υπόλοιπες Συνθέσεις μου</h3>
+              <h3 className="text-sm font-semibold text-gray-500 mb-3">📋 Οι Συνθέσεις μου</h3>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {/* "New" creation card */}

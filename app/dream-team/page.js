@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAuth } from '@/lib/auth-context';
 import DreamTeamHero from '@/components/dream-team/DreamTeamHero';
@@ -57,14 +58,25 @@ const TABS = [
   { id: 'explore', label: '🌍 Εξερεύνηση' },
 ];
 
-export default function DreamTeamPage() {
+const VALID_TABS = new Set(TABS.map((t) => t.id));
+
+function DreamTeamPageInner() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Derive initial tab from the URL ?tab= param, falling back to 'vote'
+  const initialTab = (() => {
+    const t = searchParams.get('tab');
+    return t && VALID_TABS.has(t) ? t : 'vote';
+  })();
+
   const [positions, setPositions] = useState([]);
   const [results, setResults] = useState([]);
   const [myVotesMap, setMyVotesMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('vote');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [votingPosition, setVotingPosition] = useState(null);
   const [toast, setToast] = useState(null);
   const [totalPublicFormations, setTotalPublicFormations] = useState(0);
@@ -91,6 +103,13 @@ export default function DreamTeamPage() {
   const [compareFormation, setCompareFormation] = useState(null);
   const [publicFormationsForCompare, setPublicFormationsForCompare] = useState([]);
   const [myFormationsForCompare, setMyFormationsForCompare] = useState([]);
+
+  /** Switch tab and update the URL (replaceState — no new history entry). */
+  const handleTabChange = useCallback((tabId) => {
+    setActiveTab(tabId);
+    const url = tabId === 'vote' ? '/dream-team' : `/dream-team?tab=${tabId}`;
+    router.replace(url, { scroll: false });
+  }, [router]);
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -332,7 +351,7 @@ export default function DreamTeamPage() {
           {TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex-1 min-w-[calc(50%-0.25rem)] sm:min-w-0 sm:flex-none px-5 py-2 rounded-lg text-sm font-semibold transition-colors ${
                 activeTab === tab.id
                   ? 'bg-blue-600 text-white shadow-sm'
@@ -367,7 +386,7 @@ export default function DreamTeamPage() {
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between gap-4">
                 <span>🔗 Οι ψήφοι σας συγχρονίζονται αυτόματα με την &ldquo;Η Κυβέρνησή μου&rdquo; στις Συνθέσεις σας.</span>
                 <button
-                  onClick={() => setActiveTab('formations')}
+                  onClick={() => handleTabChange('formations')}
                   className="shrink-0 text-xs font-semibold underline hover:no-underline whitespace-nowrap"
                 >
                   Δείτε τη Σύνθεσή σας →
@@ -474,5 +493,13 @@ export default function DreamTeamPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function DreamTeamPage() {
+  return (
+    <Suspense>
+      <DreamTeamPageInner />
+    </Suspense>
   );
 }
