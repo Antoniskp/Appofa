@@ -800,6 +800,16 @@ async function getPublicUserStats() {
   return { totalUsers, searchableUsers, nonSearchableUsers };
 }
 
+async function isUsernameAvailable(username, excludeUserId) {
+  const where = { username };
+  if (excludeUserId) {
+    const { Op } = require('sequelize');
+    where.id = { [Op.ne]: excludeUserId };
+  }
+  const existing = await User.findOne({ where, attributes: ['id'] });
+  return !existing;
+}
+
 module.exports = {
   ServiceError,
   buildUserStats,
@@ -815,5 +825,6 @@ module.exports = {
   getPublicUserProfile,
   getPublicUserProfileByUsername,
   searchUsers,
-  getPublicUserStats
+  getPublicUserStats,
+  isUsernameAvailable
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI, commentAPI, badgeAPI } from '@/lib/api';
@@ -16,31 +16,11 @@ import ProfileHomeLocationSection from '@/components/profile/ProfileHomeLocation
 import ProfilePrivacySection from '@/components/profile/ProfilePrivacySection';
 import ProfileSecuritySection from '@/components/profile/ProfileSecuritySection';
 import ProfileDangerZone from '@/components/profile/ProfileDangerZone';
-import Link from 'next/link';
-
-import professionsData from '@/src/data/professions.json';
-import interestsData from '@/src/data/interests.json';
-import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
-import { getAllParties } from '@/lib/utils/politicalParties';
-
-const SOCIAL_LINK_KEYS = ['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok'];
-
-const BADGE_TIER_EMOJI = { bronze: '🥉', silver: '🥈', gold: '🥇' };
-
-function BadgeTierImage({ slug, tier, size = 'w-6 h-6' }) {
-  const [imgError, setImgError] = useState(false);
-  if (imgError) {
-    return <span className="text-base">{BADGE_TIER_EMOJI[tier] || '🏅'}</span>;
-  }
-  return (
-    <img
-      src={`/images/badges/${slug}-${tier}.svg`}
-      alt={`${slug} ${tier}`}
-      className={`${size} object-contain`}
-      onError={() => setImgError(true)}
-    />
-  );
-}
+import ProfileAboutSection from '@/components/profile/ProfileAboutSection';
+import ProfileProfessionsSection from '@/components/profile/ProfileProfessionsSection';
+import ProfileInterestsSection from '@/components/profile/ProfileInterestsSection';
+import ProfileExpertiseSection from '@/components/profile/ProfileExpertiseSection';
+import ProfileBadgesSection from '@/components/profile/ProfileBadgesSection';
 
 function ProfileContent() {
   const { user, updateProfile, deleteAccount } = useAuth();
@@ -65,6 +45,9 @@ function ProfileContent() {
     expertiseArea: [],
     partyId: null,
   });
+  const [savedProfileData, setSavedProfileData] = useState(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [homeLocation, setHomeLocation] = useState(null);
   const [showHomeLocation, setShowHomeLocation] = useState(false);
   const [badgeProgress, setBadgeProgress] = useState(null);
@@ -89,20 +72,27 @@ function ProfileContent() {
   const [hasPassword, setHasPassword] = useState(false);
   const [profPicker, setProfPicker] = useState({ categoryId: '', professionId: '', subProfessionId: '' });
   const [intPicker, setIntPicker] = useState({ categoryId: '', interestId: '', subInterestId: '' });
+  const [followersCount, setFollowersCount] = useState(undefined);
+  const [followingCount, setFollowingCount] = useState(undefined);
 
-  const selectedProfSubProfessions = useMemo(() => {
-    if (!profPicker.categoryId || !profPicker.professionId) return [];
-    const cat = professionsData.categories.find(c => c.id === profPicker.categoryId);
-    const prof = cat?.professions.find(p => p.id === profPicker.professionId);
-    return prof?.subProfessions || [];
-  }, [profPicker.categoryId, profPicker.professionId]);
+  // Dirty-state tracking: compare current profileData with the last saved snapshot
+  useEffect(() => {
+    if (!savedProfileData) return;
+    const dirty = JSON.stringify(profileData) !== JSON.stringify(savedProfileData);
+    setIsDirty(dirty);
+  }, [profileData, savedProfileData]);
 
-  const selectedIntSubInterests = useMemo(() => {
-    if (!intPicker.categoryId || !intPicker.interestId) return [];
-    const cat = interestsData.categories.find(c => c.id === intPicker.categoryId);
-    const interest = cat?.interests.find(i => i.id === intPicker.interestId);
-    return interest?.subInterests || [];
-  }, [intPicker.categoryId, intPicker.interestId]);
+  // Warn user when navigating away with unsaved changes
+  useEffect(() => {
+    const handler = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
 
   // Load profile
   const { loading } = useAsyncData(
@@ -119,7 +109,7 @@ function ProfileContent() {
         const { username, firstName, lastName, githubId, googleId, avatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
           dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier } = userData;
-        setProfileData({
+        const loaded = {
           username: username || '',
           firstName: firstName || '',
           lastName: lastName || '',
@@ -134,7 +124,10 @@ function ProfileContent() {
           interests: interests || [],
           expertiseArea: expertiseArea || [],
           partyId: userData.partyId || null,
-        });
+        };
+        setProfileData(loaded);
+        setSavedProfileData(loaded);
+        setIsDirty(false);
         setDisplayBadge({ slug: displayBadgeSlug || null, tier: displayBadgeTier || null });
         setInteractionSettings({
           profileCommentsEnabled: profileCommentsEnabled !== undefined ? profileCommentsEnabled : true,
@@ -154,6 +147,19 @@ function ProfileContent() {
             }
           } catch (err) {
             console.error('Failed to load home location:', err);
+          }
+        }
+
+        // Load follower/following counts
+        if (userData.id) {
+          try {
+            const countsRes = await authAPI.getFollowCounts(userData.id);
+            if (countsRes?.data) {
+              setFollowersCount(countsRes.data.followersCount ?? 0);
+              setFollowingCount(countsRes.data.followingCount ?? 0);
+            }
+          } catch (_err) {
+            // counts are non-critical
           }
         }
       },
@@ -260,13 +266,18 @@ function ProfileContent() {
     setPasswordData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleProfileSubmit = async (event) => {
-    event.preventDefault();
+  const handleProfileSubmit = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setIsSaving(true);
     try {
       await updateProfile(profileData);
+      setSavedProfileData({ ...profileData });
+      setIsDirty(false);
       success('Profile updated successfully!');
     } catch (err) {
       error(err.message || 'Failed to update profile.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -375,36 +386,6 @@ function ProfileContent() {
     router.replace('/');
   };
 
-  const calculateAge = (dob) => {
-    if (!dob) return null;
-    const diff = Date.now() - new Date(dob).getTime();
-    return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
-  };
-
-  const resolveProfessionLabel = (entry) => {
-    const cat = professionsData.categories.find(c => c.id === entry.categoryId);
-    if (!cat) return entry.categoryId;
-    const prof = cat.professions.find(p => p.id === entry.professionId);
-    if (!prof) return `${cat.label} › ${entry.professionId}`;
-    if (entry.subProfessionId) {
-      const sub = prof.subProfessions.find(s => s.id === entry.subProfessionId);
-      return `${cat.label} › ${prof.label}${sub ? ` › ${sub.label}` : ''}`;
-    }
-    return `${cat.label} › ${prof.label}`;
-  };
-
-  const resolveInterestLabel = (entry) => {
-    const cat = interestsData.categories.find(c => c.id === entry.categoryId);
-    if (!cat) return entry.categoryId;
-    const interest = cat.interests.find(i => i.id === entry.interestId);
-    if (!interest) return `${cat.label} › ${entry.interestId}`;
-    if (entry.subInterestId) {
-      const sub = interest.subInterests.find(s => s.id === entry.subInterestId);
-      return `${cat.label} › ${interest.label}${sub ? ` › ${sub.label}` : ''}`;
-    }
-    return `${cat.label} › ${interest.label}`;
-  };
-
   const handleLocationChange = (locationId) => {
     setProfileData((prev) => ({ ...prev, homeLocationId: locationId }));
     if (locationId && locationId !== 'international') {
@@ -414,13 +395,6 @@ function ProfileContent() {
     } else {
       setHomeLocation(null);
     }
-  };
-
-  const getEarnedBadges = (progress) => {
-    if (!progress) return [];
-    return progress.flatMap(b =>
-      b.tiers.filter(t => t.earned).map(t => ({ slug: b.slug, tier: t.tier, name: b.name, label: t.label }))
-    );
   };
 
   if (loading) {
@@ -440,7 +414,7 @@ function ProfileContent() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-10">
+    <div className="bg-gray-50 min-h-screen py-10 pb-28">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         {/* Header card */}
         <Card>
@@ -451,26 +425,18 @@ function ProfileContent() {
             email={user?.email}
             avatar={profileData.avatar}
             avatarColor={profileData.avatarColor}
+            followersCount={followersCount}
+            followingCount={followingCount}
           />
-          {user?.username && (
-            <div className="flex gap-4 mt-3 text-sm text-gray-600">
-              <Link href={`/users/${user.username}/followers`} className="hover:text-blue-600 hover:underline">
-                Followers
-              </Link>
-              <Link href={`/users/${user.username}/following`} className="hover:text-blue-600 hover:underline">
-                Following
-              </Link>
-            </div>
-          )}
         </Card>
 
-        {/* Basic info + home location + privacy */}
+        {/* Basic info + home location */}
         <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Update profile information</h2>
           <ProfileBasicInfoForm
             profileData={profileData}
             onChange={handleProfileChange}
-            onSubmit={handleProfileSubmit}
+            currentUsername={savedProfileData?.username}
           />
           <div className="mt-4 space-y-4">
             <ProfileHomeLocationSection
@@ -483,296 +449,58 @@ function ProfileContent() {
           </div>
         </Card>
 
-        {/* Bio, mobile phone, and social links */}
+        {/* About & Contact */}
         <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">About &amp; Contact</h2>
-          <form
-            className="space-y-4"
-            onSubmit={(e) => { e.preventDefault(); handleProfileSubmit(e); }}
-          >
-            <div>
-              <label htmlFor="mobileTel" className="block text-sm font-medium text-gray-700 mb-1">
-                Mobile phone <span className="text-gray-400 text-xs">(private)</span>
-              </label>
-              <input
-                id="mobileTel"
-                name="mobileTel"
-                type="tel"
-                value={profileData.mobileTel}
-                onChange={handleProfileChange}
-                maxLength={30}
-                placeholder="+1 555 000 0000"
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-                Bio <span className="text-gray-400 text-xs">(max 280 chars)</span>
-              </label>
-              <textarea
-                id="bio"
-                name="bio"
-                value={profileData.bio}
-                onChange={handleProfileChange}
-                maxLength={280}
-                rows={3}
-                placeholder="Tell us a bit about yourself..."
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-400 mt-1">{(profileData.bio || '').length}/280</p>
-            </div>
-            <div>
-              <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-1">
-                Date of birth <span className="text-gray-400 text-xs">(private)</span>
-              </label>
-              <input
-                id="dateOfBirth"
-                name="dateOfBirth"
-                type="date"
-                value={profileData.dateOfBirth || ''}
-                onChange={handleProfileChange}
-                max={new Date().toISOString().split('T')[0]}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-              {profileData.dateOfBirth && calculateAge(profileData.dateOfBirth) !== null && (
-                <p className="text-xs text-gray-500 mt-1">Age: {calculateAge(profileData.dateOfBirth)}</p>
-              )}
-            </div>
-            <div>
-              <label htmlFor="partyId" className="block text-sm font-medium text-gray-700 mb-1">
-                Πολιτική Τοποθέτηση <span className="text-gray-400 text-xs">(προαιρετικό)</span>
-              </label>
-              <select
-                id="partyId"
-                value={profileData.partyId || ''}
-                onChange={(e) => setProfileData((prev) => ({ ...prev, partyId: e.target.value || null }))}
-                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">Κανένα / Δεν επιθυμώ</option>
-                {getAllParties().map((party) => (
-                  <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <p className="block text-sm font-medium text-gray-700 mb-2">Social links</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {SOCIAL_LINK_KEYS.map((key) => (
-                  <div key={key}>
-                    <label htmlFor={`social-${key}`} className="block text-xs font-medium text-gray-600 mb-1 capitalize">
-                      {key}
-                    </label>
-                    <input
-                      id={`social-${key}`}
-                      type="url"
-                      value={(profileData.socialLinks && profileData.socialLinks[key]) || ''}
-                      onChange={(e) => handleSocialLinkChange(key, e.target.value)}
-                      placeholder={`https://${key === 'website' ? 'example.com' : key + '.com/yourprofile'}`}
-                      className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Save changes
-            </button>
-          </form>
+          <ProfileAboutSection
+            profileData={profileData}
+            onChange={handleProfileChange}
+            onSocialLinkChange={handleSocialLinkChange}
+          />
         </Card>
 
         {/* Professions */}
         <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Professions <span className="text-gray-400 text-xs font-normal">(max 5)</span></h2>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {(profileData.professions || []).map((entry, idx) => (
-                <span key={idx} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                  {resolveProfessionLabel(entry)}
-                  <button
-                    type="button"
-                    onClick={() => setProfileData((prev) => ({ ...prev, professions: prev.professions.filter((_, i) => i !== idx) }))}
-                    className="ml-1 text-blue-600 hover:text-blue-900 font-bold leading-none"
-                    aria-label="Remove profession"
-                  >✕</button>
-                </span>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <select
-                value={profPicker.categoryId}
-                onChange={(e) => setProfPicker({ categoryId: e.target.value, professionId: '', subProfessionId: '' })}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">— Category —</option>
-                {professionsData.categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.label}</option>
-                ))}
-              </select>
-              <select
-                value={profPicker.professionId}
-                onChange={(e) => setProfPicker((prev) => ({ ...prev, professionId: e.target.value, subProfessionId: '' }))}
-                disabled={!profPicker.categoryId}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">— Profession —</option>
-                {profPicker.categoryId && (professionsData.categories.find(c => c.id === profPicker.categoryId)?.professions || []).map((p) => (
-                  <option key={p.id} value={p.id}>{p.label}</option>
-                ))}
-              </select>
-              <select
-                value={profPicker.subProfessionId}
-                onChange={(e) => setProfPicker((prev) => ({ ...prev, subProfessionId: e.target.value }))}
-                disabled={!profPicker.professionId || !selectedProfSubProfessions.length}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">— Sub-profession (optional) —</option>
-                {selectedProfSubProfessions.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={(profileData.professions || []).length >= 5 || !profPicker.categoryId || !profPicker.professionId}
-                onClick={() => {
-                  const entry = { categoryId: profPicker.categoryId, professionId: profPicker.professionId };
-                  if (profPicker.subProfessionId) entry.subProfessionId = profPicker.subProfessionId;
-                  setProfileData((prev) => ({ ...prev, professions: [...(prev.professions || []), entry] }));
-                  setProfPicker({ categoryId: '', professionId: '', subProfessionId: '' });
-                }}
-                className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={handleProfileSubmit}
-                className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 transition"
-              >
-                Save changes
-              </button>
-            </div>
-          </div>
+          <ProfileProfessionsSection
+            professions={profileData.professions}
+            picker={profPicker}
+            onPickerChange={setProfPicker}
+            onAdd={() => {
+              const entry = { categoryId: profPicker.categoryId, professionId: profPicker.professionId };
+              if (profPicker.subProfessionId) entry.subProfessionId = profPicker.subProfessionId;
+              setProfileData((prev) => ({ ...prev, professions: [...(prev.professions || []), entry] }));
+              setProfPicker({ categoryId: '', professionId: '', subProfessionId: '' });
+            }}
+            onRemove={(idx) => setProfileData((prev) => ({ ...prev, professions: prev.professions.filter((_, i) => i !== idx) }))}
+          />
         </Card>
 
         {/* Interests */}
         <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Interests <span className="text-gray-400 text-xs font-normal">(max 10)</span></h2>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {(profileData.interests || []).map((entry, idx) => (
-                <span key={idx} className="inline-flex items-center gap-1 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                  {resolveInterestLabel(entry)}
-                  <button
-                    type="button"
-                    onClick={() => setProfileData((prev) => ({ ...prev, interests: prev.interests.filter((_, i) => i !== idx) }))}
-                    className="ml-1 text-green-600 hover:text-green-900 font-bold leading-none"
-                    aria-label="Remove interest"
-                  >✕</button>
-                </span>
-              ))}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <select
-                value={intPicker.categoryId}
-                onChange={(e) => setIntPicker({ categoryId: e.target.value, interestId: '', subInterestId: '' })}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option value="">— Category —</option>
-                {interestsData.categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.label}</option>
-                ))}
-              </select>
-              <select
-                value={intPicker.interestId}
-                onChange={(e) => setIntPicker((prev) => ({ ...prev, interestId: e.target.value, subInterestId: '' }))}
-                disabled={!intPicker.categoryId}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">— Interest —</option>
-                {intPicker.categoryId && (interestsData.categories.find(c => c.id === intPicker.categoryId)?.interests || []).map((i) => (
-                  <option key={i.id} value={i.id}>{i.label}</option>
-                ))}
-              </select>
-              <select
-                value={intPicker.subInterestId}
-                onChange={(e) => setIntPicker((prev) => ({ ...prev, subInterestId: e.target.value }))}
-                disabled={!intPicker.interestId || !selectedIntSubInterests.length}
-                className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
-              >
-                <option value="">— Sub-interest (optional) —</option>
-                {selectedIntSubInterests.map((s) => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={(profileData.interests || []).length >= 10 || !intPicker.categoryId || !intPicker.interestId}
-                onClick={() => {
-                  const entry = { categoryId: intPicker.categoryId, interestId: intPicker.interestId };
-                  if (intPicker.subInterestId) entry.subInterestId = intPicker.subInterestId;
-                  setProfileData((prev) => ({ ...prev, interests: [...(prev.interests || []), entry] }));
-                  setIntPicker({ categoryId: '', interestId: '', subInterestId: '' });
-                }}
-                className="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={handleProfileSubmit}
-                className="bg-green-600 text-white px-4 py-2 rounded text-sm hover:bg-green-700 transition"
-              >
-                Save changes
-              </button>
-            </div>
-          </div>
+          <ProfileInterestsSection
+            interests={profileData.interests}
+            picker={intPicker}
+            onPickerChange={setIntPicker}
+            onAdd={() => {
+              const entry = { categoryId: intPicker.categoryId, interestId: intPicker.interestId };
+              if (intPicker.subInterestId) entry.subInterestId = intPicker.subInterestId;
+              setProfileData((prev) => ({ ...prev, interests: [...(prev.interests || []), entry] }));
+              setIntPicker({ categoryId: '', interestId: '', subInterestId: '' });
+            }}
+            onRemove={(idx) => setProfileData((prev) => ({ ...prev, interests: prev.interests.filter((_, i) => i !== idx) }))}
+          />
         </Card>
 
         {/* Expertise Area */}
         <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Expertise Area <span className="text-gray-400 text-xs font-normal">(select up to 5)</span></h2>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-2">
-              {(profileData.expertiseArea || []).map((area) => (
-                <span key={area} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                  {area}
-                  <button
-                    type="button"
-                    onClick={() => setProfileData((prev) => ({ ...prev, expertiseArea: prev.expertiseArea.filter((a) => a !== area) }))}
-                    className="ml-1 text-purple-600 hover:text-purple-900 font-bold leading-none"
-                    aria-label={`Remove ${area}`}
-                  >✕</button>
-                </span>
-              ))}
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {EXPERTISE_AREAS.filter((area) => !(profileData.expertiseArea || []).includes(area)).map((area) => (
-                <button
-                  key={area}
-                  type="button"
-                  disabled={(profileData.expertiseArea || []).length >= 5}
-                  onClick={() => setProfileData((prev) => ({ ...prev, expertiseArea: [...(prev.expertiseArea || []), area] }))}
-                  className="inline-flex items-center px-3 py-1 rounded-full border border-purple-300 text-xs text-purple-700 hover:bg-purple-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  + {area}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={handleProfileSubmit}
-              className="bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-700 transition"
-            >
-              Save changes
-            </button>
-          </div>
+          <ProfileExpertiseSection
+            expertiseArea={profileData.expertiseArea}
+            onAdd={(area) => setProfileData((prev) => ({ ...prev, expertiseArea: [...(prev.expertiseArea || []), area] }))}
+            onRemove={(area) => setProfileData((prev) => ({ ...prev, expertiseArea: prev.expertiseArea.filter((a) => a !== area) }))}
+          />
         </Card>
 
         {/* Privacy & Interaction */}
@@ -807,117 +535,15 @@ function ProfileContent() {
 
         {/* Τα Badges μου */}
         <Card>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Τα Badges μου</h2>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleEvaluateBadges}
-                disabled={badgeEvaluating}
-                className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 transition disabled:opacity-50"
-              >
-                {badgeEvaluating ? 'Αξιολόγηση...' : 'Αξιολόγηση τώρα'}
-              </button>
-              <Link href="/platform/badges" className="text-xs text-blue-600 hover:underline">
-                Πληροφορίες →
-              </Link>
-            </div>
-          </div>
-          {badgeProgress === null ? (
-            <p className="text-sm text-gray-500">Φόρτωση badges...</p>
-          ) : (
-            <div className="space-y-6">
-              {/* Display badge selection */}
-              {(() => {
-                const allEarned = getEarnedBadges(badgeProgress);
-                const isSelected = (slug, tier) => displayBadge.slug === slug && displayBadge.tier === tier;
-                if (allEarned.length === 0) return null;
-                return (
-                  <div className="border border-blue-100 bg-blue-50 rounded-lg p-3">
-                    <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">Εμφάνιση στο avatar</p>
-                    <p className="text-xs text-gray-500 mb-3">Επίλεξε ποιο badge να εμφανίζεται στο avatar σου.</p>
-                    <div className="flex flex-wrap gap-2">
-                      {allEarned.map(({ slug, tier, name, label }) => (
-                        <button
-                          key={`${slug}:${tier}`}
-                          type="button"
-                          disabled={savingDisplayBadge}
-                          onClick={() => isSelected(slug, tier) ? handleClearDisplayBadge() : handleSelectDisplayBadge(slug, tier)}
-                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full border text-xs font-medium transition ${
-                            isSelected(slug, tier)
-                              ? 'bg-blue-600 text-white border-blue-600 ring-2 ring-blue-300'
-                              : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:text-blue-600'
-                          } disabled:opacity-50`}
-                          title={isSelected(slug, tier) ? 'Κλικ για αφαίρεση' : 'Επιλογή για avatar'}
-                        >
-                          <BadgeTierImage slug={slug} tier={tier} size="w-4 h-4" />
-                          <span>{name} · {label || tier}</span>
-                          {isSelected(slug, tier) && <span className="ml-0.5">✓</span>}
-                        </button>
-                      ))}
-                      {displayBadge.slug && (
-                        <button
-                          type="button"
-                          disabled={savingDisplayBadge}
-                          onClick={handleClearDisplayBadge}
-                          className="flex items-center gap-1 px-2.5 py-1.5 rounded-full border border-red-200 text-xs text-red-500 hover:bg-red-50 transition disabled:opacity-50"
-                        >
-                          ✕ Καθαρισμός επιλογής
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {Object.entries(
-                badgeProgress.reduce((acc, badge) => {
-                  const cat = badge.category || 'other';
-                  if (!acc[cat]) acc[cat] = [];
-                  acc[cat].push(badge);
-                  return acc;
-                }, {})
-              ).map(([category, categoryBadges]) => (
-                <div key={category}>
-                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 capitalize">{category}</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {categoryBadges.map((badge) => (
-                      <div key={badge.slug} className="border border-gray-100 rounded-lg p-3">
-                        <p className="text-sm font-medium text-gray-800 mb-2">{badge.name}</p>
-                        <div className="space-y-1.5">
-                          {badge.tiers.map((t) => (
-                            <div key={t.tier} className={`flex items-center gap-2 ${t.earned ? '' : 'opacity-60'}`}>
-                              <BadgeTierImage slug={badge.slug} tier={t.tier} />
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs text-gray-700 capitalize">{t.label || t.tier}</span>
-                                  {t.earned ? (
-                                    <span className="text-xs text-green-600 font-medium" aria-label="Κερδηθηκε">
-                                      ✓ {t.earnedAt ? new Date(t.earnedAt).toLocaleDateString('el-GR') : ''}
-                                    </span>
-                                  ) : (
-                                    <span className="text-xs text-gray-400">{t.progress}%</span>
-                                  )}
-                                </div>
-                                {!t.earned && (
-                                  <div className="mt-0.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-blue-400 rounded-full"
-                                      style={{ width: `${t.progress}%` }}
-                                    />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ProfileBadgesSection
+            badgeProgress={badgeProgress}
+            badgeEvaluating={badgeEvaluating}
+            displayBadge={displayBadge}
+            savingDisplayBadge={savingDisplayBadge}
+            onEvaluate={handleEvaluateBadges}
+            onSelectDisplayBadge={handleSelectDisplayBadge}
+            onClearDisplayBadge={handleClearDisplayBadge}
+          />
         </Card>
 
         {/* Danger Zone: account deletion */}
@@ -927,6 +553,25 @@ function ProfileContent() {
             onDeleteAccount={handleDeleteAccount}
           />
         </Card>
+      </div>
+
+      {/* Sticky save bar */}
+      <div className="fixed bottom-0 inset-x-0 z-50 border-t border-gray-200 bg-white shadow-lg">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+          {isDirty ? (
+            <p className="text-sm text-amber-600 font-medium">● You have unsaved changes</p>
+          ) : (
+            <p className="text-sm text-gray-400">All changes saved</p>
+          )}
+          <button
+            type="button"
+            onClick={handleProfileSubmit}
+            disabled={isSaving || !isDirty}
+            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+          >
+            {isSaving ? 'Saving…' : 'Save changes'}
+          </button>
+        </div>
       </div>
     </div>
   );
