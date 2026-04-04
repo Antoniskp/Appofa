@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { commentAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Button from '@/components/ui/Button';
+import LoginLink from '@/components/ui/LoginLink';
 
 export default function CommentForm({
   entityType,
@@ -22,9 +23,9 @@ export default function CommentForm({
     return (
       <p className="text-sm text-gray-500 italic">
         Please{' '}
-        <a href="/login" className="text-blue-600 hover:underline">
+        <LoginLink className="text-blue-600 hover:underline">
           log in
-        </a>{' '}
+        </LoginLink>{' '}
         to comment.
       </p>
     );

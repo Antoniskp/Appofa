@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import CommentForm from './CommentForm';
 import { formatDistanceToNow } from 'date-fns';
 import ReportButton from '@/components/ReportButton';
+import LoginLink from '@/components/ui/LoginLink';
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
 const MAX_DEPTH = 5;
@@ -315,9 +316,9 @@ export default function CommentsThread({
             ) : (
               <p className="text-sm text-gray-500 italic">
                 Please{' '}
-                <a href="/login" className="text-blue-600 hover:underline">
+                <LoginLink className="text-blue-600 hover:underline">
                   log in
-                </a>{' '}
+                </LoginLink>{' '}
                 to post a comment.
               </p>
             )}

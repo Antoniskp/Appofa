@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
 import { getPartyById } from '@/lib/utils/politicalParties';
+import LoginLink from '@/components/ui/LoginLink';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -272,12 +273,11 @@ export default function PublicUserProfilePage() {
               Only registered users can view profiles. Log in or create an account to continue.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Link
-                href="/login"
+              <LoginLink
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 Log In
-              </Link>
+              </LoginLink>
               <Link
                 href="/register"
                 className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"

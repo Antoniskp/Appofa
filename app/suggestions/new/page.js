@@ -8,6 +8,7 @@ import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/ui/FormInput';
+import LoginLink from '@/components/ui/LoginLink';
 import FormSelect from '@/components/ui/FormSelect';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import articleCategories from '@/config/articleCategories.json';
@@ -42,12 +43,11 @@ export default function NewSuggestionPage() {
         <div className="app-container max-w-2xl">
           <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
             <p className="text-gray-600 mb-4">Πρέπει να συνδεθείτε για να δημιουργήσετε πρόταση.</p>
-            <Link
-              href="/login"
+            <LoginLink
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Σύνδεση
-            </Link>
+            </LoginLink>
           </div>
         </div>
       </div>

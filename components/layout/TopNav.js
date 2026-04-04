@@ -23,6 +23,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import DropdownMenu from '@/components/ui/DropdownMenu';
 import Tooltip from '@/components/ui/Tooltip';
+import LoginLink from '@/components/ui/LoginLink';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
@@ -300,13 +301,12 @@ export default function TopNav() {
               />
             ) : (
               <>
-                <Link
-                  href="/login"
+                <LoginLink
                   className="inline-flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-700"
                 >
                   <ArrowLeftOnRectangleIcon className="h-4 w-4" aria-hidden="true" />
                   Είσοδος
-                </Link>
+                </LoginLink>
                 <Link
                   href="/register"
                   className="inline-flex items-center gap-2 text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -418,13 +418,12 @@ export default function TopNav() {
             />
           ) : (
             <>
-              <Link
-                href="/login"
+              <LoginLink
                 className="inline-flex items-center gap-2 text-base font-medium text-blue-900 hover:text-blue-700"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
                 Έισοδος
-              </Link>
+              </LoginLink>
               <Link
                 href="/register"
                 className="inline-flex w-full items-center justify-center gap-2 text-base font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

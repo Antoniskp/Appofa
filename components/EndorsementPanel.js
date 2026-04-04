@@ -5,6 +5,7 @@ import { endorsementAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import Link from 'next/link';
+import LoginLink from '@/components/ui/LoginLink';
 
 const TOPICS = [
   'Education',
@@ -163,9 +164,9 @@ export default function EndorsementPanel({ targetUserId }) {
 
       {!authLoading && !isAuthenticated && (
         <p className="mt-3 text-xs text-gray-500">
-          <Link href="/login" className="text-blue-600 hover:underline">
+          <LoginLink className="text-blue-600 hover:underline">
             Συνδεθείτε
-          </Link>{' '}
+          </LoginLink>{' '}
           για να εγκρίνετε αυτόν τον χρήστη για ένα θέμα.
         </p>
       )}

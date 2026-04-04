@@ -12,6 +12,7 @@ import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
+import LoginLink from '@/components/ui/LoginLink';
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -167,12 +168,11 @@ export default function UsersPage() {
               Θέλετε να δείτε την πλήρη λίστα χρηστών και να συνδεθείτε με την κοινότητα;
             </p>
             <div className="flex gap-4">
-              <Link
-                href="/login"
+              <LoginLink
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 Σύνδεση
-              </Link>
+              </LoginLink>
               <Link
                 href="/register"
                 className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
