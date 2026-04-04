@@ -32,6 +32,7 @@ export const metadata = {
 };
 
 const CATEGORY_LABELS = {
+  verification: '✅ Επαλήθευση',
   content: '📰 Περιεχόμενο',
   profile: '👤 Προφίλ',
   popularity: '⭐ Δημοτικότητα',
