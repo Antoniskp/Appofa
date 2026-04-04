@@ -334,7 +334,8 @@ const getAllArticles = async (queryParams, user) => {
           attributes: ['entity_id'],
           raw: true
         });
-        where.id = { [Op.in]: linkedArticleIds.map(l => l.entity_id) };
+        // Use -1 sentinel when no matches to ensure an empty result set without SQL errors
+        where.id = { [Op.in]: linkedArticleIds.length > 0 ? linkedArticleIds.map(l => l.entity_id) : [-1] };
       }
     }
 

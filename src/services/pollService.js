@@ -483,7 +483,8 @@ const getAllPolls = async (filters, user) => {
           attributes: ['entity_id'],
           raw: true
         });
-        where.id = { [Op.in]: linkedPollIds.map(l => l.entity_id) };
+        // Use -1 sentinel when no matches to ensure an empty result set without SQL errors
+        where.id = { [Op.in]: linkedPollIds.length > 0 ? linkedPollIds.map(l => l.entity_id) : [-1] };
       }
     }
 
