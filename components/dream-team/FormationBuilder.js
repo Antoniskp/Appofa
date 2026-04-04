@@ -33,8 +33,11 @@ const MINISTER_POSITIONS = ALL_POSITIONS.filter(
  *   onBack()       – called when user cancels / goes back
  *   showToast(msg, type) – show a notification
  *   isPrimary      – whether this is the user's primary (guarded) formation
+ *   positions      – positions array with id+slug (only passed when isPrimary)
+ *   myVotes        – user's current votes array (only passed when isPrimary)
+ *   onVotesChanged() – callback after picks→votes sync (only passed when isPrimary)
  */
-export default function FormationBuilder({ formation, communityResults = [], onSave, onBack, showToast, isPrimary = false }) {
+export default function FormationBuilder({ formation, communityResults = [], onSave, onBack, showToast, isPrimary = false, positions = [], myVotes = [], onVotesChanged }) {
   const isNew = !formation?.id;
 
   const [name, setName] = useState(formation?.name || '');
@@ -50,6 +53,26 @@ export default function FormationBuilder({ formation, communityResults = [], onS
     (formation?.picks || []).forEach((p) => {
       map[p.positionSlug || p.slug] = p;
     });
+
+    // For the primary formation with no existing picks, pre-populate from the user's votes
+    if (isPrimary && Object.keys(map).length === 0 && myVotes?.length && positions?.length) {
+      const positionById = {};
+      positions.forEach((p) => { positionById[p.id] = p; });
+      myVotes.forEach((vote) => {
+        const position = positionById[vote.positionId];
+        if (position?.slug) {
+          map[position.slug] = {
+            positionSlug: position.slug,
+            personId: vote.personId || null,
+            candidateUserId: vote.candidateUserId || null,
+            personName: vote.personName || null,
+            photo: vote.person?.photo || null,
+            avatar: vote.candidateUser?.avatar || null,
+          };
+        }
+      });
+    }
+
     return map;
   });
 
@@ -196,13 +219,53 @@ export default function FormationBuilder({ formation, communityResults = [], onS
         setShareOpen(true);
       }
 
+      // For the Primary Formation, sync picks → votes in the background
+      if (isPrimary && positions?.length) {
+        try {
+          const positionBySlug = {};
+          positions.forEach((p) => { positionBySlug[p.slug] = p; });
+
+          const syncPromises = [];
+
+          // Cast a vote for every filled pick
+          picksArray.forEach((pick) => {
+            const position = positionBySlug[pick.positionSlug];
+            if (!position) return;
+            syncPromises.push(
+              dreamTeamAPI.vote(position.id, pick.personId || null, pick.candidateUserId || null)
+                .catch(() => {}),
+            );
+          });
+
+          // Delete votes for positions that were cleared in this save
+          if (myVotes?.length) {
+            myVotes.forEach((vote) => {
+              const position = positions.find((p) => p.id === vote.positionId);
+              if (position && !picks[position.slug]) {
+                syncPromises.push(
+                  dreamTeamAPI.deleteVote(vote.positionId).catch(() => {}),
+                );
+              }
+            });
+          }
+
+          await Promise.all(syncPromises);
+          if (syncPromises.length > 0) {
+            showToast('Οι ψήφοι σας ενημερώθηκαν αυτόματα');
+          }
+          onVotesChanged?.();
+        } catch {
+          showToast('Η σύνθεση αποθηκεύτηκε, αλλά οι ψήφοι δεν συγχρονίστηκαν', 'error');
+        }
+      }
+
       onSave(fullFormation);
     } catch (err) {
       showToast(err.message || 'Σφάλμα κατά την αποθήκευση', 'error');
     } finally {
       setSaving(false);
     }
-  }, [name, category, description, isPublic, isPrimary, picks, isNew, formation?.id, showToast, onSave]);
+  }, [name, category, description, isPublic, isPrimary, picks, isNew, formation?.id, positions, myVotes, onVotesChanged, showToast, onSave]);
 
   const renderPositionRow = (position) => {
     const pick = picks[position.slug];
