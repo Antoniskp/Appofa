@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { idSlug } from '@/lib/utils/slugify';
 import UserRow from '@/components/user/UserRow';
+import LoginLink from '@/components/ui/LoginLink';
 
 const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'persons'];
 
@@ -206,12 +207,11 @@ export default function LocationTabs({
                 Sign in or register to view {entities.usersCount} users from this location.
               </p>
               <div className="flex gap-3">
-                <Link
-                  href="/login"
+                <LoginLink
                   className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Log In
-                </Link>
+                </LoginLink>
                 <Link
                   href="/register"
                   className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"

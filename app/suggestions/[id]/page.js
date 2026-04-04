@@ -28,6 +28,7 @@ import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import ShareModal from '@/components/ui/ShareModal';
+import LoginLink from '@/components/ui/LoginLink';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -418,9 +419,9 @@ export default function SuggestionDetailPage() {
 
           {!user && (
             <p className="text-xs text-gray-400 mt-3 text-right">
-              <Link href="/login" className="text-blue-500 hover:underline">
+              <LoginLink className="text-blue-500 hover:underline">
                 Συνδεθείτε
-              </Link>{' '}
+              </LoginLink>{' '}
               για να ψηφίσετε.
             </p>
           )}
@@ -490,9 +491,9 @@ export default function SuggestionDetailPage() {
             </div>
           ) : !user ? (
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 text-center">
-              <Link href="/login" className="text-blue-600 hover:underline font-medium">
+              <LoginLink className="text-blue-600 hover:underline font-medium">
                 Συνδεθείτε
-              </Link>{' '}
+              </LoginLink>{' '}
               {responseConfig.loginPrompt}
             </div>
           ) : null}

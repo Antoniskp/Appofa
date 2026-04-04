@@ -11,6 +11,7 @@ import AuthDivider from '@/components/ui/AuthDivider';
 import { authAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
+import { getAndClearReturnTo } from '@/lib/auth-redirect';
 
 function LoginForm() {
   const router = useRouter();
@@ -34,7 +35,7 @@ function LoginForm() {
         .then((response) => {
           if (response.success) {
             success('Welcome back! Redirecting...');
-            router.push('/');
+            router.push(getAndClearReturnTo());
           }
         })
         .catch((err) => {
@@ -56,7 +57,7 @@ function LoginForm() {
 
   // Redirect if already logged in
   if (user) {
-    router.push('/');
+    router.push(getAndClearReturnTo());
     return null;
   }
 
@@ -74,7 +75,7 @@ function LoginForm() {
     try {
       await login(formData);
       success('Welcome back! Redirecting...');
-      router.push('/');
+      router.push(getAndClearReturnTo());
     } catch (err) {
       error(err.message || 'Invalid email or password. Please try again.');
     } finally {
