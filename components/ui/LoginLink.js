@@ -1,6 +1,5 @@
 'use client';
 
-import { useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { saveReturnTo } from '@/lib/auth-redirect';
@@ -13,12 +12,8 @@ import { saveReturnTo } from '@/lib/auth-redirect';
 export default function LoginLink({ children, className, ...props }) {
   const pathname = usePathname();
 
-  const handleClick = useCallback(() => {
-    saveReturnTo(pathname);
-  }, [pathname]);
-
   return (
-    <Link href="/login" onClick={handleClick} className={className} {...props}>
+    <Link href="/login" onClick={() => saveReturnTo(pathname)} className={className} {...props}>
       {children}
     </Link>
   );
