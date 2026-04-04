@@ -17,6 +17,7 @@ import CategoryPills from '@/components/ui/CategoryPills';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import articleCategories from '@/config/articleCategories.json';
+import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 
 const TYPE_LABELS = {
   idea: 'Ιδέα',
@@ -129,7 +130,7 @@ function SuggestionsContent() {
     prevPage,
     goToPage,
     updateFilter,
-  } = useFilters({ type: '', status: '', sort: 'newest', category: '', search: '' });
+  } = useFilters({ type: '', status: '', sort: 'newest', category: '', search: '', locationId: null });
 
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
@@ -231,6 +232,10 @@ function SuggestionsContent() {
             onSelect={(cat) => updateFilter('category', cat)}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+          />
+          <LocationFilterBreadcrumb
+            value={filters.locationId}
+            onChange={(locationId) => updateFilter('locationId', locationId)}
           />
         </div>
 

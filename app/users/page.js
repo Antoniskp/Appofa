@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import LoginLink from '@/components/ui/LoginLink';
+import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -30,6 +31,7 @@ export default function UsersPage() {
   } = useFilters({
     search: '',
     expertiseArea: '',
+    locationId: null,
   });
 
   const { data: usersData, loading, error } = useAsyncData(
@@ -232,8 +234,14 @@ export default function UsersPage() {
                   ],
                 },
               ]}
-              className="mb-8"
+              className="mb-4"
             />
+            <div className="mb-8">
+              <LocationFilterBreadcrumb
+                value={filters.locationId}
+                onChange={(locationId) => updateFilter('locationId', locationId)}
+              />
+            </div>
 
             {/* Loading State */}
             {loading && (

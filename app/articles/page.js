@@ -14,6 +14,7 @@ import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
 import { useAuth } from '@/lib/auth-context';
+import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 
 export default function ArticlesPage() {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ export default function ArticlesPage() {
     category: '',
     type: 'articles',
     search: '',
+    locationId: null,
   });
 
   const [categoryCounts, setCategoryCounts] = useState({});
@@ -117,6 +119,10 @@ export default function ArticlesPage() {
             onSelect={handleCategorySelect}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+          />
+          <LocationFilterBreadcrumb
+            value={filters.locationId}
+            onChange={(locationId) => updateFilter('locationId', locationId)}
           />
         </div>
 

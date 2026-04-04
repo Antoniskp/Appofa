@@ -228,7 +228,7 @@ const createArticle = async (userId, userRole, articleData) => {
  */
 const getAllArticles = async (queryParams, user) => {
   try {
-    const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order, isNews, newsApproved, search } = queryParams;
+    const { status, category, page = 1, limit = 10, authorId, type, tag, orderBy, order, isNews, newsApproved, search, locationId } = queryParams;
 
     const parsedPage = Number(page);
     const parsedLimit = Number(limit);
@@ -323,6 +323,20 @@ const getAllArticles = async (queryParams, user) => {
     else if (orderBy === 'newsApprovedAt') sortField = 'newsApprovedAt';
     let sortDirection = 'DESC';
     if (order && String(order).toLowerCase() === 'asc') sortDirection = 'ASC';
+
+    // Filter by location (and its descendants) via LocationLink
+    if (locationId) {
+      const parsedLocationId = parseInt(locationId, 10);
+      if (!isNaN(parsedLocationId)) {
+        const locationIds = await getDescendantLocationIds(parsedLocationId, true);
+        const linkedArticleIds = await LocationLink.findAll({
+          where: { location_id: { [Op.in]: locationIds }, entity_type: 'article' },
+          attributes: ['entity_id'],
+          raw: true
+        });
+        where.id = { [Op.in]: linkedArticleIds.map(l => l.entity_id) };
+      }
+    }
 
     const { count, rows: articles } = await Article.findAndCountAll({
       where,

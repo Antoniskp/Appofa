@@ -712,7 +712,7 @@ async function getPublicUserProfileByUsername(username) {
   return user;
 }
 
-async function searchUsers(search, page, limit, expertiseArea) {
+async function searchUsers(search, page, limit, expertiseArea, locationId) {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
@@ -743,6 +743,14 @@ async function searchUsers(search, page, limit, expertiseArea) {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
     whereClause.expertiseArea = { [likeOp]: `%${expertiseArea.replace(/[%_\\]/g, '\\$&')}%` };
+  }
+
+  if (locationId) {
+    const parsedLocationId = parseInt(locationId, 10);
+    if (!isNaN(parsedLocationId)) {
+      const locationIds = await getDescendantLocationIds(parsedLocationId, true);
+      whereClause.homeLocationId = { [Op.in]: locationIds };
+    }
   }
 
   const { count, rows: users } = await User.findAndCountAll({
