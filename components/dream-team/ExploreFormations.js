@@ -23,13 +23,52 @@ const SORT_OPTIONS = [
 const PAGE_SIZE = 12;
 
 /**
+ * Computes how similar a formation's picks are to the user's Primary Formation picks.
+ * Returns a percentage (0–100) or null if there are no overlapping filled positions.
+ */
+function computeMatchScore(formationPicks, primaryPicks) {
+  if (!primaryPicks?.length || !formationPicks?.length) return null;
+
+  const getSlug = (p) => p.positionSlug || p.slug;
+
+  // Build a map of primary picks by positionSlug
+  const primaryMap = {};
+  primaryPicks.forEach((p) => {
+    if (p.personId || p.candidateUserId) {
+      primaryMap[getSlug(p)] = p;
+    }
+  });
+
+  let overlapping = 0; // positions where BOTH have a pick
+  let matching = 0;    // positions where both picked the same person
+
+  formationPicks.forEach((fp) => {
+    if (!(fp.personId || fp.candidateUserId)) return;
+    const pp = primaryMap[getSlug(fp)];
+    if (!pp) return;
+
+    overlapping++;
+    if (
+      (fp.personId && fp.personId === pp.personId) ||
+      (fp.candidateUserId && fp.candidateUserId === pp.candidateUserId)
+    ) {
+      matching++;
+    }
+  });
+
+  if (overlapping === 0) return null;
+  return Math.round((matching / overlapping) * 100);
+}
+
+/**
  * ExploreFormations — browse public formations with filters, sort, and pagination.
  *
  * Props:
  *   showToast(msg, type) – notification handler
  *   onCompare(formation) – open comparison tool with this formation pre-selected
+ *   primaryPicks         – picks array from the user's Primary Formation (for match score)
  */
-export default function ExploreFormations({ showToast, onCompare }) {
+export default function ExploreFormations({ showToast, onCompare, primaryPicks = [] }) {
   const router = useRouter();
   const { user } = useAuth();
 
@@ -188,6 +227,7 @@ export default function ExploreFormations({ showToast, onCompare }) {
                 onCompare={onCompare ? () => onCompare(formation) : undefined}
                 showToast={showToast}
                 onClick={() => handleCardClick(formation)}
+                matchScore={computeMatchScore(formation.picks, primaryPicks)}
               />
             ))}
           </div>

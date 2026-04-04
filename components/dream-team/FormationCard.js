@@ -27,8 +27,9 @@ const TOTAL_POSITIONS = 22;
  *   isPrimary  – whether this is the user's primary (guarded) formation
  *   showToast  – optional toast function (used by ShareModal)
  *   onClick    – optional click handler for the card body
+ *   matchScore – optional number (0–100) showing similarity with user's Primary Formation
  */
-export default function FormationCard({ formation, onEdit, onDelete, onLike, onCompare, onShareCopy, isOwner = false, isPrimary = false, showToast, onClick }) {
+export default function FormationCard({ formation, onEdit, onDelete, onLike, onCompare, onShareCopy, isOwner = false, isPrimary = false, showToast, onClick, matchScore }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -66,6 +67,20 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onC
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            {matchScore !== null && matchScore !== undefined && (
+              <span
+                className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                  matchScore >= 75
+                    ? 'bg-green-100 text-green-700'
+                    : matchScore >= 40
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-red-100 text-red-600'
+                }`}
+                title="Ομοιότητα με την «Η Κυβέρνησή μου»"
+              >
+                🎯 {matchScore}%
+              </span>
+            )}
             {isPrimary ? (
               /* Shield badge for primary formation */
               <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">

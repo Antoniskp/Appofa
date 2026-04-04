@@ -80,6 +80,9 @@ export default function DreamTeamPage() {
   // Holds the Primary Formation for background vote↔formation sync
   const primaryFormationRef = useRef(null);
 
+  // Reactive copy of the Primary Formation's picks — passed to ExploreFormations
+  const [primaryPicks, setPrimaryPicks] = useState([]);
+
   // Set lastUpdated only on the client to avoid SSR/hydration mismatch
   useEffect(() => { setLastUpdated(new Date().toISOString()); }, []);
 
@@ -121,7 +124,10 @@ export default function DreamTeamPage() {
           }
           if (formationsRes?.success) {
             const primary = (formationsRes.data || []).find(isPrimaryFormation);
-            if (primary) primaryFormationRef.current = primary;
+            if (primary) {
+              primaryFormationRef.current = primary;
+              setPrimaryPicks(primary.picks || []);
+            }
           }
         } catch {
           // my-votes / formations are not critical
@@ -431,6 +437,7 @@ export default function DreamTeamPage() {
             <ExploreFormations
               showToast={showToast}
               onCompare={openCompare}
+              primaryPicks={primaryPicks}
             />
           </>
         )}
