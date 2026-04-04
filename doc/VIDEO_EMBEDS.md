@@ -155,7 +155,7 @@ Optional tuning (edit `src/controllers/linkPreviewController.js`):
 
 - Only YouTube and TikTok are supported. To add more providers, extend the allowlists and add provider-specific oEmbed fetching in `linkPreviewController.js`.
 - TikTok's oEmbed API is known to return intermittent 500 errors. The controller retries once (after a short delay) before falling back to partial data with a clickable card.
-- TikTok oEmbed titles (which contain video descriptions) are truncated to 255 characters to fit the database column limit.
+- TikTok oEmbed titles (which contain video descriptions) are truncated to 200 characters to fit the database column limit.
 - When TikTok author metadata (`authorName`) is available it is displayed as the link label, otherwise "Watch on TikTok ↗" is used.
 - Live embed preview in the form editor (VideoEmbedField) requires network access to `/api/link-preview` from the browser.
 - YouTube autoplay uses `autoplay=1&mute=1`. The `mute=1` parameter is required by browser autoplay policies; without it the browser silently blocks playback.

@@ -100,7 +100,8 @@ export default function VideoEmbedField({
         if (onChangeRef.current) onChangeRef.current(data);
         // Auto-fill title only if title field hasn't been touched by the user
         if (!isTitleDirtyRef.current && data.title && onTitleSuggestRef.current) {
-          onTitleSuggestRef.current(data.title);
+          const truncatedTitle = data.title.length > 200 ? data.title.slice(0, 200) : data.title;
+          onTitleSuggestRef.current(truncatedTitle);
         }
       } else {
         setStatus('error');
