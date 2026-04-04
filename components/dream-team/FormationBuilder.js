@@ -32,8 +32,9 @@ const MINISTER_POSITIONS = ALL_POSITIONS.filter(
  *   onSave(formation) – called with the saved formation after API success
  *   onBack()       – called when user cancels / goes back
  *   showToast(msg, type) – show a notification
+ *   isPrimary      – whether this is the user's primary (guarded) formation
  */
-export default function FormationBuilder({ formation, communityResults = [], onSave, onBack, showToast }) {
+export default function FormationBuilder({ formation, communityResults = [], onSave, onBack, showToast, isPrimary = false }) {
   const isNew = !formation?.id;
 
   const [name, setName] = useState(formation?.name || '');
@@ -156,6 +157,10 @@ export default function FormationBuilder({ formation, communityResults = [], onS
       return;
     }
     setSaving(true);
+    // Primary formation is always private; enforce here regardless of state
+    const effectiveIsPublic = isPrimary ? false : isPublic;
+    // Primary formation category is always locked to "serious"
+    const effectiveCategory = isPrimary ? 'serious' : category;
     try {
       const picksArray = Object.values(picks).filter(
         (p) => p && (p.personId || p.candidateUserId || p.personName),
@@ -163,15 +168,15 @@ export default function FormationBuilder({ formation, communityResults = [], onS
 
       let saved;
       if (isNew) {
-        const res = await dreamTeamAPI.createFormation({ name: name.trim(), category, description, isPublic });
+        const res = await dreamTeamAPI.createFormation({ name: name.trim(), category: effectiveCategory, description, isPublic: effectiveIsPublic });
         if (!res?.success) throw new Error(res?.message || 'Σφάλμα δημιουργίας');
         saved = res.data;
       } else {
         const res = await dreamTeamAPI.updateFormation(formation.id, {
           name: name.trim(),
-          category,
+          category: effectiveCategory,
           description,
-          isPublic,
+          isPublic: effectiveIsPublic,
         });
         if (!res?.success) throw new Error(res?.message || 'Σφάλμα ενημέρωσης');
         saved = res.data;
@@ -186,8 +191,8 @@ export default function FormationBuilder({ formation, communityResults = [], onS
 
       showToast(isNew ? 'Η σύνθεση δημιουργήθηκε!' : 'Η σύνθεση αποθηκεύτηκε!');
 
-      // If public, automatically open the share modal so the user can share right away
-      if (isPublic) {
+      // If public (non-primary only), automatically open the share modal
+      if (effectiveIsPublic) {
         setShareOpen(true);
       }
 
@@ -197,7 +202,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
     } finally {
       setSaving(false);
     }
-  }, [name, category, description, isPublic, picks, isNew, formation?.id, showToast, onSave]);
+  }, [name, category, description, isPublic, isPrimary, picks, isNew, formation?.id, showToast, onSave]);
 
   const renderPositionRow = (position) => {
     const pick = picks[position.slug];
@@ -258,10 +263,12 @@ export default function FormationBuilder({ formation, communityResults = [], onS
           <ArrowLeftIcon className="h-5 w-5" />
         </button>
         <h2 className="text-xl font-bold text-gray-900 flex-1">
-          {isNew ? '✨ Νέα Σύνθεση' : '✏️ Επεξεργασία Σύνθεσης'}
+          {isPrimary
+            ? '✏️ Επεξεργασία — Η Κυβέρνησή μου'
+            : isNew ? '✨ Νέα Σύνθεση' : '✏️ Επεξεργασία Σύνθεσης'}
         </h2>
         <div className="flex items-center gap-2">
-          {savedFormationData && (
+          {savedFormationData && !isPrimary && (
             <button
               onClick={() => setShareOpen(true)}
               className="flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 rounded-xl text-sm font-medium transition-colors"
@@ -302,21 +309,32 @@ export default function FormationBuilder({ formation, communityResults = [], onS
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
             Κατηγορία
           </label>
-          <div className="flex gap-2 flex-wrap">
-            {FORMATION_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
-                  category === cat.id
-                    ? `${cat.color} border-current`
-                    : 'border-gray-200 text-gray-500 hover:border-gray-300'
-                }`}
-              >
-                {cat.emoji} {cat.label}
-              </button>
-            ))}
-          </div>
+          {isPrimary ? (
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1.5 rounded-lg text-sm font-medium border bg-blue-100 border-blue-300 text-blue-700 cursor-not-allowed select-none">
+                🎯 Σοβαρή
+              </span>
+              <span className="text-xs text-gray-400 flex items-center gap-1">
+                <LockClosedIcon className="h-3 w-3" /> Κλειδωμένη για την κύρια σύνθεση
+              </span>
+            </div>
+          ) : (
+            <div className="flex gap-2 flex-wrap">
+              {FORMATION_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setCategory(cat.id)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    category === cat.id
+                      ? `${cat.color} border-current`
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                >
+                  {cat.emoji} {cat.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Description */}
@@ -334,7 +352,8 @@ export default function FormationBuilder({ formation, communityResults = [], onS
           />
         </div>
 
-        {/* Public / Private toggle */}
+        {/* Public / Private toggle — hidden for primary formation (always private) */}
+        {!isPrimary && (
         <div>
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
             Ορατότητα
@@ -369,6 +388,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
               : 'Ορατή μόνο σε όσους έχουν τον σύνδεσμο.'}
           </p>
         </div>
+        )}
       </div>
 
       {/* Progress + Quick fill */}

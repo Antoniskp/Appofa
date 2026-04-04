@@ -24,10 +24,11 @@ const TOTAL_POSITIONS = 22;
  *   onCompare  – () => void  (opens comparison tool with this formation pre-selected)
  *   onShareCopy – () => void  (legacy; kept for compat — ShareModal is now preferred)
  *   isOwner    – whether the current user owns this formation
+ *   isPrimary  – whether this is the user's primary (guarded) formation
  *   showToast  – optional toast function (used by ShareModal)
  *   onClick    – optional click handler for the card body
  */
-export default function FormationCard({ formation, onEdit, onDelete, onLike, onCompare, onShareCopy, isOwner = false, showToast, onClick }) {
+export default function FormationCard({ formation, onEdit, onDelete, onLike, onCompare, onShareCopy, isOwner = false, isPrimary = false, showToast, onClick }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -65,21 +66,28 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onC
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Public/Private badge */}
-            {formation.isPublic !== undefined && (
-              <span
-                className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-                  formation.isPublic
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-500'
-                }`}
-              >
-                {formation.isPublic ? (
-                  <><GlobeAltIcon className="h-3 w-3" />Δημόσια</>
-                ) : (
-                  <><LockClosedIcon className="h-3 w-3" />Ιδιωτική</>
-                )}
+            {isPrimary ? (
+              /* Shield badge for primary formation */
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                🛡️ Ιδιωτική — Μόνο εσείς
               </span>
+            ) : (
+              /* Public/Private badge for regular formations */
+              formation.isPublic !== undefined && (
+                <span
+                  className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
+                    formation.isPublic
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {formation.isPublic ? (
+                    <><GlobeAltIcon className="h-3 w-3" />Δημόσια</>
+                  ) : (
+                    <><LockClosedIcon className="h-3 w-3" />Ιδιωτική</>
+                  )}
+                </span>
+              )
             )}
             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${category.color}`}>
               {category.emoji} {category.label}
@@ -143,7 +151,8 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onC
 
           {/* Actions */}
           <div className="flex items-center gap-1">
-            {(formation.shareSlug || formation.id) && (
+            {/* Share — hidden for primary formation */}
+            {!isPrimary && (formation.shareSlug || formation.id) && (
               <button
                 onClick={handleShareClick}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
@@ -153,7 +162,8 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onC
                 <ShareIcon className="h-4 w-4" />
               </button>
             )}
-            {onCompare && (
+            {/* Compare — hidden for primary formation */}
+            {!isPrimary && onCompare && (
               <button
                 onClick={(e) => { e.stopPropagation(); onCompare(); }}
                 className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
@@ -173,7 +183,8 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onC
                 <PencilIcon className="h-4 w-4" />
               </button>
             )}
-            {isOwner && onDelete && (
+            {/* Delete — hidden for primary formation */}
+            {!isPrimary && isOwner && onDelete && (
               confirmDelete ? (
                 <div className="flex items-center gap-1">
                   <button
