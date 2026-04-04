@@ -180,6 +180,7 @@ export default function VideoPostForm() {
             setIsTitleDirty(true);
           }}
           placeholder="Τίτλος βίντεο"
+          maxLength={200}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           required
         />
