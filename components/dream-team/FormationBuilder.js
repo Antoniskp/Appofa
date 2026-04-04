@@ -81,7 +81,6 @@ export default function FormationBuilder({ formation, communityResults = [], onS
   });
 
   const [saving, setSaving] = useState(false);
-  const [quickFilling, setQuickFilling] = useState(false);
 
   const filledCount = Object.values(picks).filter(
     (p) => p && (p.personId || p.candidateUserId || p.personName),
@@ -138,45 +137,6 @@ export default function FormationBuilder({ formation, communityResults = [], onS
       return updated;
     });
   }, []);
-
-  const handleQuickFill = useCallback(async () => {
-    if (!communityResults.length) {
-      showToast('Δεν υπάρχουν αποτελέσματα κοινότητας ακόμα', 'error');
-      return;
-    }
-    setQuickFilling(true);
-    try {
-      const newPicks = { ...picks };
-      communityResults.forEach((result) => {
-        if (result.winner && result.position?.slug) {
-          const slug = result.position.slug;
-          const { personId, candidateUserId } = result.winner;
-
-          // Skip if this person is already assigned to a different position
-          const isDuplicate = Object.entries(newPicks).some(([existingSlug, pick]) => {
-            if (existingSlug === slug || !pick) return false;
-            if (personId && pick.personId === personId) return true;
-            if (candidateUserId && pick.candidateUserId === candidateUserId) return true;
-            return false;
-          });
-          if (isDuplicate) return;
-
-          newPicks[slug] = {
-            positionSlug: slug,
-            personId: personId || null,
-            candidateUserId: candidateUserId || null,
-            personName: result.winner.personName,
-            photo: result.winner.photo || null,
-            avatar: result.winner.avatar || null,
-          };
-        }
-      });
-      setPicks(newPicks);
-      showToast('Συμπληρώθηκε από τα αποτελέσματα κοινότητας!');
-    } finally {
-      setQuickFilling(false);
-    }
-  }, [communityResults, picks, showToast]);
 
   const handleSave = useCallback(async () => {
     if (!name.trim()) {
@@ -458,25 +418,15 @@ export default function FormationBuilder({ formation, communityResults = [], onS
         )}
       </div>
 
-      {/* Progress + Quick fill */}
+      {/* Progress */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-sm font-semibold text-gray-800">
-              {filledCount}/{TOTAL} θέσεις συμπληρώθηκαν
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {TOTAL - filledCount === 0 ? '🎉 Η σύνθεση είναι πλήρης!' : `${TOTAL - filledCount} θέσεις απομένουν`}
-            </p>
-          </div>
-          <button
-            onClick={handleQuickFill}
-            disabled={quickFilling || !communityResults.length}
-            className="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-lg font-medium hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title={!communityResults.length ? 'Δεν υπάρχουν αποτελέσματα κοινότητας' : undefined}
-          >
-            {quickFilling ? '⏳ Φόρτωση…' : '⚡ Γρήγορη συμπλήρωση από κοινότητα'}
-          </button>
+        <div className="mb-3">
+          <p className="text-sm font-semibold text-gray-800">
+            {filledCount}/{TOTAL} θέσεις συμπληρώθηκαν
+          </p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {TOTAL - filledCount === 0 ? '🎉 Η σύνθεση είναι πλήρης!' : `${TOTAL - filledCount} θέσεις απομένουν`}
+          </p>
         </div>
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
           <div
