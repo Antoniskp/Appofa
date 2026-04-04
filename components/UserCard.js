@@ -1,14 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
-
-const DEFAULT_AVATAR_COLOR = '#64748b';
+import UserAvatar from '@/components/user/UserAvatar';
 
 export default function UserCard({ user }) {
-  const [avatarLoadError, setAvatarLoadError] = useState(false);
-
   const displayName = user.firstName && user.lastName
     ? `${user.firstName} ${user.lastName}`
     : user.firstName || user.lastName || '';
@@ -17,21 +13,7 @@ export default function UserCard({ user }) {
     <Card hoverable href={`/users/${user.username}`}>
       <div className="flex items-center gap-4">
         {/* Avatar */}
-        <div
-          className="h-16 w-16 rounded-full border border-gray-200 flex items-center justify-center text-white text-xl font-semibold flex-shrink-0"
-          style={{ backgroundColor: user.avatarColor || DEFAULT_AVATAR_COLOR }}
-        >
-          {user.avatar && !avatarLoadError ? (
-            <img
-              src={user.avatar}
-              alt={user.username}
-              className="h-full w-full rounded-full object-cover"
-              onError={() => setAvatarLoadError(true)}
-            />
-          ) : (
-            <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
-          )}
-        </div>
+        <UserAvatar user={user} size="h-16 w-16" textSize="text-xl" />
         
         {/* User Info */}
         <div className="flex-1 min-w-0">
