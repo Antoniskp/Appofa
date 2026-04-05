@@ -1,5 +1,51 @@
-const { LocationRole, Location, PublicPersonProfile, User } = require('../models');
+const { LocationRole, Location, PublicPersonProfile, User, GovernmentPosition, GovernmentCurrentHolder } = require('../models');
 const locationRolesConfig = require('../../config/locationRoles.json');
+
+// Mapping from LocationRole roleKey → GovernmentPosition slug (Greece country only)
+const LOCATION_ROLE_TO_POSITION_SLUG = {
+  president: 'proedros-dimokratias',
+  prime_minister: 'prothypoyrgos',
+  parliament_speaker: 'proedros-voulis',
+};
+
+/**
+ * Fire-and-forget sync: keeps GovernmentCurrentHolder records in sync with
+ * Greece country LocationRole assignments for the 3 national positions.
+ *
+ * @param {string} roleKey  - LocationRole roleKey (e.g. 'president')
+ * @param {number|null} personId - PublicPersonProfile id to assign (null to clear)
+ * @param {number|null} userId   - User id to assign (null to clear)
+ */
+async function syncLocationRoleToHolder(roleKey, personId, userId) {
+  try {
+    const positionSlug = LOCATION_ROLE_TO_POSITION_SLUG[roleKey];
+    if (!positionSlug) return;
+
+    const position = await GovernmentPosition.findOne({ where: { slug: positionSlug }, attributes: ['id'] });
+    if (!position) {
+      console.warn(`syncLocationRoleToHolder: no position found for slug "${positionSlug}", skipping sync`);
+      return;
+    }
+
+    // Deactivate any existing active holders for this position
+    await GovernmentCurrentHolder.update(
+      { isActive: false },
+      { where: { positionId: position.id, isActive: true }, validate: false }
+    );
+
+    // Create a new active holder if someone is assigned
+    if (personId || userId) {
+      await GovernmentCurrentHolder.create({
+        positionId: position.id,
+        personId: personId || null,
+        userId: userId || null,
+        isActive: true,
+      });
+    }
+  } catch (err) {
+    console.error('syncLocationRoleToHolder error (non-fatal):', err);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Helper
@@ -176,6 +222,17 @@ exports.upsertRoles = async (req, res) => {
       ...def,
       assignment: assignmentMap[def.key] || null,
     }));
+
+    // Sync national roles to GovernmentCurrentHolder (fire-and-forget, country locations only)
+    if (location.type === 'country') {
+      for (const entry of roles) {
+        const { roleKey, personId, userId } = entry;
+        if (LOCATION_ROLE_TO_POSITION_SLUG[roleKey]) {
+          syncLocationRoleToHolder(roleKey, personId || null, userId || null)
+            .catch((err) => console.error('upsertRoles syncLocationRoleToHolder error:', err));
+        }
+      }
+    }
 
     return res.status(200).json({ success: true, locationType: location.type, roles: mergedRoles });
   } catch (err) {

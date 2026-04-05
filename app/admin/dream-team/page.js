@@ -183,6 +183,7 @@ function HolderPanel({ position, onRefresh }) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
 
+  const isNational = position.scope === 'national';
   const activeHolder = (position.currentHolders || []).find((h) => h.isActive);
   const allHolders = position.currentHolders || [];
 
@@ -215,6 +216,12 @@ function HolderPanel({ position, onRefresh }) {
 
   return (
     <div>
+      {isNational && (
+        <p className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded px-3 py-2 mb-3">
+          📍 Ο κάτοχος ορίζεται από τη{' '}
+          <a href="/admin/locations" className="underline font-medium hover:text-blue-800">σελίδα Τοποθεσίας (Ελλάδα)</a>.
+        </p>
+      )}
       {allHolders.length === 0 && !adding && (
         <p className="text-sm text-gray-400 italic mb-2">Κανένας κάτοχος ακόμα.</p>
       )}
@@ -228,13 +235,15 @@ function HolderPanel({ position, onRefresh }) {
             {h.since && <p className="text-xs text-gray-400">από {new Date(h.since).toLocaleDateString('el-GR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}
           </div>
           {h.isActive && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded flex-shrink-0">Ενεργός</span>}
-          <button onClick={() => { setDeleteTargetId(h.id); setDeleteDialogOpen(true); }} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity flex-shrink-0">
-            <TrashIcon className="h-4 w-4" />
-          </button>
+          {!isNational && (
+            <button onClick={() => { setDeleteTargetId(h.id); setDeleteDialogOpen(true); }} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity flex-shrink-0">
+              <TrashIcon className="h-4 w-4" />
+            </button>
+          )}
         </div>
       ))}
 
-      {adding ? (
+      {!isNational && (adding ? (
         <div className="mt-2 border-t pt-2 space-y-2">
           <PersonSearch onSelect={setSelectedPerson} includeUsers={true} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
@@ -255,7 +264,7 @@ function HolderPanel({ position, onRefresh }) {
           <PlusIcon className="h-3.5 w-3.5" />
           {activeHolder ? 'Αλλαγή κατόχου' : 'Προσθήκη κατόχου'}
         </button>
-      )}
+      ))}
 
       <ConfirmDialog
         isOpen={deleteDialogOpen}
