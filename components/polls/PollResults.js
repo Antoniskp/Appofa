@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Bar, Pie, Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -46,6 +46,21 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   const [chartType, setChartType] = useState('bar'); // 'bar', 'pie', 'doughnut'
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isExportingJson, setIsExportingJson] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const chartRef = useRef(null);
+  const exportMenuRef = useRef(null);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    if (!exportMenuOpen) return;
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setExportMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [exportMenuOpen]);
   
   if (!canView) {
     return (
@@ -122,7 +137,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
         display: false,
       },
       title: {
-        display: true,
+        display: false,
         text: 'Αποτελέσματα Ψηφοφορίας',
         font: {
           size: 16,
@@ -158,7 +173,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
         position: 'bottom',
       },
       title: {
-        display: true,
+        display: false,
         text: 'Αποτελέσματα Ψηφοφορίας',
         font: {
           size: 16,
@@ -180,7 +195,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   };
   
   const handleExportChart = () => {
-    const canvas = document.querySelector('canvas');
+    const canvas = chartRef.current?.canvas;
     if (canvas) {
       const url = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -194,6 +209,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   const handleExportJson = async () => {
     setIsExportingJson(true);
     setExportMenuOpen(false);
+    setExportError('');
     try {
       const response = await pollAPI.exportData(poll.id);
       if (response.success) {
@@ -208,18 +224,40 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       }
     } catch (err) {
       console.error('Failed to export poll data:', err);
+      setExportError('Σφάλμα κατά την εξαγωγή δεδομένων. Δοκιμάστε ξανά.');
     } finally {
       setIsExportingJson(false);
     }
   };
   
+  const isBinaryPoll = poll.type === 'binary' && options.length === 2;
+
   return (
     <div className="space-y-6">
       {/* Binary poll — special split-bar view */}
-      {poll.type === 'binary' && options.length === 2 && (
-        <BinarySplitBar options={optionsWithStats} totalVotes={totalVotes} useCustomColors={poll.useCustomColors} />
+      {isBinaryPoll && (
+        <>
+          <BinarySplitBar options={optionsWithStats} totalVotes={totalVotes} useCustomColors={poll.useCustomColors} />
+          {poll.authenticatedVoteCount !== undefined && poll.unauthenticatedVoteCount !== undefined && (
+            <div className="bg-white border border-gray-200 rounded-lg px-6 py-4">
+              <div className="text-sm text-gray-600">
+                <div className="flex justify-between">
+                  <span>Συνδεδεμένοι χρήστες:</span>
+                  <span className="font-medium">{poll.authenticatedVoteCount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Ανώνυμες ψήφοι:</span>
+                  <span className="font-medium">{poll.unauthenticatedVoteCount}</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
+      {/* Chart Type Toggle, Chart Display, and Detailed Results — only for non-binary polls */}
+      {!isBinaryPoll && (
+        <>
       {/* Chart Type Toggle */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
@@ -256,51 +294,56 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
         </div>
         
         {/* Export controls */}
-        {canEdit ? (
-          <div className="relative">
+        <div className="flex flex-col items-end gap-1">
+          {exportError && (
+            <p className="text-xs text-red-600">{exportError}</p>
+          )}
+          {canEdit ? (
+            <div className="relative" ref={exportMenuRef}>
+              <button
+                onClick={() => setExportMenuOpen(prev => !prev)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm font-medium"
+              >
+                <ArrowDownTrayIcon className="h-4 w-4" />
+                Εξαγωγή
+                <ChevronDownIcon className="h-3 w-3" />
+              </button>
+              {exportMenuOpen && (
+                <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                  <button
+                    onClick={handleExportChart}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-md"
+                  >
+                    Εξαγωγή ως PNG
+                  </button>
+                  <button
+                    onClick={handleExportJson}
+                    disabled={isExportingJson}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-md disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isExportingJson ? 'Γίνεται λήψη...' : 'Εξαγωγή δεδομένων (JSON)'}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
             <button
-              onClick={() => setExportMenuOpen(prev => !prev)}
+              onClick={handleExportChart}
               className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm font-medium"
             >
               <ArrowDownTrayIcon className="h-4 w-4" />
               Εξαγωγή
-              <ChevronDownIcon className="h-3 w-3" />
             </button>
-            {exportMenuOpen && (
-              <div className="absolute right-0 mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-                <button
-                  onClick={handleExportChart}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-md"
-                >
-                  Εξαγωγή ως PNG
-                </button>
-                <button
-                  onClick={handleExportJson}
-                  disabled={isExportingJson}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-b-md disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isExportingJson ? 'Γίνεται λήψη...' : 'Εξαγωγή δεδομένων (JSON)'}
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <button
-            onClick={handleExportChart}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition text-sm font-medium"
-          >
-            <ArrowDownTrayIcon className="h-4 w-4" />
-            Εξαγωγή
-          </button>
-        )}
+          )}
+        </div>
       </div>
       
       {/* Chart Display */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div style={{ height: '400px' }}>
-          {chartType === 'bar' && <Bar data={chartData} options={barOptions} />}
-          {chartType === 'pie' && <Pie data={chartData} options={pieOptions} />}
-          {chartType === 'doughnut' && <Doughnut data={chartData} options={pieOptions} />}
+          {chartType === 'bar' && <Bar ref={chartRef} data={chartData} options={barOptions} />}
+          {chartType === 'pie' && <Pie ref={chartRef} data={chartData} options={pieOptions} />}
+          {chartType === 'doughnut' && <Doughnut ref={chartRef} data={chartData} options={pieOptions} />}
         </div>
       </div>
       
@@ -371,6 +414,8 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
           )}
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }

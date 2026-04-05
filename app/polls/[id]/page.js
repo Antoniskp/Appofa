@@ -342,16 +342,6 @@ export default function PollDetailPage() {
           </div>
         )}
 
-        {/* Back Link */}
-        <div className="mt-6">
-          <Link
-            href="/polls"
-            className="text-blue-600 hover:text-blue-800 font-medium"
-          >
-            ← Επιστροφή στις Δημοσκοπήσεις
-          </Link>
-        </div>
-
         {/* Comments */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
           <CommentsThread
@@ -360,6 +350,16 @@ export default function PollDetailPage() {
             commentsEnabled={poll.commentsEnabled !== false}
             commentsLocked={poll.commentsLocked === true}
           />
+        </div>
+
+        {/* Back Link */}
+        <div className="mt-6">
+          <Link
+            href="/polls"
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            ← Επιστροφή στις Δημοσκοπήσεις
+          </Link>
         </div>
       </div>
 
