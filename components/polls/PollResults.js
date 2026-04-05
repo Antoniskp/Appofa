@@ -27,6 +27,16 @@ ChartJS.register(
 );
 
 /**
+ * Convert a hex colour string to an rgba() CSS value.
+ */
+function hexToRgba(hex, alpha = 1) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+/**
  * Poll results visualization component with Chart.js
  * @param {Object} poll - Poll object with options and vote counts
  * @param {boolean} canView - Whether user can view results
@@ -61,32 +71,43 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
   optionsWithStats.sort((a, b) => b.voteCount - a.voteCount);
   
   // Chart data
+  const defaultBackgroundColors = [
+    'rgba(59, 130, 246, 0.8)',   // blue-600
+    'rgba(16, 185, 129, 0.8)',   // green-600
+    'rgba(251, 146, 60, 0.8)',   // orange-600
+    'rgba(139, 92, 246, 0.8)',   // purple-600
+    'rgba(236, 72, 153, 0.8)',   // pink-600
+    'rgba(245, 158, 11, 0.8)',   // amber-600
+    'rgba(20, 184, 166, 0.8)',   // teal-600
+    'rgba(239, 68, 68, 0.8)',    // red-600
+  ];
+  const defaultBorderColors = [
+    'rgba(59, 130, 246, 1)',
+    'rgba(16, 185, 129, 1)',
+    'rgba(251, 146, 60, 1)',
+    'rgba(139, 92, 246, 1)',
+    'rgba(236, 72, 153, 1)',
+    'rgba(245, 158, 11, 1)',
+    'rgba(20, 184, 166, 1)',
+    'rgba(239, 68, 68, 1)',
+  ];
+
+  const chartBackgroundColors = poll.useCustomColors
+    ? optionsWithStats.map(opt => opt.color ? hexToRgba(opt.color, 0.8) : 'rgba(59, 130, 246, 0.8)')
+    : defaultBackgroundColors;
+
+  const chartBorderColors = poll.useCustomColors
+    ? optionsWithStats.map(opt => opt.color ? hexToRgba(opt.color, 1) : 'rgba(59, 130, 246, 1)')
+    : defaultBorderColors;
+
   const chartData = {
     labels: optionsWithStats.map(opt => opt.text),
     datasets: [
       {
         label: 'Ψήφοι',
         data: optionsWithStats.map(opt => opt.voteCount),
-        backgroundColor: [
-          'rgba(59, 130, 246, 0.8)',   // blue-600
-          'rgba(16, 185, 129, 0.8)',   // green-600
-          'rgba(251, 146, 60, 0.8)',   // orange-600
-          'rgba(139, 92, 246, 0.8)',   // purple-600
-          'rgba(236, 72, 153, 0.8)',   // pink-600
-          'rgba(245, 158, 11, 0.8)',   // amber-600
-          'rgba(20, 184, 166, 0.8)',   // teal-600
-          'rgba(239, 68, 68, 0.8)',    // red-600
-        ],
-        borderColor: [
-          'rgba(59, 130, 246, 1)',
-          'rgba(16, 185, 129, 1)',
-          'rgba(251, 146, 60, 1)',
-          'rgba(139, 92, 246, 1)',
-          'rgba(236, 72, 153, 1)',
-          'rgba(245, 158, 11, 1)',
-          'rgba(20, 184, 166, 1)',
-          'rgba(239, 68, 68, 1)',
-        ],
+        backgroundColor: chartBackgroundColors,
+        borderColor: chartBorderColors,
         borderWidth: 2,
       },
     ],
@@ -196,7 +217,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
     <div className="space-y-6">
       {/* Binary poll — special split-bar view */}
       {poll.type === 'binary' && options.length === 2 && (
-        <BinarySplitBar options={optionsWithStats} totalVotes={totalVotes} />
+        <BinarySplitBar options={optionsWithStats} totalVotes={totalVotes} useCustomColors={poll.useCustomColors} />
       )}
 
       {/* Chart Type Toggle */}
@@ -294,7 +315,15 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
             <div key={option.id} className="px-6 py-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                  <span
+                    className="flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm"
+                    style={
+                      poll.useCustomColors && option.color
+                        ? { backgroundColor: hexToRgba(option.color, 0.15), color: option.color }
+                        : { backgroundColor: undefined, color: undefined }
+                    }
+                    {...(!poll.useCustomColors || !option.color ? { className: 'flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm' } : {})}
+                  >
                     {index + 1}
                   </span>
                   <span className="font-medium text-gray-900">{option.text}</span>
@@ -308,8 +337,11 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
               {/* Progress bar */}
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
-                  className="bg-blue-600 h-3 rounded-full transition-all duration-500"
-                  style={{ width: `${option.percentage}%` }}
+                  className={!poll.useCustomColors || !option.color ? 'bg-blue-600 h-3 rounded-full transition-all duration-500' : 'h-3 rounded-full transition-all duration-500'}
+                  style={{
+                    width: `${option.percentage}%`,
+                    ...(poll.useCustomColors && option.color ? { backgroundColor: option.color } : {})
+                  }}
                 ></div>
               </div>
             </div>
@@ -345,7 +377,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
  * Split-bar result view for binary polls.
  * Shows a full-width horizontal bar split proportionally between the two options.
  */
-function BinarySplitBar({ options, totalVotes }) {
+function BinarySplitBar({ options, totalVotes, useCustomColors }) {
   // Display in original order (order 0 = yes/agree, order 1 = no/disagree)
   const sorted = [...options].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const [opt1, opt2] = sorted;
@@ -353,27 +385,34 @@ function BinarySplitBar({ options, totalVotes }) {
   const pct1 = totalVotes > 0 ? parseFloat(opt1.percentage) : 50;
   const pct2 = totalVotes > 0 ? parseFloat(opt2.percentage) : 50;
 
+  const color1 = (useCustomColors && opt1.color) ? opt1.color : null;
+  const color2 = (useCustomColors && opt2.color) ? opt2.color : null;
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       <h3 className="text-base font-semibold text-gray-700 mb-4 text-center">Αποτέλεσμα</h3>
 
       {/* Labels */}
       <div className="flex justify-between text-sm font-medium mb-2">
-        <span className="text-green-600">{opt1.text}</span>
-        <span className="text-red-600">{opt2.text}</span>
+        <span style={color1 ? { color: color1 } : undefined} className={!color1 ? 'text-green-600' : undefined}>
+          {opt1.text}
+        </span>
+        <span style={color2 ? { color: color2 } : undefined} className={!color2 ? 'text-red-600' : undefined}>
+          {opt2.text}
+        </span>
       </div>
 
       {/* Split bar */}
       <div className="flex w-full h-8 rounded-full overflow-hidden">
         <div
-          className="bg-green-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
-          style={{ width: `${pct1}%` }}
+          className={!color1 ? 'bg-green-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500' : 'flex items-center justify-center text-white text-xs font-bold transition-all duration-500'}
+          style={{ width: `${pct1}%`, ...(color1 ? { backgroundColor: color1 } : {}) }}
         >
           {pct1 > 8 && `${pct1}%`}
         </div>
         <div
-          className="bg-red-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500"
-          style={{ width: `${pct2}%` }}
+          className={!color2 ? 'bg-red-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500' : 'flex items-center justify-center text-white text-xs font-bold transition-all duration-500'}
+          style={{ width: `${pct2}%`, ...(color2 ? { backgroundColor: color2 } : {}) }}
         >
           {pct2 > 8 && `${pct2}%`}
         </div>
@@ -381,8 +420,18 @@ function BinarySplitBar({ options, totalVotes }) {
 
       {/* Percentages below */}
       <div className="flex justify-between text-sm mt-2">
-        <span className="font-bold text-green-600">{pct1}%</span>
-        <span className="font-bold text-red-600">{pct2}%</span>
+        <span
+          className={!color1 ? 'font-bold text-green-600' : 'font-bold'}
+          style={color1 ? { color: color1 } : undefined}
+        >
+          {pct1}%
+        </span>
+        <span
+          className={!color2 ? 'font-bold text-red-600' : 'font-bold'}
+          style={color2 ? { color: color2 } : undefined}
+        >
+          {pct2}%
+        </span>
       </div>
 
       {/* Total votes */}

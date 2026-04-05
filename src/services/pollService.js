@@ -108,7 +108,9 @@ const createPoll = async (userId, pollData) => {
       deadline,
       locationId,
       options,
-      hideCreator
+      hideCreator,
+      useCustomColors,
+      binaryColors
     } = pollData;
 
     // Validate title
@@ -249,7 +251,8 @@ const createPoll = async (userId, pollData) => {
         locationId: locationIdValue,
         creatorId: userId,
         status: 'active',
-        hideCreator: hideCreatorResult.value !== undefined ? hideCreatorResult.value : false
+        hideCreator: hideCreatorResult.value !== undefined ? hideCreatorResult.value : false,
+        useCustomColors: useCustomColors === true
       },
       { transaction }
     );
@@ -264,9 +267,13 @@ const createPoll = async (userId, pollData) => {
         ? [{ text: 'Συμφωνώ', order: 0 }, { text: 'Διαφωνώ', order: 1 }]
         : [{ text: 'Ναι', order: 0 }, { text: 'Όχι', order: 1 }];
 
-      for (const opt of binaryOptions) {
+      for (let i = 0; i < binaryOptions.length; i++) {
+        const opt = binaryOptions[i];
+        const color = (useCustomColors && Array.isArray(binaryColors) && binaryColors[i])
+          ? binaryColors[i]
+          : null;
         const pollOption = await PollOption.create(
-          { pollId: poll.id, text: opt.text, order: opt.order },
+          { pollId: poll.id, text: opt.text, order: opt.order, color },
           { transaction }
         );
         createdOptions.push(pollOption);
@@ -274,6 +281,7 @@ const createPoll = async (userId, pollData) => {
     } else {
       for (let i = 0; i < options.length; i++) {
         const option = options[i];
+        const optionColor = (useCustomColors && option.color) ? option.color : null;
 
         // For simple polls, text is required
         if (typeResult.value === 'simple') {
@@ -292,7 +300,8 @@ const createPoll = async (userId, pollData) => {
             {
               pollId: poll.id,
               text: optionTextResult.value,
-              order: i
+              order: i,
+              color: optionColor
             },
             { transaction }
           );
@@ -318,7 +327,8 @@ const createPoll = async (userId, pollData) => {
               linkUrl: option.linkUrl || null,
               displayText: option.displayText || null,
               answerType: answerTypeValue,
-              order: i
+              order: i,
+              color: optionColor
             },
             { transaction }
           );
@@ -353,7 +363,7 @@ const createPoll = async (userId, pollData) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order']
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
         }
       ]
     });
@@ -517,7 +527,7 @@ const getAllPolls = async (filters, user) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,
@@ -622,7 +632,7 @@ const getPollById = async (pollId, user) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,
@@ -705,7 +715,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { title, description, category, tags, deadline, status, locationId, hideCreator, options } = updateData;
+    const { title, description, category, tags, deadline, status, locationId, hideCreator, options, useCustomColors } = updateData;
 
     const poll = await Poll.findByPk(pollId, {
       include: [
@@ -845,8 +855,24 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       updates.hideCreator = hideCreatorResult.value;
     }
 
+    if (useCustomColors !== undefined) {
+      updates.useCustomColors = useCustomColors === true;
+    }
+
     // Update the poll
     await poll.update(updates, { transaction });
+
+    // Update option colors if options array is provided (non-binary polls only)
+    if (poll.type !== 'binary' && Array.isArray(options)) {
+      for (const optionData of options) {
+        if (optionData.id && optionData.color !== undefined) {
+          await PollOption.update(
+            { color: optionData.color || null },
+            { where: { id: optionData.id, pollId }, transaction }
+          );
+        }
+      }
+    }
 
     // Update LocationLink if locationId changed
     if (locationId !== undefined) {
@@ -887,7 +913,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order']
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
         }
       ],
       order: [[{ model: PollOption, as: 'options' }, 'order', 'ASC']]
@@ -1145,7 +1171,7 @@ const votePoll = async (pollId, optionId, userId, clientIp, userAgent) => {
  */
 const addPollOption = async (pollId, userId, optionData) => {
   try {
-    const { text, photoUrl, linkUrl, displayText, answerType } = optionData;
+    const { text, photoUrl, linkUrl, displayText, answerType, color } = optionData;
 
     const poll = await Poll.findByPk(pollId, {
       include: [
@@ -1178,7 +1204,8 @@ const addPollOption = async (pollId, userId, optionData) => {
     let newOptionData = {
       pollId,
       addedByUserId: userId,
-      order: poll.options.length
+      order: poll.options.length,
+      color: (poll.useCustomColors && color) ? color : null
     };
 
     if (poll.type === 'simple') {
@@ -1244,7 +1271,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,
@@ -1322,6 +1349,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         displayText: option.displayText,
         answerType: option.answerType,
         order: option.order,
+        color: option.color || null,
         voteCount,
         authenticatedVotes,
         unauthenticatedVotes,
@@ -1350,6 +1378,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
           type: poll.type,
           status: poll.status,
           deadline: poll.deadline,
+          useCustomColors: poll.useCustomColors,
           creator: responseCreator
         },
         results: {
@@ -1408,7 +1437,7 @@ const getMyVotedPolls = async (userId, page, limit) => {
             {
               model: PollOption,
               as: 'options',
-              attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+              attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
               include: [
                 {
                   model: PollVote,
@@ -1492,7 +1521,7 @@ const exportPoll = async (pollId, userId, userRole) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order'],
+          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,

@@ -51,6 +51,10 @@ const PollOption = sequelize.define('PollOption', {
     type: DataTypes.INTEGER,
     defaultValue: 0,
     allowNull: false
+  },
+  color: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 }, {
   timestamps: true,

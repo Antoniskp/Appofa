@@ -47,13 +47,15 @@ export default function PollForm({
     hideCreator: false,
     commentsEnabled: true,
     commentsLocked: false,
+    useCustomColors: false,
+    binaryColors: ['#16a34a', '#dc2626'],
   });
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const [options, setOptions] = useState([
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom' },
+    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#3b82f6' },
+    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#10b981' },
   ]);
 
   const [imageErrors, setImageErrors] = useState({});
@@ -78,15 +80,21 @@ export default function PollForm({
         hideCreator: Boolean(poll.hideCreator),
         commentsEnabled: poll.commentsEnabled !== false,
         commentsLocked: Boolean(poll.commentsLocked),
+        useCustomColors: Boolean(poll.useCustomColors),
+        binaryColors: poll.useCustomColors && poll.options && poll.options.length >= 2
+          ? [poll.options[0].color || '#16a34a', poll.options[1].color || '#dc2626']
+          : ['#16a34a', '#dc2626'],
       });
 
       if (poll.options && poll.options.length > 0) {
         setOptions(poll.options.map(opt => ({
+          id: opt.id,
           text: opt.text || '',
           photoUrl: opt.photoUrl || '',
           linkUrl: opt.linkUrl || '',
           displayText: opt.displayText || '',
           answerType: opt.answerType || 'custom',
+          color: opt.color || '#3b82f6',
         })));
       }
     }
@@ -101,8 +109,23 @@ export default function PollForm({
       .catch(() => {});
   }, []);
 
+  const DEFAULT_PALETTE = ['#3b82f6', '#10b981', '#fb923c', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#ef4444'];
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    if (name === 'useCustomColors' && type === 'checkbox' && checked) {
+      // Pre-fill colours with smart defaults when first enabling
+      setOptions(prev => prev.map((opt, i) => ({
+        ...opt,
+        color: opt.color || DEFAULT_PALETTE[i % DEFAULT_PALETTE.length],
+      })));
+      setFormData((prev) => ({
+        ...prev,
+        useCustomColors: true,
+        binaryColors: [prev.binaryColors[0] || '#16a34a', prev.binaryColors[1] || '#dc2626'],
+      }));
+      return;
+    }
     setFormData((prev) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value,
@@ -118,12 +141,14 @@ export default function PollForm({
   };
 
   const handleAddOption = () => {
+    const nextColor = DEFAULT_PALETTE[options.length % DEFAULT_PALETTE.length];
     setOptions(prev => [...prev, {
       text: '',
       photoUrl: '',
       linkUrl: '',
       displayText: '',
-      answerType: 'custom'
+      answerType: 'custom',
+      color: nextColor,
     }]);
   };
 
@@ -185,11 +210,11 @@ export default function PollForm({
       }
     }
     
-    // Parse tags from comma-separated string to array
     const payload = {
       ...formData,
       options: validOptions,
       deadline: formData.deadline || null,
+      binaryColors: formData.useCustomColors ? formData.binaryColors : undefined,
     };
     
     onSubmit(payload);
@@ -390,7 +415,57 @@ export default function PollForm({
               Κλείδωμα σχολίων (δεν επιτρέπονται νέα σχόλια)
             </span>
           </label>
+
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              name="useCustomColors"
+              checked={formData.useCustomColors}
+              onChange={handleInputChange}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <span className="ml-2 text-sm text-gray-700">
+              Χρήση Προσαρμοσμένων Χρωμάτων
+            </span>
+          </label>
         </div>
+
+        {/* Binary colour pickers */}
+        {formData.type === 'binary' && formData.useCustomColors && (
+          <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Χρώματα Δυαδικών Επιλογών</h4>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={formData.binaryColors[0]}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    binaryColors: [e.target.value, prev.binaryColors[1]]
+                  }))}
+                  className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                />
+                <span className="text-sm text-gray-700">
+                  {formData.binaryStyle === 'agree_disagree' ? 'Συμφωνώ' : 'Ναι'}
+                </span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={formData.binaryColors[1]}
+                  onChange={(e) => setFormData(prev => ({
+                    ...prev,
+                    binaryColors: [prev.binaryColors[0], e.target.value]
+                  }))}
+                  className="h-8 w-10 rounded border border-gray-300 cursor-pointer"
+                />
+                <span className="text-sm text-gray-700">
+                  {formData.binaryStyle === 'agree_disagree' ? 'Διαφωνώ' : 'Όχι'}
+                </span>
+              </label>
+            </div>
+          </div>
+        )}
 
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -422,7 +497,18 @@ export default function PollForm({
             return (
               <div key={index} className="border border-gray-300 rounded-lg p-4">
                 <div className="flex items-start justify-between mb-3">
-                  <h4 className="font-medium text-gray-900">Επιλογή {index + 1}</h4>
+                  <div className="flex items-center gap-2">
+                    {formData.useCustomColors && (
+                      <input
+                        type="color"
+                        value={option.color || '#3b82f6'}
+                        onChange={(e) => handleOptionChange(index, 'color', e.target.value)}
+                        className="h-7 w-9 rounded border border-gray-300 cursor-pointer p-0.5"
+                        title="Χρώμα επιλογής"
+                      />
+                    )}
+                    <h4 className="font-medium text-gray-900">Επιλογή {index + 1}</h4>
+                  </div>
                   {canDeleteOption && (
                     <button
                       type="button"

@@ -93,6 +93,11 @@ const Poll = sequelize.define('Poll', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     allowNull: false
+  },
+  useCustomColors: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+    allowNull: false
   }
 }, {
   timestamps: true,

@@ -156,6 +156,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
               selectedOptionId={selectedOptionId}
               isSubmitting={isSubmitting}
               hasVoted={hasVoted}
+              useCustomColors={poll.useCustomColors}
               onSelect={async (optionId) => {
                 setSelectedOptionId(optionId);
                 setIsSubmitting(true);
@@ -181,29 +182,41 @@ export default function PollVoting({ poll, onVoteSuccess }) {
           ) : poll.type === 'simple' ? (
             // Simple poll - radio buttons
             <div className="space-y-3">
-              {poll.options.map((option) => (
-                <label
-                  key={option.id}
-                  className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
-                    selectedOptionId === option.id
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="poll-option"
-                    value={option.id}
-                    checked={selectedOptionId === option.id}
-                    onChange={() => setSelectedOptionId(option.id)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className="ml-3 text-gray-900 font-medium">{option.text}</span>
-                  {selectedOptionId === option.id && (
-                    <CheckCircleIcon className="h-5 w-5 text-blue-600 ml-auto" />
-                  )}
-                </label>
-              ))}
+              {poll.options.map((option) => {
+                const color = (poll.useCustomColors && option.color) ? option.color : null;
+                const isSelected = selectedOptionId === option.id;
+                return (
+                  <label
+                    key={option.id}
+                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                      !color
+                        ? isSelected
+                          ? 'border-blue-600 bg-blue-50'
+                          : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                    style={color && isSelected ? { borderColor: color, backgroundColor: color + '18' } : undefined}
+                  >
+                    <input
+                      type="radio"
+                      name="poll-option"
+                      value={option.id}
+                      checked={isSelected}
+                      onChange={() => setSelectedOptionId(option.id)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500"
+                      style={color ? { accentColor: color } : undefined}
+                    />
+                    <span className="ml-3 text-gray-900 font-medium">{option.text}</span>
+                    {isSelected && (
+                      <CheckCircleIcon
+                        className="h-5 w-5 ml-auto"
+                        style={{ color: color || undefined }}
+                        {...(!color ? { className: 'h-5 w-5 text-blue-600 ml-auto' } : {})}
+                      />
+                    )}
+                  </label>
+                );
+              })}
             </div>
           ) : (
             // Complex poll - cards with images/links
@@ -211,6 +224,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
               options={poll.options}
               selectedOptionId={selectedOptionId}
               setSelectedOptionId={setSelectedOptionId}
+              useCustomColors={poll.useCustomColors}
             />
           )}
           
@@ -363,12 +377,15 @@ export default function PollVoting({ poll, onVoteSuccess }) {
  * Binary poll voting component — two large side-by-side buttons.
  * Submits the vote immediately on click (single-click vote).
  */
-function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, onSelect }) {
+function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, onSelect, useCustomColors }) {
   if (!options || options.length < 2) return null;
   const [yesOpt, noOpt] = [options[0], options[1]];
 
   const btnBase =
     'flex-1 flex flex-col items-center justify-center gap-2 py-6 px-4 rounded-xl border-2 text-lg font-bold transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed';
+
+  const yesColor = (useCustomColors && yesOpt.color) ? yesOpt.color : null;
+  const noColor = (useCustomColors && noOpt.color) ? noOpt.color : null;
 
   return (
     <div className="flex flex-col sm:flex-row gap-4">
@@ -377,10 +394,17 @@ function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, 
         disabled={isSubmitting}
         onClick={() => onSelect(yesOpt.id)}
         className={`${btnBase} ${
-          selectedOptionId === yesOpt.id
-            ? 'bg-green-500 border-green-500 text-white shadow-lg focus:ring-green-300'
-            : 'bg-white border-green-500 text-green-600 hover:bg-green-50 focus:ring-green-300'
+          !yesColor
+            ? selectedOptionId === yesOpt.id
+              ? 'bg-green-500 border-green-500 text-white shadow-lg focus:ring-green-300'
+              : 'bg-white border-green-500 text-green-600 hover:bg-green-50 focus:ring-green-300'
+            : ''
         }`}
+        style={yesColor ? (
+          selectedOptionId === yesOpt.id
+            ? { backgroundColor: yesColor, borderColor: yesColor, color: '#fff' }
+            : { backgroundColor: '#fff', borderColor: yesColor, color: yesColor }
+        ) : undefined}
       >
         {selectedOptionId === yesOpt.id && <CheckCircleIcon className="h-7 w-7" />}
         {yesOpt.text}
@@ -390,10 +414,17 @@ function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, 
         disabled={isSubmitting}
         onClick={() => onSelect(noOpt.id)}
         className={`${btnBase} ${
-          selectedOptionId === noOpt.id
-            ? 'bg-red-500 border-red-500 text-white shadow-lg focus:ring-red-300'
-            : 'bg-white border-red-500 text-red-600 hover:bg-red-50 focus:ring-red-300'
+          !noColor
+            ? selectedOptionId === noOpt.id
+              ? 'bg-red-500 border-red-500 text-white shadow-lg focus:ring-red-300'
+              : 'bg-white border-red-500 text-red-600 hover:bg-red-50 focus:ring-red-300'
+            : ''
         }`}
+        style={noColor ? (
+          selectedOptionId === noOpt.id
+            ? { backgroundColor: noColor, borderColor: noColor, color: '#fff' }
+            : { backgroundColor: '#fff', borderColor: noColor, color: noColor }
+        ) : undefined}
       >
         {selectedOptionId === noOpt.id && <CheckCircleIcon className="h-7 w-7" />}
         {noOpt.text}
@@ -406,7 +437,7 @@ function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, 
  * Complex poll option component with image handling.
  * Renders options as a vertical list with a small thumbnail and text in a row.
  */
-function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId }) {
+function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId, useCustomColors }) {
   const [imageErrors, setImageErrors] = useState({});
   
   const handleImageError = (optionId) => {
@@ -415,63 +446,74 @@ function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId }) 
   
   return (
     <div className="flex flex-col gap-3">
-      {options.map((option) => (
-        <div
-          key={option.id}
-          onClick={() => setSelectedOptionId(option.id)}
-          className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition ${
-            selectedOptionId === option.id
-              ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50'
-              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-          }`}
-        >
-          {/* Thumbnail */}
-          {option.photoUrl ? (
-            !imageErrors[option.id] ? (
-              <div className="relative flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
-                <Image
-                  src={option.photoUrl}
-                  alt={option.text}
-                  fill
-                  className="object-cover"
-                  onError={() => handleImageError(option.id)}
-                />
-              </div>
-            ) : (
-              <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
-                <PhotoIcon className="h-7 w-7 text-gray-400" />
-              </div>
-            )
-          ) : null}
+      {options.map((option) => {
+        const color = (useCustomColors && option.color) ? option.color : null;
+        const isSelected = selectedOptionId === option.id;
+        return (
+          <div
+            key={option.id}
+            onClick={() => setSelectedOptionId(option.id)}
+            className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition ${
+              !color
+                ? isSelected
+                  ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50'
+                  : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                : 'border-gray-300 hover:bg-gray-50'
+            }`}
+            style={color && isSelected ? { borderColor: color, outlineColor: color, backgroundColor: color + '18', boxShadow: `0 0 0 2px ${color}` } : undefined}
+          >
+            {/* Thumbnail */}
+            {option.photoUrl ? (
+              !imageErrors[option.id] ? (
+                <div className="relative flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md overflow-hidden">
+                  <Image
+                    src={option.photoUrl}
+                    alt={option.text}
+                    fill
+                    className="object-cover"
+                    onError={() => handleImageError(option.id)}
+                  />
+                </div>
+              ) : (
+                <div className="flex-shrink-0 w-16 h-16 bg-gray-100 rounded-md flex items-center justify-center">
+                  <PhotoIcon className="h-7 w-7 text-gray-400" />
+                </div>
+              )
+            ) : null}
 
-          {/* Text content */}
-          <div className="flex-1 min-w-0">
-            <h4 className="font-semibold text-gray-900 truncate">{option.text}</h4>
+            {/* Text content */}
+            <div className="flex-1 min-w-0">
+              <h4 className="font-semibold text-gray-900 truncate">{option.text}</h4>
 
-            {option.displayText && (
-              <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{option.displayText}</p>
-            )}
+              {option.displayText && (
+                <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{option.displayText}</p>
+              )}
 
-            {option.linkUrl && (
-              <a
-                href={option.linkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <LinkIcon className="h-4 w-4 flex-shrink-0" />
-                Περισσότερες πληροφορίες
-              </a>
+              {option.linkUrl && (
+                <a
+                  href={option.linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <LinkIcon className="h-4 w-4 flex-shrink-0" />
+                  Περισσότερες πληροφορίες
+                </a>
+              )}
+            </div>
+
+            {/* Selection indicator */}
+            {isSelected && (
+              <CheckCircleIcon
+                className="h-6 w-6 flex-shrink-0"
+                style={{ color: color || undefined }}
+                {...(!color ? { className: 'h-6 w-6 text-blue-600 flex-shrink-0' } : {})}
+              />
             )}
           </div>
-
-          {/* Selection indicator */}
-          {selectedOptionId === option.id && (
-            <CheckCircleIcon className="h-6 w-6 text-blue-600 flex-shrink-0" />
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
