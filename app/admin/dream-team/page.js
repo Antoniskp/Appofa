@@ -338,7 +338,7 @@ export default function AdminDreamTeamPage() {
             const posIcon = positionIconMap[pos.slug] || (ptMeta && ptMeta.icon);
 
             return (
-              <div key={pos.id} className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div key={pos.id} className="bg-white border border-gray-200 rounded-xl overflow-visible">
                 {/* Row header */}
                 <button
                   onClick={() => toggleExpand(pos.id)}

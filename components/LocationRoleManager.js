@@ -41,7 +41,7 @@ function AssigneePicker({ onSelect, onClose }) {
         ]);
         setResults({
           persons: personRes?.data?.profiles || personRes?.profiles || [],
-          users: userRes?.users || [],
+          users: userRes?.data?.users || userRes?.users || [],
         });
       } catch {
         // ignore search errors silently
