@@ -13,47 +13,12 @@ const {
   Formation,
   FormationPick,
   FormationLike,
-  Location,
-  LocationRole,
 } = require('../models');
 const badgeService = require('../services/badgeService');
 
-// Mapping from Dream Team position slug → LocationRole roleKey (Greece country location only)
-const POSITION_SLUG_TO_LOCATION_ROLE = {
-  'proedros-dimokratias': 'president',
-  'prothypoyrgos': 'prime_minister',
-  'proedros-voulis': 'parliament_speaker',
-};
-
-/**
- * Fire-and-forget sync: keeps the Greece country LocationRole in sync with
- * Dream Team current holders for the 3 national positions.
- *
- * @param {string} positionSlug - The slug of the government position.
- * @param {number|null} personId - PublicPersonProfile id to assign (null to clear).
- * @param {number|null} userId   - User id to assign (null to clear).
- */
-async function syncHolderToLocationRole(positionSlug, personId, userId) {
-  try {
-    const roleKey = POSITION_SLUG_TO_LOCATION_ROLE[positionSlug];
-    if (!roleKey) return; // not a mapped national position, skip silently
-
-    const greece = await Location.findOne({ where: { type: 'country', code: 'GR' } });
-    if (!greece) {
-      console.warn('syncHolderToLocationRole: no GR country location found, skipping sync');
-      return;
-    }
-
-    await LocationRole.upsert({
-      locationId: greece.id,
-      roleKey,
-      personId: personId || null,
-      userId: userId || null,
-    }, { conflictFields: ['locationId', 'roleKey'] });
-  } catch (err) {
-    console.error('syncHolderToLocationRole error (non-fatal):', err);
-  }
-}
+// National position slugs that are managed from the Location (Greece) page.
+// Editing holders for these positions via Dream Team admin is blocked.
+const NATIONAL_POSITION_SLUGS = new Set(['proedros-dimokratias', 'prothypoyrgos', 'proedros-voulis']);
 
 /**
  * Generate a unique shareSlug for a Formation row.
@@ -683,6 +648,12 @@ const dreamTeamController = {
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
+      if (NATIONAL_POSITION_SLUGS.has(position.slug)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
+        });
+      }
       if (personId) {
         const person = await PublicPersonProfile.findByPk(personId);
         if (!person) {
@@ -721,9 +692,6 @@ const dreamTeamController = {
         ],
       });
 
-      syncHolderToLocationRole(position.slug, personId || null, userId || null)
-        .catch((err) => console.error('adminCreateHolder syncHolderToLocationRole error:', err));
-
       return res.status(201).json({ success: true, data: holderWithPerson });
     } catch (error) {
       console.error('dreamTeamController.adminCreateHolder error:', error);
@@ -737,6 +705,13 @@ const dreamTeamController = {
       const holder = await GovernmentCurrentHolder.findByPk(req.params.id);
       if (!holder) {
         return res.status(404).json({ success: false, message: 'Ο κάτοχος δεν βρέθηκε.' });
+      }
+      const position = await GovernmentPosition.findByPk(holder.positionId, { attributes: ['slug'] });
+      if (position && NATIONAL_POSITION_SLUGS.has(position.slug)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
+        });
       }
       const { personId, userId, since, notes, isActive } = req.body;
       if (personId !== undefined && personId !== null) {
@@ -768,16 +743,6 @@ const dreamTeamController = {
         ],
       });
 
-      // Sync: fetch the position slug and trigger location role sync (non-blocking)
-      GovernmentPosition.findByPk(holder.positionId, { attributes: ['slug'] })
-        .then((pos) => {
-          if (!pos) return;
-          const effectivePersonId = isActive === false ? null : (updated.personId || null);
-          const effectiveUserId = isActive === false ? null : (updated.userId || null);
-          return syncHolderToLocationRole(pos.slug, effectivePersonId, effectiveUserId);
-        })
-        .catch((err) => console.error('adminUpdateHolder syncHolderToLocationRole error:', err));
-
       return res.status(200).json({ success: true, data: updated });
     } catch (error) {
       console.error('dreamTeamController.adminUpdateHolder error:', error);
@@ -792,19 +757,14 @@ const dreamTeamController = {
       if (!holder) {
         return res.status(404).json({ success: false, message: 'Ο κάτοχος δεν βρέθηκε.' });
       }
-      const { positionId } = holder;
+      const position = await GovernmentPosition.findByPk(holder.positionId, { attributes: ['slug'] });
+      if (position && NATIONAL_POSITION_SLUGS.has(position.slug)) {
+        return res.status(400).json({
+          success: false,
+          message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
+        });
+      }
       await holder.destroy();
-
-      // Sync: if no active holder remains for this position, clear the location role (non-blocking)
-      GovernmentPosition.findByPk(positionId, { attributes: ['slug'] })
-        .then(async (pos) => {
-          if (!pos) return;
-          const stillActive = await GovernmentCurrentHolder.findOne({ where: { positionId, isActive: true } });
-          const effectivePersonId = stillActive ? (stillActive.personId || null) : null;
-          const effectiveUserId = stillActive ? (stillActive.userId || null) : null;
-          return syncHolderToLocationRole(pos.slug, effectivePersonId, effectiveUserId);
-        })
-        .catch((err) => console.error('adminDeleteHolder syncHolderToLocationRole error:', err));
 
       return res.status(200).json({ success: true, message: 'Ο κάτοχος διαγράφηκε.' });
     } catch (error) {
