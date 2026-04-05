@@ -2,10 +2,12 @@ const express = require('express');
 const router = express.Router();
 const locationController = require('../controllers/locationController');
 const locationSectionController = require('../controllers/locationSectionController');
+const locationRoleController = require('../controllers/locationRoleController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
+const csrfProtection = require('../middleware/csrfProtection');
 
 // Public routes
 router.get('/', locationController.getLocations);
@@ -31,6 +33,10 @@ router.post('/:locationId/sections', apiLimiter, authMiddleware, checkRole('admi
 router.put('/:locationId/sections/reorder', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationSectionController.reorderSections);
 router.put('/:locationId/sections/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationSectionController.updateSection);
 router.delete('/:locationId/sections/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationSectionController.deleteSection);
+
+// Location roles routes
+router.get('/:locationId/roles', apiLimiter, optionalAuthMiddleware, locationRoleController.getRoles);
+router.put('/:locationId/roles', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, locationRoleController.upsertRoles);
 
 // Admin/Moderator only routes
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationController.createLocation);

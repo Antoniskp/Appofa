@@ -9,6 +9,7 @@ import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
 import LocationSections from '@/components/LocationSections';
+import LocationRoles from '@/components/LocationRoles';
 import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
 import LocationEditForm from '@/components/locations/LocationEditForm';
@@ -346,6 +347,13 @@ export default function LocationDetailPage() {
         {!isEditing && bodySections.length > 0 && (
           <div className="mb-6">
             <LocationSections sections={bodySections} />
+          </div>
+        )}
+
+        {/* Location Roles — assigned officials for this location */}
+        {!isEditing && location && (
+          <div className="mb-6">
+            <LocationRoles locationId={location.id} />
           </div>
         )}
 

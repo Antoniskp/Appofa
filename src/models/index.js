@@ -9,6 +9,7 @@ const Location = require('./Location');
 const LocationLink = require('./LocationLink');
 const LocationRequest = require('./LocationRequest');
 const LocationSection = require('./LocationSection');
+const LocationRole = require('./LocationRole');
 const Poll = require('./Poll');
 const PollOption = require('./PollOption');
 const PollVote = require('./PollVote');
@@ -204,6 +205,12 @@ LocationSection.belongsTo(Location, { foreignKey: 'locationId', as: 'location' }
 LocationSection.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 LocationSection.belongsTo(User, { foreignKey: 'updatedByUserId', as: 'updatedBy' });
 
+// LocationRole associations
+LocationRole.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+Location.hasMany(LocationRole, { foreignKey: 'locationId', as: 'roles' });
+LocationRole.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
+LocationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
 // Endorsement associations
 Endorsement.belongsTo(User, { foreignKey: 'endorserId', as: 'endorser' });
 Endorsement.belongsTo(User, { foreignKey: 'endorsedId', as: 'endorsed' });
@@ -293,6 +300,7 @@ module.exports = {
   LocationLink,
   LocationRequest,
   LocationSection,
+  LocationRole,
   Poll,
   PollOption,
   PollVote,
