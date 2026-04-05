@@ -9,6 +9,9 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { useToast } from '@/components/ToastProvider';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 function ClaimBadge({ status }) {
   const labels = {
@@ -34,8 +37,11 @@ function ClaimBadge({ status }) {
 export default function AdminPersonsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { addToast } = useToast();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const { data: profiles, loading, error, refetch } = useAsyncData(
     async () => {
@@ -56,16 +62,23 @@ export default function AdminPersonsPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Διαγραφή αυτού του προφίλ;')) return;
+    setDeleteTargetId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
     try {
-      await personAPI.deleteProfile(id);
+      await personAPI.deleteProfile(deleteTargetId);
       refetch?.();
+      addToast('Το προφίλ διαγράφηκε επιτυχώς!', { type: 'success' });
     } catch (err) {
-      alert(err.message || 'Αποτυχία διαγραφής προφίλ.');
+      addToast(err.message || 'Αποτυχία διαγραφής προφίλ.', { type: 'error' });
     }
   };
 
   return (
+    <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -145,5 +158,16 @@ export default function AdminPersonsPage() {
         )}
       </div>
     </div>
+    <ConfirmDialog
+      isOpen={deleteDialogOpen}
+      onClose={() => { setDeleteDialogOpen(false); setDeleteTargetId(null); }}
+      onConfirm={confirmDelete}
+      title="Διαγραφή Προφίλ"
+      message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το προφίλ; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
+      confirmText="Διαγραφή"
+      cancelText="Άκυρο"
+      variant="danger"
+    />
+    </AdminLayout>
   );
 }

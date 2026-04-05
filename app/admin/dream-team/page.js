@@ -19,6 +19,7 @@ import positionsData from '@/config/governmentPositions.json';
 import { useToast } from '@/components/ToastProvider';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import AdminHeader from '@/components/admin/AdminHeader';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 const positionTypesMap = positionTypesData.reduce((acc, pt) => {
   acc[pt.key] = pt;
@@ -385,6 +386,7 @@ export default function AdminDreamTeamPage() {
   };
 
   return (
+    <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-4xl">
         <AdminHeader
@@ -402,5 +404,6 @@ export default function AdminDreamTeamPage() {
         )}
       </div>
     </div>
+    </AdminLayout>
   );
 }

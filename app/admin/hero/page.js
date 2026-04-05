@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AlertMessage from '@/components/ui/AlertMessage';
 import { heroSettingsAPI } from '@/lib/api';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 function HeroSettingsContent() {
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
@@ -83,6 +84,7 @@ function HeroSettingsContent() {
   }
 
   return (
+    <AdminLayout>
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="app-container max-w-2xl">
         <div className="mb-6">
@@ -166,6 +168,7 @@ function HeroSettingsContent() {
         </div>
       </div>
     </div>
+    </AdminLayout>
   );
 }
 

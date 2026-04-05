@@ -11,6 +11,7 @@ import AdminTable from '@/components/admin/AdminTable';
 import AdminHeader from '@/components/admin/AdminHeader';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
 
@@ -195,6 +196,7 @@ function LocationManagementContent() {
   const pendingRequestsCount = locationRequests.filter(r => r.status === 'pending').length;
 
   return (
+    <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <AdminHeader
@@ -520,6 +522,7 @@ function LocationManagementContent() {
         </form>
       </Modal>
     </div>
+    </AdminLayout>
   );
 }
 

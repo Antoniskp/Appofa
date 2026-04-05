@@ -7,6 +7,7 @@ import Card from '@/components/ui/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { messageAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 function MessagesContent() {
   const { addToast } = useToast();
@@ -66,6 +67,7 @@ function MessagesContent() {
   };
 
   return (
+    <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
@@ -201,6 +203,7 @@ function MessagesContent() {
         )}
       </div>
     </div>
+    </AdminLayout>
   );
 }
 
