@@ -13,10 +13,7 @@ import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
-
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'persons'];
-const DEFAULT_TAB = 'polls';
-const HEADER_SECTION_TYPES = ['official_links', 'contacts', 'webcams'];
+import { VALID_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
 export default function LocationDetailPage() {
   const params = useParams();
@@ -37,6 +34,7 @@ export default function LocationDetailPage() {
   const [editedData, setEditedData] = useState({});
   const [imageError, setImageError] = useState(false);
   const [sections, setSections] = useState([]);
+  const [secondaryLoading, setSecondaryLoading] = useState(false);
 
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
@@ -67,6 +65,7 @@ export default function LocationDetailPage() {
         setSections([]);
         setImageError(false);
         setIsEditing(false);
+        setSecondaryLoading(true);
 
         // Build breadcrumb
         const crumbs = [];
@@ -134,6 +133,8 @@ export default function LocationDetailPage() {
         } else if (personsRes.status === 'rejected') {
           console.error('Failed to load persons:', personsRes.reason);
         }
+
+        setSecondaryLoading(false);
       },
       onError: (err) => {
         console.error('Failed to load location:', err);
@@ -361,6 +362,7 @@ export default function LocationDetailPage() {
             persons={persons}
             isAuthenticated={isAuthenticated}
             TAB_LABELS={TAB_LABELS}
+            loading={secondaryLoading}
           />
         )}
       </div>
