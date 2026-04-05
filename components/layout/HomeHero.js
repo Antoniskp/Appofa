@@ -119,7 +119,7 @@ export default function HomeHero() {
     heroSettingsAPI.getSlides()
       .then((res) => {
         if (res?.success && Array.isArray(res.data)) {
-          setActiveSlides(res.data);
+          setActiveSlides(res.data.filter(s => s.isActive));
         }
       })
       .catch(() => {});
@@ -193,7 +193,7 @@ export default function HomeHero() {
               )}
 
               {/* Slide title/subtitle with transition */}
-              <div className="relative min-h-[5rem]">
+              <div className="relative min-h-[9rem] md:min-h-[7rem]">
                 <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight transition-opacity duration-500">
                   {displayTitle}
                 </h1>
