@@ -185,17 +185,24 @@ export default function PollVoting({ poll, onVoteSuccess }) {
               {poll.options.map((option) => {
                 const color = (poll.useCustomColors && option.color) ? option.color : null;
                 const isSelected = selectedOptionId === option.id;
+                const labelClassName = `flex items-center p-4 border rounded-lg cursor-pointer transition ${
+                  !color
+                    ? isSelected
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`;
+                const labelStyle = (color && isSelected)
+                  ? { borderColor: color, backgroundColor: hexWithLowOpacity(color) }
+                  : undefined;
+                const checkIconClassName = color
+                  ? 'h-5 w-5 ml-auto'
+                  : 'h-5 w-5 text-blue-600 ml-auto';
                 return (
                   <label
                     key={option.id}
-                    className={`flex items-center p-4 border rounded-lg cursor-pointer transition ${
-                      !color
-                        ? isSelected
-                          ? 'border-blue-600 bg-blue-50'
-                          : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
-                    style={color && isSelected ? { borderColor: color, backgroundColor: color + '18' } : undefined}
+                    className={labelClassName}
+                    style={labelStyle}
                   >
                     <input
                       type="radio"
@@ -209,9 +216,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                     <span className="ml-3 text-gray-900 font-medium">{option.text}</span>
                     {isSelected && (
                       <CheckCircleIcon
-                        className="h-5 w-5 ml-auto"
-                        style={{ color: color || undefined }}
-                        {...(!color ? { className: 'h-5 w-5 text-blue-600 ml-auto' } : {})}
+                        className={checkIconClassName}
+                        style={color ? { color } : undefined}
                       />
                     )}
                   </label>
@@ -374,6 +380,14 @@ export default function PollVoting({ poll, onVoteSuccess }) {
 }
 
 /**
+ * Returns an inline background colour for a selection highlight, with ~9% opacity.
+ * Accepts a 6-digit hex string (e.g. '#3b82f6') and returns an 8-digit hex string.
+ */
+function hexWithLowOpacity(hex) {
+  return hex + '18';
+}
+
+/**
  * Binary poll voting component — two large side-by-side buttons.
  * Submits the vote immediately on click (single-click vote).
  */
@@ -449,18 +463,25 @@ function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId, us
       {options.map((option) => {
         const color = (useCustomColors && option.color) ? option.color : null;
         const isSelected = selectedOptionId === option.id;
+        const cardClassName = `flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition ${
+          !color
+            ? isSelected
+              ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50'
+              : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+            : 'border-gray-300 hover:bg-gray-50'
+        }`;
+        const cardStyle = (color && isSelected)
+          ? { borderColor: color, backgroundColor: hexWithLowOpacity(color), boxShadow: `0 0 0 2px ${color}` }
+          : undefined;
+        const checkIconClassName = color
+          ? 'h-6 w-6 flex-shrink-0'
+          : 'h-6 w-6 text-blue-600 flex-shrink-0';
         return (
           <div
             key={option.id}
             onClick={() => setSelectedOptionId(option.id)}
-            className={`flex items-center gap-3 border rounded-lg p-3 cursor-pointer transition ${
-              !color
-                ? isSelected
-                  ? 'border-blue-600 ring-2 ring-blue-600 bg-blue-50'
-                  : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
-                : 'border-gray-300 hover:bg-gray-50'
-            }`}
-            style={color && isSelected ? { borderColor: color, outlineColor: color, backgroundColor: color + '18', boxShadow: `0 0 0 2px ${color}` } : undefined}
+            className={cardClassName}
+            style={cardStyle}
           >
             {/* Thumbnail */}
             {option.photoUrl ? (
@@ -506,9 +527,8 @@ function ComplexPollOptions({ options, selectedOptionId, setSelectedOptionId, us
             {/* Selection indicator */}
             {isSelected && (
               <CheckCircleIcon
-                className="h-6 w-6 flex-shrink-0"
-                style={{ color: color || undefined }}
-                {...(!color ? { className: 'h-6 w-6 text-blue-600 flex-shrink-0' } : {})}
+                className={checkIconClassName}
+                style={color ? { color } : undefined}
               />
             )}
           </div>

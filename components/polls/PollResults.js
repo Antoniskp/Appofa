@@ -311,41 +311,43 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
         </div>
         
         <div className="divide-y divide-gray-200">
-          {optionsWithStats.map((option, index) => (
-            <div key={option.id} className="px-6 py-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-3">
-                  <span
-                    className="flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm"
-                    style={
-                      poll.useCustomColors && option.color
-                        ? { backgroundColor: hexToRgba(option.color, 0.15), color: option.color }
-                        : { backgroundColor: undefined, color: undefined }
-                    }
-                    {...(!poll.useCustomColors || !option.color ? { className: 'flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm' } : {})}
-                  >
-                    {index + 1}
-                  </span>
-                  <span className="font-medium text-gray-900">{option.text}</span>
+          {optionsWithStats.map((option, index) => {
+            const hasCustomColor = poll.useCustomColors && option.color;
+            const rankClassName = hasCustomColor
+              ? 'flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm'
+              : 'flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 font-bold text-sm';
+            const rankStyle = hasCustomColor
+              ? { backgroundColor: hexToRgba(option.color, 0.15), color: option.color }
+              : undefined;
+            const progressClassName = hasCustomColor
+              ? 'h-3 rounded-full transition-all duration-500'
+              : 'bg-blue-600 h-3 rounded-full transition-all duration-500';
+            const progressStyle = {
+              width: `${option.percentage}%`,
+              ...(hasCustomColor ? { backgroundColor: option.color } : {})
+            };
+            return (
+              <div key={option.id} className="px-6 py-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    <span className={rankClassName} style={rankStyle}>
+                      {index + 1}
+                    </span>
+                    <span className="font-medium text-gray-900">{option.text}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-gray-900">{option.voteCount}</div>
+                    <div className="text-sm text-gray-500">{option.percentage}%</div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-lg font-bold text-gray-900">{option.voteCount}</div>
-                  <div className="text-sm text-gray-500">{option.percentage}%</div>
+                
+                {/* Progress bar */}
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div className={progressClassName} style={progressStyle}></div>
                 </div>
               </div>
-              
-              {/* Progress bar */}
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className={!poll.useCustomColors || !option.color ? 'bg-blue-600 h-3 rounded-full transition-all duration-500' : 'h-3 rounded-full transition-all duration-500'}
-                  style={{
-                    width: `${option.percentage}%`,
-                    ...(poll.useCustomColors && option.color ? { backgroundColor: option.color } : {})
-                  }}
-                ></div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         
         {/* Total Votes Summary */}
@@ -394,10 +396,16 @@ function BinarySplitBar({ options, totalVotes, useCustomColors }) {
 
       {/* Labels */}
       <div className="flex justify-between text-sm font-medium mb-2">
-        <span style={color1 ? { color: color1 } : undefined} className={!color1 ? 'text-green-600' : undefined}>
+        <span
+          className={color1 ? undefined : 'text-green-600'}
+          style={color1 ? { color: color1 } : undefined}
+        >
           {opt1.text}
         </span>
-        <span style={color2 ? { color: color2 } : undefined} className={!color2 ? 'text-red-600' : undefined}>
+        <span
+          className={color2 ? undefined : 'text-red-600'}
+          style={color2 ? { color: color2 } : undefined}
+        >
           {opt2.text}
         </span>
       </div>
@@ -405,13 +413,13 @@ function BinarySplitBar({ options, totalVotes, useCustomColors }) {
       {/* Split bar */}
       <div className="flex w-full h-8 rounded-full overflow-hidden">
         <div
-          className={!color1 ? 'bg-green-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500' : 'flex items-center justify-center text-white text-xs font-bold transition-all duration-500'}
+          className={`flex items-center justify-center text-white text-xs font-bold transition-all duration-500${color1 ? '' : ' bg-green-500'}`}
           style={{ width: `${pct1}%`, ...(color1 ? { backgroundColor: color1 } : {}) }}
         >
           {pct1 > 8 && `${pct1}%`}
         </div>
         <div
-          className={!color2 ? 'bg-red-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500' : 'flex items-center justify-center text-white text-xs font-bold transition-all duration-500'}
+          className={`flex items-center justify-center text-white text-xs font-bold transition-all duration-500${color2 ? '' : ' bg-red-500'}`}
           style={{ width: `${pct2}%`, ...(color2 ? { backgroundColor: color2 } : {}) }}
         >
           {pct2 > 8 && `${pct2}%`}
@@ -421,13 +429,13 @@ function BinarySplitBar({ options, totalVotes, useCustomColors }) {
       {/* Percentages below */}
       <div className="flex justify-between text-sm mt-2">
         <span
-          className={!color1 ? 'font-bold text-green-600' : 'font-bold'}
+          className={color1 ? 'font-bold' : 'font-bold text-green-600'}
           style={color1 ? { color: color1 } : undefined}
         >
           {pct1}%
         </span>
         <span
-          className={!color2 ? 'font-bold text-red-600' : 'font-bold'}
+          className={color2 ? 'font-bold' : 'font-bold text-red-600'}
           style={color2 ? { color: color2 } : undefined}
         >
           {pct2}%
