@@ -1,5 +1,6 @@
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import LocationSectionManager from '@/components/LocationSectionManager';
+import LocationRoleManager from '@/components/LocationRoleManager';
 
 export default function LocationEditForm({ location, editedData, isSaving, onSave, onCancel, onInputChange }) {
   return (
@@ -98,6 +99,11 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
 
       {/* Section manager — part of the same edit flow */}
       <div className="border-t border-gray-200 pt-4">
+        <h3 className="text-base font-semibold text-gray-900 mb-3">Αξιωματούχοι Τοποθεσίας</h3>
+        <LocationRoleManager locationId={location.id} locationType={location.type} />
+      </div>
+
+      <div className="border-t border-gray-200 pt-4 mt-4">
         <h3 className="text-base font-semibold text-gray-900 mb-3">Manage Sections</h3>
         <LocationSectionManager locationId={location.id} />
       </div>

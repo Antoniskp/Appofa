@@ -1,0 +1,23 @@
+{
+  "roles": {
+    "international": [
+      { "key": "secretary_general", "title": "Γενικός Γραμματέας", "titleEn": "Secretary General", "order": 1 },
+      { "key": "coordinator", "title": "Συντονιστής", "titleEn": "Coordinator", "order": 2 }
+    ],
+    "country": [
+      { "key": "president", "title": "Πρόεδρος Δημοκρατίας", "titleEn": "President", "order": 1 },
+      { "key": "prime_minister", "title": "Πρωθυπουργός", "titleEn": "Prime Minister", "order": 2 },
+      { "key": "parliament_speaker", "title": "Πρόεδρος Βουλής", "titleEn": "Speaker of Parliament", "order": 3 }
+    ],
+    "prefecture": [
+      { "key": "regional_governor", "title": "Περιφερειάρχης", "titleEn": "Regional Governor", "order": 1 },
+      { "key": "vice_governor", "title": "Αντιπεριφερειάρχης", "titleEn": "Vice Governor", "order": 2 },
+      { "key": "regional_council_president", "title": "Πρόεδρος Περιφερειακού Συμβουλίου", "titleEn": "Regional Council President", "order": 3 }
+    ],
+    "municipality": [
+      { "key": "mayor", "title": "Δήμαρχος", "titleEn": "Mayor", "order": 1 },
+      { "key": "deputy_mayor", "title": "Αντιδήμαρχος", "titleEn": "Deputy Mayor", "order": 2 },
+      { "key": "council_president", "title": "Πρόεδρος Δημοτικού Συμβουλίου", "titleEn": "Municipal Council President", "order": 3 }
+    ]
+  }
+}
