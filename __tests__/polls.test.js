@@ -1855,4 +1855,162 @@ describe('Poll API Tests', () => {
       expect(option1.votes[0].voter_ref).toBe(option2.votes[0].voter_ref);
     });
   });
+
+  describe('Custom Colours Feature', () => {
+    test('should create a simple poll with useCustomColors and per-option colors', async () => {
+      const csrfToken = 'test-csrf-token-custom-colors-simple';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Custom Colours Simple Poll',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          useCustomColors: true,
+          options: [
+            { text: 'Red Option', color: '#ef4444' },
+            { text: 'Blue Option', color: '#3b82f6' },
+            { text: 'Green Option', color: '#10b981' }
+          ]
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.useCustomColors).toBe(true);
+      expect(response.body.data.options).toHaveLength(3);
+      expect(response.body.data.options[0].color).toBe('#ef4444');
+      expect(response.body.data.options[1].color).toBe('#3b82f6');
+      expect(response.body.data.options[2].color).toBe('#10b981');
+    });
+
+    test('should create a binary poll with useCustomColors and binaryColors', async () => {
+      const csrfToken = 'test-csrf-token-custom-colors-binary';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Custom Colours Binary Poll',
+          type: 'binary',
+          binaryStyle: 'yes_no',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          useCustomColors: true,
+          binaryColors: ['#16a34a', '#dc2626']
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.useCustomColors).toBe(true);
+      expect(response.body.data.options).toHaveLength(2);
+      expect(response.body.data.options[0].color).toBe('#16a34a');
+      expect(response.body.data.options[1].color).toBe('#dc2626');
+    });
+
+    test('should not store colors when useCustomColors is false', async () => {
+      const csrfToken = 'test-csrf-token-no-custom-colors';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'No Custom Colours Poll',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          useCustomColors: false,
+          options: [
+            { text: 'Option A', color: '#ef4444' },
+            { text: 'Option B', color: '#3b82f6' }
+          ]
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.useCustomColors).toBe(false);
+      // Colors should not be stored when useCustomColors is false
+      expect(response.body.data.options[0].color).toBeFalsy();
+      expect(response.body.data.options[1].color).toBeFalsy();
+    });
+
+    test('should return colors in poll results', async () => {
+      const csrfToken = 'test-csrf-token-colors-results';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Colors in Results Poll',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          useCustomColors: true,
+          options: [
+            { text: 'Option X', color: '#f59e0b' },
+            { text: 'Option Y', color: '#8b5cf6' }
+          ]
+        });
+
+      expect(createResponse.status).toBe(201);
+      const pollId = createResponse.body.data.id;
+
+      const resultsResponse = await request(app)
+        .get(`/api/polls/${pollId}/results`);
+
+      expect(resultsResponse.status).toBe(200);
+      expect(resultsResponse.body.success).toBe(true);
+      const resultOptions = resultsResponse.body.data.results.options;
+      expect(resultOptions[0].color).toBe('#f59e0b');
+      expect(resultOptions[1].color).toBe('#8b5cf6');
+    });
+
+    test('should update useCustomColors on poll update', async () => {
+      const csrfToken = 'test-csrf-token-update-colors';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      // Create a poll without custom colors
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Poll to Enable Colors On',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          useCustomColors: false,
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      expect(createResponse.status).toBe(201);
+      const pollId = createResponse.body.data.id;
+      expect(createResponse.body.data.useCustomColors).toBe(false);
+
+      // Update to enable custom colors
+      const updateResponse = await request(app)
+        .put(`/api/polls/${pollId}`)
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          useCustomColors: true
+        });
+
+      expect(updateResponse.status).toBe(200);
+      expect(updateResponse.body.success).toBe(true);
+      expect(updateResponse.body.data.useCustomColors).toBe(true);
+    });
+  });
 });
