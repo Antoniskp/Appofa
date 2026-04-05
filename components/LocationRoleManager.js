@@ -319,8 +319,8 @@ export default function LocationRoleManager({ locationId, locationType }) {
 
   // Merge server definitions with local assignment state for display
   const displayRoles = rolesData.roles.map((def) => {
+    if (!(def.key in localAssignments)) return def;
     const localA = localAssignments[def.key];
-    if (!localA) return def;
     // If local differs from server assignment, use local (for optimistic display)
     const serverA = def.assignment;
     const changed =

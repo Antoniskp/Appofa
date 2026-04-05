@@ -125,14 +125,18 @@ exports.upsertRoles = async (req, res) => {
       }
     }
 
+    // Build a quick lookup: roleKey → definition (for sortOrder)
+    const defByKey = Object.fromEntries(definitions.map((d) => [d.key, d]));
+
     // Upsert each role
     const upserted = [];
     for (const entry of roles) {
       const { roleKey, personId = null, userId = null } = entry;
+      const sortOrder = defByKey[roleKey]?.order ?? 0;
 
       const [record] = await LocationRole.findOrCreate({
         where: { locationId, roleKey },
-        defaults: { locationId, roleKey, personId, userId, sortOrder: validKeys.size },
+        defaults: { locationId, roleKey, personId, userId, sortOrder },
       });
 
       if (record.personId !== personId || record.userId !== userId) {
