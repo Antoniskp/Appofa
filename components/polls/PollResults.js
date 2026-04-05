@@ -44,6 +44,7 @@ function hexToRgba(hex, alpha = 1) {
  */
 export default function PollResults({ poll, canView = true, canEdit = false }) {
   const [chartType, setChartType] = useState('bar'); // 'bar', 'pie', 'doughnut'
+  const [sortByVotes, setSortByVotes] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [isExportingJson, setIsExportingJson] = useState(false);
   const [exportError, setExportError] = useState('');
@@ -82,8 +83,10 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
     percentage: totalVotes > 0 ? ((option.voteCount || 0) / totalVotes * 100).toFixed(1) : 0,
   }));
   
-  // Sort by vote count descending
-  optionsWithStats.sort((a, b) => b.voteCount - a.voteCount);
+  // Sort by vote count descending only when sortByVotes is enabled
+  if (sortByVotes) {
+    optionsWithStats.sort((a, b) => b.voteCount - a.voteCount);
+  }
   
   // Chart data
   const defaultBackgroundColors = [
@@ -349,8 +352,20 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       
       {/* Detailed Results Table */}
       <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Λεπτομερή Αποτελέσματα</h3>
+          <button
+            onClick={() => setSortByVotes(prev => !prev)}
+            aria-pressed={sortByVotes}
+            aria-label="Εναλλαγή σειράς ταξινόμησης"
+            className={`px-3 py-1.5 rounded-md text-sm font-medium transition ${
+              sortByVotes
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {sortByVotes ? 'Κατά ψήφους' : 'Αρχική σειρά'}
+          </button>
         </div>
         
         <div className="divide-y divide-gray-200">
@@ -362,16 +377,9 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
             const rankStyle = hasCustomColor
               ? { backgroundColor: hexToRgba(option.color, 0.15), color: option.color }
               : undefined;
-            const progressClassName = hasCustomColor
-              ? 'h-3 rounded-full transition-all duration-500'
-              : 'bg-blue-600 h-3 rounded-full transition-all duration-500';
-            const progressStyle = {
-              width: `${option.percentage}%`,
-              ...(hasCustomColor ? { backgroundColor: option.color } : {})
-            };
             return (
               <div key={option.id} className="px-6 py-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className={rankClassName} style={rankStyle}>
                       {index + 1}
@@ -382,11 +390,6 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
                     <div className="text-lg font-bold text-gray-900">{option.voteCount}</div>
                     <div className="text-sm text-gray-500">{option.percentage}%</div>
                   </div>
-                </div>
-                
-                {/* Progress bar */}
-                <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div className={progressClassName} style={progressStyle}></div>
                 </div>
               </div>
             );
