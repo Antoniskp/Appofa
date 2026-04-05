@@ -330,7 +330,7 @@ function SectionForm({ locationId, initial, onSave, onCancel }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const { error: toastError } = useToast();
 
-  // For existing sections, type is always set; initialise content from initial prop.
+  // For existing sections, type is always set; initialize content from initial prop.
   const resolvedType = type || (initial?.type ?? 'official_links');
 
   const handleTypeSelect = (selectedType) => {
