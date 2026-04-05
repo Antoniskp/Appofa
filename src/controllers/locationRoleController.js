@@ -168,12 +168,12 @@ exports.upsertRoles = async (req, res) => {
       assignmentMap[a.roleKey] = a;
     }
 
-    const roles2 = definitions.map((def) => ({
+    const mergedRoles = definitions.map((def) => ({
       ...def,
       assignment: assignmentMap[def.key] || null,
     }));
 
-    return res.status(200).json({ success: true, locationType: location.type, roles: roles2 });
+    return res.status(200).json({ success: true, locationType: location.type, roles: mergedRoles });
   } catch (err) {
     console.error('upsertRoles error:', err);
     return res.status(500).json({ success: false, message: 'Server error' });
