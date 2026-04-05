@@ -88,48 +88,50 @@ export default function PollsPage() {
 
         {/* Search, Category Pills, and compact filters */}
         <div className="flex flex-col gap-4 mb-8">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <SearchInput
               name="search"
               placeholder="Αναζήτηση δημοσκοπήσεων..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="flex-grow max-w-md"
+              className="w-full sm:flex-grow sm:max-w-md min-w-0"
             />
-            <FilterBar
-              filters={filters}
-              onChange={handleFilterChange}
-              isOpen={filterBarOpen}
-              onToggle={() => setFilterBarOpen((prev) => !prev)}
-              filterConfig={[
-                {
-                  name: 'status',
-                  label: 'Κατάσταση',
-                  type: 'select',
-                  options: [
-                    { value: '', label: 'Όλες οι καταστάσεις' },
-                    { value: 'active', label: 'Ενεργές' },
-                    { value: 'closed', label: 'Κλειστές' },
-                  ],
-                },
-              ]}
-            />
-            <Link
-              href="/dream-team"
-              className="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium whitespace-nowrap"
-            >
-              <StarIcon className="h-5 w-5" />
-              Ιδανική Κυβέρνηση
-            </Link>
-            {user && (
+            <div className="flex items-center gap-3 flex-wrap">
+              <FilterBar
+                filters={filters}
+                onChange={handleFilterChange}
+                isOpen={filterBarOpen}
+                onToggle={() => setFilterBarOpen((prev) => !prev)}
+                filterConfig={[
+                  {
+                    name: 'status',
+                    label: 'Κατάσταση',
+                    type: 'select',
+                    options: [
+                      { value: '', label: 'Όλες οι καταστάσεις' },
+                      { value: 'active', label: 'Ενεργές' },
+                      { value: 'closed', label: 'Κλειστές' },
+                    ],
+                  },
+                ]}
+              />
               <Link
-                href="/polls/create"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+                href="/dream-team"
+                className="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium whitespace-nowrap"
               >
-                <PlusCircleIcon className="h-5 w-5" />
-                Νέα Δημοσκόπηση
+                <StarIcon className="h-5 w-5" />
+                Ιδανική Κυβέρνηση
               </Link>
-            )}
+              {user && (
+                <Link
+                  href="/polls/create"
+                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+                >
+                  <PlusCircleIcon className="h-5 w-5" />
+                  Νέα Δημοσκόπηση
+                </Link>
+              )}
+            </div>
           </div>
           <CategoryPills
             categories={(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat }))}

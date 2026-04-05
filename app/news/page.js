@@ -100,13 +100,13 @@ export default function NewsPage() {
 
         {/* Search and Category Pills */}
         <div className="flex flex-col gap-4 mb-8">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <SearchInput
               name="search"
               placeholder="Search news..."
               value={filters.search}
               onChange={handleSearchChange}
-              className="flex-grow max-w-md"
+              className="w-full sm:flex-grow sm:max-w-md min-w-0"
             />
             {user && (
               <Link

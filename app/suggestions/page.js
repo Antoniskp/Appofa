@@ -173,13 +173,13 @@ function SuggestionsContent() {
 
         {/* Search, Filters, and action button */}
         <div className="flex flex-col gap-4 mb-8">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <SearchInput
               name="search"
               placeholder="Αναζήτηση προτάσεων..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="flex-grow max-w-md"
+              className="w-full sm:flex-grow sm:max-w-md min-w-0"
             />
             <FilterBar
               filters={filters}
