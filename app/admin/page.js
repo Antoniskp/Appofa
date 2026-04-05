@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon, MapPinIcon, EnvelopeIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
@@ -54,6 +54,10 @@ function AdminDashboardContent() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('');
+  const [userPage, setUserPage] = useState(1);
+  const USERS_PER_PAGE = 20;
   const articlesTableRef = useRef(null);
 
   const { data: articles, loading, refetch } = useAsyncData(
@@ -129,6 +133,33 @@ function AdminDashboardContent() {
         console.error('Failed to fetch users:', error);
       }
     }
+  );
+
+  const filteredUsers = useMemo(() => {
+    let result = users || [];
+
+    if (userSearchQuery.trim()) {
+      const query = userSearchQuery.toLowerCase().trim();
+      result = result.filter(u =>
+        u.username?.toLowerCase().includes(query) ||
+        u.email?.toLowerCase().includes(query) ||
+        u.firstName?.toLowerCase().includes(query) ||
+        u.lastName?.toLowerCase().includes(query) ||
+        `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase().includes(query)
+      );
+    }
+
+    if (userRoleFilter) {
+      result = result.filter(u => u.role === userRoleFilter);
+    }
+
+    return result;
+  }, [users, userSearchQuery, userRoleFilter]);
+
+  const userTotalPages = Math.max(1, Math.ceil(filteredUsers.length / USERS_PER_PAGE));
+  const paginatedUsers = filteredUsers.slice(
+    (userPage - 1) * USERS_PER_PAGE,
+    userPage * USERS_PER_PAGE
   );
 
   const { data: locations } = useAsyncData(
@@ -611,7 +642,43 @@ function AdminDashboardContent() {
         {/* Users Table */}
         <Card 
           className="overflow-hidden mt-8"
-          header={<h2 className="text-xl font-semibold">Users</h2>}
+          header={
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <h2 className="text-xl font-semibold">
+                Users {filteredUsers.length !== (users || []).length && (
+                  <span className="text-sm font-normal text-gray-500">
+                    ({filteredUsers.length} of {(users || []).length})
+                  </span>
+                )}
+              </h2>
+              <div className="flex flex-wrap gap-2 items-center">
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={userSearchQuery}
+                  onChange={(e) => {
+                    setUserSearchQuery(e.target.value);
+                    setUserPage(1);
+                  }}
+                  className="border border-gray-300 rounded px-3 py-1 text-sm w-48 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <select
+                  value={userRoleFilter}
+                  onChange={(e) => {
+                    setUserRoleFilter(e.target.value);
+                    setUserPage(1);
+                  }}
+                  className="border border-gray-300 rounded px-2 py-1 text-sm"
+                >
+                  <option value="">All Roles</option>
+                  <option value="admin">Admin</option>
+                  <option value="moderator">Moderator</option>
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              </div>
+            </div>
+          }
         >
 
           <AdminTable
@@ -704,10 +771,17 @@ function AdminDashboardContent() {
                 }
               }
             ]}
-            data={users}
+            data={paginatedUsers}
             loading={usersLoading}
             emptyMessage="No users found."
             actions={false}
+          />
+          <Pagination
+            currentPage={userPage}
+            totalPages={userTotalPages}
+            onPageChange={setUserPage}
+            onPrevious={() => setUserPage(p => Math.max(1, p - 1))}
+            onNext={() => setUserPage(p => Math.min(userTotalPages, p + 1))}
           />
         </Card>
       </div>
