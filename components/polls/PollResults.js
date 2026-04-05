@@ -149,6 +149,10 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       },
       tooltip: {
         callbacks: {
+          title: function(contexts) {
+            const index = contexts[0]?.dataIndex;
+            return optionsWithStats[index]?.text ?? contexts[0]?.label ?? '';
+          },
           label: function(context) {
             const value = context.parsed.y;
             const total = context.dataset.data.reduce((a, b) => a + b, 0);
