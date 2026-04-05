@@ -6,6 +6,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { personRemovalRequestAPI } from '@/lib/api';
 import AdminTable from '@/components/admin/AdminTable';
 import Pagination from '@/components/ui/Pagination';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -77,6 +78,7 @@ function RemovalRequestsContent() {
   ];
 
   return (
+    <AdminLayout>
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Removal Requests</h1>
 
@@ -176,6 +178,7 @@ function RemovalRequestsContent() {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 }
 

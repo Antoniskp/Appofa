@@ -9,6 +9,9 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { useToast } from '@/components/ToastProvider';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 function PersonAvatar({ photo, name }) {
   const [imgError, setImgError] = useState(false);
@@ -43,8 +46,11 @@ function ClaimBadge({ status }) {
 export default function AdminPersonsPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { addToast } = useToast();
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const { data: profiles, loading, error, refetch } = useAsyncData(
     async () => {
@@ -65,16 +71,26 @@ export default function AdminPersonsPage() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this person profile?')) return;
+    setDeleteTargetId(id);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetId) return;
     try {
-      await personAPI.deleteProfile(id);
+      await personAPI.deleteProfile(deleteTargetId);
       refetch?.();
+      addToast('Profile deleted successfully!', { type: 'success' });
     } catch (err) {
-      alert(err.message || 'Failed to delete profile.');
+      addToast(err.message || 'Failed to delete profile.', { type: 'error' });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
     }
   };
 
   return (
+    <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
@@ -155,5 +171,16 @@ export default function AdminPersonsPage() {
         )}
       </div>
     </div>
+    <ConfirmDialog
+      isOpen={deleteDialogOpen}
+      onClose={() => { setDeleteDialogOpen(false); setDeleteTargetId(null); }}
+      onConfirm={confirmDelete}
+      title="Delete Profile"
+      message="Are you sure you want to delete this profile? This action cannot be undone."
+      confirmText="Delete"
+      cancelText="Cancel"
+      variant="danger"
+    />
+    </AdminLayout>
   );
 }

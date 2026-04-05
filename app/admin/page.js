@@ -18,6 +18,7 @@ import Tooltip from '@/components/ui/Tooltip';
 import Pagination from '@/components/ui/Pagination';
 import articleCategories from '@/config/articleCategories.json';
 import AdminHeader from '@/components/admin/AdminHeader';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
@@ -355,6 +356,7 @@ function AdminDashboardContent() {
     }
   }, [page]);
   return (
+    <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <AdminHeader title="Admin Dashboard" />
@@ -864,6 +866,7 @@ function AdminDashboardContent() {
         variant="primary"
       />
     </div>
+    </AdminLayout>
   );
 }
 

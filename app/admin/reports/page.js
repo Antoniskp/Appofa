@@ -7,6 +7,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { reportAPI, articleAPI, commentAPI } from '@/lib/api';
 import AdminTable from '@/components/admin/AdminTable';
 import Pagination from '@/components/ui/Pagination';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 const STATUS_COLORS = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -167,6 +168,7 @@ function ReportsContent() {
   const canDeleteContent = selectedReport && (selectedReport.contentType === 'article' || selectedReport.contentType === 'comment');
 
   return (
+    <AdminLayout>
     <div className="p-6">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Content Reports</h1>
 
@@ -349,6 +351,7 @@ function ReportsContent() {
         </div>
       )}
     </div>
+    </AdminLayout>
   );
 }
 

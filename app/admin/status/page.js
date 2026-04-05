@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { adminAPI } from '@/lib/api';
 import Badge from '@/components/ui/Badge';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 const statusStyles = {
   healthy: 'bg-green-50 border-green-200 text-green-800',
@@ -151,6 +152,7 @@ function HealthStatusContent() {
   };
 
   return (
+    <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -258,6 +260,7 @@ function HealthStatusContent() {
         )}
       </div>
     </div>
+    </AdminLayout>
   );
 }
 
