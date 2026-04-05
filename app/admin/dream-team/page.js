@@ -16,6 +16,9 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import PersonSearch from '@/components/dream-team/PersonSearch';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
+import { useToast } from '@/components/ToastProvider';
+import { ConfirmDialog } from '@/components/ui/Modal';
+import AdminHeader from '@/components/admin/AdminHeader';
 
 const positionTypesMap = positionTypesData.reduce((acc, pt) => {
   acc[pt.key] = pt;
@@ -66,10 +69,13 @@ function InlineEdit({ value, onSave, placeholder = '—', className = '' }) {
 
 // ─── Suggestions panel for one position ──────────────────────────────────────
 function SuggestionsPanel({ position, onRefresh }) {
+  const { addToast } = useToast();
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [newReason, setNewReason] = useState('');
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const handleAdd = async () => {
     if (!selectedPerson) return;
@@ -84,20 +90,25 @@ function SuggestionsPanel({ position, onRefresh }) {
       });
       setSelectedPerson(null); setNewReason(''); setAdding(false);
       onRefresh();
-    } catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); } finally { setSaving(false); }
+      addToast('Η πρόταση προστέθηκε επιτυχώς!', { type: 'success' });
+    } catch (err) { addToast(err.message || 'Σφάλμα αποθήκευσης', { type: 'error' }); } finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Διαγραφή πρότασης;')) return;
     try {
       await dreamTeamAPI.adminDeleteSuggestion(id);
       onRefresh();
-    } catch (err) { alert(err.message || 'Σφάλμα διαγραφής'); }
+      addToast('Η πρόταση διαγράφηκε επιτυχώς!', { type: 'success' });
+    } catch (err) { addToast(err.message || 'Σφάλμα διαγραφής', { type: 'error' }); }
   };
 
   const handleUpdateReason = async (suggestion, reason) => {
-    try { await dreamTeamAPI.adminUpdateSuggestion(suggestion.id, { reason: reason || null }); onRefresh(); }
-    catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); }
+    try {
+      await dreamTeamAPI.adminUpdateSuggestion(suggestion.id, { reason: reason || null });
+      onRefresh();
+      addToast('Ο λόγος ενημερώθηκε επιτυχώς!', { type: 'success' });
+    }
+    catch (err) { addToast(err.message || 'Σφάλμα αποθήκευσης', { type: 'error' }); }
   };
 
   const suggestions = position.aiSuggestions || [];
@@ -119,7 +130,7 @@ function SuggestionsPanel({ position, onRefresh }) {
             </p>
             <InlineEdit value={s.reason} onSave={(v) => handleUpdateReason(s, v)} placeholder="Λόγος..." className="text-xs text-gray-500 block" />
           </div>
-          <button onClick={() => handleDelete(s.id)} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity flex-shrink-0">
+          <button onClick={() => { setDeleteTargetId(s.id); setDeleteDialogOpen(true); }} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity flex-shrink-0">
             <TrashIcon className="h-4 w-4" />
           </button>
         </div>
@@ -146,16 +157,30 @@ function SuggestionsPanel({ position, onRefresh }) {
           <PlusIcon className="h-3.5 w-3.5" /> Προσθήκη πρότασης
         </button>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => { setDeleteDialogOpen(false); setDeleteTargetId(null); }}
+        onConfirm={() => handleDelete(deleteTargetId)}
+        title="Διαγραφή πρότασης"
+        message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την πρόταση;"
+        confirmText="Διαγραφή"
+        cancelText="Ακύρωση"
+        variant="danger"
+      />
     </div>
   );
 }
 
 // ─── Current holder panel for one position ───────────────────────────────────
 function HolderPanel({ position, onRefresh }) {
+  const { addToast } = useToast();
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [since, setSince] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   const activeHolder = (position.currentHolders || []).find((h) => h.isActive);
   const allHolders = position.currentHolders || [];
@@ -172,13 +197,13 @@ function HolderPanel({ position, onRefresh }) {
       });
       setAdding(false); setSelectedPerson(null); setSince('');
       onRefresh();
-    } catch (err) { alert(err.message || 'Σφάλμα αποθήκευσης'); } finally { setSaving(false); }
+      addToast('Ο κάτοχος προστέθηκε επιτυχώς!', { type: 'success' });
+    } catch (err) { addToast(err.message || 'Σφάλμα αποθήκευσης', { type: 'error' }); } finally { setSaving(false); }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Διαγραφή κατόχου;')) return;
-    try { await dreamTeamAPI.adminDeleteHolder(id); onRefresh(); }
-    catch (err) { alert(err.message || 'Σφάλμα διαγραφής'); }
+    try { await dreamTeamAPI.adminDeleteHolder(id); onRefresh(); addToast('Ο κάτοχος διαγράφηκε επιτυχώς!', { type: 'success' }); }
+    catch (err) { addToast(err.message || 'Σφάλμα διαγραφής', { type: 'error' }); }
   };
 
   const holderDisplayName = (h) => {
@@ -202,7 +227,7 @@ function HolderPanel({ position, onRefresh }) {
             {h.since && <p className="text-xs text-gray-400">από {new Date(h.since).toLocaleDateString('el-GR', { day: 'numeric', month: 'long', year: 'numeric' })}</p>}
           </div>
           {h.isActive && <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded flex-shrink-0">Ενεργός</span>}
-          <button onClick={() => handleDelete(h.id)} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity flex-shrink-0">
+          <button onClick={() => { setDeleteTargetId(h.id); setDeleteDialogOpen(true); }} className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-red-600 transition-opacity flex-shrink-0">
             <TrashIcon className="h-4 w-4" />
           </button>
         </div>
@@ -230,6 +255,17 @@ function HolderPanel({ position, onRefresh }) {
           {activeHolder ? 'Αλλαγή κατόχου' : 'Προσθήκη κατόχου'}
         </button>
       )}
+
+      <ConfirmDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => { setDeleteDialogOpen(false); setDeleteTargetId(null); }}
+        onConfirm={() => handleDelete(deleteTargetId)}
+        title="Διαγραφή κατόχου"
+        message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτόν τον κάτοχο;"
+        confirmText="Διαγραφή"
+        cancelText="Ακύρωση"
+        variant="danger"
+      />
     </div>
   );
 }
@@ -351,12 +387,10 @@ export default function AdminDreamTeamPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-4xl">
-        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Dream Team — Διαχείριση</h1>
-            <p className="text-sm text-gray-500 mt-1">Ορίστε τρέχοντες κατόχους θέσεων και προτάσεις AI ανά θέση.</p>
-          </div>
-        </div>
+        <AdminHeader
+          title="Dream Team — Διαχείριση"
+          subtitle="Ορίστε τρέχοντες κατόχους θέσεων και προτάσεις AI ανά θέση."
+        />
 
         {loading && <SkeletonLoader count={5} type="card" />}
         {error && <p className="text-red-500 text-sm">Αποτυχία φόρτωσης δεδομένων.</p>}
