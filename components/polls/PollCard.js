@@ -159,12 +159,14 @@ export default function PollCard({ poll, variant = 'grid' }) {
 
       currentAngle = endAngle;
 
+      // Skip tiny segments that would be nearly invisible as SVG arcs
       if (angle < 0.5) {
         return null;
       }
 
       const color = chartColors[index % chartColors.length];
 
+      // Treat near-360° arcs as full circles to avoid SVG degenerate-arc rendering issues
       if (angle >= 359.99) {
         return {
           isFullCircle: true,
