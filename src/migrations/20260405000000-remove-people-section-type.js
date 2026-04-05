@@ -13,34 +13,37 @@ module.exports = {
     const dialect = queryInterface.sequelize.getDialect();
     if (dialect !== 'postgres') return;
 
+    // Remove any existing 'people' sections (there should be none)
+    await queryInterface.sequelize.query(
+      `DELETE FROM "LocationSections" WHERE type = 'people';`
+    );
+
+    // Recreate enum without 'people'
     await queryInterface.sequelize.query(`
-      -- 1. Remove any orphaned rows (there should be none, but be safe)
-      DELETE FROM "LocationSections" WHERE type = 'people';
-
-      -- 2. Rename old enum
       ALTER TYPE "enum_LocationSections_type" RENAME TO "enum_LocationSections_type_old";
-
-      -- 3. Create new enum without 'people'
+    `);
+    await queryInterface.sequelize.query(`
       CREATE TYPE "enum_LocationSections_type" AS ENUM (
-        'official_links',
-        'contacts',
-        'webcams',
-        'announcements',
-        'news_sources'
+        'official_links', 'contacts', 'webcams', 'announcements', 'news_sources'
       );
-
-      -- 4. Alter column to use new enum (cast through text)
+    `);
+    await queryInterface.sequelize.query(`
       ALTER TABLE "LocationSections"
         ALTER COLUMN type TYPE "enum_LocationSections_type"
         USING type::text::"enum_LocationSections_type";
-
-      -- 5. Drop old enum
+    `);
+    await queryInterface.sequelize.query(`
       DROP TYPE "enum_LocationSections_type_old";
     `);
   },
 
-  async down() {
-    // Re-adding a removed enum value is possible but not necessary since there
-    // is no data to restore. Treat down() as a no-op.
+  async down(queryInterface) {
+    const dialect = queryInterface.sequelize.getDialect();
+    if (dialect !== 'postgres') return;
+
+    // Re-add 'people' value
+    await queryInterface.sequelize.query(`
+      ALTER TYPE "enum_LocationSections_type" ADD VALUE IF NOT EXISTS 'people';
+    `);
   }
 };
