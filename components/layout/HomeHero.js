@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { statsAPI, heroSettingsAPI } from '@/lib/api';
@@ -8,6 +8,7 @@ import {
   MapPinIcon, 
   ChartBarIcon,
   ArrowRightIcon,
+  ArrowLeftIcon,
   UsersIcon,
   ChatBubbleLeftRightIcon,
   CheckBadgeIcon,
@@ -21,6 +22,9 @@ import {
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
+const DEFAULT_TITLE = 'Αποφάσεις που ξεκινούν από εσένα.';
+const DEFAULT_SUBTITLE = 'Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.';
+const SLIDE_INTERVAL_MS = 5000;
 
 const NAV_CARDS = [
   {
@@ -81,6 +85,10 @@ export default function HomeHero() {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [heroBg, setHeroBg] = useState({ type: 'color', value: DEFAULT_BG_COLOR });
+  const [activeSlides, setActiveSlides] = useState([]);
+  const [currentSlideIdx, setCurrentSlideIdx] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     statsAPI.getCommunityStats()
@@ -107,6 +115,34 @@ export default function HomeHero() {
       .catch(() => {});
   }, []);
 
+  useEffect(() => {
+    heroSettingsAPI.getSlides()
+      .then((res) => {
+        if (res?.success && Array.isArray(res.data)) {
+          setActiveSlides(res.data);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setCurrentSlideIdx((idx) => (idx + 1) % activeSlides.length);
+  }, [activeSlides.length]);
+
+  const goToPrev = useCallback(() => {
+    setCurrentSlideIdx((idx) => (idx - 1 + activeSlides.length) % activeSlides.length);
+  }, [activeSlides.length]);
+
+  // Auto-rotation
+  useEffect(() => {
+    if (activeSlides.length <= 1 || isHovered) {
+      clearInterval(intervalRef.current);
+      return;
+    }
+    intervalRef.current = setInterval(goToNext, SLIDE_INTERVAL_MS);
+    return () => clearInterval(intervalRef.current);
+  }, [activeSlides.length, isHovered, goToNext]);
+
   const metrics = stats ? [
     { label: 'Χρήστες',       value: stats.totalUsers,    icon: UsersIcon },
     { label: 'Ψηφοφορίες',    value: stats.totalPolls,    icon: ChartBarIcon },
@@ -123,10 +159,23 @@ export default function HomeHero() {
         }
       : { backgroundColor: heroBg.value };
 
+  // Determine current slide text
+  const currentSlide = activeSlides.length > 0 ? activeSlides[currentSlideIdx] : null;
+  const displayTitle = currentSlide ? currentSlide.title : DEFAULT_TITLE;
+  const displaySubtitle = currentSlide ? currentSlide.subtitle : DEFAULT_SUBTITLE;
+  const hasLink = currentSlide && currentSlide.linkUrl && /^https?:\/\//.test(currentSlide.linkUrl);
+  const linkText = (currentSlide && currentSlide.linkText) ? currentSlide.linkText : 'Μάθε περισσότερα';
+  const showArrows = activeSlides.length >= 2;
+
   return (
     <>
       {/* Hero banner */}
-      <section className="relative overflow-hidden text-white" style={heroStyle}>
+      <section
+        className="relative overflow-hidden text-white"
+        style={heroStyle}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
         {/* Dark overlay for image backgrounds */}
         {heroBg.type === 'image' && (
           <div className="absolute inset-0 bg-black/55 pointer-events-none" />
@@ -143,13 +192,65 @@ export default function HomeHero() {
                 </p>
               )}
 
-              <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight">
-                Αποφάσεις που ξεκινούν από εσένα.
-              </h1>
+              {/* Slide title/subtitle with transition */}
+              <div className="relative min-h-[5rem]">
+                <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight transition-opacity duration-500">
+                  {displayTitle}
+                </h1>
+                <p className="text-base text-white/80 mb-3 transition-opacity duration-500">
+                  {displaySubtitle}
+                </p>
+              </div>
 
-              <p className="text-base text-white/80 mb-5">
-                Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.
-              </p>
+              {/* Optional CTA link from slide */}
+              {hasLink && (
+                <div className="mb-3">
+                  <a
+                    href={currentSlide.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                  >
+                    {linkText}
+                    <ArrowRightIcon className="w-4 h-4" />
+                  </a>
+                </div>
+              )}
+
+              {/* Arrow navigation */}
+              {showArrows && (
+                <div className="flex items-center gap-3 mb-4">
+                  <button
+                    onClick={goToPrev}
+                    aria-label="Προηγούμενο slide"
+                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/20"
+                  >
+                    <ArrowLeftIcon className="w-5 h-5" />
+                  </button>
+                  {/* Dot indicators */}
+                  <div className="flex gap-1.5" role="tablist" aria-label="Slides">
+                    {activeSlides.map((slide, idx) => (
+                      <button
+                        key={slide.id}
+                        role="tab"
+                        aria-selected={idx === currentSlideIdx}
+                        aria-label={`Slide ${idx + 1}`}
+                        onClick={() => setCurrentSlideIdx(idx)}
+                        className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 ${
+                          idx === currentSlideIdx ? 'bg-white w-4' : 'bg-white/40 hover:bg-white/60'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={goToNext}
+                    aria-label="Επόμενο slide"
+                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/20"
+                  >
+                    <ArrowRightIcon className="w-5 h-5" />
+                  </button>
+                </div>
+              )}
 
               <div className="flex flex-wrap gap-3">
                 <Link 

@@ -1,4 +1,15 @@
 {
   "backgroundImageUrl": "",
-  "backgroundColor": "#1a2a3a"
+  "backgroundColor": "#1a2a3a",
+  "slides": [
+    {
+      "id": "default-slide-1",
+      "title": "Αποφάσεις που ξεκινούν από εσένα.",
+      "subtitle": "Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.",
+      "linkUrl": "",
+      "linkText": "",
+      "isActive": true,
+      "order": 1
+    }
+  ]
 }
