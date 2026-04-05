@@ -63,7 +63,7 @@ export default function PersonSearch({
     setSearching(true);
     try {
       const [profileRes, userRes] = await Promise.allSettled([
-        apiRequest('/api/persons?limit=8'),
+        apiRequest('/api/persons?limit=8&claimStatus=all'),
         includeUsers ? apiRequest('/api/auth/users/search?limit=8') : Promise.resolve(null),
       ]);
       if (myId !== requestIdRef.current) return;
@@ -115,7 +115,7 @@ export default function PersonSearch({
         // Send raw query; backend already handles Greek normalization + raw matching.
         const encodedQ = encodeURIComponent(q.trim());
         const [profileRes, userRes] = await Promise.allSettled([
-          apiRequest(`/api/persons?search=${encodedQ}&limit=8`),
+          apiRequest(`/api/persons?search=${encodedQ}&limit=8&claimStatus=all`),
           includeUsers
             ? apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`)
             : Promise.resolve(null),

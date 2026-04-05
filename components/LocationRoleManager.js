@@ -36,7 +36,7 @@ function AssigneePicker({ onSelect, onClose }) {
       setSearching(true);
       try {
         const [personRes, userRes] = await Promise.all([
-          apiRequest(`/api/persons?search=${encodeURIComponent(query)}&limit=5`),
+          apiRequest(`/api/persons?search=${encodeURIComponent(query)}&limit=5&claimStatus=all`),
           apiRequest(`/api/auth/users/search?search=${encodeURIComponent(query)}&limit=5`),
         ]);
         setResults({

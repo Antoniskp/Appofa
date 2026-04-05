@@ -72,7 +72,7 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
 
   const where = {};
   if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
-  if (claimStatus) where.claimStatus = claimStatus;
+  if (claimStatus && claimStatus !== 'all') where.claimStatus = claimStatus;
   if (search) {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
