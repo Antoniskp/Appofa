@@ -171,8 +171,8 @@ export default function PersonsPage() {
               currentPage={page}
               totalPages={totalPages}
               onNext={nextPage}
-              onPrev={prevPage}
-              onGoTo={goToPage}
+              onPrevious={prevPage}
+              onPageChange={goToPage}
             />
           </div>
         )}
