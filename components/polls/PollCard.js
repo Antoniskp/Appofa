@@ -126,10 +126,19 @@ export default function PollCard({ poll, variant = 'grid' }) {
     
     if (totalVotesForResults === 0) {
       return (
-        <div className="h-32 bg-gradient-to-br from-gray-50 to-white flex items-center justify-center">
-          <div className="text-center text-sm text-gray-500">
-            <div className="text-xs font-semibold mb-1">Χωρίς ψήφους</div>
+        <div className="h-32 bg-gradient-to-br from-gray-50 to-white px-4 flex items-center justify-between gap-4">
+          <div className="flex items-center">
+            <div className="relative">
+              <svg width="128" height="128" viewBox="0 0 100 100" className="block">
+                <circle cx="50" cy="50" r="40" fill="#e5e7eb" />
+                <circle cx="50" cy="50" r="25" fill="white" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center text-center text-xs">
+                <div className="text-gray-400 font-semibold leading-tight px-1">Χωρίς ψήφους</div>
+              </div>
+            </div>
           </div>
+          <div className="flex-1 min-w-0" />
         </div>
       );
     }
@@ -147,6 +156,24 @@ export default function PollCard({ poll, variant = 'grid' }) {
       
       const startAngle = currentAngle;
       const endAngle = currentAngle + angle;
+
+      currentAngle = endAngle;
+
+      if (angle < 0.5) {
+        return null;
+      }
+
+      const color = chartColors[index % chartColors.length];
+
+      if (angle >= 359.99) {
+        return {
+          isFullCircle: true,
+          color,
+          percentage: (percentage * 100).toFixed(0),
+          label: option.text,
+          votes: option.voteCount || 0,
+        };
+      }
       
       const startRad = (startAngle * Math.PI) / 180;
       const endRad = (endAngle * Math.PI) / 180;
@@ -171,16 +198,15 @@ export default function PollCard({ poll, variant = 'grid' }) {
         Z
       `;
       
-      currentAngle = endAngle;
-      
       return {
+        isFullCircle: false,
         path,
-        color: chartColors[index % chartColors.length],
+        color,
         percentage: (percentage * 100).toFixed(0),
         label: option.text,
         votes: option.voteCount || 0,
       };
-    });
+    }).filter(Boolean);
 
     const topOptions = [...segments]
       .sort((a, b) => b.votes - a.votes)
@@ -191,15 +217,22 @@ export default function PollCard({ poll, variant = 'grid' }) {
         <div className="flex items-center">
           <div className="relative">
             <svg width="128" height="128" viewBox="0 0 100 100" className="block">
-              {segments.map((segment, index) => (
-                <path
-                  key={index}
-                  d={segment.path}
-                  fill={segment.color}
-                  stroke="white"
-                  strokeWidth="1"
-                />
-              ))}
+              {segments.map((segment, index) =>
+                segment.isFullCircle ? (
+                  <g key={index}>
+                    <circle cx={cx} cy={cy} r={radius} fill={segment.color} stroke="white" strokeWidth="1" />
+                    <circle cx={cx} cy={cy} r={innerRadius} fill="white" />
+                  </g>
+                ) : (
+                  <path
+                    key={index}
+                    d={segment.path}
+                    fill={segment.color}
+                    stroke="white"
+                    strokeWidth="1"
+                  />
+                )
+              )}
             </svg>
             <div className="absolute inset-0 flex items-center justify-center text-center text-xs">
               <div>
