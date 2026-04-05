@@ -93,6 +93,9 @@ export default function PollCard({ poll, variant = 'grid' }) {
     '#14B8A6', // teal-600
     '#EF4444', // red-600
   ];
+
+  // Default colors for binary polls (green for Yes / red for No)
+  const BINARY_DEFAULTS = ['#16a34a', '#dc2626'];
   
   // Type badge variant mapping
   const getTypeBadge = (type) => {
@@ -164,7 +167,11 @@ export default function PollCard({ poll, variant = 'grid' }) {
         return null;
       }
 
-      const color = (poll.useCustomColors && option.color) ? option.color : chartColors[index % chartColors.length];
+      const color = (poll.useCustomColors && option.color)
+        ? option.color
+        : (poll.type === 'binary' && index < BINARY_DEFAULTS.length)
+          ? BINARY_DEFAULTS[index]
+          : chartColors[index % chartColors.length];
 
       // Treat near-360° arcs as full circles to avoid SVG degenerate-arc rendering issues
       if (angle >= 359.99) {
@@ -297,37 +304,39 @@ export default function PollCard({ poll, variant = 'grid' }) {
       const total = counts.reduce((s, o) => s + (o.voteCount || 0), 0);
       return (
         <div className="mt-3 space-y-1.5">
-          {counts.map((option) => {
+          {counts.map((option, idx) => {
             const pct = total > 0 ? Math.round(((option.voteCount || 0) / total) * 100) : 0;
             const isVoted = option.id === inlineVotedId;
             const customColor = (poll.useCustomColors && option.color) ? option.color : null;
-            const labelClass = `font-medium truncate max-w-[70%] ${isVoted && !customColor ? 'text-blue-700' : 'text-gray-700'}`;
-            const pctClass = `font-semibold ${isVoted && !customColor ? 'text-blue-700' : 'text-gray-500'}`;
-            const barClass = `h-full rounded-full transition-all duration-500 ${isVoted && customColor ? '' : isVoted ? 'bg-blue-500' : 'bg-gray-300'}`;
+            const isBinaryDefault = !customColor && poll.type === 'binary' && idx < BINARY_DEFAULTS.length;
+            const barColor = customColor || (isBinaryDefault ? BINARY_DEFAULTS[idx] : null);
+            const labelClass = `font-medium truncate max-w-[70%] ${isVoted && !barColor ? 'text-blue-700' : 'text-gray-700'}`;
+            const pctClass = `font-semibold ${isVoted && !barColor ? 'text-blue-700' : 'text-gray-500'}`;
+            const barClass = `h-full rounded-full transition-all duration-500 ${barColor ? '' : isVoted ? 'bg-blue-500' : 'bg-gray-300'}`;
             return (
               <div key={option.id} className="relative">
                 <div className="flex items-center justify-between text-xs mb-0.5">
                   <span
                     className={labelClass}
-                    style={customColor && isVoted ? { color: customColor } : undefined}
+                    style={barColor && isVoted ? { color: barColor } : undefined}
                   >
                     {isVoted && (
                       <CheckCircleIcon
-                        className={`h-3.5 w-3.5 inline mr-1${!customColor ? ' text-blue-600' : ''}`}
-                        style={customColor ? { color: customColor } : undefined}
+                        className={`h-3.5 w-3.5 inline mr-1${!barColor ? ' text-blue-600' : ''}`}
+                        style={barColor ? { color: barColor } : undefined}
                       />
                     )}
                     {option.text}
                   </span>
                   <span
                     className={pctClass}
-                    style={customColor && isVoted ? { color: customColor } : undefined}
+                    style={barColor && isVoted ? { color: barColor } : undefined}
                   >{pct}%</span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
                   <div
                     className={barClass}
-                    style={{ width: `${pct}%`, ...(customColor && isVoted ? { backgroundColor: customColor } : {}) }}
+                    style={{ width: `${pct}%`, ...(barColor ? { backgroundColor: barColor } : {}) }}
                   />
                 </div>
               </div>
