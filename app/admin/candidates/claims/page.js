@@ -104,8 +104,8 @@ export default function AdminClaimsPage() {
           <div className="mt-6">
             <Pagination currentPage={page} totalPages={totalPages}
               onNext={() => setPage((p) => Math.min(p + 1, totalPages))}
-              onPrev={() => setPage((p) => Math.max(p - 1, 1))}
-              onGoTo={(p) => setPage(p)} />
+              onPrevious={() => setPage((p) => Math.max(p - 1, 1))}
+              onPageChange={(p) => setPage(p)} />
           </div>
         )}
       </div>
