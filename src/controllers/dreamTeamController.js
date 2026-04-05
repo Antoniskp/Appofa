@@ -670,11 +670,8 @@ const dreamTeamController = {
         }
       }
 
-      // Deactivate any existing active holder for this position
-      await GovernmentCurrentHolder.update(
-        { isActive: false },
-        { where: { positionId, isActive: true }, validate: false }
-      );
+      // Delete any existing holders for this position (stale data should not be kept)
+      await GovernmentCurrentHolder.destroy({ where: { positionId } });
 
       const holder = await GovernmentCurrentHolder.create({
         positionId,
