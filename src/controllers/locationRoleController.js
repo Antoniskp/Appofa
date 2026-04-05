@@ -27,11 +27,8 @@ async function syncLocationRoleToHolder(roleKey, personId, userId) {
       return;
     }
 
-    // Deactivate any existing active holders for this position
-    await GovernmentCurrentHolder.update(
-      { isActive: false },
-      { where: { positionId: position.id, isActive: true }, validate: false }
-    );
+    // Delete all existing holders for this position (stale data should not be kept)
+    await GovernmentCurrentHolder.destroy({ where: { positionId: position.id } });
 
     // Create a new active holder if someone is assigned
     if (personId || userId) {
