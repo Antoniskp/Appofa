@@ -413,13 +413,17 @@ function BinarySplitBar({ options, totalVotes, useCustomColors }) {
       {/* Split bar */}
       <div className="flex w-full h-8 rounded-full overflow-hidden">
         <div
-          className={`flex items-center justify-center text-white text-xs font-bold transition-all duration-500${color1 ? '' : ' bg-green-500'}`}
+          className={color1
+            ? 'flex items-center justify-center text-white text-xs font-bold transition-all duration-500'
+            : 'bg-green-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500'}
           style={{ width: `${pct1}%`, ...(color1 ? { backgroundColor: color1 } : {}) }}
         >
           {pct1 > 8 && `${pct1}%`}
         </div>
         <div
-          className={`flex items-center justify-center text-white text-xs font-bold transition-all duration-500${color2 ? '' : ' bg-red-500'}`}
+          className={color2
+            ? 'flex items-center justify-center text-white text-xs font-bold transition-all duration-500'
+            : 'bg-red-500 flex items-center justify-center text-white text-xs font-bold transition-all duration-500'}
           style={{ width: `${pct2}%`, ...(color2 ? { backgroundColor: color2 } : {}) }}
         >
           {pct2 > 8 && `${pct2}%`}
