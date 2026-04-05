@@ -119,7 +119,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
     : defaultBorderColors;
 
   const chartData = {
-    labels: optionsWithStats.map(opt => opt.text),
+    labels: optionsWithStats.map(opt => opt.text.length > 30 ? opt.text.slice(0, 30) + '…' : opt.text),
     datasets: [
       {
         label: 'Ψήφοι',
@@ -163,6 +163,15 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
         beginAtZero: true,
         ticks: {
           stepSize: 1,
+        },
+      },
+      x: {
+        ticks: {
+          maxRotation: 45,
+          minRotation: 0,
+          font: {
+            size: 11,
+          },
         },
       },
     },
@@ -343,7 +352,7 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
       
       {/* Chart Display */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div style={{ height: '400px' }}>
+        <div style={{ height: Math.max(400, optionsWithStats.length * 50) + 'px' }}>
           {chartType === 'bar' && <Bar ref={chartRef} data={chartData} options={barOptions} />}
           {chartType === 'pie' && <Pie ref={chartRef} data={chartData} options={pieOptions} />}
           {chartType === 'doughnut' && <Doughnut ref={chartRef} data={chartData} options={pieOptions} />}
