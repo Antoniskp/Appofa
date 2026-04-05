@@ -663,7 +663,7 @@ const dreamTeamController = {
       // Deactivate any existing active holder for this position
       await GovernmentCurrentHolder.update(
         { isActive: false },
-        { where: { positionId, isActive: true } }
+        { where: { positionId, isActive: true }, validate: false }
       );
 
       const holder = await GovernmentCurrentHolder.create({
