@@ -15,6 +15,6 @@ module.exports = {
   },
 
   async down() {
-    // Deleted rows cannot be restored; this migration is intentionally irreversible.
+    throw new Error('This migration cannot be reversed as permanently deleted holder rows cannot be restored.');
   },
 };
