@@ -2,7 +2,7 @@
 
 Location Sections allow moderators and admins to add rich, structured "extra information" to any location page — beyond the core fields (name, coordinates, Wikipedia data, etc.).
 
-Sections are **predefined by type**, so they remain structured and secure while still giving moderators flexibility to describe official websites, contacts, important people, webcams, announcements, and local news sources.
+Sections are **predefined by type**, so they remain structured and secure while still giving moderators flexibility to describe official websites, contacts, webcams, announcements, and local news sources.
 
 ---
 
@@ -69,44 +69,14 @@ Phone numbers and email addresses for the location (e.g., town hall, tourist off
 
 ---
 
-### 3. `people` — Important People
+### 3. `webcams` — Webcams
 
-Key figures associated with the location: mayor, prime minister, regional governor, etc.
+Live camera feeds for the location.
 
-```json
-{
-  "people": [
-    {
-      "name": "Jane Doe",
-      "role": "Mayor",
-      "websiteUrl": "https://janedoe.gr",
-      "photoUrl": "https://cdn.example.com/janedoe.jpg"
-    },
-    {
-      "name": "John Smith",
-      "role": "Regional Governor"
-    }
-  ]
-}
-```
-
-| Field | Type | Required | Notes |
-|-------|------|----------|-------|
-| `people` | array | ✅ | Array of person objects |
-| `people[].name` | string | ✅ | Full name |
-| `people[].role` | string | ✅ | Official title or role |
-| `people[].websiteUrl` | string | ❌ | Must start with `https://` if provided |
-| `people[].photoUrl` | string | ❌ | Must start with `https://` if provided |
-
----
-
-### 4. `webcams` — Webcams
-
-Live camera feeds for the location. Three embed strategies are supported:
-
-- `"link"` — A simple link, opens in new tab (safest, always works)
-- `"image"` — Rendered as a `<img>` tag (for MJPEG stills/refreshing images)
-- `"iframe"` — Rendered in a sandboxed `<iframe>` (for interactive streams)
+The `embedType` field is **auto-detected server-side** and should not be set by the moderator UI:
+- URLs ending in `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp` → `"image"` (rendered as `<img>`)
+- All other URLs → `"link"` (shown as a clickable link)
+- `"iframe"` remains a valid stored value but is not auto-detected (set programmatically if needed)
 
 ```json
 {
@@ -114,17 +84,12 @@ Live camera feeds for the location. Three embed strategies are supported:
     {
       "label": "Town square",
       "url": "https://webcam.municipality.gr/live",
-      "embedType": "iframe"
+      "embedType": "link"
     },
     {
       "label": "Harbour view",
       "url": "https://cam.example.com/harbour.jpg",
       "embedType": "image"
-    },
-    {
-      "label": "Mountain cam",
-      "url": "https://cam.example.com/mountain",
-      "embedType": "link"
     }
   ]
 }
@@ -135,15 +100,20 @@ Live camera feeds for the location. Three embed strategies are supported:
 | `webcams` | array | ✅ | Array of webcam objects |
 | `webcams[].label` | string | ✅ | Human-readable label |
 | `webcams[].url` | string | ✅ | Must start with `https://` |
-| `webcams[].embedType` | string | ❌ | `"link"` (default), `"image"`, or `"iframe"` |
+| `webcams[].embedType` | string | ❌ | Auto-detected: `"link"` (default) or `"image"` (for image URLs) |
 
 > **Security note:** `iframe` embeds use `sandbox="allow-scripts allow-same-origin"` to limit risk. Arbitrary HTML is never allowed.
 
 ---
 
-### 5. `announcements` — Announcements
+### 4. `announcements` — Announcements
 
 Time-limited notices or alerts for the location. Items with an `endsAt` date in the past are automatically hidden on the public page.
+
+Priority levels used in the moderator UI:
+- **⚪ Normal** → `priority: 0` (shown with blue accent)
+- **🟡 Important** → `priority: 3` (shown with yellow accent)
+- **🔴 Urgent** → `priority: 5` (shown with red accent)
 
 ```json
 {
@@ -158,7 +128,7 @@ Time-limited notices or alerts for the location. Items with an `endsAt` date in 
     },
     {
       "title": "Summer festival",
-      "priority": 2
+      "priority": 0
     }
   ]
 }
@@ -169,14 +139,14 @@ Time-limited notices or alerts for the location. Items with an `endsAt` date in 
 | `items` | array | ✅ | Array of announcement objects |
 | `items[].title` | string | ✅ | Short heading |
 | `items[].body` | string | ❌ | Optional longer description |
-| `items[].startsAt` | ISO date string | ❌ | Display start date |
-| `items[].endsAt` | ISO date string | ❌ | Items past this date are hidden publicly |
+| `items[].startsAt` | ISO date string | ❌ | Display start date ("Show from") |
+| `items[].endsAt` | ISO date string | ❌ | Items past this date are hidden publicly ("Show until") |
 | `items[].linkUrl` | string | ❌ | Must start with `https://` if provided |
-| `items[].priority` | integer 0–10 | ❌ | Higher = shown first; ≥5 displayed in red, ≥3 in yellow |
+| `items[].priority` | integer 0–10 | ❌ | 0=Normal, 3=Important, 5=Urgent; higher values shown first |
 
 ---
 
-### 6. `news_sources` — Local News Sources
+### 5. `news_sources` — Local News Sources
 
 Links to local news outlets associated with the location.
 
@@ -211,7 +181,7 @@ Moderators and admins can manage sections directly on the public location page.
 
 | Action | Description |
 |--------|-------------|
-| **Add Section** | Choose a type, fill in the content form, optionally set a title override, and save |
+| **Add Section** | Click "Add Section" to open a visual card picker. Select a section type card, then fill in the content form and save |
 | **Edit** | Click the pencil icon on any section row to edit its content, title, and published status |
 | **Publish / Unpublish** | Click the eye icon to toggle visibility. Draft sections are shown only to moderators/admins |
 | **Reorder** | Use the ▲ / ▼ arrows on each row to change display order |
@@ -221,6 +191,10 @@ Moderators and admins can manage sections directly on the public location page.
 
 - **Draft** (`isPublished: false`): visible only to moderators/admins via the manager. Not shown on the public page.
 - **Published** (`isPublished: true`): shown on the public location page in `sortOrder`.
+
+### Title Override (Advanced)
+
+The section form hides the optional **Title Override** field behind an "⚙️ Advanced options" toggle to reduce visual noise. Click it to reveal the input and set a custom display title (overrides the default type name).
 
 ---
 
@@ -238,7 +212,7 @@ The `official_links`, `contacts`, `webcams`, and `news_sources` section types ar
 
 ### Body area
 
-All remaining section types (`people`, `announcements`) are rendered as full-width cards between the location header and the tabbed content area.
+All remaining section types (`announcements`) are rendered as full-width cards between the location header and the tabbed content area.
 
 ---
 
@@ -328,7 +302,6 @@ In `src/models/LocationSection.js`, add the new value to the `SECTION_TYPES` arr
 const SECTION_TYPES = [
   'official_links',
   'contacts',
-  'people',
   'webcams',
   'announcements',
   'news_sources',
@@ -338,7 +311,7 @@ const SECTION_TYPES = [
 
 ### 2. Add a migration
 
-Create a new migration file (e.g., `src/migrations/027-add-gallery-section-type.js`) to update the PostgreSQL enum:
+Create a new migration file (e.g., `src/migrations/YYYYMMDD-add-gallery-section-type.js`) to update the PostgreSQL enum:
 
 ```js
 module.exports = {
@@ -357,11 +330,15 @@ In `src/controllers/locationSectionController.js`, add a `case 'gallery':` block
 
 ### 4. Add a public renderer
 
-In `components/LocationSections.js`, add a new component (e.g., `GallerySection`) and a `case 'gallery':` entry in `SectionContent`.
+In `components/LocationSections.js`, add a new component (e.g., `GallerySection`) and a `case 'gallery':` entry in `SectionContent`. Also add entries to `DEFAULT_TITLES` and `SECTION_ICONS`.
 
 ### 5. Add a moderator editor
 
-In `components/LocationSectionManager.js`, add a new editor component and a `case 'gallery':` entry in `ContentEditor`. Also add a default `EMPTY_CONTENT.gallery` entry.
+In `components/LocationSectionManager.js`, add a new editor component and a `case 'gallery':` entry in `ContentEditor`. Also add:
+- `{ value: 'gallery', label: 'Gallery' }` to `SECTION_TYPES`
+- A description to `SECTION_DESCRIPTIONS`
+- An emoji to `SECTION_EMOJIS`
+- A default `EMPTY_CONTENT.gallery` entry
 
 ### 6. Update this document
 
@@ -375,12 +352,13 @@ All section content is validated server-side before saving.
 
 | Rule | Details |
 |------|---------|
-| `type` must be predefined | One of: `official_links`, `contacts`, `people`, `webcams`, `announcements`, `news_sources` |
+| `type` must be predefined | One of: `official_links`, `contacts`, `webcams`, `announcements`, `news_sources` |
 | `content` must be an object | Not null, not an array, not a string |
 | All URLs must use `https://` | `http://` URLs are rejected to enforce security |
 | Required string fields | See per-type tables above |
-| `webcams[].embedType` | Must be `"link"`, `"image"`, or `"iframe"` if specified |
+| `webcams[].embedType` | Auto-detected from URL; must be `"link"`, `"image"`, or `"iframe"` if explicitly provided |
 | Date fields | `startsAt` / `endsAt` must be parseable by `Date.parse()` |
 | `news_sources[].sources` | Must be a non-empty array; each entry needs `name` and `url` |
 
 See `src/controllers/locationSectionController.js` → `validateContent()` for the authoritative implementation.
+

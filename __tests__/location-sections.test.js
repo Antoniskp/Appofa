@@ -72,25 +72,36 @@ describe('Location Sections', () => {
       });
     });
 
-    describe('people', () => {
-      it('accepts valid people', () => {
-        expect(validateContent('people', {
-          people: [{ name: 'Jane', role: 'Mayor', websiteUrl: 'https://jane.com', photoUrl: 'https://img.com/j.jpg' }]
-        })).toBeNull();
-      });
-      it('rejects missing name', () => {
-        expect(validateContent('people', { people: [{ role: 'Mayor' }] })).not.toBeNull();
-      });
-      it('rejects non-https websiteUrl', () => {
-        expect(validateContent('people', { people: [{ name: 'Jane', role: 'Mayor', websiteUrl: 'http://jane.com' }] })).not.toBeNull();
-      });
-    });
-
     describe('webcams', () => {
-      it('accepts valid webcam', () => {
+      it('accepts valid webcam with explicit embedType', () => {
         expect(validateContent('webcams', {
           webcams: [{ label: 'Main cam', url: 'https://cam.example.com', embedType: 'image' }]
         })).toBeNull();
+      });
+      it('accepts webcam without embedType (auto-detected)', () => {
+        expect(validateContent('webcams', {
+          webcams: [{ label: 'Main cam', url: 'https://cam.example.com/stream' }]
+        })).toBeNull();
+      });
+      it('auto-detects image embedType for .jpg URL', () => {
+        const content = { webcams: [{ label: 'Still', url: 'https://cam.example.com/still.jpg' }] };
+        validateContent('webcams', content);
+        expect(content.webcams[0].embedType).toBe('image');
+      });
+      it('auto-detects image embedType for .png URL with query string', () => {
+        const content = { webcams: [{ label: 'Still', url: 'https://cam.example.com/still.png?t=1234' }] };
+        validateContent('webcams', content);
+        expect(content.webcams[0].embedType).toBe('image');
+      });
+      it('defaults embedType to link for non-image URLs', () => {
+        const content = { webcams: [{ label: 'Stream', url: 'https://cam.example.com/stream' }] };
+        validateContent('webcams', content);
+        expect(content.webcams[0].embedType).toBe('link');
+      });
+      it('preserves explicit iframe embedType', () => {
+        const content = { webcams: [{ label: 'Embed', url: 'https://cam.example.com/stream', embedType: 'iframe' }] };
+        validateContent('webcams', content);
+        expect(content.webcams[0].embedType).toBe('iframe');
       });
       it('rejects invalid embedType', () => {
         expect(validateContent('webcams', {
@@ -222,18 +233,19 @@ describe('Location Sections', () => {
   describe('CRUD operations', () => {
     let sectionId;
 
-    it('creates a people section', async () => {
+    it('creates a webcams section', async () => {
       const res = await request(app)
         .post(`/api/locations/${testLocation.id}/sections`)
         .set('Cookie', `auth_token=${adminToken}`)
         .send({
-          type: 'people',
-          content: { people: [{ name: 'Alice', role: 'Mayor' }] },
+          type: 'webcams',
+          content: { webcams: [{ label: 'Town square', url: 'https://cam.example.com/stream' }] },
           isPublished: true
         })
         .expect(201);
       sectionId = res.body.section.id;
-      expect(res.body.section.content.people[0].name).toBe('Alice');
+      expect(res.body.section.type).toBe('webcams');
+      expect(res.body.section.content.webcams[0].label).toBe('Town square');
     });
 
     it('creates a news_sources section', async () => {

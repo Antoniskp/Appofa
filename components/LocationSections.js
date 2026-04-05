@@ -1,6 +1,6 @@
 'use client';
 
-import { GlobeAltIcon, PhoneIcon, UserIcon, VideoCameraIcon, MegaphoneIcon, NewspaperIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, PhoneIcon, VideoCameraIcon, MegaphoneIcon, NewspaperIcon } from '@heroicons/react/24/outline';
 
 // ---------------------------------------------------------------------------
 // Default titles per section type
@@ -8,7 +8,6 @@ import { GlobeAltIcon, PhoneIcon, UserIcon, VideoCameraIcon, MegaphoneIcon, News
 const DEFAULT_TITLES = {
   official_links: 'Official Links',
   contacts: 'Contacts',
-  people: 'Important People',
   webcams: 'Live Webcams',
   announcements: 'Announcements',
   news_sources: 'Τοπικά Μέσα Ενημέρωσης',
@@ -17,7 +16,6 @@ const DEFAULT_TITLES = {
 const SECTION_ICONS = {
   official_links: GlobeAltIcon,
   contacts: PhoneIcon,
-  people: UserIcon,
   webcams: VideoCameraIcon,
   announcements: MegaphoneIcon,
   news_sources: NewspaperIcon,
@@ -84,45 +82,6 @@ function ContactsSection({ content }) {
           </ul>
         </div>
       )}
-    </div>
-  );
-}
-
-function PeopleSection({ content }) {
-  const people = content?.people || [];
-  if (people.length === 0) return <p className="text-gray-500 text-sm">No people listed.</p>;
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {people.map((person, i) => (
-        <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-          {person.photoUrl ? (
-            <img
-              src={person.photoUrl}
-              alt={person.name}
-              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-              <UserIcon className="w-6 h-6 text-blue-400" />
-            </div>
-          )}
-          <div className="min-w-0">
-            {person.websiteUrl ? (
-              <a
-                href={person.websiteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-semibold text-blue-600 hover:underline break-words"
-              >
-                {person.name}
-              </a>
-            ) : (
-              <p className="text-sm font-semibold text-gray-900 break-words">{person.name}</p>
-            )}
-            <p className="text-xs text-gray-500">{person.role}</p>
-          </div>
-        </div>
-      ))}
     </div>
   );
 }
@@ -317,7 +276,6 @@ function SectionContent({ type, content, compact = false }) {
   switch (type) {
     case 'official_links': return <OfficialLinksSection content={content} />;
     case 'contacts': return <ContactsSection content={content} />;
-    case 'people': return <PeopleSection content={content} />;
     case 'webcams': return <WebcamsSection content={content} compact={compact} />;
     case 'announcements': return <AnnouncementsSection content={content} />;
     case 'news_sources': return <NewsSourcesSection content={content} compact={compact} />;

@@ -55,32 +55,21 @@ const validateContent = (type, content) => {
       break;
     }
 
-    case 'people': {
-      const people = content.people;
-      if (!Array.isArray(people)) return 'people content must have a "people" array';
-      for (const person of people) {
-        if (!person.name || typeof person.name !== 'string') return 'Each person must have a string "name"';
-        if (!person.role || typeof person.role !== 'string') return 'Each person must have a string "role"';
-        if (person.websiteUrl && !isValidHttpsUrl(person.websiteUrl)) {
-          return `Person websiteUrl must start with https://: "${person.websiteUrl}"`;
-        }
-        if (person.photoUrl && !isValidHttpsUrl(person.photoUrl)) {
-          return `Person photoUrl must start with https://: "${person.photoUrl}"`;
-        }
-      }
-      break;
-    }
-
     case 'webcams': {
       const webcams = content.webcams;
       if (!Array.isArray(webcams)) return 'webcams content must have a "webcams" array';
       const validEmbedTypes = ['iframe', 'image', 'link'];
+      const imageExtensions = /\.(jpg|jpeg|png|gif|webp)$/i;
       for (const cam of webcams) {
         if (!cam.label || typeof cam.label !== 'string') return 'Each webcam must have a string "label"';
         if (!cam.url || typeof cam.url !== 'string') return 'Each webcam must have a string "url"';
         if (!isValidHttpsUrl(cam.url)) return `Webcam URL must start with https://: "${cam.url}"`;
         if (cam.embedType && !validEmbedTypes.includes(cam.embedType)) {
           return `Webcam embedType must be one of: ${validEmbedTypes.join(', ')}`;
+        }
+        // Auto-detect embedType from URL if not explicitly set to 'iframe'
+        if (!cam.embedType || cam.embedType === 'link') {
+          cam.embedType = imageExtensions.test(cam.url.split('?')[0]) ? 'image' : 'link';
         }
       }
       break;

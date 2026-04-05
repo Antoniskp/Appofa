@@ -21,18 +21,32 @@ import {
 const SECTION_TYPES = [
   { value: 'official_links', label: 'Official Links' },
   { value: 'contacts', label: 'Contacts' },
-  { value: 'people', label: 'Important People' },
   { value: 'webcams', label: 'Webcams' },
   { value: 'announcements', label: 'Announcements' },
   { value: 'news_sources', label: 'News Sources' },
 ];
 
+const SECTION_DESCRIPTIONS = {
+  official_links: 'Add links to official websites and portals',
+  contacts: 'Phone numbers and email addresses',
+  news_sources: 'Local news outlet URLs',
+  webcams: 'Live camera feeds for the location',
+  announcements: 'Time-limited notices and alerts',
+};
+
+const SECTION_EMOJIS = {
+  official_links: '🔗',
+  contacts: '📞',
+  news_sources: '📰',
+  webcams: '📷',
+  announcements: '📢',
+};
+
 const EMPTY_CONTENT = {
   official_links: { links: [{ label: '', url: '' }] },
   contacts: { phones: [], emails: [] },
-  people: { people: [{ name: '', role: '', websiteUrl: '', photoUrl: '' }] },
-  webcams: { webcams: [{ label: '', url: '', embedType: 'link' }] },
-  announcements: { items: [{ title: '', body: '', startsAt: '', endsAt: '', linkUrl: '', priority: 0 }] },
+  webcams: { webcams: [{ label: '', url: '' }] },
+  announcements: { items: [{ title: '', priority: 0 }] },
   news_sources: { sources: [{ name: '', url: '' }] },
 };
 
@@ -104,17 +118,34 @@ function ContactsEditor({ content, onChange }) {
   const phones = content?.phones || [];
   const emails = content?.emails || [];
 
-  const rowRenderer = (item, i, update) => (
+  const phoneRowRenderer = (item, i, update) => (
     <div className="grid grid-cols-2 gap-2">
       <input
         className="border rounded px-2 py-1 text-sm"
-        placeholder="Label"
+        placeholder="e.g. Town Hall"
         value={item.label}
         onChange={(e) => update(i, 'label', e.target.value)}
       />
       <input
         className="border rounded px-2 py-1 text-sm"
-        placeholder="Value"
+        placeholder="e.g. +30 210 000 0000"
+        value={item.value}
+        onChange={(e) => update(i, 'value', e.target.value)}
+      />
+    </div>
+  );
+
+  const emailRowRenderer = (item, i, update) => (
+    <div className="grid grid-cols-2 gap-2">
+      <input
+        className="border rounded px-2 py-1 text-sm"
+        placeholder="e.g. General enquiries"
+        value={item.label}
+        onChange={(e) => update(i, 'label', e.target.value)}
+      />
+      <input
+        className="border rounded px-2 py-1 text-sm"
+        placeholder="e.g. info@municipality.gr"
         value={item.value}
         onChange={(e) => update(i, 'value', e.target.value)}
       />
@@ -129,7 +160,7 @@ function ContactsEditor({ content, onChange }) {
           items={phones}
           setItems={(p) => onChange({ phones: p, emails })}
           newRow={{ label: '', value: '' }}
-          renderRow={rowRenderer}
+          renderRow={phoneRowRenderer}
         />
       </div>
       <div>
@@ -138,50 +169,10 @@ function ContactsEditor({ content, onChange }) {
           items={emails}
           setItems={(e) => onChange({ phones, emails: e })}
           newRow={{ label: '', value: '' }}
-          renderRow={rowRenderer}
+          renderRow={emailRowRenderer}
         />
       </div>
     </div>
-  );
-}
-
-function PeopleEditor({ content, onChange }) {
-  const people = content?.people || [];
-  const setPeople = (p) => onChange({ people: p });
-  return (
-    <RepeatingRows
-      items={people}
-      setItems={setPeople}
-      newRow={{ name: '', role: '', websiteUrl: '', photoUrl: '' }}
-      renderRow={(item, i, update) => (
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            placeholder="Name"
-            value={item.name}
-            onChange={(e) => update(i, 'name', e.target.value)}
-          />
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            placeholder="Role (e.g. Mayor)"
-            value={item.role}
-            onChange={(e) => update(i, 'role', e.target.value)}
-          />
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            placeholder="Website URL (optional, https://)"
-            value={item.websiteUrl}
-            onChange={(e) => update(i, 'websiteUrl', e.target.value)}
-          />
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            placeholder="Photo URL (optional, https://)"
-            value={item.photoUrl}
-            onChange={(e) => update(i, 'photoUrl', e.target.value)}
-          />
-        </div>
-      )}
-    />
   );
 }
 
@@ -192,9 +183,9 @@ function WebcamsEditor({ content, onChange }) {
     <RepeatingRows
       items={webcams}
       setItems={setWebcams}
-      newRow={{ label: '', url: '', embedType: 'link' }}
+      newRow={{ label: '', url: '' }}
       renderRow={(item, i, update) => (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <input
             className="border rounded px-2 py-1 text-sm"
             placeholder="Label"
@@ -202,20 +193,11 @@ function WebcamsEditor({ content, onChange }) {
             onChange={(e) => update(i, 'label', e.target.value)}
           />
           <input
-            className="border rounded px-2 py-1 text-sm col-span-1"
+            className="border rounded px-2 py-1 text-sm"
             placeholder="https://..."
             value={item.url}
             onChange={(e) => update(i, 'url', e.target.value)}
           />
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={item.embedType}
-            onChange={(e) => update(i, 'embedType', e.target.value)}
-          >
-            <option value="link">Link only</option>
-            <option value="image">Image (MJPEG/still)</option>
-            <option value="iframe">iFrame embed</option>
-          </select>
         </div>
       )}
     />
@@ -229,7 +211,7 @@ function AnnouncementsEditor({ content, onChange }) {
     <RepeatingRows
       items={items}
       setItems={setItems}
-      newRow={{ title: '', body: '', startsAt: '', endsAt: '', linkUrl: '', priority: 0 }}
+      newRow={{ title: '', priority: 0 }}
       renderRow={(item, i, update) => (
         <div className="space-y-2">
           <input
@@ -242,40 +224,52 @@ function AnnouncementsEditor({ content, onChange }) {
             className="border rounded px-2 py-1 text-sm w-full"
             placeholder="Body (optional)"
             rows={2}
-            value={item.body}
+            value={item.body || ''}
             onChange={(e) => update(i, 'body', e.target.value)}
           />
-          <div className="grid grid-cols-3 gap-2">
-            <input
-              className="border rounded px-2 py-1 text-sm"
-              type="date"
-              placeholder="Starts at"
-              value={item.startsAt ? item.startsAt.slice(0, 10) : ''}
-              onChange={(e) => update(i, 'startsAt', e.target.value || '')}
-            />
-            <input
-              className="border rounded px-2 py-1 text-sm"
-              type="date"
-              placeholder="Ends at"
-              value={item.endsAt ? item.endsAt.slice(0, 10) : ''}
-              onChange={(e) => update(i, 'endsAt', e.target.value || '')}
-            />
-            <input
-              className="border rounded px-2 py-1 text-sm"
-              type="number"
-              min={0}
-              max={10}
-              placeholder="Priority (0-10)"
-              value={item.priority}
-              onChange={(e) => update(i, 'priority', parseInt(e.target.value, 10) || 0)}
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Show from <span className="text-gray-400">(optional)</span></label>
+              <input
+                className="border rounded px-2 py-1 text-sm w-full"
+                type="date"
+                value={item.startsAt ? item.startsAt.slice(0, 10) : ''}
+                onChange={(e) => update(i, 'startsAt', e.target.value || '')}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Show until <span className="text-gray-400">(optional)</span></label>
+              <input
+                className="border rounded px-2 py-1 text-sm w-full"
+                type="date"
+                value={item.endsAt ? item.endsAt.slice(0, 10) : ''}
+                onChange={(e) => update(i, 'endsAt', e.target.value || '')}
+              />
+            </div>
           </div>
-          <input
-            className="border rounded px-2 py-1 text-sm w-full"
-            placeholder="Link URL (optional, https://)"
-            value={item.linkUrl}
-            onChange={(e) => update(i, 'linkUrl', e.target.value)}
-          />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Priority</label>
+              <select
+                className="border rounded px-2 py-1 text-sm w-full"
+                value={item.priority ?? 0}
+                onChange={(e) => update(i, 'priority', parseInt(e.target.value, 10))}
+              >
+                <option value={0}>⚪ Normal</option>
+                <option value={3}>🟡 Important</option>
+                <option value={5}>🔴 Urgent</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Link URL <span className="text-gray-400">(optional)</span></label>
+              <input
+                className="border rounded px-2 py-1 text-sm w-full"
+                placeholder="https://..."
+                value={item.linkUrl || ''}
+                onChange={(e) => update(i, 'linkUrl', e.target.value)}
+              />
+            </div>
+          </div>
         </div>
       )}
     />
@@ -314,7 +308,6 @@ function ContentEditor({ type, content, onChange }) {
   switch (type) {
     case 'official_links': return <OfficialLinksEditor content={content} onChange={onChange} />;
     case 'contacts': return <ContactsEditor content={content} onChange={onChange} />;
-    case 'people': return <PeopleEditor content={content} onChange={onChange} />;
     case 'webcams': return <WebcamsEditor content={content} onChange={onChange} />;
     case 'announcements': return <AnnouncementsEditor content={content} onChange={onChange} />;
     case 'news_sources': return <NewsSourcesEditor content={content} onChange={onChange} />;
@@ -327,20 +320,22 @@ function ContentEditor({ type, content, onChange }) {
 // ---------------------------------------------------------------------------
 function SectionForm({ locationId, initial, onSave, onCancel }) {
   const isNew = !initial;
-  const [type, setType] = useState(initial?.type || 'official_links');
+  const [type, setType] = useState(initial?.type || null);
   const [title, setTitle] = useState(initial?.title || '');
   const [content, setContent] = useState(
-    initial?.content || EMPTY_CONTENT['official_links']
+    initial?.content || null
   );
   const [isPublished, setIsPublished] = useState(initial?.isPublished || false);
   const [saving, setSaving] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { error: toastError } = useToast();
 
-  const handleTypeChange = (newType) => {
-    setType(newType);
-    if (isNew) {
-      setContent(EMPTY_CONTENT[newType] || {});
-    }
+  // For existing sections, type is always set; initialize content from initial prop.
+  const resolvedType = type || (initial?.type ?? 'official_links');
+
+  const handleTypeSelect = (selectedType) => {
+    setType(selectedType);
+    setContent(EMPTY_CONTENT[selectedType] || {});
   };
 
   const handleSubmit = async (e) => {
@@ -350,7 +345,7 @@ function SectionForm({ locationId, initial, onSave, onCancel }) {
       let response;
       if (isNew) {
         response = await locationSectionAPI.createSection(locationId, {
-          type, title: title || null, content, isPublished
+          type: resolvedType, title: title || null, content, isPublished
         });
       } else {
         response = await locationSectionAPI.updateSection(locationId, initial.id, {
@@ -369,45 +364,76 @@ function SectionForm({ locationId, initial, onSave, onCancel }) {
     }
   };
 
+  // When adding a new section, show type picker first
+  if (isNew && !type) {
+    return (
+      <div className="bg-white border border-blue-200 rounded-lg p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="font-semibold text-gray-800">Choose Section Type</h4>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="p-1 text-gray-400 hover:text-gray-600"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {SECTION_TYPES.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => handleTypeSelect(t.value)}
+              className="flex flex-col items-start gap-1 p-4 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-colors text-left"
+            >
+              <span className="text-2xl">{SECTION_EMOJIS[t.value]}</span>
+              <span className="text-sm font-semibold text-gray-900">{t.label}</span>
+              <span className="text-xs text-gray-500 leading-snug">{SECTION_DESCRIPTIONS[t.value]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const currentTypeLabel = SECTION_TYPES.find(t => t.value === resolvedType)?.label || resolvedType;
+
   return (
     <div className="bg-white border border-blue-200 rounded-lg p-4 shadow-sm">
       <h4 className="font-semibold text-gray-800 mb-3">
-        {isNew ? 'Add New Section' : 'Edit Section'}
+        {isNew
+          ? <>{SECTION_EMOJIS[resolvedType]} {currentTypeLabel}</>
+          : 'Edit Section'}
       </h4>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Type selector (only for new sections) */}
-        {isNew && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Section Type</label>
-            <select
-              className="border rounded px-3 py-2 text-sm w-full"
-              value={type}
-              onChange={(e) => handleTypeChange(e.target.value)}
-            >
-              {SECTION_TYPES.map(t => (
-                <option key={t.value} value={t.value}>{t.label}</option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Optional title override */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Title Override <span className="text-gray-400">(optional)</span>
-          </label>
-          <input
-            className="border rounded px-3 py-2 text-sm w-full"
-            placeholder={`Leave blank to use default: "${SECTION_TYPES.find(t => t.value === type)?.label}"`}
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-        </div>
-
         {/* Content editor */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Content</label>
-          <ContentEditor type={type} content={content} onChange={setContent} />
+          <ContentEditor type={resolvedType} content={content} onChange={setContent} />
+        </div>
+
+        {/* Advanced options (title override) */}
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(v => !v)}
+            className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+          >
+            ⚙️ Advanced options {showAdvanced ? '▲' : '▼'}
+          </button>
+          {showAdvanced && (
+            <div className="mt-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Title Override <span className="text-gray-400">(optional)</span>
+              </label>
+              <input
+                className="border rounded px-3 py-2 text-sm w-full"
+                placeholder={`Leave blank to use default: "${currentTypeLabel}"`}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+          )}
         </div>
 
         {/* Published toggle */}
@@ -436,12 +462,21 @@ function SectionForm({ locationId, initial, onSave, onCancel }) {
           </button>
           <button
             type="button"
-            onClick={onCancel}
+            onClick={isNew ? () => setType(null) : onCancel}
             className="flex items-center gap-1 bg-gray-100 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-200"
           >
             <XMarkIcon className="w-4 h-4" />
-            Cancel
+            {isNew ? 'Back' : 'Cancel'}
           </button>
+          {isNew && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="ml-auto text-sm text-gray-400 hover:text-gray-600"
+            >
+              Cancel
+            </button>
+          )}
         </div>
       </form>
     </div>
