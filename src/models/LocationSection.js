@@ -8,7 +8,6 @@ const sequelize = require('../config/database');
 const SECTION_TYPES = [
   'official_links',
   'contacts',
-  'people',
   'webcams',
   'announcements',
   'news_sources'
