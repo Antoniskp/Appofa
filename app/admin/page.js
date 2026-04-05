@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon, MapPinIcon, EnvelopeIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -12,11 +12,12 @@ import Badge, { StatusBadge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import AdminTable from '@/components/admin/AdminTable';
-import { ConfirmDialog } from '@/components/ui/Modal';
+import Modal, { ConfirmDialog } from '@/components/ui/Modal';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import Tooltip from '@/components/ui/Tooltip';
 import Pagination from '@/components/ui/Pagination';
 import articleCategories from '@/config/articleCategories.json';
+import AdminHeader from '@/components/admin/AdminHeader';
 
 function AdminDashboardContent() {
   const { user } = useAuth();
@@ -43,6 +44,10 @@ function AdminDashboardContent() {
   const [selectedArticle, setSelectedArticle] = useState(null);
   const [moderatorLocationOverrides, setModeratorLocationOverrides] = useState({});
   const [verifyingUserId, setVerifyingUserId] = useState(null);
+  const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
+  const [roleChangeTarget, setRoleChangeTarget] = useState(null);
+  const [roleChangeNewRole, setRoleChangeNewRole] = useState('');
+  const [selectedLocationForRole, setSelectedLocationForRole] = useState('');
   const [sortBy, setSortBy] = useState('lastModified'); // 'lastModified' | 'title' | 'createdAt'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
   const [statusFilter, setStatusFilter] = useState('');
@@ -69,11 +74,16 @@ function AdminDashboardContent() {
       
       const response = await articleAPI.getAll(params);
       if (response.success) {
-        // Update total pages for pagination
+        const allArticles = response.data.articles || [];
+        // Update total pages for pagination and accurate total from server
         if (response.data.pagination) {
           setTotalPages(response.data.pagination.totalPages);
+          setStats(prev => ({
+            ...prev,
+            total: response.data.pagination.totalItems ?? response.data.pagination.total ?? allArticles.length,
+          }));
         }
-        return response.data.articles || [];
+        return allArticles;
       }
       return [];
     },
@@ -81,14 +91,14 @@ function AdminDashboardContent() {
     {
       initialData: [],
       transform: (allArticles) => {
-        // Calculate stats
-        setStats({
-          total: allArticles.length,
+        // Per-page status breakdown (reflects the current page only)
+        setStats(prev => ({
+          ...prev,
           published: allArticles.filter(a => a.status === 'published').length,
           draft: allArticles.filter(a => a.status === 'draft').length,
           archived: allArticles.filter(a => a.status === 'archived').length,
           pendingNews: allArticles.filter(a => a.isNews && !a.newsApprovedAt).length,
-        });
+        }));
         return allArticles;
       },
       onError: (error) => {
@@ -165,37 +175,53 @@ function AdminDashboardContent() {
   };
 
   const handleRoleChange = async (targetUser, newRole) => {
-    let locationId;
-
     if (newRole === 'moderator') {
-      const defaultLocation = targetUser.homeLocationId || '';
-      const input = window.prompt(
-        'Enter Location ID for this moderator (must be a valid location you can manage):',
-        String(defaultLocation)
-      );
-
-      if (input === null) {
-        return;
-      }
-
-      const parsed = Number.parseInt(input, 10);
-      if (!Number.isInteger(parsed) || parsed < 1) {
-        addToast('Valid location ID is required for moderator role.', { type: 'error' });
-        return;
-      }
-
-      locationId = parsed;
+      // Open dialog to pick a location instead of window.prompt
+      setRoleChangeTarget(targetUser);
+      setRoleChangeNewRole(newRole);
+      const defaultLocationId = targetUser.homeLocationId ? String(targetUser.homeLocationId) : '';
+      setSelectedLocationForRole(defaultLocationId);
+      setRoleChangeDialogOpen(true);
+      return;
     }
 
     try {
-      const response = await authAPI.updateUserRole(targetUser.id, newRole, locationId);
+      const response = await authAPI.updateUserRole(targetUser.id, newRole);
       if (response.success) {
-        // Refetch users to get the updated list
         await refetchUsers();
         addToast('User role updated successfully!', { type: 'success' });
       }
     } catch (error) {
       addToast(`Failed to update user role: ${error.message}`, { type: 'error' });
+    }
+  };
+
+  const confirmRoleChange = async () => {
+    if (!roleChangeTarget || !roleChangeNewRole) return;
+
+    let locationId;
+    if (roleChangeNewRole === 'moderator') {
+      const parsed = Number.parseInt(selectedLocationForRole, 10);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        addToast('Valid location is required for moderator role.', { type: 'error' });
+        return;
+      }
+      locationId = parsed;
+    }
+
+    setRoleChangeDialogOpen(false);
+    try {
+      const response = await authAPI.updateUserRole(roleChangeTarget.id, roleChangeNewRole, locationId);
+      if (response.success) {
+        await refetchUsers();
+        addToast('User role updated successfully!', { type: 'success' });
+      }
+    } catch (error) {
+      addToast(`Failed to update user role: ${error.message}`, { type: 'error' });
+    } finally {
+      setRoleChangeTarget(null);
+      setRoleChangeNewRole('');
+      setSelectedLocationForRole('');
     }
   };
 
@@ -300,7 +326,7 @@ function AdminDashboardContent() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold mb-8">Admin Dashboard</h1>
+        <AdminHeader title="Admin Dashboard" />
 
         {/* Welcome Message */}
         <Card className="mb-8">
@@ -372,67 +398,28 @@ function AdminDashboardContent() {
         {/* Quick Actions */}
         <Card className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/editor"
-              className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Create New Article
-            </Link>
-            <Link
-              href="/articles"
-              className="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700 transition"
-            >
-              View All Articles
-            </Link>
-            <Link
-              href="/admin/locations"
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 transition"
-            >
-              Manage Locations
-            </Link>
-            <Link
-              href="/admin/messages"
-              className="bg-purple-600 text-white px-6 py-2 rounded hover:bg-purple-700 transition"
-            >
-              Manage Messages
-            </Link>
-            <Link
-              href="/admin/persons"
-              className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition"
-            >
-              Manage Persons
-            </Link>
-            <Link
-              href="/admin/removal-requests"
-              className="bg-orange-600 text-white px-6 py-2 rounded hover:bg-orange-700 transition"
-            >
-              Removal Requests
-            </Link>
-            <Link
-              href="/admin/reports"
-              className="bg-rose-600 text-white px-6 py-2 rounded hover:bg-rose-700 transition"
-            >
-              Reports
-            </Link>
-            <Link
-              href="/admin/dream-team"
-              className="bg-teal-600 text-white px-6 py-2 rounded hover:bg-teal-700 transition"
-            >
-              Dream Team
-            </Link>
-            <Link
-              href="/admin/hero"
-              className="bg-indigo-600 text-white px-6 py-2 rounded hover:bg-indigo-700 transition"
-            >
-              Hero Settings
-            </Link>
-            <Link
-              href="/admin/status"
-              className="bg-white text-blue-700 border border-blue-200 px-6 py-2 rounded hover:bg-blue-50 transition"
-            >
-              System Health
-            </Link>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {[
+              { href: '/editor', label: 'Create Article', icon: PencilSquareIcon },
+              { href: '/articles', label: 'View Articles', icon: DocumentTextIcon },
+              { href: '/admin/locations', label: 'Manage Locations', icon: MapPinIcon },
+              { href: '/admin/messages', label: 'Manage Messages', icon: EnvelopeIcon },
+              { href: '/admin/persons', label: 'Manage Persons', icon: UserGroupIcon },
+              { href: '/admin/removal-requests', label: 'Removal Requests', icon: XCircleIcon },
+              { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
+              { href: '/admin/dream-team', label: 'Dream Team', icon: StarIcon },
+              { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
+              { href: '/admin/status', label: 'System Health', icon: HeartIcon },
+            ].map(action => (
+              <Link
+                key={action.href}
+                href={action.href}
+                className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition group"
+              >
+                <action.icon className="h-8 w-8 text-gray-500 group-hover:text-blue-600 transition" />
+                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 text-center">{action.label}</span>
+              </Link>
+            ))}
           </div>
         </Card>
 
@@ -724,6 +711,60 @@ function AdminDashboardContent() {
           />
         </Card>
       </div>
+
+      {/* Role Change Dialog — location picker for moderator role */}
+      <Modal
+        isOpen={roleChangeDialogOpen}
+        onClose={() => {
+          setRoleChangeDialogOpen(false);
+          setRoleChangeTarget(null);
+          setRoleChangeNewRole('');
+          setSelectedLocationForRole('');
+        }}
+        title="Assign Moderator Location"
+        size="sm"
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                setRoleChangeDialogOpen(false);
+                setRoleChangeTarget(null);
+                setRoleChangeNewRole('');
+                setSelectedLocationForRole('');
+              }}
+              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmRoleChange}
+              className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Confirm
+            </button>
+          </>
+        }
+      >
+        <label htmlFor="roleLocationSelect" className="text-gray-700 mb-2 block">
+          Select the location this moderator will manage:
+        </label>
+        <select
+          id="roleLocationSelect"
+          aria-label="Moderator location"
+          value={selectedLocationForRole}
+          onChange={(e) => setSelectedLocationForRole(e.target.value)}
+          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+        >
+          <option value="">Select a location</option>
+          {(locations ?? []).map((loc) => (
+            <option key={loc.id} value={String(loc.id)}>
+              {loc.name} (#{loc.id})
+            </option>
+          ))}
+        </select>
+      </Modal>
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
