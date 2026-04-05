@@ -2,8 +2,7 @@ import Link from 'next/link';
 import { idSlug } from '@/lib/utils/slugify';
 import UserRow from '@/components/user/UserRow';
 import LoginLink from '@/components/ui/LoginLink';
-
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'persons'];
+import { VALID_TABS } from '@/lib/constants/locations';
 
 const POSITION_LABELS = {
   mayor: 'Δήμαρχος',
@@ -22,6 +21,7 @@ export default function LocationTabs({
   persons,
   isAuthenticated,
   TAB_LABELS,
+  loading,
 }) {
   return (
     <div className="bg-white rounded-lg shadow-md">
@@ -47,10 +47,12 @@ export default function LocationTabs({
               if (e.key === 'ArrowRight') {
                 const next = VALID_TABS[(VALID_TABS.indexOf(tab) + 1) % VALID_TABS.length];
                 onTabChange(next);
+                document.getElementById(`tab-${next}`)?.focus();
               }
               if (e.key === 'ArrowLeft') {
                 const prev = VALID_TABS[(VALID_TABS.indexOf(tab) - 1 + VALID_TABS.length) % VALID_TABS.length];
                 onTabChange(prev);
+                document.getElementById(`tab-${prev}`)?.focus();
               }
             }}
             className={`flex-shrink-0 px-5 py-3 text-sm font-medium border-b-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
@@ -73,7 +75,9 @@ export default function LocationTabs({
           aria-labelledby="tab-polls"
           hidden={activeTab !== 'polls'}
         >
-          {activePolls.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+          ) : activePolls.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No polls linked to this location yet.</p>
           ) : (
             <div className="space-y-3">
@@ -89,7 +93,7 @@ export default function LocationTabs({
                   )}
                   <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                     <span className="capitalize">{poll.status}</span>
-                    {(poll.hideCreator ? 'Anonymous' : poll.creator?.username) && (
+                    {(poll.hideCreator || poll.creator?.username) && (
                       <>
                         <span>•</span>
                         <span>by {poll.hideCreator ? 'Anonymous' : poll.creator?.username}</span>
@@ -115,7 +119,9 @@ export default function LocationTabs({
           aria-labelledby="tab-news"
           hidden={activeTab !== 'news'}
         >
-          {newsArticles.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+          ) : newsArticles.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No news linked to this location yet.</p>
           ) : (
             <div className="space-y-3">
@@ -130,7 +136,7 @@ export default function LocationTabs({
                     <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
                   )}
                   <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
+                    {(article.hideAuthor || article.author?.username) && (
                       <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
                     )}
                     {article.createdAt && (
@@ -153,7 +159,9 @@ export default function LocationTabs({
           aria-labelledby="tab-articles"
           hidden={activeTab !== 'articles'}
         >
-          {regularArticles.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+          ) : regularArticles.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No articles linked to this location yet.</p>
           ) : (
             <div className="space-y-3">
@@ -169,7 +177,7 @@ export default function LocationTabs({
                   )}
                   <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                     <span>{article.type}</span>
-                    {(article.hideAuthor ? 'Anonymous' : article.author?.username) && (
+                    {(article.hideAuthor || article.author?.username) && (
                       <>
                         <span>•</span>
                         <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
@@ -189,7 +197,9 @@ export default function LocationTabs({
           aria-labelledby="tab-users"
           hidden={activeTab !== 'users'}
         >
-          {entities.usersCount === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+          ) : entities.usersCount === 0 ? (
             <p className="text-center text-gray-500 py-8">No users linked to this location yet.</p>
           ) : isAuthenticated ? (
             entities.users.length > 0 ? (
@@ -230,7 +240,9 @@ export default function LocationTabs({
           aria-labelledby="tab-suggestions"
           hidden={activeTab !== 'suggestions'}
         >
-          {suggestions.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+          ) : suggestions.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No suggestions linked to this location yet.</p>
           ) : (
             <div className="space-y-3">
@@ -274,7 +286,9 @@ export default function LocationTabs({
           aria-labelledby="tab-persons"
           hidden={activeTab !== 'persons'}
         >
-          {persons.length === 0 ? (
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+          ) : persons.length === 0 ? (
             <p className="text-center text-gray-500 py-8">Δεν υπάρχουν πρόσωπα για αυτή την περιφέρεια.</p>
           ) : (
             <div className="space-y-3">

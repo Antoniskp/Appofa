@@ -2,8 +2,7 @@ import Link from 'next/link';
 import Badge from '@/components/ui/Badge';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import LocationSections from '@/components/LocationSections';
-
-const HEADER_SECTION_TYPES = ['official_links', 'contacts', 'webcams'];
+import { HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
 export default function LocationHeader({
   location,
