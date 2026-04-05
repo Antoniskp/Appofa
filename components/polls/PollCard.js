@@ -164,7 +164,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
         return null;
       }
 
-      const color = chartColors[index % chartColors.length];
+      const color = (poll.useCustomColors && option.color) ? option.color : chartColors[index % chartColors.length];
 
       // Treat near-360° arcs as full circles to avoid SVG degenerate-arc rendering issues
       if (angle >= 359.99) {
@@ -300,19 +300,34 @@ export default function PollCard({ poll, variant = 'grid' }) {
           {counts.map((option) => {
             const pct = total > 0 ? Math.round(((option.voteCount || 0) / total) * 100) : 0;
             const isVoted = option.id === inlineVotedId;
+            const customColor = (poll.useCustomColors && option.color) ? option.color : null;
+            const labelClass = `font-medium truncate max-w-[70%] ${isVoted && !customColor ? 'text-blue-700' : 'text-gray-700'}`;
+            const pctClass = `font-semibold ${isVoted && !customColor ? 'text-blue-700' : 'text-gray-500'}`;
+            const barClass = `h-full rounded-full transition-all duration-500 ${isVoted && customColor ? '' : isVoted ? 'bg-blue-500' : 'bg-gray-300'}`;
             return (
               <div key={option.id} className="relative">
                 <div className="flex items-center justify-between text-xs mb-0.5">
-                  <span className={`font-medium truncate max-w-[70%] ${isVoted ? 'text-blue-700' : 'text-gray-700'}`}>
-                    {isVoted && <CheckCircleIcon className="h-3.5 w-3.5 inline mr-1 text-blue-600" />}
+                  <span
+                    className={labelClass}
+                    style={customColor && isVoted ? { color: customColor } : undefined}
+                  >
+                    {isVoted && (
+                      <CheckCircleIcon
+                        className={`h-3.5 w-3.5 inline mr-1${!customColor ? ' text-blue-600' : ''}`}
+                        style={customColor ? { color: customColor } : undefined}
+                      />
+                    )}
                     {option.text}
                   </span>
-                  <span className={`font-semibold ${isVoted ? 'text-blue-700' : 'text-gray-500'}`}>{pct}%</span>
+                  <span
+                    className={pctClass}
+                    style={customColor && isVoted ? { color: customColor } : undefined}
+                  >{pct}%</span>
                 </div>
                 <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all duration-500 ${isVoted ? 'bg-blue-500' : 'bg-gray-300'}`}
-                    style={{ width: `${pct}%` }}
+                    className={barClass}
+                    style={{ width: `${pct}%`, ...(customColor && isVoted ? { backgroundColor: customColor } : {}) }}
                   />
                 </div>
               </div>
@@ -330,11 +345,14 @@ export default function PollCard({ poll, variant = 'grid' }) {
     return (
       <div className={`mt-3 ${isBinary ? 'flex gap-2' : 'space-y-1.5'}`}>
         {options.map((option, idx) => {
-          const colorClass = isBinary
-            ? idx === 0
-              ? 'border-green-400 text-green-700 hover:bg-green-50 focus:ring-green-300'
-              : 'border-red-400 text-red-600 hover:bg-red-50 focus:ring-red-300'
-            : 'border-blue-300 text-blue-700 hover:bg-blue-50 focus:ring-blue-300';
+          const customColor = (poll.useCustomColors && option.color) ? option.color : null;
+          const colorClass = customColor
+            ? ''
+            : isBinary
+              ? idx === 0
+                ? 'border-green-400 text-green-700 hover:bg-green-50 focus:ring-green-300'
+                : 'border-red-400 text-red-600 hover:bg-red-50 focus:ring-red-300'
+              : 'border-blue-300 text-blue-700 hover:bg-blue-50 focus:ring-blue-300';
           return (
             <button
               key={option.id}
@@ -342,6 +360,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
               disabled={isInlineSubmitting}
               onClick={(e) => handleInlineVote(e, option.id)}
               className={`${isBinary ? 'flex-1' : 'w-full text-left'} px-3 py-1.5 rounded-lg border text-sm font-medium transition focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${colorClass}`}
+              style={customColor ? { borderColor: customColor, color: customColor } : undefined}
             >
               {isInlineSubmitting ? '…' : option.text}
             </button>
