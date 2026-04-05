@@ -38,18 +38,18 @@ async function syncHolderToLocationRole(positionSlug, personId, userId) {
     const roleKey = POSITION_SLUG_TO_LOCATION_ROLE[positionSlug];
     if (!roleKey) return; // not a mapped national position, skip silently
 
-    const greece = await Location.findOne({ where: { type: 'country' } });
+    const greece = await Location.findOne({ where: { type: 'country', code: 'GR' } });
     if (!greece) {
-      console.warn('syncHolderToLocationRole: no country-type location found, skipping sync');
+      console.warn('syncHolderToLocationRole: no GR country location found, skipping sync');
       return;
     }
 
-    const [locationRole] = await LocationRole.findOrCreate({
-      where: { locationId: greece.id, roleKey },
-      defaults: { personId: personId || null, userId: userId || null },
-    });
-
-    await locationRole.update({ personId: personId || null, userId: userId || null });
+    await LocationRole.upsert({
+      locationId: greece.id,
+      roleKey,
+      personId: personId || null,
+      userId: userId || null,
+    }, { conflictFields: ['locationId', 'roleKey'] });
   } catch (err) {
     console.error('syncHolderToLocationRole error (non-fatal):', err);
   }
