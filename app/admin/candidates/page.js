@@ -83,6 +83,9 @@ export default function AdminPersonsPage() {
       addToast('Profile deleted successfully!', { type: 'success' });
     } catch (err) {
       addToast(err.message || 'Failed to delete profile.', { type: 'error' });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
     }
   };
 

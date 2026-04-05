@@ -74,6 +74,9 @@ export default function AdminPersonsPage() {
       addToast('Το προφίλ διαγράφηκε επιτυχώς!', { type: 'success' });
     } catch (err) {
       addToast(err.message || 'Αποτυχία διαγραφής προφίλ.', { type: 'error' });
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
     }
   };
 

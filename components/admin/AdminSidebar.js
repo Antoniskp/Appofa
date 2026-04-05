@@ -29,7 +29,7 @@ export default function AdminSidebar() {
 
   const isActive = (href) => {
     if (href === '/admin') return pathname === '/admin';
-    return pathname.startsWith(href);
+    return pathname === href || pathname.startsWith(href + '/');
   };
 
   const navContent = (
