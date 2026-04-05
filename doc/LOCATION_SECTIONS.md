@@ -2,7 +2,7 @@
 
 Location Sections allow moderators and admins to add rich, structured "extra information" to any location page — beyond the core fields (name, coordinates, Wikipedia data, etc.).
 
-Sections are **predefined by type**, so they remain structured and secure while still giving moderators flexibility to describe official websites, contacts, important people, webcams, and announcements.
+Sections are **predefined by type**, so they remain structured and secure while still giving moderators flexibility to describe official websites, contacts, important people, webcams, announcements, and local news sources.
 
 ---
 
@@ -176,6 +176,27 @@ Time-limited notices or alerts for the location. Items with an `endsAt` date in 
 
 ---
 
+### 6. `news_sources` — Local News Sources
+
+Links to local news outlets associated with the location.
+
+```json
+{
+  "sources": [
+    { "name": "Εφημερίδα Θεσσαλίας", "url": "https://e-thessalia.gr" },
+    { "name": "Ταχυδρόμος", "url": "https://taxydromos.gr" }
+  ]
+}
+```
+
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `sources` | array | ✅ | Array of news source objects (at least one) |
+| `sources[].name` | string | ✅ | Name of the news outlet |
+| `sources[].url` | string | ✅ | Must start with `https://` |
+
+---
+
 ## How Moderators Manage Sections
 
 Moderators and admins can manage sections directly on the public location page.
@@ -209,10 +230,11 @@ Sections are rendered in two areas of the public location page (`/locations/<slu
 
 ### Info box (right column)
 
-The `official_links`, `contacts`, and `webcams` section types are shown **inside the "Πληροφορίες" information box** in the compact header area. These types are rendered in a compact, single-line format:
+The `official_links`, `contacts`, `webcams`, and `news_sources` section types are shown **inside the "Πληροφορίες" information box** in the compact header area. These types are rendered in a compact, single-line format:
 
 - **official_links / contacts** — rendered as compact lists (globe / phone icons + labels)
 - **webcams** — rendered as a compact list of links, one per camera: `[camera icon] <label>` linking to the camera URL. No embed (iframe/image) is used in this view.
+- **news_sources** — rendered as a compact list of linked outlet names with a newspaper icon.
 
 ### Body area
 
@@ -309,6 +331,7 @@ const SECTION_TYPES = [
   'people',
   'webcams',
   'announcements',
+  'news_sources',
   'gallery', // new type
 ];
 ```
@@ -352,11 +375,12 @@ All section content is validated server-side before saving.
 
 | Rule | Details |
 |------|---------|
-| `type` must be predefined | One of: `official_links`, `contacts`, `people`, `webcams`, `announcements` |
+| `type` must be predefined | One of: `official_links`, `contacts`, `people`, `webcams`, `announcements`, `news_sources` |
 | `content` must be an object | Not null, not an array, not a string |
 | All URLs must use `https://` | `http://` URLs are rejected to enforce security |
 | Required string fields | See per-type tables above |
 | `webcams[].embedType` | Must be `"link"`, `"image"`, or `"iframe"` if specified |
 | Date fields | `startsAt` / `endsAt` must be parseable by `Date.parse()` |
+| `news_sources[].sources` | Must be a non-empty array; each entry needs `name` and `url` |
 
 See `src/controllers/locationSectionController.js` → `validateContent()` for the authoritative implementation.

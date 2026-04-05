@@ -1,6 +1,6 @@
 'use client';
 
-import { GlobeAltIcon, PhoneIcon, UserIcon, VideoCameraIcon, MegaphoneIcon } from '@heroicons/react/24/outline';
+import { GlobeAltIcon, PhoneIcon, UserIcon, VideoCameraIcon, MegaphoneIcon, NewspaperIcon } from '@heroicons/react/24/outline';
 
 // ---------------------------------------------------------------------------
 // Default titles per section type
@@ -11,6 +11,7 @@ const DEFAULT_TITLES = {
   people: 'Important People',
   webcams: 'Live Webcams',
   announcements: 'Announcements',
+  news_sources: 'Τοπικά Μέσα Ενημέρωσης',
 };
 
 const SECTION_ICONS = {
@@ -19,6 +20,7 @@ const SECTION_ICONS = {
   people: UserIcon,
   webcams: VideoCameraIcon,
   announcements: MegaphoneIcon,
+  news_sources: NewspaperIcon,
 };
 
 // ---------------------------------------------------------------------------
@@ -262,6 +264,52 @@ function AnnouncementsSection({ content }) {
   );
 }
 
+function NewsSourcesSection({ content, compact = false }) {
+  const sources = content?.sources || [];
+  if (sources.length === 0) return <p className="text-gray-500 text-sm">No news sources listed.</p>;
+
+  if (compact) {
+    return (
+      <ul className="space-y-1">
+        {sources.map((source, i) => (
+          <li key={i} className="flex items-center gap-2">
+            <NewspaperIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <a
+              href={source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 hover:underline text-sm truncate"
+            >
+              {source.name}
+            </a>
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {sources.map((source, i) => (
+        <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+          <NewspaperIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <a
+              href={source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm font-semibold text-blue-600 hover:underline break-words"
+            >
+              {source.name}
+            </a>
+            <p className="text-xs text-gray-400 truncate">{source.url}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Section renderer (dispatches by type)
 // ---------------------------------------------------------------------------
@@ -272,6 +320,7 @@ function SectionContent({ type, content, compact = false }) {
     case 'people': return <PeopleSection content={content} />;
     case 'webcams': return <WebcamsSection content={content} compact={compact} />;
     case 'announcements': return <AnnouncementsSection content={content} />;
+    case 'news_sources': return <NewsSourcesSection content={content} compact={compact} />;
     default: return <p className="text-gray-500 text-sm">Unknown section type.</p>;
   }
 }

@@ -121,6 +121,29 @@ describe('Location Sections', () => {
       });
     });
 
+    describe('news_sources', () => {
+      it('accepts valid sources', () => {
+        expect(validateContent('news_sources', {
+          sources: [{ name: 'Εφημερίδα Θεσσαλίας', url: 'https://e-thessalia.gr' }]
+        })).toBeNull();
+      });
+      it('rejects missing sources array', () => {
+        expect(validateContent('news_sources', {})).not.toBeNull();
+      });
+      it('rejects empty sources array', () => {
+        expect(validateContent('news_sources', { sources: [] })).not.toBeNull();
+      });
+      it('rejects missing name', () => {
+        expect(validateContent('news_sources', { sources: [{ url: 'https://example.com' }] })).not.toBeNull();
+      });
+      it('rejects missing url', () => {
+        expect(validateContent('news_sources', { sources: [{ name: 'Test' }] })).not.toBeNull();
+      });
+      it('rejects non-https URL', () => {
+        expect(validateContent('news_sources', { sources: [{ name: 'Test', url: 'http://example.com' }] })).not.toBeNull();
+      });
+    });
+
     it('rejects unknown section type', () => {
       expect(validateContent('unknown_type', {})).not.toBeNull();
     });
@@ -211,6 +234,21 @@ describe('Location Sections', () => {
         .expect(201);
       sectionId = res.body.section.id;
       expect(res.body.section.content.people[0].name).toBe('Alice');
+    });
+
+    it('creates a news_sources section', async () => {
+      const res = await request(app)
+        .post(`/api/locations/${testLocation.id}/sections`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          type: 'news_sources',
+          content: { sources: [{ name: 'Εφημερίδα Θεσσαλίας', url: 'https://e-thessalia.gr' }] },
+          isPublished: true
+        })
+        .expect(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.section.type).toBe('news_sources');
+      expect(res.body.section.content.sources[0].name).toBe('Εφημερίδα Θεσσαλίας');
     });
 
     it('rejects invalid content', async () => {
