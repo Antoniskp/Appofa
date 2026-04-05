@@ -104,6 +104,17 @@ const validateContent = (type, content) => {
       break;
     }
 
+    case 'news_sources': {
+      const sources = content.sources;
+      if (!Array.isArray(sources) || sources.length === 0) return 'news_sources content must have a non-empty "sources" array';
+      for (const source of sources) {
+        if (!source.name || typeof source.name !== 'string') return 'Each source must have a string "name"';
+        if (!source.url || typeof source.url !== 'string') return 'Each source must have a string "url"';
+        if (!isValidHttpsUrl(source.url)) return `Source URL must start with https://: "${source.url}"`;
+      }
+      break;
+    }
+
     default:
       return `Unknown section type: "${type}"`;
   }

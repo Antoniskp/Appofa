@@ -24,6 +24,7 @@ const SECTION_TYPES = [
   { value: 'people', label: 'Important People' },
   { value: 'webcams', label: 'Webcams' },
   { value: 'announcements', label: 'Announcements' },
+  { value: 'news_sources', label: 'News Sources' },
 ];
 
 const EMPTY_CONTENT = {
@@ -32,6 +33,7 @@ const EMPTY_CONTENT = {
   people: { people: [{ name: '', role: '', websiteUrl: '', photoUrl: '' }] },
   webcams: { webcams: [{ label: '', url: '', embedType: 'link' }] },
   announcements: { items: [{ title: '', body: '', startsAt: '', endsAt: '', linkUrl: '', priority: 0 }] },
+  news_sources: { sources: [{ name: '', url: '' }] },
 };
 
 // ---------------------------------------------------------------------------
@@ -280,6 +282,34 @@ function AnnouncementsEditor({ content, onChange }) {
   );
 }
 
+function NewsSourcesEditor({ content, onChange }) {
+  const sources = content?.sources || [];
+  const setSources = (arr) => onChange({ sources: arr });
+  return (
+    <RepeatingRows
+      items={sources}
+      setItems={setSources}
+      newRow={{ name: '', url: '' }}
+      renderRow={(item, i, update) => (
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            className="border rounded px-2 py-1 text-sm"
+            placeholder="Outlet name"
+            value={item.name}
+            onChange={(e) => update(i, 'name', e.target.value)}
+          />
+          <input
+            className="border rounded px-2 py-1 text-sm"
+            placeholder="https://..."
+            value={item.url}
+            onChange={(e) => update(i, 'url', e.target.value)}
+          />
+        </div>
+      )}
+    />
+  );
+}
+
 function ContentEditor({ type, content, onChange }) {
   switch (type) {
     case 'official_links': return <OfficialLinksEditor content={content} onChange={onChange} />;
@@ -287,6 +317,7 @@ function ContentEditor({ type, content, onChange }) {
     case 'people': return <PeopleEditor content={content} onChange={onChange} />;
     case 'webcams': return <WebcamsEditor content={content} onChange={onChange} />;
     case 'announcements': return <AnnouncementsEditor content={content} onChange={onChange} />;
+    case 'news_sources': return <NewsSourcesEditor content={content} onChange={onChange} />;
     default: return null;
   }
 }

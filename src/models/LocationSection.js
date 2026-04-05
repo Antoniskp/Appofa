@@ -10,7 +10,8 @@ const SECTION_TYPES = [
   'contacts',
   'people',
   'webcams',
-  'announcements'
+  'announcements',
+  'news_sources'
 ];
 
 const LocationSection = sequelize.define('LocationSection', {
