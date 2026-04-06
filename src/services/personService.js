@@ -257,8 +257,14 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
   const claimingUserId = profile.claimedByUserId;
   const placeholderUserId = profile.placeholderUserId;
 
-  // Transfer relationships from placeholder user to the claiming user (if a placeholder exists)
-  if (placeholderUserId && claimingUserId && placeholderUserId !== claimingUserId) {
+  // Transfer relationships from the placeholder user to the real claiming user.
+  // The guard `placeholderUserId !== claimingUserId` prevents a no-op transfer in the
+  // unlikely case where the placeholder was somehow set as the claimedByUserId (it should
+  // not happen in normal flow, but this makes the code safe against re-approvals or bugs).
+  const claimingUser = claimingUserId ? await User.findByPk(claimingUserId) : null;
+  const isClaimingUserReal = claimingUser && !claimingUser.isPlaceholder;
+
+  if (placeholderUserId && claimingUserId && placeholderUserId !== claimingUserId && isClaimingUserReal) {
     // Transfer endorsements: handle potential unique-constraint conflicts.
     // Fetch all placeholder endorsements and all existing claiming-user endorsements in two queries,
     // then resolve conflicts in-memory to avoid N+1 queries.
@@ -293,8 +299,8 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
     );
 
     // Ensure claiming user is searchable
-    const claimingUser = await User.findByPk(claimingUserId);
-    if (claimingUser) {
+    // claimingUser was already fetched above; re-use it.
+    {
       const nameUpdates = { searchable: true };
       if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
       if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
@@ -309,19 +315,16 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
     if (placeholderUser && placeholderUser.isPlaceholder) {
       await placeholderUser.destroy();
     }
-  } else if (claimingUserId) {
-    // No placeholder: sync name fields to the claiming user (legacy profiles)
-    const claimingUser = await User.findByPk(claimingUserId);
-    if (claimingUser) {
-      const nameUpdates = {};
-      if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
-      if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
-      if (profile.firstNameEn) nameUpdates.firstNameEn = profile.firstNameEn;
-      if (profile.lastNameEn) nameUpdates.lastNameEn = profile.lastNameEn;
-      if (profile.nickname) nameUpdates.nickname = profile.nickname;
-      if (Object.keys(nameUpdates).length > 0) {
-        await claimingUser.update(nameUpdates);
-      }
+  } else if (claimingUser) {
+    // No placeholder (or claiming user IS the placeholder - shouldn't happen): sync name fields
+    const nameUpdates = {};
+    if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
+    if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
+    if (profile.firstNameEn) nameUpdates.firstNameEn = profile.firstNameEn;
+    if (profile.lastNameEn) nameUpdates.lastNameEn = profile.lastNameEn;
+    if (profile.nickname) nameUpdates.nickname = profile.nickname;
+    if (Object.keys(nameUpdates).length > 0) {
+      await claimingUser.update(nameUpdates);
     }
   }
 
@@ -351,7 +354,7 @@ async function rejectClaim(moderatorUserId, moderatorRole, profileId, reason) {
   const restoredClaimedByUserId = profile.placeholderUserId || null;
 
   await profile.update({
-    claimStatus: 'unclaimed',
+    claimStatus: 'rejected',
     claimedByUserId: restoredClaimedByUserId,
     claimRequestedAt: null,
     claimToken: null,
