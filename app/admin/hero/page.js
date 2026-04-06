@@ -152,9 +152,9 @@ function HeroSettingsContent() {
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
-      await Promise.all([
-        heroSettingsAPI.updateSlide(a.id, { order: b.order }),
-        heroSettingsAPI.updateSlide(b.id, { order: a.order }),
+      await heroSettingsAPI.reorderSlides([
+        { id: a.id, order: b.order },
+        { id: b.id, order: a.order },
       ]);
       loadSlides();
     } catch (err) {
