@@ -34,8 +34,8 @@ const populateDatabase = async () => {
         email: 'admin@admin.gr',
         password: 'admin123', // Will be hashed automatically
         role: 'admin',
-        firstName: 'Admin',
-        lastName: 'User'
+        firstNameNative: 'Admin',
+        lastNameNative: 'User'
       });
       console.log('✓ Admin account created');
 
@@ -45,8 +45,8 @@ const populateDatabase = async () => {
         email: 'moderator@moderator.gr',
         password: 'moderator123',
         role: 'moderator',
-        firstName: 'Moderator',
-        lastName: 'User'
+        firstNameNative: 'Moderator',
+        lastNameNative: 'User'
       });
       console.log('✓ Moderator account created');
 
@@ -56,8 +56,8 @@ const populateDatabase = async () => {
         email: 'editor@editor.gr',
         password: 'editor123',
         role: 'editor',
-        firstName: 'Editor',
-        lastName: 'User'
+        firstNameNative: 'Editor',
+        lastNameNative: 'User'
       });
       console.log('✓ Editor account created');
 

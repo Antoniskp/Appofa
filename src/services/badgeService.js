@@ -92,8 +92,10 @@ const badgeService = {
     // Profile completeness score
     let profileScore = 0;
     if (user) {
-      // Level 1: basic info (firstName OR lastName with meaningful content)
-      if ((user.firstName && user.firstName.trim()) || (user.lastName && user.lastName.trim())) profileScore = 1;
+      // Level 1: basic info (any name field with meaningful content)
+      if ((user.firstNameNative && user.firstNameNative.trim()) || (user.lastNameNative && user.lastNameNative.trim()) ||
+          (user.firstNameEn && user.firstNameEn.trim()) || (user.lastNameEn && user.lastNameEn.trim()) ||
+          (user.nickname && user.nickname.trim())) profileScore = 1;
       // Level 2: avatar + bio
       if (profileScore >= 1 && user.avatar && user.bio && user.bio.trim()) profileScore = 2;
       // Level 3: all sections (socialLinks, homeLocationId, professions or interests)

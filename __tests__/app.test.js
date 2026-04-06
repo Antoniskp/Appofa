@@ -58,8 +58,8 @@ describe('News Application Integration Tests', () => {
       email: 'admin@test.com',
       password: 'admin123',
       role: 'admin',
-      firstName: 'Test',
-      lastName: 'Admin'
+      firstNameNative: 'Test',
+      lastNameNative: 'Admin'
     });
     const adminUser = await User.findOne({ where: { email: 'admin@test.com' } });
     adminUserId = adminUser?.id;
@@ -121,8 +121,8 @@ describe('News Application Integration Tests', () => {
           username: 'testviewer',
           email: 'viewer@test.com',
           password: 'viewer123',
-          firstName: 'Test',
-          lastName: 'Viewer'
+          firstNameNative: 'Test',
+          lastNameNative: 'Viewer'
         });
 
       expect(response.status).toBe(201);
@@ -143,8 +143,8 @@ describe('News Application Integration Tests', () => {
           email: 'editor@test.com',
           password: 'editor123',
           role: 'editor',
-          firstName: 'Test',
-          lastName: 'Editor'
+          firstNameNative: 'Test',
+          lastNameNative: 'Editor'
         });
 
       expect(response.status).toBe(201);
@@ -190,8 +190,8 @@ describe('News Application Integration Tests', () => {
           email: 'moderator@test.com',
           password: 'moderator123',
           role: 'moderator',
-          firstName: 'Test',
-          lastName: 'Moderator'
+          firstNameNative: 'Test',
+          lastNameNative: 'Moderator'
         });
 
       expect(response.status).toBe(201);
@@ -348,8 +348,8 @@ describe('News Application Integration Tests', () => {
         .set(csrfHeaderFor(csrfToken))
         .send({
           username: 'updatedadmin',
-          firstName: 'Updated',
-          lastName: 'Admin',
+          firstNameNative: 'Updated',
+          lastNameNative: 'Admin',
           avatar: 'https://example.com/avatar.png',
           avatarColor: '#1d4ed8'
         });
@@ -357,8 +357,8 @@ describe('News Application Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.username).toBe('updatedadmin');
-      expect(response.body.data.user.firstName).toBe('Updated');
-      expect(response.body.data.user.lastName).toBe('Admin');
+      expect(response.body.data.user.firstNameNative).toBe('Updated');
+      expect(response.body.data.user.lastNameNative).toBe('Admin');
       expect(response.body.data.user.avatar).toBe('https://example.com/avatar.png');
       expect(response.body.data.user.avatarColor).toBe('#1d4ed8');
     });
@@ -384,8 +384,8 @@ describe('News Application Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeaderFor(csrfToken))
         .send({
-          firstName: 'A'.repeat(120),
-          lastName: 'B'.repeat(120)
+          firstNameNative: 'A'.repeat(120),
+          lastNameNative: 'B'.repeat(120)
         });
 
       expect(response.status).toBe(400);

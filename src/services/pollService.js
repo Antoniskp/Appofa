@@ -358,7 +358,7 @@ const createPoll = async (userId, pollData) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstName', 'lastName']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
         },
         {
           model: PollOption,
@@ -522,7 +522,7 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstName', 'lastName']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
         },
         {
           model: PollOption,
@@ -659,7 +659,7 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstName', 'lastName']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
         },
         {
           model: Location,
@@ -955,7 +955,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstName', 'lastName']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
         },
         {
           model: PollOption,
@@ -1313,7 +1313,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstName', 'lastName']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
         },
         {
           model: PollOption,
@@ -1479,7 +1479,7 @@ const getMyVotedPolls = async (userId, page, limit) => {
             {
               model: User,
               as: 'creator',
-              attributes: ['id', 'username', 'firstName', 'lastName']
+              attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
             },
             {
               model: PollOption,

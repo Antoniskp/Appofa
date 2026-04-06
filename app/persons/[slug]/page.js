@@ -85,13 +85,13 @@ export default function PersonProfilePage({ params }) {
           <div className="p-6">
             <div className="flex items-start gap-5">
               {profile.photo ? (
-                <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="w-20 h-20 rounded-full object-cover flex-shrink-0" />
+                <img src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} className="w-20 h-20 rounded-full object-cover flex-shrink-0" />
               ) : (
                 <UserCircleIcon className="w-20 h-20 text-gray-300 flex-shrink-0" />
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h1 className="text-2xl font-bold text-gray-900">{profile.firstName} {profile.lastName}</h1>
+                  <h1 className="text-2xl font-bold text-gray-900">{profile.firstNameNative} {profile.lastNameNative}</h1>
                   {profile.claimStatus === 'claimed' && (
                     <CheckBadgeIcon className="h-6 w-6 text-green-500" title="Επαληθευμένο Προφίλ" />
                   )}

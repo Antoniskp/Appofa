@@ -307,7 +307,7 @@ export default function UsersPage() {
                           {profile.photo ? (
                             <img
                               src={profile.photo}
-                              alt={`${profile.firstName} ${profile.lastName}`}
+                              alt={`${profile.firstNameNative} ${profile.lastNameNative}`}
                               className="w-12 h-12 rounded-full object-cover flex-shrink-0"
                             />
                           ) : (
@@ -316,7 +316,7 @@ export default function UsersPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-base font-semibold text-gray-900 truncate">
-                                {profile.firstName} {profile.lastName}
+                                {profile.firstNameNative} {profile.lastNameNative}
                               </span>
                               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                                 📋 Δημόσιο Προφίλ

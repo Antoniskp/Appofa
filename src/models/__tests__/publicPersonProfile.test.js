@@ -6,7 +6,8 @@ const { PublicPersonProfile, User, Location } = require('../index');
 describe('PublicPersonProfile Model', () => {
   it('has all required fields defined', () => {
     const fields = Object.keys(PublicPersonProfile.rawAttributes);
-    const required = ['id', 'slug', 'firstName', 'lastName', 'locationId', 'constituencyId',
+    const required = ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname',
+      'locationId', 'constituencyId',
       'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto',
       'claimStatus', 'claimedByUserId', 'claimRequestedAt', 'claimVerifiedAt',
       'claimVerifiedByUserId', 'claimToken', 'claimTokenExpiresAt',
@@ -36,21 +37,43 @@ describe('PublicPersonProfile Model', () => {
     expect(PublicPersonProfile.rawAttributes.slug.unique).toBe(true);
   });
 
-  it('has firstName allowNull false', () => {
-    expect(PublicPersonProfile.rawAttributes.firstName.allowNull).toBe(false);
+  it('has firstNameNative allowNull false', () => {
+    expect(PublicPersonProfile.rawAttributes.firstNameNative.allowNull).toBe(false);
   });
 
-  it('has lastName allowNull false', () => {
-    expect(PublicPersonProfile.rawAttributes.lastName.allowNull).toBe(false);
+  it('has lastNameNative allowNull false', () => {
+    expect(PublicPersonProfile.rawAttributes.lastNameNative.allowNull).toBe(false);
   });
 
-  it('has fullName as a virtual field combining firstName and lastName', () => {
-    const inst = PublicPersonProfile.build({ firstName: 'Jane', lastName: 'Doe' });
+  it('has firstNameEn allowNull true', () => {
+    expect(PublicPersonProfile.rawAttributes.firstNameEn.allowNull).toBe(true);
+  });
+
+  it('has lastNameEn allowNull true', () => {
+    expect(PublicPersonProfile.rawAttributes.lastNameEn.allowNull).toBe(true);
+  });
+
+  it('has nickname allowNull true', () => {
+    expect(PublicPersonProfile.rawAttributes.nickname.allowNull).toBe(true);
+  });
+
+  it('has fullName as a virtual field (backward compat alias for fullNameNative)', () => {
+    const inst = PublicPersonProfile.build({ firstNameNative: 'Jane', lastNameNative: 'Doe' });
     expect(inst.fullName).toBe('Jane Doe');
   });
 
+  it('has fullNameNative as a virtual field combining firstNameNative and lastNameNative', () => {
+    const inst = PublicPersonProfile.build({ firstNameNative: 'Jane', lastNameNative: 'Doe' });
+    expect(inst.fullNameNative).toBe('Jane Doe');
+  });
+
+  it('has fullNameEn as a virtual field combining firstNameEn and lastNameEn', () => {
+    const inst = PublicPersonProfile.build({ firstNameEn: 'Jane', lastNameEn: 'Doe' });
+    expect(inst.fullNameEn).toBe('Jane Doe');
+  });
+
   it('fullName virtual trims whitespace when one name part is empty', () => {
-    const inst = PublicPersonProfile.build({ firstName: 'Jane', lastName: '' });
+    const inst = PublicPersonProfile.build({ firstNameNative: 'Jane', lastNameNative: '' });
     expect(inst.fullName).toBe('Jane');
   });
 

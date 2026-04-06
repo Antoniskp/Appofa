@@ -15,7 +15,7 @@ export default function ContactForm({
   const { user } = useAuth();
   const [formData, setFormData] = useState({
     type,
-    name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+    name: user ? `${user.firstNameNative || ''} ${user.lastNameNative || ''}`.trim() : '',
     email: user?.email || '',
     subject: '',
     message: '',
@@ -42,7 +42,7 @@ export default function ContactForm({
         setSuccess(true);
         setFormData({
           type,
-          name: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : '',
+          name: user ? `${user.firstNameNative || ''} ${user.lastNameNative || ''}`.trim() : '',
           email: user?.email || '',
           subject: '',
           message: '',

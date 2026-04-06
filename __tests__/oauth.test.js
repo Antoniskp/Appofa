@@ -39,8 +39,8 @@ describe('OAuth Integration Tests', () => {
       email: 'oauth@test.com',
       password: 'test123',
       role: 'viewer',
-      firstName: 'OAuth',
-      lastName: 'Test'
+      firstNameNative: 'OAuth',
+      lastNameNative: 'Test'
     });
 
     // Login to get token
@@ -425,8 +425,8 @@ describe('OAuth Integration Tests', () => {
         githubId: '11111111',
         githubAccessToken: 'github-token',
         avatar: 'https://avatars.githubusercontent.com/u/11111111',
-        firstName: 'GitHub',
-        lastName: 'User',
+        firstNameNative: 'GitHub',
+        lastNameNative: 'User',
         role: 'viewer'
       });
 
@@ -444,8 +444,8 @@ describe('OAuth Integration Tests', () => {
         googleId: '22222222',
         googleAccessToken: 'google-token',
         avatar: 'https://lh3.googleusercontent.com/avatar',
-        firstName: 'Google',
-        lastName: 'User',
+        firstNameNative: 'Google',
+        lastNameNative: 'User',
         role: 'viewer'
       });
 

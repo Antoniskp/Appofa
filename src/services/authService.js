@@ -38,7 +38,7 @@ function generateToken(user) {
   );
 }
 
-async function registerUser({ username, email, password, firstName, lastName, searchable }) {
+async function registerUser({ username, email, password, firstNameNative, lastNameNative, searchable }) {
   const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
   if (usernameResult.error) throw new ServiceError(400, usernameResult.error);
 
@@ -48,11 +48,11 @@ async function registerUser({ username, email, password, firstName, lastName, se
   const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
   if (passwordResult.error) throw new ServiceError(400, passwordResult.error);
 
-  const firstNameResult = normalizeOptionalText(firstName, 'First name', undefined, NAME_MAX_LENGTH);
-  if (firstNameResult.error) throw new ServiceError(400, firstNameResult.error);
+  const firstNameNativeResult = normalizeOptionalText(firstNameNative, 'First name', undefined, NAME_MAX_LENGTH);
+  if (firstNameNativeResult.error) throw new ServiceError(400, firstNameNativeResult.error);
 
-  const lastNameResult = normalizeOptionalText(lastName, 'Last name', undefined, NAME_MAX_LENGTH);
-  if (lastNameResult.error) throw new ServiceError(400, lastNameResult.error);
+  const lastNameNativeResult = normalizeOptionalText(lastNameNative, 'Last name', undefined, NAME_MAX_LENGTH);
+  if (lastNameNativeResult.error) throw new ServiceError(400, lastNameNativeResult.error);
 
   const existingUser = await User.findOne({
     where: {
@@ -69,8 +69,8 @@ async function registerUser({ username, email, password, firstName, lastName, se
     email: emailResult.value,
     password: passwordResult.value,
     role: 'viewer',
-    firstName: firstNameResult.value,
-    lastName: lastNameResult.value,
+    firstNameNative: firstNameNativeResult.value,
+    lastNameNative: lastNameNativeResult.value,
     searchable: searchable !== undefined ? Boolean(searchable) : true
   });
 

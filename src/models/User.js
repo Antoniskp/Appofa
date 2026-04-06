@@ -33,12 +33,24 @@ const User = sequelize.define('User', {
     defaultValue: 'viewer',
     allowNull: false
   },
-  firstName: {
-    type: DataTypes.STRING,
+  firstNameNative: {
+    type: DataTypes.STRING(100),
     allowNull: true
   },
-  lastName: {
-    type: DataTypes.STRING,
+  lastNameNative: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  firstNameEn: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  lastNameEn: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  nickname: {
+    type: DataTypes.STRING(100),
     allowNull: true
   },
   avatar: {
@@ -191,6 +203,28 @@ const User = sequelize.define('User', {
   displayBadgeTier: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  fullNameNative: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.firstNameNative || ''} ${this.lastNameNative || ''}`.trim();
+    }
+  },
+  fullNameEn: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.firstNameEn || ''} ${this.lastNameEn || ''}`.trim();
+    }
+  },
+  displayName: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      const native = `${this.firstNameNative || ''} ${this.lastNameNative || ''}`.trim();
+      if (native) return native;
+      const en = `${this.firstNameEn || ''} ${this.lastNameEn || ''}`.trim();
+      if (en) return en;
+      return this.username || '';
+    }
   }
 }, {
   timestamps: true,

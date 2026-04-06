@@ -81,10 +81,10 @@ export default function AdminPersonDetailPage() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-start gap-4">
             {profile.photo && (
-              <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="w-20 h-20 rounded-full object-cover border border-gray-200 flex-shrink-0" />
+              <img src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} className="w-20 h-20 rounded-full object-cover border border-gray-200 flex-shrink-0" />
             )}
             <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-bold text-gray-900">{profile.firstName} {profile.lastName}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{profile.firstNameNative} {profile.lastNameNative}</h1>
               <p className="text-sm text-gray-500 mt-0.5">/{profile.slug}</p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <ClaimBadge status={profile.claimStatus} />

@@ -21,8 +21,8 @@ export default function RegisterPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    firstNameNative: '',
+    lastNameNative: '',
     searchable: true,
   });
   const [loading, setLoading] = useState(false);
@@ -130,19 +130,19 @@ export default function RegisterPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <FormInput
-                name="firstName"
+                name="firstNameNative"
                 type="text"
                 label="First Name"
-                value={formData.firstName}
+                value={formData.firstNameNative}
                 onChange={handleChange}
                 autoComplete="given-name"
                 placeholder="First Name"
               />
               <FormInput
-                name="lastName"
+                name="lastNameNative"
                 type="text"
                 label="Last Name"
-                value={formData.lastName}
+                value={formData.lastNameNative}
                 onChange={handleChange}
                 autoComplete="family-name"
                 placeholder="Last Name"

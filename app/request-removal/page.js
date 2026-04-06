@@ -107,7 +107,7 @@ export default function RequestRemovalPage() {
                 <option value="">Select a person...</option>
                 {persons.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.firstName} {p.lastName}
+                    {p.firstNameNative} {p.lastNameNative}
                   </option>
                 ))}
               </select>

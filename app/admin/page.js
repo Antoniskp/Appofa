@@ -144,9 +144,9 @@ function AdminDashboardContent() {
       result = result.filter(u =>
         u.username?.toLowerCase().includes(query) ||
         u.email?.toLowerCase().includes(query) ||
-        u.firstName?.toLowerCase().includes(query) ||
-        u.lastName?.toLowerCase().includes(query) ||
-        `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase().includes(query)
+        u.firstNameNative?.toLowerCase().includes(query) ||
+        u.lastNameNative?.toLowerCase().includes(query) ||
+        `${u.firstNameNative || ''} ${u.lastNameNative || ''}`.toLowerCase().includes(query)
       );
     }
 
@@ -689,7 +689,7 @@ function AdminDashboardContent() {
               {
                 key: 'name',
                 header: 'Name',
-                render: (user) => [user.firstName, user.lastName].filter(Boolean).join(' ') || '-'
+                render: (user) => [user.firstNameNative, user.lastNameNative].filter(Boolean).join(' ') || '-'
               },
               {
                 key: 'role',

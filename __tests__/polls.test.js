@@ -57,8 +57,8 @@ describe('Poll API Tests', () => {
       email: 'admin@test.com',
       password: 'admin123',
       role: 'admin',
-      firstName: 'Admin',
-      lastName: 'User'
+      firstNameNative: 'Admin',
+      lastNameNative: 'User'
     });
 
     const adminUser = await User.findOne({ where: { email: 'admin@test.com' } });
@@ -70,8 +70,8 @@ describe('Poll API Tests', () => {
       email: 'user@test.com',
       password: 'user123',
       role: 'user',
-      firstName: 'Test',
-      lastName: 'User'
+      firstNameNative: 'Test',
+      lastNameNative: 'User'
     });
 
     const regularUser = await User.findOne({ where: { email: 'user@test.com' } });
@@ -917,8 +917,8 @@ describe('Poll API Tests', () => {
         email: 'newuser@test.com',
         password: 'newuser123',
         role: 'user',
-        firstName: 'New',
-        lastName: 'User'
+        firstNameNative: 'New',
+        lastNameNative: 'User'
       });
 
       const newUser = await User.findOne({ where: { email: 'newuser@test.com' } });

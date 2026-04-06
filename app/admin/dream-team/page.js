@@ -126,9 +126,9 @@ function SuggestionsPanel({ position, onRefresh }) {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">
               {s.person
-                ? `${s.person.firstName} ${s.person.lastName}`
+                ? `${s.person.firstNameNative} ${s.person.lastNameNative}`
                 : s.user
-                  ? ((`${s.user.firstName || ''} ${s.user.lastName || ''}`.trim()) || s.user.username)
+                  ? ((`${s.user.firstNameNative || ''} ${s.user.lastNameNative || ''}`.trim()) || s.user.username)
                   : '—'}
             </p>
             <InlineEdit value={s.reason} onSave={(v) => handleUpdateReason(s, v)} placeholder="Λόγος..." className="text-xs text-gray-500 block" />
@@ -143,7 +143,7 @@ function SuggestionsPanel({ position, onRefresh }) {
         <div className="mt-2 space-y-1 border-t pt-2">
           <PersonSearch onSelect={setSelectedPerson} includeUsers={true} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
+            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstNameNative} ${selectedPerson.lastNameNative}`}</p>
           )}
           <input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Λόγος (προαιρετικό)" className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
@@ -211,8 +211,8 @@ function HolderPanel({ position, onRefresh }) {
   };
 
   const holderDisplayName = (h) => {
-    if (h.person) return `${h.person.firstName} ${h.person.lastName}`;
-    if (h.user) return ((`${h.user.firstName || ''} ${h.user.lastName || ''}`.trim()) || h.user.username);
+    if (h.person) return `${h.person.firstNameNative} ${h.person.lastNameNative}`;
+    if (h.user) return ((`${h.user.firstNameNative || ''} ${h.user.lastNameNative || ''}`.trim()) || h.user.username);
     return '—';
   };
 
@@ -249,7 +249,7 @@ function HolderPanel({ position, onRefresh }) {
         <div className="mt-2 border-t pt-2 space-y-2">
           <PersonSearch onSelect={setSelectedPerson} includeUsers={true} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstName || ''} ${selectedPerson.lastName || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstName} ${selectedPerson.lastName}`}</p>
+            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstNameNative} ${selectedPerson.lastNameNative}`}</p>
           )}
           <input type="date" value={since} onChange={(e) => setSince(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
@@ -329,9 +329,9 @@ export default function AdminDreamTeamPage() {
             const tab = getTab(pos.id);
             const activeHolder = (pos.currentHolders || []).find((h) => h.isActive);
             const holderName = activeHolder?.person
-              ? `${activeHolder.person.firstName} ${activeHolder.person.lastName}`
+              ? `${activeHolder.person.firstNameNative} ${activeHolder.person.lastNameNative}`
               : activeHolder?.user
-                ? ((`${activeHolder.user.firstName || ''} ${activeHolder.user.lastName || ''}`.trim()) || activeHolder.user.username)
+                ? ((`${activeHolder.user.firstNameNative || ''} ${activeHolder.user.lastNameNative || ''}`.trim()) || activeHolder.user.username)
                 : null;
             const suggCount = (pos.aiSuggestions || []).length;
             const ptMeta = positionTypesMap[pos.positionTypeKey];

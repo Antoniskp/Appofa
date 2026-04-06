@@ -24,8 +24,8 @@ export default function EditAdminPersonPage({ params }) {
   const router = useRouter();
 
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
+    firstNameNative: '',
+    lastNameNative: '',
     constituencyId: '',
     bio: '',
     photo: '',
@@ -79,8 +79,8 @@ export default function EditAdminPersonPage({ params }) {
   useEffect(() => {
     if (profile) {
       setForm({
-        firstName: profile.firstName || '',
-        lastName: profile.lastName || '',
+        firstNameNative: profile.firstNameNative || '',
+        lastNameNative: profile.lastNameNative || '',
         constituencyId: profile.constituencyId || '',
         bio: profile.bio || '',
         photo: profile.photo || '',
@@ -128,8 +128,8 @@ export default function EditAdminPersonPage({ params }) {
       const locationId = personSelectedMunicipalityId || personSelectedPrefectureId || undefined;
 
       const payload = {
-        firstName: form.firstName,
-        lastName: form.lastName,
+        firstNameNative: form.firstNameNative,
+        lastNameNative: form.lastNameNative,
         constituencyId: form.constituencyId || undefined,
         bio: form.bio || undefined,
         photo: form.photo || undefined,
@@ -168,12 +168,12 @@ export default function EditAdminPersonPage({ params }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα <span className="text-red-500">*</span></label>
-              <input type="text" value={form.firstName} onChange={(e) => handleChange('firstName', e.target.value)} required
+              <input type="text" value={form.firstNameNative} onChange={(e) => handleChange('firstNameNative', e.target.value)} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Επώνυμο <span className="text-red-500">*</span></label>
-              <input type="text" value={form.lastName} onChange={(e) => handleChange('lastName', e.target.value)} required
+              <input type="text" value={form.lastNameNative} onChange={(e) => handleChange('lastNameNative', e.target.value)} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>

@@ -240,9 +240,9 @@ export default function PublicUserProfilePage() {
 
   const [countsKey, setCountsKey] = useState(0);
 
-  const displayName = user?.firstName && user?.lastName
-    ? `${user.firstName} ${user.lastName}`
-    : user?.firstName || user?.lastName || '';
+  const displayName = user?.firstNameNative && user?.lastNameNative
+    ? `${user.firstNameNative} ${user.lastNameNative}`
+    : user?.firstNameNative || user?.lastNameNative || '';
 
   const getLocationBreadcrumb = (location) => {
     if (!location) return null;

@@ -209,7 +209,7 @@ const createArticle = async (userId, userRole, articleData) => {
       include: [{
         model: User,
         as: 'author',
-        attributes: ['id', 'username', 'firstName', 'lastName']
+        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
       }]
     });
 
@@ -345,7 +345,7 @@ const getAllArticles = async (queryParams, user) => {
       include: [{
         model: User,
         as: 'author',
-        attributes: ['id', 'username', 'firstName', 'lastName']
+        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
       }],
       order: [[sortField, sortDirection]],
       limit: parsedLimit,
@@ -384,7 +384,7 @@ const getArticleById = async (articleId, user) => {
       include: [{
         model: User,
         as: 'author',
-        attributes: ['id', 'username', 'firstName', 'lastName']
+        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
       }]
     });
 
@@ -586,7 +586,7 @@ const updateArticle = async (articleId, user, updateData) => {
       include: [{
         model: User,
         as: 'author',
-        attributes: ['id', 'username', 'firstName', 'lastName']
+        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
       }]
     });
 
@@ -661,7 +661,7 @@ const approveNews = async (articleId, user) => {
         {
           model: User,
           as: 'author',
-          attributes: ['id', 'username', 'firstName', 'lastName']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
         }
       ]
     });

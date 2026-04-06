@@ -81,8 +81,8 @@ describe('Dream Team API Tests', () => {
     // Seed a public person profile
     const person = await PublicPersonProfile.create({
       slug: 'test-person-dt',
-      firstName: 'Δοκιμαστικός',
-      lastName: 'Πολιτικός',
+      firstNameNative: 'Δοκιμαστικός',
+      lastNameNative: 'Πολιτικός',
       claimStatus: 'unclaimed',
       source: 'moderator',
     });
@@ -186,8 +186,8 @@ describe('Dream Team API Tests', () => {
       // Create a second person
       const person2 = await PublicPersonProfile.create({
         slug: 'test-person-dt-2',
-        firstName: 'Άλλος',
-        lastName: 'Υποψήφιος',
+        firstNameNative: 'Άλλος',
+        lastNameNative: 'Υποψήφιος',
         claimStatus: 'unclaimed',
         source: 'moderator',
       });

@@ -58,11 +58,11 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
       let type;
       let id;
       if (myVote.person) {
-        name = `${myVote.person.firstName} ${myVote.person.lastName}`.trim();
+        name = `${myVote.person.firstNameNative} ${myVote.person.lastNameNative}`.trim();
         type = 'profile';
         id = myVote.personId;
       } else if (myVote.candidateUser) {
-        name = (`${myVote.candidateUser.firstName || ''} ${myVote.candidateUser.lastName || ''}`.trim()) || myVote.candidateUser.username;
+        name = (`${myVote.candidateUser.firstNameNative || ''} ${myVote.candidateUser.lastNameNative || ''}`.trim()) || myVote.candidateUser.username;
         type = 'user';
         id = myVote.candidateUserId;
       } else {
@@ -84,8 +84,8 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
 
   const handleSelectPerson = useCallback((person) => {
     const name = person.type === 'user'
-      ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
-      : `${person.firstName} ${person.lastName}`.trim();
+      ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
+      : `${person.firstNameNative} ${person.lastNameNative}`.trim();
     setSelectedPerson({ id: person.id, name, type: person.type });
     setSearchQuery(name);
   }, []);
@@ -131,17 +131,17 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
               <PersonAvatar
                 photo={currentHolder.person?.photo || currentHolder.user?.avatar || null}
                 name={currentHolder.person
-                  ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
+                  ? `${currentHolder.person.firstNameNative} ${currentHolder.person.lastNameNative}`
                   : currentHolder.user
-                    ? ((`${currentHolder.user.firstName || ''} ${currentHolder.user.lastName || ''}`.trim()) || currentHolder.user.username)
+                    ? ((`${currentHolder.user.firstNameNative || ''} ${currentHolder.user.lastNameNative || ''}`.trim()) || currentHolder.user.username)
                     : '—'}
               />
               <div>
                 <p className="font-semibold text-gray-800 text-sm">
                   {currentHolder.person
-                    ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
+                    ? `${currentHolder.person.firstNameNative} ${currentHolder.person.lastNameNative}`
                     : currentHolder.user
-                      ? ((`${currentHolder.user.firstName || ''} ${currentHolder.user.lastName || ''}`.trim()) || currentHolder.user.username)
+                      ? ((`${currentHolder.user.firstNameNative || ''} ${currentHolder.user.lastNameNative || ''}`.trim()) || currentHolder.user.username)
                       : '—'}
                 </p>
                 {currentHolder.since && (
@@ -239,9 +239,9 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
               <p className="font-semibold text-gray-700 text-xs leading-tight">
                 {currentHolder
                   ? (currentHolder.person
-                      ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
+                      ? `${currentHolder.person.firstNameNative} ${currentHolder.person.lastNameNative}`
                       : currentHolder.user
-                        ? ((`${currentHolder.user.firstName || ''} ${currentHolder.user.lastName || ''}`.trim()) || currentHolder.user.username)
+                        ? ((`${currentHolder.user.firstNameNative || ''} ${currentHolder.user.lastNameNative || ''}`.trim()) || currentHolder.user.username)
                         : '—')
                   : '—'}
               </p>
@@ -250,9 +250,9 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
               <p className="text-purple-400 mb-1">🤖 AI</p>
               <p className="font-semibold text-purple-700 text-xs leading-tight">
                 {position.aiSuggestions?.[0]?.person
-                  ? `${position.aiSuggestions[0].person.firstName} ${position.aiSuggestions[0].person.lastName}`
+                  ? `${position.aiSuggestions[0].person.firstNameNative} ${position.aiSuggestions[0].person.lastNameNative}`
                   : position.aiSuggestions?.[0]?.user
-                    ? ((`${position.aiSuggestions[0].user.firstName || ''} ${position.aiSuggestions[0].user.lastName || ''}`.trim()) || position.aiSuggestions[0].user.username)
+                    ? ((`${position.aiSuggestions[0].user.firstNameNative || ''} ${position.aiSuggestions[0].user.lastNameNative || ''}`.trim()) || position.aiSuggestions[0].user.username)
                     : '—'}
               </p>
             </div>

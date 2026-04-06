@@ -51,13 +51,13 @@ const dreamTeamController = {
               {
                 model: PublicPersonProfile,
                 as: 'person',
-                attributes: ['id', 'firstName', 'lastName', 'photo', 'bio'],
+                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo', 'bio'],
                 required: false,
               },
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
                 required: false,
               },
             ],
@@ -72,13 +72,13 @@ const dreamTeamController = {
               {
                 model: PublicPersonProfile,
                 as: 'person',
-                attributes: ['id', 'firstName', 'lastName', 'photo'],
+                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
                 required: false,
               },
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
                 required: false,
               },
             ],
@@ -108,7 +108,7 @@ const dreamTeamController = {
       if (votedPersonIds.length > 0) {
         const votedPersons = await PublicPersonProfile.findAll({
           where: { id: { [Op.in]: votedPersonIds } },
-          attributes: ['id', 'firstName', 'lastName', 'photo'],
+          attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
           raw: true,
         });
         const personMap = {};
@@ -121,7 +121,7 @@ const dreamTeamController = {
       if (votedUserIds.length > 0) {
         const votedUsers = await User.findAll({
           where: { id: { [Op.in]: votedUserIds } },
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
           raw: true,
         });
         const userMap = {};
@@ -191,7 +191,7 @@ const dreamTeamController = {
       let personName;
       if (personId) {
         const person = await PublicPersonProfile.findByPk(personId, {
-          attributes: ['id', 'firstName', 'lastName'],
+          attributes: ['id', 'firstNameNative', 'lastNameNative'],
         });
         if (!person) {
           return res.status(404).json({
@@ -199,10 +199,10 @@ const dreamTeamController = {
             message: 'Το πρόσωπο δεν βρέθηκε.',
           });
         }
-        personName = `${person.firstName} ${person.lastName}`.trim();
+        personName = `${person.firstNameNative} ${person.lastNameNative}`.trim();
       } else {
         const candidateUser = await User.findByPk(candidateUserId, {
-          attributes: ['id', 'username', 'firstName', 'lastName'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'],
         });
         if (!candidateUser) {
           return res.status(404).json({
@@ -210,7 +210,7 @@ const dreamTeamController = {
             message: 'Ο χρήστης δεν βρέθηκε.',
           });
         }
-        personName = (`${candidateUser.firstName || ''} ${candidateUser.lastName || ''}`.trim()) || candidateUser.username;
+        personName = (`${candidateUser.firstNameNative || ''} ${candidateUser.lastNameNative || ''}`.trim()) || candidateUser.username;
       }
 
       // Check if the same person is already voted for in a different position
@@ -293,13 +293,13 @@ const dreamTeamController = {
               {
                 model: PublicPersonProfile,
                 as: 'person',
-                attributes: ['id', 'firstName', 'lastName', 'photo'],
+                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
                 required: false,
               },
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
                 required: false,
               },
             ],
@@ -314,13 +314,13 @@ const dreamTeamController = {
               {
                 model: PublicPersonProfile,
                 as: 'person',
-                attributes: ['id', 'firstName', 'lastName', 'photo'],
+                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
                 required: false,
               },
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
                 required: false,
               },
             ],
@@ -430,13 +430,13 @@ const dreamTeamController = {
           {
             model: PublicPersonProfile,
             as: 'person',
-            attributes: ['id', 'firstName', 'lastName', 'photo'],
+            attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
             required: false,
           },
           {
             model: User,
             as: 'candidateUser',
-            attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
             required: false,
           },
         ],
@@ -485,13 +485,13 @@ const dreamTeamController = {
               {
                 model: PublicPersonProfile,
                 as: 'person',
-                attributes: ['id', 'firstName', 'lastName', 'photo'],
+                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
                 required: false,
               },
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
                 required: false,
               },
             ],
@@ -505,13 +505,13 @@ const dreamTeamController = {
               {
                 model: PublicPersonProfile,
                 as: 'person',
-                attributes: ['id', 'firstName', 'lastName', 'photo'],
+                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
                 required: false,
               },
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
                 required: false,
               },
             ],
@@ -563,8 +563,8 @@ const dreamTeamController = {
       });
       const suggestionWithPerson = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
       return res.status(201).json({ success: true, data: suggestionWithPerson });
@@ -606,8 +606,8 @@ const dreamTeamController = {
       });
       const updated = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
       return res.status(200).json({ success: true, data: updated });
@@ -684,8 +684,8 @@ const dreamTeamController = {
 
       const holderWithPerson = await GovernmentCurrentHolder.findByPk(holder.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
 
@@ -735,8 +735,8 @@ const dreamTeamController = {
       });
       const updated = await GovernmentCurrentHolder.findByPk(holder.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstName', 'lastName', 'photo'], required: false },
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'], required: false },
+          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
 
@@ -816,7 +816,7 @@ const dreamTeamController = {
       likeCount: formation.likeCount,
       likedByMe,
       authorName: formation.author
-        ? (`${formation.author.firstName || ''} ${formation.author.lastName || ''}`.trim() || formation.author.username)
+        ? (`${formation.author.firstNameNative || ''} ${formation.author.lastNameNative || ''}`.trim() || formation.author.username)
         : null,
       authorAvatar: formation.author?.avatar || null,
       picks,
@@ -833,7 +833,7 @@ const dreamTeamController = {
         where: { userId },
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
         order: [['updatedAt', 'DESC']],
       });
@@ -876,7 +876,7 @@ const dreamTeamController = {
       const full = await Formation.findByPk(formation.id, {
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
       });
 
@@ -896,7 +896,7 @@ const dreamTeamController = {
       const formation = await Formation.findByPk(req.params.id, {
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
       });
 
@@ -947,7 +947,7 @@ const dreamTeamController = {
       const full = await Formation.findByPk(formation.id, {
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
       });
 
@@ -1038,7 +1038,7 @@ const dreamTeamController = {
       const full = await Formation.findByPk(formation.id, {
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
       });
 
@@ -1088,7 +1088,7 @@ const dreamTeamController = {
         attributes,
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
         order,
         limit: parseInt(limit, 10),
@@ -1161,7 +1161,7 @@ const dreamTeamController = {
         where: { shareSlug: req.params.slug },
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
       });
 
@@ -1252,7 +1252,7 @@ const dreamTeamController = {
         },
         include: [
           { model: FormationPick, as: 'picks' },
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
         order: [['likeCount', 'DESC'], ['createdAt', 'DESC']],
       });
@@ -1284,7 +1284,7 @@ const dreamTeamController = {
           [sequelize.fn('COUNT', sequelize.col('Formation.id')), 'publicFormations'],
         ],
         include: [
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
         group: ['userId', 'author.id'],
         order: [[sequelize.literal('"totalLikes"'), 'DESC']],
@@ -1298,7 +1298,7 @@ const dreamTeamController = {
         rank: parseInt(offset, 10) + idx + 1,
         userId: row.userId,
         username: row.author
-          ? (`${row.author.firstName || ''} ${row.author.lastName || ''}`.trim() || row.author.username)
+          ? (`${row.author.firstNameNative || ''} ${row.author.lastNameNative || ''}`.trim() || row.author.username)
           : 'Άγνωστος',
         avatar: row.author?.avatar || null,
         totalLikes: parseInt(row.dataValues.totalLikes, 10) || 0,
@@ -1403,7 +1403,7 @@ const dreamTeamController = {
       const recentFormations = await Formation.findAll({
         where: { isPublic: true },
         include: [
-          { model: User, as: 'author', attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'] },
+          { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
         order: [['createdAt', 'DESC']],
         limit: parseInt(limit, 10),
@@ -1412,7 +1412,7 @@ const dreamTeamController = {
 
       const activities = recentFormations.map((f) => {
         const authorName = f.author
-          ? (`${f.author.firstName || ''} ${f.author.lastName || ''}`.trim() || f.author.username)
+          ? (`${f.author.firstNameNative || ''} ${f.author.lastNameNative || ''}`.trim() || f.author.username)
           : 'Κάποιος χρήστης';
         const authorAvatar = f.author?.avatar || null;
 

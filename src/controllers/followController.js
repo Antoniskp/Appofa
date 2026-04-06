@@ -127,7 +127,7 @@ const followController = {
         include: [{
           model: User,
           as: 'follower',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'role', 'searchable'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role', 'searchable'],
           where: { searchable: true }
         }],
         order: [['createdAt', 'DESC']],
@@ -177,7 +177,7 @@ const followController = {
         include: [{
           model: User,
           as: 'followingUser',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'role', 'searchable'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role', 'searchable'],
           where: { searchable: true }
         }],
         order: [['createdAt', 'DESC']],

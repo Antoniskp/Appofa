@@ -23,7 +23,7 @@ function WinnerCard({ item }) {
   const currentHolder = item.position?.currentHolders?.[0] || null;
   const currentHolderName = currentHolder
     ? (currentHolder.person
-        ? `${currentHolder.person.firstName} ${currentHolder.person.lastName}`
+        ? `${currentHolder.person.firstNameNative} ${currentHolder.person.lastNameNative}`
         : currentHolder.holderName)
     : null;
   const aiSuggestion = item.position?.aiSuggestions?.[0]?.name || null;

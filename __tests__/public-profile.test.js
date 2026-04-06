@@ -31,8 +31,8 @@ describe('getPublicUserProfileByUsername endpoint construction', () => {
                 user: {
                   id: 1,
                   username: 'testuser',
-                  firstName: 'Test',
-                  lastName: 'User',
+                  firstNameNative: 'Test',
+                  lastNameNative: 'User',
                   avatar: null,
                   avatarColor: '#64748b',
                   createdAt: new Date().toISOString(),
