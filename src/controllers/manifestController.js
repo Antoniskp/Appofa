@@ -108,7 +108,7 @@ const manifestController = {
         include: [{
           model: User,
           as: 'user',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
         }],
         order: [['acceptedAt', 'DESC']],
         limit,
@@ -118,8 +118,8 @@ const manifestController = {
       const users = rows.map((row) => ({
         id: row.user.id,
         username: row.user.username,
-        firstName: row.user.firstName,
-        lastName: row.user.lastName,
+        firstName: row.user.firstNameNative,
+        lastName: row.user.lastNameNative,
         avatar: row.user.avatar,
         avatarColor: row.user.avatarColor,
         acceptedAt: row.acceptedAt,
@@ -154,7 +154,7 @@ const manifestController = {
         include: [{
           model: User,
           as: 'user',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
         }],
         order: sequelize.random(),
         limit,
@@ -163,8 +163,8 @@ const manifestController = {
       const users = rows.map((row) => ({
         id: row.user.id,
         username: row.user.username,
-        firstName: row.user.firstName,
-        lastName: row.user.lastName,
+        firstName: row.user.firstNameNative,
+        lastName: row.user.lastNameNative,
         avatar: row.user.avatar,
         avatarColor: row.user.avatarColor,
       }));
