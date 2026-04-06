@@ -389,7 +389,7 @@ const createPoll = async (userId, pollData) => {
  * @param {object|null} user - plain user object { id, role } or null
  * @returns {Promise<{success: boolean, status?: number, message?: string, data?: object, error?: string}>}
  */
-const getAllPolls = async (filters, user) => {
+const getAllPolls = async (filters, user, clientIp, userAgent) => {
   try {
     const {
       status,
@@ -576,6 +576,23 @@ const getAllPolls = async (filters, user) => {
           }
         }
       }
+    } else if (clientIp && userAgent) {
+      const pollIds = pollsWithCounts.map(p => p.id);
+      if (pollIds.length > 0) {
+        const anonVotes = await PollVote.findAll({
+          where: { pollId: { [Op.in]: pollIds }, userId: null, ipAddress: clientIp, userAgent },
+          attributes: ['pollId', 'optionId', 'createdAt']
+        });
+        const voteMap = {};
+        for (const v of anonVotes) {
+          voteMap[v.pollId] = { optionId: v.optionId, createdAt: v.createdAt };
+        }
+        for (const p of pollsWithCounts) {
+          if (voteMap[p.id]) {
+            p.userVote = voteMap[p.id];
+          }
+        }
+      }
     }
 
     // Filter by tag in memory and then apply pagination.
@@ -635,7 +652,7 @@ const getAllPolls = async (filters, user) => {
  * @param {object|null} user - plain user object { id, role } or null
  * @returns {Promise<{success: boolean, status?: number, message?: string, data?: object, error?: string}>}
  */
-const getPollById = async (pollId, user) => {
+const getPollById = async (pollId, user, clientIp, userAgent) => {
   try {
     const poll = await Poll.findByPk(pollId, {
       include: [
@@ -707,6 +724,16 @@ const getPollById = async (pollId, user) => {
         responsePoll.userVote = {
           optionId: userVote.optionId,
           createdAt: userVote.createdAt
+        };
+      }
+    } else if (clientIp && userAgent) {
+      const anonVote = await PollVote.findOne({
+        where: { pollId, userId: null, ipAddress: clientIp, userAgent }
+      });
+      if (anonVote) {
+        responsePoll.userVote = {
+          optionId: anonVote.optionId,
+          createdAt: anonVote.createdAt
         };
       }
     }
