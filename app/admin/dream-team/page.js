@@ -140,7 +140,7 @@ function SuggestionsPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 space-y-1 border-t pt-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε πρόσωπο ή χρήστη *" />
           {selectedPerson && (
             <p className="text-xs text-green-600">✓ {(`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username}</p>
           )}
@@ -245,7 +245,7 @@ function HolderPanel({ position, onRefresh }) {
 
       {!isLocationManaged && (adding ? (
         <div className="mt-2 border-t pt-2 space-y-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε πρόσωπο ή χρήστη *" />
           {selectedPerson && (
             <p className="text-xs text-green-600">✓ {(`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username}</p>
           )}
