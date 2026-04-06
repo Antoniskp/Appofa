@@ -119,11 +119,13 @@ export function TruncatedTextTooltip({
     }
   }, [text]);
 
+  const lineClampClass = maxLines === 1 ? 'line-clamp-1' : maxLines === 3 ? 'line-clamp-3' : 'line-clamp-2';
+
   return (
     <Tooltip content={isTruncated ? text : null} position="top">
       <span
         ref={textRef}
-        className={`line-clamp-${maxLines} ${className}`}
+        className={`${lineClampClass} ${className}`}
       >
         {text}
       </span>
