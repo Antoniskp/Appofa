@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { articleAPI, pollAPI, suggestionAPI } from '@/lib/api';
+import { articleAPI, pollAPI, suggestionAPI, manifestAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import ArticleCard from '@/components/articles/ArticleCard';
@@ -35,6 +35,9 @@ export default function HomePage() {
   const [videos, setVideos] = useState([]);
   const [videosLoading, setVideosLoading] = useState(true);
   const [videosError, setVideosError] = useState(null);
+
+  const [manifestData, setManifestData] = useState([]);
+  const [manifestLoading, setManifestLoading] = useState(true);
 
   useEffect(() => {
     const fetchLatestArticles = async () => {
@@ -128,6 +131,35 @@ export default function HomePage() {
     fetchPolls();
     fetchLatestNews();
     fetchVideos();
+
+    // Fetch manifest supporters for homepage
+    const fetchManifestSupporters = async () => {
+      try {
+        const res = await manifestAPI.getAll();
+        if (res?.success && res.data?.manifests?.length) {
+          const manifests = res.data.manifests;
+          const withSupporters = await Promise.all(
+            manifests.map(async (m) => {
+              try {
+                const supportersRes = await manifestAPI.getRandomSupporters(m.slug, 8);
+                return {
+                  ...m,
+                  randomSupporters: supportersRes?.success ? supportersRes.data?.users || [] : [],
+                };
+              } catch {
+                return { ...m, randomSupporters: [] };
+              }
+            })
+          );
+          setManifestData(withSupporters);
+        }
+      } catch {
+        // non-critical
+      } finally {
+        setManifestLoading(false);
+      }
+    };
+    fetchManifestSupporters();
   }, []);
 
   return (
@@ -208,6 +240,73 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* Manifest Supporters Section */}
+      {!manifestLoading && manifestData.length > 0 && (
+        <section className="bg-gradient-to-b from-gray-50 to-white">
+          <div className="app-container py-16">
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              📜 Υποστηρικτές Μανιφέστου
+            </h2>
+            <p className="text-sm text-gray-500 mb-8">
+              Μέλη που αποδέχτηκαν τα μανιφέστα μας
+            </p>
+            <div className="space-y-10">
+              {manifestData.map((manifest) => (
+                <div key={manifest.slug}>
+                  <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">{manifest.title}</h3>
+                      <p className="text-xs text-gray-400">
+                        {manifest.supportersCount || 0} συνολικά υποστηρικτές
+                      </p>
+                    </div>
+                    <Link
+                      href={`/manifest-supporters?manifest=${encodeURIComponent(manifest.slug)}`}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Δείτε όλους →
+                    </Link>
+                  </div>
+                  {manifest.randomSupporters.length > 0 ? (
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-4">
+                      {manifest.randomSupporters.map((supporter) => (
+                        <Link
+                          key={supporter.id}
+                          href={`/users/${supporter.id}`}
+                          className="flex flex-col items-center group"
+                        >
+                          <div
+                            className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold group-hover:ring-2 ring-blue-400 transition overflow-hidden"
+                            style={{ backgroundColor: supporter.avatarColor || '#dbeafe' }}
+                          >
+                            {supporter.avatar ? (
+                              <img
+                                src={supporter.avatar}
+                                alt={supporter.username}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-blue-600">
+                                {(supporter.firstName || supporter.username || '?')[0].toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-600 mt-1 truncate max-w-[80px] text-center">
+                            {supporter.firstName || supporter.username}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">Δεν υπάρχουν ακόμα υποστηρικτές.</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <HomepageSection
         title="Τελευταίες Ειδήσεις"

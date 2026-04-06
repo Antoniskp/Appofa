@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI, locationAPI, commentAPI, badgeAPI } from '@/lib/api';
+import { authAPI, locationAPI, commentAPI, badgeAPI, manifestAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import Card from '@/components/ui/Card';
@@ -21,6 +21,7 @@ import ProfileProfessionsSection from '@/components/profile/ProfileProfessionsSe
 import ProfileInterestsSection from '@/components/profile/ProfileInterestsSection';
 import ProfileExpertiseSection from '@/components/profile/ProfileExpertiseSection';
 import ProfileBadgesSection from '@/components/profile/ProfileBadgesSection';
+import ProfileManifestSection from '@/components/profile/ProfileManifestSection';
 
 function ProfileContent() {
   const { user, updateProfile, deleteAccount } = useAuth();
@@ -77,6 +78,9 @@ function ProfileContent() {
   const [intPicker, setIntPicker] = useState({ categoryId: '', interestId: '', subInterestId: '' });
   const [followersCount, setFollowersCount] = useState(undefined);
   const [followingCount, setFollowingCount] = useState(undefined);
+  const [manifestList, setManifestList] = useState([]);
+  const [manifestAcceptances, setManifestAcceptances] = useState([]);
+  const [manifestLoading, setManifestLoading] = useState(true);
 
   // Dirty-state tracking: compare current profileData with the last saved snapshot
   useEffect(() => {
@@ -212,6 +216,25 @@ function ProfileContent() {
       .catch(() => {});
   }, []);
 
+  // Fetch active manifests and user's acceptances
+  useEffect(() => {
+    const fetchManifests = async () => {
+      try {
+        const [manifestsRes, acceptancesRes] = await Promise.all([
+          manifestAPI.getAll(),
+          manifestAPI.getMyAcceptances(),
+        ]);
+        if (manifestsRes?.success) setManifestList(manifestsRes.data?.manifests || []);
+        if (acceptancesRes?.success) setManifestAcceptances(acceptancesRes.data?.acceptances || []);
+      } catch (_err) {
+        // non-critical
+      } finally {
+        setManifestLoading(false);
+      }
+    };
+    fetchManifests();
+  }, []);
+
   const handleEvaluateBadges = async () => {
     setBadgeEvaluating(true);
     try {
@@ -252,6 +275,30 @@ function ProfileContent() {
       error('Αποτυχία αφαίρεσης badge εμφάνισης.');
     } finally {
       setSavingDisplayBadge(false);
+    }
+  };
+
+  const handleManifestAccept = async (slug) => {
+    try {
+      const res = await manifestAPI.accept(slug);
+      if (res?.success) {
+        setManifestAcceptances((prev) => [...prev, { slug, acceptedAt: res.data?.acceptedAt || new Date().toISOString() }]);
+        success('Το μανιφέστο αποδεχτήκατε επιτυχώς!');
+      }
+    } catch (_err) {
+      error('Αποτυχία αποδοχής μανιφέστου.');
+    }
+  };
+
+  const handleManifestWithdraw = async (slug) => {
+    try {
+      const res = await manifestAPI.withdraw(slug);
+      if (res?.success) {
+        setManifestAcceptances((prev) => prev.filter((a) => a.slug !== slug));
+        success('Η αποδοχή αποσύρθηκε.');
+      }
+    } catch (_err) {
+      error('Αποτυχία απόσυρσης αποδοχής.');
     }
   };
 
@@ -438,6 +485,21 @@ function ProfileContent() {
             followingCount={followingCount}
           />
         </Card>
+
+        {/* Manifest acceptance section */}
+        {(manifestList.length > 0 || manifestLoading) && (
+          <Card className="border-2 border-blue-200 bg-blue-50">
+            <ProfileManifestSection
+              manifests={manifestList.map((m) => {
+                const acceptance = manifestAcceptances.find((a) => a.slug === m.slug);
+                return { ...m, acceptedAt: acceptance ? acceptance.acceptedAt : null };
+              })}
+              onAccept={handleManifestAccept}
+              onWithdraw={handleManifestWithdraw}
+              loading={manifestLoading}
+            />
+          </Card>
+        )}
 
         {/* Basic info + home location */}
         <Card>
