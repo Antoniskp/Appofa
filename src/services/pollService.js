@@ -558,6 +558,26 @@ const getAllPolls = async (filters, user) => {
       return pollData;
     });
 
+    // Attach userVote for each poll when the user is authenticated
+    if (user) {
+      const pollIds = pollsWithCounts.map(p => p.id);
+      if (pollIds.length > 0) {
+        const userVotes = await PollVote.findAll({
+          where: { pollId: { [Op.in]: pollIds }, userId: user.id },
+          attributes: ['pollId', 'optionId', 'createdAt']
+        });
+        const voteMap = {};
+        for (const v of userVotes) {
+          voteMap[v.pollId] = { optionId: v.optionId, createdAt: v.createdAt };
+        }
+        for (const p of pollsWithCounts) {
+          if (voteMap[p.id]) {
+            p.userVote = voteMap[p.id];
+          }
+        }
+      }
+    }
+
     // Filter by tag in memory and then apply pagination.
     if (isTagFiltering) {
       pollsWithCounts = pollsWithCounts.filter(
