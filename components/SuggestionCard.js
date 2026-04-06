@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Badge from '@/components/ui/Badge';
+import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import InlineSuggestionVote from '@/components/InlineSuggestionVote';
 
 const TYPE_LABELS = {
@@ -27,8 +28,10 @@ export default function SuggestionCard({ suggestion }) {
             {TYPE_LABELS[suggestion.type] || suggestion.type}
           </Badge>
         </div>
-        <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-3">
-          {suggestion.title}
+        <h3 className="text-base font-bold text-gray-900 mb-3">
+          <TruncatedTextTooltip maxLines={2}>
+            {suggestion.title}
+          </TruncatedTextTooltip>
         </h3>
       </Link>
       <div className="flex items-center justify-between text-sm text-gray-500">
