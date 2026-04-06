@@ -89,7 +89,7 @@ function SuggestionCard({ suggestion }) {
                 </span>
               )}
             </div>
-            <h3 className="text-base font-semibold text-gray-900 truncate">{suggestion.title}</h3>
+            <h3 className="text-base font-semibold text-gray-900 line-clamp-2">{suggestion.title}</h3>
             <p className="text-sm text-gray-600 mt-1 line-clamp-2">{suggestion.body}</p>
             <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
               {suggestion.author && (
