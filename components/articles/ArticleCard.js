@@ -112,7 +112,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         <h3 className="headline hover:text-blue-600 flex items-start gap-1.5">
           <FilmIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
           <span className="sr-only">(Video) </span>
-          <TruncatedTextTooltip maxLines={2} className="headline">
+          <TruncatedTextTooltip maxLines={2}>
             {article.title}
           </TruncatedTextTooltip>
         </h3>
@@ -157,7 +157,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             
             {/* Title */}
             <h2 className="text-2xl font-semibold mb-2 hover:text-blue-600">
-              <TruncatedTextTooltip maxLines={2} className="text-2xl font-semibold">
+              <TruncatedTextTooltip maxLines={2}>
                 {article.title}
               </TruncatedTextTooltip>
             </h2>
@@ -204,7 +204,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         )}
       </div>
       <h3 className="headline hover:text-blue-600">
-        <TruncatedTextTooltip maxLines={2} className="headline">
+        <TruncatedTextTooltip maxLines={2}>
           {article.title}
         </TruncatedTextTooltip>
       </h3>

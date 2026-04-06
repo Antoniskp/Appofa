@@ -383,7 +383,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const pollInfoContent = (
     <>
       <h3 className="headline hover:text-blue-600 mb-2">
-        <TruncatedTextTooltip maxLines={2} className="headline">
+        <TruncatedTextTooltip maxLines={2}>
           {poll.title}
         </TruncatedTextTooltip>
       </h3>
