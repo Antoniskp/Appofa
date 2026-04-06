@@ -9,7 +9,6 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon,
   CheckIcon,
-  UserIcon,
 } from '@heroicons/react/24/outline';
 
 // ---------------------------------------------------------------------------
@@ -17,7 +16,7 @@ import {
 // ---------------------------------------------------------------------------
 function AssigneePicker({ onSelect, onClose }) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState({ persons: [], users: [] });
+  const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef(null);
   const inputRef = useRef(null);
@@ -28,21 +27,15 @@ function AssigneePicker({ onSelect, onClose }) {
 
   useEffect(() => {
     if (!query.trim()) {
-      setResults({ persons: [], users: [] });
+      setResults([]);
       return;
     }
     clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const [personRes, userRes] = await Promise.all([
-          apiRequest(`/api/persons?search=${encodeURIComponent(query)}&limit=5&claimStatus=all`),
-          apiRequest(`/api/auth/users/search?search=${encodeURIComponent(query)}&limit=5`),
-        ]);
-        setResults({
-          persons: personRes?.data?.profiles || personRes?.profiles || [],
-          users: userRes?.data?.users || userRes?.users || [],
-        });
+        const res = await apiRequest(`/api/auth/users/search?search=${encodeURIComponent(query)}&limit=5`);
+        setResults(res?.data?.users || res?.users || []);
       } catch {
         // ignore search errors silently
       } finally {
@@ -52,8 +45,6 @@ function AssigneePicker({ onSelect, onClose }) {
 
     return () => clearTimeout(debounceRef.current);
   }, [query]);
-
-  const hasResults = results.persons.length > 0 || results.users.length > 0;
 
   return (
     <div className="mt-2 p-3 border border-gray-200 rounded-lg bg-gray-50 shadow-sm">
@@ -73,35 +64,13 @@ function AssigneePicker({ onSelect, onClose }) {
         <p className="text-xs text-gray-500 py-1">Searching…</p>
       )}
 
-      {!searching && query.trim() && !hasResults && (
+      {!searching && query.trim() && results.length === 0 && (
         <p className="text-xs text-gray-500 py-1">No results found.</p>
       )}
 
-      {results.persons.length > 0 && (
-        <div className="mb-2">
-          <p className="text-xs font-semibold text-gray-500 mb-1">Person Profiles</p>
-          {results.persons.map((p) => (
-            <button
-              key={`person-${p.id}`}
-              type="button"
-              onClick={() => onSelect({ type: 'person', id: p.id, name: `${p.firstNameNative || ''} ${p.lastNameNative || ''}`.trim(), photo: p.photo })}
-              className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"
-            >
-              {p.photo ? (
-                <img src={p.photo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-              ) : (
-                <UserCircleIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
-              )}
-              <span className="truncate">{`${p.firstNameNative || ''} ${p.lastNameNative || ''}`.trim() || '—'}</span>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {results.users.length > 0 && (
+      {results.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-gray-500 mb-1">Users</p>
-          {results.users.map((u) => (
+          {results.map((u) => (
             <button
               key={`user-${u.id}`}
               type="button"
@@ -111,11 +80,14 @@ function AssigneePicker({ onSelect, onClose }) {
               {u.avatar ? (
                 <img src={u.avatar} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
               ) : (
-                <UserIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
+                <UserCircleIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
               )}
               <span className="truncate">{u.firstNameNative ? `${u.firstNameNative} ${u.lastNameNative || ''}`.trim() : u.username}</span>
               {u.username && u.firstNameNative && (
                 <span className="text-xs text-gray-400">@{u.username}</span>
+              )}
+              {u.isPlaceholder && (
+                <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">📋 Δημόσιο Προφίλ</span>
               )}
             </button>
           ))}

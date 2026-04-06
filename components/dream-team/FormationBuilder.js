@@ -97,12 +97,10 @@ export default function FormationBuilder({ formation, communityResults = [], onS
     }
 
     // Check if this person is already assigned to a different position
-    const incomingPersonId = person.type === 'profile' ? person.id : null;
-    const incomingCandidateUserId = person.type === 'user' ? person.id : null;
+    const incomingCandidateUserId = person.id;
     const conflictEntry = Object.entries(picks).find(([existingSlug, pick]) => {
       if (existingSlug === slug || !pick) return false;
-      if (incomingPersonId && pick.personId === incomingPersonId) return true;
-      if (incomingCandidateUserId && pick.candidateUserId === incomingCandidateUserId) return true;
+      if (pick.candidateUserId === incomingCandidateUserId) return true;
       return false;
     });
     if (conflictEntry) {
@@ -114,17 +112,15 @@ export default function FormationBuilder({ formation, communityResults = [], onS
       return;
     }
 
-    const displayName = person.type === 'user'
-      ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
-      : `${person.firstNameNative} ${person.lastNameNative}`;
+    const displayName = (`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username;
     setPicks((prev) => ({
       ...prev,
       [slug]: {
         positionSlug: slug,
-        personId: person.type === 'profile' ? person.id : null,
-        candidateUserId: person.type === 'user' ? person.id : null,
+        personId: null,
+        candidateUserId: person.id,
         personName: displayName,
-        photo: person.photo || null,
+        photo: null,
         avatar: person.avatar || null,
       },
     }));
@@ -269,7 +265,6 @@ export default function FormationBuilder({ formation, communityResults = [], onS
             <PersonSearch
               placeholder="Αναζητήστε πρόσωπο..."
               showTopSuggestions
-              includeUsers
               onSelect={(person) => handlePickSelect(position.slug, person)}
             />
           )}
