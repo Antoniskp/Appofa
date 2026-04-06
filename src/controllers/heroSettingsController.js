@@ -83,7 +83,7 @@ const updateHeroSettings = async (req, res) => {
       settings.backgroundColor = backgroundColor;
     }
 
-    await settings.save();
+    await settings.save({ fields: ['backgroundImageUrl', 'backgroundColor', 'updatedAt'] });
 
     return res.json({
       success: true,
@@ -151,7 +151,7 @@ const createSlide = async (req, res) => {
 
     settings.slides = [...slides, newSlide];
     settings.changed('slides', true);
-    await settings.save();
+    await settings.save({ fields: ['slides', 'updatedAt'] });
 
     return res.status(201).json({ success: true, data: newSlide, message: 'Slide created.' });
   } catch (err) {
@@ -200,7 +200,7 @@ const updateSlide = async (req, res) => {
     updatedSlides[idx] = updatedSlide;
     settings.slides = updatedSlides;
     settings.changed('slides', true);
-    await settings.save();
+    await settings.save({ fields: ['slides', 'updatedAt'] });
 
     return res.json({ success: true, data: updatedSlide, message: 'Slide updated.' });
   } catch (err) {
@@ -220,7 +220,7 @@ const deleteSlide = async (req, res) => {
     }
     settings.slides = slides.filter((s) => s.id !== id);
     settings.changed('slides', true);
-    await settings.save();
+    await settings.save({ fields: ['slides', 'updatedAt'] });
     return res.json({ success: true, message: 'Slide deleted.' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to delete slide.' });
@@ -249,7 +249,7 @@ const reorderSlides = async (req, res) => {
 
     settings.slides = updatedSlides;
     settings.changed('slides', true);
-    await settings.save();
+    await settings.save({ fields: ['slides', 'updatedAt'] });
 
     return res.json({ success: true, data: updatedSlides, message: 'Slides reordered.' });
   } catch (err) {
@@ -271,7 +271,7 @@ const toggleSlide = async (req, res) => {
     updatedSlides[idx] = { ...updatedSlides[idx], isActive: !updatedSlides[idx].isActive };
     settings.slides = updatedSlides;
     settings.changed('slides', true);
-    await settings.save();
+    await settings.save({ fields: ['slides', 'updatedAt'] });
     return res.json({ success: true, data: updatedSlides[idx], message: `Slide ${updatedSlides[idx].isActive ? 'activated' : 'deactivated'}.` });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to toggle slide.' });
