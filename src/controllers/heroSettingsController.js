@@ -150,6 +150,7 @@ const createSlide = async (req, res) => {
     };
 
     settings.slides = [...slides, newSlide];
+    settings.changed('slides', true);
     await settings.save();
 
     return res.status(201).json({ success: true, data: newSlide, message: 'Slide created.' });
@@ -198,6 +199,7 @@ const updateSlide = async (req, res) => {
     const updatedSlides = [...slides];
     updatedSlides[idx] = updatedSlide;
     settings.slides = updatedSlides;
+    settings.changed('slides', true);
     await settings.save();
 
     return res.json({ success: true, data: updatedSlide, message: 'Slide updated.' });
@@ -217,6 +219,7 @@ const deleteSlide = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
     }
     settings.slides = slides.filter((s) => s.id !== id);
+    settings.changed('slides', true);
     await settings.save();
     return res.json({ success: true, message: 'Slide deleted.' });
   } catch (err) {
@@ -237,6 +240,7 @@ const toggleSlide = async (req, res) => {
     const updatedSlides = [...slides];
     updatedSlides[idx] = { ...updatedSlides[idx], isActive: !updatedSlides[idx].isActive };
     settings.slides = updatedSlides;
+    settings.changed('slides', true);
     await settings.save();
     return res.json({ success: true, data: updatedSlides[idx], message: `Slide ${updatedSlides[idx].isActive ? 'activated' : 'deactivated'}.` });
   } catch (err) {
