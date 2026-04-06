@@ -67,6 +67,9 @@ export default function PollCard({ poll, variant = 'grid' }) {
     }
   };
   
+  // Whether the user has voted (from server data or from an inline vote this session)
+  const hasVoted = inlineVotedId !== null;
+
   // Check if user can view results
   const canViewResults = () => {
     if (!poll) return false;
@@ -77,7 +80,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
     // Check visibility settings
     if (poll.resultsVisibility === 'always') return true;
     if (poll.resultsVisibility === 'after_deadline' && (poll.status === 'closed' || (poll.deadline && new Date() >= new Date(poll.deadline)))) return true;
-    if (poll.resultsVisibility === 'after_vote' && poll.userVote) return true;
+    if (poll.resultsVisibility === 'after_vote' && hasVoted) return true;
     
     return false;
   };
@@ -409,12 +412,22 @@ export default function PollCard({ poll, variant = 'grid' }) {
       ) : (
         <div className="mt-4">
           {isPollActive ? (
-            <Link
-              href={pollHref}
-              className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
-            >
-              Ψηφοφορία Τώρα
-            </Link>
+            hasVoted ? (
+              <Link
+                href={pollHref}
+                className="inline-flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm font-medium"
+              >
+                <CheckCircleIcon className="h-4 w-4" />
+                Αλλαγή Ψήφου
+              </Link>
+            ) : (
+              <Link
+                href={pollHref}
+                className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+              >
+                Ψηφοφορία Τώρα
+              </Link>
+            )
           ) : (
             <Link
               href={pollHref}

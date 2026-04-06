@@ -472,6 +472,40 @@ describe('Poll API Tests', () => {
       }
     });
 
+    test('should include userVote in list response for authenticated user who has voted', async () => {
+      // Regular user already voted on testPollId in the single-poll tests setup
+      const csrfToken = 'test-csrf-token-list-vote';
+      const headers = csrfHeaderFor(csrfToken, regularUserId);
+
+      await request(app)
+        .post(`/api/polls/${testPollId}/vote`)
+        .set('Cookie', [`auth_token=${userToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({ optionId: testPollOptionId });
+
+      const response = await request(app)
+        .get('/api/polls')
+        .set('Cookie', `auth_token=${userToken}`);
+
+      expect(response.status).toBe(200);
+      const votedPoll = response.body.data.find(p => p.id === testPollId);
+      expect(votedPoll).toBeDefined();
+      expect(votedPoll).toHaveProperty('userVote');
+      expect(votedPoll.userVote).toHaveProperty('optionId', testPollOptionId);
+    });
+
+    test('should not include userVote in list response for unauthenticated users', async () => {
+      const response = await request(app)
+        .get('/api/polls');
+
+      expect(response.status).toBe(200);
+      if (response.body.data.length > 0) {
+        response.body.data.forEach(poll => {
+          expect(poll.userVote).toBeUndefined();
+        });
+      }
+    });
+
     test('should filter polls by search text', async () => {
       const response = await request(app)
         .get('/api/polls')
