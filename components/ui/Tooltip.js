@@ -105,16 +105,28 @@ export default function Tooltip({
  */
 export function TruncatedTextTooltip({ 
   children, 
-  maxLength = 50,
+  maxLines = 2,
   className = ''
 }) {
+  const textRef = useRef(null);
+  const [isTruncated, setIsTruncated] = useState(false);
   const text = String(children || '');
-  const isTruncated = text.length > maxLength;
-  const displayText = isTruncated ? text.substring(0, maxLength) + '...' : text;
-  
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (el) {
+      setIsTruncated(el.scrollHeight > el.clientHeight);
+    }
+  }, [text]);
+
   return (
     <Tooltip content={isTruncated ? text : null} position="top">
-      <span className={className}>{displayText}</span>
+      <span
+        ref={textRef}
+        className={`line-clamp-${maxLines} ${className}`}
+      >
+        {text}
+      </span>
     </Tooltip>
   );
 }

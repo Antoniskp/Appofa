@@ -564,22 +564,15 @@ function AdminDashboardContent() {
                 key: 'title',
                 header: 'Title',
                 className: 'whitespace-normal',
-                render: (article) => {
-                  // Truncate to 60 chars, max 2 lines, always end with ... if truncated, never overflow to 3rd line
-                  let displayTitle = article.title;
-                  if (displayTitle.length > 60) {
-                    displayTitle = article.title.slice(0, 60).replace(/\.{0,3}$/, '') + '...';
-                  }
-                  return (
-                    <Link
-                      href={article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`}
-                      className="text-blue-600 hover:text-blue-800 line-clamp-2 block max-h-[3.2em] overflow-hidden"
-                      title={article.title}
-                    >
-                      {displayTitle}
-                    </Link>
-                  );
-                }
+                render: (article) => (
+                  <Link
+                    href={article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`}
+                    className="text-blue-600 hover:text-blue-800 line-clamp-2 block"
+                    title={article.title}
+                  >
+                    {article.title}
+                  </Link>
+                )
               },
               {
                 key: 'author',
