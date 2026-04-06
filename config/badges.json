@@ -95,5 +95,16 @@
       { "tier": "silver", "label": "Ασημένιο", "criteria": "Δημιουργήστε 3 συνθέσεις", "threshold": 3 },
       { "tier": "gold", "label": "Χρυσό", "criteria": "Δημιουργήστε 10 συνθέσεις", "threshold": 10 }
     ]
+  },
+  {
+    "slug": "manifest-supporter",
+    "name": "Υποστηρικτής Μανιφέστου",
+    "description": "Αποδεχτείτε μανιφέστα στην πλατφόρμα",
+    "category": "community",
+    "tiers": [
+      { "tier": "bronze", "label": "Χάλκινο", "criteria": "Αποδεχτείτε 1 μανιφέστο", "threshold": 1 },
+      { "tier": "silver", "label": "Ασημένιο", "criteria": "Αποδεχτείτε 3 μανιφέστα", "threshold": 3 },
+      { "tier": "gold", "label": "Χρυσό", "criteria": "Αποδεχτείτε 5 μανιφέστα", "threshold": 5 }
+    ]
   }
 ]

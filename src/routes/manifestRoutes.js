@@ -21,6 +21,7 @@ router.put('/:slug/accept', createLimiter, authMiddleware, csrfProtection, manif
 router.delete('/:slug/accept', createLimiter, authMiddleware, csrfProtection, manifestController.withdraw);
 
 // Admin routes
+router.get('/admin', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), manifestController.listAll);
 router.post('/', createLimiter, authMiddleware, checkRole('admin'), csrfProtection, manifestController.create);
 router.put('/:slug', createLimiter, authMiddleware, checkRole('admin'), csrfProtection, manifestController.update);
 router.delete('/:slug', createLimiter, authMiddleware, checkRole('admin'), csrfProtection, manifestController.remove);

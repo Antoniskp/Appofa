@@ -441,6 +441,7 @@ function AdminDashboardContent() {
               { href: '/admin/removal-requests', label: 'Removal Requests', icon: XCircleIcon },
               { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
               { href: '/admin/dream-team', label: 'Dream Team', icon: StarIcon },
+              { href: '/admin/manifests', label: 'Manage Manifests', icon: DocumentTextIcon },
               { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
               { href: '/admin/status', label: 'System Health', icon: HeartIcon },
             ].map(action => (
