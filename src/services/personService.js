@@ -259,19 +259,31 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
 
   // Transfer relationships from placeholder user to the claiming user (if a placeholder exists)
   if (placeholderUserId && claimingUserId && placeholderUserId !== claimingUserId) {
-    // Transfer endorsements: handle potential unique-constraint conflicts
-    const placeholderEndorsements = await Endorsement.findAll({
-      where: { endorsedId: placeholderUserId }
-    });
+    // Transfer endorsements: handle potential unique-constraint conflicts.
+    // Fetch all placeholder endorsements and all existing claiming-user endorsements in two queries,
+    // then resolve conflicts in-memory to avoid N+1 queries.
+    const [placeholderEndorsements, existingClaimingEndorsements] = await Promise.all([
+      Endorsement.findAll({ where: { endorsedId: placeholderUserId } }),
+      Endorsement.findAll({ where: { endorsedId: claimingUserId } }),
+    ]);
+    const existingKey = new Set(
+      existingClaimingEndorsements.map((e) => `${e.endorserId}:${e.topic}`)
+    );
+    const toDestroy = [];
+    const toUpdate = [];
     for (const endorsement of placeholderEndorsements) {
-      const conflict = await Endorsement.findOne({
-        where: { endorserId: endorsement.endorserId, endorsedId: claimingUserId, topic: endorsement.topic }
-      });
-      if (conflict) {
-        await endorsement.destroy();
+      const key = `${endorsement.endorserId}:${endorsement.topic}`;
+      if (existingKey.has(key)) {
+        toDestroy.push(endorsement.id);
       } else {
-        await endorsement.update({ endorsedId: claimingUserId });
+        toUpdate.push(endorsement.id);
       }
+    }
+    if (toDestroy.length > 0) {
+      await Endorsement.destroy({ where: { id: { [Op.in]: toDestroy } } });
+    }
+    if (toUpdate.length > 0) {
+      await Endorsement.update({ endorsedId: claimingUserId }, { where: { id: { [Op.in]: toUpdate } } });
     }
 
     // Transfer dream-team votes (candidateUserId column)

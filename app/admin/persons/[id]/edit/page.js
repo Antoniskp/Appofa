@@ -228,6 +228,7 @@ export default function EditPersonProfilePage({ params }) {
         if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
       } else {
         payload.partyId = null;
+        payload.position = null;
         payload.manifesto = null;
         payload.politicalPositions = null;
       }
