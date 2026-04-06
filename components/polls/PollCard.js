@@ -40,18 +40,19 @@ export default function PollCard({ poll, variant = 'grid' }) {
   // ── Countdown timer state ─────────────────────────────────────────────────
   const deadlineDate = poll.deadline ? new Date(poll.deadline) : null;
   const [timeLeft, setTimeLeft] = useState(() => {
-    if (!deadlineDate) return null;
-    const diff = deadlineDate - new Date();
+    if (!poll.deadline) return null;
+    const diff = new Date(poll.deadline) - new Date();
     return diff > 0 ? diff : 0;
   });
 
   useEffect(() => {
-    if (!deadlineDate) return;
-    const diff = deadlineDate - new Date();
+    if (!poll.deadline) return;
+    const deadline = new Date(poll.deadline);
+    const diff = deadline - new Date();
     if (diff <= 0) return;
     setTimeLeft(diff);
     const interval = setInterval(() => {
-      const remaining = deadlineDate - new Date();
+      const remaining = deadline - new Date();
       if (remaining <= 0) {
         setTimeLeft(0);
         clearInterval(interval);
@@ -60,7 +61,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [poll.deadline]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [poll.deadline]);
 
   // Which poll types can be voted on inline (binary OR simple with ≤3 options)
   const options = poll.options || [];
@@ -310,8 +311,8 @@ export default function PollCard({ poll, variant = 'grid' }) {
     const hours = Math.floor((totalSeconds % 86400) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
     const seconds = totalSeconds % 60;
-    if (days > 0) return `${days}η ${hours}ω ${minutes}λ`;
-    return `${hours}ω ${minutes}λ ${seconds}δ`;
+    if (days > 0) return `${days}η ${hours}ω ${minutes}λ`; // η=days, ω=hours, λ=minutes
+    return `${hours}ω ${minutes}λ ${seconds}δ`; // ω=hours, λ=minutes, δ=seconds
   };
 
   // Render the contextual info panel shown in the h-32 top area when the poll
