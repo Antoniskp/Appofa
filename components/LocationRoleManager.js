@@ -111,27 +111,19 @@ function AssigneePicker({ onSelect, onClose }) {
 function RoleSlotRow({ definition, assignment, onChange }) {
   const [picking, setPicking] = useState(false);
 
-  const person = assignment?.person || null;
   const user = assignment?.user || null;
-  const assignee = person || user;
-  const displayName = assignee
-    ? (person
-        ? `${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()
-        : (user.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user.username))
+  const displayName = user
+    ? (user.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user.username)
     : null;
-  const photo = assignee ? (person?.photo || user?.avatar) : null;
+  const photo = user?.avatar || null;
 
-  const handleSelect = ({ type, id }) => {
+  const handleSelect = ({ id }) => {
     setPicking(false);
-    if (type === 'person') {
-      onChange(definition.key, { personId: id, userId: null });
-    } else {
-      onChange(definition.key, { personId: null, userId: id });
-    }
+    onChange(definition.key, { userId: id });
   };
 
   const handleClear = () => {
-    onChange(definition.key, { personId: null, userId: null });
+    onChange(definition.key, { userId: null });
   };
 
   return (
@@ -143,7 +135,7 @@ function RoleSlotRow({ definition, assignment, onChange }) {
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {assignee ? (
+          {user ? (
             <>
               {photo ? (
                 <img src={photo} alt="" className="w-8 h-8 rounded-full object-cover" />
@@ -211,7 +203,6 @@ export default function LocationRoleManager({ locationId, locationType }) {
         for (const role of res.roles) {
           if (role.assignment) {
             map[role.key] = {
-              personId: role.assignment.personId || null,
               userId: role.assignment.userId || null,
             };
           }
@@ -229,10 +220,10 @@ export default function LocationRoleManager({ locationId, locationType }) {
     load();
   }, [load]);
 
-  const handleChange = (roleKey, { personId, userId }) => {
+  const handleChange = (roleKey, { userId }) => {
     setLocalAssignments((prev) => ({
       ...prev,
-      [roleKey]: { personId, userId },
+      [roleKey]: { userId },
     }));
   };
 
@@ -245,7 +236,6 @@ export default function LocationRoleManager({ locationId, locationType }) {
         const a = localAssignments[def.key] || {};
         return {
           roleKey: def.key,
-          personId: a.personId || null,
           userId: a.userId || null,
         };
       });
@@ -259,7 +249,6 @@ export default function LocationRoleManager({ locationId, locationType }) {
         for (const role of res.roles) {
           if (role.assignment) {
             map[role.key] = {
-              personId: role.assignment.personId || null,
               userId: role.assignment.userId || null,
             };
           }
@@ -295,18 +284,14 @@ export default function LocationRoleManager({ locationId, locationType }) {
     const localA = localAssignments[def.key];
     // If local differs from server assignment, use local (for optimistic display)
     const serverA = def.assignment;
-    const changed =
-      (localA.personId !== (serverA?.personId || null)) ||
-      (localA.userId !== (serverA?.userId || null));
+    const changed = (localA.userId !== (serverA?.userId || null));
     if (!changed) return def;
     return {
       ...def,
       assignment: {
         ...serverA,
-        personId: localA.personId,
         userId: localA.userId,
-        // person/user objects will be stale until save — show name via local state only
-        person: localA.personId ? serverA?.person : null,
+        // user object will be stale until save — show name via local state only
         user: localA.userId ? serverA?.user : null,
       },
     };

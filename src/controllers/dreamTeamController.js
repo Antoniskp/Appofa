@@ -8,7 +8,6 @@ const {
   GovernmentCurrentHolder,
   GovernmentPositionSuggestion,
   DreamTeamVote,
-  PublicPersonProfile,
   User,
   Formation,
   FormationPick,
@@ -49,12 +48,6 @@ const dreamTeamController = {
             required: false,
             include: [
               {
-                model: PublicPersonProfile,
-                as: 'person',
-                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo', 'bio'],
-                required: false,
-              },
-              {
                 model: User,
                 as: 'user',
                 attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
@@ -70,12 +63,6 @@ const dreamTeamController = {
             order: [['order', 'ASC']],
             include: [
               {
-                model: PublicPersonProfile,
-                as: 'person',
-                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
-                required: false,
-              },
-              {
                 model: User,
                 as: 'user',
                 attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
@@ -88,35 +75,21 @@ const dreamTeamController = {
 
       const positionIds = positions.map((p) => p.id);
 
-      // Fetch vote counts per position (include candidateUserId in group to satisfy PostgreSQL)
+      // Fetch vote counts per position
       const voteCounts = await DreamTeamVote.findAll({
         attributes: [
           'positionId',
-          'personId',
           'candidateUserId',
           'personName',
           [sequelize.fn('COUNT', sequelize.col('id')), 'voteCount'],
         ],
         where: { positionId: { [Op.in]: positionIds } },
-        group: ['positionId', 'personId', 'candidateUserId', 'personName'],
+        group: ['positionId', 'candidateUserId', 'personName'],
         order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
         raw: true,
       });
 
-      // Enrich vote counts with person photos for PublicPersonProfile votes
-      const votedPersonIds = [...new Set(voteCounts.map((v) => v.personId).filter(Boolean))];
-      if (votedPersonIds.length > 0) {
-        const votedPersons = await PublicPersonProfile.findAll({
-          where: { id: { [Op.in]: votedPersonIds } },
-          attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
-          raw: true,
-        });
-        const personMap = {};
-        votedPersons.forEach((p) => { personMap[p.id] = p; });
-        voteCounts.forEach((v) => { v.person = personMap[v.personId] || null; });
-      }
-
-      // Enrich vote counts with User avatars for candidateUserId-based votes
+      // Enrich vote counts with User data
       const votedUserIds = [...new Set(voteCounts.map((v) => v.candidateUserId).filter(Boolean))];
       if (votedUserIds.length > 0) {
         const votedUsers = await User.findAll({
@@ -169,12 +142,12 @@ const dreamTeamController = {
   // POST /api/dream-team/vote
   vote: async (req, res) => {
     try {
-      const { positionId, personId, candidateUserId } = req.body;
+      const { positionId, candidateUserId } = req.body;
 
-      if (!positionId || (!personId && !candidateUserId)) {
+      if (!positionId || !candidateUserId) {
         return res.status(400).json({
           success: false,
-          message: 'Απαιτούνται positionId και (personId ή candidateUserId).',
+          message: 'Απαιτούνται positionId και candidateUserId.',
         });
       }
 
@@ -188,62 +161,31 @@ const dreamTeamController = {
         });
       }
 
-      let personName;
-      if (personId) {
-        const person = await PublicPersonProfile.findByPk(personId, {
-          attributes: ['id', 'firstNameNative', 'lastNameNative'],
+      const candidateUser = await User.findByPk(candidateUserId, {
+        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'],
+      });
+      if (!candidateUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ο χρήστης δεν βρέθηκε.',
         });
-        if (!person) {
-          return res.status(404).json({
-            success: false,
-            message: 'Το πρόσωπο δεν βρέθηκε.',
-          });
-        }
-        personName = `${person.firstNameNative} ${person.lastNameNative}`.trim();
-      } else {
-        const candidateUser = await User.findByPk(candidateUserId, {
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'],
-        });
-        if (!candidateUser) {
-          return res.status(404).json({
-            success: false,
-            message: 'Ο χρήστης δεν βρέθηκε.',
-          });
-        }
-        personName = (`${candidateUser.firstNameNative || ''} ${candidateUser.lastNameNative || ''}`.trim()) || candidateUser.username;
       }
+      const personName = (`${candidateUser.firstNameNative || ''} ${candidateUser.lastNameNative || ''}`.trim()) || candidateUser.username;
 
       // Check if the same person is already voted for in a different position
-      if (personId) {
-        const duplicateVote = await DreamTeamVote.findOne({
-          where: {
-            userId: req.user.id,
-            personId,
-            positionId: { [Op.ne]: positionId },
-          },
-          include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
+      const duplicateVote = await DreamTeamVote.findOne({
+        where: {
+          userId: req.user.id,
+          candidateUserId,
+          positionId: { [Op.ne]: positionId },
+        },
+        include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
+      });
+      if (duplicateVote) {
+        return res.status(400).json({
+          success: false,
+          message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
         });
-        if (duplicateVote) {
-          return res.status(400).json({
-            success: false,
-            message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
-          });
-        }
-      } else if (candidateUserId) {
-        const duplicateVote = await DreamTeamVote.findOne({
-          where: {
-            userId: req.user.id,
-            candidateUserId,
-            positionId: { [Op.ne]: positionId },
-          },
-          include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
-        });
-        if (duplicateVote) {
-          return res.status(400).json({
-            success: false,
-            message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
-          });
-        }
       }
 
       const existing = await DreamTeamVote.findOne({
@@ -251,24 +193,19 @@ const dreamTeamController = {
       });
 
       if (existing) {
-        await existing.update({
-          personId: personId || null,
-          candidateUserId: candidateUserId || null,
-          personName,
-        });
+        await existing.update({ candidateUserId, personName });
       } else {
         await DreamTeamVote.create({
           userId: req.user.id,
           positionId,
-          personId: personId || null,
-          candidateUserId: candidateUserId || null,
+          candidateUserId,
           personName,
         });
       }
 
       return res.status(200).json({
         success: true,
-        data: { positionId, personId: personId || null, candidateUserId: candidateUserId || null, personName },
+        data: { positionId, candidateUserId, personName },
         message: 'Ψήφος καταγράφηκε επιτυχώς.',
       });
     } catch (error) {
@@ -291,12 +228,6 @@ const dreamTeamController = {
             required: false,
             include: [
               {
-                model: PublicPersonProfile,
-                as: 'person',
-                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
-                required: false,
-              },
-              {
                 model: User,
                 as: 'user',
                 attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
@@ -311,12 +242,6 @@ const dreamTeamController = {
             required: false,
             order: [['order', 'ASC']],
             include: [
-              {
-                model: PublicPersonProfile,
-                as: 'person',
-                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
-                required: false,
-              },
               {
                 model: User,
                 as: 'user',
@@ -334,18 +259,17 @@ const dreamTeamController = {
       const voteCounts = await DreamTeamVote.findAll({
         attributes: [
           'positionId',
-          'personId',
           'candidateUserId',
           'personName',
           [sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'voteCount'],
         ],
         where: { positionId: { [Op.in]: positionIds } },
-        group: ['positionId', 'personId', 'candidateUserId', 'personName'],
+        group: ['positionId', 'candidateUserId', 'personName'],
         order: [[sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'DESC']],
         raw: true,
       });
 
-      // Step 2: determine winner per position and collect their personIds / candidateUserIds
+      // Step 2: determine winner per position and collect their candidateUserIds
       const winnerByPosition = {};
       voteCounts.forEach((v) => {
         if (!winnerByPosition[v.positionId]) {
@@ -353,25 +277,11 @@ const dreamTeamController = {
         }
       });
 
-      const winnerPersonIds = [...new Set(
-        Object.values(winnerByPosition).map((v) => v.personId).filter(Boolean)
-      )];
       const winnerUserIds = [...new Set(
         Object.values(winnerByPosition).map((v) => v.candidateUserId).filter(Boolean)
       )];
 
-      // Step 3: fetch photos separately for PublicPersonProfile winners
-      const personPhotos = {};
-      if (winnerPersonIds.length > 0) {
-        const persons = await PublicPersonProfile.findAll({
-          where: { id: { [Op.in]: winnerPersonIds } },
-          attributes: ['id', 'photo'],
-          raw: true,
-        });
-        persons.forEach((p) => { personPhotos[p.id] = p.photo; });
-      }
-
-      // Step 4: fetch avatars for User-based winners
+      // Step 3: fetch avatars for User-based winners
       const userAvatars = {};
       if (winnerUserIds.length > 0) {
         const users = await User.findAll({
@@ -395,10 +305,8 @@ const dreamTeamController = {
           position: position.toJSON(),
           winner: winner
             ? {
-                personId: winner.personId,
                 candidateUserId: winner.candidateUserId,
                 personName: winner.personName,
-                photo: personPhotos[winner.personId] || null,
                 avatar: userAvatars[winner.candidateUserId] || null,
                 voteCount: parseInt(winner.voteCount, 10),
                 percentage: total > 0
@@ -426,12 +334,6 @@ const dreamTeamController = {
             model: GovernmentPosition,
             as: 'position',
             attributes: ['id', 'slug', 'title', 'positionTypeKey', 'scope'],
-          },
-          {
-            model: PublicPersonProfile,
-            as: 'person',
-            attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
-            required: false,
           },
           {
             model: User,
@@ -483,12 +385,6 @@ const dreamTeamController = {
             required: false,
             include: [
               {
-                model: PublicPersonProfile,
-                as: 'person',
-                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
-                required: false,
-              },
-              {
                 model: User,
                 as: 'user',
                 attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
@@ -502,12 +398,6 @@ const dreamTeamController = {
             required: false,
             order: [['order', 'ASC']],
             include: [
-              {
-                model: PublicPersonProfile,
-                as: 'person',
-                attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
-                required: false,
-              },
               {
                 model: User,
                 as: 'user',
@@ -530,44 +420,34 @@ const dreamTeamController = {
   // POST /api/admin/dream-team/suggestions
   adminCreateSuggestion: async (req, res) => {
     try {
-      const { positionId, personId, userId, reason, order: ord } = req.body;
-      if (!positionId || (!personId && !userId)) {
-        return res.status(400).json({ success: false, message: 'Απαιτείται personId (PublicPersonProfile) ή userId (verified app user).' });
+      const { positionId, userId, reason, order: ord } = req.body;
+      if (!positionId || !userId) {
+        return res.status(400).json({ success: false, message: 'Απαιτείται userId (verified app user).' });
       }
       const position = await GovernmentPosition.findByPk(positionId);
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      if (personId) {
-        const person = await PublicPersonProfile.findByPk(personId);
-        if (!person) {
-          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
-        }
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if (userId) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
-        if (!user) {
-          return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
-        }
-        if (!user.isVerified || !user.searchable) {
-          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
-        }
+      if (!user.isVerified && !user.searchable) {
+        return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
       const suggestion = await GovernmentPositionSuggestion.create({
         positionId,
-        personId: personId || null,
-        userId: userId || null,
+        userId,
         reason: reason?.trim() || null,
         order: ord ?? 0,
         isActive: true,
       });
-      const suggestionWithPerson = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
+      const suggestionWithUser = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
           { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
-      return res.status(201).json({ success: true, data: suggestionWithPerson });
+      return res.status(201).json({ success: true, data: suggestionWithUser });
     } catch (error) {
       console.error('dreamTeamController.adminCreateSuggestion error:', error);
       return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
@@ -581,24 +461,17 @@ const dreamTeamController = {
       if (!suggestion) {
         return res.status(404).json({ success: false, message: 'Η πρόταση δεν βρέθηκε.' });
       }
-      const { personId, userId, reason, order: ord, isActive } = req.body;
-      if (personId !== undefined && personId !== null) {
-        const person = await PublicPersonProfile.findByPk(personId);
-        if (!person) {
-          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
-        }
-      }
+      const { userId, reason, order: ord, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
         const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if (!user.isVerified || !user.searchable) {
+        if (!user.isVerified && !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }
       await suggestion.update({
-        ...(personId !== undefined && { personId: personId || null }),
         ...(userId !== undefined && { userId: userId || null }),
         ...(reason !== undefined && { reason: reason?.trim() || null }),
         ...(ord !== undefined && { order: ord }),
@@ -606,7 +479,6 @@ const dreamTeamController = {
       });
       const updated = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
           { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
@@ -637,11 +509,11 @@ const dreamTeamController = {
   // POST /api/admin/dream-team/holders
   adminCreateHolder: async (req, res) => {
     try {
-      const { positionId, personId, userId, since, notes } = req.body;
-      if (!positionId || (!personId && !userId)) {
+      const { positionId, userId, since, notes } = req.body;
+      if (!positionId || !userId) {
         return res.status(400).json({
           success: false,
-          message: 'Απαιτείται personId (PublicPersonProfile) ή userId (verified app user).',
+          message: 'Απαιτείται userId (verified app user).',
         });
       }
       const position = await GovernmentPosition.findByPk(positionId);
@@ -654,20 +526,12 @@ const dreamTeamController = {
           message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
         });
       }
-      if (personId) {
-        const person = await PublicPersonProfile.findByPk(personId);
-        if (!person) {
-          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
-        }
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if (userId) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
-        if (!user) {
-          return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
-        }
-        if (!user.isVerified || !user.searchable) {
-          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
-        }
+      if (!user.isVerified && !user.searchable) {
+        return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
 
       // Delete any existing holders for this position (stale data should not be kept)
@@ -675,21 +539,19 @@ const dreamTeamController = {
 
       const holder = await GovernmentCurrentHolder.create({
         positionId,
-        personId: personId || null,
-        userId: userId || null,
+        userId,
         since: since || null,
         notes: notes?.trim() || null,
         isActive: true,
       });
 
-      const holderWithPerson = await GovernmentCurrentHolder.findByPk(holder.id, {
+      const holderWithUser = await GovernmentCurrentHolder.findByPk(holder.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
           { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
 
-      return res.status(201).json({ success: true, data: holderWithPerson });
+      return res.status(201).json({ success: true, data: holderWithUser });
     } catch (error) {
       console.error('dreamTeamController.adminCreateHolder error:', error);
       return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
@@ -710,24 +572,17 @@ const dreamTeamController = {
           message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
         });
       }
-      const { personId, userId, since, notes, isActive } = req.body;
-      if (personId !== undefined && personId !== null) {
-        const person = await PublicPersonProfile.findByPk(personId);
-        if (!person) {
-          return res.status(404).json({ success: false, message: 'Το πρόσωπο δεν βρέθηκε.' });
-        }
-      }
+      const { userId, since, notes, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
         const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if (!user.isVerified || !user.searchable) {
+        if (!user.isVerified && !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }
       await holder.update({
-        ...(personId !== undefined && { personId: personId || null }),
         ...(userId !== undefined && { userId: userId || null }),
         ...(since !== undefined && { since: since || null }),
         ...(notes !== undefined && { notes: notes?.trim() || null }),
@@ -735,7 +590,6 @@ const dreamTeamController = {
       });
       const updated = await GovernmentCurrentHolder.findByPk(holder.id, {
         include: [
-          { model: PublicPersonProfile, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'], required: false },
           { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
         ],
       });
@@ -776,7 +630,6 @@ const dreamTeamController = {
   _serializeFormation: async (formation, requestUserId) => {
     const picks = (formation.picks || []).map((p) => ({
       positionSlug: p.positionSlug,
-      personId: p.personId,
       candidateUserId: p.candidateUserId,
       personName: p.personName,
       photo: p.photo,
@@ -999,14 +852,12 @@ const dreamTeamController = {
       }
 
       const validPicks = picks.filter(
-        (p) => p.positionSlug && (p.personName || p.personId || p.candidateUserId),
+        (p) => p.positionSlug && (p.personName || p.candidateUserId),
       );
 
-      // Check for duplicate personId or candidateUserId across picks
-      const pickedPersonIds = validPicks.map((p) => p.personId).filter((id) => id != null);
+      // Check for duplicate candidateUserId across picks
       const pickedCandidateUserIds = validPicks.map((p) => p.candidateUserId).filter((id) => id != null);
       if (
-        new Set(pickedPersonIds).size < pickedPersonIds.length ||
         new Set(pickedCandidateUserIds).size < pickedCandidateUserIds.length
       ) {
         return res.status(400).json({
@@ -1023,7 +874,6 @@ const dreamTeamController = {
           validPicks.map((p) => ({
             formationId: formation.id,
             positionSlug: p.positionSlug,
-            personId: p.personId || null,
             candidateUserId: p.candidateUserId || null,
             personName: p.personName || null,
             photo: p.photo || null,
@@ -1070,7 +920,7 @@ const dreamTeamController = {
         const pickCountSubquery = `(
           SELECT COUNT(*) FROM "FormationPicks" AS fp
           WHERE fp."formationId" = "Formation"."id"
-            AND (fp."personName" IS NOT NULL OR fp."personId" IS NOT NULL OR fp."candidateUserId" IS NOT NULL)
+            AND (fp."personName" IS NOT NULL OR fp."candidateUserId" IS NOT NULL)
         )`;
         attributes = {
           include: [[sequelize.literal(pickCountSubquery), 'filledCount']],
@@ -1192,7 +1042,6 @@ const dreamTeamController = {
               positionSlug: slug,
               [Op.or]: [
                 { personName: { [Op.ne]: null } },
-                { personId: { [Op.ne]: null } },
                 { candidateUserId: { [Op.ne]: null } },
               ],
             },
@@ -1206,13 +1055,12 @@ const dreamTeamController = {
             ],
             attributes: [
               'personName',
-              'personId',
               'candidateUserId',
               'photo',
               'avatar',
               [sequelize.fn('COUNT', sequelize.col('FormationPick.id')), 'count'],
             ],
-            group: ['personName', 'personId', 'candidateUserId', 'photo', 'avatar'],
+            group: ['personName', 'candidateUserId', 'photo', 'avatar'],
             order: [[sequelize.literal('"count"'), 'DESC']],
             limit: 1,
             subQuery: false,
@@ -1222,7 +1070,6 @@ const dreamTeamController = {
           return {
             positionSlug: slug,
             personName: top?.personName || null,
-            personId: top?.personId || null,
             candidateUserId: top?.candidateUserId || null,
             photo: top?.photo || null,
             avatar: top?.avatar || null,
@@ -1351,7 +1198,7 @@ const dreamTeamController = {
       const totalLikes = formations.reduce((sum, f) => sum + (f.likeCount || 0), 0);
       const hasFullCabinet = formations.some((f) => {
         const filledPicks = (f.picks || []).filter(
-          (p) => p.personId || p.candidateUserId || p.personName,
+          (p) => p.candidateUserId || p.personName,
         );
         return filledPicks.length >= 22;
       });
@@ -1371,7 +1218,7 @@ const dreamTeamController = {
 
       const avgCompletion = formationCount === 0 ? 0 : Math.round(
         formations.reduce((sum, f) => {
-          const filled = (f.picks || []).filter((p) => p.personId || p.candidateUserId || p.personName).length;
+          const filled = (f.picks || []).filter((p) => p.candidateUserId || p.personName).length;
           return sum + (filled / 22) * 100;
         }, 0) / formationCount,
       );

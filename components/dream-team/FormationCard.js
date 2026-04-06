@@ -35,7 +35,7 @@ export default function FormationCard({ formation, onEdit, onDelete, onLike, onC
 
   const category = FORMATION_CATEGORIES.find((c) => c.id === formation.category) || FORMATION_CATEGORIES[2];
   const picks = formation.picks || [];
-  const filledCount = picks.filter((p) => p.personId || p.candidateUserId || p.personName).length;
+  const filledCount = picks.filter((p) => p.candidateUserId || p.personName).length;
 
   // Top 3 preview: PM, President, Speaker (by positionTypeKey)
   const topSlugs = ['prothypoyrgos', 'proedros-dimokratias', 'proedros-voulis'];

@@ -34,7 +34,7 @@ function computeMatchScore(formationPicks, primaryPicks) {
   // Build a map of primary picks by positionSlug
   const primaryMap = {};
   primaryPicks.forEach((p) => {
-    if (p.personId || p.candidateUserId) {
+    if (p.candidateUserId) {
       primaryMap[getSlug(p)] = p;
     }
   });
@@ -43,15 +43,12 @@ function computeMatchScore(formationPicks, primaryPicks) {
   let matching = 0;    // positions where both picked the same person
 
   formationPicks.forEach((fp) => {
-    if (!(fp.personId || fp.candidateUserId)) return;
+    if (!fp.candidateUserId) return;
     const pp = primaryMap[getSlug(fp)];
     if (!pp) return;
 
     overlapping++;
-    if (
-      (fp.personId && fp.personId === pp.personId) ||
-      (fp.candidateUserId && fp.candidateUserId === pp.candidateUserId)
-    ) {
+    if (fp.candidateUserId && fp.candidateUserId === pp.candidateUserId) {
       matching++;
     }
   });

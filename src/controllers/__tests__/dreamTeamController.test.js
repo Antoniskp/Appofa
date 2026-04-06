@@ -1,7 +1,3 @@
-/**
- * Dream Team API integration tests
- * Uses supertest with a real SQLite test DB.
- */
 const request = require('supertest');
 const express = require('express');
 const cors = require('cors');
@@ -12,7 +8,6 @@ const {
   User,
   GovernmentPosition,
   DreamTeamVote,
-  PublicPersonProfile,
 } = require('../../models');
 const authRoutes = require('../../routes/authRoutes');
 const dreamTeamRoutes = require('../../routes/dreamTeamRoutes');
@@ -28,7 +23,7 @@ describe('Dream Team API Tests', () => {
   let userToken, userId;
   let secondUserToken, secondUserId;
   let positionId;
-  let personId;
+  let candidateUserId;
 
   const csrfToken = 'test-csrf-dreamteam';
   const csrfHeaders = (uid, authToken) => {
@@ -78,15 +73,16 @@ describe('Dream Team API Tests', () => {
     });
     positionId = pos.id;
 
-    // Seed a public person profile
-    const person = await PublicPersonProfile.create({
-      slug: 'test-person-dt',
+    // Create a candidate user to vote for
+    const candidateUser = await User.create({
+      username: 'dt_candidate1',
+      email: 'dt_candidate1@dt.test',
+      password: null,
+      role: 'viewer',
       firstNameNative: 'Δοκιμαστικός',
       lastNameNative: 'Πολιτικός',
-      claimStatus: 'unclaimed',
-      source: 'moderator',
     });
-    personId = person.id;
+    candidateUserId = candidateUser.id;
   });
 
   afterAll(async () => {
@@ -129,7 +125,7 @@ describe('Dream Team API Tests', () => {
     it('returns 401 when not authenticated', async () => {
       const res = await request(app)
         .post('/api/dream-team/vote')
-        .send({ positionId, personId });
+        .send({ positionId, candidateUserId });
       expect(res.status).toBe(401);
     });
 
@@ -137,12 +133,12 @@ describe('Dream Team API Tests', () => {
       const res = await request(app)
         .post('/api/dream-team/vote')
         .set(csrfHeaders(userId, userToken))
-        .send({ personId });
+        .send({ candidateUserId });
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
 
-    it('returns 400 when personId is missing', async () => {
+    it('returns 400 when candidateUserId is missing', async () => {
       const res = await request(app)
         .post('/api/dream-team/vote')
         .set(csrfHeaders(userId, userToken))
@@ -155,16 +151,16 @@ describe('Dream Team API Tests', () => {
       const res = await request(app)
         .post('/api/dream-team/vote')
         .set(csrfHeaders(userId, userToken))
-        .send({ positionId: 99999, personId });
+        .send({ positionId: 99999, candidateUserId });
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
     });
 
-    it('returns 404 when person does not exist', async () => {
+    it('returns 404 when candidate user does not exist', async () => {
       const res = await request(app)
         .post('/api/dream-team/vote')
         .set(csrfHeaders(userId, userToken))
-        .send({ positionId, personId: 99999 });
+        .send({ positionId, candidateUserId: 99999 });
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
     });
@@ -173,32 +169,33 @@ describe('Dream Team API Tests', () => {
       const res = await request(app)
         .post('/api/dream-team/vote')
         .set(csrfHeaders(userId, userToken))
-        .send({ positionId, personId });
+        .send({ positionId, candidateUserId });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data).toHaveProperty('positionId', positionId);
-      expect(res.body.data).toHaveProperty('personId', personId);
+      expect(res.body.data).toHaveProperty('candidateUserId', candidateUserId);
       expect(res.body.data).toHaveProperty('personName');
       expect(res.body.message).toBe('Ψήφος καταγράφηκε επιτυχώς.');
     });
 
     it('upserts (updates) vote when user votes again for same position', async () => {
-      // Create a second person
-      const person2 = await PublicPersonProfile.create({
-        slug: 'test-person-dt-2',
+      // Create a second candidate user
+      const candidate2 = await User.create({
+        username: 'dt_candidate2',
+        email: 'dt_candidate2@dt.test',
+        password: null,
+        role: 'viewer',
         firstNameNative: 'Άλλος',
         lastNameNative: 'Υποψήφιος',
-        claimStatus: 'unclaimed',
-        source: 'moderator',
       });
 
       const res = await request(app)
         .post('/api/dream-team/vote')
         .set(csrfHeaders(userId, userToken))
-        .send({ positionId, personId: person2.id });
+        .send({ positionId, candidateUserId: candidate2.id });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.personId).toBe(person2.id);
+      expect(res.body.data.candidateUserId).toBe(candidate2.id);
 
       // Only one vote should exist for this user+position
       const voteCount = await DreamTeamVote.count({ where: { userId, positionId } });
@@ -208,9 +205,9 @@ describe('Dream Team API Tests', () => {
     it('enforces unique constraint (userId, positionId) at DB level', async () => {
       // Attempt to insert two votes directly; second should fail
       await DreamTeamVote.destroy({ where: { userId: secondUserId, positionId } });
-      await DreamTeamVote.create({ userId: secondUserId, positionId, personId, personName: 'Test' });
+      await DreamTeamVote.create({ userId: secondUserId, positionId, candidateUserId, personName: 'Test' });
       await expect(
-        DreamTeamVote.create({ userId: secondUserId, positionId, personId, personName: 'Dup' })
+        DreamTeamVote.create({ userId: secondUserId, positionId, candidateUserId, personName: 'Dup' })
       ).rejects.toThrow();
     });
   });
@@ -238,7 +235,7 @@ describe('Dream Team API Tests', () => {
       const res = await request(app).get('/api/dream-team/results');
       const item = res.body.data.find((r) => r.position.id === positionId);
       if (item.winner) {
-        expect(item.winner).toHaveProperty('personId');
+        expect(item.winner).toHaveProperty('candidateUserId');
         expect(item.winner).toHaveProperty('personName');
         expect(item.winner).toHaveProperty('voteCount');
         expect(item.winner).toHaveProperty('percentage');
