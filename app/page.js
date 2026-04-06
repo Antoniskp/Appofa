@@ -1,24 +1,20 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { articleAPI, pollAPI, suggestionAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
-import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import EmptyState from '@/components/ui/EmptyState';
-import VideoThumbnailCard from '@/components/articles/VideoThumbnailCard';
 import SuggestionCard from '@/components/SuggestionCard';
+import HomepageSection from '@/components/HomepageSection';
+
+const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
 
 export default function HomePage() {
-  const [videos, setVideos] = useState([]);
-  const [videosLoading, setVideosLoading] = useState(true);
-  const [videosError, setVideosError] = useState(null);
-
-  const [latestNews, setLatestNews] = useState([]);
-  const [newsLoading, setNewsLoading] = useState(true);
-  const [newsError, setNewsError] = useState(null);
+  const { user } = useAuth();
 
   const [latestArticles, setLatestArticles] = useState([]);
   const [articlesLoading, setArticlesLoading] = useState(true);
@@ -32,47 +28,15 @@ export default function HomePage() {
   const [pollsLoading, setPollsLoading] = useState(true);
   const [pollsError, setPollsError] = useState(null);
 
+  const [latestNews, setLatestNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState(null);
+
+  const [videos, setVideos] = useState([]);
+  const [videosLoading, setVideosLoading] = useState(true);
+  const [videosError, setVideosError] = useState(null);
+
   useEffect(() => {
-    const fetchVideos = async () => {
-      try {
-        const response = await articleAPI.getAll({
-          type: 'video',
-          status: 'published',
-          limit: 6,
-          orderBy: 'createdAt',
-          order: 'desc',
-        });
-        if (response.success) {
-          setVideos(response.data.articles || []);
-        }
-      } catch (err) {
-        setVideosError(err.message);
-      } finally {
-        setVideosLoading(false);
-      }
-    };
-
-    const fetchLatestNews = async () => {
-      try {
-        const response = await articleAPI.getAll({
-          status: 'published',
-          type: 'news',
-          newsApproved: true,
-          orderBy: 'newsApprovedAt',
-          order: 'desc',
-          limit: 3,
-          page: 1,
-        });
-        if (response.success) {
-          setLatestNews(response.data.articles || []);
-        }
-      } catch (err) {
-        setNewsError(err.message);
-      } finally {
-        setNewsLoading(false);
-      }
-    };
-
     const fetchLatestArticles = async () => {
       try {
         const response = await articleAPI.getAll({
@@ -108,7 +72,7 @@ export default function HomePage() {
 
     const fetchPolls = async () => {
       try {
-        const response = await pollAPI.getAll({});
+        const response = await pollAPI.getAll({ limit: 3 });
         if (response.success && Array.isArray(response.data)) {
           setPolls(response.data);
         }
@@ -119,214 +83,159 @@ export default function HomePage() {
       }
     };
 
-    fetchVideos();
-    fetchLatestNews();
+    const fetchLatestNews = async () => {
+      try {
+        const response = await articleAPI.getAll({
+          status: 'published',
+          type: 'news',
+          newsApproved: true,
+          orderBy: 'newsApprovedAt',
+          order: 'desc',
+          limit: 3,
+          page: 1,
+        });
+        if (response.success) {
+          setLatestNews(response.data.articles || []);
+        }
+      } catch (err) {
+        setNewsError(err.message);
+      } finally {
+        setNewsLoading(false);
+      }
+    };
+
+    const fetchVideos = async () => {
+      try {
+        const response = await articleAPI.getAll({
+          type: 'video',
+          status: 'published',
+          limit: 6,
+          orderBy: 'createdAt',
+          order: 'desc',
+        });
+        if (response.success) {
+          setVideos(response.data.articles || []);
+        }
+      } catch (err) {
+        setVideosError(err.message);
+      } finally {
+        setVideosLoading(false);
+      }
+    };
+
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
+    fetchLatestNews();
+    fetchVideos();
   }, []);
 
   return (
     <div className="bg-gray-50">
       <HomeHero />
 
-      {/* Latest Videos Section */}
-      <section className="bg-white">
-        <div className="app-container py-16">
-          <h2 className="section-title flex items-center gap-4">
-            Τελευταία Βίντεο
-            <Link href="/videos" className="btn-primary text-sm">
-              Δείτε όλα
+      <HomepageSection
+        title="Τελευταία Άρθρα"
+        subtitle="Αναλύσεις και απόψεις από την κοινότητα"
+        linkHref="/articles"
+        loading={articlesLoading}
+        error={articlesError}
+        items={latestArticles}
+        emptyTitle="Δεν βρέθηκαν άρθρα"
+        emptyDescription="Δεν υπάρχουν άρθρα αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        skeletonCount={3}
+        bgColor="bg-white"
+        renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
+      />
+
+      <HomepageSection
+        title="Κορυφαίες Προτάσεις"
+        subtitle="Οι πιο δημοφιλείς προτάσεις πολιτών"
+        linkHref="/suggestions"
+        loading={suggestionsLoading}
+        error={suggestionsError}
+        items={suggestions}
+        emptyTitle="Δεν βρέθηκαν προτάσεις"
+        emptyDescription="Δεν υπάρχουν προτάσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        skeletonCount={3}
+        bgColor="bg-gray-50"
+        renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
+      />
+
+      <HomepageSection
+        title="Μεγαλύτερες Ψηφοφορίες"
+        subtitle="Ψηφίστε στα πιο δημοφιλή θέματα"
+        linkHref="/polls"
+        loading={pollsLoading}
+        error={pollsError}
+        items={polls}
+        emptyTitle="Δεν βρέθηκαν ψηφοφορίες"
+        emptyDescription="Δεν υπάρχουν ψηφοφορίες αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        skeletonCount={3}
+        bgColor="bg-white"
+        renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
+      />
+
+      {/* CTA / Engagement Banner */}
+      <section className="bg-gradient-to-r from-blue-600 to-blue-800">
+        <div className="app-container py-12 text-center">
+          <h2 className="text-3xl font-bold text-white mb-2">Έχεις κάτι να πεις;</h2>
+          <p className="text-blue-100 mb-6">
+            Γράψε ένα άρθρο, κατέθεσε πρόταση ή ψήφισε σε ανοιχτές ψηφοφορίες!
+          </p>
+          {user ? (
+            <div className="flex justify-center gap-4 flex-wrap">
+              <Link
+                href="/articles/new"
+                className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                Γράψε Άρθρο
+              </Link>
+              <Link
+                href="/suggestions/new"
+                className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
+              >
+                Κατέθεσε Πρόταση
+              </Link>
+            </div>
+          ) : (
+            <Link
+              href="/register"
+              className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+            >
+              Εγγραφή
             </Link>
-          </h2>
-          {videosLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SkeletonLoader type="card" count={6} variant="grid" />
-            </div>
-          )}
-          {videosError && (
-            <EmptyState
-              type="error"
-              title="Σφάλμα φόρτωσης βίντεο"
-              description={videosError}
-              action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
-            />
-          )}
-          {!videosLoading && !videosError && videos.length === 0 && (
-            <EmptyState
-              type="empty"
-              title="Δεν βρέθηκαν βίντεο"
-              description="Δεν υπάρχουν βίντεο αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
-            />
-          )}
-          {videos.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {videos.map((video) => (
-                <VideoThumbnailCard key={video.id} article={video} />
-              ))}
-            </div>
           )}
         </div>
       </section>
 
-      {/* Latest News Section */}
-      <section className="bg-gray-50">
-        <div className="app-container py-16">
-          <h2 className="section-title flex items-center gap-4">
-            Τελευταίες Ειδήσεις
-            <Link href="/news" className="btn-primary text-sm">
-              Δείτε όλα
-            </Link>
-          </h2>
-          {newsLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SkeletonLoader type="card" count={3} variant="grid" />
-            </div>
-          )}
-          {newsError && (
-            <EmptyState
-              type="error"
-              title="Σφάλμα φόρτωσης ειδήσεων"
-              description={newsError}
-              action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
-            />
-          )}
-          {!newsLoading && !newsError && latestNews.length === 0 && (
-            <EmptyState
-              type="empty"
-              title="Δεν βρέθηκαν ειδήσεις"
-              description="Δεν υπάρχουν εγκεκριμένες ειδήσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
-            />
-          )}
-          {latestNews.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {latestNews.map((article) => (
-                <ArticleCard key={article.id} article={article} variant="grid" />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <HomepageSection
+        title="Τελευταίες Ειδήσεις"
+        subtitle="Τα τελευταία νέα από εγκεκριμένες πηγές"
+        linkHref="/news"
+        loading={newsLoading}
+        error={newsError}
+        items={latestNews}
+        emptyTitle="Δεν βρέθηκαν ειδήσεις"
+        emptyDescription="Δεν υπάρχουν εγκεκριμένες ειδήσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        skeletonCount={3}
+        bgColor="bg-gray-50"
+        renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
+      />
 
-      {/* Latest Articles Section */}
-      <section className="bg-white">
-        <div className="app-container py-16">
-          <h2 className="section-title flex items-center gap-4">
-            Τελευταία Άρθρα
-            <Link href="/articles" className="btn-primary text-sm">
-              Δείτε όλα
-            </Link>
-          </h2>
-          {articlesLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SkeletonLoader type="card" count={3} variant="grid" />
-            </div>
-          )}
-          {articlesError && (
-            <EmptyState
-              type="error"
-              title="Σφάλμα φόρτωσης άρθρων"
-              description={articlesError}
-              action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
-            />
-          )}
-          {!articlesLoading && !articlesError && latestArticles.length === 0 && (
-            <EmptyState
-              type="empty"
-              title="Δεν βρέθηκαν άρθρα"
-              description="Δεν υπάρχουν άρθρα αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
-            />
-          )}
-          {latestArticles.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {latestArticles.map((article) => (
-                <ArticleCard key={article.id} article={article} variant="grid" />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Top Suggestions Section */}
-      <section className="bg-gray-50">
-        <div className="app-container py-16">
-          <h2 className="section-title flex items-center gap-4">
-            Κορυφαίες Προτάσεις
-            <Link href="/suggestions" className="btn-primary text-sm">
-              Δείτε όλα
-            </Link>
-          </h2>
-          {suggestionsLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SkeletonLoader type="card" count={3} variant="grid" />
-            </div>
-          )}
-          {suggestionsError && (
-            <EmptyState
-              type="error"
-              title="Σφάλμα φόρτωσης προτάσεων"
-              description={suggestionsError}
-              action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
-            />
-          )}
-          {!suggestionsLoading && !suggestionsError && suggestions.length === 0 && (
-            <EmptyState
-              type="empty"
-              title="Δεν βρέθηκαν προτάσεις"
-              description="Δεν υπάρχουν προτάσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
-            />
-          )}
-          {suggestions.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {suggestions.map((suggestion) => (
-                <SuggestionCard key={suggestion.id} suggestion={suggestion} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Biggest Polls Section */}
-      <section className="bg-white">
-        <div className="app-container py-16">
-          <h2 className="section-title flex items-center gap-4">
-            Μεγαλύτερες Ψηφοφορίες
-            <Link href="/polls" className="btn-primary text-sm">
-              Δείτε όλα
-            </Link>
-          </h2>
-          {pollsLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <SkeletonLoader type="card" count={3} variant="grid" />
-            </div>
-          )}
-          {pollsError && (
-            <EmptyState
-              type="error"
-              title="Σφάλμα φόρτωσης ψηφοφοριών"
-              description={pollsError}
-              action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
-            />
-          )}
-          {!pollsLoading && !pollsError && polls.length === 0 && (
-            <EmptyState
-              type="empty"
-              title="Δεν βρέθηκαν ψηφοφορίες"
-              description="Δεν υπάρχουν ψηφοφορίες αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
-            />
-          )}
-          {polls.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {polls
-                .sort((a, b) => (b.totalVotes || 0) - (a.totalVotes || 0))
-                .slice(0, 3)
-                .map((poll) => (
-                  <PollCard key={poll.id} poll={poll} variant="grid" />
-                ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <HomepageSection
+        title="Τελευταία Βίντεο"
+        subtitle="Βίντεο αναλύσεις και συζητήσεις"
+        linkHref="/videos"
+        loading={videosLoading}
+        error={videosError}
+        items={videos}
+        emptyTitle="Δεν βρέθηκαν βίντεο"
+        emptyDescription="Δεν υπάρχουν βίντεο αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        skeletonCount={3}
+        bgColor="bg-white"
+        renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
+      />
     </div>
   );
 }
