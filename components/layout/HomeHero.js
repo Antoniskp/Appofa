@@ -159,10 +159,8 @@ export default function HomeHero() {
         }
       : { backgroundColor: heroBg.value };
 
-  // Determine current slide text
+  // Determine current slide for CTA
   const currentSlide = activeSlides.length > 0 ? activeSlides[currentSlideIdx] : null;
-  const displayTitle = currentSlide ? currentSlide.title : DEFAULT_TITLE;
-  const displaySubtitle = currentSlide ? currentSlide.subtitle : DEFAULT_SUBTITLE;
   const hasLink = currentSlide && currentSlide.linkUrl && /^https?:\/\//.test(currentSlide.linkUrl);
   const linkText = (currentSlide && currentSlide.linkText) ? currentSlide.linkText : 'Μάθε περισσότερα';
   const showArrows = activeSlides.length >= 2;
@@ -192,30 +190,49 @@ export default function HomeHero() {
                 </p>
               )}
 
-              {/* Slide title/subtitle with transition */}
-              <div className="relative min-h-[9rem] md:min-h-[7rem]">
-                <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight transition-opacity duration-500">
-                  {displayTitle}
-                </h1>
-                <p className="text-base text-white/80 mb-3 transition-opacity duration-500">
-                  {displaySubtitle}
-                </p>
+              {/* Slide title/subtitle – all slides stacked absolutely to prevent reflow */}
+              <div className="relative min-h-[11rem] md:min-h-[7rem]">
+                {activeSlides.length > 0 ? (
+                  activeSlides.map((slide, idx) => (
+                    <div
+                      key={slide.id}
+                      className={`absolute inset-0 transition-opacity duration-500 ${
+                        idx === currentSlideIdx ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                      }`}
+                    >
+                      <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight">
+                        {slide.title}
+                      </h1>
+                      <p className="text-base text-white/80 mb-3">
+                        {slide.subtitle}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="absolute inset-0">
+                    <h1 className="text-3xl md:text-4xl font-extrabold mb-2 leading-tight tracking-tight">
+                      {DEFAULT_TITLE}
+                    </h1>
+                    <p className="text-base text-white/80 mb-3">
+                      {DEFAULT_SUBTITLE}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {/* Optional CTA link from slide */}
-              {hasLink && (
-                <div className="mb-3">
-                  <a
-                    href={currentSlide.linkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                  >
-                    {linkText}
-                    <ArrowRightIcon className="w-4 h-4" />
-                  </a>
-                </div>
-              )}
+              {/* CTA link – always rendered to reserve space; hidden when no link */}
+              <div className={`mb-3 transition-opacity duration-500 ${hasLink ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                <a
+                  href={currentSlide?.linkUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  tabIndex={hasLink ? 0 : -1}
+                  className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                >
+                  {linkText}
+                  <ArrowRightIcon className="w-4 h-4" />
+                </a>
+              </div>
 
               {/* Arrow navigation */}
               {showArrows && (
