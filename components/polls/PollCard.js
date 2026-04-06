@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
 import { ImageTopCard } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
-import { ChartBarIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import { idSlug } from '@/lib/utils/slugify';
@@ -36,6 +36,31 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const [inlineVotedId, setInlineVotedId]       = useState(initialVotedId);
   const [inlineVoteCounts, setInlineVoteCounts] = useState(null); // populated after first inline vote
   const [isInlineSubmitting, setIsInlineSubmitting] = useState(false);
+
+  // ── Countdown timer state ─────────────────────────────────────────────────
+  const deadlineDate = poll.deadline ? new Date(poll.deadline) : null;
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (!deadlineDate) return null;
+    const diff = deadlineDate - new Date();
+    return diff > 0 ? diff : 0;
+  });
+
+  useEffect(() => {
+    if (!deadlineDate) return;
+    const diff = deadlineDate - new Date();
+    if (diff <= 0) return;
+    setTimeLeft(diff);
+    const interval = setInterval(() => {
+      const remaining = deadlineDate - new Date();
+      if (remaining <= 0) {
+        setTimeLeft(0);
+        clearInterval(interval);
+      } else {
+        setTimeLeft(remaining);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [poll.deadline]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Which poll types can be voted on inline (binary OR simple with ≤3 options)
   const options = poll.options || [];
@@ -276,6 +301,60 @@ export default function PollCard({ poll, variant = 'grid' }) {
   
   // Show results if user can view them
   const showResults = canViewResults();
+
+  // Format remaining milliseconds as a human-readable Greek string
+  const formatTimeLeft = (ms) => {
+    if (ms <= 0) return 'Η ψηφοφορία έληξε';
+    const totalSeconds = Math.floor(ms / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    if (days > 0) return `${days}η ${hours}ω ${minutes}λ`;
+    return `${hours}ω ${minutes}λ ${seconds}δ`;
+  };
+
+  // Render the contextual info panel shown in the h-32 top area when the poll
+  // has no custom banner and results are not yet visible.
+  const renderInfoPanel = () => {
+    const isAfterDeadline = poll.resultsVisibility === 'after_deadline';
+    const hasDeadline = deadlineDate !== null;
+
+    // Case 3: after_deadline — always show countdown (or "ended" if race condition)
+    if (isAfterDeadline && hasDeadline) {
+      return (
+        <div className="h-32 bg-gradient-to-br from-gray-50 to-white flex flex-col items-center justify-center gap-1 px-4">
+          <ClockIcon className="h-6 w-6 text-gray-400" />
+          {timeLeft > 0 ? (
+            <>
+              <p className="text-xs text-gray-500 text-center">Αποτελέσματα μετά τη λήξη</p>
+              <p className="text-sm font-semibold text-gray-600">{formatTimeLeft(timeLeft)}</p>
+            </>
+          ) : (
+            <p className="text-xs text-gray-500 text-center">Η ψηφοφορία έληξε</p>
+          )}
+        </div>
+      );
+    }
+
+    // Cases 1 & 2: after_vote + not voted (with or without deadline)
+    return (
+      <div className="h-32 bg-gradient-to-br from-gray-50 to-white flex flex-col items-center justify-center gap-1 px-4">
+        {hasDeadline && timeLeft > 0 ? (
+          <>
+            <ClockIcon className="h-6 w-6 text-gray-400" />
+            <p className="text-xs text-gray-500 text-center">Ψηφίστε για να δείτε τα αποτελέσματα</p>
+            <p className="text-sm font-semibold text-gray-600">{formatTimeLeft(timeLeft)}</p>
+          </>
+        ) : (
+          <>
+            <ChartBarIcon className="h-6 w-6 text-gray-400" />
+            <p className="text-xs text-gray-500 text-center">Ψηφίστε για να δείτε τα αποτελέσματα</p>
+          </>
+        )}
+      </div>
+    );
+  };
   
   // Render badges
   const badgesContent = (
@@ -462,12 +541,16 @@ export default function PollCard({ poll, variant = 'grid' }) {
     return (
       <Card hoverable className="overflow-hidden h-full">
         <Link href={pollHref} className="block">
-          <img
-            src={pollImageUrl}
-            alt={`${poll.title} banner`}
-            className="w-full h-32 object-cover"
-            onError={(e) => { e.currentTarget.src = defaultPollImage; }}
-          />
+          {poll.bannerImageUrl ? (
+            <img
+              src={pollImageUrl}
+              alt={`${poll.title} banner`}
+              className="w-full h-32 object-cover"
+              onError={(e) => { e.currentTarget.src = defaultPollImage; }}
+            />
+          ) : (
+            renderInfoPanel()
+          )}
         </Link>
         <div className="p-6">
           <Link href={pollHref} className="block">
