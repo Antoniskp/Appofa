@@ -19,6 +19,7 @@ const reportRoutes = require('./reportRoutes');
 const dreamTeamRoutes = require('./dreamTeamRoutes');
 const heroSettingsRoutes = require('./heroSettingsRoutes');
 const badgeRoutes = require('./badges');
+const manifestRoutes = require('./manifestRoutes');
 
 const routes = [
   { prefix: '/api/auth', router: authRoutes },
@@ -44,6 +45,7 @@ const routes = [
   { prefix: '/api/dream-team', router: dreamTeamRoutes },
   { prefix: '/api/hero-settings', router: heroSettingsRoutes },
   { prefix: '/api/badges', router: badgeRoutes },
+  { prefix: '/api/manifests', router: manifestRoutes },
 ];
 
 function registerRoutes(app) {

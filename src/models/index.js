@@ -334,4 +334,6 @@ module.exports = {
   FormationLike,
   UserBadge,
   HeroSettings,
+  Manifest,
+  ManifestAcceptance,
 };
