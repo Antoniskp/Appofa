@@ -8,18 +8,15 @@ import { apiRequest } from '@/lib/api/client.js';
  * Shared person-search dropdown component.
  *
  * Props:
- *   onSelect(person)       – called with the selected person object ({ id, firstName, lastName,
- *                            username?, type: 'profile'|'user', ... })
+ *   onSelect(user)         – called with the selected user object
  *   placeholder            – input placeholder text
- *   includeUsers           – also search /api/auth/users/search alongside /api/persons
- *   showTopSuggestions     – on focus with empty query, load top persons/users as suggestions
+ *   showTopSuggestions     – on focus with empty query, load top suggestions
  *   value                  – controlled input value (optional)
  *   onChange               – controlled onChange handler (optional)
  */
 export default function PersonSearch({
   onSelect,
   placeholder = 'Αναζητήστε πρόσωπο...',
-  includeUsers = false,
   showTopSuggestions = false,
   value,
   onChange,
@@ -62,28 +59,20 @@ export default function PersonSearch({
     const myId = ++requestIdRef.current;
     setSearching(true);
     try {
-      const [profileRes, userRes] = await Promise.allSettled([
-        apiRequest('/api/persons?limit=8&claimStatus=all'),
-        includeUsers ? apiRequest('/api/auth/users/search?limit=8') : Promise.resolve(null),
-      ]);
+      const res = await apiRequest('/api/auth/users/search?limit=8');
       if (myId !== requestIdRef.current) return;
-      const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
-      const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
-      const merged = [
-        ...profiles.map((p) => ({ ...p, type: 'profile' })),
-        ...users.map((u) => ({ ...u, type: 'user' })),
-      ];
-      setResults(merged);
+      const users = res?.data?.users || [];
+      setResults(users);
       setIsTopSuggestions(true);
-      setOpen(merged.length > 0);
-      setSearchStatus(merged.length > 0 ? null : 'empty');
+      setOpen(users.length > 0);
+      setSearchStatus(users.length > 0 ? null : 'empty');
     } catch {
       if (myId !== requestIdRef.current) return;
       setResults([]);
     } finally {
       if (myId === requestIdRef.current) setSearching(false);
     }
-  }, [showTopSuggestions, includeUsers]);
+  }, [showTopSuggestions]);
 
   // Debounced search — dependency array intentionally excludes results state.
   // resultsRef is used for the 1-char guard so the callback is never stale.
@@ -114,22 +103,12 @@ export default function PersonSearch({
       try {
         // Send raw query; backend already handles Greek normalization + raw matching.
         const encodedQ = encodeURIComponent(q.trim());
-        const [profileRes, userRes] = await Promise.allSettled([
-          apiRequest(`/api/persons?search=${encodedQ}&limit=8&claimStatus=all`),
-          includeUsers
-            ? apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`)
-            : Promise.resolve(null),
-        ]);
+        const res = await apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`);
         if (myId !== requestIdRef.current) return;
-        const profiles = (profileRes.status === 'fulfilled' ? profileRes.value?.data?.profiles : null) || [];
-        const users = (userRes.status === 'fulfilled' ? userRes.value?.data?.users : null) || [];
-        const merged = [
-          ...profiles.map((p) => ({ ...p, type: 'profile' })),
-          ...users.map((u) => ({ ...u, type: 'user' })),
-        ];
-        setResults(merged);
+        const users = res?.data?.users || [];
+        setResults(users);
         setIsTopSuggestions(false);
-        setSearchStatus(merged.length > 0 ? null : 'empty');
+        setSearchStatus(users.length > 0 ? null : 'empty');
         setOpen(true);
       } catch {
         if (myId !== requestIdRef.current) return;
@@ -139,7 +118,7 @@ export default function PersonSearch({
         if (myId === requestIdRef.current) setSearching(false);
       }
     }, 300);
-  }, [includeUsers]);
+  }, []);
 
   const handleInputChange = (e) => {
     const q = e.target.value;
@@ -149,9 +128,7 @@ export default function PersonSearch({
   };
 
   const handleSelect = (person) => {
-    const displayName = person.type === 'user'
-      ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
-      : `${person.firstNameNative} ${person.lastNameNative}`;
+    const displayName = (`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username;
     if (!isControlled) setInternalQuery(displayName);
     if (onChange) onChange({ target: { value: displayName } });
     setOpen(false);
@@ -200,36 +177,27 @@ export default function PersonSearch({
             </li>
           )}
           {results.map((person) => {
-            const isUser = person.type === 'user';
-            const isVerifiedUser = isUser && person.isVerified === true;
-            // Unverified users can appear in results but cannot be selected;
-            // only verified users are permitted as candidates.
-            const isBlockedUser = isUser && !isVerifiedUser;
-            const displayName = isUser
-              ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
-              : `${person.firstNameNative} ${person.lastNameNative}`;
-            const photo = isUser ? person.avatar : person.photo;
+            const displayName = (`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username;
+            const badge = person.isPlaceholder
+              ? { label: '📋 Δημόσιο Προφίλ', cls: 'bg-gray-100 text-gray-500' }
+              : person.isVerified
+                ? { label: '🧑 Επαληθευμένος', cls: 'bg-green-100 text-green-600' }
+                : { label: '🧑 Χρήστης', cls: 'bg-blue-100 text-blue-600' };
             return (
               <li
-                key={`${person.type}-${person.id}`}
+                key={`user-${person.id}`}
                 role="option"
-                onClick={() => {
-                  if (isBlockedUser) return;
-                  handleSelect(person);
-                }}
-                onKeyDown={(e) => e.key === 'Enter' && !isBlockedUser && handleSelect(person)}
-                tabIndex={isBlockedUser ? -1 : 0}
-                title={isBlockedUser ? 'Μόνο επαληθευμένοι χρήστες μπορούν να προστεθούν.' : undefined}
-                className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isBlockedUser ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer transition-colors'}`}
+                onClick={() => handleSelect(person)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSelect(person)}
+                tabIndex={0}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 cursor-pointer transition-colors"
               >
-                {photo
-                  ? <img src={photo} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                {person.avatar
+                  ? <img src={person.avatar} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
                   : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate">{displayName}</p>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${isBlockedUser ? 'bg-gray-100 text-gray-400' : isVerifiedUser ? 'bg-green-100 text-green-600' : isUser ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-500'}`}>
-                    {isBlockedUser ? '🔒 Μη επαληθευμένος' : isUser ? '🧑 Χρήστης' : '📋 Δημόσιο Προφίλ'}
-                  </span>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.label}</span>
                 </div>
               </li>
             );

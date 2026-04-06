@@ -84,10 +84,9 @@ function SuggestionsPanel({ position, onRefresh }) {
     if (!selectedPerson) return;
     setSaving(true);
     try {
-      const isUser = selectedPerson.type === 'user';
       await dreamTeamAPI.adminCreateSuggestion({
         positionId: position.id,
-        ...(isUser ? { userId: selectedPerson.id } : { personId: selectedPerson.id }),
+        userId: selectedPerson.id,
         reason: newReason.trim() || null,
         order: position.aiSuggestions?.length || 0,
       });
@@ -141,9 +140,9 @@ function SuggestionsPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 space-y-1 border-t pt-2">
-          <PersonSearch onSelect={setSelectedPerson} includeUsers={true} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstNameNative} ${selectedPerson.lastNameNative}`}</p>
+            <p className="text-xs text-green-600">✓ {(`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username}</p>
           )}
           <input value={newReason} onChange={(e) => setNewReason(e.target.value)} placeholder="Λόγος (προαιρετικό)" className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">
@@ -193,10 +192,9 @@ function HolderPanel({ position, onRefresh }) {
     if (!selectedPerson) return;
     setSaving(true);
     try {
-      const isUser = selectedPerson.type === 'user';
       await dreamTeamAPI.adminCreateHolder({
         positionId: position.id,
-        ...(isUser ? { userId: selectedPerson.id } : { personId: selectedPerson.id }),
+        userId: selectedPerson.id,
         since: since || null,
       });
       setAdding(false); setSelectedPerson(null); setSince('');
@@ -247,9 +245,9 @@ function HolderPanel({ position, onRefresh }) {
 
       {!isLocationManaged && (adding ? (
         <div className="mt-2 border-t pt-2 space-y-2">
-          <PersonSearch onSelect={setSelectedPerson} includeUsers={true} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
+          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε δημόσιο προφίλ ή χρήστη *" />
           {selectedPerson && (
-            <p className="text-xs text-green-600">✓ {selectedPerson.type === 'user' ? ((`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username) : `${selectedPerson.firstNameNative} ${selectedPerson.lastNameNative}`}</p>
+            <p className="text-xs text-green-600">✓ {(`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username}</p>
           )}
           <input type="date" value={since} onChange={(e) => setSince(e.target.value)} className="w-full border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           <div className="flex gap-2">

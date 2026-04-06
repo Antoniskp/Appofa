@@ -83,25 +83,20 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   }, [myVote]);
 
   const handleSelectPerson = useCallback((person) => {
-    const name = person.type === 'user'
-      ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
-      : `${person.firstNameNative} ${person.lastNameNative}`.trim();
-    setSelectedPerson({ id: person.id, name, type: person.type });
+    const name = (`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username;
+    setSelectedPerson({ id: person.id, name, type: 'user' });
     setSearchQuery(name);
   }, []);
 
   const isVoteChanged = selectedPerson && (
-    (selectedPerson.type === 'profile' && selectedPerson.id !== myVote?.personId) ||
-    (selectedPerson.type === 'user' && selectedPerson.id !== myVote?.candidateUserId)
+    selectedPerson.type === 'profile'
+      ? selectedPerson.id !== myVote?.personId
+      : selectedPerson.id !== myVote?.candidateUserId
   );
 
   const handleVoteClick = () => {
     if (onVote && selectedPerson && isVoteChanged) {
-      if (selectedPerson.type === 'user') {
-        onVote(position.id, null, selectedPerson.id);
-      } else {
-        onVote(position.id, selectedPerson.id, null);
-      }
+      onVote(position.id, null, selectedPerson.id);
     }
   };
 
@@ -163,7 +158,6 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
           <div className="relative">
             <PersonSearch
               onSelect={handleSelectPerson}
-              includeUsers={!!onVote}
               showTopSuggestions={true}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
