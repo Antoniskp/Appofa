@@ -33,9 +33,9 @@ const DEFAULT_AVATAR_COLOR = '#64748b';
 
 function UserLeaderboardCard({ user, rank }) {
   const displayName =
-    user.firstName && user.lastName
-      ? `${user.firstName} ${user.lastName}`
-      : user.firstName || user.lastName || '';
+    user.firstNameNative && user.lastNameNative
+      ? `${user.firstNameNative} ${user.lastNameNative}`
+      : user.firstNameNative || user.lastNameNative || '';
 
   return (
     <Link

@@ -22,10 +22,10 @@ function isValidHttpUrl(str) {
 
 /**
  * Form section for updating basic profile information:
- * username, first/last name, avatar URL, and avatar color.
+ * username, native name, English name, nickname, avatar URL, and avatar color.
  *
  * @param {Object} props
- * @param {Object} props.profileData - { username, firstName, lastName, avatar, avatarColor }
+ * @param {Object} props.profileData - { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor }
  * @param {Function} props.onChange - (event) => void, handles name/value input changes
  * @param {string} [props.currentUsername] - The saved username (to skip self-check)
  */
@@ -128,20 +128,49 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormInput
-          name="firstName"
+          name="firstNameNative"
           type="text"
-          label="First name"
-          value={profileData.firstName}
+          label="Όνομα"
+          value={profileData.firstNameNative}
           onChange={onChange}
           autoComplete="given-name"
         />
         <FormInput
-          name="lastName"
+          name="lastNameNative"
           type="text"
-          label="Last name"
-          value={profileData.lastName}
+          label="Επώνυμο"
+          value={profileData.lastNameNative}
           onChange={onChange}
           autoComplete="family-name"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <FormInput
+          name="firstNameEn"
+          type="text"
+          label="First name (English)"
+          value={profileData.firstNameEn}
+          onChange={onChange}
+          autoComplete="given-name"
+        />
+        <FormInput
+          name="lastNameEn"
+          type="text"
+          label="Last name (English)"
+          value={profileData.lastNameEn}
+          onChange={onChange}
+          autoComplete="family-name"
+        />
+      </div>
+
+      <div>
+        <FormInput
+          name="nickname"
+          type="text"
+          label="Παρατσούκλι / Nickname"
+          value={profileData.nickname}
+          onChange={onChange}
         />
       </div>
     </div>

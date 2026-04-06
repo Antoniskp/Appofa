@@ -84,7 +84,7 @@ function AssigneePicker({ onSelect, onClose }) {
             <button
               key={`person-${p.id}`}
               type="button"
-              onClick={() => onSelect({ type: 'person', id: p.id, name: `${p.firstName || ''} ${p.lastName || ''}`.trim(), photo: p.photo })}
+              onClick={() => onSelect({ type: 'person', id: p.id, name: `${p.firstNameNative || ''} ${p.lastNameNative || ''}`.trim(), photo: p.photo })}
               className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"
             >
               {p.photo ? (
@@ -92,7 +92,7 @@ function AssigneePicker({ onSelect, onClose }) {
               ) : (
                 <UserCircleIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
               )}
-              <span className="truncate">{`${p.firstName || ''} ${p.lastName || ''}`.trim() || '—'}</span>
+              <span className="truncate">{`${p.firstNameNative || ''} ${p.lastNameNative || ''}`.trim() || '—'}</span>
             </button>
           ))}
         </div>
@@ -105,7 +105,7 @@ function AssigneePicker({ onSelect, onClose }) {
             <button
               key={`user-${u.id}`}
               type="button"
-              onClick={() => onSelect({ type: 'user', id: u.id, name: u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username, photo: u.avatar })}
+              onClick={() => onSelect({ type: 'user', id: u.id, name: u.firstNameNative ? `${u.firstNameNative} ${u.lastNameNative || ''}`.trim() : u.username, photo: u.avatar })}
               className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"
             >
               {u.avatar ? (
@@ -113,8 +113,8 @@ function AssigneePicker({ onSelect, onClose }) {
               ) : (
                 <UserIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
               )}
-              <span className="truncate">{u.firstName ? `${u.firstName} ${u.lastName || ''}`.trim() : u.username}</span>
-              {u.username && u.firstName && (
+              <span className="truncate">{u.firstNameNative ? `${u.firstNameNative} ${u.lastNameNative || ''}`.trim() : u.username}</span>
+              {u.username && u.firstNameNative && (
                 <span className="text-xs text-gray-400">@{u.username}</span>
               )}
             </button>
@@ -144,8 +144,8 @@ function RoleSlotRow({ definition, assignment, onChange }) {
   const assignee = person || user;
   const displayName = assignee
     ? (person
-        ? `${person.firstName || ''} ${person.lastName || ''}`.trim()
-        : (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.username))
+        ? `${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()
+        : (user.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user.username))
     : null;
   const photo = assignee ? (person?.photo || user?.avatar) : null;
 

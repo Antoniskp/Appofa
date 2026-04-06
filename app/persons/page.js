@@ -43,13 +43,13 @@ function PersonCard({ profile }) {
       <div className="p-5">
         <div className="flex items-start gap-4">
           {profile.photo ? (
-            <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
+            <img src={profile.photo} alt={`${profile.firstNameNative} ${profile.lastNameNative}`} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
           ) : (
             <UserCircleIcon className="w-14 h-14 text-gray-300 flex-shrink-0" />
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base font-semibold text-gray-900 truncate">{profile.firstName} {profile.lastName}</h2>
+              <h2 className="text-base font-semibold text-gray-900 truncate">{profile.firstNameNative} {profile.lastNameNative}</h2>
               <ClaimStatusBadge status={profile.claimStatus} />
             </div>
             {profile.location && (

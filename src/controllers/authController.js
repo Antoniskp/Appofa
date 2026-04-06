@@ -61,8 +61,8 @@ const authController = {
             username: user.username,
             email: user.email,
             role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            firstNameNative: user.firstNameNative,
+            lastNameNative: user.lastNameNative,
             avatar: user.avatar,
             avatarColor: user.avatarColor
           }
@@ -92,8 +92,8 @@ const authController = {
             username: user.username,
             email: user.email,
             role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            firstNameNative: user.firstNameNative,
+            lastNameNative: user.lastNameNative,
             avatar: user.avatar,
             avatarColor: user.avatarColor
           }
@@ -206,8 +206,8 @@ const authController = {
             username: user.username,
             email: user.email,
             role: user.role,
-            firstName: user.firstName,
-            lastName: user.lastName,
+            firstNameNative: user.firstNameNative,
+            lastNameNative: user.lastNameNative,
             homeLocationId: user.homeLocationId,
             homeLocation: user.homeLocation,
             createdAt: user.createdAt

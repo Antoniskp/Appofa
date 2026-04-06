@@ -134,7 +134,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstName, lastName, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId } = data;
+  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -152,13 +152,25 @@ async function updateUserProfile(userId, data) {
     }
   }
 
-  const firstNameResult = normalizeOptionalText(firstName, 'First name', undefined, NAME_MAX_LENGTH);
-  if (firstNameResult.error) throw new ServiceError(400, firstNameResult.error);
-  if (firstNameResult.value !== undefined) user.firstName = firstNameResult.value;
+  const firstNameNativeResult = normalizeOptionalText(firstNameNative, 'First name', undefined, NAME_MAX_LENGTH);
+  if (firstNameNativeResult.error) throw new ServiceError(400, firstNameNativeResult.error);
+  if (firstNameNativeResult.value !== undefined) user.firstNameNative = firstNameNativeResult.value;
 
-  const lastNameResult = normalizeOptionalText(lastName, 'Last name', undefined, NAME_MAX_LENGTH);
-  if (lastNameResult.error) throw new ServiceError(400, lastNameResult.error);
-  if (lastNameResult.value !== undefined) user.lastName = lastNameResult.value;
+  const lastNameNativeResult = normalizeOptionalText(lastNameNative, 'Last name', undefined, NAME_MAX_LENGTH);
+  if (lastNameNativeResult.error) throw new ServiceError(400, lastNameNativeResult.error);
+  if (lastNameNativeResult.value !== undefined) user.lastNameNative = lastNameNativeResult.value;
+
+  const firstNameEnResult = normalizeOptionalText(firstNameEn, 'First name (English)', undefined, NAME_MAX_LENGTH);
+  if (firstNameEnResult.error) throw new ServiceError(400, firstNameEnResult.error);
+  if (firstNameEnResult.value !== undefined) user.firstNameEn = firstNameEnResult.value;
+
+  const lastNameEnResult = normalizeOptionalText(lastNameEn, 'Last name (English)', undefined, NAME_MAX_LENGTH);
+  if (lastNameEnResult.error) throw new ServiceError(400, lastNameEnResult.error);
+  if (lastNameEnResult.value !== undefined) user.lastNameEn = lastNameEnResult.value;
+
+  const nicknameResult = normalizeOptionalText(nickname, 'Nickname', undefined, NAME_MAX_LENGTH);
+  if (nicknameResult.error) throw new ServiceError(400, nicknameResult.error);
+  if (nicknameResult.value !== undefined) user.nickname = nicknameResult.value;
 
   if (avatar !== undefined) {
     if (avatar === null) {
@@ -429,8 +441,11 @@ async function deleteUserAccount(userId, password, mode) {
       email: `${anonymousId}@deleted.invalid`,
       password: null,
       role: 'viewer',
-      firstName: null,
-      lastName: null,
+      firstNameNative: null,
+      lastNameNative: null,
+      firstNameEn: null,
+      lastNameEn: null,
+      nickname: null,
       avatar: null,
       avatarColor: null,
       homeLocationId: null,
@@ -449,7 +464,7 @@ async function deleteUserAccount(userId, password, mode) {
 
 async function getUsers(actorId, actorRole) {
   const baseQuery = {
-    attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt', 'isVerified'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified'],
     include: [
       {
         model: Location,
@@ -626,7 +641,7 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
 
     updatedUser = await User.findByPk(user.id, {
       transaction,
-      attributes: ['id', 'username', 'email', 'role', 'firstName', 'lastName', 'homeLocationId', 'createdAt'],
+      attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt'],
       include: [
         {
           model: Location,
@@ -691,7 +706,7 @@ async function getPublicUserProfile(userId) {
 
   const user = await User.findOne({
     where: { id: userId, searchable: true },
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -705,7 +720,7 @@ async function getPublicUserProfileByUsername(username) {
 
   const user = await User.findOne({
     where: { username: username.trim(), searchable: true },
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -726,14 +741,20 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
     const sanitizedNorm = sanitizeForLike(normalizeGreek(search));
     const conditions = [
       { username: { [likeOp]: `%${sanitizedRaw}%` } },
-      { firstName: { [likeOp]: `%${sanitizedRaw}%` } },
-      { lastName: { [likeOp]: `%${sanitizedRaw}%` } },
+      { firstNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+      { firstNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+      { nickname: { [likeOp]: `%${sanitizedRaw}%` } },
     ];
     if (sanitizedNorm !== sanitizedRaw) {
       conditions.push(
         { username: { [likeOp]: `%${sanitizedNorm}%` } },
-        { firstName: { [likeOp]: `%${sanitizedNorm}%` } },
-        { lastName: { [likeOp]: `%${sanitizedNorm}%` } }
+        { firstNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+        { firstNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+        { nickname: { [likeOp]: `%${sanitizedNorm}%` } }
       );
     }
     whereClause[Op.or] = conditions;
@@ -755,7 +776,7 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'isVerified', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier'],
     order: [['username', 'ASC']],
     limit: limitNum,
     offset

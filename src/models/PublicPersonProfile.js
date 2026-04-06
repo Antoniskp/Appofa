@@ -12,13 +12,25 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
     allowNull: false,
     unique: true
   },
-  firstName: {
+  firstNameNative: {
     type: DataTypes.STRING(100),
     allowNull: false
   },
-  lastName: {
+  lastNameNative: {
     type: DataTypes.STRING(100),
     allowNull: false
+  },
+  firstNameEn: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  lastNameEn: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  nickname: {
+    type: DataTypes.STRING(100),
+    allowNull: true
   },
   locationId: {
     type: DataTypes.INTEGER,
@@ -100,10 +112,32 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  fullNameNative: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.firstNameNative || ''} ${this.lastNameNative || ''}`.trim();
+    }
+  },
+  fullNameEn: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      return `${this.firstNameEn || ''} ${this.lastNameEn || ''}`.trim();
+    }
+  },
   fullName: {
     type: DataTypes.VIRTUAL,
     get() {
-      return `${this.firstName || ''} ${this.lastName || ''}`.trim();
+      return `${this.firstNameNative || ''} ${this.lastNameNative || ''}`.trim();
+    }
+  },
+  displayName: {
+    type: DataTypes.VIRTUAL,
+    get() {
+      const native = `${this.firstNameNative || ''} ${this.lastNameNative || ''}`.trim();
+      if (native) return native;
+      const en = `${this.firstNameEn || ''} ${this.lastNameEn || ''}`.trim();
+      if (en) return en;
+      return this.slug || '';
     }
   },
   claimStatus: {

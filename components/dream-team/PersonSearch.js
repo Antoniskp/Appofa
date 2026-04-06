@@ -150,8 +150,8 @@ export default function PersonSearch({
 
   const handleSelect = (person) => {
     const displayName = person.type === 'user'
-      ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
-      : `${person.firstName} ${person.lastName}`;
+      ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
+      : `${person.firstNameNative} ${person.lastNameNative}`;
     if (!isControlled) setInternalQuery(displayName);
     if (onChange) onChange({ target: { value: displayName } });
     setOpen(false);
@@ -206,8 +206,8 @@ export default function PersonSearch({
             // only verified users are permitted as candidates.
             const isBlockedUser = isUser && !isVerifiedUser;
             const displayName = isUser
-              ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
-              : `${person.firstName} ${person.lastName}`;
+              ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
+              : `${person.firstNameNative} ${person.lastNameNative}`;
             const photo = isUser ? person.avatar : person.photo;
             return (
               <li

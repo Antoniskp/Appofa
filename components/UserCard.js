@@ -5,9 +5,9 @@ import Badge from '@/components/ui/Badge';
 import UserAvatar from '@/components/user/UserAvatar';
 
 export default function UserCard({ user }) {
-  const displayName = user.firstName && user.lastName
-    ? `${user.firstName} ${user.lastName}`
-    : user.firstName || user.lastName || '';
+  const displayName = user.firstNameNative && user.lastNameNative
+    ? `${user.firstNameNative} ${user.lastNameNative}`
+    : user.firstNameNative || user.lastNameNative || '';
 
   return (
     <Card hoverable href={`/users/${user.username}`}>

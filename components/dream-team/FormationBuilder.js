@@ -115,8 +115,8 @@ export default function FormationBuilder({ formation, communityResults = [], onS
     }
 
     const displayName = person.type === 'user'
-      ? ((`${person.firstName || ''} ${person.lastName || ''}`.trim()) || person.username)
-      : `${person.firstName} ${person.lastName}`;
+      ? ((`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username)
+      : `${person.firstNameNative} ${person.lastNameNative}`;
     setPicks((prev) => ({
       ...prev,
       [slug]: {

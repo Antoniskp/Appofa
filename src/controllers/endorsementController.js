@@ -119,7 +119,7 @@ const endorsementController = {
         include: [{
           model: User,
           as: 'endorsed',
-          attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'role'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role'],
           where: { searchable: true }
         }],
         group: ['endorsedId', 'endorsed.id'],

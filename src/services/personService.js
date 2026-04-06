@@ -20,8 +20,8 @@ class ServiceError extends Error {
 
 // ─── Slug utilities ──────────────────────────────────────────────────────────
 
-function generateSlug(firstName, lastName) {
-  const fullName = `${firstName} ${lastName}`;
+function generateSlug(firstNameNative, lastNameNative) {
+  const fullName = `${firstNameNative} ${lastNameNative}`;
   return fullName.toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
@@ -50,7 +50,7 @@ const PROFILE_INCLUDE = [
   {
     model: User,
     as: 'claimedBy',
-    attributes: ['id', 'username', 'firstName', 'lastName', 'avatar'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
     required: false
   },
   {
@@ -61,7 +61,7 @@ const PROFILE_INCLUDE = [
   }
 ];
 
-const SAFE_USER_ATTRS = ['id', 'username', 'firstName', 'lastName', 'avatar', 'email', 'role'];
+const SAFE_USER_ATTRS = ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'email', 'role'];
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 
@@ -79,13 +79,19 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
     const sanitizedRaw = sanitizeForLike(search);
     const sanitizedNorm = sanitizeForLike(normalizeGreek(search));
     const conditions = [
-      { firstName: { [likeOp]: `%${sanitizedRaw}%` } },
-      { lastName: { [likeOp]: `%${sanitizedRaw}%` } },
+      { firstNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+      { firstNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+      { nickname: { [likeOp]: `%${sanitizedRaw}%` } },
     ];
     if (sanitizedNorm !== sanitizedRaw) {
       conditions.push(
-        { firstName: { [likeOp]: `%${sanitizedNorm}%` } },
-        { lastName: { [likeOp]: `%${sanitizedNorm}%` } }
+        { firstNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+        { firstNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+        { nickname: { [likeOp]: `%${sanitizedNorm}%` } }
       );
     }
     where[Op.or] = conditions;
@@ -159,20 +165,23 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     throw new ServiceError(403, 'Only admins and moderators can create person profiles.');
   }
 
-  const { firstName, lastName, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId } = data;
-  if (!firstName || !firstName.trim()) throw new ServiceError(400, 'First name is required.');
-  if (!lastName || !lastName.trim()) throw new ServiceError(400, 'Last name is required.');
+  const { firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId } = data;
+  if (!firstNameNative || !firstNameNative.trim()) throw new ServiceError(400, 'First name is required.');
+  if (!lastNameNative || !lastNameNative.trim()) throw new ServiceError(400, 'Last name is required.');
 
   const validatedExpertiseArea = validateExpertiseArea(expertiseArea);
   const validatedPartyId = validatePartyId(partyId);
 
-  const base = generateSlug(firstName.trim(), lastName.trim());
+  const base = generateSlug(firstNameNative.trim(), lastNameNative.trim());
   const slug = await ensureUniqueSlug(base);
 
   const profile = await PublicPersonProfile.create({
     slug,
-    firstName: firstName.trim(),
-    lastName: lastName.trim(),
+    firstNameNative: firstNameNative.trim(),
+    lastNameNative: lastNameNative.trim(),
+    firstNameEn: firstNameEn ? firstNameEn.trim() : null,
+    lastNameEn: lastNameEn ? lastNameEn.trim() : null,
+    nickname: nickname ? nickname.trim() : null,
     locationId: locationId || null,
     constituencyId: constituencyId || null,
     bio: bio || null,
@@ -233,6 +242,22 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
     claimTokenExpiresAt: null
   });
 
+  // Sync name fields from profile to the claiming user
+  if (profile.claimedByUserId) {
+    const claimingUser = await User.findByPk(profile.claimedByUserId);
+    if (claimingUser) {
+      const nameUpdates = {};
+      if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
+      if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
+      if (profile.firstNameEn) nameUpdates.firstNameEn = profile.firstNameEn;
+      if (profile.lastNameEn) nameUpdates.lastNameEn = profile.lastNameEn;
+      if (profile.nickname) nameUpdates.nickname = profile.nickname;
+      if (Object.keys(nameUpdates).length > 0) {
+        await claimingUser.update(nameUpdates);
+      }
+    }
+  }
+
   return profile;
 }
 
@@ -267,7 +292,7 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
     throw new ServiceError(403, 'You do not have permission to update this profile.');
   }
 
-  const allowedFields = ['firstName', 'lastName', 'locationId', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position'];
+  const allowedFields = ['firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'locationId', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position'];
   if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug');
 
   const updates = {};

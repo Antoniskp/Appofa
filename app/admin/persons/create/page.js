@@ -25,8 +25,11 @@ export default function CreatePersonProfilePage() {
 
   // Section 1 — Basic person fields
   const [form, setForm] = useState({
-    firstName: '',
-    lastName: '',
+    firstNameNative: '',
+    lastNameNative: '',
+    firstNameEn: '',
+    lastNameEn: '',
+    nickname: '',
     photo: '',
     bio: '',
     contactEmail: '',
@@ -125,9 +128,12 @@ export default function CreatePersonProfilePage() {
       const locationId = personSelectedMunicipalityId || personSelectedPrefectureId || undefined;
 
       const payload = {
-        firstName: form.firstName,
-        lastName: form.lastName,
+        firstNameNative: form.firstNameNative,
+        lastNameNative: form.lastNameNative,
       };
+      if (form.firstNameEn) payload.firstNameEn = form.firstNameEn;
+      if (form.lastNameEn) payload.lastNameEn = form.lastNameEn;
+      if (form.nickname) payload.nickname = form.nickname;
       if (form.photo) payload.photo = form.photo;
       if (form.bio) payload.bio = form.bio;
       if (form.contactEmail) payload.contactEmail = form.contactEmail;
@@ -179,8 +185,8 @@ export default function CreatePersonProfilePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα <span className="text-red-500">*</span></label>
                 <input
                   type="text"
-                  value={form.firstName}
-                  onChange={(e) => handleChange('firstName', e.target.value)}
+                  value={form.firstNameNative}
+                  onChange={(e) => handleChange('firstNameNative', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -189,12 +195,43 @@ export default function CreatePersonProfilePage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Επώνυμο <span className="text-red-500">*</span></label>
                 <input
                   type="text"
-                  value={form.lastName}
-                  onChange={(e) => handleChange('lastName', e.target.value)}
+                  value={form.lastNameNative}
+                  onChange={(e) => handleChange('lastNameNative', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First name (English)</label>
+                <input
+                  type="text"
+                  value={form.firstNameEn}
+                  onChange={(e) => handleChange('firstNameEn', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last name (English)</label>
+                <input
+                  type="text"
+                  value={form.lastNameEn}
+                  onChange={(e) => handleChange('lastNameEn', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Παρατσούκλι / Nickname</label>
+              <input
+                type="text"
+                value={form.nickname}
+                onChange={(e) => handleChange('nickname', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
             <div>

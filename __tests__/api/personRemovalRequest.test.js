@@ -61,8 +61,8 @@ describe('Person Removal Request API', () => {
 
     // Create a test public person profile
     const person = await PublicPersonProfile.create({
-      firstName: 'Test',
-      lastName: 'Person',
+      firstNameNative: 'Test',
+      lastNameNative: 'Person',
       slug: 'test-person-removal',
     });
     testPersonId = person.id;

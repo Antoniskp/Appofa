@@ -9,9 +9,9 @@ import UserAvatar from '@/components/user/UserAvatar';
  * Used in followers/following list pages.
  */
 export default function UserRow({ user }) {
-  const displayName = user.firstName && user.lastName
-    ? `${user.firstName} ${user.lastName}`
-    : user.firstName || user.lastName || '';
+  const displayName = user.firstNameNative && user.lastNameNative
+    ? `${user.firstNameNative} ${user.lastNameNative}`
+    : user.firstNameNative || user.lastNameNative || '';
 
   return (
     <Link href={`/users/${user.username}`} className="block hover:bg-gray-50 transition-colors rounded-lg">

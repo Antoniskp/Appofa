@@ -47,7 +47,7 @@ const personRemovalRequestController = {
     const { count, rows } = await PersonRemovalRequest.findAndCountAll({
       where,
       include: [
-        { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'firstName', 'lastName', 'slug'] },
+        { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'firstNameNative', 'lastNameNative', 'slug'] },
         { model: User, as: 'reviewer', attributes: ['id', 'username'], required: false }
       ],
       limit: parseInt(limit),
@@ -72,7 +72,7 @@ const personRemovalRequestController = {
   getRemovalRequestById: async (req, res) => {
     const removalRequest = await PersonRemovalRequest.findByPk(req.params.id, {
       include: [
-        { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'firstName', 'lastName', 'slug'] },
+        { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'firstNameNative', 'lastNameNative', 'slug'] },
         { model: User, as: 'reviewer', attributes: ['id', 'username'], required: false }
       ]
     });

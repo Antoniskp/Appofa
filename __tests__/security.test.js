@@ -108,8 +108,8 @@ describe('CSRF Refresh Endpoint Tests', () => {
       email: 'csrftest@example.com',
       password: 'password123',
       role: 'viewer',
-      firstName: 'Csrf',
-      lastName: 'Test'
+      firstNameNative: 'Csrf',
+      lastNameNative: 'Test'
     }).catch(() => User.findOne({ where: { email: 'csrftest@example.com' } }));
 
     const loginResponse = await request(app)

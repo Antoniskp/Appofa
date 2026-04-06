@@ -21,7 +21,7 @@ export default function LocationHeader({
   const headerSections = publishedSections.filter(s => HEADER_SECTION_TYPES.includes(s.type));
 
   const locationNeedsModerator = !location.hasModerator;
-  const moderatorDisplayName = [location?.moderatorPreview?.firstName, location?.moderatorPreview?.lastName]
+  const moderatorDisplayName = [location?.moderatorPreview?.firstNameNative, location?.moderatorPreview?.lastNameNative]
     .filter(Boolean)
     .join(' ')
     .trim() || location?.moderatorPreview?.username || '';

@@ -126,8 +126,8 @@ async function handleGithubCallback(code, state) {
           email: primaryEmail,
           githubId: githubUser.id.toString(),
           githubAccessToken: encryptToken(accessToken),
-          firstName: nameParts[0] || githubUser.login,
-          lastName: nameParts.slice(1).join(' ') || '',
+          firstNameNative: nameParts[0] || githubUser.login,
+          lastNameNative: nameParts.slice(1).join(' ') || '',
           avatar: githubUser.avatar_url,
           role: 'viewer'
         });
@@ -273,8 +273,8 @@ async function handleGoogleCallback(code, state) {
           email: googleUser.email,
           googleId: googleUser.id.toString(),
           googleAccessToken: encryptToken(accessToken),
-          firstName: googleUser.given_name || nameParts[0] || '',
-          lastName: googleUser.family_name || nameParts.slice(1).join(' ') || '',
+          firstNameNative: googleUser.given_name || nameParts[0] || '',
+          lastNameNative: googleUser.family_name || nameParts.slice(1).join(' ') || '',
           avatar: googleUser.picture,
           role: 'viewer'
         });

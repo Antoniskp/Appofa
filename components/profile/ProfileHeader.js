@@ -9,24 +9,27 @@ import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
  *
  * @param {Object} props
  * @param {string} props.username
- * @param {string} [props.firstName]
- * @param {string} [props.lastName]
+ * @param {string} [props.firstNameNative]
+ * @param {string} [props.lastNameNative]
+ * @param {string} [props.firstNameEn]
+ * @param {string} [props.lastNameEn]
+ * @param {string} [props.nickname]
  * @param {string} [props.email]
  * @param {string} [props.avatar]
  * @param {string} [props.avatarColor]
  * @param {number} [props.followersCount]
  * @param {number} [props.followingCount]
  */
-export default function ProfileHeader({ username, firstName, lastName, email, avatar, avatarColor, followersCount, followingCount }) {
+export default function ProfileHeader({ username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, email, avatar, avatarColor, followersCount, followingCount }) {
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   useEffect(() => {
     setAvatarLoadError(false);
   }, [avatar]);
 
-  const displayName = firstName && lastName
-    ? `${firstName} ${lastName}`
-    : firstName || lastName || '';
+  const nativeName = `${firstNameNative || ''} ${lastNameNative || ''}`.trim();
+  const enName = `${firstNameEn || ''} ${lastNameEn || ''}`.trim();
+  const displayName = nativeName || enName || nickname || '';
 
   const initials = (username || email || 'U').slice(0, 1).toUpperCase();
 

@@ -31,8 +31,11 @@ function ProfileContent() {
 
   const [profileData, setProfileData] = useState({
     username: '',
-    firstName: '',
-    lastName: '',
+    firstNameNative: '',
+    lastNameNative: '',
+    firstNameEn: '',
+    lastNameEn: '',
+    nickname: '',
     avatar: '',
     avatarColor: '',
     homeLocationId: null,
@@ -106,13 +109,16 @@ function ProfileContent() {
     [],
     {
       onSuccess: async (userData) => {
-        const { username, firstName, lastName, githubId, googleId, avatar, avatarColor, homeLocationId,
+        const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, githubId, googleId, avatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
           dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier } = userData;
         const loaded = {
           username: username || '',
-          firstName: firstName || '',
-          lastName: lastName || '',
+          firstNameNative: firstNameNative || '',
+          lastNameNative: lastNameNative || '',
+          firstNameEn: firstNameEn || '',
+          lastNameEn: lastNameEn || '',
+          nickname: nickname || '',
           avatar: avatar || '',
           avatarColor: avatarColor || '',
           homeLocationId: homeLocationId || null,
@@ -420,8 +426,11 @@ function ProfileContent() {
         <Card>
           <ProfileHeader
             username={profileData.username}
-            firstName={profileData.firstName}
-            lastName={profileData.lastName}
+            firstNameNative={profileData.firstNameNative}
+            lastNameNative={profileData.lastNameNative}
+            firstNameEn={profileData.firstNameEn}
+            lastNameEn={profileData.lastNameEn}
+            nickname={profileData.nickname}
             email={user?.email}
             avatar={profileData.avatar}
             avatarColor={profileData.avatarColor}

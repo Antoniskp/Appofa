@@ -172,7 +172,7 @@ const getLocations = async (queryParams) => {
           role: 'moderator',
           homeLocationId: { [Op.in]: locationIds }
         },
-        attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor', 'homeLocationId'],
+        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'homeLocationId'],
         order: [['createdAt', 'ASC'], ['id', 'ASC']],
         raw: true
       });
@@ -186,8 +186,8 @@ const getLocations = async (queryParams) => {
             moderatorPreviewByLocationId.set(homeLocationId, {
               id: assignment.id,
               username: assignment.username,
-              firstName: assignment.firstName,
-              lastName: assignment.lastName,
+              firstNameNative: assignment.firstNameNative,
+              lastNameNative: assignment.lastNameNative,
               avatar: assignment.avatar,
               avatarColor: assignment.avatarColor
             });
@@ -289,7 +289,7 @@ const getLocation = async (id) => {
 
     const moderator = await User.findOne({
       where: { role: 'moderator', homeLocationId: locationId },
-      attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor'],
+      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
       order: [['createdAt', 'ASC'], ['id', 'ASC']]
     });
 
@@ -667,7 +667,7 @@ const getLocationEntities = async (locationId, queryParams, user) => {
         id: combinedUserIds,
         searchable: true
       },
-      attributes: ['id', 'username', 'firstName', 'lastName', 'avatar', 'avatarColor']
+      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor']
     }) : [];
 
     const polls = pollIds.length > 0 ? await Poll.findAll({
@@ -766,8 +766,8 @@ const getLocationRequests = async (queryParams) => {
     const { count, rows } = await LocationRequest.findAndCountAll({
       where: whereClause,
       include: [
-        { model: User, as: 'requestedBy', attributes: ['id', 'username', 'firstName', 'lastName'] },
-        { model: User, as: 'reviewedBy', attributes: ['id', 'username', 'firstName', 'lastName'] }
+        { model: User, as: 'requestedBy', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'] },
+        { model: User, as: 'reviewedBy', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'] }
       ],
       order: [['createdAt', 'DESC']],
       limit: parseInt(limit),

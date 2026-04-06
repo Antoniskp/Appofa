@@ -186,7 +186,7 @@ export default function HomeHero() {
             <div className="flex-1 min-w-0">
               {!authLoading && user && (
                 <p className="text-sm mb-1 text-cyan-100 font-medium">
-                  Καλώς ήρθες, {user.firstName || user.username}!
+                  Καλώς ήρθες, {user.firstNameNative || user.username}!
                 </p>
               )}
 

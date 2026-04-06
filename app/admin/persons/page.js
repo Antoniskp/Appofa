@@ -121,7 +121,7 @@ export default function AdminPersonsPage() {
                   <tr key={p.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <Link href={`/admin/persons/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">
-                        {p.firstName} {p.lastName}
+                        {p.firstNameNative} {p.lastNameNative}
                       </Link>
                       <p className="text-xs text-gray-400">/{p.slug}</p>
                     </td>

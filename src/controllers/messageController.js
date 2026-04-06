@@ -208,12 +208,12 @@ const messageController = {
           {
             model: User,
             as: 'user',
-            attributes: ['id', 'username', 'email', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'email', 'firstNameNative', 'lastNameNative']
           },
           {
             model: User,
             as: 'responder',
-            attributes: ['id', 'username', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
           },
           {
             model: Location,
@@ -265,12 +265,12 @@ const messageController = {
           {
             model: User,
             as: 'user',
-            attributes: ['id', 'username', 'email', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'email', 'firstNameNative', 'lastNameNative']
           },
           {
             model: User,
             as: 'responder',
-            attributes: ['id', 'username', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
           },
           {
             model: Location,
@@ -407,12 +407,12 @@ const messageController = {
           {
             model: User,
             as: 'user',
-            attributes: ['id', 'username', 'email', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'email', 'firstNameNative', 'lastNameNative']
           },
           {
             model: User,
             as: 'responder',
-            attributes: ['id', 'username', 'firstName', 'lastName']
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
           },
           {
             model: Location,
