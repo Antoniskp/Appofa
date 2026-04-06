@@ -26,6 +26,9 @@ export default function EditAdminPersonPage({ params }) {
   const [form, setForm] = useState({
     firstNameNative: '',
     lastNameNative: '',
+    firstNameEn: '',
+    lastNameEn: '',
+    nickname: '',
     constituencyId: '',
     bio: '',
     photo: '',
@@ -81,6 +84,9 @@ export default function EditAdminPersonPage({ params }) {
       setForm({
         firstNameNative: profile.firstNameNative || '',
         lastNameNative: profile.lastNameNative || '',
+        firstNameEn: profile.firstNameEn || '',
+        lastNameEn: profile.lastNameEn || '',
+        nickname: profile.nickname || '',
         constituencyId: profile.constituencyId || '',
         bio: profile.bio || '',
         photo: profile.photo || '',
@@ -130,6 +136,9 @@ export default function EditAdminPersonPage({ params }) {
       const payload = {
         firstNameNative: form.firstNameNative,
         lastNameNative: form.lastNameNative,
+        firstNameEn: form.firstNameEn || null,
+        lastNameEn: form.lastNameEn || null,
+        nickname: form.nickname || null,
         constituencyId: form.constituencyId || undefined,
         bio: form.bio || undefined,
         photo: form.photo || undefined,
@@ -176,6 +185,25 @@ export default function EditAdminPersonPage({ params }) {
               <input type="text" value={form.lastNameNative} onChange={(e) => handleChange('lastNameNative', e.target.value)} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First name (English)</label>
+              <input type="text" value={form.firstNameEn} onChange={(e) => handleChange('firstNameEn', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last name (English)</label>
+              <input type="text" value={form.lastNameEn} onChange={(e) => handleChange('lastNameEn', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Παρατσούκλι / Nickname</label>
+            <input type="text" value={form.nickname} onChange={(e) => handleChange('nickname', e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           <div>

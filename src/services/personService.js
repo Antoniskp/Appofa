@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { PublicPersonProfile, User, Location } = require('../models');
+const { PublicPersonProfile, User, Location, Endorsement, DreamTeamVote } = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
@@ -175,6 +175,24 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   const base = generateSlug(firstNameNative.trim(), lastNameNative.trim());
   const slug = await ensureUniqueSlug(base);
 
+  // Create a placeholder User record for this unclaimed profile so that
+  // endorsements, dream-team votes, and search all work via the Users table.
+  const placeholderEmail = `unclaimed-${slug}@placeholder.appofasi.gr`;
+  const placeholderUsername = `person-${slug}`;
+  const placeholderUser = await User.create({
+    username: placeholderUsername,
+    email: placeholderEmail,
+    password: null,
+    role: 'viewer',
+    isPlaceholder: true,
+    searchable: true,
+    firstNameNative: firstNameNative.trim(),
+    lastNameNative: lastNameNative.trim(),
+    firstNameEn: firstNameEn ? firstNameEn.trim() : null,
+    lastNameEn: lastNameEn ? lastNameEn.trim() : null,
+    nickname: nickname ? nickname.trim() : null,
+  });
+
   const profile = await PublicPersonProfile.create({
     slug,
     firstNameNative: firstNameNative.trim(),
@@ -195,6 +213,8 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     partyId: validatedPartyId,
     claimStatus: 'unclaimed',
     createdByUserId: moderatorUserId,
+    claimedByUserId: placeholderUser.id,
+    placeholderUserId: placeholderUser.id,
     source: 'moderator'
   });
 
@@ -234,29 +254,88 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
   if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
 
-  await profile.update({
-    claimStatus: 'claimed',
-    claimVerifiedAt: new Date(),
-    claimVerifiedByUserId: moderatorUserId,
-    claimToken: null,
-    claimTokenExpiresAt: null
-  });
+  const claimingUserId = profile.claimedByUserId;
+  const placeholderUserId = profile.placeholderUserId;
 
-  // Sync name fields from profile to the claiming user
-  if (profile.claimedByUserId) {
-    const claimingUser = await User.findByPk(profile.claimedByUserId);
-    if (claimingUser) {
-      const nameUpdates = {};
+  // Transfer relationships from the placeholder user to the real claiming user.
+  // The guard `placeholderUserId !== claimingUserId` prevents a no-op transfer in the
+  // unlikely case where the placeholder was somehow set as the claimedByUserId (it should
+  // not happen in normal flow, but this makes the code safe against re-approvals or bugs).
+  const claimingUser = claimingUserId ? await User.findByPk(claimingUserId) : null;
+  const isClaimingUserReal = claimingUser && !claimingUser.isPlaceholder;
+
+  if (placeholderUserId && claimingUserId && placeholderUserId !== claimingUserId && isClaimingUserReal) {
+    // Transfer endorsements: handle potential unique-constraint conflicts.
+    // Fetch all placeholder endorsements and all existing claiming-user endorsements in two queries,
+    // then resolve conflicts in-memory to avoid N+1 queries.
+    const [placeholderEndorsements, existingClaimingEndorsements] = await Promise.all([
+      Endorsement.findAll({ where: { endorsedId: placeholderUserId } }),
+      Endorsement.findAll({ where: { endorsedId: claimingUserId } }),
+    ]);
+    const existingKey = new Set(
+      existingClaimingEndorsements.map((e) => `${e.endorserId}:${e.topic}`)
+    );
+    const toDestroy = [];
+    const toUpdate = [];
+    for (const endorsement of placeholderEndorsements) {
+      const key = `${endorsement.endorserId}:${endorsement.topic}`;
+      if (existingKey.has(key)) {
+        toDestroy.push(endorsement.id);
+      } else {
+        toUpdate.push(endorsement.id);
+      }
+    }
+    if (toDestroy.length > 0) {
+      await Endorsement.destroy({ where: { id: { [Op.in]: toDestroy } } });
+    }
+    if (toUpdate.length > 0) {
+      await Endorsement.update({ endorsedId: claimingUserId }, { where: { id: { [Op.in]: toUpdate } } });
+    }
+
+    // Transfer dream-team votes (candidateUserId column)
+    await DreamTeamVote.update(
+      { candidateUserId: claimingUserId },
+      { where: { candidateUserId: placeholderUserId } }
+    );
+
+    // Ensure claiming user is searchable
+    // claimingUser was already fetched above; re-use it.
+    {
+      const nameUpdates = { searchable: true };
       if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
       if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
       if (profile.firstNameEn) nameUpdates.firstNameEn = profile.firstNameEn;
       if (profile.lastNameEn) nameUpdates.lastNameEn = profile.lastNameEn;
       if (profile.nickname) nameUpdates.nickname = profile.nickname;
-      if (Object.keys(nameUpdates).length > 0) {
-        await claimingUser.update(nameUpdates);
-      }
+      await claimingUser.update(nameUpdates);
+    }
+
+    // Delete the placeholder user (all FKs to it have been transferred or will be SET NULL)
+    const placeholderUser = await User.findByPk(placeholderUserId);
+    if (placeholderUser && placeholderUser.isPlaceholder) {
+      await placeholderUser.destroy();
+    }
+  } else if (claimingUser) {
+    // No placeholder (or claiming user IS the placeholder - shouldn't happen): sync name fields
+    const nameUpdates = {};
+    if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
+    if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
+    if (profile.firstNameEn) nameUpdates.firstNameEn = profile.firstNameEn;
+    if (profile.lastNameEn) nameUpdates.lastNameEn = profile.lastNameEn;
+    if (profile.nickname) nameUpdates.nickname = profile.nickname;
+    if (Object.keys(nameUpdates).length > 0) {
+      await claimingUser.update(nameUpdates);
     }
   }
+
+  await profile.update({
+    claimStatus: 'claimed',
+    claimVerifiedAt: new Date(),
+    claimVerifiedByUserId: moderatorUserId,
+    claimToken: null,
+    claimTokenExpiresAt: null,
+    placeholderUserId: null,
+  });
 
   return profile;
 }
@@ -270,9 +349,13 @@ async function rejectClaim(moderatorUserId, moderatorRole, profileId, reason) {
   if (!profile) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
 
+  // Restore claimedByUserId to the placeholder user (if one exists) so the profile
+  // remains endorsable and searchable after rejection.
+  const restoredClaimedByUserId = profile.placeholderUserId || null;
+
   await profile.update({
     claimStatus: 'rejected',
-    claimedByUserId: null,
+    claimedByUserId: restoredClaimedByUserId,
     claimRequestedAt: null,
     claimToken: null,
     claimTokenExpiresAt: null

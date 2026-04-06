@@ -29,6 +29,9 @@ export default function EditPersonProfilePage({ params }) {
   const [form, setForm] = useState({
     firstNameNative: '',
     lastNameNative: '',
+    firstNameEn: '',
+    lastNameEn: '',
+    nickname: '',
     photo: '',
     bio: '',
     contactEmail: '',
@@ -45,7 +48,9 @@ export default function EditPersonProfilePage({ params }) {
   const [personSelectedMunicipalityId, setPersonSelectedMunicipalityId] = useState('');
 
   // Section 2 — Political fields
+  const [hasPoliticalInfo, setHasPoliticalInfo] = useState(false);
   const [politicalForm, setPoliticalForm] = useState({
+    position: '',
     manifesto: '',
     partyId: '',
   });
@@ -109,6 +114,9 @@ export default function EditPersonProfilePage({ params }) {
     setForm({
       firstNameNative: profile.firstNameNative || '',
       lastNameNative: profile.lastNameNative || '',
+      firstNameEn: profile.firstNameEn || '',
+      lastNameEn: profile.lastNameEn || '',
+      nickname: profile.nickname || '',
       photo: profile.photo || '',
       bio: profile.bio || '',
       contactEmail: profile.contactEmail || '',
@@ -126,8 +134,14 @@ export default function EditPersonProfilePage({ params }) {
     const ppPairs = Object.entries(pp).map(([k, v]) => ({ key: k, value: v }));
     setPoliticalPositions(ppPairs.length > 0 ? ppPairs : [{ key: '', value: '' }]);
 
-    // Political fields
+    // Political fields — auto-enable section if profile has any political data
+    const hasPolitical = !!(profile.manifesto || profile.partyId || profile.constituencyId ||
+      (profile.politicalPositions && Object.keys(profile.politicalPositions).length > 0) ||
+      profile.position);
+    setHasPoliticalInfo(hasPolitical);
+
     setPoliticalForm({
+      position: profile.position || '',
       manifesto: profile.manifesto || '',
       partyId: profile.partyId || '',
     });
@@ -185,6 +199,9 @@ export default function EditPersonProfilePage({ params }) {
         firstNameNative: form.firstNameNative,
         lastNameNative: form.lastNameNative,
       };
+      if (form.firstNameEn !== undefined) payload.firstNameEn = form.firstNameEn || null;
+      if (form.lastNameEn !== undefined) payload.lastNameEn = form.lastNameEn || null;
+      if (form.nickname !== undefined) payload.nickname = form.nickname || null;
       if (form.photo !== undefined) payload.photo = form.photo || null;
       if (form.bio) payload.bio = form.bio;
       if (form.contactEmail) payload.contactEmail = form.contactEmail;
@@ -200,13 +217,21 @@ export default function EditPersonProfilePage({ params }) {
       // Expertise area
       payload.expertiseArea = expertiseArea;
 
-      // Political fields
-      payload.partyId = politicalForm.partyId || null;
-      const constId = constituencyId || constSelectedPrefectureId || undefined;
-      if (constId) payload.constituencyId = parseInt(constId, 10);
-      if (politicalForm.manifesto) payload.manifesto = politicalForm.manifesto;
-      const ppObj = pairsToObject(politicalPositions);
-      if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
+      // Political fields — only include if section is enabled
+      if (hasPoliticalInfo) {
+        payload.partyId = politicalForm.partyId || null;
+        if (politicalForm.position) payload.position = politicalForm.position;
+        const constId = constituencyId || constSelectedPrefectureId || undefined;
+        if (constId) payload.constituencyId = parseInt(constId, 10);
+        if (politicalForm.manifesto) payload.manifesto = politicalForm.manifesto;
+        const ppObj = pairsToObject(politicalPositions);
+        if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
+      } else {
+        payload.partyId = null;
+        payload.position = null;
+        payload.manifesto = null;
+        payload.politicalPositions = null;
+      }
 
       await personAPI.updateProfile(id, payload);
       setSuccess(true);
@@ -252,6 +277,37 @@ export default function EditPersonProfilePage({ params }) {
                   required
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First name (English)</label>
+                <input
+                  type="text"
+                  value={form.firstNameEn}
+                  onChange={(e) => handleChange('firstNameEn', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last name (English)</label>
+                <input
+                  type="text"
+                  value={form.lastNameEn}
+                  onChange={(e) => handleChange('lastNameEn', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Παρατσούκλι / Nickname</label>
+              <input
+                type="text"
+                value={form.nickname}
+                onChange={(e) => handleChange('nickname', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
 
             <div>
@@ -367,104 +423,131 @@ export default function EditPersonProfilePage({ params }) {
             </div>
           </div>
 
-          {/* Section 2 — Political fields */}
+          {/* Section 2 — Political fields (collapsible) */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-            <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-100 pb-3">Πολιτικά Στοιχεία</h2>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={hasPoliticalInfo}
+                onChange={(e) => setHasPoliticalInfo(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-lg font-semibold text-gray-900">Πολιτικά Στοιχεία</span>
+            </label>
+            <p className="text-sm text-gray-500 -mt-3">Ενεργοποιήστε για να συμπεριλάβετε πολιτικά στοιχεία.</p>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
-              <select
-                value={politicalForm.partyId}
-                onChange={(e) => handlePoliticalChange('partyId', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Κανένα / Ανεξάρτητος</option>
-                {getAllParties().map((party) => (
-                  <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Constituency cascading picker */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
-              <div className="space-y-2">
-                <select
-                  value={constSelectedPrefectureId}
-                  onChange={(e) => {
-                    setConstSelectedPrefectureId(e.target.value);
-                    setConstituencyId('');
-                  }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Επιλέξτε Περιφέρεια</option>
-                  {constPrefectures.map((loc) => (
-                    <option key={loc.id} value={loc.id}>{loc.name}</option>
-                  ))}
-                </select>
-                {constSelectedPrefectureId && (
+            {hasPoliticalInfo && (
+              <div className="space-y-5 pt-2 border-t border-gray-100">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Θέση</label>
                   <select
-                    value={constituencyId}
-                    onChange={(e) => setConstituencyId(e.target.value)}
+                    value={politicalForm.position}
+                    onChange={(e) => handlePoliticalChange('position', e.target.value)}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Επιλέξτε Δήμο (προαιρετικό)</option>
-                    {constMunicipalities.map((loc) => (
-                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    <option value="">Επιλέξτε...</option>
+                    <option value="mayor">Δήμαρχος</option>
+                    <option value="prefect">Περιφερειάρχης</option>
+                    <option value="parliamentary">Βουλευτής</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Κόμμα</label>
+                  <select
+                    value={politicalForm.partyId}
+                    onChange={(e) => handlePoliticalChange('partyId', e.target.value)}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Κανένα / Ανεξάρτητος</option>
+                    {getAllParties().map((party) => (
+                      <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
                     ))}
                   </select>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Πρόγραμμα</label>
-              <textarea
-                value={politicalForm.manifesto}
-                onChange={(e) => handlePoliticalChange('manifesto', e.target.value)}
-                rows={5}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              />
-            </div>
+                {/* Constituency cascading picker */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Εκλογική Περιφέρεια</label>
+                  <div className="space-y-2">
+                    <select
+                      value={constSelectedPrefectureId}
+                      onChange={(e) => {
+                        setConstSelectedPrefectureId(e.target.value);
+                        setConstituencyId('');
+                      }}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Επιλέξτε Περιφέρεια</option>
+                      {constPrefectures.map((loc) => (
+                        <option key={loc.id} value={loc.id}>{loc.name}</option>
+                      ))}
+                    </select>
+                    {constSelectedPrefectureId && (
+                      <select
+                        value={constituencyId}
+                        onChange={(e) => setConstituencyId(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Επιλέξτε Δήμο (προαιρετικό)</option>
+                        {constMunicipalities.map((loc) => (
+                          <option key={loc.id} value={loc.id}>{loc.name}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Πολιτικές Θέσεις</label>
-              <div className="space-y-2">
-                {politicalPositions.map((pair, index) => (
-                  <div key={index} className="flex gap-2 items-center">
-                    <input
-                      type="text"
-                      value={pair.key}
-                      onChange={(e) => handlePairChange(index, 'key', e.target.value)}
-                      placeholder="π.χ. Οικονομία"
-                      className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <input
-                      type="text"
-                      value={pair.value}
-                      onChange={(e) => handlePairChange(index, 'value', e.target.value)}
-                      placeholder="..."
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Πολιτικό Πρόγραμμα</label>
+                  <textarea
+                    value={politicalForm.manifesto}
+                    onChange={(e) => handlePoliticalChange('manifesto', e.target.value)}
+                    rows={5}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Πολιτικές Θέσεις</label>
+                  <div className="space-y-2">
+                    {politicalPositions.map((pair, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <input
+                          type="text"
+                          value={pair.key}
+                          onChange={(e) => handlePairChange(index, 'key', e.target.value)}
+                          placeholder="π.χ. Οικονομία"
+                          className="w-1/3 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <input
+                          type="text"
+                          value={pair.value}
+                          onChange={(e) => handlePairChange(index, 'value', e.target.value)}
+                          placeholder="..."
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setPoliticalPositions((prev) => prev.filter((_, i) => i !== index))}
+                          disabled={politicalPositions.length === 1}
+                          className="text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-1 text-lg"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
                     <button
                       type="button"
-                      onClick={() => setPoliticalPositions((prev) => prev.filter((_, i) => i !== index))}
-                      disabled={politicalPositions.length === 1}
-                      className="text-gray-400 hover:text-red-500 disabled:opacity-30 disabled:cursor-not-allowed transition-colors px-1 text-lg"
+                      onClick={() => setPoliticalPositions((prev) => [...prev, { key: '', value: '' }])}
+                      className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
                     >
-                      ×
+                      + Προσθήκη
                     </button>
                   </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setPoliticalPositions((prev) => [...prev, { key: '', value: '' }])}
-                  className="text-sm text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  + Προσθήκη
-                </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{error}</p>}

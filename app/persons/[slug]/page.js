@@ -11,6 +11,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import { getPartyById } from '@/lib/utils/politicalParties';
 import ReportButton from '@/components/ReportButton';
+import EndorsementPanel from '@/components/EndorsementPanel';
 
 const SOCIAL_LINK_LABELS = {
   website: 'Ιστοσελίδα',
@@ -213,6 +214,13 @@ export default function PersonProfilePage({ params }) {
             )}
           </div>
         </div>
+
+        {/* Endorsements — only when a linked user exists (placeholder or claimed) */}
+        {profile.claimedByUserId && (
+          <div className="mt-6">
+            <EndorsementPanel targetUserId={profile.claimedByUserId} />
+          </div>
+        )}
       </div>
     </div>
   );

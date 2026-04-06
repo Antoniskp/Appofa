@@ -204,6 +204,11 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  isPlaceholder: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
   fullNameNative: {
     type: DataTypes.VIRTUAL,
     get() {

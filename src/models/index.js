@@ -241,7 +241,9 @@ PublicPersonProfile.belongsTo(Location, { foreignKey: 'constituencyId', as: 'con
 PublicPersonProfile.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
 PublicPersonProfile.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
 PublicPersonProfile.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+PublicPersonProfile.belongsTo(User, { foreignKey: 'placeholderUserId', as: 'placeholderUser' });
 User.hasOne(PublicPersonProfile, { foreignKey: 'claimedByUserId', as: 'publicPersonProfile' });
+User.hasOne(PublicPersonProfile, { foreignKey: 'placeholderUserId', as: 'placeholderPersonProfile' });
 PublicPersonProfile.hasMany(PersonRemovalRequest, { foreignKey: 'publicPersonProfileId', as: 'removalRequests' });
 
 // PersonRemovalRequest associations
