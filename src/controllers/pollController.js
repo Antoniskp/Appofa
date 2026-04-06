@@ -47,7 +47,7 @@ const pollController = {
 
   // Get all polls with filtering and pagination
   getAllPolls: async (req, res) => {
-    const result = await pollService.getAllPolls(req.query, toUserObj(req.user));
+    const result = await pollService.getAllPolls(req.query, toUserObj(req.user), getClientIp(req), getUserAgent(req));
     if (!result.success) {
       return res.status(result.status).json({
         success: false,
@@ -64,7 +64,7 @@ const pollController = {
 
   // Get a specific poll by ID
   getPollById: async (req, res) => {
-    const result = await pollService.getPollById(req.params.id, toUserObj(req.user));
+    const result = await pollService.getPollById(req.params.id, toUserObj(req.user), getClientIp(req), getUserAgent(req));
     if (!result.success) {
       return res.status(result.status).json({
         success: false,
