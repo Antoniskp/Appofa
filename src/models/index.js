@@ -30,6 +30,8 @@ const FormationPick = require('./FormationPick');
 const FormationLike = require('./FormationLike');
 const UserBadge = require('./UserBadge');
 const HeroSettings = require('./HeroSettings');
+const Manifest = require('./Manifest');
+const ManifestAcceptance = require('./ManifestAcceptance');
 
 // Define associations
 User.hasMany(Article, {
@@ -292,6 +294,12 @@ User.hasMany(FormationLike, { foreignKey: 'userId', as: 'formationLikes' });
 // UserBadge associations
 User.hasMany(UserBadge, { foreignKey: 'userId', as: 'badges' });
 UserBadge.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Manifest associations
+Manifest.hasMany(ManifestAcceptance, { foreignKey: 'manifestId', as: 'acceptances' });
+ManifestAcceptance.belongsTo(Manifest, { foreignKey: 'manifestId', as: 'manifest' });
+ManifestAcceptance.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(ManifestAcceptance, { foreignKey: 'userId', as: 'manifestAcceptances' });
 
 module.exports = {
   sequelize,
