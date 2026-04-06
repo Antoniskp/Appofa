@@ -428,11 +428,11 @@ const dreamTeamController = {
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if (!user.isVerified && !user.searchable) {
+      if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
         return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
       const suggestion = await GovernmentPositionSuggestion.create({
@@ -463,11 +463,11 @@ const dreamTeamController = {
       }
       const { userId, reason, order: ord, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if (!user.isVerified && !user.searchable) {
+        if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }
@@ -526,11 +526,11 @@ const dreamTeamController = {
           message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
         });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if (!user.isVerified && !user.searchable) {
+      if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
         return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
 
@@ -574,11 +574,11 @@ const dreamTeamController = {
       }
       const { userId, since, notes, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if (!user.isVerified && !user.searchable) {
+        if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }
