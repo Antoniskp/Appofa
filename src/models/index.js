@@ -29,6 +29,7 @@ const Formation = require('./Formation');
 const FormationPick = require('./FormationPick');
 const FormationLike = require('./FormationLike');
 const UserBadge = require('./UserBadge');
+const HeroSettings = require('./HeroSettings');
 
 // Define associations
 User.hasMany(Article, {
@@ -324,4 +325,5 @@ module.exports = {
   FormationPick,
   FormationLike,
   UserBadge,
+  HeroSettings,
 };

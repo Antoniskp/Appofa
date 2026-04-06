@@ -1,35 +1,36 @@
-const fs = require('fs');
-const path = require('path');
 const { randomUUID } = require('crypto');
-
-const SETTINGS_PATH = path.join(__dirname, '../data/hero-settings.json');
+const HeroSettings = require('../models/HeroSettings');
 
 const DEFAULT_SETTINGS = {
   backgroundImageUrl: '',
   backgroundColor: '#1a2a3a',
-  slides: [],
+  slides: [
+    {
+      id: 'default-slide-1',
+      title: 'Αποφάσεις που ξεκινούν από εσένα.',
+      subtitle: 'Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.',
+      linkUrl: '',
+      linkText: '',
+      isActive: true,
+      order: 1,
+    },
+  ],
 };
 
 function generateId() {
   return randomUUID();
 }
 
-function readSettings() {
-  try {
-    const raw = fs.readFileSync(SETTINGS_PATH, 'utf8');
-    const parsed = JSON.parse(raw);
-    return {
-      ...DEFAULT_SETTINGS,
-      ...parsed,
-      slides: Array.isArray(parsed.slides) ? parsed.slides : [],
-    };
-  } catch {
-    return { ...DEFAULT_SETTINGS };
+async function getOrCreateSettings() {
+  let settings = await HeroSettings.findOne();
+  if (!settings) {
+    settings = await HeroSettings.create({
+      backgroundImageUrl: DEFAULT_SETTINGS.backgroundImageUrl,
+      backgroundColor: DEFAULT_SETTINGS.backgroundColor,
+      slides: DEFAULT_SETTINGS.slides,
+    });
   }
-}
-
-function writeSettings(data) {
-  fs.writeFileSync(SETTINGS_PATH, JSON.stringify(data, null, 2), 'utf8');
+  return settings;
 }
 
 function isValidUrl(str) {
@@ -41,16 +42,23 @@ function isValidUrl(str) {
   }
 }
 
-const getHeroSettings = (req, res) => {
+const getHeroSettings = async (req, res) => {
   try {
-    const settings = readSettings();
-    return res.json({ success: true, data: settings });
+    const settings = await getOrCreateSettings();
+    return res.json({
+      success: true,
+      data: {
+        backgroundImageUrl: settings.backgroundImageUrl,
+        backgroundColor: settings.backgroundColor,
+        slides: settings.slides,
+      },
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to read hero settings.' });
   }
 };
 
-const updateHeroSettings = (req, res) => {
+const updateHeroSettings = async (req, res) => {
   try {
     const { backgroundImageUrl, backgroundColor } = req.body;
 
@@ -66,15 +74,26 @@ const updateHeroSettings = (req, res) => {
       }
     }
 
-    const current = readSettings();
-    const updated = {
-      ...current,
-      backgroundImageUrl: backgroundImageUrl !== undefined ? backgroundImageUrl.trim() : current.backgroundImageUrl,
-      backgroundColor: backgroundColor !== undefined ? backgroundColor : current.backgroundColor,
-    };
+    const settings = await getOrCreateSettings();
 
-    writeSettings(updated);
-    return res.json({ success: true, data: updated, message: 'Hero settings updated.' });
+    if (backgroundImageUrl !== undefined) {
+      settings.backgroundImageUrl = backgroundImageUrl.trim();
+    }
+    if (backgroundColor !== undefined) {
+      settings.backgroundColor = backgroundColor;
+    }
+
+    await settings.save();
+
+    return res.json({
+      success: true,
+      data: {
+        backgroundImageUrl: settings.backgroundImageUrl,
+        backgroundColor: settings.backgroundColor,
+        slides: settings.slides,
+      },
+      message: 'Hero settings updated.',
+    });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update hero settings.' });
   }
@@ -82,9 +101,9 @@ const updateHeroSettings = (req, res) => {
 
 // GET /api/hero-settings/slides
 // Admin: returns all slides; public: returns only active slides sorted by order
-const getSlides = (req, res) => {
+const getSlides = async (req, res) => {
   try {
-    const settings = readSettings();
+    const settings = await getOrCreateSettings();
     const isAdmin = req.user && req.user.role === 'admin';
     let slides = settings.slides || [];
     if (!isAdmin) {
@@ -97,7 +116,7 @@ const getSlides = (req, res) => {
 };
 
 // POST /api/hero-settings/slides
-const createSlide = (req, res) => {
+const createSlide = async (req, res) => {
   try {
     const { title, subtitle, linkUrl, linkText, isActive, order } = req.body;
 
@@ -114,7 +133,7 @@ const createSlide = (req, res) => {
       return res.status(400).json({ success: false, message: 'linkText must be a string.' });
     }
 
-    const settings = readSettings();
+    const settings = await getOrCreateSettings();
     const slides = settings.slides || [];
     const resolvedOrder = typeof order === 'number'
       ? order
@@ -130,8 +149,9 @@ const createSlide = (req, res) => {
       order: resolvedOrder,
     };
 
-    const updated = { ...settings, slides: [...slides, newSlide] };
-    writeSettings(updated);
+    settings.slides = [...slides, newSlide];
+    await settings.save();
+
     return res.status(201).json({ success: true, data: newSlide, message: 'Slide created.' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to create slide.' });
@@ -139,7 +159,7 @@ const createSlide = (req, res) => {
 };
 
 // PUT /api/hero-settings/slides/:id
-const updateSlide = (req, res) => {
+const updateSlide = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, subtitle, linkUrl, linkText, isActive, order } = req.body;
@@ -157,7 +177,7 @@ const updateSlide = (req, res) => {
       return res.status(400).json({ success: false, message: 'linkText must be a string.' });
     }
 
-    const settings = readSettings();
+    const settings = await getOrCreateSettings();
     const slides = settings.slides || [];
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
@@ -177,8 +197,9 @@ const updateSlide = (req, res) => {
 
     const updatedSlides = [...slides];
     updatedSlides[idx] = updatedSlide;
-    const updatedSettings = { ...settings, slides: updatedSlides };
-    writeSettings(updatedSettings);
+    settings.slides = updatedSlides;
+    await settings.save();
+
     return res.json({ success: true, data: updatedSlide, message: 'Slide updated.' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to update slide.' });
@@ -186,18 +207,17 @@ const updateSlide = (req, res) => {
 };
 
 // DELETE /api/hero-settings/slides/:id
-const deleteSlide = (req, res) => {
+const deleteSlide = async (req, res) => {
   try {
     const { id } = req.params;
-    const settings = readSettings();
+    const settings = await getOrCreateSettings();
     const slides = settings.slides || [];
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
     }
-    const updatedSlides = slides.filter((s) => s.id !== id);
-    const updatedSettings = { ...settings, slides: updatedSlides };
-    writeSettings(updatedSettings);
+    settings.slides = slides.filter((s) => s.id !== id);
+    await settings.save();
     return res.json({ success: true, message: 'Slide deleted.' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to delete slide.' });
@@ -205,10 +225,10 @@ const deleteSlide = (req, res) => {
 };
 
 // PATCH /api/hero-settings/slides/:id/toggle
-const toggleSlide = (req, res) => {
+const toggleSlide = async (req, res) => {
   try {
     const { id } = req.params;
-    const settings = readSettings();
+    const settings = await getOrCreateSettings();
     const slides = settings.slides || [];
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
@@ -216,8 +236,8 @@ const toggleSlide = (req, res) => {
     }
     const updatedSlides = [...slides];
     updatedSlides[idx] = { ...updatedSlides[idx], isActive: !updatedSlides[idx].isActive };
-    const updatedSettings = { ...settings, slides: updatedSlides };
-    writeSettings(updatedSettings);
+    settings.slides = updatedSlides;
+    await settings.save();
     return res.json({ success: true, data: updatedSlides[idx], message: `Slide ${updatedSlides[idx].isActive ? 'activated' : 'deactivated'}.` });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to toggle slide.' });
@@ -225,3 +245,4 @@ const toggleSlide = (req, res) => {
 };
 
 module.exports = { getHeroSettings, updateHeroSettings, getSlides, createSlide, updateSlide, deleteSlide, toggleSlide };
+
