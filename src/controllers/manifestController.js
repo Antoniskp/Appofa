@@ -1,6 +1,37 @@
 const { Manifest, ManifestAcceptance, User, sequelize } = require('../models');
+const badgeService = require('../services/badgeService');
 
 const manifestController = {
+  /**
+   * GET /api/manifests/admin
+   * List ALL manifests (active + inactive) for admin use.
+   */
+  listAll: async (_req, res) => {
+    try {
+      const manifests = await Manifest.findAll({
+        order: [['displayOrder', 'ASC'], ['createdAt', 'ASC']],
+        attributes: {
+          include: [
+            [
+              sequelize.literal(
+                '(SELECT COUNT(*) FROM "ManifestAcceptances" WHERE "ManifestAcceptances"."manifestId" = "Manifest"."id")'
+              ),
+              'supportersCount',
+            ],
+          ],
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: { manifests: manifests.map((m) => ({ ...m.toJSON(), supportersCount: parseInt(m.get('supportersCount'), 10) || 0 })) },
+      });
+    } catch (error) {
+      console.error('List all manifests error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching manifests.' });
+    }
+  },
+
   /**
    * GET /api/manifests
    * List all active manifests with supporter counts.
@@ -163,6 +194,9 @@ const manifestController = {
         defaults: { acceptedAt: new Date() },
       });
 
+      // Fire-and-forget badge evaluation
+      badgeService.evaluate(req.user.id).catch(err => console.error('Badge eval error:', err));
+
       return res.status(200).json({
         success: true,
         data: { acceptedAt: acceptance.acceptedAt, created },
@@ -190,6 +224,9 @@ const manifestController = {
       const deleted = await ManifestAcceptance.destroy({
         where: { manifestId: manifest.id, userId: req.user.id },
       });
+
+      // Fire-and-forget badge evaluation
+      badgeService.evaluate(req.user.id).catch(err => console.error('Badge eval error:', err));
 
       return res.status(200).json({
         success: true,

@@ -1,5 +1,5 @@
 const badges = require('../../config/badges.json');
-const { UserBadge, User, Article, Poll, Comment, PollVote, SuggestionVote, Follow, Formation } = require('../models');
+const { UserBadge, User, Article, Poll, Comment, PollVote, SuggestionVote, Follow, Formation, ManifestAcceptance } = require('../models');
 
 const badgeService = {
   /**
@@ -77,6 +77,7 @@ const badgeService = {
       suggestionVoteCount,
       followerCount,
       formationCount,
+      manifestAcceptanceCount,
       user,
     ] = await Promise.all([
       Article.count({ where: { authorId: userId, status: 'published' } }),
@@ -86,6 +87,7 @@ const badgeService = {
       SuggestionVote.count({ where: { userId } }),
       Follow.count({ where: { followingId: userId } }),
       Formation.count({ where: { userId } }),
+      ManifestAcceptance.count({ where: { userId } }),
       User.findByPk(userId),
     ]);
 
@@ -118,6 +120,7 @@ const badgeService = {
       voteCount: pollVoteCount + suggestionVoteCount,
       followerCount,
       formationCount,
+      manifestAcceptanceCount,
       profileScore,
       totalViews,
       isVerified: user ? !!user.isVerified : false,
@@ -138,6 +141,7 @@ const badgeService = {
       'voter': stats.voteCount,
       'followed': stats.followerCount,
       'strategist': stats.formationCount,
+      'manifest-supporter': stats.manifestAcceptanceCount,
     };
     return mapping[slug] ?? 0;
   },
