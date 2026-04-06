@@ -44,6 +44,12 @@ router.put('/slides/:id', apiLimiter, authMiddleware, checkRole('admin'), csrfPr
 router.delete('/slides/:id', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, heroSettingsController.deleteSlide);
 
 /**
+ * @route PATCH /api/hero-settings/slides/reorder
+ * @desc Reorder slides atomically (admin only)
+ */
+router.patch('/slides/reorder', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, heroSettingsController.reorderSlides);
+
+/**
  * @route PATCH /api/hero-settings/slides/:id/toggle
  * @desc Toggle slide active/inactive (admin only)
  */

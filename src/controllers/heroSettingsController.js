@@ -227,6 +227,36 @@ const deleteSlide = async (req, res) => {
   }
 };
 
+// PATCH /api/hero-settings/slides/reorder
+const reorderSlides = async (req, res) => {
+  try {
+    const { updates } = req.body;
+
+    if (!Array.isArray(updates) || updates.length === 0) {
+      return res.status(400).json({ success: false, message: 'updates must be a non-empty array.' });
+    }
+    for (const entry of updates) {
+      if (typeof entry.id !== 'string' || typeof entry.order !== 'number') {
+        return res.status(400).json({ success: false, message: 'Each update must have a string id and a number order.' });
+      }
+    }
+
+    const settings = await getOrCreateSettings();
+    const slides = settings.slides || [];
+
+    const orderMap = new Map(updates.map((u) => [u.id, u.order]));
+    const updatedSlides = slides.map((s) => (orderMap.has(s.id) ? { ...s, order: orderMap.get(s.id) } : s));
+
+    settings.slides = updatedSlides;
+    settings.changed('slides', true);
+    await settings.save();
+
+    return res.json({ success: true, data: updatedSlides, message: 'Slides reordered.' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to reorder slides.' });
+  }
+};
+
 // PATCH /api/hero-settings/slides/:id/toggle
 const toggleSlide = async (req, res) => {
   try {
@@ -248,5 +278,5 @@ const toggleSlide = async (req, res) => {
   }
 };
 
-module.exports = { getHeroSettings, updateHeroSettings, getSlides, createSlide, updateSlide, deleteSlide, toggleSlide };
+module.exports = { getHeroSettings, updateHeroSettings, getSlides, createSlide, updateSlide, deleteSlide, toggleSlide, reorderSlides };
 
