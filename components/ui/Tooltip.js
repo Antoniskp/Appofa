@@ -11,6 +11,7 @@ import { useState, useRef, useEffect } from 'react';
  * @param {number} delay - Delay before showing tooltip (ms)
  * @param {boolean} disabled - Disable tooltip
  * @param {string} className - Additional CSS classes for tooltip
+ * @param {boolean} fullWidth - Make the wrapper take the full available width (flex w-full instead of inline-flex)
  */
 export default function Tooltip({ 
   children, 
@@ -18,7 +19,8 @@ export default function Tooltip({
   position = 'top',
   delay = 300,
   disabled = false,
-  className = ''
+  className = '',
+  fullWidth = false
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const timeoutRef = useRef(null);
@@ -74,7 +76,7 @@ export default function Tooltip({
   return (
     <div 
       ref={triggerRef}
-      className="relative inline-flex"
+      className={`relative ${fullWidth ? 'flex w-full' : 'inline-flex'}`}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}
@@ -114,18 +116,28 @@ export function TruncatedTextTooltip({
 
   useEffect(() => {
     const el = textRef.current;
-    if (el) {
-      setIsTruncated(el.scrollHeight > el.clientHeight);
-    }
+    if (!el) return;
+    setIsTruncated(el.scrollHeight > el.clientHeight);
   }, [text]);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    const checkTruncation = () => {
+      setIsTruncated(el.scrollHeight > el.clientHeight);
+    };
+    const observer = new ResizeObserver(checkTruncation);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const lineClampClass = maxLines === 1 ? 'line-clamp-1' : maxLines === 3 ? 'line-clamp-3' : 'line-clamp-2';
 
   return (
-    <Tooltip content={isTruncated ? text : null} position="top">
+    <Tooltip content={isTruncated ? text : null} position="top" fullWidth>
       <span
         ref={textRef}
-        className={`${lineClampClass} ${className}`}
+        className={`block ${lineClampClass} ${className}`}
       >
         {text}
       </span>
