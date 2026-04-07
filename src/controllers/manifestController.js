@@ -108,7 +108,7 @@ const manifestController = {
         include: [{
           model: User,
           as: 'user',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'displayBadgeSlug', 'displayBadgeTier'],
         }],
         order: [['acceptedAt', 'DESC']],
         limit,
@@ -122,6 +122,8 @@ const manifestController = {
         lastName: row.user.lastNameNative,
         avatar: row.user.avatar,
         avatarColor: row.user.avatarColor,
+        displayBadgeSlug: row.user.displayBadgeSlug || null,
+        displayBadgeTier: row.user.displayBadgeTier || null,
         acceptedAt: row.acceptedAt,
       }));
 
@@ -154,7 +156,7 @@ const manifestController = {
         include: [{
           model: User,
           as: 'user',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'displayBadgeSlug', 'displayBadgeTier'],
         }],
         order: sequelize.random(),
         limit,
@@ -167,6 +169,8 @@ const manifestController = {
         lastName: row.user.lastNameNative,
         avatar: row.user.avatar,
         avatarColor: row.user.avatarColor,
+        displayBadgeSlug: row.user.displayBadgeSlug || null,
+        displayBadgeTier: row.user.displayBadgeTier || null,
       }));
 
       return res.status(200).json({ success: true, data: { users } });

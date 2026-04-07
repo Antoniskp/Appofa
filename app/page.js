@@ -273,23 +273,32 @@ export default function HomePage() {
                       {manifest.randomSupporters.map((supporter) => (
                         <Link
                           key={supporter.id}
-                          href={`/users/${supporter.id}`}
+                          href={`/users/${supporter.username}`}
                           className="flex flex-col items-center group"
                         >
-                          <div
-                            className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold group-hover:ring-2 ring-blue-400 transition overflow-hidden"
-                            style={{ backgroundColor: supporter.avatarColor || '#dbeafe' }}
-                          >
-                            {supporter.avatar ? (
+                          <div className="relative">
+                            <div
+                              className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold group-hover:ring-2 ring-blue-400 transition overflow-hidden"
+                              style={{ backgroundColor: supporter.avatarColor || '#dbeafe' }}
+                            >
+                              {supporter.avatar ? (
+                                <img
+                                  src={supporter.avatar}
+                                  alt={supporter.username}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-blue-600">
+                                  {(supporter.firstName || supporter.username || '?')[0].toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            {supporter.displayBadgeSlug && supporter.displayBadgeTier && (
                               <img
-                                src={supporter.avatar}
-                                alt={supporter.username}
-                                className="w-full h-full object-cover"
+                                src={`/images/badges/${supporter.displayBadgeSlug}-${supporter.displayBadgeTier}.svg`}
+                                alt=""
+                                className="absolute -bottom-1 -right-1 w-5 h-5"
                               />
-                            ) : (
-                              <span className="text-blue-600">
-                                {(supporter.firstName || supporter.username || '?')[0].toUpperCase()}
-                              </span>
                             )}
                           </div>
                           <span className="text-xs text-gray-600 mt-1 truncate max-w-[80px] text-center">
