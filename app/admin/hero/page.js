@@ -142,15 +142,14 @@ function HeroSettingsContent() {
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
     if (swapIdx < 0 || swapIdx >= sorted.length) return;
 
-    const a = sorted[idx];
-    const b = sorted[swapIdx];
+    const reordered = [...sorted];
+    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
+    const updates = reordered.map((s, i) => ({ id: s.id, order: i + 1 }));
+
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
-      const res = await heroSettingsAPI.reorderSlides([
-        { id: a.id, order: b.order },
-        { id: b.id, order: a.order },
-      ]);
+      const res = await heroSettingsAPI.reorderSlides(updates);
       if (res?.success) {
         setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
         await refetchSlides();

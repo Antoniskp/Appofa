@@ -119,7 +119,7 @@ export default function HomeHero() {
     heroSettingsAPI.getSlides()
       .then((res) => {
         if (res?.success && Array.isArray(res.data)) {
-          setActiveSlides(res.data.filter(s => s.isActive));
+          setActiveSlides(res.data.filter(s => s.isActive).sort((a, b) => (a.order || 0) - (b.order || 0)));
         }
       })
       .catch(() => {});
