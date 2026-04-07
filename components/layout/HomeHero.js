@@ -95,7 +95,7 @@ export default function HomeHero() {
     { transform: (res) => res?.success ? res.data : null }
   );
 
-  // Fetch hero background settings
+  // Fetch hero background settings (side-effect only — sets heroBg state)
   useAsyncData(
     () => heroSettingsAPI.get(),
     [],
