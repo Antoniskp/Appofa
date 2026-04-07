@@ -146,17 +146,36 @@ function HeroSettingsContent() {
     [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
     const updates = reordered.map((s, i) => ({ id: s.id, order: i + 1 }));
 
+    // Snapshot the current state for rollback before any async operations
+    const previousSlides = slides;
+
+    // Build optimistic state: same slides but with updated order values
+    const optimisticSlides = slides.map((s) => {
+      const update = updates.find((u) => u.id === s.id);
+      return update ? { ...s, order: update.order } : s;
+    });
+
     clearSlidesMessages();
     setSlidesSaving(true);
+    // Apply optimistic update immediately so the UI responds instantly
+    setSlides(optimisticSlides);
+
     try {
       const res = await heroSettingsAPI.reorderSlides(updates);
       if (res?.success) {
         setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
-        if (Array.isArray(res.data)) setSlides(res.data);
+        // Reconcile with server response if available, otherwise keep optimistic state
+        if (Array.isArray(res.data)) {
+          setSlides(res.data);
+        }
       } else {
+        // Revert on failure
+        setSlides(previousSlides);
         setSlidesErrorMsg(res?.message || 'Αποτυχία αναδιάταξης.');
       }
     } catch (err) {
+      // Revert on error
+      setSlides(previousSlides);
       setSlidesErrorMsg(err?.message || 'Αποτυχία αναδιάταξης.');
     } finally {
       setSlidesSaving(false);

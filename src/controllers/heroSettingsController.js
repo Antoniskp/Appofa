@@ -251,7 +251,8 @@ const reorderSlides = async (req, res) => {
     settings.changed('slides', true);
     await settings.save({ fields: ['slides', 'updatedAt'] });
 
-    return res.json({ success: true, data: updatedSlides, message: 'Slides reordered.' });
+    const sortedUpdatedSlides = [...updatedSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
+    return res.json({ success: true, data: sortedUpdatedSlides, message: 'Slides reordered.' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to reorder slides.' });
   }
