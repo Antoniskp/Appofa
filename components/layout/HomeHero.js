@@ -126,12 +126,24 @@ export default function HomeHero() {
   }, []);
 
   const goToNext = useCallback(() => {
+    if (activeSlides.length <= 1) return;
     setCurrentSlideIdx((idx) => (idx + 1) % activeSlides.length);
   }, [activeSlides.length]);
 
   const goToPrev = useCallback(() => {
+    if (activeSlides.length <= 1) return;
     setCurrentSlideIdx((idx) => (idx - 1 + activeSlides.length) % activeSlides.length);
   }, [activeSlides.length]);
+
+  useEffect(() => {
+    if (activeSlides.length === 0 && currentSlideIdx !== 0) {
+      setCurrentSlideIdx(0);
+      return;
+    }
+    if (currentSlideIdx >= activeSlides.length) {
+      setCurrentSlideIdx(Math.max(0, activeSlides.length - 1));
+    }
+  }, [activeSlides.length, currentSlideIdx]);
 
   // Auto-rotation
   useEffect(() => {
