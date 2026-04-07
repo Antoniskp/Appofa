@@ -140,34 +140,62 @@ function HeroSettingsContent() {
 
   const handleMoveSlide = async (id, direction) => {
     if (slidesSaving) return;
-
-    const idx = slides.findIndex((s) => s.id === id);
-    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= slides.length) return;
-
-    // Build new order by swapping the two adjacent items
-    const reordered = [...slides];
-    [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
-
-    // Snapshot for rollback
-    const previousSlides = [...slides];
-
     clearSlidesMessages();
     setSlidesSaving(true);
-    // Optimistic update
-    setSlides(reordered);
 
     try {
+      // 1. Fetch fresh slides from server to avoid stale-state 400s
+      const freshRes = await heroSettingsAPI.getSlides();
+      const freshSlides = (freshRes?.success && Array.isArray(freshRes.data)) ? freshRes.data : null;
+
+      if (!freshSlides) {
+        setSlidesErrorMsg('Αδυναμία φόρτωσης slides. Δοκιμάστε ξανά.');
+        setSlidesSaving(false);
+        return;
+      }
+
+      // 2. Find the slide and its neighbour in the FRESH list
+      const freshIdx = freshSlides.findIndex((s) => s.id === id);
+      if (freshIdx === -1) {
+        // Slide no longer exists — resync UI with fresh data
+        setSlides(freshSlides);
+        setSlidesErrorMsg('Το slide δεν βρέθηκε. Η λίστα ανανεώθηκε.');
+        setSlidesSaving(false);
+        return;
+      }
+
+      const swapIdx = direction === 'up' ? freshIdx - 1 : freshIdx + 1;
+      if (swapIdx < 0 || swapIdx >= freshSlides.length) {
+        setSlides(freshSlides); // resync anyway
+        setSlidesSaving(false);
+        return;
+      }
+
+      // 3. Build reordered array from fresh data
+      const reordered = [...freshSlides];
+      [reordered[freshIdx], reordered[swapIdx]] = [reordered[swapIdx], reordered[freshIdx]];
+
+      // 4. Optimistic update
+      setSlides(reordered);
+
+      // 5. Send to server
       const res = await heroSettingsAPI.reorderSlides(reordered.map((s) => s.id));
       if (res?.success) {
         setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
         if (Array.isArray(res.data)) setSlides(res.data);
       } else {
-        setSlides(previousSlides);
+        // Rollback to fresh (not stale) data
+        setSlides(freshSlides);
         setSlidesErrorMsg(res?.message || 'Αποτυχία αναδιάταξης.');
       }
     } catch (err) {
-      setSlides(previousSlides);
+      // On any error, re-fetch to resync rather than rolling back to stale snapshot
+      try {
+        const syncRes = await heroSettingsAPI.getSlides();
+        if (syncRes?.success && Array.isArray(syncRes.data)) setSlides(syncRes.data);
+      } catch {
+        // best effort
+      }
       setSlidesErrorMsg(err?.message || 'Αποτυχία αναδιάταξης.');
     } finally {
       setSlidesSaving(false);
