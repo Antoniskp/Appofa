@@ -141,61 +141,32 @@ function HeroSettingsContent() {
   const handleMoveSlide = async (id, direction) => {
     if (slidesSaving) return;
     clearSlidesMessages();
+
+    // Snapshot current state for rollback on error
+    const snapshot = slides;
+    const currentIdx = snapshot.findIndex((s) => s.id === id);
+    if (currentIdx === -1) return;
+
+    const swapIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1;
+    if (swapIdx < 0 || swapIdx >= snapshot.length) return;
+
+    // Build reordered array and apply optimistic update immediately
+    const reordered = [...snapshot];
+    [reordered[currentIdx], reordered[swapIdx]] = [reordered[swapIdx], reordered[currentIdx]];
+    setSlides(reordered);
+
     setSlidesSaving(true);
-
     try {
-      // 1. Fetch fresh slides from server to avoid stale-state 400s
-      const freshRes = await heroSettingsAPI.getSlides();
-      const freshSlides = (freshRes?.success && Array.isArray(freshRes.data)) ? freshRes.data : null;
-
-      if (!freshSlides) {
-        setSlidesErrorMsg('Αδυναμία φόρτωσης slides. Δοκιμάστε ξανά.');
-        setSlidesSaving(false);
-        return;
-      }
-
-      // 2. Find the slide and its neighbour in the FRESH list
-      const freshIdx = freshSlides.findIndex((s) => s.id === id);
-      if (freshIdx === -1) {
-        // Slide no longer exists — resync UI with fresh data
-        setSlides(freshSlides);
-        setSlidesErrorMsg('Το slide δεν βρέθηκε. Η λίστα ανανεώθηκε.');
-        setSlidesSaving(false);
-        return;
-      }
-
-      const swapIdx = direction === 'up' ? freshIdx - 1 : freshIdx + 1;
-      if (swapIdx < 0 || swapIdx >= freshSlides.length) {
-        setSlides(freshSlides); // resync anyway
-        setSlidesSaving(false);
-        return;
-      }
-
-      // 3. Build reordered array from fresh data
-      const reordered = [...freshSlides];
-      [reordered[freshIdx], reordered[swapIdx]] = [reordered[swapIdx], reordered[freshIdx]];
-
-      // 4. Optimistic update
-      setSlides(reordered);
-
-      // 5. Send to server
       const res = await heroSettingsAPI.reorderSlides(reordered.map((s) => s.id));
       if (res?.success) {
         setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
         if (Array.isArray(res.data)) setSlides(res.data);
       } else {
-        // Rollback to fresh (not stale) data
-        setSlides(freshSlides);
+        setSlides(snapshot);
         setSlidesErrorMsg(res?.message || 'Αποτυχία αναδιάταξης.');
       }
     } catch (err) {
-      // On any error, re-fetch to resync rather than rolling back to stale snapshot
-      try {
-        const syncRes = await heroSettingsAPI.getSlides();
-        if (syncRes?.success && Array.isArray(syncRes.data)) setSlides(syncRes.data);
-      } catch {
-        // best effort
-      }
+      setSlides(snapshot);
       setSlidesErrorMsg(err?.message || 'Αποτυχία αναδιάταξης.');
     } finally {
       setSlidesSaving(false);
