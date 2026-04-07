@@ -34,24 +34,24 @@ function LoginForm() {
       authAPI.getProfile()
         .then((response) => {
           if (response.success) {
-            success('Welcome back! Redirecting...');
+            success('Καλώς ήρθατε! Ανακατεύθυνση...');
             router.push(getAndClearReturnTo());
           }
         })
         .catch((err) => {
           console.error('OAuth login failed:', err);
-          error('OAuth authentication failed');
+          error('Αποτυχία OAuth');
           setLoading(false);
         });
     } else if (errorParam) {
       const errorMessages = {
-        missing_params: 'OAuth failed: Missing parameters',
-        invalid_state: 'OAuth failed: Invalid state token',
-        token_exchange_failed: 'OAuth failed: Could not exchange token',
-        oauth_failed: 'OAuth authentication failed',
-        google_already_linked: 'This Google account is already linked to another user'
+        missing_params: 'Αποτυχία OAuth: Λείπουν παράμετροι',
+        invalid_state: 'Αποτυχία OAuth: Μη έγκυρο token κατάστασης',
+        token_exchange_failed: 'Αποτυχία OAuth: Δεν ήταν δυνατή η ανταλλαγή token',
+        oauth_failed: 'Αποτυχία OAuth',
+        google_already_linked: 'Αυτός ο λογαριασμός Google είναι ήδη συνδεδεμένος με άλλον χρήστη'
       };
-      error(errorMessages[errorParam] || 'OAuth authentication failed');
+      error(errorMessages[errorParam] || 'Αποτυχία OAuth');
     }
   }, [searchParams, router, success, error]);
 
@@ -74,10 +74,10 @@ function LoginForm() {
 
     try {
       await login(formData);
-      success('Welcome back! Redirecting...');
+      success('Καλώς ήρθατε! Ανακατεύθυνση...');
       router.push(getAndClearReturnTo());
     } catch (err) {
-      error(err.message || 'Invalid email or password. Please try again.');
+      error(err.message || 'Λάθος email ή κωδικός. Παρακαλώ δοκιμάστε ξανά.');
     } finally {
       setLoading(false);
     }
@@ -91,7 +91,7 @@ function LoginForm() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Failed to initiate GitHub login');
+      error(err.message || 'Αποτυχία εκκίνησης σύνδεσης με GitHub');
       setLoading(false);
     }
   };
@@ -104,7 +104,7 @@ function LoginForm() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Failed to initiate Google login');
+      error(err.message || 'Αποτυχία εκκίνησης σύνδεσης με Google');
       setLoading(false);
     }
   };
@@ -114,47 +114,15 @@ function LoginForm() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Σύνδεση στον λογαριασμό σας
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
+            Ή{' '}
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              create a new account
+              δημιουργήστε νέο λογαριασμό
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <FormInput
-              name="email"
-              type="email"
-              label="Email address"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              autoComplete="email"
-              placeholder="Email address"
-            />
-            <FormInput
-              name="password"
-              type="password"
-              label="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              autoComplete="current-password"
-              placeholder="Password"
-            />
-          </div>
-
-          <div>
-            <Button type="submit" loading={loading} size="md" className="w-full">
-              Sign in
-            </Button>
-          </div>
-        </form>
-
-        <AuthDivider />
 
         {/* OAuth Buttons */}
         <OAuthButtons
@@ -163,6 +131,39 @@ function LoginForm() {
           onGoogleLogin={handleGoogleLogin}
           disabled={loading}
         />
+
+        <AuthDivider />
+
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="space-y-4">
+            <FormInput
+              name="email"
+              type="email"
+              label="Διεύθυνση email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              autoComplete="email"
+              placeholder="Διεύθυνση email"
+            />
+            <FormInput
+              name="password"
+              type="password"
+              label="Κωδικός πρόσβασης"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              autoComplete="current-password"
+              placeholder="Κωδικός πρόσβασης"
+            />
+          </div>
+
+          <div>
+            <Button type="submit" loading={loading} size="md" className="w-full">
+              Σύνδεση
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );
@@ -172,7 +173,7 @@ export default function LoginPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+        <p className="text-gray-600">Φόρτωση...</p>
       </div>
     }>
       <LoginForm />

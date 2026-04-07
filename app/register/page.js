@@ -46,7 +46,7 @@ export default function RegisterPage() {
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      error('Passwords do not match');
+      error('Οι κωδικοί δεν ταιριάζουν');
       return;
     }
 
@@ -55,10 +55,10 @@ export default function RegisterPage() {
     try {
       const { confirmPassword, ...registerData } = formData;
       await register(registerData);
-      success('Account created successfully! Welcome!');
+      success('Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!');
       router.push('/');
     } catch (err) {
-      error(err.message || 'Registration failed. Please try again.');
+      error(err.message || 'Αποτυχία εγγραφής. Παρακαλώ δοκιμάστε ξανά.');
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export default function RegisterPage() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Failed to initiate GitHub signup');
+      error(err.message || 'Αποτυχία εκκίνησης εγγραφής με GitHub');
       setLoading(false);
     }
   };
@@ -85,7 +85,7 @@ export default function RegisterPage() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Failed to initiate Google signup');
+      error(err.message || 'Αποτυχία εκκίνησης εγγραφής με Google');
       setLoading(false);
     }
   };
@@ -95,80 +95,91 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Create your account
+            Δημιουργία λογαριασμού
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Already have an account?{' '}
+            Έχετε ήδη λογαριασμό;{' '}
             <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              Sign in
+              Σύνδεση
             </Link>
           </p>
         </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+        {/* OAuth Buttons */}
+        <OAuthButtons
+          config={oauthConfig}
+          onGithubLogin={handleGithubSignup}
+          onGoogleLogin={handleGoogleSignup}
+          disabled={loading}
+        />
+
+        <AuthDivider text="Ή εγγραφή με" />
+
+        <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <FormInput
               name="username"
               type="text"
-              label="Username"
+              label="Όνομα χρήστη"
               value={formData.username}
               onChange={handleChange}
               required
               autoComplete="username"
-              placeholder="Username"
+              placeholder="Όνομα χρήστη"
             />
 
             <FormInput
               name="email"
               type="email"
-              label="Email address"
+              label="Διεύθυνση email"
               value={formData.email}
               onChange={handleChange}
               required
               autoComplete="email"
-              placeholder="Email address"
+              placeholder="Διεύθυνση email"
             />
 
             <div className="grid grid-cols-2 gap-4">
               <FormInput
                 name="firstNameNative"
                 type="text"
-                label="First Name"
+                label="Όνομα"
                 value={formData.firstNameNative}
                 onChange={handleChange}
                 autoComplete="given-name"
-                placeholder="First Name"
+                placeholder="Όνομα"
               />
               <FormInput
                 name="lastNameNative"
                 type="text"
-                label="Last Name"
+                label="Επώνυμο"
                 value={formData.lastNameNative}
                 onChange={handleChange}
                 autoComplete="family-name"
-                placeholder="Last Name"
+                placeholder="Επώνυμο"
               />
             </div>
 
             <FormInput
               name="password"
               type="password"
-              label="Password"
+              label="Κωδικός πρόσβασης"
               value={formData.password}
               onChange={handleChange}
               required
               autoComplete="new-password"
-              placeholder="Password"
+              placeholder="Κωδικός πρόσβασης"
             />
 
             <FormInput
               name="confirmPassword"
               type="password"
-              label="Confirm Password"
+              label="Επιβεβαίωση κωδικού"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
               autoComplete="new-password"
-              placeholder="Confirm Password"
+              placeholder="Επιβεβαίωση κωδικού"
             />
 
             <div className="flex items-center">
@@ -181,7 +192,7 @@ export default function RegisterPage() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="searchable" className="ml-2 block text-sm text-gray-900">
-                Allow other users to find me in user search
+                Να με βρίσκουν άλλοι χρήστες στην αναζήτηση
               </label>
             </div>
 
@@ -189,20 +200,10 @@ export default function RegisterPage() {
 
           <div>
             <Button type="submit" loading={loading} size="md" className="w-full">
-              Create account
+              Δημιουργία λογαριασμού
             </Button>
           </div>
         </form>
-
-        <AuthDivider text="Or sign up with" />
-
-        {/* OAuth Buttons */}
-        <OAuthButtons
-          config={oauthConfig}
-          onGithubLogin={handleGithubSignup}
-          onGoogleLogin={handleGoogleSignup}
-          disabled={loading}
-        />
       </div>
     </div>
   );

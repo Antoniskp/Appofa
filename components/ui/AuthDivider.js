@@ -3,7 +3,7 @@
 /**
  * Divider with "or" text for auth forms
  */
-export default function AuthDivider({ text = 'Or continue with' }) {
+export default function AuthDivider({ text = 'Ή συνεχίστε με email' }) {
   return (
     <div className="relative my-6">
       <div className="absolute inset-0 flex items-center">
