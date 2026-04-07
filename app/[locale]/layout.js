@@ -1,5 +1,6 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
+import { defaultLocale } from '@/lib/i18n-config';
 import { AuthProvider } from '@/lib/auth-context';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
@@ -12,14 +13,14 @@ const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 
 export async function generateMetadata({ params }) {
   const { locale } = await params;
-  const resolvedLocale = locale || 'el';
+  const resolvedLocale = locale || defaultLocale;
   const titles = { el: 'Απόφαση', en: 'Appofa' };
   const descriptions = {
     el: 'Η πύλη σας για τελευταίες ειδήσεις, δημοσκοπήσεις και τοπικά νέα',
     en: 'Your portal for the latest news, polls and local content'
   };
-  const title = titles[resolvedLocale] || titles.el;
-  const description = descriptions[resolvedLocale] || descriptions.el;
+  const title = titles[resolvedLocale] || titles[defaultLocale];
+  const description = descriptions[resolvedLocale] || descriptions[defaultLocale];
   return {
     metadataBase: new URL(SITE_URL),
     title: { default: title, template: `%s | ${title}` },
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }) {
 
 export default async function LocaleLayout({ children, params }) {
   const { locale } = await params;
-  const resolvedLocale = locale || 'el';
+  const resolvedLocale = locale || defaultLocale;
   const messages = await getMessages();
 
   return (

@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-
-const locales = ['el', 'en'];
+import { locales, defaultLocale } from '@/lib/i18n-config';
 
 const LOCALE_LABELS = {
   el: '🇬🇷 EL',
@@ -16,7 +15,7 @@ export default function LanguageSwitcher() {
   // pathname is like /el/articles or /en/articles
   // We need to swap the locale segment
   const segments = pathname.split('/');
-  const currentLocale = locales.includes(segments[1]) ? segments[1] : 'el';
+  const currentLocale = locales.includes(segments[1]) ? segments[1] : defaultLocale;
 
   const getLocalePath = (locale) => {
     const newSegments = [...segments];
