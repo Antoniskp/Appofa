@@ -19,19 +19,13 @@ const DreamTeamVote = sequelize.define('DreamTeamVote', {
     references: { model: 'GovernmentPositions', key: 'id' },
     onDelete: 'CASCADE',
   },
-  personId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: { model: 'PublicPersonProfiles', key: 'id' },
-    onDelete: 'CASCADE',
-  },
   personName: {
     type: DataTypes.STRING(200),
     allowNull: true,
   },
   candidateUserId: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
     references: { model: 'Users', key: 'id' },
     onDelete: 'CASCADE',
   },

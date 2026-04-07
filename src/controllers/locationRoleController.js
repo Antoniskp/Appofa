@@ -13,10 +13,9 @@ const LOCATION_ROLE_TO_POSITION_SLUG = {
  * Greece country LocationRole assignments for the 3 national positions.
  *
  * @param {string} roleKey  - LocationRole roleKey (e.g. 'president')
- * @param {number|null} personId - PublicPersonProfile id to assign (null to clear)
  * @param {number|null} userId   - User id to assign (null to clear)
  */
-async function syncLocationRoleToHolder(roleKey, personId, userId) {
+async function syncLocationRoleToHolder(roleKey, userId) {
   try {
     const positionSlug = LOCATION_ROLE_TO_POSITION_SLUG[roleKey];
     if (!positionSlug) return;
@@ -31,11 +30,10 @@ async function syncLocationRoleToHolder(roleKey, personId, userId) {
     await GovernmentCurrentHolder.destroy({ where: { positionId: position.id } });
 
     // Create a new active holder if someone is assigned
-    if (personId || userId) {
+    if (userId) {
       await GovernmentCurrentHolder.create({
         positionId: position.id,
-        personId: personId || null,
-        userId: userId || null,
+        userId,
         isActive: true,
       });
     }
@@ -223,9 +221,9 @@ exports.upsertRoles = async (req, res) => {
     // Sync national roles to GovernmentCurrentHolder (fire-and-forget, country locations only)
     if (location.type === 'country') {
       for (const entry of roles) {
-        const { roleKey, personId, userId } = entry;
+        const { roleKey, userId } = entry;
         if (LOCATION_ROLE_TO_POSITION_SLUG[roleKey]) {
-          syncLocationRoleToHolder(roleKey, personId || null, userId || null)
+          syncLocationRoleToHolder(roleKey, userId || null)
             .catch((err) => console.error('upsertRoles syncLocationRoleToHolder error:', err));
         }
       }

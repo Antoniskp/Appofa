@@ -55,23 +55,16 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
   useEffect(() => {
     if (myVote) {
       let name;
-      let type;
       let id;
-      if (myVote.person) {
-        name = `${myVote.person.firstNameNative} ${myVote.person.lastNameNative}`.trim();
-        type = 'profile';
-        id = myVote.personId;
-      } else if (myVote.candidateUser) {
+      if (myVote.candidateUser) {
         name = (`${myVote.candidateUser.firstNameNative || ''} ${myVote.candidateUser.lastNameNative || ''}`.trim()) || myVote.candidateUser.username;
-        type = 'user';
         id = myVote.candidateUserId;
       } else {
         name = myVote.personName || '';
-        type = myVote.personId ? 'profile' : 'user';
-        id = myVote.personId || myVote.candidateUserId;
+        id = myVote.candidateUserId;
       }
       if (id) {
-        setSelectedPerson({ id, name, type });
+        setSelectedPerson({ id, name, type: 'user' });
         setSearchQuery(name);
       }
     } else if (prevMyVoteRef.current != null && !myVote) {
@@ -88,15 +81,11 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
     setSearchQuery(name);
   }, []);
 
-  const isVoteChanged = selectedPerson && (
-    selectedPerson.type === 'profile'
-      ? selectedPerson.id !== myVote?.personId
-      : selectedPerson.id !== myVote?.candidateUserId
-  );
+  const isVoteChanged = selectedPerson && selectedPerson.id !== myVote?.candidateUserId;
 
   const handleVoteClick = () => {
     if (onVote && selectedPerson && isVoteChanged) {
-      onVote(position.id, null, selectedPerson.id);
+      onVote(position.id, selectedPerson.id);
     }
   };
 
@@ -188,11 +177,10 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
               {topVotes.map((v, idx) => {
                 const count = parseInt(v.voteCount, 10);
                 const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
-                const isMyVote = (v.personId && v.personId === myVote?.personId) ||
-                  (v.candidateUserId && v.candidateUserId === myVote?.candidateUserId);
-                const photo = v.person?.photo || v.candidateUser?.avatar || null;
+                const isMyVote = v.candidateUserId && v.candidateUserId === myVote?.candidateUserId;
+                const photo = v.candidateUser?.avatar || null;
                 return (
-                  <div key={`${v.personId || v.candidateUserId}-${idx}`}>
+                  <div key={`${v.candidateUserId}-${idx}`}>
                     <div className="flex items-center justify-between text-xs mb-1">
                       <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
                         {photo && (

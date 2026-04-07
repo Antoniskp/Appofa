@@ -260,15 +260,11 @@ User.hasMany(Report, { foreignKey: 'reviewedBy', as: 'reviewedReports' });
 // GovernmentPosition associations
 GovernmentPosition.hasMany(GovernmentCurrentHolder, { foreignKey: 'positionId', as: 'currentHolders' });
 GovernmentCurrentHolder.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });
-GovernmentCurrentHolder.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
-PublicPersonProfile.hasMany(GovernmentCurrentHolder, { foreignKey: 'personId', as: 'governmentPositions' });
 GovernmentCurrentHolder.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(GovernmentCurrentHolder, { foreignKey: 'userId', as: 'heldGovernmentPositions' });
 
 GovernmentPosition.hasMany(GovernmentPositionSuggestion, { foreignKey: 'positionId', as: 'aiSuggestions' });
 GovernmentPositionSuggestion.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });
-GovernmentPositionSuggestion.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
-PublicPersonProfile.hasMany(GovernmentPositionSuggestion, { foreignKey: 'personId', as: 'dreamTeamSuggestions' });
 GovernmentPositionSuggestion.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(GovernmentPositionSuggestion, { foreignKey: 'userId', as: 'dreamTeamSuggestions' });
 
@@ -277,7 +273,6 @@ GovernmentPosition.belongsTo(Location, { foreignKey: 'jurisdictionId', as: 'juri
 GovernmentPosition.hasMany(DreamTeamVote, { foreignKey: 'positionId', as: 'dreamTeamVotes' });
 DreamTeamVote.belongsTo(GovernmentPosition, { foreignKey: 'positionId', as: 'position' });
 DreamTeamVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
-DreamTeamVote.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
 DreamTeamVote.belongsTo(User, { foreignKey: 'candidateUserId', as: 'candidateUser' });
 User.hasMany(DreamTeamVote, { foreignKey: 'userId', as: 'dreamTeamVotes' });
 
@@ -286,7 +281,6 @@ User.hasMany(Formation, { foreignKey: 'userId', as: 'formations' });
 Formation.belongsTo(User, { foreignKey: 'userId', as: 'author' });
 Formation.hasMany(FormationPick, { foreignKey: 'formationId', as: 'picks' });
 FormationPick.belongsTo(Formation, { foreignKey: 'formationId', as: 'formation' });
-FormationPick.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
 FormationPick.belongsTo(User, { foreignKey: 'candidateUserId', as: 'candidateUser' });
 Formation.hasMany(FormationLike, { foreignKey: 'formationId', as: 'likes' });
 FormationLike.belongsTo(Formation, { foreignKey: 'formationId', as: 'formation' });

@@ -13,15 +13,9 @@ const GovernmentCurrentHolder = sequelize.define('GovernmentCurrentHolder', {
     references: { model: 'GovernmentPositions', key: 'id' },
     onDelete: 'CASCADE',
   },
-  personId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: { model: 'PublicPersonProfiles', key: 'id' },
-    onDelete: 'CASCADE',
-  },
   userId: {
     type: DataTypes.INTEGER,
-    allowNull: true,
+    allowNull: false,
     references: { model: 'Users', key: 'id' },
     onDelete: 'CASCADE',
   },
@@ -40,13 +34,6 @@ const GovernmentCurrentHolder = sequelize.define('GovernmentCurrentHolder', {
 }, {
   tableName: 'GovernmentCurrentHolders',
   timestamps: true,
-  validate: {
-    atLeastOnePerson() {
-      if (!this.personId && !this.userId) {
-        throw new Error('Απαιτείται personId (PublicPersonProfile) ή userId (verified app user).');
-      }
-    },
-  },
 });
 
 module.exports = GovernmentCurrentHolder;

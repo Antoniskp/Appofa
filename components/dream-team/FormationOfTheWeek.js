@@ -58,7 +58,7 @@ export default function FormationOfTheWeek({ onLike, onCompare, showToast }) {
   const topPicks = TOP_SLUGS
     .map((slug) => picks.find((p) => p.positionSlug === slug))
     .filter(Boolean);
-  const filledCount = picks.filter((p) => p.personId || p.candidateUserId || p.personName).length;
+  const filledCount = picks.filter((p) => p.candidateUserId || p.personName).length;
 
   const handleLike = (e) => {
     e.stopPropagation();

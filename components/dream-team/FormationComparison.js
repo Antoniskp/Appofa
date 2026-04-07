@@ -16,7 +16,7 @@ function buildPicksMap(formation) {
 }
 
 function PickCell({ pick, highlight }) {
-  const hasPick = pick && (pick.personId || pick.candidateUserId || pick.personName);
+  const hasPick = pick && (pick.candidateUserId || pick.personName);
   return (
     <div
       className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm transition-colors ${
@@ -140,15 +140,15 @@ export default function FormationComparison({ formationA = null, publicFormation
   ALL_POSITIONS.forEach((pos) => {
     const l = leftMap[pos.slug];
     const r = rightMap[pos.slug];
-    const lKey = l?.personId || l?.candidateUserId || l?.personName || null;
-    const rKey = r?.personId || r?.candidateUserId || r?.personName || null;
+    const lKey = l?.candidateUserId || l?.personName || null;
+    const rKey = r?.candidateUserId || r?.personName || null;
     if (lKey && rKey && lKey === rKey) matchCount++;
   });
 
   const totalFilled = ALL_POSITIONS.filter((pos) => {
     const l = leftMap[pos.slug];
     const r = rightMap[pos.slug];
-    return (l?.personId || l?.candidateUserId || l?.personName) || (r?.personId || r?.candidateUserId || r?.personName);
+    return (l?.candidateUserId || l?.personName) || (r?.candidateUserId || r?.personName);
   }).length;
 
   const matchPercent = totalFilled > 0 ? Math.round((matchCount / totalFilled) * 100) : 0;
@@ -259,8 +259,8 @@ export default function FormationComparison({ formationA = null, publicFormation
                 {ALL_POSITIONS.map((pos) => {
                   const l = leftMap[pos.slug];
                   const r = rightMap[pos.slug];
-                  const lKey = l?.personId || l?.candidateUserId || l?.personName || null;
-                  const rKey = r?.personId || r?.candidateUserId || r?.personName || null;
+                  const lKey = l?.candidateUserId || l?.personName || null;
+                  const rKey = r?.candidateUserId || r?.personName || null;
                   const isMatch = lKey && rKey && lKey === rKey;
                   const isDiff = lKey && rKey && lKey !== rKey;
 

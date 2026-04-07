@@ -39,7 +39,7 @@ function buildPrimaryPicksMap(formation) {
  */
 function syncPrimaryFormationPicks(formation, picksMap) {
   const picksArray = Object.values(picksMap).filter(
-    (p) => p && (p.personId || p.candidateUserId || p.personName),
+    (p) => p && (p.candidateUserId || p.personName),
   );
   dreamTeamAPI.updateFormationPicks(formation.id, picksArray)
     .then((res) => {
@@ -171,19 +171,11 @@ function DreamTeamPageInner() {
     loadData();
   }, [loadData]);
 
-  const handleVote = useCallback(async (positionId, personId, candidateUserId) => {
+  const handleVote = useCallback(async (positionId, candidateUserId) => {
     setVotingPosition(positionId);
     try {
       // Check if this person is already voted for in a different position
-      if (personId) {
-        const conflict = Object.values(myVotesMapRef.current).find(
-          (v) => v.personId === personId && v.positionId !== positionId,
-        );
-        if (conflict) {
-          showToast('Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση. Αφαιρέστε το πρώτα από εκείνη τη θέση.', 'error');
-          return;
-        }
-      } else if (candidateUserId) {
+      if (candidateUserId) {
         const conflict = Object.values(myVotesMapRef.current).find(
           (v) => v.candidateUserId === candidateUserId && v.positionId !== positionId,
         );
@@ -193,7 +185,7 @@ function DreamTeamPageInner() {
         }
       }
 
-      const res = await dreamTeamAPI.vote(positionId, personId, candidateUserId);
+      const res = await dreamTeamAPI.vote(positionId, candidateUserId);
       if (res?.success) {
         showToast(res.message || 'Ψήφος καταγράφηκε!');
         // Update myVotesMap optimistically
@@ -201,7 +193,6 @@ function DreamTeamPageInner() {
           ...prev,
           [positionId]: {
             positionId,
-            personId: personId || null,
             candidateUserId: candidateUserId || null,
             personName: res.data?.personName,
           },
@@ -220,7 +211,6 @@ function DreamTeamPageInner() {
             const updatedPicks = buildPrimaryPicksMap(primaryFormation);
             updatedPicks[position.slug] = {
               positionSlug: position.slug,
-              personId: personId || null,
               candidateUserId: candidateUserId || null,
               personName: res.data?.personName || null,
             };

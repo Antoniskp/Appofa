@@ -17,7 +17,7 @@ const TOP_POSITIONS = ALL_POSITIONS.filter((p) => p.positionTypeKey !== 'ministe
 const MINISTER_POSITIONS = ALL_POSITIONS.filter((p) => p.positionTypeKey === 'minister');
 
 function PickCard({ position, pick }) {
-  const hasPick = !!(pick && (pick.personId || pick.candidateUserId || pick.personName));
+  const hasPick = !!(pick && (pick.candidateUserId || pick.personName));
   return (
     <div className="flex items-center gap-3 py-3 border-b border-gray-50 last:border-0">
       <div className="flex-shrink-0 flex items-center justify-center h-9 w-9 rounded-xl bg-gray-100 text-lg">
@@ -77,7 +77,7 @@ export default function FormationView({ formation, onBack, showToast, onLike, on
   picks.forEach((p) => {
     picksMap[p.positionSlug || p.slug] = p;
   });
-  const filledCount = picks.filter((p) => p.personId || p.candidateUserId || p.personName).length;
+  const filledCount = picks.filter((p) => p.candidateUserId || p.personName).length;
 
   return (
     <div className="space-y-6">

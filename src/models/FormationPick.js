@@ -17,12 +17,6 @@ const FormationPick = sequelize.define('FormationPick', {
     type: DataTypes.STRING(100),
     allowNull: false,
   },
-  personId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: { model: 'PublicPersonProfiles', key: 'id' },
-    onDelete: 'SET NULL',
-  },
   candidateUserId: {
     type: DataTypes.INTEGER,
     allowNull: true,

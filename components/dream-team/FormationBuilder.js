@@ -67,10 +67,9 @@ export default function FormationBuilder({ formation, communityResults = [], onS
         if (position?.slug) {
           map[position.slug] = {
             positionSlug: position.slug,
-            personId: vote.personId || null,
             candidateUserId: vote.candidateUserId || null,
             personName: vote.personName || null,
-            photo: vote.person?.photo || null,
+            photo: null,
             avatar: vote.candidateUser?.avatar || null,
           };
         }
@@ -83,7 +82,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
   const [saving, setSaving] = useState(false);
 
   const filledCount = Object.values(picks).filter(
-    (p) => p && (p.personId || p.candidateUserId || p.personName),
+    (p) => p && (p.candidateUserId || p.personName),
   ).length;
 
   const handlePickSelect = useCallback((slug, person) => {
@@ -117,7 +116,6 @@ export default function FormationBuilder({ formation, communityResults = [], onS
       ...prev,
       [slug]: {
         positionSlug: slug,
-        personId: null,
         candidateUserId: person.id,
         personName: displayName,
         photo: null,
@@ -146,7 +144,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
     const effectiveCategory = isPrimary ? 'serious' : category;
     try {
       const picksArray = Object.values(picks).filter(
-        (p) => p && (p.personId || p.candidateUserId || p.personName),
+        (p) => p && (p.candidateUserId || p.personName),
       );
 
       let saved;
@@ -192,7 +190,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
             const position = positionBySlug[pick.positionSlug];
             if (!position) return;
             syncPromises.push(
-              dreamTeamAPI.vote(position.id, pick.personId || null, pick.candidateUserId || null)
+              dreamTeamAPI.vote(position.id, pick.candidateUserId || null)
                 .catch(() => {}),
             );
           });
@@ -229,7 +227,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
 
   const renderPositionRow = (position) => {
     const pick = picks[position.slug];
-    const hasPick = !!(pick && (pick.personId || pick.candidateUserId || pick.personName));
+    const hasPick = !!(pick && (pick.candidateUserId || pick.personName));
 
     return (
       <div key={position.slug} className="flex items-start gap-3 py-3 border-b border-gray-50 last:border-0">
