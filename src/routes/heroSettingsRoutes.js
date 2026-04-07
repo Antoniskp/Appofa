@@ -43,6 +43,10 @@ router.put('/slides/:id', apiLimiter, authMiddleware, checkRole('admin'), csrfPr
  */
 router.delete('/slides/:id', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, heroSettingsController.deleteSlide);
 
+// IMPORTANT: Static PATCH routes must always be declared BEFORE dynamic :id PATCH routes.
+// Express matches routes in registration order; if /slides/:id/toggle were first,
+// a request to /slides/reorder would match with :id = "reorder" and call the wrong handler.
+
 /**
  * @route PATCH /api/hero-settings/slides/reorder
  * @desc Reorder slides atomically (admin only)
