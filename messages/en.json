@@ -1,0 +1,27 @@
+{
+  "nav": {
+    "articles": "Articles",
+    "news": "News",
+    "videos": "Videos",
+    "polls": "Polls",
+    "suggestions": "Suggestions",
+    "locations": "Locations",
+    "users": "Users",
+    "pages": "Pages",
+    "login": "Login",
+    "register": "Register",
+    "logout": "Logout"
+  },
+  "profile": {
+    "nationality": "Nationality",
+    "languagesSpoken": "Languages I speak",
+    "addLanguage": "Add language",
+    "noNationality": "Not set"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading…",
+    "error": "Something went wrong"
+  }
+}

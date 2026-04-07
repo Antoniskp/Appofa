@@ -19,6 +19,10 @@ const MOBILE_TEL_MAX_LENGTH = 30;
 const BIO_MAX_LENGTH = 280;
 const PASSWORD_MIN_LENGTH = 6;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
+const MAX_LANGUAGES = 10;
+const VALID_NATIONALITY_REGEX = /^[A-Z]{2}$/;
+const VALID_BCP47_LANGUAGE_REGEX = /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-[A-Z]{2})?(-[a-z0-9]+)*$/;
+
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
 const VALID_EXPERTISE_AREAS = new Set(EXPERTISE_AREAS);
 const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
@@ -134,7 +138,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId } = data;
+  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, nationality, languagesSpoken } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -389,6 +393,38 @@ async function updateUserProfile(userId, data) {
     }
   }
 
+  if (nationality !== undefined) {
+    if (nationality === null || nationality === '') {
+      user.nationality = null;
+    } else if (typeof nationality !== 'string') {
+      throw new ServiceError(400, 'Nationality must be a string.');
+    } else {
+      const trimmed = nationality.trim().toUpperCase();
+      if (!VALID_NATIONALITY_REGEX.test(trimmed)) {
+        throw new ServiceError(400, 'Nationality must be a valid ISO 3166-1 alpha-2 country code (e.g. GR, DE, US).');
+      }
+      user.nationality = trimmed;
+    }
+  }
+
+  if (languagesSpoken !== undefined) {
+    if (languagesSpoken === null) {
+      user.languagesSpoken = null;
+    } else if (!Array.isArray(languagesSpoken)) {
+      throw new ServiceError(400, 'Languages spoken must be an array.');
+    } else if (languagesSpoken.length > MAX_LANGUAGES) {
+      throw new ServiceError(400, `You can add at most ${MAX_LANGUAGES} languages.`);
+    } else {
+      for (const lang of languagesSpoken) {
+        if (typeof lang !== 'string') throw new ServiceError(400, 'Each language must be a string.');
+        if (!VALID_BCP47_LANGUAGE_REGEX.test(lang.trim())) {
+          throw new ServiceError(400, `Invalid language tag: "${lang}". Use BCP-47 format (e.g. el, en, zh-Hant).`);
+        }
+      }
+      user.languagesSpoken = languagesSpoken.length > 0 ? languagesSpoken.map(l => l.trim()) : null;
+    }
+  }
+
   await user.save();
 
   const updatedUser = await User.findByPk(user.id, {
@@ -457,7 +493,9 @@ async function deleteUserAccount(userId, password, mode) {
       professions: null,
       interests: null,
       dateOfBirth: null,
-      partyId: null
+      partyId: null,
+      nationality: null,
+      languagesSpoken: null
     }, { where: { id: user.id }, individualHooks: false });
   }
 }
