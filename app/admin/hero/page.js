@@ -137,6 +137,8 @@ function HeroSettingsContent() {
   };
 
   const handleMoveSlide = async (id, direction) => {
+    if (slidesSaving) return;
+
     const sorted = [...slides].sort((a, b) => (a.order || 0) - (b.order || 0));
     const idx = sorted.findIndex((s) => s.id === id);
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
@@ -147,7 +149,7 @@ function HeroSettingsContent() {
     const updates = reordered.map((s, i) => ({ id: s.id, order: i + 1 }));
 
     // Snapshot the current state for rollback before any async operations
-    const previousSlides = slides;
+    const previousSlides = [...slides];
 
     // Build optimistic state: same slides but with updated order values
     const optimisticSlides = slides.map((s) => {
