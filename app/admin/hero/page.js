@@ -39,7 +39,7 @@ function HeroSettingsContent() {
   const [editForm, setEditForm] = useState(EMPTY_SLIDE_FORM);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  const { data: slides, loading: slidesLoading, error: slidesLoadError, refetch: refetchSlides } = useAsyncData(
+  const { data: slides, setData: setSlides, loading: slidesLoading, error: slidesLoadError } = useAsyncData(
     () => heroSettingsAPI.getSlides(),
     [],
     {
@@ -106,7 +106,7 @@ function HeroSettingsContent() {
       const res = await heroSettingsAPI.toggleSlide(id);
       if (res?.success) {
         setSlidesSuccessMsg(res.message || 'Η κατάσταση του slide άλλαξε.');
-        await refetchSlides();
+        if (res.data) setSlides((prev) => prev.map((s) => s.id === id ? { ...s, ...res.data } : s));
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία αλλαγής κατάστασης.');
       }
@@ -125,7 +125,7 @@ function HeroSettingsContent() {
       if (res?.success) {
         setSlidesSuccessMsg('Το slide διαγράφηκε.');
         setConfirmDeleteId(null);
-        await refetchSlides();
+        setSlides((prev) => prev.filter((s) => s.id !== id));
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία διαγραφής.');
       }
@@ -152,7 +152,7 @@ function HeroSettingsContent() {
       const res = await heroSettingsAPI.reorderSlides(updates);
       if (res?.success) {
         setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
-        await refetchSlides();
+        if (Array.isArray(res.data)) setSlides(res.data);
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία αναδιάταξης.');
       }
@@ -193,9 +193,9 @@ function HeroSettingsContent() {
       const res = await heroSettingsAPI.updateSlide(editingSlideId, editForm);
       if (res?.success) {
         setSlidesSuccessMsg('Το slide ενημερώθηκε.');
+        if (res.data) setSlides((prev) => prev.map((s) => s.id === editingSlideId ? { ...s, ...res.data } : s));
         setEditingSlideId(null);
         setEditForm(EMPTY_SLIDE_FORM);
-        await refetchSlides();
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία ενημέρωσης.');
       }
@@ -222,7 +222,7 @@ function HeroSettingsContent() {
       if (res?.success) {
         setSlidesSuccessMsg('Νέο slide δημιουργήθηκε.');
         setNewSlideForm(EMPTY_SLIDE_FORM);
-        await refetchSlides();
+        if (res.data) setSlides((prev) => [...prev, res.data]);
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία δημιουργίας.');
       }
