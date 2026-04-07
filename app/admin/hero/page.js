@@ -99,6 +99,8 @@ function HeroSettingsContent() {
   };
 
   // --- Slide handlers ---
+  // All mutations replace the entire slides state from the server response,
+  // preventing frontend/backend state drift.
   const handleToggleSlide = async (id) => {
     clearSlidesMessages();
     setSlidesSaving(true);
@@ -106,7 +108,7 @@ function HeroSettingsContent() {
       const res = await heroSettingsAPI.toggleSlide(id);
       if (res?.success) {
         setSlidesSuccessMsg(res.message || 'Η κατάσταση του slide άλλαξε.');
-        if (res.data) setSlides((prev) => prev.map((s) => s.id === id ? { ...s, ...res.data } : s));
+        if (Array.isArray(res.data)) setSlides(res.data);
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία αλλαγής κατάστασης.');
       }
@@ -125,7 +127,7 @@ function HeroSettingsContent() {
       if (res?.success) {
         setSlidesSuccessMsg('Το slide διαγράφηκε.');
         setConfirmDeleteId(null);
-        setSlides((prev) => prev.filter((s) => s.id !== id));
+        if (Array.isArray(res.data)) setSlides(res.data);
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία διαγραφής.');
       }
@@ -139,44 +141,32 @@ function HeroSettingsContent() {
   const handleMoveSlide = async (id, direction) => {
     if (slidesSaving) return;
 
-    const sorted = [...slides].sort((a, b) => (a.order || 0) - (b.order || 0));
-    const idx = sorted.findIndex((s) => s.id === id);
+    const idx = slides.findIndex((s) => s.id === id);
     const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-    if (swapIdx < 0 || swapIdx >= sorted.length) return;
+    if (swapIdx < 0 || swapIdx >= slides.length) return;
 
-    const reordered = [...sorted];
+    // Build new order by swapping the two adjacent items
+    const reordered = [...slides];
     [reordered[idx], reordered[swapIdx]] = [reordered[swapIdx], reordered[idx]];
-    const updates = reordered.map((s, i) => ({ id: s.id, order: i + 1 }));
 
-    // Snapshot the current state for rollback before any async operations
+    // Snapshot for rollback
     const previousSlides = [...slides];
-
-    // Build optimistic state: same slides but with updated order values
-    const optimisticSlides = slides.map((s) => {
-      const update = updates.find((u) => u.id === s.id);
-      return update ? { ...s, order: update.order } : s;
-    });
 
     clearSlidesMessages();
     setSlidesSaving(true);
-    // Apply optimistic update immediately so the UI responds instantly
-    setSlides(optimisticSlides);
+    // Optimistic update
+    setSlides(reordered);
 
     try {
-      const res = await heroSettingsAPI.reorderSlides(updates);
+      const res = await heroSettingsAPI.reorderSlides(reordered.map((s) => s.id));
       if (res?.success) {
         setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
-        // Reconcile with server response if available, otherwise keep optimistic state
-        if (Array.isArray(res.data)) {
-          setSlides(res.data);
-        }
+        if (Array.isArray(res.data)) setSlides(res.data);
       } else {
-        // Revert on failure
         setSlides(previousSlides);
         setSlidesErrorMsg(res?.message || 'Αποτυχία αναδιάταξης.');
       }
     } catch (err) {
-      // Revert on error
       setSlides(previousSlides);
       setSlidesErrorMsg(err?.message || 'Αποτυχία αναδιάταξης.');
     } finally {
@@ -214,7 +204,7 @@ function HeroSettingsContent() {
       const res = await heroSettingsAPI.updateSlide(editingSlideId, editForm);
       if (res?.success) {
         setSlidesSuccessMsg('Το slide ενημερώθηκε.');
-        if (res.data) setSlides((prev) => prev.map((s) => s.id === editingSlideId ? { ...s, ...res.data } : s));
+        if (Array.isArray(res.data)) setSlides(res.data);
         setEditingSlideId(null);
         setEditForm(EMPTY_SLIDE_FORM);
       } else {
@@ -243,7 +233,7 @@ function HeroSettingsContent() {
       if (res?.success) {
         setSlidesSuccessMsg('Νέο slide δημιουργήθηκε.');
         setNewSlideForm(EMPTY_SLIDE_FORM);
-        if (res.data) setSlides((prev) => [...prev, res.data]);
+        if (Array.isArray(res.data)) setSlides(res.data);
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία δημιουργίας.');
       }
@@ -266,7 +256,8 @@ function HeroSettingsContent() {
     );
   }
 
-  const sortedSlides = [...slides].sort((a, b) => (a.order || 0) - (b.order || 0));
+  // Array position IS the canonical order — no sorting needed
+  const sortedSlides = slides;
 
   return (
     <AdminLayout>
@@ -402,7 +393,7 @@ function HeroSettingsContent() {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
-                        <span className="text-xs text-gray-400 font-mono">#{slide.order}</span>
+                        <span className="text-xs text-gray-400 font-mono">#{idx + 1}</span>
                         <span
                           className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                             slide.isActive

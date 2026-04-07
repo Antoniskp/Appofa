@@ -12,7 +12,6 @@ const DEFAULT_SETTINGS = {
       linkUrl: '',
       linkText: '',
       isActive: true,
-      order: 1,
     },
   ],
 };
@@ -21,20 +20,12 @@ function generateId() {
   return randomUUID();
 }
 
-function normalizeSlidesOrder(slides = []) {
-  return [...slides]
-    .map((slide, index) => ({ ...slide, _originalIndex: index }))
-    .sort((a, b) => {
-      const aOrder = Number.isFinite(a.order) ? a.order : Number.MAX_SAFE_INTEGER;
-      const bOrder = Number.isFinite(b.order) ? b.order : Number.MAX_SAFE_INTEGER;
-      if (aOrder !== bOrder) return aOrder - bOrder;
-      return a._originalIndex - b._originalIndex;
-    })
-    .map((slide, index) => {
-      const normalizedSlide = { ...slide };
-      delete normalizedSlide._originalIndex;
-      return { ...normalizedSlide, order: index + 1 };
-    });
+/**
+ * Strip any legacy `order` field from slides.
+ * Array position is the canonical order — no `order` property needed.
+ */
+function cleanSlides(slides = []) {
+  return slides.map(({ order: _order, ...rest }) => rest);
 }
 
 async function getOrCreateSettings() {
@@ -47,6 +38,15 @@ async function getOrCreateSettings() {
     });
   }
   return settings;
+}
+
+/** Persist slides array and return the cleaned version. */
+async function saveSlides(settings, slides) {
+  const cleaned = cleanSlides(slides);
+  settings.slides = cleaned;
+  settings.changed('slides', true);
+  await settings.save({ fields: ['slides', 'updatedAt'] });
+  return cleaned;
 }
 
 function isValidUrl(str) {
@@ -66,10 +66,10 @@ const getHeroSettings = async (req, res) => {
       data: {
         backgroundImageUrl: settings.backgroundImageUrl,
         backgroundColor: settings.backgroundColor,
-        slides: settings.slides,
+        slides: cleanSlides(settings.slides),
       },
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to read hero settings.' });
   }
 };
@@ -106,35 +106,35 @@ const updateHeroSettings = async (req, res) => {
       data: {
         backgroundImageUrl: settings.backgroundImageUrl,
         backgroundColor: settings.backgroundColor,
-        slides: settings.slides,
+        slides: cleanSlides(settings.slides),
       },
       message: 'Hero settings updated.',
     });
-  } catch (err) {
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update hero settings.' });
   }
 };
 
 // GET /api/hero-settings/slides
-// Admin: returns all slides; public: returns only active slides sorted by order
+// Admin: returns all slides; public: returns only active slides (array order = display order)
 const getSlides = async (req, res) => {
   try {
     const settings = await getOrCreateSettings();
     const isAdmin = req.user && req.user.role === 'admin';
-    let slides = normalizeSlidesOrder(settings.slides || []);
+    let slides = cleanSlides(settings.slides || []);
     if (!isAdmin) {
       slides = slides.filter((s) => s.isActive);
     }
     return res.json({ success: true, data: slides });
-  } catch (err) {
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to read slides.' });
   }
 };
 
-// POST /api/hero-settings/slides
+// POST /api/hero-settings/slides — new slide is appended at end
 const createSlide = async (req, res) => {
   try {
-    const { title, subtitle, linkUrl, linkText, isActive, order } = req.body;
+    const { title, subtitle, linkUrl, linkText, isActive } = req.body;
 
     if (!title || typeof title !== 'string' || !title.trim()) {
       return res.status(400).json({ success: false, message: 'title is required and must be a non-empty string.' });
@@ -150,8 +150,7 @@ const createSlide = async (req, res) => {
     }
 
     const settings = await getOrCreateSettings();
-    const slides = normalizeSlidesOrder(settings.slides || []);
-    const resolvedOrder = typeof order === 'number' ? order : slides.length + 1;
+    const slides = cleanSlides(settings.slides || []);
 
     const newSlide = {
       id: generateId(),
@@ -160,16 +159,11 @@ const createSlide = async (req, res) => {
       linkUrl: (linkUrl && linkUrl.trim()) ? linkUrl.trim() : '',
       linkText: (linkText && linkText.trim()) ? linkText.trim() : '',
       isActive: typeof isActive === 'boolean' ? isActive : true,
-      order: resolvedOrder,
     };
 
-    settings.slides = normalizeSlidesOrder([...slides, newSlide]);
-    settings.changed('slides', true);
-    await settings.save({ fields: ['slides', 'updatedAt'] });
-
-    const persistedSlide = settings.slides.find((slide) => slide.id === newSlide.id) || newSlide;
-    return res.status(201).json({ success: true, data: persistedSlide, message: 'Slide created.' });
-  } catch (err) {
+    const saved = await saveSlides(settings, [...slides, newSlide]);
+    return res.status(201).json({ success: true, data: saved, message: 'Slide created.' });
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to create slide.' });
   }
 };
@@ -178,7 +172,7 @@ const createSlide = async (req, res) => {
 const updateSlide = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, subtitle, linkUrl, linkText, isActive, order } = req.body;
+    const { title, subtitle, linkUrl, linkText, isActive } = req.body;
 
     if (title !== undefined && (typeof title !== 'string' || !title.trim())) {
       return res.status(400).json({ success: false, message: 'title must be a non-empty string.' });
@@ -194,31 +188,25 @@ const updateSlide = async (req, res) => {
     }
 
     const settings = await getOrCreateSettings();
-    const slides = normalizeSlidesOrder(settings.slides || []);
+    const slides = cleanSlides(settings.slides || []);
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
     }
 
     const existing = slides[idx];
-    const updatedSlide = {
+    slides[idx] = {
       ...existing,
       title: title !== undefined ? title.trim() : existing.title,
       subtitle: subtitle !== undefined ? subtitle.trim() : existing.subtitle,
       linkUrl: linkUrl !== undefined ? (linkUrl.trim() || '') : existing.linkUrl,
       linkText: linkText !== undefined ? (linkText.trim() || '') : existing.linkText,
       isActive: typeof isActive === 'boolean' ? isActive : existing.isActive,
-      order: typeof order === 'number' ? order : existing.order,
     };
 
-    const updatedSlides = [...slides];
-    updatedSlides[idx] = updatedSlide;
-    settings.slides = normalizeSlidesOrder(updatedSlides);
-    settings.changed('slides', true);
-    await settings.save({ fields: ['slides', 'updatedAt'] });
-
-    return res.json({ success: true, data: updatedSlide, message: 'Slide updated.' });
-  } catch (err) {
+    const saved = await saveSlides(settings, slides);
+    return res.json({ success: true, data: saved, message: 'Slide updated.' });
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to update slide.' });
   }
 };
@@ -228,62 +216,55 @@ const deleteSlide = async (req, res) => {
   try {
     const { id } = req.params;
     const settings = await getOrCreateSettings();
-    const slides = normalizeSlidesOrder(settings.slides || []);
+    const slides = cleanSlides(settings.slides || []);
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
     }
-    settings.slides = normalizeSlidesOrder(slides.filter((s) => s.id !== id));
-    settings.changed('slides', true);
-    await settings.save({ fields: ['slides', 'updatedAt'] });
-    return res.json({ success: true, message: 'Slide deleted.' });
-  } catch (err) {
+    const saved = await saveSlides(settings, slides.filter((s) => s.id !== id));
+    return res.json({ success: true, data: saved, message: 'Slide deleted.' });
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to delete slide.' });
   }
 };
 
 // PATCH /api/hero-settings/slides/reorder
+// Accepts { ids: string[] } — the new ordering of ALL slide ids.
 const reorderSlides = async (req, res) => {
   try {
-    const { updates } = req.body;
+    const { ids } = req.body;
 
-    if (!Array.isArray(updates) || updates.length === 0) {
-      return res.status(400).json({ success: false, message: 'updates must be a non-empty array.' });
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: 'ids must be a non-empty array of slide id strings.' });
     }
-    for (const entry of updates) {
-      if (typeof entry.id !== 'string' || typeof entry.order !== 'number') {
-        return res.status(400).json({ success: false, message: 'Each update must have a string id and a number order.' });
+    for (const id of ids) {
+      if (typeof id !== 'string') {
+        return res.status(400).json({ success: false, message: 'Each id must be a string.' });
       }
     }
 
     const settings = await getOrCreateSettings();
-    const slides = normalizeSlidesOrder(settings.slides || []);
+    const slides = cleanSlides(settings.slides || []);
 
-    const uniqueIds = new Set(updates.map((u) => u.id));
-    if (uniqueIds.size !== updates.length) {
-      return res.status(400).json({ success: false, message: 'Duplicate slide ids are not allowed in updates.' });
+    const uniqueIds = new Set(ids);
+    if (uniqueIds.size !== ids.length) {
+      return res.status(400).json({ success: false, message: 'Duplicate slide ids are not allowed.' });
     }
-    if (updates.length !== slides.length) {
-      return res.status(400).json({ success: false, message: 'updates must include every existing slide exactly once.' });
+    if (ids.length !== slides.length) {
+      return res.status(400).json({ success: false, message: 'ids must include every existing slide exactly once.' });
     }
 
-    const existingIds = new Set(slides.map((slide) => slide.id));
-    for (const id of uniqueIds) {
-      if (!existingIds.has(id)) {
+    const slideMap = new Map(slides.map((s) => [s.id, s]));
+    for (const id of ids) {
+      if (!slideMap.has(id)) {
         return res.status(400).json({ success: false, message: `Slide with id ${id} does not exist.` });
       }
     }
 
-    const orderMap = new Map(updates.map((u) => [u.id, u.order]));
-    const reorderedSlides = [...slides].sort((a, b) => orderMap.get(a.id) - orderMap.get(b.id));
-    const updatedSlides = normalizeSlidesOrder(reorderedSlides);
-
-    settings.slides = updatedSlides;
-    settings.changed('slides', true);
-    await settings.save({ fields: ['slides', 'updatedAt'] });
-
-    return res.json({ success: true, data: updatedSlides, message: 'Slides reordered.' });
-  } catch (err) {
+    const reordered = ids.map((id) => slideMap.get(id));
+    const saved = await saveSlides(settings, reordered);
+    return res.json({ success: true, data: saved, message: 'Slides reordered.' });
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to reorder slides.' });
   }
 };
@@ -293,18 +274,15 @@ const toggleSlide = async (req, res) => {
   try {
     const { id } = req.params;
     const settings = await getOrCreateSettings();
-    const slides = normalizeSlidesOrder(settings.slides || []);
+    const slides = cleanSlides(settings.slides || []);
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
     }
-    const updatedSlides = [...slides];
-    updatedSlides[idx] = { ...updatedSlides[idx], isActive: !updatedSlides[idx].isActive };
-    settings.slides = normalizeSlidesOrder(updatedSlides);
-    settings.changed('slides', true);
-    await settings.save({ fields: ['slides', 'updatedAt'] });
-    return res.json({ success: true, data: updatedSlides[idx], message: `Slide ${updatedSlides[idx].isActive ? 'activated' : 'deactivated'}.` });
-  } catch (err) {
+    slides[idx] = { ...slides[idx], isActive: !slides[idx].isActive };
+    const saved = await saveSlides(settings, slides);
+    return res.json({ success: true, data: saved, message: `Slide ${slides[idx].isActive ? 'activated' : 'deactivated'}.` });
+  } catch {
     return res.status(500).json({ success: false, message: 'Failed to toggle slide.' });
   }
 };
