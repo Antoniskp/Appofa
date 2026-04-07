@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AlertMessage from '@/components/ui/AlertMessage';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { heroSettingsAPI } from '@/lib/api';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { PencilIcon, TrashIcon, ChevronUpIcon, ChevronDownIcon, PlusIcon } from '@heroicons/react/24/outline';
 
@@ -13,14 +15,22 @@ function HeroSettingsContent() {
   // --- Background settings state ---
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [backgroundColor, setBackgroundColor] = useState('#1a2a3a');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const { loading, error: settingsLoadError } = useAsyncData(
+    () => heroSettingsAPI.get(),
+    [],
+    {
+      onSuccess: (res) => {
+        setBackgroundImageUrl(res?.data?.backgroundImageUrl || '');
+        setBackgroundColor(res?.data?.backgroundColor || '#1a2a3a');
+      },
+    }
+  );
+
   // --- Slides state ---
-  const [slides, setSlides] = useState([]);
-  const [slidesLoading, setSlidesLoading] = useState(true);
   const [slidesSaving, setSlidesSaving] = useState(false);
   const [slidesSuccessMsg, setSlidesSuccessMsg] = useState('');
   const [slidesErrorMsg, setSlidesErrorMsg] = useState('');
@@ -29,29 +39,14 @@ function HeroSettingsContent() {
   const [editForm, setEditForm] = useState(EMPTY_SLIDE_FORM);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
-  useEffect(() => {
-    heroSettingsAPI.get()
-      .then((res) => {
-        if (res?.success) {
-          setBackgroundImageUrl(res.data.backgroundImageUrl || '');
-          setBackgroundColor(res.data.backgroundColor || '#1a2a3a');
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
-  const loadSlides = useCallback(() => {
-    setSlidesLoading(true);
-    heroSettingsAPI.getSlides()
-      .then((res) => {
-        if (res?.success) setSlides(res.data || []);
-      })
-      .catch(() => {})
-      .finally(() => setSlidesLoading(false));
-  }, []);
-
-  useEffect(() => { loadSlides(); }, [loadSlides]);
+  const { data: slides, loading: slidesLoading, error: slidesLoadError, refetch: refetchSlides } = useAsyncData(
+    () => heroSettingsAPI.getSlides(),
+    [],
+    {
+      initialData: [],
+      transform: (res) => res?.data || [],
+    }
+  );
 
   const clearMessages = () => { setSuccessMsg(''); setErrorMsg(''); };
   const clearSlidesMessages = () => { setSlidesSuccessMsg(''); setSlidesErrorMsg(''); };
@@ -111,7 +106,7 @@ function HeroSettingsContent() {
       const res = await heroSettingsAPI.toggleSlide(id);
       if (res?.success) {
         setSlidesSuccessMsg(res.message || 'Η κατάσταση του slide άλλαξε.');
-        loadSlides();
+        await refetchSlides();
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία αλλαγής κατάστασης.');
       }
@@ -130,7 +125,7 @@ function HeroSettingsContent() {
       if (res?.success) {
         setSlidesSuccessMsg('Το slide διαγράφηκε.');
         setConfirmDeleteId(null);
-        loadSlides();
+        await refetchSlides();
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία διαγραφής.');
       }
@@ -152,11 +147,16 @@ function HeroSettingsContent() {
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
-      await heroSettingsAPI.reorderSlides([
+      const res = await heroSettingsAPI.reorderSlides([
         { id: a.id, order: b.order },
         { id: b.id, order: a.order },
       ]);
-      loadSlides();
+      if (res?.success) {
+        setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
+        await refetchSlides();
+      } else {
+        setSlidesErrorMsg(res?.message || 'Αποτυχία αναδιάταξης.');
+      }
     } catch (err) {
       setSlidesErrorMsg(err?.message || 'Αποτυχία αναδιάταξης.');
     } finally {
@@ -196,7 +196,7 @@ function HeroSettingsContent() {
         setSlidesSuccessMsg('Το slide ενημερώθηκε.');
         setEditingSlideId(null);
         setEditForm(EMPTY_SLIDE_FORM);
-        loadSlides();
+        await refetchSlides();
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία ενημέρωσης.');
       }
@@ -223,7 +223,7 @@ function HeroSettingsContent() {
       if (res?.success) {
         setSlidesSuccessMsg('Νέο slide δημιουργήθηκε.');
         setNewSlideForm(EMPTY_SLIDE_FORM);
-        loadSlides();
+        await refetchSlides();
       } else {
         setSlidesErrorMsg(res?.message || 'Αποτυχία δημιουργίας.');
       }
@@ -236,9 +236,13 @@ function HeroSettingsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500">Φόρτωση ρυθμίσεων...</p>
-      </div>
+      <AdminLayout>
+        <div className="min-h-screen bg-gray-50 py-8">
+          <div className="app-container max-w-4xl">
+            <SkeletonLoader type="form" count={2} />
+          </div>
+        </div>
+      </AdminLayout>
     );
   }
 
@@ -259,7 +263,7 @@ function HeroSettingsContent() {
         <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-6 mb-8">
           <h2 className="text-lg font-semibold text-gray-800">Ρυθμίσεις Φόντου</h2>
           {successMsg && <AlertMessage tone="success" message={successMsg} />}
-          {errorMsg && <AlertMessage tone="error" message={errorMsg} />}
+          {(errorMsg || settingsLoadError) && <AlertMessage tone="error" message={errorMsg || settingsLoadError} />}
 
           {/* Background Image URL */}
           <div>
@@ -342,11 +346,11 @@ function HeroSettingsContent() {
           </div>
 
           {slidesSuccessMsg && <AlertMessage tone="success" message={slidesSuccessMsg} />}
-          {slidesErrorMsg && <AlertMessage tone="error" message={slidesErrorMsg} />}
+          {(slidesErrorMsg || slidesLoadError) && <AlertMessage tone="error" message={slidesErrorMsg || slidesLoadError} />}
 
           {/* Slides list */}
-          {slidesLoading ? (
-            <p className="text-gray-500 text-sm">Φόρτωση slides...</p>
+          {slidesLoading && sortedSlides.length === 0 ? (
+            <SkeletonLoader type="form" count={2} />
           ) : sortedSlides.length === 0 ? (
             <p className="text-gray-400 text-sm italic">Δεν υπάρχουν slides. Δημιουργήστε ένα παρακάτω.</p>
           ) : (
