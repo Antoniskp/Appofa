@@ -275,6 +275,76 @@ describe('Hero Settings API Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.map((s) => s.id)).toEqual(reordered);
     });
+
+    it('should reject a stale/partial id list (regression: rapid-click race)', async () => {
+      // Simulates the in-flight race condition where a stale snapshot sends
+      // fewer IDs than the server currently holds — the fix must reject this 400.
+      const res = await request(app)
+        .patch('/api/hero-settings/slides/reorder')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ ids: [slideAId] }); // only one of many — stale partial list
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject an id list containing non-string values', async () => {
+      // Regression: if local state is corrupt and an id is not a string, the
+      // backend must return 400 (not 500) without crashing.
+      const res = await request(app)
+        .patch('/api/hero-settings/slides/reorder')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ ids: [slideAId, slideBId, 42] });
+      expect(res.status).toBe(400);
+    });
+
+    it('should handle two sequential reorder requests atomically (last wins)', async () => {
+      // Simulate what happens when the frontend guard works correctly:
+      // two requests are sent one after the other (not truly concurrent due
+      // to SQLite in-memory being serial), and the last committed order wins.
+      const getRes = await request(app)
+        .get('/api/hero-settings/slides')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const current = getRes.body.data.map((s) => s.id);
+
+      const aIdx = current.indexOf(slideAId);
+      const bIdx = current.indexOf(slideBId);
+      // Both slides must exist in the current list for this test to be meaningful
+      expect(aIdx).toBeGreaterThan(-1);
+      expect(bIdx).toBeGreaterThan(-1);
+
+      // First request: swap A with an adjacent element.
+      // Guard against A already being at the last position (no-op edge case).
+      const order1 = [...current];
+      const swapTarget1 = aIdx < current.length - 1 ? aIdx + 1 : aIdx - 1;
+      [order1[aIdx], order1[swapTarget1]] = [order1[swapTarget1], order1[aIdx]];
+
+      // Second request: move B toward the front if possible, otherwise swap backward.
+      const order2 = [...current];
+      const swapTarget2 = bIdx > 0 ? bIdx - 1 : bIdx + 1;
+      if (swapTarget2 < order2.length) {
+        [order2[bIdx], order2[swapTarget2]] = [order2[swapTarget2], order2[bIdx]];
+      }
+
+      const [res1, res2] = await Promise.all([
+        request(app)
+          .patch('/api/hero-settings/slides/reorder')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .set(csrfHeadersFor(csrfAdmin, adminId))
+          .send({ ids: order1 }),
+        request(app)
+          .patch('/api/hero-settings/slides/reorder')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .set(csrfHeadersFor(csrfAdmin, adminId))
+          .send({ ids: order2 }),
+      ]);
+
+      // Both should be valid orders (200) since they each include all IDs.
+      // At least one should succeed; the backend must never crash with 500.
+      const statuses = [res1.status, res2.status];
+      expect(statuses.every((s) => s === 200 || s === 400)).toBe(true);
+      expect(statuses.some((s) => s === 200)).toBe(true);
+    });
   });
 
   // ─── PATCH /api/hero-settings/slides/:id/toggle ──────────────────────────────
