@@ -34,31 +34,31 @@ export default function AdminClaimsPage() {
   }
 
   const handleApprove = async (id) => {
-    if (!window.confirm('Approve this claim? The profile will be marked as claimed.')) return;
+    if (!window.confirm('Έγκριση αυτής της διεκδίκησης; Το προφίλ θα επισημανθεί ως διεκδικημένο.')) return;
     try { await personAPI.approveClaim(id); refetch?.(); }
-    catch (err) { alert(err.message || 'Failed to approve claim.'); }
+    catch (err) { alert(err.message || 'Αποτυχία έγκρισης διεκδίκησης.'); }
   };
 
   const handleReject = async (id) => {
-    const reason = window.prompt('Rejection reason (optional):');
+    const reason = window.prompt('Λόγος απόρριψης (προαιρετικό):');
     if (reason === null) return;
     try { await personAPI.rejectClaim(id, { reason }); refetch?.(); }
-    catch (err) { alert(err.message || 'Failed to reject claim.'); }
+    catch (err) { alert(err.message || 'Αποτυχία απόρριψης διεκδίκησης.'); }
   };
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">Pending Profile Claims</h1>
-          <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline">← All Profiles</Link>
+          <h1 className="text-2xl font-bold text-gray-900">Εκκρεμείς Διεκδικήσεις Προφίλ</h1>
+          <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline">← Όλα τα Προφίλ</Link>
         </div>
 
         {loading && <SkeletonLoader count={5} type="card" />}
-        {error && <p className="text-red-500">Failed to load claims.</p>}
+        {error && <p className="text-red-500">Αποτυχία φόρτωσης διεκδικήσεων.</p>}
 
         {!loading && claims.length === 0 && (
-          <div className="text-center py-12 text-gray-500">No pending claims.</div>
+          <div className="text-center py-12 text-gray-500">Δεν υπάρχουν εκκρεμείς διεκδικήσεις.</div>
         )}
 
         {!loading && claims.length > 0 && (
@@ -66,11 +66,11 @@ export default function AdminClaimsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Profile</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Claimed By</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Constituency</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Requested</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Προφίλ</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Διεκδικείται από</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Εκλογική Περιφέρεια</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημ/νία Αιτήματος</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ενέργειες</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -84,13 +84,13 @@ export default function AdminClaimsPage() {
                     <td className="px-4 py-3 text-sm text-gray-500">{profile.claimRequestedAt ? new Date(profile.claimRequestedAt).toLocaleDateString() : '—'}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleApprove(profile.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Approve">
+                        <button onClick={() => handleApprove(profile.id)} className="p-1.5 text-green-600 hover:bg-green-50 rounded" title="Έγκριση">
                           <CheckIcon className="h-4 w-4" />
                         </button>
-                        <button onClick={() => handleReject(profile.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Reject">
+                        <button onClick={() => handleReject(profile.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded" title="Απόρριψη">
                           <XMarkIcon className="h-4 w-4" />
                         </button>
-                        <Link href={`/admin/persons/claims/${profile.id}`} className="text-xs text-blue-600 hover:underline">View</Link>
+                        <Link href={`/admin/persons/claims/${profile.id}`} className="text-xs text-blue-600 hover:underline">Προβολή</Link>
                       </div>
                     </td>
                   </tr>
