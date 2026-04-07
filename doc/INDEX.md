@@ -8,6 +8,7 @@ Welcome to the Appofa News Application documentation. All documentation files li
 
 | File | Description |
 |------|-------------|
+| [REPOSITORY_MAP.md](REPOSITORY_MAP.md) | **Living codebase map** — all models, routes, pages, components, migrations (auto-updated by AI) |
 | [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | Holistic project overview: features, tech stack, role matrix, statistics |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | System architecture, middleware, and component overview |
 | [SECURITY.md](SECURITY.md) | Security features, audit history, and best practices |

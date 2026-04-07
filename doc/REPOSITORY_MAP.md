@@ -1,0 +1,593 @@
+# Repository Map — Appofa
+
+<!-- AI UPDATE RULES
+This file is the living source of truth for the codebase structure.
+After completing ANY task that:
+- Adds, removes, or renames a file, model, route, page, or component
+- Adds or changes a migration
+- Changes architectural patterns or conventions
+- Adds or removes a dependency
+
+You MUST update the relevant section below before finalizing your PR.
+This instruction is permanent and must never be removed.
+-->
+
+> **Last updated**: 2026-04-07
+>
+> This document is a living map of the entire codebase. AI agents read and update it automatically.
+
+---
+
+## Table of Contents
+
+- [Directory Structure](#directory-structure)
+- [Models (33)](#models-33)
+- [API Routes (23 files, 150+ endpoints)](#api-routes-23-files-150-endpoints)
+- [Controllers (21)](#controllers-21)
+- [Services (8)](#services-8)
+- [Middleware (6)](#middleware-6)
+- [Frontend Pages (97)](#frontend-pages-97)
+- [Components (120+)](#components-120)
+- [API Client Modules (22)](#api-client-modules-22)
+- [Hooks (5)](#hooks-5)
+- [Constants](#constants)
+- [Migrations (70)](#migrations-70)
+- [Tests (46 files)](#tests-46-files)
+- [Scripts](#scripts)
+- [npm Scripts](#npm-scripts)
+
+---
+
+## Directory Structure
+
+```
+Appofa/
+├── src/                    # Backend (Express + Sequelize)
+│   ├── controllers/        # Request handlers (21 files)
+│   ├── services/           # Business logic (8 files)
+│   ├── models/             # Sequelize models (33 models)
+│   ├── routes/             # Express route definitions (23 files)
+│   ├── middleware/         # Auth, CSRF, rate-limit, error handling (6 files)
+│   ├── migrations/         # DB migrations (70 files)
+│   ├── config/             # database.js, securityHeaders.js
+│   ├── constants/          # articleTypes.js, expertiseAreas.js
+│   ├── scripts/            # run-migrations.js, seed scripts
+│   ├── utils/              # Utility helpers
+│   └── index.js            # Express app entry point
+│
+├── app/                    # Frontend (Next.js App Router, 97 pages)
+│   ├── (statics)/          # Static content pages (46 pages)
+│   ├── admin/              # Admin dashboard (15 pages)
+│   ├── articles/           # Article CRUD pages
+│   ├── polls/              # Poll pages
+│   ├── suggestions/        # Suggestion pages
+│   ├── dream-team/         # Dream team feature
+│   ├── persons/            # Person profile pages
+│   ├── locations/          # Location pages
+│   └── ...                 # Auth, profile, bookmarks, etc.
+│
+├── components/             # Reusable React components (120+ files)
+│   ├── admin/              # Admin UI (5 files)
+│   ├── articles/           # Article components (9 files)
+│   ├── comments/           # Comment components (2 files)
+│   ├── dream-team/         # Dream team components (17 files)
+│   ├── follow/             # Follow button (1 file)
+│   ├── layout/             # Layout, nav, footer (8 files)
+│   ├── locations/          # Location components (4 files)
+│   ├── polls/              # Poll components (5 files)
+│   ├── profile/            # Profile components (12 files)
+│   └── ui/                 # Shared UI primitives (20+ files)
+│
+├── lib/                    # Shared frontend utilities
+│   ├── api/                # API client modules (22 files)
+│   ├── constants/          # Frontend constants (3 files)
+│   ├── utils/              # Utility helpers
+│   └── auth-context.js     # Auth context provider
+│
+├── hooks/                  # Custom React hooks (5 files)
+├── config/                 # articleCategories.json, badges.json
+├── __tests__/              # Jest test suites (46 files)
+├── doc/                    # Documentation (30+ files)
+├── scripts/                # Deployment & setup scripts
+├── public/                 # Static assets
+└── .github/                # CI workflows, agents, copilot instructions
+```
+
+---
+
+## Models (33)
+
+| Model | Table | Key Fields | Key Associations |
+|-------|-------|-----------|------------------|
+| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
+| Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment |
+| Poll | Polls | id, title, description, category, tags, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote |
+| PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
+| PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
+| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole; belongsTo: parent |
+| LocationLink | LocationLinks | id, locationId, url, type, pollId | belongsTo: Location, Poll |
+| LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
+| LocationRole | LocationRoles | id, locationId, roleName, isActive | belongsTo: Location |
+| LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
+| Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment |
+| Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
+| SuggestionVote | SuggestionVotes | id, suggestionId, userId, voteType | belongsTo: Suggestion, User |
+| Comment | Comments | id, entityType, entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
+| Message | Messages | id, type, userId, email, name, subject, message, locationId, status | belongsTo: User, Location |
+| Follow | Follows | id, followerId, followingId | belongsTo: User (×2) |
+| Bookmark | Bookmarks | id, userId, entityType, entityId | belongsTo: User |
+| Endorsement | Endorsements | id, endorserId, endorsedId, topic | belongsTo: User (×2) |
+| Report | Reports | id, contentType, contentId, category, message, reporterEmail, status | — |
+| Formation | Formations | id, userId, name, description, slug, totalVotes, isPublished | belongsTo: User; hasMany: FormationPick, FormationLike, DreamTeamVote |
+| FormationPick | FormationPicks | id, formationId, positionId, candidateId, pickOrder | belongsTo: Formation, GovernmentPosition |
+| FormationLike | FormationLikes | id, formationId, userId | belongsTo: Formation, User |
+| DreamTeamVote | DreamTeamVotes | id, candidateUserId, positionId, voteCount | belongsTo: GovernmentPosition |
+| GovernmentPosition | GovernmentPositions | id, name, description, isActive | hasMany: GovernmentCurrentHolder, GovernmentPositionSuggestion, DreamTeamVote, FormationPick |
+| GovernmentCurrentHolder | GovernmentCurrentHolders | id, positionId, personId, firstName, lastName, isActive | belongsTo: GovernmentPosition |
+| GovernmentPositionSuggestion | GovernmentPositionSuggestions | id, positionId, suggestedFirstName, suggestedLastName, reason | belongsTo: GovernmentPosition |
+| PublicPersonProfile | PublicPersonProfiles | id, slug, position, bio, imageUrl, isApproved, claimedByUserId, placeholderUserId, firstNameNative, lastNameNative | belongsTo: User (×2) |
+| PersonRemovalRequest | PersonRemovalRequests | id, publicPersonProfileId, reason, status, submittedBy | — |
+| LinkPreviewCache | LinkPreviewCaches | id, url, title, description, imageUrl, favicon, domain, expiresAt | — |
+| Manifest | Manifests | id, slug, title, description, content, createdBy, status | belongsTo: User; hasMany: ManifestAcceptance |
+| ManifestAcceptance | ManifestAcceptances | id, manifestId, userId, acceptedAt | belongsTo: Manifest, User |
+| UserBadge | UserBadges | id, userId, badgeName, earnedAt | belongsTo: User |
+| HeroSettings | HeroSettings | id, isActive, slide data fields | — |
+
+---
+
+## API Routes (23 files, 150+ endpoints)
+
+### Auth (`/api/auth`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /csrf | — | Get CSRF token |
+| POST | /register | — | Register |
+| POST | /login | — | Login |
+| GET | /profile | ✅ | Get profile |
+| PUT | /profile | ✅ | Update profile |
+| PUT | /password | ✅ | Change password |
+| POST | /logout | ✅ | Logout |
+| DELETE | /profile | ✅ | Delete account |
+| GET | /github | — | GitHub OAuth |
+| GET | /github/callback | — | GitHub callback |
+| GET | /google | — | Google OAuth |
+| GET | /google/callback | — | Google callback |
+| DELETE | /github/unlink | ✅ | Unlink GitHub |
+| DELETE | /google/unlink | ✅ | Unlink Google |
+
+### Articles (`/api/articles`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | opt | List articles |
+| GET | /category-counts | — | Category counts |
+| GET | /:id | opt | Get article |
+| POST | / | ✅ | Create article |
+| PUT | /:id | ✅ | Update article |
+| DELETE | /:id | ✅ | Delete article |
+| POST | /:id/approve-news | admin | Approve news |
+| PATCH | /:id/comment-settings | ✅ | Toggle comments |
+
+### Polls (`/api/polls`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | opt | List polls |
+| GET | /category-counts | — | Category counts |
+| GET | /my-voted | ✅ | My voted polls |
+| GET | /:id | opt | Get poll |
+| GET | /:id/results | opt | Poll results |
+| GET | /:id/export | ✅ | Export audit data |
+| POST | / | ✅ | Create poll |
+| PUT | /:id | ✅ | Update poll |
+| DELETE | /:id | ✅ | Delete poll |
+| POST | /:id/vote | opt | Vote |
+| POST | /:id/options | ✅ | Add options |
+| PATCH | /:id/comment-settings | ✅ | Toggle comments |
+
+### Suggestions (`/api/suggestions`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | opt | List suggestions |
+| GET | /category-counts | — | Category counts |
+| GET | /:id | opt | Get suggestion |
+| GET | /:id/solutions | — | Get solutions |
+| POST | / | ✅ | Create suggestion |
+| PATCH | /:id | ✅ | Update suggestion |
+| DELETE | /:id | ✅ | Delete suggestion |
+| POST | /:id/solutions | ✅ | Add solution |
+| POST | /:id/vote | ✅ | Vote |
+
+### Locations (`/api/locations`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | — | Location hierarchy |
+| GET | /:id | — | Get location |
+| GET | /:id/entities | opt | Location entities |
+| POST | /requests | ✅ | Request new location |
+| GET | /requests | admin | List requests |
+| PUT | /requests/:id | admin | Review request |
+| POST | /link | ✅ | Link entity to location |
+| POST | /unlink | ✅ | Unlink entity |
+| GET | /:locationId/sections | — | Get sections |
+| POST | /:locationId/sections | mod | Create section |
+| PUT | /:locationId/sections/reorder | mod | Reorder sections |
+| PUT | /:locationId/sections/:id | mod | Update section |
+| DELETE | /:locationId/sections/:id | mod | Delete section |
+| GET | /:locationId/roles | — | Get roles |
+
+### Dream Team (`/api/dream-team`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | /positions | — | List positions |
+| POST | /vote | ✅ | Cast vote |
+| DELETE | /vote/:positionId | ✅ | Remove vote |
+| GET | /results | — | Results |
+| GET | /my-votes | ✅ | My votes |
+| GET | /formations/public | — | Public formations |
+| GET | /formations/popular-picks | — | Popular picks |
+| GET | /formations/formation-of-the-week | — | Weekly featured |
+| GET | /formations/leaderboard | — | Leaderboard |
+| GET | /formations/my-stats | ✅ | My stats |
+| GET | /formations/activity | — | Activity feed |
+| GET | /formations/share/:slug | — | Shared formation |
+| GET | /formations | ✅ | My formations |
+| POST | /formations | ✅ | Create formation |
+| GET | /formations/:id | ✅ | Get formation |
+
+### Persons (`/api/persons`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | opt | List persons |
+| GET | /claims | admin | List claims |
+| POST | /claims/:id/approve | admin | Approve claim |
+| POST | /claims/:id/reject | admin | Reject claim |
+| POST | / | admin | Create person |
+| DELETE | /:id | admin | Delete person |
+| POST | /:id/claim | ✅ | Claim profile |
+| PUT | /:id | ✅ | Update person |
+| GET | /profile/:id | — | Get by ID |
+| GET | /:slug | opt | Get by slug |
+
+> Note: `/api/candidates` is a backward-compatible alias for `/api/persons`
+
+### Other Route Files
+| File | Base Path | Key Endpoints |
+|------|-----------|---------------|
+| commentRoutes.js | /api/comments | GET /, POST /, PATCH /:id/hide, PATCH /:id/unhide, DELETE /:id |
+| bookmarkRoutes.js | /api/bookmarks | GET /, GET /count, GET /status, POST /toggle |
+| followRoutes.js | /api/users | POST /:id/follow, DELETE /:id/follow, GET /:id/follow/status, GET /:id/followers, GET /:id/following |
+| endorsementRoutes.js | /api/endorsements | GET /topics, GET /leaderboard, GET /status, POST /, DELETE / |
+| messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
+| reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
+| personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
+| manifestRoutes.js | /api/manifests | GET /, POST /, PUT /:slug, DELETE /:slug, PUT /:slug/accept, DELETE /:slug/accept, GET /:slug/supporters |
+| badges.js | /api/badges | GET /my, GET /user/:userId, POST /evaluate, PUT /display |
+| heroSettingsRoutes.js | /api/hero-settings | GET /, PUT /, GET /slides, POST /slides, PUT /slides/:id, DELETE /slides/:id |
+| linkPreviewRoutes.js | /api/link-preview | POST / |
+| solutionRoutes.js | /api/solutions | POST /:id/vote |
+| statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
+| tagRoutes.js | /api/tags | GET /suggestions |
+| adminRoutes.js | /api/admin | GET /health, dream-team management endpoints |
+
+---
+
+## Controllers (21)
+
+| Controller | Domain |
+|-----------|--------|
+| articleController.js | Article CRUD & management |
+| authController.js | Authentication, OAuth, password |
+| bookmarkController.js | Bookmark management |
+| commentController.js | Comment CRUD & moderation |
+| dreamTeamController.js | Dream team formations, votes |
+| endorsementController.js | Endorsements |
+| followController.js | Follow/unfollow |
+| heroSettingsController.js | Hero section config |
+| linkPreviewController.js | Link preview caching |
+| locationController.js | Location CRUD, sections, roles |
+| locationRoleController.js | Location role management |
+| locationSectionController.js | Location section management |
+| manifestController.js | Manifest CRUD & acceptance |
+| messageController.js | Contact messages |
+| personController.js | Person profiles & claims |
+| personRemovalRequestController.js | Removal requests |
+| pollController.js | Poll CRUD, voting, results |
+| reportController.js | Content reporting |
+| statsController.js | Statistics |
+| suggestionController.js | Suggestions & solutions |
+| tagController.js | Tag management |
+
+---
+
+## Services (8)
+
+| Service | Purpose |
+|---------|---------|
+| articleService.js | Article business logic |
+| authService.js | Authentication & authorization |
+| badgeService.js | Badge evaluation & assignment |
+| locationService.js | Location data management |
+| oauthService.js | OAuth integration (GitHub, Google) |
+| personService.js | Person profile management, claims, placeholders |
+| pollService.js | Poll operations & calculations |
+| userService.js | User management & utilities |
+
+---
+
+## Middleware (6)
+
+| Middleware | Purpose |
+|-----------|---------|
+| auth.js | JWT authentication (`authMiddleware`) |
+| checkRole.js | Role-based access (`checkRole([...])`) |
+| csrfProtection.js | CSRF token validation |
+| errorHandler.js | Global error handling |
+| optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
+| rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`) |
+
+---
+
+## Frontend Pages (97)
+
+### Main Pages
+| Route | Description |
+|-------|-------------|
+| `/` | Home page |
+| `/login`, `/register` | Authentication |
+| `/profile` | User profile |
+| `/users`, `/users/[username]` | User list & public profiles |
+| `/users/[username]/followers`, `/users/[username]/following` | Social connections |
+| `/bookmarks` | Saved items |
+| `/my-votes`, `/my-polls`, `/my-news` | User content |
+
+### Content
+| Route | Description |
+|-------|-------------|
+| `/articles`, `/articles/[id]`, `/articles/new`, `/articles/[id]/edit` | Articles |
+| `/news`, `/news/[id]` | News |
+| `/videos`, `/videos/[id]`, `/videos/new` | Videos |
+| `/editor` | Content editor |
+| `/polls`, `/polls/[id]`, `/polls/create`, `/polls/[id]/edit` | Polls |
+| `/suggestions`, `/suggestions/[id]`, `/suggestions/new`, `/suggestions/[id]/edit` | Suggestions |
+
+### Features
+| Route | Description |
+|-------|-------------|
+| `/locations`, `/locations/[slug]` | Locations |
+| `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations |
+| `/persons`, `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles |
+| `/candidates/*` | Backward-compat alias for persons |
+| `/worthy-citizens` | Worthy citizens page |
+| `/manifest-supporters` | Manifest supporters |
+| `/request-removal` | Profile removal request |
+
+### Admin (15 pages)
+| Route | Description |
+|-------|-------------|
+| `/admin` | Dashboard |
+| `/admin/status` | System status |
+| `/admin/persons/*` | Person management (list, detail, edit, create) |
+| `/admin/candidates/*` | Candidate management (backward-compat) |
+| `/admin/dream-team` | Dream team admin |
+| `/admin/hero` | Hero settings |
+| `/admin/locations` | Location admin |
+| `/admin/manifests` | Manifest admin |
+| `/admin/messages/*` | Message admin |
+| `/admin/removal-requests` | Removal request admin |
+| `/admin/reports` | Report admin |
+
+### Static Pages (46 pages in `(statics)` layout)
+Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, etc.
+
+---
+
+## Components (120+)
+
+| Directory | Count | Key Components |
+|-----------|-------|----------------|
+| `admin/` | 5 | AdminHeader, AdminLayout, AdminSidebar, AdminTable, AdminTableActions |
+| `articles/` | 9 | ArticleCard, ArticleForm, RichArticleContent, VideoEmbed, VideoPostForm |
+| `comments/` | 2 | CommentForm, CommentsThread |
+| `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
+| `follow/` | 1 | FollowButton |
+| `layout/` | 8 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout |
+| `locations/` | 4 | LocationBreadcrumb, LocationEditForm, LocationHeader, LocationTabs |
+| `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
+| `profile/` | 12 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection |
+| `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
+| Root | 20+ | ContactForm, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
+
+---
+
+## API Client Modules (22)
+
+All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
+
+| Module | Domain |
+|--------|--------|
+| admin.js | Admin endpoints |
+| articles.js | Article CRUD |
+| auth.js | Authentication |
+| badges.js | Badge system |
+| bookmarks.js | Bookmarks |
+| client.js | HTTP client (axios base config) |
+| comments.js | Comments |
+| dreamTeamAPI.js | Dream team |
+| endorsements.js | Endorsements |
+| heroSettings.js | Hero settings |
+| linkPreview.js | Link previews |
+| locations.js | Locations |
+| manifest.js | Manifests |
+| messages.js | Messages |
+| personRemovalRequests.js | Removal requests |
+| persons.js | Person profiles |
+| polls.js | Polls |
+| reports.js | Reports |
+| stats.js | Statistics |
+| suggestions.js | Suggestions |
+| tags.js | Tags |
+
+---
+
+## Hooks (5)
+
+| Hook | Purpose |
+|------|---------|
+| useAsyncData.js | Async data fetching with loading/error/refetch |
+| useFetchArticle.js | Fetch single article with metadata |
+| useFilters.js | Filter + pagination state management |
+| useOAuthConfig.js | OAuth configuration & provider detection |
+| usePermissions.js | User permissions/role checking |
+
+---
+
+## Constants
+
+### Backend (`src/constants/`)
+| File | Contents |
+|------|----------|
+| articleTypes.js | Article type ENUM: `personal`, `articles`, `news`, `video` |
+| expertiseAreas.js | 11 expertise area values (CJS) |
+
+### Frontend (`lib/constants/`)
+| File | Contents |
+|------|----------|
+| expertiseAreas.js | Expertise areas (ESM mirror) |
+| locations.js | Location type definitions |
+| profile.js | Profile field definitions |
+
+### Config (`config/`)
+| File | Contents |
+|------|----------|
+| articleCategories.json | Article types with bilingual category lists |
+| badges.json | 8 badge definitions, 3 tiers each |
+
+---
+
+## Migrations (70)
+
+Listed chronologically. Core schema → feature additions → dated refactors.
+
+<details>
+<summary>Click to expand full migration list</summary>
+
+| # | File | Description |
+|---|------|-------------|
+| 000 | 000-create-base-tables.js | Users, Articles base tables |
+| 001 | 001-create-locations-table.js | Locations table |
+| 002 | 002-create-location-links-table.js | LocationLinks table |
+| 003 | 003-add-user-columns.js | Additional user columns |
+| 004 | 004-add-user-searchable.js | User searchable flag |
+| 005 | 005-add-location-wikipedia-url.js | Location Wikipedia URL |
+| 006 | 006-create-poll-tables.js | Polls, PollOptions, PollVotes |
+| 007 | 007-add-poll-to-location-links.js | Poll-location links |
+| 008 | 008-update-poll-option-urls.js | Poll option URLs |
+| 009 | 009-add-poll-category.js | Poll categories |
+| 010 | 010-add-wikipedia-cache-fields.js | Wikipedia cache |
+| 011 | 011-add-google-oauth-fields.js | Google OAuth |
+| 012 | 012-fix-google-access-token-length.js | Token length fix |
+| 013 | 013-add-user-agent-to-poll-votes.js | Vote user agent |
+| 014 | 014-increase-varchar-fields-to-text.js | VARCHAR → TEXT |
+| 015 | 015-add-creator-visibility-fields.js | Creator visibility |
+| 016 | 016-create-bookmarks-table.js | Bookmarks |
+| 017 | 017-add-international-location.js | International locations |
+| 018 | 018-create-messages-table.js | Messages |
+| 019 | 019-fix-location-uniqueness.js | Location dedup |
+| 020 | 020-add-tags-to-polls.js | Poll tags |
+| 021 | 021-create-follows-table.js | Follows |
+| 022 | 022-create-comments-table.js | Comments |
+| 023 | 023-add-comment-settings.js | Comment settings |
+| 024 | 024-add-user-profile-fields.js | Profile fields |
+| 025 | 025-create-location-requests-table.js | Location requests |
+| 026 | 026-create-location-sections-table.js | Location sections |
+| 027 | 027-create-endorsements-table.js | Endorsements |
+| 028 | 028-create-suggestions-tables.js | Suggestions, Solutions, SuggestionVotes |
+| 029a | 029-add-article-embed-fields.js | Article embeds |
+| 029b | 029-add-problem-request-type.js | Problem request type |
+| 030 | 030-create-link-preview-cache-table.js | Link preview cache |
+| 031 | 031-add-video-article-type.js | Video article type |
+| 032 | 032-alter-link-preview-cache-title-to-text.js | Cache title → TEXT |
+| 033 | 033-add-candidate-role-to-users.js | Candidate role |
+| 034 | 034-create-candidate-tables.js | PublicPersonProfiles, CandidateApplications |
+| 035 | 035-add-position-to-candidates.js | Candidate position |
+| 036 | 036-add-appointment-fields.js | Appointment fields |
+| 037 | 037-add-candidate-profile-id.js | Candidate profile ID |
+| 038 | 038-ensure-public-person-profiles.js | Idempotent PPP fix |
+| 039 | 039-add-binary-poll-type.js | Binary poll type |
+| 040 | 040-add-poll-custom-colours.js | Poll colours |
+| 041 | 041-add-news-sources-section-type.js | News sources section |
+| — | 20260330120000-create-person-removal-requests.js | Removal requests |
+| — | 20260330130000-create-reports.js | Reports |
+| — | 20260331000000-create-dream-team-tables.js | Dream team core |
+| — | 20260331100000-seed-government-positions.js | Seed positions |
+| — | 20260331200000-seed-government-current-holders.js | Seed holders |
+| — | 20260331300000-create-government-position-suggestions.js | Position suggestions |
+| — | 20260331400000-seed-government-position-suggestions.js | Seed suggestions |
+| — | 20260401000000-refactor-dream-team-schema.js | Dream team refactor |
+| — | 20260401500000-add-dob-professions-interests.js | User DOB, professions |
+| — | 20260402000000-add-candidate-user-to-dream-team-votes.js | DT vote candidate ref |
+| — | 20260402000000-ensure-parliament-speaker-position.js | Parliament speaker |
+| — | 20260402100000-add-user-id-to-dream-team.js | DT user ID |
+| — | 20260402200000-add-suggestion-category.js | Suggestion category |
+| — | 20260403000000-create-formations.js | Formations |
+| — | 20260403100000-add-expertise-area.js | Expertise area |
+| — | 20260403200000-create-user-badges.js | User badges |
+| — | 20260403300000-add-display-badge-to-users.js | Display badge |
+| — | 20260403400000-add-party-id.js | Party ID |
+| — | 20260403500000-remove-candidate-tables.js | Remove old candidate tables |
+| — | 20260404000000-create-location-roles.js | Location roles |
+| — | 20260405000000-remove-people-section-type.js | Remove people section |
+| — | 20260405100000-cleanup-inactive-holders.js | Cleanup holders |
+| — | 20260406000000-create-hero-settings.js | Hero settings |
+| — | 20260406100000-rename-name-fields.js | Rename name fields |
+| — | 20260406200000-create-manifests.js | Manifests |
+| — | 20260407100000-add-placeholder-fields.js | Placeholder user fields |
+| — | 20260407200000-remove-person-id-columns.js | Remove person ID cols |
+
+</details>
+
+---
+
+## Tests (46 files)
+
+### Component Tests
+AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
+
+### Feature/Integration Tests
+api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, link-preview, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, user-profiles-verification, user-stats, wikipediaFetcher
+
+### Hook Tests
+useAsyncData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
+
+---
+
+## Scripts
+
+| File | Purpose |
+|------|---------|
+| scripts/deploy.sh | Deployment automation |
+| scripts/setup-db.sh | Database setup |
+| scripts/start-frontend.js | Next.js frontend startup |
+| scripts/test-api.sh | API testing |
+
+---
+
+## npm Scripts
+
+```bash
+npm run dev                  # Backend dev server (nodemon)
+npm run frontend             # Frontend dev server (port 3001)
+npm start                    # Backend production
+npm run frontend:build       # Build frontend
+npm run frontend:start       # Start frontend production
+npm test                     # Jest with coverage
+npm run test:watch           # Jest watch mode
+npm run lint                 # ESLint (src/)
+npm run migrate              # Run migrations
+npm run migrate:up           # Run migrations up
+npm run migrate:down         # Roll back last migration
+npm run migrate:status       # Migration status
+npm run seed                 # Seed database
+npm run seed:locations       # Seed locations
+npm run seed:government-positions        # Seed positions
+npm run seed:government-current-holders  # Seed holders
+```
