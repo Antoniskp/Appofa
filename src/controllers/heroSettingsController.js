@@ -21,6 +21,22 @@ function generateId() {
   return randomUUID();
 }
 
+function normalizeSlidesOrder(slides = []) {
+  return [...slides]
+    .map((slide, index) => ({ ...slide, _originalIndex: index }))
+    .sort((a, b) => {
+      const aOrder = Number.isFinite(a.order) ? a.order : Number.MAX_SAFE_INTEGER;
+      const bOrder = Number.isFinite(b.order) ? b.order : Number.MAX_SAFE_INTEGER;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return a._originalIndex - b._originalIndex;
+    })
+    .map((slide, index) => {
+      const normalizedSlide = { ...slide };
+      delete normalizedSlide._originalIndex;
+      return { ...normalizedSlide, order: index + 1 };
+    });
+}
+
 async function getOrCreateSettings() {
   let settings = await HeroSettings.findOne();
   if (!settings) {
@@ -105,9 +121,9 @@ const getSlides = async (req, res) => {
   try {
     const settings = await getOrCreateSettings();
     const isAdmin = req.user && req.user.role === 'admin';
-    let slides = settings.slides || [];
+    let slides = normalizeSlidesOrder(settings.slides || []);
     if (!isAdmin) {
-      slides = slides.filter((s) => s.isActive).sort((a, b) => (a.order || 0) - (b.order || 0));
+      slides = slides.filter((s) => s.isActive);
     }
     return res.json({ success: true, data: slides });
   } catch (err) {
@@ -134,10 +150,8 @@ const createSlide = async (req, res) => {
     }
 
     const settings = await getOrCreateSettings();
-    const slides = settings.slides || [];
-    const resolvedOrder = typeof order === 'number'
-      ? order
-      : slides.reduce((max, s) => Math.max(max, s.order || 0), 0) + 1;
+    const slides = normalizeSlidesOrder(settings.slides || []);
+    const resolvedOrder = typeof order === 'number' ? order : slides.length + 1;
 
     const newSlide = {
       id: generateId(),
@@ -149,11 +163,12 @@ const createSlide = async (req, res) => {
       order: resolvedOrder,
     };
 
-    settings.slides = [...slides, newSlide];
+    settings.slides = normalizeSlidesOrder([...slides, newSlide]);
     settings.changed('slides', true);
     await settings.save({ fields: ['slides', 'updatedAt'] });
 
-    return res.status(201).json({ success: true, data: newSlide, message: 'Slide created.' });
+    const persistedSlide = settings.slides.find((slide) => slide.id === newSlide.id) || newSlide;
+    return res.status(201).json({ success: true, data: persistedSlide, message: 'Slide created.' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to create slide.' });
   }
@@ -179,7 +194,7 @@ const updateSlide = async (req, res) => {
     }
 
     const settings = await getOrCreateSettings();
-    const slides = settings.slides || [];
+    const slides = normalizeSlidesOrder(settings.slides || []);
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
@@ -198,7 +213,7 @@ const updateSlide = async (req, res) => {
 
     const updatedSlides = [...slides];
     updatedSlides[idx] = updatedSlide;
-    settings.slides = updatedSlides;
+    settings.slides = normalizeSlidesOrder(updatedSlides);
     settings.changed('slides', true);
     await settings.save({ fields: ['slides', 'updatedAt'] });
 
@@ -213,12 +228,12 @@ const deleteSlide = async (req, res) => {
   try {
     const { id } = req.params;
     const settings = await getOrCreateSettings();
-    const slides = settings.slides || [];
+    const slides = normalizeSlidesOrder(settings.slides || []);
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
     }
-    settings.slides = slides.filter((s) => s.id !== id);
+    settings.slides = normalizeSlidesOrder(slides.filter((s) => s.id !== id));
     settings.changed('slides', true);
     await settings.save({ fields: ['slides', 'updatedAt'] });
     return res.json({ success: true, message: 'Slide deleted.' });
@@ -242,17 +257,32 @@ const reorderSlides = async (req, res) => {
     }
 
     const settings = await getOrCreateSettings();
-    const slides = settings.slides || [];
+    const slides = normalizeSlidesOrder(settings.slides || []);
+
+    const uniqueIds = new Set(updates.map((u) => u.id));
+    if (uniqueIds.size !== updates.length) {
+      return res.status(400).json({ success: false, message: 'Duplicate slide ids are not allowed in updates.' });
+    }
+    if (updates.length !== slides.length) {
+      return res.status(400).json({ success: false, message: 'updates must include every existing slide exactly once.' });
+    }
+
+    const existingIds = new Set(slides.map((slide) => slide.id));
+    for (const id of uniqueIds) {
+      if (!existingIds.has(id)) {
+        return res.status(400).json({ success: false, message: `Slide with id ${id} does not exist.` });
+      }
+    }
 
     const orderMap = new Map(updates.map((u) => [u.id, u.order]));
-    const updatedSlides = slides.map((s) => (orderMap.has(s.id) ? { ...s, order: orderMap.get(s.id) } : s));
+    const reorderedSlides = [...slides].sort((a, b) => orderMap.get(a.id) - orderMap.get(b.id));
+    const updatedSlides = normalizeSlidesOrder(reorderedSlides);
 
     settings.slides = updatedSlides;
     settings.changed('slides', true);
     await settings.save({ fields: ['slides', 'updatedAt'] });
 
-    const sortedUpdatedSlides = [...updatedSlides].sort((a, b) => (a.order || 0) - (b.order || 0));
-    return res.json({ success: true, data: sortedUpdatedSlides, message: 'Slides reordered.' });
+    return res.json({ success: true, data: updatedSlides, message: 'Slides reordered.' });
   } catch (err) {
     return res.status(500).json({ success: false, message: 'Failed to reorder slides.' });
   }
@@ -263,14 +293,14 @@ const toggleSlide = async (req, res) => {
   try {
     const { id } = req.params;
     const settings = await getOrCreateSettings();
-    const slides = settings.slides || [];
+    const slides = normalizeSlidesOrder(settings.slides || []);
     const idx = slides.findIndex((s) => s.id === id);
     if (idx === -1) {
       return res.status(404).json({ success: false, message: 'Slide not found.' });
     }
     const updatedSlides = [...slides];
     updatedSlides[idx] = { ...updatedSlides[idx], isActive: !updatedSlides[idx].isActive };
-    settings.slides = updatedSlides;
+    settings.slides = normalizeSlidesOrder(updatedSlides);
     settings.changed('slides', true);
     await settings.save({ fields: ['slides', 'updatedAt'] });
     return res.json({ success: true, data: updatedSlides[idx], message: `Slide ${updatedSlides[idx].isActive ? 'activated' : 'deactivated'}.` });
@@ -280,4 +310,3 @@ const toggleSlide = async (req, res) => {
 };
 
 module.exports = { getHeroSettings, updateHeroSettings, getSlides, createSlide, updateSlide, deleteSlide, toggleSlide, reorderSlides };
-
