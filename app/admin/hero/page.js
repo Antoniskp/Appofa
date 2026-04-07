@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AlertMessage from '@/components/ui/AlertMessage';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -32,6 +32,9 @@ function HeroSettingsContent() {
 
   // --- Slides state ---
   const [slidesSaving, setSlidesSaving] = useState(false);
+  // Synchronous in-flight guard — prevents overlapping reorder requests from rapid clicks
+  // before the async React state update for slidesSaving becomes visible.
+  const reorderInFlightRef = useRef(false);
   const [slidesSuccessMsg, setSlidesSuccessMsg] = useState('');
   const [slidesErrorMsg, setSlidesErrorMsg] = useState('');
   const [newSlideForm, setNewSlideForm] = useState(EMPTY_SLIDE_FORM);
@@ -139,36 +142,80 @@ function HeroSettingsContent() {
   };
 
   const handleMoveSlide = async (id, direction) => {
-    if (slidesSaving) return;
+    // Use a synchronous ref guard in addition to React state so rapid repeated
+    // clicks cannot send overlapping reorder requests before slidesSaving is
+    // visible in React's next render cycle.
+    if (reorderInFlightRef.current || slidesSaving) return;
+    reorderInFlightRef.current = true;
+    setSlidesSaving(true);
     clearSlidesMessages();
 
-    // Snapshot current state for rollback on error
-    const snapshot = slides;
+    // Clone snapshot for safe rollback
+    const snapshot = [...slides];
     const currentIdx = snapshot.findIndex((s) => s.id === id);
-    if (currentIdx === -1) return;
+    if (currentIdx === -1) {
+      reorderInFlightRef.current = false;
+      setSlidesSaving(false);
+      return;
+    }
 
     const swapIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1;
-    if (swapIdx < 0 || swapIdx >= snapshot.length) return;
+    if (swapIdx < 0 || swapIdx >= snapshot.length) {
+      reorderInFlightRef.current = false;
+      setSlidesSaving(false);
+      return;
+    }
 
     // Build reordered array and apply optimistic update immediately
     const reordered = [...snapshot];
     [reordered[currentIdx], reordered[swapIdx]] = [reordered[swapIdx], reordered[currentIdx]];
-    setSlides(reordered);
 
-    setSlidesSaving(true);
+    // Validate all IDs are strings and unique before sending to prevent 400
+    const reorderedIds = reordered.map((s) => s.id);
+    const allStrings = reorderedIds.every((sid) => typeof sid === 'string');
+    const allUnique = new Set(reorderedIds).size === reorderedIds.length;
+    if (!allStrings || !allUnique) {
+      // Local state is corrupt — refetch canonical list from server
+      reorderInFlightRef.current = false;
+      setSlidesSaving(false);
+      setSlidesErrorMsg('Αδύνατη η αναδιάταξη: μη έγκυρα δεδομένα slide. Ανανεώστε τη σελίδα.');
+      try {
+        const fresh = await heroSettingsAPI.getSlides();
+        if (Array.isArray(fresh?.data)) setSlides(fresh.data);
+      } catch {
+        // ignore refetch errors
+      }
+      return;
+    }
+
+    setSlides(reordered);
     try {
-      const res = await heroSettingsAPI.reorderSlides(reordered.map((s) => s.id));
+      const res = await heroSettingsAPI.reorderSlides(reorderedIds);
       if (res?.success) {
         setSlidesSuccessMsg('Τα slides αναδιατάχθηκαν.');
         if (Array.isArray(res.data)) setSlides(res.data);
       } else {
+        // Rollback optimistic update and refetch canonical state
         setSlides(snapshot);
         setSlidesErrorMsg(res?.message || 'Αποτυχία αναδιάταξης.');
+        try {
+          const fresh = await heroSettingsAPI.getSlides();
+          if (Array.isArray(fresh?.data)) setSlides(fresh.data);
+        } catch {
+          // ignore refetch errors; snapshot already restored
+        }
       }
     } catch (err) {
       setSlides(snapshot);
       setSlidesErrorMsg(err?.message || 'Αποτυχία αναδιάταξης.');
+      try {
+        const fresh = await heroSettingsAPI.getSlides();
+        if (Array.isArray(fresh?.data)) setSlides(fresh.data);
+      } catch {
+        // ignore refetch errors; snapshot already restored
+      }
     } finally {
+      reorderInFlightRef.current = false;
       setSlidesSaving(false);
     }
   };
