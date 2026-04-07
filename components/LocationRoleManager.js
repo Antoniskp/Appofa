@@ -115,7 +115,7 @@ function RoleSlotRow({ definition, assignment, onChange }) {
   const displayName = user
     ? (user.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user.username)
     : null;
-  const photo = user?.avatar || null;
+  const photo = user?.avatar || user?.placeholderPersonProfile?.photo || null;
 
   const handleSelect = ({ id }) => {
     setPicking(false);
