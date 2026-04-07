@@ -78,7 +78,8 @@ export default function LocationRoles({ locationId, compact = false }) {
           const name = person
             ? `${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()
             : (user?.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user?.username);
-          const profileHref = person?.slug ? `/persons/${person.slug}` : (placeholderProfile?.slug ? `/persons/${placeholderProfile.slug}` : null);
+          const profileSlug = person?.slug || placeholderProfile?.slug;
+          const profileHref = profileSlug ? `/persons/${profileSlug}` : null;
 
           return (
             <div key={role.key} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
