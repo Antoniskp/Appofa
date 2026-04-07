@@ -1,11 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from './lib/i18n-config';
+import { routing } from './lib/i18n-routing';
 
-export default createMiddleware({
-  locales,
-  defaultLocale,
-  localeDetection: true // uses Accept-Language header on first visit
-});
+export default createMiddleware(routing);
 
 export const config = {
   // Match all paths except API routes, Next internals, and static files
