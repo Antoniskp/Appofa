@@ -30,7 +30,7 @@ export default function ClaimDetailPage({ params }) {
   }
 
   const handleApprove = async () => {
-    if (!window.confirm('Έγκριση αυτής της διεκδίκησης; Το προφίλ θα επισημανθεί ως επιβεβαιωμένο.')) return;
+    if (!window.confirm('Έγκριση αυτής της διεκδίκησης; Το προφίλ θα επισημανθεί ως διεκδικημένο.')) return;
     setProcessing(true); setActionError('');
     try { await personAPI.approveClaim(id); refetch?.(); }
     catch (err) { setActionError(err.message || 'Αποτυχία έγκρισης.'); }
