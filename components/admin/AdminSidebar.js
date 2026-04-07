@@ -15,7 +15,6 @@ const navItems = [
   { href: '/admin/locations', label: 'Locations', icon: MapPinIcon },
   { href: '/admin/messages', label: 'Messages', icon: EnvelopeIcon },
   { href: '/admin/persons', label: 'Persons', icon: UserGroupIcon },
-  { href: '/admin/candidates', label: 'Unclaimed Profiles', icon: UserGroupIcon },
   { href: '/admin/manifests', label: 'Manifests', icon: DocumentTextIcon },
   { href: '/admin/removal-requests', label: 'Removals', icon: XCircleIcon },
   { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
