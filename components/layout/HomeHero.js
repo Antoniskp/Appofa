@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { statsAPI, heroSettingsAPI } from '@/lib/api';
+import { useAsyncData } from '@/hooks/useAsyncData';
 import { 
   MapPinIcon, 
   ChartBarIcon,
@@ -82,24 +83,24 @@ function StatSkeleton() {
 
 export default function HomeHero() {
   const { user, loading: authLoading } = useAuth();
-  const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(true);
   const [heroBg, setHeroBg] = useState({ type: 'color', value: DEFAULT_BG_COLOR });
-  const [activeSlides, setActiveSlides] = useState([]);
   const [currentSlideIdx, setCurrentSlideIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const intervalRef = useRef(null);
 
-  useEffect(() => {
-    statsAPI.getCommunityStats()
-      .then((res) => { if (res?.success) setStats(res.data); })
-      .catch(() => {})
-      .finally(() => setStatsLoading(false));
-  }, []);
+  // Fetch community stats via useAsyncData
+  const { data: stats, loading: statsLoading } = useAsyncData(
+    () => statsAPI.getCommunityStats(),
+    [],
+    { transform: (res) => res?.success ? res.data : null }
+  );
 
-  useEffect(() => {
-    heroSettingsAPI.get()
-      .then((res) => {
+  // Fetch hero background settings
+  useAsyncData(
+    () => heroSettingsAPI.get(),
+    [],
+    {
+      onSuccess: (res) => {
         if (!res?.success) return;
         const { backgroundImageUrl, backgroundColor } = res.data;
         const color = backgroundColor || DEFAULT_BG_COLOR;
@@ -111,19 +112,19 @@ export default function HomeHero() {
         } else {
           setHeroBg({ type: 'color', value: color });
         }
-      })
-      .catch(() => {});
-  }, []);
+      },
+    }
+  );
 
-  useEffect(() => {
-    heroSettingsAPI.getSlides()
-      .then((res) => {
-        if (res?.success && Array.isArray(res.data)) {
-          setActiveSlides(res.data.filter(s => s.isActive).sort((a, b) => (a.order || 0) - (b.order || 0)));
-        }
-      })
-      .catch(() => {});
-  }, []);
+  // Fetch slides — public endpoint already returns only active slides in order
+  const { data: activeSlides } = useAsyncData(
+    () => heroSettingsAPI.getSlides(),
+    [],
+    {
+      initialData: [],
+      transform: (res) => (res?.success && Array.isArray(res.data)) ? res.data : [],
+    }
+  );
 
   const goToNext = useCallback(() => {
     if (activeSlides.length <= 1) return;
