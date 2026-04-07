@@ -16,6 +16,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  * 
  * @returns {Object} Object containing:
  *   - data: The fetched data (null initially)
+ *   - setData: Function to manually update data state (e.g. for optimistic updates)
  *   - loading: Boolean loading state
  *   - error: Error message or null
  *   - refetch: Function to manually trigger refetch
@@ -92,5 +93,5 @@ export function useAsyncData(
     };
   }, []);
 
-  return { data, loading, error, refetch: fetchData };
+  return { data, setData, loading, error, refetch: fetchData };
 }
