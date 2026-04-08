@@ -9,6 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { useToast } from '@/components/ToastProvider';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -34,7 +35,7 @@ function ClaimBadge({ status }) {
 }
 
 
-export default function AdminPersonsPage() {
+function AdminPersonsPageContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
@@ -55,11 +56,6 @@ export default function AdminPersonsPage() {
     [page],
     { initialData: [] }
   );
-
-  if (!authLoading && user && !['admin', 'moderator'].includes(user.role)) {
-    router.replace('/');
-    return null;
-  }
 
   const handleDelete = async (id) => {
     setDeleteTargetId(id);
@@ -105,46 +101,48 @@ export default function AdminPersonsPage() {
 
         {!loading && profiles.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Όνομα</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Τοποθεσία</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Εκλογική Περιφέρεια</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Κατάσταση</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Πηγή</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Ενέργειες</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {profiles.map((p) => (
-                  <tr key={p.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
-                      <Link href={`/admin/persons/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">
-                        {p.firstNameNative} {p.lastNameNative}
-                      </Link>
-                      <p className="text-xs text-gray-400">/{p.slug}</p>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{p.location?.name || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
-                    <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
-                    <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/persons/${p.id}/edit`} className="p-1.5 text-gray-500 hover:text-blue-600 rounded">
-                          <PencilSquareIcon className="h-4 w-4" />
-                        </Link>
-                        {user?.role === 'admin' && (
-                          <button onClick={() => handleDelete(p.id)} className="p-1.5 text-gray-500 hover:text-red-600 rounded">
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Όνομα</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Τοποθεσία</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Εκλογική Περιφέρεια</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Κατάσταση</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Πηγή</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Ενέργειες</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {profiles.map((p) => (
+                    <tr key={p.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <Link href={`/admin/persons/${p.id}`} className="font-medium text-gray-900 hover:text-blue-600">
+                          {p.firstNameNative} {p.lastNameNative}
+                        </Link>
+                        <p className="text-xs text-gray-400">/{p.slug}</p>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{p.location?.name || '—'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-600">{p.constituency?.name || '—'}</td>
+                      <td className="px-4 py-3"><ClaimBadge status={p.claimStatus} /></td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{p.source}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link href={`/admin/persons/${p.id}/edit`} className="p-1.5 text-gray-500 hover:text-blue-600 rounded">
+                            <PencilSquareIcon className="h-4 w-4" />
+                          </Link>
+                          {user?.role === 'admin' && (
+                            <button onClick={() => handleDelete(p.id)} className="p-1.5 text-gray-500 hover:text-red-600 rounded">
+                              <TrashIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -172,5 +170,13 @@ export default function AdminPersonsPage() {
       variant="danger"
     />
     </AdminLayout>
+  );
+}
+
+export default function AdminPersonsPage() {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'moderator']}>
+      <AdminPersonsPageContent />
+    </ProtectedRoute>
   );
 }

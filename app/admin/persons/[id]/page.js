@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation';
 import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 function ClaimBadge({ status }) {
   const labels = {
@@ -26,7 +28,7 @@ function ClaimBadge({ status }) {
   );
 }
 
-export default function AdminPersonDetailPage() {
+function AdminPersonDetailPageContent() {
   const POSITION_LABELS = {
     mayor: 'Δήμαρχος',
     prefect: 'Περιφερειάρχης',
@@ -47,35 +49,35 @@ export default function AdminPersonDetailPage() {
     { initialData: null }
   );
 
-  if (!authLoading && user && !['admin', 'moderator'].includes(user.role)) {
-    router.replace('/');
-    return null;
-  }
-
   if (authLoading || loading) {
     return (
-      <div className="bg-gray-50 min-h-screen py-8">
-        <div className="app-container max-w-3xl mx-auto">
-          <p className="text-gray-500">Φόρτωση...</p>
+      <AdminLayout>
+        <div className="bg-gray-50 min-h-screen py-8">
+          <div className="app-container max-w-3xl mx-auto">
+            <p className="text-gray-500">Φόρτωση...</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   if (error || !profile) {
     return (
-      <div className="bg-gray-50 min-h-screen py-8">
-        <div className="app-container max-w-3xl mx-auto">
-          <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Προφίλ</Link>
-          <p className="text-red-500">Αποτυχία φόρτωσης προφίλ προσώπου.</p>
+      <AdminLayout>
+        <div className="bg-gray-50 min-h-screen py-8">
+          <div className="app-container max-w-3xl mx-auto">
+            <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Προφίλ</Link>
+            <p className="text-red-500">Αποτυχία φόρτωσης προφίλ προσώπου.</p>
+          </div>
         </div>
-      </div>
+      </AdminLayout>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container max-w-3xl mx-auto">
+    <AdminLayout>
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="app-container max-w-3xl mx-auto">
         <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Προφίλ</Link>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -137,8 +139,16 @@ export default function AdminPersonDetailPage() {
             )}
           </div>
         </div>
-
       </div>
-    </div>
+      </div>
+    </AdminLayout>
+  );
+}
+
+export default function AdminPersonDetailPage() {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'moderator']}>
+      <AdminPersonDetailPageContent />
+    </ProtectedRoute>
   );
 }

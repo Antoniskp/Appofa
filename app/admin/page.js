@@ -544,40 +544,6 @@ function AdminDashboardContent() {
           <AdminTable
             columns={[
               {
-                key: 'actions',
-                header: 'Actions',
-                width: 'w-24',
-                render: (article) => (
-                  <div className="flex gap-2 items-center justify-end">
-                    <TooltipIconButton
-                      icon={EyeIcon}
-                      tooltip="Προβολή άρθρου"
-                      onClick={() => router.push(article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`)}
-                    />
-                    {article.isNews && !article.newsApprovedAt && (
-                      <TooltipIconButton
-                        icon={CheckIcon}
-                        tooltip="Έγκριση άρθρου"
-                        onClick={() => {
-                          setSelectedArticle(article);
-                          setApproveDialogOpen(true);
-                        }}
-                        variant="primary"
-                      />
-                    )}
-                    <TooltipIconButton
-                      icon={TrashIcon}
-                      tooltip="Διαγραφή άρθρου"
-                      onClick={() => {
-                        setSelectedArticle(article);
-                        setDeleteDialogOpen(true);
-                      }}
-                      variant="danger"
-                    />
-                  </div>
-                )
-              },
-              {
                 key: 'title',
                 header: 'Title',
                 className: 'whitespace-normal',
@@ -634,6 +600,40 @@ function AdminDashboardContent() {
                 header: 'Created',
                 width: 'w-28',
                 render: (article) => new Date(article.createdAt).toLocaleDateString()
+              },
+              {
+                key: 'actions',
+                header: 'Actions',
+                width: 'w-24',
+                render: (article) => (
+                  <div className="flex gap-2 items-center justify-end">
+                    <TooltipIconButton
+                      icon={EyeIcon}
+                      tooltip="Προβολή άρθρου"
+                      onClick={() => router.push(article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`)}
+                    />
+                    {article.isNews && !article.newsApprovedAt && (
+                      <TooltipIconButton
+                        icon={CheckIcon}
+                        tooltip="Έγκριση άρθρου"
+                        onClick={() => {
+                          setSelectedArticle(article);
+                          setApproveDialogOpen(true);
+                        }}
+                        variant="primary"
+                      />
+                    )}
+                    <TooltipIconButton
+                      icon={TrashIcon}
+                      tooltip="Διαγραφή άρθρου"
+                      onClick={() => {
+                        setSelectedArticle(article);
+                        setDeleteDialogOpen(true);
+                      }}
+                      variant="danger"
+                    />
+                  </div>
+                )
               }
             ]}
             data={articles}

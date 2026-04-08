@@ -8,6 +8,8 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminLayout from '@/components/admin/AdminLayout';
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -20,7 +22,7 @@ const SOCIAL_LINK_KEYS = [
   { key: 'tiktok', label: 'TikTok' },
 ];
 
-export default function EditPersonProfilePage({ params }) {
+function EditPersonProfilePageContent({ params }) {
   const { id } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -150,11 +152,6 @@ export default function EditPersonProfilePage({ params }) {
     }
   }, [profile]);
 
-  if (!authLoading && user && !['admin', 'moderator'].includes(user.role)) {
-    router.replace('/');
-    return null;
-  }
-
   const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const handlePoliticalChange = (field, value) => setPoliticalForm((prev) => ({ ...prev, [field]: value }));
 
@@ -246,8 +243,9 @@ export default function EditPersonProfilePage({ params }) {
   if (authLoading) return <div className="app-container py-10"><p className="text-gray-500">Φόρτωση...</p></div>;
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container max-w-2xl mx-auto">
+    <AdminLayout>
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="app-container max-w-2xl mx-auto">
         <Link href="/admin/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Προφίλ</Link>
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Επεξεργασία Προφίλ Προσώπου</h1>
 
@@ -578,6 +576,15 @@ export default function EditPersonProfilePage({ params }) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </AdminLayout>
+  );
+}
+
+export default function EditPersonProfilePage(props) {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'moderator']}>
+      <EditPersonProfilePageContent {...props} />
+    </ProtectedRoute>
   );
 }

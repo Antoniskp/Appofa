@@ -7,14 +7,18 @@ import { personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import AdminLayout from '@/components/admin/AdminLayout';
+import { ConfirmDialog } from '@/components/ui/Modal';
 
-export default function ClaimDetailPage({ params }) {
+function ClaimDetailPageContent({ params }) {
   const { id } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [reason, setReason] = useState('');
   const [processing, setProcessing] = useState(false);
   const [actionError, setActionError] = useState('');
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
 
   const { data: profile, loading, error, refetch } = useAsyncData(
     async () => {
@@ -25,12 +29,7 @@ export default function ClaimDetailPage({ params }) {
     { initialData: null }
   );
 
-  if (!authLoading && user && !['admin', 'moderator'].includes(user.role)) {
-    router.replace('/'); return null;
-  }
-
   const handleApprove = async () => {
-    if (!window.confirm('Έγκριση αυτής της διεκδίκησης; Το προφίλ θα επισημανθεί ως διεκδικημένο.')) return;
     setProcessing(true); setActionError('');
     try { await personAPI.approveClaim(id); refetch?.(); }
     catch (err) { setActionError(err.message || 'Αποτυχία έγκρισης.'); }
@@ -44,12 +43,26 @@ export default function ClaimDetailPage({ params }) {
     finally { setProcessing(false); }
   };
 
-  if (authLoading || loading) return <div className="app-container py-10"><SkeletonLoader count={1} type="card" /></div>;
-  if (error || !profile) return <div className="app-container py-10 text-center"><p className="text-red-500">Το προφίλ δεν βρέθηκε.</p></div>;
+  if (authLoading || loading) {
+    return (
+      <AdminLayout>
+        <div className="app-container py-10"><SkeletonLoader count={1} type="card" /></div>
+      </AdminLayout>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <AdminLayout>
+        <div className="app-container py-10 text-center"><p className="text-red-500">Το προφίλ δεν βρέθηκε.</p></div>
+      </AdminLayout>
+    );
+  }
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container max-w-2xl mx-auto">
+    <AdminLayout>
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="app-container max-w-2xl mx-auto">
         <Link href="/admin/persons/claims" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλες οι Διεκδικήσεις</Link>
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Αξιολόγηση Διεκδίκησης: {profile.fullName}</h1>
 
@@ -79,7 +92,12 @@ export default function ClaimDetailPage({ params }) {
             </div>
             {actionError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{actionError}</p>}
             <div className="flex gap-3">
-              <button onClick={handleApprove} disabled={processing}
+              <button
+                onClick={() => {
+                  setActionError('');
+                  setApproveDialogOpen(true);
+                }}
+                disabled={processing}
                 className="flex-1 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
                 {processing ? '...' : '✓ Έγκριση Διεκδίκησης'}
               </button>
@@ -90,7 +108,27 @@ export default function ClaimDetailPage({ params }) {
             </div>
           </div>
         )}
+        </div>
+
+        <ConfirmDialog
+          isOpen={approveDialogOpen}
+          onClose={() => setApproveDialogOpen(false)}
+          onConfirm={handleApprove}
+          title="Έγκριση διεκδίκησης"
+          message={`Να εγκριθεί η διεκδίκηση για το προφίλ "${profile.fullName}"?`}
+          confirmText={processing ? 'Επεξεργασία...' : 'Έγκριση'}
+          cancelText="Άκυρο"
+          variant="primary"
+        />
       </div>
-    </div>
+    </AdminLayout>
+  );
+}
+
+export default function ClaimDetailPage(props) {
+  return (
+    <ProtectedRoute allowedRoles={['admin', 'moderator']}>
+      <ClaimDetailPageContent {...props} />
+    </ProtectedRoute>
   );
 }
