@@ -28,7 +28,7 @@ async function syncLocationRoleToHolder(roleKey, userId, countryCode = 'GR') {
       attributes: ['id'],
     });
     if (!position) {
-      console.warn(`syncLocationRoleToHolder: no position found for positionTypeKey="${positionTypeKey}" countryCode="${countryCode}", skipping sync`);
+      console.warn(`syncLocationRoleToHolder: no position found for positionTypeKey=${positionTypeKey} countryCode=${countryCode}, skipping sync`);
       return;
     }
 
