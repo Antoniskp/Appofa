@@ -104,7 +104,7 @@ export default function PollForm({
   useEffect(() => {
     tagAPI.getSuggestions()
       .then((data) => {
-        if (data?.tags) setTagSuggestions(data.tags);
+        if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
       })
       .catch(() => {});
   }, []);
