@@ -11,10 +11,12 @@ import AdminTable from '@/components/admin/AdminTable';
 import AdminHeader from '@/components/admin/AdminHeader';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
+import Pagination from '@/components/ui/Pagination';
 import AdminLayout from '@/components/admin/AdminLayout';
 import LocationSelector from '@/components/ui/LocationSelector';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
+const PAGE_SIZE = 25;
 
 const PARENT_TYPE_MAP = {
   country: 'international',
@@ -33,10 +35,19 @@ function LocationManagementContent() {
   const { success, error: toastError } = useToast();
   const {
     filters,
+    page,
+    totalPages,
+    setTotalPages,
+    updateFilter,
+    updateFilters,
+    goToPage,
+    nextPage,
+    prevPage,
     handleFilterChange,
   } = useFilters({
     search: '',
     type: '',
+    parent_id: '',
   });
   const [activeTab, setActiveTab] = useState('locations');
   const [showModal, setShowModal] = useState(false);
@@ -56,16 +67,24 @@ function LocationManagementContent() {
 
   const { data: locations, loading, refetch } = useAsyncData(
     async () => {
-      const params = {};
+      const params = {
+        limit: PAGE_SIZE,
+        offset: (page - 1) * PAGE_SIZE,
+      };
       if (filters.type) params.type = filters.type;
-      
+      if (filters.search.trim()) params.search = filters.search.trim();
+      if (filters.parent_id) params.parent_id = filters.parent_id;
+
       const response = await locationAPI.getAll(params);
       if (response.success) {
+        const total = Number(response.pagination?.total || 0);
+        setTotalPages(Math.max(1, Math.ceil(total / PAGE_SIZE)));
         return response.locations || [];
       }
+      setTotalPages(1);
       return [];
     },
-    [filters.type],
+    [filters.search, filters.type, filters.parent_id, page],
     {
       initialData: [],
       onError: (err) => {
@@ -179,6 +198,13 @@ function LocationManagementContent() {
 
       if (response.success) {
         success(editingLocation ? 'Location updated successfully!' : 'Location created successfully!');
+        if (!editingLocation && response.location) {
+          updateFilters({
+            search: response.location.name || '',
+            type: response.location.type || '',
+            parent_id: response.location.parent_id ? String(response.location.parent_id) : '',
+          });
+        }
         handleCloseModal();
         refetch();
       }
@@ -201,15 +227,6 @@ function LocationManagementContent() {
     }
   };
 
-  const filteredLocations = locations.filter(loc => {
-    const matchesSearch = !filters.search || 
-      loc.name.toLowerCase().includes(filters.search.toLowerCase()) ||
-      (loc.name_local && loc.name_local.toLowerCase().includes(filters.search.toLowerCase())) ||
-      (loc.code && loc.code.toLowerCase().includes(filters.search.toLowerCase()));
-    
-    return matchesSearch;
-  });
-
   if (loading && activeTab === 'locations') {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
@@ -219,6 +236,7 @@ function LocationManagementContent() {
   }
 
   const pendingRequestsCount = locationRequests.filter(r => r.status === 'pending').length;
+  const locationParentFilterType = filters.type ? PARENT_TYPE_MAP[filters.type] : null;
 
   return (
     <AdminLayout>
@@ -275,7 +293,12 @@ function LocationManagementContent() {
               <select
                 name="type"
                 value={filters.type}
-                onChange={handleFilterChange}
+                onChange={(e) => {
+                  updateFilters({
+                    type: e.target.value,
+                    parent_id: '',
+                  });
+                }}
                 className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">All Types</option>
@@ -284,6 +307,28 @@ function LocationManagementContent() {
                 ))}
               </select>
             </div>
+            {filters.type !== 'international' && (
+              <div className="mt-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                <div className="w-full sm:max-w-md">
+                  <LocationSelector
+                    value={filters.parent_id || null}
+                    onChange={(id) => updateFilter('parent_id', id ? String(id) : '')}
+                    filterType={locationParentFilterType}
+                    placeholder="Filter by parent location..."
+                    allowClear={true}
+                  />
+                </div>
+                {filters.parent_id && (
+                  <button
+                    type="button"
+                    onClick={() => updateFilter('parent_id', '')}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    Clear parent filter
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           <AdminTable
@@ -313,12 +358,25 @@ function LocationManagementContent() {
                 )
               },
             ]}
-            data={filteredLocations}
+            data={locations}
             onEdit={handleOpenModal}
             onDelete={handleDelete}
             loading={loading}
             emptyMessage="No locations found. Create one to get started."
           />
+          <div className="px-6 py-4 border-t border-gray-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-500">
+              Page {page} of {totalPages}
+            </p>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={goToPage}
+              onPrevious={prevPage}
+              onNext={nextPage}
+              className="mt-0"
+            />
+          </div>
         </div>
         )}
 
