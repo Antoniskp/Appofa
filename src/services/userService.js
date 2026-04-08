@@ -503,7 +503,7 @@ async function adminDeleteUser(actorId, actorRole, targetId) {
 
 async function getUsers(actorId, actorRole) {
   const baseQuery = {
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'isPlaceholder'],
     include: [
       {
         model: Location,
