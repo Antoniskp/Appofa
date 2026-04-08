@@ -32,6 +32,8 @@ const UserBadge = require('./UserBadge');
 const HeroSettings = require('./HeroSettings');
 const Manifest = require('./Manifest');
 const ManifestAcceptance = require('./ManifestAcceptance');
+const Tag = require('./Tag');
+const TaggableItem = require('./TaggableItem');
 
 // Define associations
 User.hasMany(Article, {
@@ -297,6 +299,55 @@ ManifestAcceptance.belongsTo(Manifest, { foreignKey: 'manifestId', as: 'manifest
 ManifestAcceptance.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(ManifestAcceptance, { foreignKey: 'userId', as: 'manifestAcceptances' });
 
+// Tag associations (polymorphic via TaggableItem)
+TaggableItem.belongsTo(Tag, { foreignKey: 'tagId', as: 'tag', constraints: false });
+Tag.hasMany(TaggableItem, { foreignKey: 'tagId', as: 'taggableItems', constraints: false });
+
+Article.belongsToMany(Tag, {
+  through: { model: TaggableItem, scope: { entityType: 'article' } },
+  foreignKey: 'entityId',
+  otherKey: 'tagId',
+  as: 'tags',
+  constraints: false
+});
+Tag.belongsToMany(Article, {
+  through: { model: TaggableItem, scope: { entityType: 'article' } },
+  foreignKey: 'tagId',
+  otherKey: 'entityId',
+  as: 'articles',
+  constraints: false
+});
+
+Poll.belongsToMany(Tag, {
+  through: { model: TaggableItem, scope: { entityType: 'poll' } },
+  foreignKey: 'entityId',
+  otherKey: 'tagId',
+  as: 'tags',
+  constraints: false
+});
+Tag.belongsToMany(Poll, {
+  through: { model: TaggableItem, scope: { entityType: 'poll' } },
+  foreignKey: 'tagId',
+  otherKey: 'entityId',
+  as: 'polls',
+  constraints: false
+});
+
+Suggestion.belongsToMany(Tag, {
+  through: { model: TaggableItem, scope: { entityType: 'suggestion' } },
+  foreignKey: 'entityId',
+  otherKey: 'tagId',
+  as: 'tags',
+  constraints: false
+});
+Tag.belongsToMany(Suggestion, {
+  through: { model: TaggableItem, scope: { entityType: 'suggestion' } },
+  foreignKey: 'tagId',
+  otherKey: 'entityId',
+  as: 'suggestions',
+  constraints: false
+});
+
 module.exports = {
   sequelize,
   User,
@@ -332,4 +383,6 @@ module.exports = {
   HeroSettings,
   Manifest,
   ManifestAcceptance,
+  Tag,
+  TaggableItem,
 };

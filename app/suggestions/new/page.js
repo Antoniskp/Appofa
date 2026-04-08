@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { suggestionAPI } from '@/lib/api';
+import { suggestionAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/ui/FormInput';
 import LoginLink from '@/components/ui/LoginLink';
 import FormSelect from '@/components/ui/FormSelect';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
+import TagInput from '@/components/ui/TagInput';
 import articleCategories from '@/config/articleCategories.json';
 
 const SUGGESTION_TYPES = [
@@ -32,9 +33,19 @@ export default function NewSuggestionPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  const [form, setForm] = useState({ title: '', body: '', type: 'idea', locationId: null, category: '' });
+  const [form, setForm] = useState({ title: '', body: '', type: 'idea', locationId: null, category: '', tags: [] });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [tagSuggestions, setTagSuggestions] = useState([]);
+
+  // Fetch existing tag suggestions for autocomplete
+  useEffect(() => {
+    tagAPI.getSuggestions({ entityType: 'suggestion' })
+      .then((data) => {
+        if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
+      })
+      .catch(() => {});
+  }, []);
 
   // Redirect if not logged in
   if (!user) {
@@ -87,6 +98,7 @@ export default function NewSuggestionPage() {
         type: form.type,
         ...(form.locationId ? { locationId: form.locationId } : { locationId: null }),
         ...(form.category ? { category: form.category } : {}),
+        tags: form.tags,
       };
       const res = await suggestionAPI.create(payload);
       if (res.success) {
@@ -209,6 +221,17 @@ export default function NewSuggestionPage() {
                 value={form.locationId}
                 onChange={(locationId) => setForm((prev) => ({ ...prev, locationId: locationId || null }))}
                 allowClear
+              />
+            </div>
+
+            {/* Tags (optional) */}
+            <div>
+              <TagInput
+                label="Tags (προαιρετικό)"
+                value={form.tags}
+                onChange={(tags) => setForm((prev) => ({ ...prev, tags }))}
+                suggestions={tagSuggestions}
+                placeholder="π.χ. περιβάλλον, συγκοινωνία"
               />
             </div>
 

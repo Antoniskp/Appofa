@@ -1,8 +1,9 @@
 const { Op } = require('sequelize');
-const { Suggestion, Solution, SuggestionVote, User, Location, sequelize } = require('../models');
+const { Suggestion, Solution, SuggestionVote, User, Location, Tag, TaggableItem, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeOptionalText, normalizeEnum, normalizeInteger } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { syncTags, attachTags } = require('../utils/tagUtils');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
@@ -57,7 +58,7 @@ const suggestionController = {
    */
   getSuggestions: async (req, res) => {
     try {
-      const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12, category, search } = req.query;
+      const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12, category, search, tag } = req.query;
 
       const where = {};
       if (type && SUGGESTION_TYPES.includes(type)) where.type = type;
@@ -79,6 +80,28 @@ const suggestionController = {
       if (authorId) {
         const parsedAuthorId = parseInt(authorId, 10);
         if (!isNaN(parsedAuthorId)) where.authorId = parsedAuthorId;
+      }
+
+      // Filter by tag using TaggableItems
+      if (tag) {
+        const normalizedTag = String(tag).trim().toLowerCase();
+        if (normalizedTag) {
+          const tagRecord = await Tag.findOne({ where: { name: normalizedTag } });
+          if (!tagRecord) {
+            return res.json({
+              success: true,
+              data: [],
+              pagination: { total: 0, page: parseInt(page, 10) || 1, limit: Math.min(50, Math.max(1, parseInt(limit, 10) || 12)), totalPages: 0 }
+            });
+          }
+          const linkedItems = await TaggableItem.findAll({
+            where: { tagId: tagRecord.id, entityType: 'suggestion' },
+            attributes: ['entityId'],
+            raw: true
+          });
+          const linkedIds = linkedItems.map((i) => i.entityId);
+          where.id = { [Op.in]: linkedIds.length > 0 ? linkedIds : [-1] };
+        }
       }
 
       const parsedPage = Math.max(1, parseInt(page, 10) || 1);
@@ -116,6 +139,8 @@ const suggestionController = {
       if (sort === 'top') {
         suggestions = suggestions.sort((a, b) => b.score - a.score);
       }
+
+      suggestions = await attachTags('suggestion', suggestions);
 
       return res.json({
         success: true,
@@ -172,9 +197,11 @@ const suggestionController = {
       );
       solutionsWithVotes.sort((a, b) => b.score - a.score || new Date(a.createdAt) - new Date(b.createdAt));
 
+      const withTags = await attachTags('suggestion', withVotes);
+
       return res.json({
         success: true,
-        data: { ...withVotes, solutions: solutionsWithVotes }
+        data: { ...withTags, solutions: solutionsWithVotes }
       });
     } catch (error) {
       console.error('Get suggestion by ID error:', error);
@@ -188,7 +215,7 @@ const suggestionController = {
    */
   createSuggestion: async (req, res) => {
     try {
-      const { title, body, type, locationId, status, category } = req.body;
+      const { title, body, type, locationId, status, category, tags } = req.body;
 
       const titleResult = normalizeRequiredText(title, 'Title', 5, 200);
       if (titleResult.error) return res.status(400).json({ success: false, message: titleResult.error });
@@ -221,6 +248,11 @@ const suggestionController = {
         ...(category ? { category } : {})
       });
 
+      // Sync tags via unified tag system
+      if (Array.isArray(tags) && tags.length > 0) {
+        await syncTags('suggestion', suggestion.id, tags);
+      }
+
       const created = await Suggestion.findByPk(suggestion.id, {
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
@@ -228,9 +260,11 @@ const suggestionController = {
         ]
       });
 
+      const createdData = await attachTags('suggestion', { ...created.toJSON(), upvotes: 0, downvotes: 0, score: 0, myVote: null });
+
       return res.status(201).json({
         success: true,
-        data: { ...created.toJSON(), upvotes: 0, downvotes: 0, score: 0, myVote: null },
+        data: createdData,
         message: 'Suggestion created successfully.'
       });
     } catch (error) {
@@ -307,6 +341,11 @@ const suggestionController = {
 
       await suggestion.update(updates);
 
+      // Sync tags if provided
+      if (req.body.tags !== undefined) {
+        await syncTags('suggestion', suggestion.id, Array.isArray(req.body.tags) ? req.body.tags : []);
+      }
+
       const updated = await Suggestion.findByPk(suggestion.id, {
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
@@ -314,7 +353,8 @@ const suggestionController = {
         ]
       });
 
-      return res.json({ success: true, data: updated, message: 'Suggestion updated.' });
+      const updatedData = await attachTags('suggestion', updated.toJSON());
+      return res.json({ success: true, data: updatedData, message: 'Suggestion updated.' });
     } catch (error) {
       console.error('Update suggestion error:', error);
       return res.status(500).json({ success: false, message: 'Error updating suggestion.' });

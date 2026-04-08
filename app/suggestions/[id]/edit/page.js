@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { suggestionAPI } from '@/lib/api';
+import { suggestionAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -12,6 +12,7 @@ import LoginLink from '@/components/ui/LoginLink';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
+import TagInput from '@/components/ui/TagInput';
 import articleCategories from '@/config/articleCategories.json';
 
 const SUGGESTION_TYPES = [
@@ -39,6 +40,7 @@ export default function EditSuggestionPage() {
   const [form, setForm] = useState(null);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [tagSuggestions, setTagSuggestions] = useState([]);
 
   const fetchSuggestion = useCallback(async () => {
     const res = await suggestionAPI.getById(suggestionId);
@@ -55,7 +57,14 @@ export default function EditSuggestionPage() {
         status: data.status,
         locationId: data.locationId || null,
         category: data.category || '',
+        tags: Array.isArray(data.tags) ? data.tags : [],
       });
+      // Load tag suggestions
+      tagAPI.getSuggestions({ entityType: 'suggestion' })
+        .then((res) => {
+          if (res?.tags) setTagSuggestions(res.tags.map((t) => t.name || t));
+        })
+        .catch(() => {});
     },
   });
 
@@ -139,6 +148,7 @@ export default function EditSuggestionPage() {
         type: form.type,
         locationId: form.locationId,
         category: form.category || null,
+        tags: form.tags,
       };
       if (isPrivileged) {
         payload.status = form.status;
@@ -262,6 +272,17 @@ export default function EditSuggestionPage() {
                 value={form.locationId}
                 onChange={handleLocationChange}
                 allowClear
+              />
+            </div>
+
+            {/* Tags (optional) */}
+            <div>
+              <TagInput
+                label="Tags (προαιρετικό)"
+                value={form.tags}
+                onChange={(tags) => setForm((prev) => ({ ...prev, tags }))}
+                suggestions={tagSuggestions}
+                placeholder="π.χ. περιβάλλον, συγκοινωνία"
               />
             </div>
 
