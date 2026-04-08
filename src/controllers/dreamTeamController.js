@@ -9,6 +9,7 @@ const {
   GovernmentPositionSuggestion,
   DreamTeamVote,
   User,
+  PublicPersonProfile,
   Formation,
   FormationPick,
   FormationLike,
@@ -114,6 +115,23 @@ const dreamTeamController = {
         });
       }
 
+      // Batch-fetch PublicPersonProfile photos for placeholder holder users
+      const holderUserIds = [];
+      positions.forEach((p) => {
+        (p.currentHolders || []).forEach((h) => {
+          if (h.userId) holderUserIds.push(h.userId);
+        });
+      });
+      const holderPhotoMap = new Map();
+      if (holderUserIds.length > 0) {
+        const profiles = await PublicPersonProfile.findAll({
+          where: { placeholderUserId: { [Op.in]: holderUserIds } },
+          attributes: ['placeholderUserId', 'photo'],
+          raw: true,
+        });
+        profiles.forEach((prof) => holderPhotoMap.set(prof.placeholderUserId, prof.photo));
+      }
+
       // Build lookup maps
       const votesByPosition = {};
       voteCounts.forEach((v) => {
@@ -126,11 +144,18 @@ const dreamTeamController = {
         myVoteByPosition[v.positionId] = v;
       });
 
-      const data = positions.map((position) => ({
-        ...position.toJSON(),
-        votes: votesByPosition[position.id] || [],
-        myVote: myVoteByPosition[position.id] || null,
-      }));
+      const data = positions.map((position) => {
+        const posJson = position.toJSON();
+        posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
+          ...holder,
+          holderPhoto: holderPhotoMap.get(holder.userId) || null,
+        }));
+        return {
+          ...posJson,
+          votes: votesByPosition[position.id] || [],
+          myVote: myVoteByPosition[position.id] || null,
+        };
+      });
 
       return res.status(200).json({ success: true, data });
     } catch (error) {
@@ -292,6 +317,23 @@ const dreamTeamController = {
         users.forEach((u) => { userAvatars[u.id] = u.avatar; });
       }
 
+      // Step 4: batch-fetch PublicPersonProfile photos for placeholder holder users
+      const holderUserIds = [];
+      positions.forEach((p) => {
+        (p.currentHolders || []).forEach((h) => {
+          if (h.userId) holderUserIds.push(h.userId);
+        });
+      });
+      const holderPhotoMap = new Map();
+      if (holderUserIds.length > 0) {
+        const profiles = await PublicPersonProfile.findAll({
+          where: { placeholderUserId: { [Op.in]: holderUserIds } },
+          attributes: ['placeholderUserId', 'photo'],
+          raw: true,
+        });
+        profiles.forEach((prof) => holderPhotoMap.set(prof.placeholderUserId, prof.photo));
+      }
+
       // Total votes per position
       const totalByPosition = {};
       voteCounts.forEach((v) => {
@@ -301,8 +343,13 @@ const dreamTeamController = {
       const dreamTeam = positions.map((position) => {
         const winner = winnerByPosition[position.id];
         const total = totalByPosition[position.id] || 0;
+        const posJson = position.toJSON();
+        posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
+          ...holder,
+          holderPhoto: holderPhotoMap.get(holder.userId) || null,
+        }));
         return {
-          position: position.toJSON(),
+          position: posJson,
           winner: winner
             ? {
                 candidateUserId: winner.candidateUserId,
