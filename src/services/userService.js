@@ -462,6 +462,51 @@ async function deleteUserAccount(userId, password, mode) {
   }
 }
 
+async function adminDeleteUser(actorId, actorRole, targetId) {
+  if (actorRole !== 'admin') {
+    throw new ServiceError(403, 'Only admins can delete users.');
+  }
+
+  if (actorId === targetId) {
+    throw new ServiceError(400, 'You cannot delete your own account using this action.');
+  }
+
+  const target = await User.findByPk(targetId);
+  if (!target) throw new ServiceError(404, 'User not found.');
+
+  if (target.role === 'admin') {
+    throw new ServiceError(403, 'Cannot delete another admin.');
+  }
+
+  if (target.isPlaceholder) {
+    throw new ServiceError(400, 'Cannot delete placeholder users. Delete the person profile instead.');
+  }
+
+  // Ensure at least one admin remains
+  const adminCount = await User.count({ where: { role: 'admin' } });
+  if (adminCount <= 1 && target.role === 'admin') {
+    throw new ServiceError(400, 'Cannot delete the last admin.');
+  }
+
+  await sequelize.transaction(async (t) => {
+    await Follow.destroy({
+      where: { [Op.or]: [{ followerId: target.id }, { followingId: target.id }] },
+      transaction: t
+    });
+    await Bookmark.destroy({ where: { userId: target.id }, transaction: t });
+    await PollVote.destroy({ where: { userId: target.id }, transaction: t });
+    await Article.destroy({ where: { authorId: target.id }, transaction: t });
+    const userPolls = await Poll.findAll({ where: { creatorId: target.id }, attributes: ['id'], transaction: t });
+    if (userPolls.length > 0) {
+      const pollIds = userPolls.map((p) => p.id);
+      await PollVote.destroy({ where: { pollId: pollIds }, transaction: t });
+      await PollOption.destroy({ where: { pollId: pollIds }, transaction: t });
+      await Poll.destroy({ where: { creatorId: target.id }, transaction: t });
+    }
+    await target.destroy({ transaction: t });
+  });
+}
+
 async function getUsers(actorId, actorRole) {
   const baseQuery = {
     attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified'],
@@ -838,6 +883,7 @@ module.exports = {
   getUserProfile,
   updateUserProfile,
   deleteUserAccount,
+  adminDeleteUser,
   getUsers,
   getUserStats,
   updateUserRole,

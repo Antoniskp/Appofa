@@ -33,6 +33,7 @@ router.get('/users', apiLimiter, authMiddleware, checkRole('admin', 'moderator')
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUserStats);
 router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.updateUserRole);
 router.put('/users/:id/verify', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.verifyUser);
+router.delete('/users/:id', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), authController.adminDeleteUser);
 
 // Registered users only: check if a username is available
 router.get('/check-username', apiLimiter, authMiddleware, authController.checkUsernameAvailability);

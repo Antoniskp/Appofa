@@ -457,6 +457,20 @@ const authController = {
       return res.status(500).json({ success: false, message: 'Error updating verification status.' });
     }
   },
+  adminDeleteUser: async (req, res) => {
+    try {
+      const targetId = parseInt(req.params.id, 10);
+      await userService.adminDeleteUser(req.user.id, req.user.role, targetId);
+      res.status(200).json({ success: true, message: 'User deleted successfully.' });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Admin delete user error:', error);
+      res.status(500).json({ success: false, message: 'Error deleting user.' });
+    }
+  },
+
   // Check if a username is available (not taken by another user)
   checkUsernameAvailability: async (req, res) => {
     const { username } = req.query;

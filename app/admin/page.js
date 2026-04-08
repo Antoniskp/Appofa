@@ -49,6 +49,8 @@ function AdminDashboardContent() {
   const [roleChangeTarget, setRoleChangeTarget] = useState(null);
   const [roleChangeNewRole, setRoleChangeNewRole] = useState('');
   const [selectedLocationForRole, setSelectedLocationForRole] = useState('');
+  const [deleteUserDialogOpen, setDeleteUserDialogOpen] = useState(false);
+  const [deleteUserTarget, setDeleteUserTarget] = useState(null);
   const [sortBy, setSortBy] = useState('lastModified'); // 'lastModified' | 'title' | 'createdAt'
   const [sortOrder, setSortOrder] = useState('desc'); // 'asc' | 'desc'
   const [statusFilter, setStatusFilter] = useState('');
@@ -335,6 +337,20 @@ function AdminDashboardContent() {
       addToast(`Failed to update verification: ${error.message}`, { type: 'error' });
     } finally {
       setVerifyingUserId(null);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deleteUserTarget) return;
+    try {
+      await authAPI.adminDeleteUser(deleteUserTarget.id);
+      await refetchUsers();
+      addToast('User deleted successfully.', { type: 'success' });
+    } catch (error) {
+      addToast(`Failed to delete user: ${error.message}`, { type: 'error' });
+    } finally {
+      setDeleteUserDialogOpen(false);
+      setDeleteUserTarget(null);
     }
   };
 
@@ -765,6 +781,25 @@ function AdminDashboardContent() {
                     </button>
                   );
                 }
+              },
+              {
+                key: 'deleteAction',
+                header: '',
+                width: 'w-12',
+                render: (targetUser) => {
+                  if (targetUser.role === 'admin' || targetUser.id === user?.id) return null;
+                  return (
+                    <TooltipIconButton
+                      icon={TrashIcon}
+                      tooltip="Delete user"
+                      onClick={() => {
+                        setDeleteUserTarget(targetUser);
+                        setDeleteUserDialogOpen(true);
+                      }}
+                      variant="danger"
+                    />
+                  );
+                }
               }
             ]}
             data={paginatedUsers}
@@ -843,6 +878,18 @@ function AdminDashboardContent() {
         onConfirm={handleDelete}
         title="Delete Article"
         message="Are you sure you want to delete this article? This action cannot be undone."
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteUserDialogOpen}
+        onClose={() => { setDeleteUserDialogOpen(false); setDeleteUserTarget(null); }}
+        onConfirm={handleDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to permanently delete user "${deleteUserTarget?.username}"? This action cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
         variant="danger"
