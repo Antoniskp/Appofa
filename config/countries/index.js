@@ -17,7 +17,11 @@ const allCountries = fs
   .filter((file) => file.endsWith('.json'))
   .map((file) => {
     const filePath = path.join(countriesDir, file);
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    try {
+      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch (err) {
+      throw new Error(`Failed to parse country config file "${filePath}": ${err.message}`);
+    }
   });
 
 /**

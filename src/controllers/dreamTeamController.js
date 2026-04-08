@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const crypto = require('crypto');
 const { Op } = require('sequelize');
 const sequelize = require('../config/database');
@@ -15,6 +16,7 @@ const {
   FormationLike,
 } = require('../models');
 const badgeService = require('../services/badgeService');
+const { allCountries } = require(path.join(__dirname, '../../config/countries/index.js'));
 
 // National position slugs that are managed from the Location (Greece) page.
 // Editing holders for these positions via Dream Team admin is blocked.
@@ -1323,6 +1325,21 @@ const dreamTeamController = {
       return res.json({ success: true, data: activities });
     } catch (error) {
       console.error('dreamTeamController.getActivityFeed error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
+  // GET /api/dream-team/countries
+  // Returns the list of countries that have active government position configs.
+  getCountries: async (req, res) => {
+    try {
+      const countries = allCountries.map((c) => ({
+        countryCode: c.countryCode,
+        positionCount: Array.isArray(c.positions) ? c.positions.length : 0,
+      }));
+      return res.json({ success: true, data: countries });
+    } catch (error) {
+      console.error('dreamTeamController.getCountries error:', error);
       return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
     }
   },

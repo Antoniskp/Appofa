@@ -18,7 +18,7 @@ import FormationComparison from '@/components/dream-team/FormationComparison';
 import EmptyState from '@/components/ui/EmptyState';
 import Link from 'next/link';
 
-/** Simple metadata map for known countries */
+/** Display metadata for known ISO country codes — used for flag/name enrichment only. */
 const COUNTRY_META = {
   GR: { name: 'Ελλάδα', flag: '🇬🇷' },
   FR: { name: 'France', flag: '🇫🇷' },
@@ -29,16 +29,6 @@ const COUNTRY_META = {
   NL: { name: 'Netherlands', flag: '🇳🇱' },
   BE: { name: 'Belgium', flag: '🇧🇪' },
   PL: { name: 'Poland', flag: '🇵🇱' },
-  SE: { name: 'Sweden', flag: '🇸🇪' },
-  FI: { name: 'Finland', flag: '🇫🇮' },
-  AT: { name: 'Austria', flag: '🇦🇹' },
-  CZ: { name: 'Czechia', flag: '🇨🇿' },
-  HU: { name: 'Hungary', flag: '🇭🇺' },
-  RO: { name: 'Romania', flag: '🇷🇴' },
-  BG: { name: 'Bulgaria', flag: '🇧🇬' },
-  HR: { name: 'Croatia', flag: '🇭🇷' },
-  SK: { name: 'Slovakia', flag: '🇸🇰' },
-  SI: { name: 'Slovenia', flag: '🇸🇮' },
   CY: { name: 'Cyprus', flag: '🇨🇾' },
   US: { name: 'United States', flag: '🇺🇸' },
   GB: { name: 'United Kingdom', flag: '🇬🇧' },

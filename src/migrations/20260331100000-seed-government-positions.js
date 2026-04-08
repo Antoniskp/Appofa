@@ -3,9 +3,6 @@
 const path = require('path');
 const { allPositions } = require(path.join(__dirname, '../../config/countries/index.js'));
 
-// Keep legacy positions list for the `down` rollback (slugs only)
-const { positions: LEGACY_POSITIONS } = require(path.join(__dirname, '../../config/governmentPositions.json'));
-
 module.exports = {
   async up(queryInterface) {
     const dialect = queryInterface.sequelize.getDialect();
@@ -67,7 +64,8 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    const slugs = LEGACY_POSITIONS.map((p) => p.slug);
+    // Remove all positions seeded from the countries config files
+    const slugs = allPositions.map((p) => p.slug);
     await queryInterface.bulkDelete('GovernmentPositions', { slug: slugs });
   },
 };

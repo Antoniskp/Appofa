@@ -3,34 +3,64 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
 /**
- * Known countries with active Dream Team configurations.
- * To add a new country: drop a <CC>.json file in config/countries/ and add an
- * entry here so it appears in the selector.
+ * Display metadata (name, flag) for known ISO country codes.
+ * Only used for UI enrichment — the authoritative list of active countries
+ * is loaded from the backend /api/dream-team/countries endpoint.
  */
-const AVAILABLE_COUNTRIES = [
-  { code: 'GR', name: 'Ελλάδα', flag: '🇬🇷', description: 'Ελληνική Κυβέρνηση' },
-];
+const COUNTRY_META = {
+  GR: { name: 'Ελλάδα', flag: '🇬🇷', description: 'Ελληνική Κυβέρνηση' },
+  FR: { name: 'France', flag: '🇫🇷', description: 'Gouvernement Français' },
+  DE: { name: 'Germany', flag: '🇩🇪', description: 'Bundesregierung' },
+  ES: { name: 'España', flag: '🇪🇸', description: 'Gobierno de España' },
+  IT: { name: 'Italia', flag: '🇮🇹', description: 'Governo Italiano' },
+  CY: { name: 'Cyprus', flag: '🇨🇾', description: 'Government of Cyprus' },
+  US: { name: 'United States', flag: '🇺🇸', description: 'U.S. Federal Government' },
+  GB: { name: 'United Kingdom', flag: '🇬🇧', description: 'UK Government' },
+};
+
+function getCountryMeta(code) {
+  return COUNTRY_META[code] || { name: code, flag: '🌐', description: '' };
+}
 
 /**
- * Dream Team landing page — country selector.
+ * Dream Team landing page — dynamic country selector.
  *
- * Currently Greece is the only active country so we redirect immediately to
- * /dream-team/gr for backward compatibility. As more countries are added,
- * this page will show the full selector grid.
+ * Loads the list of countries with active configurations from the backend.
+ * When only one country is available, redirects immediately to its page
+ * for backward compatibility.
  */
 export default function DreamTeamPage() {
   const router = useRouter();
 
-  // Auto-redirect to Greece when it is the only available country
-  useEffect(() => {
-    if (AVAILABLE_COUNTRIES.length === 1) {
-      router.replace(`/dream-team/${AVAILABLE_COUNTRIES[0].code.toLowerCase()}`);
-    }
-  }, [router]);
+  const { data: countriesData, loading } = useAsyncData(
+    () => dreamTeamAPI.getCountries(),
+    [],
+  );
 
-  // Show selector (visible briefly before redirect, or when multiple countries exist)
+  const countries = countriesData?.data || [];
+
+  // Auto-redirect when only one country is configured
+  useEffect(() => {
+    if (!loading && countries.length === 1) {
+      router.replace(`/dream-team/${countries[0].countryCode.toLowerCase()}`);
+    }
+  }, [loading, countries, router]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-16">
+        <div className="app-container max-w-2xl mx-auto">
+          <SkeletonLoader count={2} type="card" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen py-16">
       <div className="app-container max-w-2xl mx-auto text-center">
@@ -43,22 +73,25 @@ export default function DreamTeamPage() {
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {AVAILABLE_COUNTRIES.map((country) => (
-            <Link
-              key={country.code}
-              href={`/dream-team/${country.code.toLowerCase()}`}
-              className="flex items-center gap-4 p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group"
-            >
-              <span className="text-4xl">{country.flag}</span>
-              <div className="text-left">
-                <div className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
-                  {country.name}
+          {countries.map((country) => {
+            const meta = getCountryMeta(country.countryCode);
+            return (
+              <Link
+                key={country.countryCode}
+                href={`/dream-team/${country.countryCode.toLowerCase()}`}
+                className="flex items-center gap-4 p-6 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 transition-all group"
+              >
+                <span className="text-4xl">{meta.flag}</span>
+                <div className="text-left">
+                  <div className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                    {meta.name}
+                  </div>
+                  <div className="text-sm text-gray-500">{meta.description}</div>
                 </div>
-                <div className="text-sm text-gray-500">{country.description}</div>
-              </div>
-              <span className="ml-auto text-gray-400 group-hover:text-blue-500 transition-colors">→</span>
-            </Link>
-          ))}
+                <span className="ml-auto text-gray-400 group-hover:text-blue-500 transition-colors">→</span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
