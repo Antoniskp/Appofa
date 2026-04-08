@@ -32,6 +32,8 @@ function CreatePersonProfilePageContent() {
     firstNameEn: '',
     lastNameEn: '',
     nickname: '',
+    nationality: '',
+    countryCode: '',
     photo: '',
     bio: '',
     contactEmail: '',
@@ -134,6 +136,8 @@ function CreatePersonProfilePageContent() {
       if (form.photo) payload.photo = form.photo;
       if (form.bio) payload.bio = form.bio;
       if (form.contactEmail) payload.contactEmail = form.contactEmail;
+      if (form.nationality) payload.nationality = form.nationality;
+      if (form.countryCode) payload.countryCode = form.countryCode.toUpperCase();
       if (locationId) payload.locationId = parseInt(locationId, 10);
 
       // Social links — only non-empty
@@ -251,6 +255,33 @@ function CreatePersonProfilePageContent() {
                 rows={4}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Εθνικότητα <span className="text-gray-400 font-normal">(ISO, π.χ. GR)</span>
+                </label>
+                <input
+                  value={form.nationality}
+                  onChange={(e) => handleChange('nationality', e.target.value.toUpperCase())}
+                  maxLength={5}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                  placeholder="GR"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Κωδικός Χώρας <span className="text-gray-400 font-normal">(ISO, π.χ. GR)</span>
+                </label>
+                <input
+                  value={form.countryCode}
+                  onChange={(e) => handleChange('countryCode', e.target.value.toUpperCase())}
+                  maxLength={5}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                  placeholder="GR"
+                />
+              </div>
             </div>
 
             {/* Person Location cascading picker */}

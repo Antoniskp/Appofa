@@ -134,7 +134,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId } = data;
+  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, nationality } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -386,6 +386,18 @@ async function updateUserProfile(userId, data) {
       throw new ServiceError(400, 'Invalid political party.');
     } else {
       user.partyId = partyId;
+    }
+  }
+
+  if (nationality !== undefined) {
+    if (nationality === null || nationality === '') {
+      user.nationality = null;
+    } else {
+      const trimmed = String(nationality).trim().toUpperCase();
+      if (trimmed.length > 5) {
+        throw new ServiceError(400, 'Nationality code must be at most 5 characters.');
+      }
+      user.nationality = trimmed || null;
     }
   }
 

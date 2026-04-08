@@ -112,6 +112,14 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  nationality: {
+    type: DataTypes.STRING(5),
+    allowNull: true
+  },
+  countryCode: {
+    type: DataTypes.STRING(5),
+    allowNull: true
+  },
   fullNameNative: {
     type: DataTypes.VIRTUAL,
     get() {

@@ -344,6 +344,16 @@ export default function AdminDreamTeamPage() {
                 >
                   {posIcon && <span className="text-base flex-shrink-0" aria-hidden="true">{posIcon}</span>}
                   <span className="flex-1 font-medium text-gray-800 text-sm">{pos.title}</span>
+                  {pos.countryCode && pos.countryCode !== 'GR' && (
+                    <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded hidden sm:block">
+                      {pos.countryCode}
+                    </span>
+                  )}
+                  {pos.chamberKey && (
+                    <span className="text-xs font-mono bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded hidden sm:block">
+                      {pos.chamberKey}
+                    </span>
+                  )}
                   <span className="text-xs text-gray-400 hidden sm:block">
                     {holderName
                       ? <span className="text-green-600">✓ {holderName}</span>

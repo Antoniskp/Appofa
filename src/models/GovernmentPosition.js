@@ -48,6 +48,10 @@ const GovernmentPosition = sequelize.define('GovernmentPosition', {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
+  chamberKey: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+  },
   isActive: {
     type: DataTypes.BOOLEAN,
     defaultValue: true,

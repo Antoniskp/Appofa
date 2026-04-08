@@ -2,8 +2,8 @@ const path = require('path');
 const { sequelize, GovernmentPosition } = require('../models');
 require('dotenv').config();
 
-const { positions: POSITIONS, countryCode } = require(
-  path.join(__dirname, '../../config/governmentPositions.json')
+const { allPositions } = require(
+  path.join(__dirname, '../../config/countries/index.js')
 );
 
 const seedGovernmentPositions = async () => {
@@ -14,7 +14,7 @@ const seedGovernmentPositions = async () => {
 
     let created = 0;
     let skipped = 0;
-    for (const pos of POSITIONS) {
+    for (const pos of allPositions) {
       const [, wasCreated] = await GovernmentPosition.findOrCreate({
         where: { slug: pos.slug },
         defaults: {
@@ -23,17 +23,18 @@ const seedGovernmentPositions = async () => {
           titleEn: pos.titleEn || null,
           positionTypeKey: pos.positionTypeKey,
           scope: pos.scope || 'national',
-          countryCode: countryCode || 'GR',
+          countryCode: pos.countryCode || 'GR',
+          chamberKey: pos.chamberKey || null,
           description: null,
           order: pos.order,
           isActive: true,
         },
       });
       if (wasCreated) {
-        console.log(`✓ Created: ${pos.title}`);
+        console.log(`✓ Created [${pos.countryCode}]: ${pos.title}`);
         created++;
       } else {
-        console.log(`- Already exists: ${pos.title}`);
+        console.log(`- Already exists [${pos.countryCode}]: ${pos.title}`);
         skipped++;
       }
     }
