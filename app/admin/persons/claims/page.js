@@ -167,7 +167,7 @@ function AdminClaimsPageContent() {
           }}
           onConfirm={handleApprove}
           title="Έγκριση διεκδίκησης"
-          message={`Να εγκριθεί η διεκδίκηση για το προφίλ "${selectedClaim?.fullName || ''}";`}
+          message={`Να εγκριθεί η διεκδίκηση για το προφίλ "${selectedClaim?.fullName || ''}"?`}
           confirmText={processing ? 'Επεξεργασία...' : 'Έγκριση'}
           cancelText="Άκυρο"
           variant="primary"

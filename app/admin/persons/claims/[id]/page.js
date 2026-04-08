@@ -115,7 +115,7 @@ function ClaimDetailPageContent({ params }) {
           onClose={() => setApproveDialogOpen(false)}
           onConfirm={handleApprove}
           title="Έγκριση διεκδίκησης"
-          message={`Να εγκριθεί η διεκδίκηση για το προφίλ "${profile.fullName}";`}
+          message={`Να εγκριθεί η διεκδίκηση για το προφίλ "${profile.fullName}"?`}
           confirmText={processing ? 'Επεξεργασία...' : 'Έγκριση'}
           cancelText="Άκυρο"
           variant="primary"
