@@ -34,6 +34,29 @@ async function generateShareSlug() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+/**
+ * Build a Map<userId, photo> from PublicPersonProfile for placeholder holder users.
+ * Performs a single batch query for all unique holder userIds.
+ */
+async function buildHolderPhotoMap(positions) {
+  const holderUserIds = new Set();
+  positions.forEach((p) => {
+    (p.currentHolders || []).forEach((h) => {
+      if (h.userId) holderUserIds.add(h.userId);
+    });
+  });
+  const photoMap = new Map();
+  if (holderUserIds.size > 0) {
+    const profiles = await PublicPersonProfile.findAll({
+      where: { placeholderUserId: { [Op.in]: Array.from(holderUserIds) } },
+      attributes: ['placeholderUserId', 'photo'],
+      raw: true,
+    });
+    profiles.forEach((prof) => photoMap.set(prof.placeholderUserId, prof.photo));
+  }
+  return photoMap;
+}
+
 const dreamTeamController = {
   // GET /api/dream-team/positions
   getPositionsWithData: async (req, res) => {
@@ -116,21 +139,7 @@ const dreamTeamController = {
       }
 
       // Batch-fetch PublicPersonProfile photos for placeholder holder users
-      const holderUserIds = [];
-      positions.forEach((p) => {
-        (p.currentHolders || []).forEach((h) => {
-          if (h.userId) holderUserIds.push(h.userId);
-        });
-      });
-      const holderPhotoMap = new Map();
-      if (holderUserIds.length > 0) {
-        const profiles = await PublicPersonProfile.findAll({
-          where: { placeholderUserId: { [Op.in]: holderUserIds } },
-          attributes: ['placeholderUserId', 'photo'],
-          raw: true,
-        });
-        profiles.forEach((prof) => holderPhotoMap.set(prof.placeholderUserId, prof.photo));
-      }
+      const holderPhotoMap = await buildHolderPhotoMap(positions);
 
       // Build lookup maps
       const votesByPosition = {};
@@ -318,21 +327,7 @@ const dreamTeamController = {
       }
 
       // Step 4: batch-fetch PublicPersonProfile photos for placeholder holder users
-      const holderUserIds = [];
-      positions.forEach((p) => {
-        (p.currentHolders || []).forEach((h) => {
-          if (h.userId) holderUserIds.push(h.userId);
-        });
-      });
-      const holderPhotoMap = new Map();
-      if (holderUserIds.length > 0) {
-        const profiles = await PublicPersonProfile.findAll({
-          where: { placeholderUserId: { [Op.in]: holderUserIds } },
-          attributes: ['placeholderUserId', 'photo'],
-          raw: true,
-        });
-        profiles.forEach((prof) => holderPhotoMap.set(prof.placeholderUserId, prof.photo));
-      }
+      const holderPhotoMap = await buildHolderPhotoMap(positions);
 
       // Total votes per position
       const totalByPosition = {};
