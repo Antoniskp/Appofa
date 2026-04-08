@@ -48,6 +48,8 @@ function ProfileContent() {
     interests: [],
     expertiseArea: [],
     partyId: null,
+    nationality: '',
+    languagesSpoken: [],
   });
   const [savedProfileData, setSavedProfileData] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -115,7 +117,7 @@ function ProfileContent() {
       onSuccess: async (userData) => {
         const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, githubId, googleId, avatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
-          dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier } = userData;
+          dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier, nationality, languagesSpoken } = userData;
         const loaded = {
           username: username || '',
           firstNameNative: firstNameNative || '',
@@ -134,6 +136,8 @@ function ProfileContent() {
           interests: interests || [],
           expertiseArea: expertiseArea || [],
           partyId: userData.partyId || null,
+          nationality: nationality || '',
+          languagesSpoken: languagesSpoken || [],
         };
         setProfileData(loaded);
         setSavedProfileData(loaded);
@@ -305,6 +309,10 @@ function ProfileContent() {
   const handleProfileChange = (event) => {
     const { name, value } = event.target;
     setProfileData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleLanguagesChange = (newLanguages) => {
+    setProfileData((prev) => ({ ...prev, languagesSpoken: newLanguages }));
   };
 
   const handleSocialLinkChange = (key, value) => {
@@ -507,6 +515,7 @@ function ProfileContent() {
           <ProfileBasicInfoForm
             profileData={profileData}
             onChange={handleProfileChange}
+            onLanguagesChange={handleLanguagesChange}
             currentUsername={savedProfileData?.username}
           />
           <div className="mt-4 space-y-4">

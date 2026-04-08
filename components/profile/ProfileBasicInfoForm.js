@@ -7,6 +7,52 @@ import { authAPI } from '@/lib/api';
 
 const USERNAME_CHECK_DEBOUNCE_MS = 500;
 
+const COUNTRY_OPTIONS = [
+  { code: '', label: '— Καμία / None —' },
+  { code: 'GR', label: 'GR — Greece' },
+  { code: 'CY', label: 'CY — Cyprus' },
+  { code: 'DE', label: 'DE — Germany' },
+  { code: 'GB', label: 'GB — United Kingdom' },
+  { code: 'US', label: 'US — United States' },
+  { code: 'FR', label: 'FR — France' },
+  { code: 'IT', label: 'IT — Italy' },
+  { code: 'ES', label: 'ES — Spain' },
+  { code: 'AU', label: 'AU — Australia' },
+  { code: 'CA', label: 'CA — Canada' },
+  { code: 'NL', label: 'NL — Netherlands' },
+  { code: 'BE', label: 'BE — Belgium' },
+  { code: 'AT', label: 'AT — Austria' },
+  { code: 'CH', label: 'CH — Switzerland' },
+  { code: 'SE', label: 'SE — Sweden' },
+  { code: 'NO', label: 'NO — Norway' },
+  { code: 'DK', label: 'DK — Denmark' },
+  { code: 'PT', label: 'PT — Portugal' },
+  { code: 'PL', label: 'PL — Poland' },
+  { code: 'CZ', label: 'CZ — Czech Republic' },
+  { code: 'SK', label: 'SK — Slovakia' },
+  { code: 'HU', label: 'HU — Hungary' },
+  { code: 'RO', label: 'RO — Romania' },
+  { code: 'BG', label: 'BG — Bulgaria' },
+  { code: 'RS', label: 'RS — Serbia' },
+  { code: 'AL', label: 'AL — Albania' },
+  { code: 'MK', label: 'MK — North Macedonia' },
+  { code: 'TR', label: 'TR — Turkey' },
+  { code: 'RU', label: 'RU — Russia' },
+  { code: 'UA', label: 'UA — Ukraine' },
+  { code: 'IL', label: 'IL — Israel' },
+  { code: 'JP', label: 'JP — Japan' },
+  { code: 'CN', label: 'CN — China' },
+  { code: 'IN', label: 'IN — India' },
+  { code: 'BR', label: 'BR — Brazil' },
+  { code: 'AR', label: 'AR — Argentina' },
+  { code: 'ZA', label: 'ZA — South Africa' },
+  { code: 'NG', label: 'NG — Nigeria' },
+  { code: 'MX', label: 'MX — Mexico' },
+  { code: 'NZ', label: 'NZ — New Zealand' },
+];
+
+const MAX_LANGUAGES = 10;
+
 /**
  * Tries to detect if a string is a valid absolute URL (http/https).
  */
@@ -22,16 +68,19 @@ function isValidHttpUrl(str) {
 
 /**
  * Form section for updating basic profile information:
- * username, native name, English name, nickname, avatar URL, and avatar color.
+ * username, native name, English name, nickname, avatar URL, avatar color,
+ * nationality, and languages spoken.
  *
  * @param {Object} props
- * @param {Object} props.profileData - { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor }
+ * @param {Object} props.profileData - { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, nationality, languagesSpoken }
  * @param {Function} props.onChange - (event) => void, handles name/value input changes
+ * @param {Function} props.onLanguagesChange - (newArray) => void, handles languagesSpoken array changes
  * @param {string} [props.currentUsername] - The saved username (to skip self-check)
  */
-export default function ProfileBasicInfoForm({ profileData, onChange, currentUsername }) {
+export default function ProfileBasicInfoForm({ profileData, onChange, onLanguagesChange, currentUsername }) {
   const [avatarUrlError, setAvatarUrlError] = useState('');
   const [usernameStatus, setUsernameStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'error'
+  const [langInput, setLangInput] = useState('');
   const debounceRef = useRef(null);
 
   const handleAvatarChange = (e) => {
@@ -81,6 +130,29 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
     if (usernameStatus === 'taken') return <span className="text-red-600 text-xs">✗ Username is already taken</span>;
     if (usernameStatus === 'error') return <span className="text-yellow-600 text-xs">Could not check availability</span>;
     return null;
+  };
+
+  const languages = profileData.languagesSpoken || [];
+
+  const handleAddLanguage = () => {
+    const tag = langInput.trim();
+    if (!tag) return;
+    if (languages.length >= MAX_LANGUAGES) return;
+    if (!languages.includes(tag)) {
+      onLanguagesChange([...languages, tag]);
+    }
+    setLangInput('');
+  };
+
+  const handleRemoveLanguage = (tag) => {
+    onLanguagesChange(languages.filter((l) => l !== tag));
+  };
+
+  const handleLangKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddLanguage();
+    }
   };
 
   return (
@@ -172,6 +244,70 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
           value={profileData.nickname}
           onChange={onChange}
         />
+      </div>
+
+      <div>
+        <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
+          Εθνικότητα / Nationality
+        </label>
+        <select
+          id="nationality"
+          name="nationality"
+          value={profileData.nationality || ''}
+          onChange={onChange}
+          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          {COUNTRY_OPTIONS.map(({ code, label }) => (
+            <option key={code} value={code}>{label}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Γλώσσες / Languages Spoken{' '}
+          <span className="text-gray-400 text-xs font-normal">(max {MAX_LANGUAGES})</span>
+        </label>
+        {languages.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-2">
+            {languages.map((lang) => (
+              <span
+                key={lang}
+                className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full"
+              >
+                {lang}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveLanguage(lang)}
+                  className="text-blue-500 hover:text-blue-700 leading-none"
+                  aria-label={`Remove ${lang}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={langInput}
+            onChange={(e) => setLangInput(e.target.value)}
+            onKeyDown={handleLangKeyDown}
+            placeholder="e.g. el, en, zh-Hant"
+            disabled={languages.length >= MAX_LANGUAGES}
+            className="flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-400"
+          />
+          <button
+            type="button"
+            onClick={handleAddLanguage}
+            disabled={languages.length >= MAX_LANGUAGES || !langInput.trim()}
+            className="px-3 py-2 text-sm font-medium bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Add
+          </button>
+        </div>
+        <p className="mt-1 text-xs text-gray-400">Use BCP-47 tags (e.g. el, en, zh-Hant). Press Enter or click Add.</p>
       </div>
     </div>
   );

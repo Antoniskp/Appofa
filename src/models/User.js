@@ -179,6 +179,25 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  nationality: {
+    type: DataTypes.STRING(2),
+    allowNull: true
+  },
+  languagesSpoken: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('languagesSpoken');
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch (err) {
+        console.error('Failed to parse languagesSpoken JSON:', err.message);
+        return [];
+      }
+    },
+    set(val) {
+      this.setDataValue('languagesSpoken', val && val.length > 0 ? JSON.stringify(val) : null);
+    }
+  },
   isVerified: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

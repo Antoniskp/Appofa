@@ -1,0 +1,27 @@
+{
+  "nav": {
+    "articles": "Άρθρα",
+    "news": "Ειδήσεις",
+    "videos": "Βίντεο",
+    "polls": "Ψηφοφορίες",
+    "suggestions": "Προτάσεις",
+    "locations": "Τοποθεσίες",
+    "users": "Χρήστες",
+    "pages": "Σελίδες",
+    "login": "Είσοδος",
+    "register": "Εγγραφή",
+    "logout": "Αποσύνδεση"
+  },
+  "profile": {
+    "nationality": "Εθνικότητα",
+    "languagesSpoken": "Γλώσσες που μιλώ",
+    "addLanguage": "Προσθήκη γλώσσας",
+    "noNationality": "Δεν έχει οριστεί"
+  },
+  "common": {
+    "save": "Αποθήκευση",
+    "cancel": "Ακύρωση",
+    "loading": "Φόρτωση…",
+    "error": "Κάτι πήγε στραβά"
+  }
+}

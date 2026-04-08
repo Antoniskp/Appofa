@@ -86,6 +86,9 @@ Appofa/
 │
 ├── hooks/                  # Custom React hooks (5 files)
 ├── config/                 # articleCategories.json, badges.json
+├── messages/               # i18n translation files (el.json, en.json)
+├── i18n.js                 # next-intl config (locales: el, en; defaultLocale: el)
+├── middleware.js           # next-intl URL-prefix routing middleware (/el/, /en/)
 ├── __tests__/              # Jest test suites (46 files)
 ├── doc/                    # Documentation (30+ files)
 ├── scripts/                # Deployment & setup scripts
@@ -99,7 +102,7 @@ Appofa/
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
-| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
+| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge, nationality (STRING(2)), languagesSpoken (TEXT/JSON array) | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment |
 | Poll | Polls | id, title, description, category, tags, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
@@ -394,7 +397,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 12 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection |
 | `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
-| Root | 20+ | ContactForm, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
+| Root | 20+ | ContactForm, EndorsementPanel, LanguageSwitcher, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ---
 
@@ -542,6 +545,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260406200000-create-manifests.js | Manifests |
 | — | 20260407100000-add-placeholder-fields.js | Placeholder user fields |
 | — | 20260407200000-remove-person-id-columns.js | Remove person ID cols |
+| — | 20260407300000-add-nationality-languages-to-users.js | Add nationality + languagesSpoken to Users |
 
 </details>
 
