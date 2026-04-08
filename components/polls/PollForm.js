@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { PlusIcon, TrashIcon, InformationCircleIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import AlertMessage from '@/components/ui/AlertMessage';
@@ -103,6 +103,15 @@ export default function PollForm({
   // Fetch existing tag suggestions for autocomplete
   useEffect(() => {
     tagAPI.getSuggestions()
+      .then((data) => {
+        if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleTagSearch = useCallback((query) => {
+    const params = query ? { q: query } : {};
+    tagAPI.getSuggestions(params)
       .then((data) => {
         if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
       })
@@ -266,6 +275,7 @@ export default function PollForm({
           value={formData.tags}
           onChange={(tags) => setFormData((prev) => ({ ...prev, tags }))}
           suggestions={tagSuggestions}
+          onSearch={handleTagSearch}
           placeholder="e.g. programming, education"
         />
       </div>

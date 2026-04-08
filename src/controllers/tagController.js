@@ -51,7 +51,9 @@ const getSuggestions = async (req, res) => {
         name: tag.name,
         count: tag.taggableItems ? tag.taggableItems.length : 0
       }))
-      .filter((t) => t.count > 0)
+      // When searching by prefix, include all matching tags (even unused ones)
+      // When browsing without a query, only show tags that are actually in use
+      .filter((t) => q ? true : t.count > 0)
       .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 
     return res.json({ success: true, tags: result });

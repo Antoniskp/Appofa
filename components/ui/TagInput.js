@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useId } from 'react';
+import { useState, useEffect, useRef, useId, useCallback } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 // Delay before closing the dropdown on blur so that a mousedown on a
 // suggestion option fires before the blur handler hides the list.
 const DROPDOWN_CLOSE_DELAY_MS = 150;
+
+// Debounce delay for server-side search (ms)
+const SEARCH_DEBOUNCE_MS = 300;
 
 /**
  * Lightweight tag input with autocomplete and comma-separated tag creation.
@@ -13,6 +16,7 @@ const DROPDOWN_CLOSE_DELAY_MS = 150;
  * @param {string[]} value - Current array of tags
  * @param {Function} onChange - Called with updated tag array
  * @param {string[]} [suggestions=[]] - Autocomplete suggestions
+ * @param {Function} [onSearch] - Called with search query string for dynamic suggestions
  * @param {string} [label] - Field label
  * @param {string} [placeholder='Add tag…'] - Input placeholder
  * @param {string} [helpText] - Help text shown below the input
@@ -21,6 +25,7 @@ export default function TagInput({
   value = [],
   onChange,
   suggestions = [],
+  onSearch,
   label,
   placeholder = 'Add tag\u2026',
   helpText = 'Separate tags with commas.',
@@ -30,6 +35,26 @@ export default function TagInput({
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef(null);
   const listboxId = useId();
+  const debounceRef = useRef(null);
+
+  // Debounced server-side search when onSearch is provided
+  const debouncedSearch = useCallback(
+    (query) => {
+      if (!onSearch) return;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      debounceRef.current = setTimeout(() => {
+        onSearch(query);
+      }, SEARCH_DEBOUNCE_MS);
+    },
+    [onSearch]
+  );
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   // Filter suggestions: match input text, exclude already-added tags
   const filtered = suggestions.filter(
@@ -95,9 +120,12 @@ export default function TagInput({
       // Commit everything before the last comma as separate tags
       const parts = val.split(',');
       parts.slice(0, -1).forEach((p) => commitTag(p));
-      setInputValue(parts[parts.length - 1]);
+      const remaining = parts[parts.length - 1];
+      setInputValue(remaining);
+      debouncedSearch(remaining.trim());
     } else {
       setInputValue(val);
+      debouncedSearch(val.trim());
     }
     setShowDropdown(true);
     setActiveIndex(-1);
@@ -148,7 +176,11 @@ export default function TagInput({
           value={inputValue}
           onChange={handleChange}
           onKeyDown={handleKeyDown}
-          onFocus={() => inputValue && setShowDropdown(true)}
+          onFocus={() => {
+            setShowDropdown(true);
+            // Trigger an initial search to populate suggestions on focus
+            if (onSearch && !inputValue) onSearch('');
+          }}
           onBlur={() =>
             // Delay so mousedown on suggestion fires first
             setTimeout(() => {
