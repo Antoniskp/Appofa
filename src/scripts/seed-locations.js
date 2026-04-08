@@ -23,7 +23,7 @@ const seedLocations = async () => {
         name_local: 'Ελλάδα',
         type: 'country',
         code: 'GR',
-        slug: 'country-greece',
+        slug: 'greece',
         lat: 39.0742,
         lng: 21.8243
       });
@@ -60,7 +60,7 @@ const seedLocations = async () => {
           ...prefData,
           type: 'prefecture',
           parent_id: greece.id,
-          slug: `prefecture-${prefData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${prefData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`✓ Prefecture ${prefData.name} created`);
       } else {
@@ -100,7 +100,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Attica'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Attica`);
       } else {
@@ -131,7 +131,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Central Macedonia'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Central Macedonia`);
       } else {
@@ -160,7 +160,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Crete'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Crete`);
       } else {
@@ -189,7 +189,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Thessaly'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Thessaly`);
       } else {
@@ -220,7 +220,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Peloponnese'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Peloponnese`);
       } else {
@@ -249,7 +249,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Ionian Islands'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Ionian Islands`);
       } else {
@@ -276,7 +276,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Western Greece'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Western Greece`);
       } else {
@@ -304,7 +304,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Eastern Macedonia and Thrace'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Eastern Macedonia and Thrace`);
       } else {
@@ -331,7 +331,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Western Macedonia'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Western Macedonia`);
       } else {
@@ -358,7 +358,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Epirus'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Epirus`);
       } else {
@@ -385,7 +385,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['Central Greece'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in Central Greece`);
       } else {
@@ -412,7 +412,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['North Aegean'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in North Aegean`);
       } else {
@@ -442,7 +442,7 @@ const seedLocations = async () => {
           ...munData,
           type: 'municipality',
           parent_id: createdPrefectures['South Aegean'].id,
-          slug: `municipality-${munData.name.toLowerCase().replace(/\s+/g, '-')}`
+          slug: `${munData.name.toLowerCase().replace(/\s+/g, '-')}`
         });
         console.log(`  ✓ Municipality ${munData.name} created in South Aegean`);
       } else {
