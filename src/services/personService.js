@@ -185,7 +185,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     password: null,
     role: 'viewer',
     isPlaceholder: true,
-    searchable: true,
+    searchable: false,
     firstNameNative: firstNameNative.trim(),
     lastNameNative: lastNameNative.trim(),
     firstNameEn: firstNameEn ? firstNameEn.trim() : null,
