@@ -787,7 +787,7 @@ function AdminDashboardContent() {
                 header: '',
                 width: 'w-12',
                 render: (targetUser) => {
-                  if (targetUser.role === 'admin' || targetUser.id === user?.id) return null;
+                  if (targetUser.role === 'admin' || targetUser.id === user?.id || targetUser.isPlaceholder) return null;
                   return (
                     <TooltipIconButton
                       icon={TrashIcon}
