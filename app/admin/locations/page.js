@@ -12,8 +12,22 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 import AdminLayout from '@/components/admin/AdminLayout';
+import LocationSelector from '@/components/ui/LocationSelector';
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
+
+const PARENT_TYPE_MAP = {
+  country: 'international',
+  prefecture: 'country',
+  municipality: 'prefecture',
+  international: null,
+};
+
+const PARENT_HINT_MAP = {
+  country: 'Select the international region this country belongs to',
+  prefecture: 'Select the country this prefecture belongs to',
+  municipality: 'Select the prefecture this municipality belongs to',
+};
 
 function LocationManagementContent() {
   const { success, error: toastError } = useToast();
@@ -133,6 +147,11 @@ function LocationManagementContent() {
     }));
   };
 
+  const handleTypeChange = (e) => {
+    const newType = e.target.value;
+    setFormData(prev => ({ ...prev, type: newType, parent_id: '' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
@@ -144,6 +163,12 @@ function LocationManagementContent() {
         lat: formData.lat ? parseFloat(formData.lat) : null,
         lng: formData.lng ? parseFloat(formData.lng) : null,
       };
+
+      if (payload.type !== 'international' && !payload.parent_id) {
+        toastError(`A ${payload.type} requires a parent location.`);
+        setSubmitting(false);
+        return;
+      }
 
       let response;
       if (editingLocation) {
@@ -431,7 +456,7 @@ function LocationManagementContent() {
               <select
                 name="type"
                 value={formData.type}
-                onChange={handleInputChange}
+                onChange={handleTypeChange}
                 required
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
               >
@@ -455,22 +480,23 @@ function LocationManagementContent() {
             </div>
           </div>
 
+          {formData.type !== 'international' && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Parent Location ID
+              Parent Location <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
-              name="parent_id"
-              value={formData.parent_id}
-              onChange={handleInputChange}
-              placeholder="Leave empty for top-level location"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            <LocationSelector
+              value={formData.parent_id || null}
+              onChange={(id) => setFormData(prev => ({ ...prev, parent_id: id ?? '' }))}
+              filterType={PARENT_TYPE_MAP[formData.type]}
+              placeholder={`Select parent ${PARENT_TYPE_MAP[formData.type] || 'location'}...`}
+              allowClear={true}
             />
             <p className="mt-1 text-xs text-gray-500">
-              Enter the ID of the parent location (e.g., country for prefecture)
+              {PARENT_HINT_MAP[formData.type]}
             </p>
           </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
