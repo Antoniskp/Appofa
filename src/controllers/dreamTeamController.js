@@ -9,6 +9,7 @@ const {
   GovernmentPositionSuggestion,
   DreamTeamVote,
   User,
+  PublicPersonProfile,
   Formation,
   FormationPick,
   FormationLike,
@@ -31,6 +32,29 @@ async function generateShareSlug() {
     if (!existing) return candidate;
   }
   return crypto.randomBytes(16).toString('hex');
+}
+
+/**
+ * Build a Map<userId, photo> from PublicPersonProfile for placeholder holder users.
+ * Performs a single batch query for all unique holder userIds.
+ */
+async function buildHolderPhotoMap(positions) {
+  const holderUserIds = new Set();
+  positions.forEach((p) => {
+    (p.currentHolders || []).forEach((h) => {
+      if (h.userId) holderUserIds.add(h.userId);
+    });
+  });
+  const photoMap = new Map();
+  if (holderUserIds.size > 0) {
+    const profiles = await PublicPersonProfile.findAll({
+      where: { placeholderUserId: { [Op.in]: Array.from(holderUserIds) } },
+      attributes: ['placeholderUserId', 'photo'],
+      raw: true,
+    });
+    profiles.forEach((prof) => photoMap.set(prof.placeholderUserId, prof.photo));
+  }
+  return photoMap;
 }
 
 const dreamTeamController = {
@@ -114,6 +138,9 @@ const dreamTeamController = {
         });
       }
 
+      // Batch-fetch PublicPersonProfile photos for placeholder holder users
+      const holderPhotoMap = await buildHolderPhotoMap(positions);
+
       // Build lookup maps
       const votesByPosition = {};
       voteCounts.forEach((v) => {
@@ -126,11 +153,18 @@ const dreamTeamController = {
         myVoteByPosition[v.positionId] = v;
       });
 
-      const data = positions.map((position) => ({
-        ...position.toJSON(),
-        votes: votesByPosition[position.id] || [],
-        myVote: myVoteByPosition[position.id] || null,
-      }));
+      const data = positions.map((position) => {
+        const posJson = position.toJSON();
+        posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
+          ...holder,
+          holderPhoto: holderPhotoMap.get(holder.userId) || null,
+        }));
+        return {
+          ...posJson,
+          votes: votesByPosition[position.id] || [],
+          myVote: myVoteByPosition[position.id] || null,
+        };
+      });
 
       return res.status(200).json({ success: true, data });
     } catch (error) {
@@ -292,6 +326,9 @@ const dreamTeamController = {
         users.forEach((u) => { userAvatars[u.id] = u.avatar; });
       }
 
+      // Step 4: batch-fetch PublicPersonProfile photos for placeholder holder users
+      const holderPhotoMap = await buildHolderPhotoMap(positions);
+
       // Total votes per position
       const totalByPosition = {};
       voteCounts.forEach((v) => {
@@ -301,8 +338,13 @@ const dreamTeamController = {
       const dreamTeam = positions.map((position) => {
         const winner = winnerByPosition[position.id];
         const total = totalByPosition[position.id] || 0;
+        const posJson = position.toJSON();
+        posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
+          ...holder,
+          holderPhoto: holderPhotoMap.get(holder.userId) || null,
+        }));
         return {
-          position: position.toJSON(),
+          position: posJson,
           winner: winner
             ? {
                 candidateUserId: winner.candidateUserId,

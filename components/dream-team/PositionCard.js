@@ -113,7 +113,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
             </p>
             <div className="flex items-center gap-3">
               <PersonAvatar
-                photo={currentHolder.person?.photo || currentHolder.user?.avatar || null}
+                photo={currentHolder.holderPhoto || currentHolder.person?.photo || currentHolder.user?.avatar || null}
                 name={currentHolder.person
                   ? `${currentHolder.person.firstNameNative} ${currentHolder.person.lastNameNative}`
                   : currentHolder.user
