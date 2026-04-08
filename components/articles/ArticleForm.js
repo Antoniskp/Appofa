@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { InformationCircleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import Badge from '@/components/ui/Badge';
@@ -105,6 +105,15 @@ export default function ArticleForm({
   // Fetch existing tag suggestions for autocomplete
   useEffect(() => {
     tagAPI.getSuggestions()
+      .then((data) => {
+        if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleTagSearch = useCallback((query) => {
+    const params = query ? { q: query } : {};
+    tagAPI.getSuggestions(params)
       .then((data) => {
         if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
       })
@@ -499,6 +508,7 @@ export default function ArticleForm({
         value={formData.tags}
         onChange={(tags) => setFormData((prev) => ({ ...prev, tags }))}
         suggestions={tagSuggestions}
+        onSearch={handleTagSearch}
         placeholder="e.g. AI, Research"
       />
 

@@ -68,6 +68,16 @@ export default function EditSuggestionPage() {
     },
   });
 
+  const handleTagSearch = useCallback((query) => {
+    const params = { entityType: 'suggestion' };
+    if (query) params.q = query;
+    tagAPI.getSuggestions(params)
+      .then((data) => {
+        if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
+      })
+      .catch(() => {});
+  }, []);
+
   if (loading) {
     return (
       <div className="bg-gray-50 min-h-screen py-8">
@@ -282,6 +292,7 @@ export default function EditSuggestionPage() {
                 value={form.tags}
                 onChange={(tags) => setForm((prev) => ({ ...prev, tags }))}
                 suggestions={tagSuggestions}
+                onSearch={handleTagSearch}
                 placeholder="π.χ. περιβάλλον, συγκοινωνία"
               />
             </div>

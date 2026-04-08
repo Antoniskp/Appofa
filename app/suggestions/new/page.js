@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -41,6 +41,16 @@ export default function NewSuggestionPage() {
   // Fetch existing tag suggestions for autocomplete
   useEffect(() => {
     tagAPI.getSuggestions({ entityType: 'suggestion' })
+      .then((data) => {
+        if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleTagSearch = useCallback((query) => {
+    const params = { entityType: 'suggestion' };
+    if (query) params.q = query;
+    tagAPI.getSuggestions(params)
       .then((data) => {
         if (data?.tags) setTagSuggestions(data.tags.map((t) => t.name || t));
       })
@@ -231,6 +241,7 @@ export default function NewSuggestionPage() {
                 value={form.tags}
                 onChange={(tags) => setForm((prev) => ({ ...prev, tags }))}
                 suggestions={tagSuggestions}
+                onSearch={handleTagSearch}
                 placeholder="π.χ. περιβάλλον, συγκοινωνία"
               />
             </div>
