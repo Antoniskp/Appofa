@@ -9,8 +9,8 @@ const { getDescendantLocationIds } = require('../utils/locationUtils');
 // Private helpers
 // ---------------------------------------------------------------------------
 
-const generateSlug = (name, type) => {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+const generateSlug = (name, _type) => {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-{2,}/g, '-').replace(/^-|-$/g, '');
 };
 
 const isValidWikipediaUrl = (url) => {
