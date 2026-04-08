@@ -165,7 +165,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     throw new ServiceError(403, 'Only admins and moderators can create person profiles.');
   }
 
-  const { firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId } = data;
+  const { firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId, nationality, countryCode } = data;
   if (!firstNameNative || !firstNameNative.trim()) throw new ServiceError(400, 'First name is required.');
   if (!lastNameNative || !lastNameNative.trim()) throw new ServiceError(400, 'Last name is required.');
 
@@ -175,10 +175,12 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   const base = generateSlug(firstNameNative.trim(), lastNameNative.trim());
   const slug = await ensureUniqueSlug(base);
 
+  // Country-prefix the placeholder credentials to avoid slug collisions across countries
+  const countryPrefix = (countryCode || 'gr').toLowerCase();
   // Create a placeholder User record for this unclaimed profile so that
   // endorsements, dream-team votes, and search all work via the Users table.
-  const placeholderEmail = `unclaimed-${slug}@placeholder.appofasi.gr`;
-  const placeholderUsername = `person-${slug}`;
+  const placeholderEmail = `unclaimed-${countryPrefix}-${slug}@placeholder.appofasi.gr`;
+  const placeholderUsername = `person-${countryPrefix}-${slug}`;
   const placeholderUser = await User.create({
     username: placeholderUsername,
     email: placeholderEmail,
@@ -211,6 +213,8 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     position: position || null,
     expertiseArea: validatedExpertiseArea,
     partyId: validatedPartyId,
+    nationality: nationality || null,
+    countryCode: countryCode ? countryCode.toUpperCase() : null,
     claimStatus: 'unclaimed',
     createdByUserId: moderatorUserId,
     claimedByUserId: placeholderUser.id,
@@ -375,8 +379,8 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
     throw new ServiceError(403, 'You do not have permission to update this profile.');
   }
 
-  const allowedFields = ['firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'locationId', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position'];
-  if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug');
+  const allowedFields = ['firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'locationId', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position', 'nationality'];
+  if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug', 'countryCode');
 
   const updates = {};
   allowedFields.forEach((field) => {

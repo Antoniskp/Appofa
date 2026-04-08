@@ -204,6 +204,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  nationality: {
+    type: DataTypes.STRING(5),
+    allowNull: true
+  },
   isPlaceholder: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

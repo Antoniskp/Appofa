@@ -34,6 +34,8 @@ function EditPersonProfilePageContent({ params }) {
     firstNameEn: '',
     lastNameEn: '',
     nickname: '',
+    nationality: '',
+    countryCode: '',
     photo: '',
     bio: '',
     contactEmail: '',
@@ -122,6 +124,8 @@ function EditPersonProfilePageContent({ params }) {
       photo: profile.photo || '',
       bio: profile.bio || '',
       contactEmail: profile.contactEmail || '',
+      nationality: profile.nationality || '',
+      countryCode: profile.countryCode || '',
     });
 
     // Social links
@@ -202,6 +206,8 @@ function EditPersonProfilePageContent({ params }) {
       if (form.photo !== undefined) payload.photo = form.photo || null;
       if (form.bio) payload.bio = form.bio;
       if (form.contactEmail) payload.contactEmail = form.contactEmail;
+      if (form.nationality !== undefined) payload.nationality = form.nationality || null;
+      if (form.countryCode !== undefined) payload.countryCode = form.countryCode ? form.countryCode.toUpperCase() : null;
       if (locationId) payload.locationId = parseInt(locationId, 10);
 
       // Social links — only non-empty
@@ -327,6 +333,33 @@ function EditPersonProfilePageContent({ params }) {
                 rows={4}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Εθνικότητα <span className="text-gray-400 font-normal">(ISO, π.χ. GR)</span>
+                </label>
+                <input
+                  value={form.nationality}
+                  onChange={(e) => handleChange('nationality', e.target.value.toUpperCase())}
+                  maxLength={5}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                  placeholder="GR"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Κωδικός Χώρας <span className="text-gray-400 font-normal">(ISO, π.χ. GR)</span>
+                </label>
+                <input
+                  value={form.countryCode}
+                  onChange={(e) => handleChange('countryCode', e.target.value.toUpperCase())}
+                  maxLength={5}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
+                  placeholder="GR"
+                />
+              </div>
             </div>
 
             {/* Person Location cascading picker */}

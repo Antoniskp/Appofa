@@ -1,28 +1,34 @@
 const { LocationRole, Location, PublicPersonProfile, User, GovernmentPosition, GovernmentCurrentHolder } = require('../models');
 const locationRolesConfig = require('../../config/locationRoles.json');
 
-// Mapping from LocationRole roleKey → GovernmentPosition slug (Greece country only)
-const LOCATION_ROLE_TO_POSITION_SLUG = {
-  president: 'proedros-dimokratias',
-  prime_minister: 'prothypoyrgos',
-  parliament_speaker: 'proedros-voulis',
+// Maps LocationRole roleKey → universal positionTypeKey used in GovernmentPositions.
+// This allows the sync to work for any country dynamically — the countryCode is read
+// from the Location record at runtime instead of being hardcoded to Greece slugs.
+const ROLE_KEY_TO_POSITION_TYPE = {
+  president: 'head_of_state',
+  prime_minister: 'prime_minister',
+  parliament_speaker: 'parliament_speaker',
 };
 
 /**
  * Fire-and-forget sync: keeps GovernmentCurrentHolder records in sync with
- * Greece country LocationRole assignments for the 3 national positions.
+ * country LocationRole assignments for national positions.
  *
- * @param {string} roleKey  - LocationRole roleKey (e.g. 'president')
- * @param {number|null} userId   - User id to assign (null to clear)
+ * @param {string} roleKey    - LocationRole roleKey (e.g. 'president')
+ * @param {number|null} userId - User id to assign (null to clear)
+ * @param {string} [countryCode='GR'] - ISO country code from the Location record
  */
-async function syncLocationRoleToHolder(roleKey, userId) {
+async function syncLocationRoleToHolder(roleKey, userId, countryCode = 'GR') {
   try {
-    const positionSlug = LOCATION_ROLE_TO_POSITION_SLUG[roleKey];
-    if (!positionSlug) return;
+    const positionTypeKey = ROLE_KEY_TO_POSITION_TYPE[roleKey];
+    if (!positionTypeKey) return;
 
-    const position = await GovernmentPosition.findOne({ where: { slug: positionSlug }, attributes: ['id'] });
+    const position = await GovernmentPosition.findOne({
+      where: { positionTypeKey, countryCode, scope: 'national' },
+      attributes: ['id'],
+    });
     if (!position) {
-      console.warn(`syncLocationRoleToHolder: no position found for slug "${positionSlug}", skipping sync`);
+      console.warn(`syncLocationRoleToHolder: no position found for positionTypeKey="${positionTypeKey}" countryCode="${countryCode}", skipping sync`);
       return;
     }
 
@@ -68,7 +74,7 @@ exports.getRoles = async (req, res) => {
   try {
     const { locationId } = req.params;
 
-    const location = await Location.findByPk(locationId, { attributes: ['id', 'type'] });
+    const location = await Location.findByPk(locationId, { attributes: ['id', 'type', 'code'] });
     if (!location) {
       return res.status(404).json({ success: false, message: 'Location not found' });
     }
@@ -141,7 +147,7 @@ exports.upsertRoles = async (req, res) => {
       return res.status(400).json({ success: false, message: '"roles" must be an array' });
     }
 
-    const location = await Location.findByPk(locationId, { attributes: ['id', 'type'] });
+    const location = await Location.findByPk(locationId, { attributes: ['id', 'type', 'code'] });
     if (!location) {
       return res.status(404).json({ success: false, message: 'Location not found' });
     }
@@ -236,10 +242,11 @@ exports.upsertRoles = async (req, res) => {
 
     // Sync national roles to GovernmentCurrentHolder (fire-and-forget, country locations only)
     if (location.type === 'country') {
+      const locationCountryCode = (location.code || 'GR').toUpperCase();
       for (const entry of roles) {
         const { roleKey, userId } = entry;
-        if (LOCATION_ROLE_TO_POSITION_SLUG[roleKey]) {
-          syncLocationRoleToHolder(roleKey, userId || null)
+        if (ROLE_KEY_TO_POSITION_TYPE[roleKey]) {
+          syncLocationRoleToHolder(roleKey, userId || null, locationCountryCode)
             .catch((err) => console.error('upsertRoles syncLocationRoleToHolder error:', err));
         }
       }

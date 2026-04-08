@@ -52,6 +52,21 @@ export default function ProfileAboutSection({ profileData, onChange, onSocialLin
         />
       </div>
       <div>
+        <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
+          Nationality <span className="text-gray-400 text-xs">(ISO 3166-1 alpha-2, e.g. GR)</span>
+        </label>
+        <input
+          id="nationality"
+          name="nationality"
+          type="text"
+          value={profileData.nationality || ''}
+          onChange={(e) => onChange({ target: { name: 'nationality', value: e.target.value.toUpperCase() } })}
+          maxLength={5}
+          placeholder="GR"
+          className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase"
+        />
+      </div>
+      <div>
         <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
           Bio <span className="text-gray-400 text-xs">(max 280 chars)</span>
         </label>

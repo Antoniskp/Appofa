@@ -1,14 +1,17 @@
 'use strict';
 
 const path = require('path');
-const { positions: POSITIONS, countryCode } = require(path.join(__dirname, '../../config/governmentPositions.json'));
+const { allPositions } = require(path.join(__dirname, '../../config/countries/index.js'));
+
+// Keep legacy positions list for the `down` rollback (slugs only)
+const { positions: LEGACY_POSITIONS } = require(path.join(__dirname, '../../config/governmentPositions.json'));
 
 module.exports = {
   async up(queryInterface) {
     const dialect = queryInterface.sequelize.getDialect();
     const now = new Date();
 
-    for (const pos of POSITIONS) {
+    for (const pos of allPositions) {
       if (dialect === 'sqlite') {
         await queryInterface.sequelize.query(
           `INSERT OR IGNORE INTO "GovernmentPositions"
@@ -22,7 +25,7 @@ module.exports = {
               titleEn: pos.titleEn || null,
               positionTypeKey: pos.positionTypeKey,
               scope: pos.scope || 'national',
-              countryCode: countryCode || 'GR',
+              countryCode: pos.countryCode || 'GR',
               order: pos.order,
               createdAt: now.toISOString(),
               updatedAt: now.toISOString(),
@@ -51,7 +54,7 @@ module.exports = {
               titleEn: pos.titleEn || null,
               positionTypeKey: pos.positionTypeKey,
               scope: pos.scope || 'national',
-              countryCode: countryCode || 'GR',
+              countryCode: pos.countryCode || 'GR',
               order: pos.order,
               createdAt: now,
               updatedAt: now,
@@ -64,7 +67,7 @@ module.exports = {
   },
 
   async down(queryInterface) {
-    const slugs = POSITIONS.map((p) => p.slug);
+    const slugs = LEGACY_POSITIONS.map((p) => p.slug);
     await queryInterface.bulkDelete('GovernmentPositions', { slug: slugs });
   },
 };

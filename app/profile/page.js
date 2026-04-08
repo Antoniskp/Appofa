@@ -48,6 +48,7 @@ function ProfileContent() {
     interests: [],
     expertiseArea: [],
     partyId: null,
+    nationality: '',
   });
   const [savedProfileData, setSavedProfileData] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -115,7 +116,7 @@ function ProfileContent() {
       onSuccess: async (userData) => {
         const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, githubId, googleId, avatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
-          dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier } = userData;
+          dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier, nationality } = userData;
         const loaded = {
           username: username || '',
           firstNameNative: firstNameNative || '',
@@ -134,6 +135,7 @@ function ProfileContent() {
           interests: interests || [],
           expertiseArea: expertiseArea || [],
           partyId: userData.partyId || null,
+          nationality: nationality || '',
         };
         setProfileData(loaded);
         setSavedProfileData(loaded);

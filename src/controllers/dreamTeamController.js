@@ -61,8 +61,9 @@ const dreamTeamController = {
   // GET /api/dream-team/positions
   getPositionsWithData: async (req, res) => {
     try {
+      const countryCode = (req.query.countryCode || 'GR').toUpperCase();
       const positions = await GovernmentPosition.findAll({
-        where: { isActive: true },
+        where: { isActive: true, countryCode },
         order: [['order', 'ASC']],
         include: [
           {
@@ -251,8 +252,9 @@ const dreamTeamController = {
   // GET /api/dream-team/results
   getResults: async (req, res) => {
     try {
+      const countryCode = (req.query.countryCode || 'GR').toUpperCase();
       const positions = await GovernmentPosition.findAll({
-        where: { isActive: true },
+        where: { isActive: true, countryCode },
         order: [['order', 'ASC']],
         include: [
           {
