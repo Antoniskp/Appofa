@@ -343,13 +343,20 @@ const getAllArticles = async (queryParams, user) => {
       }
     }
 
-    // Filter by tag using TaggableItems
+    // Filter by tag using TaggableItems (supports partial prefix matching)
     if (tag) {
       const normalizedTag = String(tag).trim().toLowerCase();
       if (normalizedTag) {
-        const tagRecord = await Tag.findOne({ where: { name: normalizedTag } });
-        if (!tagRecord) {
-          // No tag found — return empty result
+        const dialect = sequelize.getDialect();
+        const tagWhere = dialect === 'postgres'
+          ? { name: { [Op.iLike]: `%${normalizedTag}%` } }
+          : { name: { [Op.like]: `%${normalizedTag}%` } };
+        const matchingTags = await Tag.findAll({
+          where: tagWhere,
+          attributes: ['id'],
+          raw: true
+        });
+        if (!matchingTags.length) {
           return {
             success: true,
             data: {
@@ -358,12 +365,13 @@ const getAllArticles = async (queryParams, user) => {
             }
           };
         }
+        const matchingTagIds = matchingTags.map((t) => t.id);
         const linkedItems = await TaggableItem.findAll({
-          where: { tagId: tagRecord.id, entityType: 'article' },
+          where: { tagId: { [Op.in]: matchingTagIds }, entityType: 'article' },
           attributes: ['entityId'],
           raw: true
         });
-        const linkedIds = linkedItems.map((i) => i.entityId);
+        const linkedIds = [...new Set(linkedItems.map((i) => i.entityId))];
         where.id = { [Op.in]: linkedIds.length > 0 ? linkedIds : [-1] };
       }
     }

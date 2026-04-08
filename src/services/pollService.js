@@ -545,9 +545,6 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       where.id = { [Op.in]: linkedIds.length > 0 ? linkedIds : [-1] };
     }
 
-    // Tag filtering is applied in memory for consistent case-insensitive partial matching.
-    const isTagFiltering = false;
-
     const { count, rows: polls } = await Poll.findAndCountAll({
       where,
       distinct: true,
@@ -625,13 +622,6 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
           }
         }
       }
-    }
-
-    // Filter by tag in memory and then apply pagination.
-    // (isTagFiltering is always false now — tag filtering is done via TaggableItems above)
-    // eslint-disable-next-line no-constant-condition
-    if (isTagFiltering) {
-      // This branch is unreachable but kept for safety
     }
 
     const pollsWithTags = await attachTags('poll', pollsWithCounts);

@@ -27,9 +27,9 @@ export default function SuggestionCard({ suggestion }) {
           <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
             {TYPE_LABELS[suggestion.type] || suggestion.type}
           </Badge>
-          {Array.isArray(suggestion.tags) && suggestion.tags.length > 0 && (
-            <Badge variant="purple">{suggestion.tags.join(', ')}</Badge>
-          )}
+          {Array.isArray(suggestion.tags) && suggestion.tags.map((t) => (
+            <Badge key={t} variant="purple">{t}</Badge>
+          ))}
         </div>
         <h3 className="text-base font-bold text-gray-900 mb-3">
           <TruncatedTextTooltip maxLines={2}>
