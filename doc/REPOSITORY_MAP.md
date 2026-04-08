@@ -21,7 +21,7 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (33)](#models-33)
+- [Models (35)](#models-35)
 - [API Routes (23 files, 150+ endpoints)](#api-routes-23-files-150-endpoints)
 - [Controllers (21)](#controllers-21)
 - [Services (8)](#services-8)
@@ -95,13 +95,13 @@ Appofa/
 
 ---
 
-## Models (33)
+## Models (35)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
 | User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
-| Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment |
-| Poll | Polls | id, title, description, category, tags, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote |
+| Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
+| Poll | Polls | id, title, description, category, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
 | PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
 | Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole; belongsTo: parent |
@@ -109,7 +109,7 @@ Appofa/
 | LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
 | LocationRole | LocationRoles | id, locationId, roleName, isActive | belongsTo: Location |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
-| Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment |
+| Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
 | Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
 | SuggestionVote | SuggestionVotes | id, suggestionId, userId, voteType | belongsTo: Suggestion, User |
 | Comment | Comments | id, entityType, entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
@@ -132,6 +132,8 @@ Appofa/
 | ManifestAcceptance | ManifestAcceptances | id, manifestId, userId, acceptedAt | belongsTo: Manifest, User |
 | UserBadge | UserBadges | id, userId, badgeName, earnedAt | belongsTo: User |
 | HeroSettings | HeroSettings | id, isActive, slide data fields | — |
+| Tag | Tags | id, name (unique lowercase) | hasMany: TaggableItem; belongsToMany: Article, Poll, Suggestion (via TaggableItems) |
+| TaggableItem | TaggableItems | id, tagId, entityType (article\|poll\|suggestion), entityId | belongsTo: Tag |
 
 ---
 
@@ -265,7 +267,7 @@ Appofa/
 | linkPreviewRoutes.js | /api/link-preview | POST / |
 | solutionRoutes.js | /api/solutions | POST /:id/vote |
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
-| tagRoutes.js | /api/tags | GET /suggestions |
+| tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints |
 
 ---
@@ -294,7 +296,7 @@ Appofa/
 | reportController.js | Content reporting |
 | statsController.js | Statistics |
 | suggestionController.js | Suggestions & solutions |
-| tagController.js | Tag management |
+| tagController.js | Unified tag system — returns tags with usage counts from Tags/TaggableItems, supports ?entityType and ?q filters |
 
 ---
 
@@ -542,6 +544,8 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260406200000-create-manifests.js | Manifests |
 | — | 20260407100000-add-placeholder-fields.js | Placeholder user fields |
 | — | 20260407200000-remove-person-id-columns.js | Remove person ID cols |
+| — | 20260407300000-add-nationality-languages-to-users.js | User nationality/languages |
+| — | 20260408000000-create-unified-tags.js | Tags/TaggableItems tables; removes tags JSON from Articles and Polls |
 
 </details>
 

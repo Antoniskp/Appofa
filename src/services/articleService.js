@@ -1,9 +1,10 @@
 'use strict';
 
-const { Article, User, LocationLink, sequelize } = require('../models');
+const { Article, User, LocationLink, TaggableItem, Tag, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { syncTags, attachTags } = require('../utils/tagUtils');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -188,7 +189,6 @@ const createArticle = async (userId, userRole, articleData) => {
       content: contentResult.value ?? null,
       summary: summaryResult.value,
       category: categoryResult.value,
-      tags: tagsResult.value ?? [],
       status: resolvedStatus,
       authorId: userId,
       publishedAt: resolvedStatus === 'published' ? new Date() : null,
@@ -205,6 +205,9 @@ const createArticle = async (userId, userRole, articleData) => {
       embedHtml: resolvedEmbedHtml
     });
 
+    // Sync tags via unified tag system
+    await syncTags('article', article.id, tagsResult.value ?? []);
+
     const articleWithAuthor = await Article.findByPk(article.id, {
       include: [{
         model: User,
@@ -213,7 +216,8 @@ const createArticle = async (userId, userRole, articleData) => {
       }]
     });
 
-    return { success: true, data: { article: articleWithAuthor } };
+    const articleWithTags = await attachTags('article', articleWithAuthor.toJSON());
+    return { success: true, data: { article: articleWithTags } };
   } catch (error) {
     console.error('Create article error:', error);
     return { success: false, status: 500, message: 'Error creating article.' };
@@ -339,6 +343,39 @@ const getAllArticles = async (queryParams, user) => {
       }
     }
 
+    // Filter by tag using TaggableItems (supports partial prefix matching)
+    if (tag) {
+      const normalizedTag = String(tag).trim().toLowerCase();
+      if (normalizedTag) {
+        const dialect = sequelize.getDialect();
+        const tagWhere = dialect === 'postgres'
+          ? { name: { [Op.iLike]: `%${normalizedTag}%` } }
+          : { name: { [Op.like]: `%${normalizedTag}%` } };
+        const matchingTags = await Tag.findAll({
+          where: tagWhere,
+          attributes: ['id'],
+          raw: true
+        });
+        if (!matchingTags.length) {
+          return {
+            success: true,
+            data: {
+              articles: [],
+              pagination: { total: 0, page: parsedPage, limit: parsedLimit, totalPages: 0 }
+            }
+          };
+        }
+        const matchingTagIds = matchingTags.map((t) => t.id);
+        const linkedItems = await TaggableItem.findAll({
+          where: { tagId: { [Op.in]: matchingTagIds }, entityType: 'article' },
+          attributes: ['entityId'],
+          raw: true
+        });
+        const linkedIds = [...new Set(linkedItems.map((i) => i.entityId))];
+        where.id = { [Op.in]: linkedIds.length > 0 ? linkedIds : [-1] };
+      }
+    }
+
     const { count, rows: articles } = await Article.findAndCountAll({
       where,
       distinct: true,
@@ -353,11 +390,12 @@ const getAllArticles = async (queryParams, user) => {
     });
 
     const sanitizedArticles = articles.map((article) => sanitizeArticle(article, user));
+    const articlesWithTags = await attachTags('article', sanitizedArticles);
 
     return {
       success: true,
       data: {
-        articles: sanitizedArticles,
+        articles: articlesWithTags,
         pagination: {
           total: count,
           page: parsedPage,
@@ -404,7 +442,8 @@ const getArticleById = async (articleId, user) => {
     }
 
     const responseArticle = sanitizeArticle(article, user);
-    return { success: true, data: { article: responseArticle } };
+    const responseArticleWithTags = await attachTags('article', responseArticle);
+    return { success: true, data: { article: responseArticleWithTags } };
   } catch (error) {
     console.error('Get article error:', error);
     return { success: false, status: 500, message: 'Error fetching article.' };
@@ -489,9 +528,6 @@ const updateArticle = async (articleId, user, updateData) => {
     const tagsResult = normalizeTags(tags);
     if (tagsResult.error) {
       return { success: false, status: 400, message: tagsResult.error };
-    }
-    if (tagsResult.value !== undefined) {
-      article.tags = tagsResult.value;
     }
 
     if (bannerImageUrl !== undefined) {
@@ -582,6 +618,11 @@ const updateArticle = async (articleId, user, updateData) => {
 
     await article.save();
 
+    // Sync tags if tags were provided in the update
+    if (tagsResult.value !== undefined) {
+      await syncTags('article', articleId, tagsResult.value);
+    }
+
     const updatedArticle = await Article.findByPk(articleId, {
       include: [{
         model: User,
@@ -590,7 +631,8 @@ const updateArticle = async (articleId, user, updateData) => {
       }]
     });
 
-    return { success: true, data: { article: updatedArticle } };
+    const updatedArticleData = await attachTags('article', updatedArticle.toJSON());
+    return { success: true, data: { article: updatedArticleData } };
   } catch (error) {
     console.error('Update article error:', error);
     return { success: false, status: 500, message: 'Error updating article.' };

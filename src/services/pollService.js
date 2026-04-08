@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { Poll, PollOption, PollVote, Comment, User, Location, LocationLink, sequelize } = require('../models');
+const { Poll, PollOption, PollVote, Comment, User, Location, LocationLink, Tag, TaggableItem, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
@@ -12,6 +12,7 @@ const {
   normalizeStringArray
 } = require('../utils/validators');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { syncTags, attachTags } = require('../utils/tagUtils');
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -239,7 +240,6 @@ const createPoll = async (userId, pollData) => {
         title: titleResult.value,
         description: descriptionResult.value,
         category: categoryResult.value,
-        tags: tagsResult.value ?? [],
         type: typeResult.value,
         allowUserContributions:
           allowUserContributionsResult.value !== undefined ? allowUserContributionsResult.value : false,
@@ -352,6 +352,9 @@ const createPoll = async (userId, pollData) => {
 
     await transaction.commit();
 
+    // Sync tags via unified tag system (outside transaction)
+    await syncTags('poll', poll.id, tagsResult.value ?? []);
+
     // Fetch the created poll with associations
     const createdPoll = await Poll.findByPk(poll.id, {
       include: [
@@ -368,9 +371,10 @@ const createPoll = async (userId, pollData) => {
       ]
     });
 
+    const createdPollWithTags = await attachTags('poll', createdPoll.toJSON());
     // user object not available here; caller passes it in for sanitization
     // Return raw poll — controller will sanitize with the req.user object
-    return { success: true, data: createdPoll };
+    return { success: true, data: createdPollWithTags };
   } catch (error) {
     await transaction.rollback();
     console.error('Error creating poll:', error);
@@ -512,8 +516,34 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
 
     const offset = (pageNum - 1) * limitNum;
 
-    // Tag filtering is applied in memory for consistent case-insensitive partial matching.
-    const isTagFiltering = Boolean(normalizedTag);
+    // Filter by tag using TaggableItems (supports partial prefix matching)
+    if (normalizedTag) {
+      const tagWhere = sequelize.getDialect() === 'postgres'
+        ? { name: { [Op.iLike]: `%${normalizedTag}%` } }
+        : { name: { [Op.like]: `%${normalizedTag}%` } };
+      const matchingTags = await Tag.findAll({
+        where: tagWhere,
+        attributes: ['id'],
+        raw: true
+      });
+      if (matchingTags.length === 0) {
+        return {
+          success: true,
+          data: {
+            polls: [],
+            pagination: { currentPage: pageNum, totalPages: 0, totalItems: 0, itemsPerPage: limitNum }
+          }
+        };
+      }
+      const matchingTagIds = matchingTags.map((t) => t.id);
+      const linkedItems = await TaggableItem.findAll({
+        where: { tagId: { [Op.in]: matchingTagIds }, entityType: 'poll' },
+        attributes: ['entityId'],
+        raw: true
+      });
+      const linkedIds = [...new Set(linkedItems.map((i) => i.entityId))];
+      where.id = { [Op.in]: linkedIds.length > 0 ? linkedIds : [-1] };
+    }
 
     const { count, rows: polls } = await Poll.findAndCountAll({
       where,
@@ -537,9 +567,8 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
           ]
         }
       ],
-      // Skip limit/offset while filtering tags in memory - we'll apply after filtering.
-      limit: isTagFiltering ? undefined : limitNum,
-      offset: isTagFiltering ? undefined : offset,
+      limit: limitNum,
+      offset: offset,
       order: [['createdAt', 'DESC'], [{ model: PollOption, as: 'options' }, 'order', 'ASC']]
     });
 
@@ -595,38 +624,12 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       }
     }
 
-    // Filter by tag in memory and then apply pagination.
-    if (isTagFiltering) {
-      pollsWithCounts = pollsWithCounts.filter(
-        poll =>
-          Array.isArray(poll.tags) &&
-          poll.tags.some(
-            existingTag =>
-              typeof existingTag === 'string' && existingTag.toLowerCase().includes(normalizedTag)
-          )
-      );
-      // Apply pagination after filtering
-      const totalFiltered = pollsWithCounts.length;
-      pollsWithCounts = pollsWithCounts.slice(offset, offset + limitNum);
-
-      return {
-        success: true,
-        data: {
-          polls: pollsWithCounts,
-          pagination: {
-            currentPage: pageNum,
-            totalPages: Math.ceil(totalFiltered / limitNum),
-            totalItems: totalFiltered,
-            itemsPerPage: limitNum
-          }
-        }
-      };
-    }
+    const pollsWithTags = await attachTags('poll', pollsWithCounts);
 
     return {
       success: true,
       data: {
-        polls: pollsWithCounts,
+        polls: pollsWithTags,
         pagination: {
           currentPage: pageNum,
           totalPages: Math.ceil(count / limitNum),
@@ -738,7 +741,8 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
       }
     }
 
-    return { success: true, data: responsePoll };
+    const responsePollWithTags = await attachTags('poll', responsePoll);
+    return { success: true, data: responsePollWithTags };
   } catch (error) {
     console.error('Error fetching poll:', error);
     return {
@@ -832,13 +836,14 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
     }
 
     // Validate and update tags
+    let tagsToSync = undefined;
     if (tags !== undefined) {
       const tagsResult = normalizeStringArray(tags, 'Tags');
       if (tagsResult.error) {
         await transaction.rollback();
         return { success: false, status: 400, message: tagsResult.error };
       }
-      updates.tags = tagsResult.value ?? [];
+      tagsToSync = tagsResult.value ?? [];
     }
 
     // Validate and update deadline
@@ -949,6 +954,11 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
 
     await transaction.commit();
 
+    // Sync tags if provided (outside transaction)
+    if (tagsToSync !== undefined) {
+      await syncTags('poll', pollId, tagsToSync);
+    }
+
     // Fetch updated poll with associations
     const updatedPoll = await Poll.findByPk(pollId, {
       include: [
@@ -966,8 +976,9 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       order: [[{ model: PollOption, as: 'options' }, 'order', 'ASC']]
     });
 
+    const updatedPollData = await attachTags('poll', updatedPoll.toJSON());
     // Return the raw poll; the controller sanitizes with req.user
-    return { success: true, data: updatedPoll };
+    return { success: true, data: updatedPollData };
   } catch (error) {
     // Safely rollback transaction if it hasn't been committed
     if (transaction && !transaction.finished) {

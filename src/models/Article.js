@@ -73,11 +73,6 @@ const Article = sequelize.define('Article', {
       key: 'id'
     }
   },
-  tags: {
-    type: DataTypes.JSON,
-    allowNull: true,
-    defaultValue: []
-  },
   hideAuthor: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

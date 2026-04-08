@@ -1,30 +1,60 @@
-const { Article, Poll } = require('../models');
+const { Tag, TaggableItem, sequelize } = require('../models');
+const { Op } = require('sequelize');
+
+const VALID_ENTITY_TYPES = ['article', 'poll', 'suggestion'];
 
 /**
  * GET /api/tags/suggestions
- * Returns a deduplicated, sorted list of all tags used across articles and polls.
+ * Returns tags with usage counts from the unified Tags table.
  * Public endpoint – no authentication required.
+ *
+ * Query params:
+ *   ?entityType=article|poll|suggestion  (optional) scope results to one entity type
+ *   ?q=partial                           (optional) prefix search on tag name
  */
 const getSuggestions = async (req, res) => {
   try {
-    const [articles, polls] = await Promise.all([
-      Article.findAll({ attributes: ['tags'] }),
-      Poll.findAll({ attributes: ['tags'] }),
-    ]);
+    const { entityType, q } = req.query;
 
-    const tagSet = new Set();
-    [...articles, ...polls].forEach((item) => {
-      if (Array.isArray(item.tags)) {
-        item.tags.forEach((tag) => {
-          if (typeof tag === 'string') {
-            const normalized = tag.trim();
-            if (normalized) tagSet.add(normalized);
-          }
-        });
+    const itemWhere = {};
+    if (entityType && VALID_ENTITY_TYPES.includes(entityType)) {
+      itemWhere.entityType = entityType;
+    }
+
+    const tagWhere = {};
+    if (q && typeof q === 'string') {
+      const prefix = q.trim().toLowerCase();
+      if (prefix) {
+        const dialect = sequelize.getDialect();
+        tagWhere.name = dialect === 'postgres'
+          ? { [Op.iLike]: `${prefix}%` }
+          : { [Op.like]: `${prefix}%` };
       }
+    }
+
+    const tags = await Tag.findAll({
+      where: tagWhere,
+      include: [
+        {
+          model: TaggableItem,
+          as: 'taggableItems',
+          where: Object.keys(itemWhere).length ? itemWhere : undefined,
+          required: false,
+          attributes: ['id']
+        }
+      ],
+      attributes: ['name']
     });
 
-    return res.json({ success: true, tags: [...tagSet].sort() });
+    const result = tags
+      .map((tag) => ({
+        name: tag.name,
+        count: tag.taggableItems ? tag.taggableItems.length : 0
+      }))
+      .filter((t) => t.count > 0)
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+    return res.json({ success: true, tags: result });
   } catch (error) {
     console.error('tagController.getSuggestions error:', error);
     return res.status(500).json({ success: false, message: 'Failed to fetch tag suggestions.' });

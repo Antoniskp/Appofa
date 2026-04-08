@@ -23,10 +23,13 @@ export default function SuggestionCard({ suggestion }) {
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow duration-200">
       <Link href={`/suggestions/${suggestion.id}`} className="block">
-        <div className="mb-3">
+        <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
             {TYPE_LABELS[suggestion.type] || suggestion.type}
           </Badge>
+          {Array.isArray(suggestion.tags) && suggestion.tags.map((t) => (
+            <Badge key={t} variant="purple">{t}</Badge>
+          ))}
         </div>
         <h3 className="text-base font-bold text-gray-900 mb-3">
           <TruncatedTextTooltip maxLines={2}>
