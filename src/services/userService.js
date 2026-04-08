@@ -482,12 +482,6 @@ async function adminDeleteUser(actorId, actorRole, targetId) {
     throw new ServiceError(400, 'Cannot delete placeholder users. Delete the person profile instead.');
   }
 
-  // Ensure at least one admin remains
-  const adminCount = await User.count({ where: { role: 'admin' } });
-  if (adminCount <= 1 && target.role === 'admin') {
-    throw new ServiceError(400, 'Cannot delete the last admin.');
-  }
-
   await sequelize.transaction(async (t) => {
     await Follow.destroy({
       where: { [Op.or]: [{ followerId: target.id }, { followingId: target.id }] },
