@@ -232,7 +232,11 @@ async function updateNotificationPreferences(userId, preferences) {
     }
   }
   const user = await User.findByPk(userId);
-  if (!user) throw { status: 404, message: 'User not found.' };
+  if (!user) {
+    const err = new Error('User not found.');
+    err.status = 404;
+    throw err;
+  }
   user.notificationPreferences = sanitized;
   await user.save();
   return sanitized;

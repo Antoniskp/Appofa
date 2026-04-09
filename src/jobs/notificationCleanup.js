@@ -10,27 +10,23 @@ try {
   cron = null;
 }
 
+async function runPurge() {
+  try {
+    await notificationService.purgeOldNotifications();
+  } catch (err) {
+    console.error('[notificationCleanup] Error purging notifications:', err);
+  }
+}
+
 function startNotificationCleanupJob() {
   if (cron) {
     // Run daily at 03:00 AM
-    cron.schedule('0 3 * * *', async () => {
-      try {
-        await notificationService.purgeOldNotifications();
-      } catch (err) {
-        console.error('[notificationCleanup] Error purging notifications:', err);
-      }
-    });
+    cron.schedule('0 3 * * *', runPurge);
     console.log('[notificationCleanup] Scheduled daily cleanup at 03:00 AM');
   } else {
     // Fallback: run once per day using setInterval
     const INTERVAL_MS = 24 * 60 * 60 * 1000;
-    setInterval(async () => {
-      try {
-        await notificationService.purgeOldNotifications();
-      } catch (err) {
-        console.error('[notificationCleanup] Error purging notifications:', err);
-      }
-    }, INTERVAL_MS);
+    setInterval(runPurge, INTERVAL_MS);
     console.log('[notificationCleanup] Scheduled daily cleanup via setInterval');
   }
 }

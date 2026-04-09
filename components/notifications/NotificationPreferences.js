@@ -21,11 +21,12 @@ export default function NotificationPreferences() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   useEffect(() => {
     notificationAPI.getPreferences()
       .then(res => setPrefs(res.data?.preferences ?? {}))
-      .catch(() => {})
+      .catch(err => console.error('Failed to load preferences:', err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -36,17 +37,20 @@ export default function NotificationPreferences() {
       [key]: prev[key] === false ? true : false
     }));
     setSaved(false);
+    setSaveError(null);
   };
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError(null);
     try {
       const res = await notificationAPI.updatePreferences(prefs);
       setPrefs(res.data?.preferences ?? prefs);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch {
-      // silently ignore
+    } catch (err) {
+      console.error('Failed to save preferences:', err);
+      setSaveError('Αποτυχία αποθήκευσης. Παρακαλώ δοκιμάστε ξανά.');
     } finally {
       setSaving(false);
     }
@@ -103,6 +107,7 @@ export default function NotificationPreferences() {
           {saving ? 'Αποθήκευση...' : 'Αποθήκευση'}
         </button>
         {saved && <span className="text-sm text-green-600">✓ Αποθηκεύτηκε</span>}
+        {saveError && <span className="text-sm text-red-600">{saveError}</span>}
       </div>
     </div>
   );
