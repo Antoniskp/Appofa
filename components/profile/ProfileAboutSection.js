@@ -1,6 +1,7 @@
 'use client';
 
 import { getAllParties } from '@/lib/utils/politicalParties';
+import NationalitySelector from '@/components/ui/NationalitySelector';
 
 const SOCIAL_LINK_KEYS = ['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok'];
 
@@ -53,17 +54,13 @@ export default function ProfileAboutSection({ profileData, onChange, onSocialLin
       </div>
       <div>
         <label htmlFor="nationality" className="block text-sm font-medium text-gray-700 mb-1">
-          Nationality <span className="text-gray-400 text-xs">(ISO 3166-1 alpha-2, e.g. GR)</span>
+          Nationality
         </label>
-        <input
+        <NationalitySelector
           id="nationality"
           name="nationality"
-          type="text"
           value={profileData.nationality || ''}
-          onChange={(e) => onChange({ target: { name: 'nationality', value: e.target.value.toUpperCase() } })}
-          maxLength={5}
-          placeholder="GR"
-          className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 uppercase"
+          onChange={(code) => onChange({ target: { name: 'nationality', value: code } })}
         />
       </div>
       <div>

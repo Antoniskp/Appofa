@@ -7,6 +7,7 @@ import { personAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
+import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 
@@ -260,26 +261,20 @@ function CreatePersonProfilePageContent() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Εθνικότητα <span className="text-gray-400 font-normal">(ISO, π.χ. GR)</span>
+                  Εθνικότητα
                 </label>
-                <input
+                <NationalitySelector
                   value={form.nationality}
-                  onChange={(e) => handleChange('nationality', e.target.value.toUpperCase())}
-                  maxLength={5}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                  placeholder="GR"
+                  onChange={(code) => handleChange('nationality', code)}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Κωδικός Χώρας <span className="text-gray-400 font-normal">(ISO, π.χ. GR)</span>
+                  Κωδικός Χώρας
                 </label>
-                <input
+                <NationalitySelector
                   value={form.countryCode}
-                  onChange={(e) => handleChange('countryCode', e.target.value.toUpperCase())}
-                  maxLength={5}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 uppercase"
-                  placeholder="GR"
+                  onChange={(code) => handleChange('countryCode', code)}
                 />
               </div>
             </div>
