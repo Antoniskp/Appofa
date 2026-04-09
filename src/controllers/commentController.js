@@ -1,5 +1,6 @@
 const { Comment, User, Article, Poll } = require('../models');
 const badgeService = require('../services/badgeService');
+const notificationService = require('../services/notificationService');
 
 const MAX_DEPTH = 5;
 
@@ -171,6 +172,15 @@ const commentController = {
       });
 
       badgeService.evaluate(req.user.id).catch(err => console.error('Badge evaluation error:', err));
+
+      // Notify article/poll owner of new comment (skip user_profile entityType)
+      if (entityType === 'article' || entityType === 'poll') {
+        notificationService.notifyNewComment(
+          settings.entity,
+          comment,
+          req.user.id
+        ).catch(err => console.error('Notification error:', err));
+      }
 
       return res.status(201).json({ success: true, message: 'Comment created successfully.', data: { comment: created } });
     } catch (error) {

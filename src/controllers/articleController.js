@@ -2,6 +2,7 @@
 
 const articleService = require('../services/articleService');
 const badgeService = require('../services/badgeService');
+const notificationService = require('../services/notificationService');
 
 const toUserObj = (reqUser) =>
   reqUser ? { id: reqUser.id, role: reqUser.role } : null;
@@ -84,6 +85,7 @@ const articleController = {
       return res.status(result.status).json({ success: false, message: result.message });
     }
     const responseArticle = articleService.sanitizeArticle(result.data.article, toUserObj(req.user));
+    notificationService.notifyArticleApproved(result.data.article).catch(err => console.error('Notification error:', err));
     return res.status(200).json({
       success: true,
       message: 'News approved and published successfully.',

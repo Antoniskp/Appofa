@@ -24,6 +24,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import DropdownMenu from '@/components/ui/DropdownMenu';
 import Tooltip from '@/components/ui/Tooltip';
 import LoginLink from '@/components/ui/LoginLink';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
@@ -290,15 +291,18 @@ export default function TopNav() {
                 <SkeletonLoader type="button" count={2} className="flex gap-4" />
               </div>
             ) : user ? (
-              <DropdownMenu
-                triggerText={`Γεια σου ${user.username}`}
-                items={userMenuItems}
-                align="right"
-                showChevron={true}
-                menuId="desktop-user-menu"
-                open={isDesktopUserMenuOpen}
-                onOpenChange={setIsDesktopUserMenuOpen}
-              />
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <DropdownMenu
+                  triggerText={`Γεια σου ${user.username}`}
+                  items={userMenuItems}
+                  align="right"
+                  showChevron={true}
+                  menuId="desktop-user-menu"
+                  open={isDesktopUserMenuOpen}
+                  onOpenChange={setIsDesktopUserMenuOpen}
+                />
+              </div>
             ) : (
               <>
                 <LoginLink
@@ -396,26 +400,32 @@ export default function TopNav() {
               <SkeletonLoader type="button" count={2} className="space-y-2" />
             </div>
           ) : user ? (
-            <DropdownMenu
-              trigger={
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
-                >
-                  <span>Γεια σου {user.username}</span>
-                  <ChevronDownIcon
-                    className={`h-4 w-4 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
-                    aria-hidden="true"
-                  />
-                </button>
-              }
-              items={mobileMenuItems}
-              align="left"
-              menuId="mobile-user-menu"
-              menuClassName="w-full"
-              open={isMobileUserMenuOpen}
-              onOpenChange={setIsMobileUserMenuOpen}
-            />
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <NotificationBell />
+                <span className="text-sm text-gray-500">Ειδοποιήσεις</span>
+              </div>
+              <DropdownMenu
+                trigger={
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
+                  >
+                    <span>Γεια σου {user.username}</span>
+                    <ChevronDownIcon
+                      className={`h-4 w-4 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                }
+                items={mobileMenuItems}
+                align="left"
+                menuId="mobile-user-menu"
+                menuClassName="w-full"
+                open={isMobileUserMenuOpen}
+                onOpenChange={setIsMobileUserMenuOpen}
+              />
+            </>
           ) : (
             <>
               <LoginLink

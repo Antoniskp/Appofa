@@ -1,6 +1,7 @@
 const { Endorsement, User } = require('../models');
 const { ENDORSEMENT_TOPICS } = require('../models/Endorsement');
 const { normalizeInteger } = require('../utils/validators');
+const notificationService = require('../services/notificationService');
 
 const PAGE_SIZE = 20;
 
@@ -43,6 +44,10 @@ const endorsementController = {
       const [endorsement, created] = await Endorsement.findOrCreate({
         where: { endorserId: req.user.id, endorsedId, topic }
       });
+
+      if (created) {
+        notificationService.notifyEndorsement(endorsedId, req.user.id).catch(err => console.error('Notification error:', err));
+      }
 
       return res.status(200).json({
         success: true,
