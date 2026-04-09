@@ -12,16 +12,17 @@ import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileBasicInfoForm from '@/components/profile/ProfileBasicInfoForm';
-import ProfileHomeLocationSection from '@/components/profile/ProfileHomeLocationSection';
 import ProfilePrivacySection from '@/components/profile/ProfilePrivacySection';
 import ProfileSecuritySection from '@/components/profile/ProfileSecuritySection';
 import ProfileDangerZone from '@/components/profile/ProfileDangerZone';
-import ProfileAboutSection from '@/components/profile/ProfileAboutSection';
+import ProfileBioSection from '@/components/profile/ProfileBioSection';
+import ProfileSocialLinksSection from '@/components/profile/ProfileSocialLinksSection';
+import ProfileLocationSection from '@/components/profile/ProfileLocationSection';
+import ProfilePoliticsSection from '@/components/profile/ProfilePoliticsSection';
 import ProfileProfessionsSection from '@/components/profile/ProfileProfessionsSection';
 import ProfileInterestsSection from '@/components/profile/ProfileInterestsSection';
 import ProfileExpertiseSection from '@/components/profile/ProfileExpertiseSection';
 import ProfileBadgesSection from '@/components/profile/ProfileBadgesSection';
-import ProfileManifestSection from '@/components/profile/ProfileManifestSection';
 
 function ProfileContent() {
   const { user, updateProfile, deleteAccount } = useAuth();
@@ -488,53 +489,68 @@ function ProfileContent() {
           />
         </Card>
 
-        {/* Manifest acceptance section */}
-        {(manifestList.length > 0 || manifestLoading) && (
-          <Card className="border-2 border-blue-200 bg-blue-50">
-            <ProfileManifestSection
-              manifests={manifestList.map((m) => {
-                const acceptance = manifestAcceptances.find((a) => a.slug === m.slug);
-                return { ...m, acceptedAt: acceptance ? acceptance.acceptedAt : null };
-              })}
-              onAccept={handleManifestAccept}
-              onWithdraw={handleManifestWithdraw}
-              loading={manifestLoading}
-            />
-          </Card>
-        )}
-
-        {/* Basic info + home location */}
+        {/* Στοιχεία Χρήστη */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Update profile information</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Στοιχεία Χρήστη</h2>
           <ProfileBasicInfoForm
             profileData={profileData}
             onChange={handleProfileChange}
             currentUsername={savedProfileData?.username}
           />
-          <div className="mt-4 space-y-4">
-            <ProfileHomeLocationSection
-              homeLocationId={profileData.homeLocationId}
-              homeLocation={homeLocation}
-              isOpen={showHomeLocation}
-              onToggle={() => setShowHomeLocation((prev) => !prev)}
-              onLocationChange={handleLocationChange}
-            />
-          </div>
         </Card>
 
-        {/* About & Contact */}
+        {/* Τοποθεσία & Εθνικότητα */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">About &amp; Contact</h2>
-          <ProfileAboutSection
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Τοποθεσία &amp; Εθνικότητα</h2>
+          <ProfileLocationSection
             profileData={profileData}
             onChange={handleProfileChange}
+            homeLocationId={profileData.homeLocationId}
+            homeLocation={homeLocation}
+            isOpen={showHomeLocation}
+            onToggle={() => setShowHomeLocation((prev) => !prev)}
+            onLocationChange={handleLocationChange}
+          />
+        </Card>
+
+        {/* Πολιτική Τοποθέτηση */}
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Πολιτική Τοποθέτηση</h2>
+          <ProfilePoliticsSection
+            profileData={profileData}
+            onChange={handleProfileChange}
+            manifests={manifestList.map((m) => {
+              const acceptance = manifestAcceptances.find((a) => a.slug === m.slug);
+              return { ...m, acceptedAt: acceptance ? acceptance.acceptedAt : null };
+            })}
+            onAccept={handleManifestAccept}
+            onWithdraw={handleManifestWithdraw}
+            manifestLoading={manifestLoading}
+          />
+        </Card>
+
+        {/* Σχετικά με εμένα & Επικοινωνία */}
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Σχετικά με εμένα &amp; Επικοινωνία</h2>
+          <ProfileBioSection
+            profileData={profileData}
+            onChange={handleProfileChange}
+          />
+        </Card>
+
+        {/* Social Links */}
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h2>
+          <ProfileSocialLinksSection
+            profileData={profileData}
             onSocialLinkChange={handleSocialLinkChange}
           />
         </Card>
 
-        {/* Professions */}
+        {/* Επαγγέλματα & Τομέας Εμπειρογνωμοσύνης */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Professions <span className="text-gray-400 text-xs font-normal">(max 5)</span></h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Επαγγέλματα &amp; Τομέας Εμπειρογνωμοσύνης</h2>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Επαγγέλματα <span className="text-gray-400 text-xs font-normal">(max 5)</span></h3>
           <ProfileProfessionsSection
             professions={profileData.professions}
             picker={profPicker}
@@ -547,11 +563,18 @@ function ProfileContent() {
             }}
             onRemove={(idx) => setProfileData((prev) => ({ ...prev, professions: prev.professions.filter((_, i) => i !== idx) }))}
           />
+          <hr className="my-6 border-gray-200" />
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Τομέας Εμπειρογνωμοσύνης <span className="text-gray-400 text-xs font-normal">(max 5)</span></h3>
+          <ProfileExpertiseSection
+            expertiseArea={profileData.expertiseArea}
+            onAdd={(area) => setProfileData((prev) => ({ ...prev, expertiseArea: [...(prev.expertiseArea || []), area] }))}
+            onRemove={(area) => setProfileData((prev) => ({ ...prev, expertiseArea: prev.expertiseArea.filter((a) => a !== area) }))}
+          />
         </Card>
 
-        {/* Interests */}
+        {/* Ενδιαφέροντα */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Interests <span className="text-gray-400 text-xs font-normal">(max 10)</span></h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ενδιαφέροντα</h2>
           <ProfileInterestsSection
             interests={profileData.interests}
             picker={intPicker}
@@ -566,17 +589,20 @@ function ProfileContent() {
           />
         </Card>
 
-        {/* Expertise Area */}
+        {/* Τα Badges μου */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Expertise Area <span className="text-gray-400 text-xs font-normal">(select up to 5)</span></h2>
-          <ProfileExpertiseSection
-            expertiseArea={profileData.expertiseArea}
-            onAdd={(area) => setProfileData((prev) => ({ ...prev, expertiseArea: [...(prev.expertiseArea || []), area] }))}
-            onRemove={(area) => setProfileData((prev) => ({ ...prev, expertiseArea: prev.expertiseArea.filter((a) => a !== area) }))}
+          <ProfileBadgesSection
+            badgeProgress={badgeProgress}
+            badgeEvaluating={badgeEvaluating}
+            displayBadge={displayBadge}
+            savingDisplayBadge={savingDisplayBadge}
+            onEvaluate={handleEvaluateBadges}
+            onSelectDisplayBadge={handleSelectDisplayBadge}
+            onClearDisplayBadge={handleClearDisplayBadge}
           />
         </Card>
 
-        {/* Privacy & Interaction */}
+        {/* Απόρρητο & Αλληλεπίδραση */}
         <Card>
           <ProfilePrivacySection
             searchable={interactionSettings.searchable}
@@ -588,7 +614,7 @@ function ProfileContent() {
           />
         </Card>
 
-        {/* Security: password + OAuth */}
+        {/* Ασφάλεια */}
         <Card>
           <ProfileSecuritySection
             passwordData={passwordData}
@@ -606,20 +632,7 @@ function ProfileContent() {
           />
         </Card>
 
-        {/* Τα Badges μου */}
-        <Card>
-          <ProfileBadgesSection
-            badgeProgress={badgeProgress}
-            badgeEvaluating={badgeEvaluating}
-            displayBadge={displayBadge}
-            savingDisplayBadge={savingDisplayBadge}
-            onEvaluate={handleEvaluateBadges}
-            onSelectDisplayBadge={handleSelectDisplayBadge}
-            onClearDisplayBadge={handleClearDisplayBadge}
-          />
-        </Card>
-
-        {/* Danger Zone: account deletion */}
+        {/* Επικίνδυνη Ζώνη */}
         <Card>
           <ProfileDangerZone
             hasPassword={hasPassword}

@@ -46,9 +46,6 @@ export default function ProfileManifestSection({ manifests, onAccept, onWithdraw
 
   return (
     <div>
-      <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        📜 Μανιφέστα
-      </h2>
       {loading ? (
         <p className="text-sm text-gray-500">Φόρτωση μανιφέστων...</p>
       ) : (
