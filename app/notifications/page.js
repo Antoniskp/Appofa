@@ -6,6 +6,7 @@ import { BellIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { notificationAPI } from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
+import NotificationPreferences from '@/components/notifications/NotificationPreferences';
 
 function relativeTime(dateString) {
   const diff = Date.now() - new Date(dateString).getTime();
@@ -204,6 +205,19 @@ export default function NotificationsPage() {
           />
         </div>
       )}
+
+      {/* Notification preferences */}
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <details className="group">
+          <summary className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900 list-none">
+            <span className="group-open:rotate-90 transition-transform">▶</span>
+            Ρυθμίσεις ειδοποιήσεων
+          </summary>
+          <div className="mt-4">
+            <NotificationPreferences />
+          </div>
+        </details>
+      </div>
     </div>
   );
 }

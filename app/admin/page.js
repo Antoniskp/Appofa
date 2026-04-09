@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon, MapPinIcon, EnvelopeIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon, PencilSquareIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { articleAPI, authAPI, locationAPI } from '@/lib/api';
+import { articleAPI, authAPI, locationAPI, notificationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import Card, { StatsCard } from '@/components/ui/Card';
 import Badge, { StatusBadge } from '@/components/ui/Badge';
@@ -62,6 +62,33 @@ function AdminDashboardContent() {
   const [userPage, setUserPage] = useState(1);
   const USERS_PER_PAGE = 20;
   const articlesTableRef = useRef(null);
+
+  // Broadcast state
+  const [broadcastForm, setBroadcastForm] = useState({ title: '', body: '', actionUrl: '', targetRole: '' });
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastResult, setBroadcastResult] = useState(null); // { success, message }
+
+  const handleBroadcast = async (e) => {
+    e.preventDefault();
+    if (!broadcastForm.title.trim()) return;
+    setBroadcastLoading(true);
+    setBroadcastResult(null);
+    try {
+      const res = await notificationAPI.broadcast({
+        title: broadcastForm.title,
+        body: broadcastForm.body || undefined,
+        actionUrl: broadcastForm.actionUrl || undefined,
+        targetRole: broadcastForm.targetRole || undefined,
+      });
+      setBroadcastResult({ success: true, message: res.data?.message || `Εστάλη σε ${res.data?.count} χρήστες` });
+      setBroadcastForm({ title: '', body: '', actionUrl: '', targetRole: '' });
+      setTimeout(() => setBroadcastResult(null), 5000);
+    } catch (err) {
+      setBroadcastResult({ success: false, message: err.message || 'Αποτυχία αποστολής' });
+    } finally {
+      setBroadcastLoading(false);
+    }
+  };
 
   const { data: articles, loading, refetch } = useAsyncData(
     async () => {
@@ -815,6 +842,89 @@ function AdminDashboardContent() {
             onNext={() => setUserPage(p => Math.min(userTotalPages, p + 1))}
           />
         </Card>
+
+        {/* Broadcast panel — admin only */}
+        {user?.role === 'admin' && (
+          <Card className="mt-8" header={<h2 className="text-xl font-semibold flex items-center gap-2">📣 Ανακοινώσεις</h2>}>
+            <form onSubmit={handleBroadcast} className="space-y-4 max-w-xl">
+              <div>
+                <label htmlFor="broadcastTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                  Τίτλος <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="broadcastTitle"
+                  type="text"
+                  maxLength={200}
+                  value={broadcastForm.title}
+                  onChange={e => setBroadcastForm(f => ({ ...f, title: e.target.value }))}
+                  placeholder="Τίτλος ανακοίνωσης"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+                <p className="text-xs text-gray-400 mt-0.5 text-right">{broadcastForm.title.length}/200</p>
+              </div>
+              <div>
+                <label htmlFor="broadcastBody" className="block text-sm font-medium text-gray-700 mb-1">
+                  Περιεχόμενο <span className="text-gray-400 text-xs">(προαιρετικό)</span>
+                </label>
+                <textarea
+                  id="broadcastBody"
+                  maxLength={500}
+                  rows={3}
+                  value={broadcastForm.body}
+                  onChange={e => setBroadcastForm(f => ({ ...f, body: e.target.value }))}
+                  placeholder="Σύντομο κείμενο ανακοίνωσης..."
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+                <p className="text-xs text-gray-400 mt-0.5 text-right">{broadcastForm.body.length}/500</p>
+              </div>
+              <div>
+                <label htmlFor="broadcastActionUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                  URL ενέργειας <span className="text-gray-400 text-xs">(προαιρετικό)</span>
+                </label>
+                <input
+                  id="broadcastActionUrl"
+                  type="text"
+                  value={broadcastForm.actionUrl}
+                  onChange={e => setBroadcastForm(f => ({ ...f, actionUrl: e.target.value }))}
+                  placeholder="/notifications"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label htmlFor="broadcastTargetRole" className="block text-sm font-medium text-gray-700 mb-1">
+                  Κοινό <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="broadcastTargetRole"
+                  value={broadcastForm.targetRole}
+                  onChange={e => setBroadcastForm(f => ({ ...f, targetRole: e.target.value }))}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Όλοι οι χρήστες</option>
+                  <option value="citizen">Χρήστες (citizen)</option>
+                  <option value="candidate">Υποψήφιοι (candidate)</option>
+                  <option value="admin">Διαχειριστές (admin)</option>
+                  <option value="moderator">Συντονιστές (moderator)</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={broadcastLoading || !broadcastForm.title.trim()}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                >
+                  {broadcastLoading ? 'Αποστολή...' : '📣 Αποστολή ανακοίνωσης'}
+                </button>
+                {broadcastResult && (
+                  <span className={`text-sm ${broadcastResult.success ? 'text-green-600' : 'text-red-600'}`}>
+                    {broadcastResult.success ? '✓ ' : '✗ '}{broadcastResult.message}
+                  </span>
+                )}
+              </div>
+            </form>
+          </Card>
+        )}
       </div>
 
       {/* Role Change Dialog — location picker for moderator role */}

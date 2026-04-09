@@ -94,6 +94,10 @@ const startServer = async () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
+
+    // Start background jobs
+    const { startNotificationCleanupJob } = require('./jobs/notificationCleanup');
+    startNotificationCleanupJob();
   } catch (error) {
     console.error('Unable to start server:', error);
     process.exit(1);
