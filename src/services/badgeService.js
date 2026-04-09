@@ -1,5 +1,6 @@
 const badges = require('../../config/badges.json');
 const { UserBadge, User, Article, Poll, Comment, PollVote, SuggestionVote, Follow, Formation, ManifestAcceptance } = require('../models');
+const notificationService = require('./notificationService');
 
 const badgeService = {
   /**
@@ -36,6 +37,10 @@ const badgeService = {
       if (toCreate.length > 0) {
         await UserBadge.bulkCreate(toCreate, { ignoreDuplicates: true });
       }
+      for (const badge of newBadges) {
+        // Notification errors must never abort badge evaluation
+        await notificationService.notifyBadgeEarned(userId, badge).catch(() => {});
+      }
       return newBadges;
     }
 
@@ -60,6 +65,12 @@ const badgeService = {
 
     if (toCreate.length > 0) {
       await UserBadge.bulkCreate(toCreate, { ignoreDuplicates: true });
+    }
+
+    // Notify user of each newly awarded badge
+    // Notification errors must never abort badge evaluation
+    for (const badge of newBadges) {
+      await notificationService.notifyBadgeEarned(userId, badge).catch(() => {});
     }
 
     return newBadges;
