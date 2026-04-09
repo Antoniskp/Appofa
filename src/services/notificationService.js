@@ -55,19 +55,25 @@ async function notifyArticleApproved(article) {
 }
 
 /**
- * Called when a comment is posted on an article.
+ * Called when a comment is posted on an article or poll.
+ * Accepts the full entity object so it works for both articles (authorId) and polls (creatorId).
  */
-async function notifyNewComment(article, comment, commentAuthorId) {
+async function notifyNewComment(entity, comment, commentAuthorId) {
+  const ownerId = entity.authorId || entity.creatorId;
+  if (!ownerId) return null;
+  const actionUrl = entity.authorId
+    ? `/articles/${entity.id}#comment-${comment.id}`
+    : `/polls/${entity.id}#comment-${comment.id}`;
   return createNotification({
-    userId: article.authorId,
+    userId: ownerId,
     actorId: commentAuthorId,
     type: 'article_commented',
     entityType: 'comment',
     entityId: comment.id,
-    title: 'New comment on your article',
-    body: `Someone commented on "${article.title}"`,
-    actionUrl: `/articles/${article.id}#comment-${comment.id}`,
-    metadata: { articleTitle: article.title }
+    title: 'Νέο σχόλιο στο περιεχόμενό σου',
+    body: `Κάποιος σχολίασε "${entity.title}"`,
+    actionUrl,
+    metadata: { entityTitle: entity.title }
   });
 }
 
