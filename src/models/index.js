@@ -34,6 +34,7 @@ const Manifest = require('./Manifest');
 const ManifestAcceptance = require('./ManifestAcceptance');
 const Tag = require('./Tag');
 const TaggableItem = require('./TaggableItem');
+const Notification = require('./Notification');
 
 // Define associations
 User.hasMany(Article, {
@@ -348,6 +349,11 @@ Tag.belongsToMany(Suggestion, {
   constraints: false
 });
 
+// Notification associations
+Notification.belongsTo(User, { foreignKey: 'userId', as: 'recipient' });
+Notification.belongsTo(User, { foreignKey: 'actorId', as: 'actor' });
+User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
+
 module.exports = {
   sequelize,
   User,
@@ -385,4 +391,5 @@ module.exports = {
   ManifestAcceptance,
   Tag,
   TaggableItem,
+  Notification,
 };
