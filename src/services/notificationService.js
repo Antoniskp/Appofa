@@ -20,6 +20,12 @@ async function createNotification({
   // Never notify yourself
   if (actorId && actorId === userId) return null;
 
+  // Check user's notification preferences (fail-open: if lookup fails, proceed)
+  try {
+    const user = await User.findByPk(userId, { attributes: ['notificationPreferences'] });
+    if (user?.notificationPreferences?.[type] === false) return null;
+  } catch { /* fail-open: proceed with creation */ }
+
   return Notification.create({
     userId, actorId, type, entityType, entityId,
     title, body, actionUrl, metadata
@@ -185,6 +191,94 @@ async function deleteNotification(id, userId) {
   return Notification.destroy({ where: { id, userId } });
 }
 
+// ── Retention / cleanup ───────────────────────────────────────────────────
+
+const RETENTION_DAYS = 90;
+
+/**
+ * Hard-deletes all Notification rows older than RETENTION_DAYS.
+ * Called by the scheduled job — never exposed via HTTP.
+ */
+async function purgeOldNotifications() {
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000);
+  const deleted = await Notification.destroy({
+    where: {
+      createdAt: { [Op.lt]: cutoff }
+    }
+  });
+  console.log(`[notificationService] purgeOldNotifications: deleted ${deleted} rows older than ${RETENTION_DAYS} days`);
+  return deleted;
+}
+
+// ── Per-user preferences ──────────────────────────────────────────────────
+
+const VALID_NOTIFICATION_TYPES = [
+  'article_approved', 'article_commented', 'article_liked',
+  'new_follower', 'endorsement_received', 'poll_result',
+  'badge_earned', 'mention', 'report_resolved', 'system_announcement'
+];
+
+/**
+ * Update a user's notification preferences.
+ * @param {number} userId
+ * @param {object} preferences - map of notification type → boolean
+ * @returns {object} sanitized preferences that were saved
+ */
+async function updateNotificationPreferences(userId, preferences) {
+  const sanitized = {};
+  for (const [key, val] of Object.entries(preferences)) {
+    if (VALID_NOTIFICATION_TYPES.includes(key) && typeof val === 'boolean') {
+      sanitized[key] = val;
+    }
+  }
+  const user = await User.findByPk(userId);
+  if (!user) {
+    const err = new Error('User not found.');
+    err.status = 404;
+    throw err;
+  }
+  user.notificationPreferences = sanitized;
+  await user.save();
+  return sanitized;
+}
+
+// ── Admin broadcast ───────────────────────────────────────────────────────
+
+/**
+ * Sends a system_announcement to all users (or all users of a specific role).
+ * @param {object} payload - { title, body, actionUrl }
+ * @param {string|null} targetRole - role to target, or null for all users
+ * @returns {number} count of notifications created
+ */
+async function broadcastNotification(payload, targetRole = null) {
+  const where = { isPlaceholder: false };
+  if (targetRole) where.role = targetRole;
+
+  const users = await User.findAll({ where, attributes: ['id'] });
+  const userIds = users.map(u => u.id);
+
+  if (userIds.length === 0) return 0;
+
+  const notifications = userIds.map(userId => ({
+    userId,
+    actorId: null,
+    type: 'system_announcement',
+    entityType: null,
+    entityId: null,
+    title: payload.title,
+    body: payload.body || null,
+    actionUrl: payload.actionUrl || null,
+    isRead: false,
+    metadata: payload.metadata || null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }));
+
+  await Notification.bulkCreate(notifications, { ignoreDuplicates: true });
+  console.log(`[notificationService] broadcastNotification: sent to ${userIds.length} users`);
+  return userIds.length;
+}
+
 module.exports = {
   createNotification,
   notifyMany,
@@ -197,5 +291,8 @@ module.exports = {
   getUnreadCount,
   markAsRead,
   markAllAsRead,
-  deleteNotification
+  deleteNotification,
+  purgeOldNotifications,
+  updateNotificationPreferences,
+  broadcastNotification
 };

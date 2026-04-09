@@ -63,3 +63,56 @@ exports.deleteNotification = async (req, res) => {
     res.status(500).json({ success: false, message: 'Failed to delete notification.' });
   }
 };
+
+exports.getPreferences = async (req, res) => {
+  try {
+    const prefs = req.user.notificationPreferences || {};
+    return res.status(200).json({ success: true, data: { preferences: prefs } });
+  } catch (err) {
+    console.error('getPreferences error:', err);
+    return res.status(500).json({ success: false, message: 'Error fetching preferences.' });
+  }
+};
+
+exports.updatePreferences = async (req, res) => {
+  try {
+    const { preferences } = req.body;
+    if (!preferences || typeof preferences !== 'object' || Array.isArray(preferences)) {
+      return res.status(400).json({ success: false, message: 'preferences must be an object.' });
+    }
+    const updated = await notificationService.updateNotificationPreferences(req.user.id, preferences);
+    return res.status(200).json({ success: true, data: { preferences: updated }, message: 'Preferences updated.' });
+  } catch (err) {
+    if (err.status) return res.status(err.status).json({ success: false, message: err.message });
+    console.error('updatePreferences error:', err);
+    return res.status(500).json({ success: false, message: 'Error updating preferences.' });
+  }
+};
+
+exports.adminBroadcast = async (req, res) => {
+  try {
+    const { title, body, actionUrl, targetRole } = req.body;
+    if (!title || typeof title !== 'string' || title.trim().length === 0) {
+      return res.status(400).json({ success: false, message: 'title is required.' });
+    }
+    if (title.length > 200) {
+      return res.status(400).json({ success: false, message: 'title must be 200 chars or fewer.' });
+    }
+    const VALID_ROLES = ['admin', 'moderator', 'candidate', 'citizen', 'editor', 'viewer'];
+    if (targetRole && !VALID_ROLES.includes(targetRole)) {
+      return res.status(400).json({ success: false, message: `targetRole must be one of: ${VALID_ROLES.join(', ')}.` });
+    }
+    const count = await notificationService.broadcastNotification(
+      { title: title.trim(), body, actionUrl },
+      targetRole || null
+    );
+    return res.status(200).json({
+      success: true,
+      data: { count },
+      message: `Broadcast sent to ${count} users.`
+    });
+  } catch (err) {
+    console.error('adminBroadcast error:', err);
+    return res.status(500).json({ success: false, message: 'Error sending broadcast.' });
+  }
+};

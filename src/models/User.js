@@ -204,6 +204,21 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  notificationPreferences: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('notificationPreferences');
+      if (!raw) return {};
+      try { return JSON.parse(raw); } catch { return {}; }
+    },
+    set(val) {
+      this.setDataValue(
+        'notificationPreferences',
+        val && Object.keys(val).length > 0 ? JSON.stringify(val) : null
+      );
+    }
+  },
   nationality: {
     type: DataTypes.STRING(5),
     allowNull: true
