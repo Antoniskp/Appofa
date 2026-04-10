@@ -343,7 +343,7 @@ router.delete('/ip-rules/:ip', apiLimiter, authMiddleware, checkRole('admin'), c
   } catch (err) { next(err); }
 });
 
-router.post('/ip-rules/check', apiLimiter, authMiddleware, checkRole('admin'), async (req, res, next) => {
+router.post('/ip-rules/check', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res, next) => {
   try {
     const { ip } = req.body;
     if (!ip) return res.status(400).json({ success: false, message: 'ip is required.' });

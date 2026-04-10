@@ -11,7 +11,7 @@ async function getIpRulesCache() {
   const blacklist = new Set();
   for (const rule of rules) {
     if (rule.type === 'whitelist') whitelist.add(rule.ip);
-    else blacklist.add(rule.ip);
+    else if (rule.type === 'blacklist') blacklist.add(rule.ip);
   }
   cache = { whitelist, blacklist };
   cacheExpiry = Date.now() + CACHE_TTL;
