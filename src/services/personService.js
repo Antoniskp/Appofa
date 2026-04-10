@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { PublicPersonProfile, User, Location, Endorsement, DreamTeamVote } = require('../models');
 const dbConfig = require('../config/database');
-const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
+const { normalizeGreek, sanitizeForLike, transliterateGreek } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
 const politicalParties = require('../../config/politicalParties.json');
 
@@ -22,7 +22,8 @@ class ServiceError extends Error {
 
 function generateSlug(firstNameNative, lastNameNative) {
   const fullName = `${firstNameNative} ${lastNameNative}`;
-  return fullName.toLowerCase()
+  return transliterateGreek(fullName)
+    .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
@@ -358,7 +359,7 @@ async function rejectClaim(moderatorUserId, moderatorRole, profileId, reason) {
   const restoredClaimedByUserId = profile.placeholderUserId || null;
 
   await profile.update({
-    claimStatus: 'rejected',
+    claimStatus: 'unclaimed',
     claimedByUserId: restoredClaimedByUserId,
     claimRequestedAt: null,
     claimToken: null,
