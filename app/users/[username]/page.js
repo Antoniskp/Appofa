@@ -19,6 +19,7 @@ import FollowButton from '@/components/follow/FollowButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
 import { getPartyById } from '@/lib/utils/politicalParties';
 import LoginLink from '@/components/ui/LoginLink';
+import TwitchEmbed from '@/components/profile/TwitchEmbed';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -395,9 +396,26 @@ export default function PublicUserProfilePage() {
               </Card>
             )}
 
+            {/* Twitch Stream */}
+            {user.twitchChannel && (
+              <Card>
+                <h2 className="text-sm font-semibold text-gray-700 mb-3">
+                  🎮 Live on Twitch —{' '}
+                  <a
+                    href={`https://www.twitch.tv/${user.twitchChannel}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-purple-600 hover:underline"
+                  >
+                    twitch.tv/{user.twitchChannel}
+                  </a>
+                </h2>
+                <TwitchEmbed channel={user.twitchChannel} />
+              </Card>
+            )}
+
             {/* Endorsements */}
             <EndorsementPanel targetUserId={user.id} />
-
             {/* Badges */}
             <UserBadgesSection userId={user.id} />
 

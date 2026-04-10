@@ -134,7 +134,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, nationality } = data;
+  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, nationality, twitchChannel } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -398,6 +398,27 @@ async function updateUserProfile(userId, data) {
         throw new ServiceError(400, 'Nationality code must be at most 5 characters.');
       }
       user.nationality = trimmed || null;
+    }
+  }
+
+  if (twitchChannel !== undefined) {
+    const isEligible = user.isVerified === true || ['admin', 'moderator', 'editor'].includes(user.role);
+    if (!isEligible) {
+      throw new ServiceError(403, 'Only verified users or privileged roles can set a Twitch channel.');
+    }
+    if (twitchChannel === null || twitchChannel === '') {
+      user.twitchChannel = null;
+    } else if (typeof twitchChannel !== 'string') {
+      throw new ServiceError(400, 'Twitch channel must be a string.');
+    } else {
+      const trimmed = twitchChannel.trim();
+      if (trimmed.length > 50) {
+        throw new ServiceError(400, 'Twitch channel name must be at most 50 characters.');
+      }
+      if (!/^[a-zA-Z0-9_]{1,50}$/.test(trimmed)) {
+        throw new ServiceError(400, 'Twitch channel name may only contain letters, numbers, and underscores.');
+      }
+      user.twitchChannel = trimmed;
     }
   }
 
@@ -757,7 +778,7 @@ async function getPublicUserProfile(userId) {
 
   const user = await User.findOne({
     where: { id: userId, searchable: true },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -771,7 +792,7 @@ async function getPublicUserProfileByUsername(username) {
 
   const user = await User.findOne({
     where: { username: username.trim(), searchable: true },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');

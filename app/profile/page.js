@@ -23,6 +23,7 @@ import ProfileProfessionsSection from '@/components/profile/ProfileProfessionsSe
 import ProfileInterestsSection from '@/components/profile/ProfileInterestsSection';
 import ProfileExpertiseSection from '@/components/profile/ProfileExpertiseSection';
 import ProfileBadgesSection from '@/components/profile/ProfileBadgesSection';
+import ProfileTwitchSection from '@/components/profile/ProfileTwitchSection';
 
 function ProfileContent() {
   const { user, updateProfile, deleteAccount } = useAuth();
@@ -50,6 +51,7 @@ function ProfileContent() {
     expertiseArea: [],
     partyId: null,
     nationality: '',
+    twitchChannel: '',
   });
   const [savedProfileData, setSavedProfileData] = useState(null);
   const [isDirty, setIsDirty] = useState(false);
@@ -117,7 +119,7 @@ function ProfileContent() {
       onSuccess: async (userData) => {
         const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, githubId, googleId, avatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
-          dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier, nationality } = userData;
+          dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier, nationality, twitchChannel } = userData;
         const loaded = {
           username: username || '',
           firstNameNative: firstNameNative || '',
@@ -137,6 +139,7 @@ function ProfileContent() {
           expertiseArea: expertiseArea || [],
           partyId: userData.partyId || null,
           nationality: nationality || '',
+          twitchChannel: twitchChannel || '',
         };
         setProfileData(loaded);
         setSavedProfileData(loaded);
@@ -546,6 +549,17 @@ function ProfileContent() {
             onSocialLinkChange={handleSocialLinkChange}
           />
         </Card>
+
+        {/* Twitch Channel */}
+        {(user?.isVerified || ['admin', 'moderator', 'editor'].includes(user?.role)) && (
+          <Card>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Twitch Channel</h2>
+            <ProfileTwitchSection
+              twitchChannel={profileData.twitchChannel}
+              onChange={handleProfileChange}
+            />
+          </Card>
+        )}
 
         {/* Επαγγέλματα & Τομέας Εμπειρογνωμοσύνης */}
         <Card>
