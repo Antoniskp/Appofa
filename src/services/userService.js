@@ -412,11 +412,8 @@ async function updateUserProfile(userId, data) {
       throw new ServiceError(400, 'Twitch channel must be a string.');
     } else {
       const trimmed = twitchChannel.trim();
-      if (trimmed.length > 50) {
-        throw new ServiceError(400, 'Twitch channel name must be at most 50 characters.');
-      }
       if (!/^[a-zA-Z0-9_]{1,50}$/.test(trimmed)) {
-        throw new ServiceError(400, 'Twitch channel name may only contain letters, numbers, and underscores.');
+        throw new ServiceError(400, 'Twitch channel name may only contain letters, numbers, and underscores (max 50 characters).');
       }
       user.twitchChannel = trimmed;
     }
