@@ -801,7 +801,7 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
 
-  const whereClause = { searchable: true };
+  const whereClause = { searchable: true, isPlaceholder: { [Op.or]: [false, null] } };
 
   if (search && typeof search === 'string') {
     const isPostgres = dbConfig.getDialect() === 'postgres';

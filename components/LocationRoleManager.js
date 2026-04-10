@@ -12,6 +12,13 @@ import {
 } from '@heroicons/react/24/outline';
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function formatPersonName(firstNameNative, lastNameNative, fallback) {
+  return firstNameNative ? `${firstNameNative} ${lastNameNative || ''}`.trim() : (fallback || '');
+}
+
+// ---------------------------------------------------------------------------
 // Person / User search picker
 // ---------------------------------------------------------------------------
 function AssigneePicker({ onSelect, onClose }) {
@@ -34,8 +41,40 @@ function AssigneePicker({ onSelect, onClose }) {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await apiRequest(`/api/auth/users/search?search=${encodeURIComponent(query)}&limit=5`);
-        setResults(res?.data?.users || res?.users || []);
+        const encodedQ = encodeURIComponent(query);
+        const [usersRes, personsRes] = await Promise.all([
+          apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=5`).catch(() => null),
+          apiRequest(`/api/persons?search=${encodedQ}&limit=5`).catch(() => null),
+        ]);
+
+        const userResults = (usersRes?.data?.users || []).map((u) => ({
+          userId: u.id,
+          name: formatPersonName(u.firstNameNative, u.lastNameNative, u.username),
+          photo: u.avatar,
+          username: u.username,
+          isPerson: false,
+        }));
+
+        const personResults = (personsRes?.data?.profiles || [])
+          .map((p) => {
+            const userId = p.claimStatus === 'claimed' ? p.claimedByUserId : p.placeholderUserId;
+            if (!userId) return null;
+            return {
+              userId,
+              name: formatPersonName(p.firstNameNative, p.lastNameNative),
+              photo: p.photo,
+              claimStatus: p.claimStatus,
+              isPerson: true,
+            };
+          })
+          .filter(Boolean);
+
+        // Person results take priority; skip user results whose userId is already
+        // covered by a person result to avoid duplicates.
+        const personUserIds = new Set(personResults.map((r) => r.userId));
+        const filteredUsers = userResults.filter((r) => !personUserIds.has(r.userId));
+
+        setResults([...personResults, ...filteredUsers]);
       } catch {
         // ignore search errors silently
       } finally {
@@ -55,39 +94,42 @@ function AssigneePicker({ onSelect, onClose }) {
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name or username…"
+          placeholder="Αναζήτηση με όνομα…"
           className="w-full pl-7 pr-3 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       {searching && (
-        <p className="text-xs text-gray-500 py-1">Searching…</p>
+        <p className="text-xs text-gray-500 py-1">Αναζήτηση…</p>
       )}
 
       {!searching && query.trim() && results.length === 0 && (
-        <p className="text-xs text-gray-500 py-1">No results found.</p>
+        <p className="text-xs text-gray-500 py-1">Δεν βρέθηκαν αποτελέσματα.</p>
       )}
 
       {results.length > 0 && (
         <div>
-          {results.map((u) => (
+          {results.map((r, i) => (
             <button
-              key={`user-${u.id}`}
+              key={`result-${r.userId}-${i}`}
               type="button"
-              onClick={() => onSelect({ type: 'user', id: u.id, name: u.firstNameNative ? `${u.firstNameNative} ${u.lastNameNative || ''}`.trim() : u.username, photo: u.avatar })}
+              onClick={() => onSelect({ type: 'user', id: r.userId, name: r.name, photo: r.photo })}
               className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"
             >
-              {u.avatar ? (
-                <img src={u.avatar} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+              {r.photo ? (
+                <img src={r.photo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
               ) : (
                 <UserCircleIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
               )}
-              <span className="truncate">{u.firstNameNative ? `${u.firstNameNative} ${u.lastNameNative || ''}`.trim() : u.username}</span>
-              {u.username && u.firstNameNative && (
-                <span className="text-xs text-gray-400">@{u.username}</span>
+              <span className="truncate">{r.name}</span>
+              {r.username && (
+                <span className="text-xs text-gray-400">@{r.username}</span>
               )}
-              {u.isPlaceholder && (
-                <span className="ml-auto text-xs bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">📋 Δημόσιο Προφίλ</span>
+              {r.isPerson && r.claimStatus === 'unclaimed' && (
+                <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Αδιεκδίκητο</span>
+              )}
+              {r.isPerson && r.claimStatus === 'pending' && (
+                <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Σε Αναμονή</span>
               )}
             </button>
           ))}
@@ -99,7 +141,7 @@ function AssigneePicker({ onSelect, onClose }) {
         onClick={onClose}
         className="mt-2 text-xs text-gray-500 hover:text-gray-700"
       >
-        Cancel
+        Ακύρωση
       </button>
     </div>
   );
@@ -112,9 +154,7 @@ function RoleSlotRow({ definition, assignment, onChange }) {
   const [picking, setPicking] = useState(false);
 
   const user = assignment?.user || null;
-  const displayName = user
-    ? (user.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user.username)
-    : null;
+  const displayName = user ? formatPersonName(user.firstNameNative, user.lastNameNative, user.username) : null;
   const photo = user?.avatar || user?.placeholderPersonProfile?.photo || null;
 
   const handleSelect = ({ id }) => {
