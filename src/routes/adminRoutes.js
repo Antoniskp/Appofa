@@ -306,3 +306,49 @@ router.delete('/dream-team/suggestions/:id', apiLimiter, authMiddleware, checkRo
 router.post(  '/dream-team/holders',     apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminCreateHolder);
 router.put(   '/dream-team/holders/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminUpdateHolder);
 router.delete('/dream-team/holders/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, dreamTeamController.adminDeleteHolder);
+
+// ─── IP Access Rules ──────────────────────────────────────────────────────────
+
+const ipAccessService = require('../services/ipAccessService');
+
+router.get('/ip-rules', apiLimiter, authMiddleware, checkRole('admin'), async (req, res, next) => {
+  try {
+    const rules = await ipAccessService.listRules();
+    res.json({ success: true, data: rules });
+  } catch (err) { next(err); }
+});
+
+router.post('/ip-rules', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res, next) => {
+  try {
+    const { ip, type, reason } = req.body;
+    if (!ip || !['whitelist', 'blacklist'].includes(type)) {
+      return res.status(400).json({ success: false, message: 'ip and type (whitelist|blacklist) are required.' });
+    }
+    const rule = await ipAccessService.addRule(ip.trim(), type, reason || null, req.user.id);
+    res.status(201).json({ success: true, data: rule });
+  } catch (err) {
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({ success: false, message: 'This IP already has a rule.' });
+    }
+    next(err);
+  }
+});
+
+router.delete('/ip-rules/:ip', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res, next) => {
+  try {
+    const ip = decodeURIComponent(req.params.ip);
+    const deleted = await ipAccessService.removeRule(ip);
+    if (!deleted) return res.status(404).json({ success: false, message: 'Rule not found.' });
+    res.json({ success: true, message: 'Rule removed.' });
+  } catch (err) { next(err); }
+});
+
+router.post('/ip-rules/check', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res, next) => {
+  try {
+    const { ip } = req.body;
+    if (!ip) return res.status(400).json({ success: false, message: 'ip is required.' });
+    const rules = await ipAccessService.getIpRulesCache();
+    const status = rules.whitelist.has(ip) ? 'whitelist' : rules.blacklist.has(ip) ? 'blacklist' : 'none';
+    res.json({ success: true, ip, status });
+  } catch (err) { next(err); }
+});

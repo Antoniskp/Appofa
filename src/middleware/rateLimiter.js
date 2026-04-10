@@ -1,10 +1,17 @@
 const rateLimit = require('express-rate-limit');
+const ipAccessService = require('../services/ipAccessService');
+
+const skipForWhitelist = async (req) => {
+  if (process.env.NODE_ENV === 'test') return true;
+  const rules = await ipAccessService.getIpRulesCache();
+  return rules.whitelist.has(req.ip);
+};
 
 // General API rate limiter - 100 requests per 15 minutes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200, // Limit each IP to 100 requests per windowMs
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: skipForWhitelist,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
@@ -17,7 +24,7 @@ const apiLimiter = rateLimit({
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Limit each IP to 5 login/register requests per windowMs
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: skipForWhitelist,
   message: {
     success: false,
     message: 'Too many authentication attempts from this IP, please try again after 15 minutes.'
@@ -31,7 +38,7 @@ const authLimiter = rateLimit({
 const createLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20, // Limit each IP to 20 create operations per windowMs
-  skip: () => process.env.NODE_ENV === 'test',
+  skip: skipForWhitelist,
   message: {
     success: false,
     message: 'Too many create requests from this IP, please try again later.'
@@ -40,8 +47,23 @@ const createLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+const ipBlockMiddleware = async (req, res, next) => {
+  try {
+    if (process.env.NODE_ENV === 'test') return next();
+    const rules = await ipAccessService.getIpRulesCache();
+    if (rules.blacklist.has(req.ip)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   apiLimiter,
   authLimiter,
-  createLimiter
+  createLimiter,
+  ipBlockMiddleware,
 };
+
