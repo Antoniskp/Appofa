@@ -57,7 +57,16 @@ function AssigneePicker({ onSelect, onClose }) {
 
         const personResults = (personsRes?.data?.profiles || [])
           .map((p) => {
-            const userId = p.claimStatus === 'claimed' ? p.claimedByUserId : p.placeholderUserId;
+            // For claimed profiles use the real owner; for unclaimed/pending use the
+            // placeholder (the claim hasn't been approved yet in pending state).
+            let userId;
+            if (p.claimStatus === 'claimed') {
+              userId = p.claimedByUserId;
+            } else if (p.claimStatus === 'unclaimed' || p.claimStatus === 'pending') {
+              userId = p.placeholderUserId;
+            } else {
+              return null;
+            }
             if (!userId) return null;
             return {
               userId,
@@ -109,9 +118,9 @@ function AssigneePicker({ onSelect, onClose }) {
 
       {results.length > 0 && (
         <div>
-          {results.map((r, i) => (
+          {results.map((r) => (
             <button
-              key={`result-${r.userId}-${i}`}
+              key={r.userId}
               type="button"
               onClick={() => onSelect({ type: 'user', id: r.userId, name: r.name, photo: r.photo })}
               className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"

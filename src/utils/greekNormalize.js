@@ -42,10 +42,9 @@ const GREEK_TO_LATIN_MAP = new Map([
 ]);
 
 // Pre-built regex: longer keys first so digraphs (αυ, ευ) match before single letters
-const GREEK_TO_LATIN_RE = new RegExp(
-  [...GREEK_TO_LATIN_MAP.keys()].sort((a, b) => b.length - a.length).map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
-  'g'
-);
+const _sortedGreekKeys = [...GREEK_TO_LATIN_MAP.keys()].sort((a, b) => b.length - a.length);
+const _escapedGreekKeys = _sortedGreekKeys.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+const GREEK_TO_LATIN_RE = new RegExp(_escapedGreekKeys.join('|'), 'g');
 
 /**
  * Strip diacritics and Greek tonos from a string using NFD decomposition.
