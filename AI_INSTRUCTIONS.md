@@ -320,7 +320,7 @@ __tests__/         # components/, hooks/, api/, security/, migrations/
 | `JWT_SECRET` | JWT signing key (min 32 chars) |
 | `NODE_ENV` | `development` or `production` |
 | `PORT` | Backend port (default 3000) |
-| `NEXT_PUBLIC_API_URL` | Frontend API base URL |
+| `NEXT_PUBLIC_API_URL` | Frontend API base URL (also used to derive Twitch embed parent domain) |
 | `NEXT_PUBLIC_GA_ID` | Google Analytics ID (optional) |
 
 ⚠️ Never commit `.env` · Use strong unique secrets · Different secrets per environment · Rotate periodically

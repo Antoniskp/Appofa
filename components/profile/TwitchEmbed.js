@@ -7,7 +7,13 @@ export default function TwitchEmbed({ channel }) {
 
   useEffect(() => {
     if (!channel) return;
-    const parent = process.env.NEXT_PUBLIC_TWITCH_PARENT || 'localhost';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    let parent = 'localhost';
+    try {
+      parent = new URL(apiUrl).hostname;
+    } catch {
+      parent = 'localhost';
+    }
     const containerId = `twitch-embed-${channel}`;
 
     const initEmbed = () => {
