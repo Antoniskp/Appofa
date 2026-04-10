@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   HomeIcon, PencilSquareIcon, MapPinIcon, EnvelopeIcon,
   UserGroupIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon,
-  Bars3Icon, XMarkIcon, DocumentTextIcon
+  Bars3Icon, XMarkIcon, DocumentTextIcon, ShieldExclamationIcon
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
@@ -20,6 +20,7 @@ const navItems = [
   { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
   { href: '/admin/dream-team', label: 'Dream Team', icon: StarIcon },
   { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
+  { href: '/admin/ip-rules', label: 'IP Rules', icon: ShieldExclamationIcon },
   { href: '/admin/status', label: 'System Health', icon: HeartIcon },
 ];
 

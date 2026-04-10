@@ -7,6 +7,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 require('dotenv').config();
 
 const registerRoutes = require('./routes');
+const { ipBlockMiddleware } = require('./middleware/rateLimiter');
 
 const app = express();
 
@@ -23,6 +24,9 @@ app.use(helmet(helmetConfig));
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Block blacklisted IPs before any route runs
+app.use(ipBlockMiddleware);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

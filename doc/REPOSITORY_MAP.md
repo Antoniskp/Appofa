@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-07
+> **Last updated**: 2026-04-10
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -95,7 +95,7 @@ Appofa/
 
 ---
 
-## Models (35)
+## Models (36)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -134,6 +134,7 @@ Appofa/
 | HeroSettings | HeroSettings | id, isActive, slide data fields | — |
 | Tag | Tags | id, name (unique lowercase) | hasMany: TaggableItem; belongsToMany: Article, Poll, Suggestion (via TaggableItems) |
 | TaggableItem | TaggableItems | id, tagId, entityType (article\|poll\|suggestion), entityId | belongsTo: Tag |
+| IpAccessRule | IpAccessRules | id, ip (STRING 45, unique), type (whitelist\|blacklist), reason, createdByUserId | belongsTo: User (createdBy) |
 
 ---
 
@@ -268,7 +269,7 @@ Appofa/
 | solutionRoutes.js | /api/solutions | POST /:id/vote |
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
-| adminRoutes.js | /api/admin | GET /health, dream-team management endpoints |
+| adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
 
 ---
 
@@ -300,13 +301,14 @@ Appofa/
 
 ---
 
-## Services (8)
+## Services (9)
 
 | Service | Purpose |
 |---------|---------|
 | articleService.js | Article business logic |
 | authService.js | Authentication & authorization |
 | badgeService.js | Badge evaluation & assignment |
+| ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management |
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders |
@@ -324,7 +326,7 @@ Appofa/
 | csrfProtection.js | CSRF token validation |
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
-| rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`) |
+| rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
 
 ---
 
@@ -362,7 +364,7 @@ Appofa/
 | `/manifest-supporters` | Manifest supporters |
 | `/request-removal` | Profile removal request |
 
-### Admin (15 pages)
+### Admin (16 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
@@ -371,6 +373,7 @@ Appofa/
 | `/admin/candidates/*` | Candidate management (backward-compat) |
 | `/admin/dream-team` | Dream team admin |
 | `/admin/hero` | Hero settings |
+| `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/locations` | Location admin |
 | `/admin/manifests` | Manifest admin |
 | `/admin/messages/*` | Message admin |
@@ -400,7 +403,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (22)
+## API Client Modules (23)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -416,6 +419,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | dreamTeamAPI.js | Dream team |
 | endorsements.js | Endorsements |
 | heroSettings.js | Hero settings |
+| ipRules.js | IP whitelist/blacklist management |
 | linkPreview.js | Link previews |
 | locations.js | Locations |
 | manifest.js | Manifests |
@@ -465,7 +469,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (70)
+## Migrations (71)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -546,6 +550,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260407200000-remove-person-id-columns.js | Remove person ID cols |
 | — | 20260407300000-add-nationality-languages-to-users.js | User nationality/languages |
 | — | 20260408000000-create-unified-tags.js | Tags/TaggableItems tables; removes tags JSON from Articles and Polls |
+| — | 20260410000000-create-ip-access-rules.js | IpAccessRules table (whitelist/blacklist) |
 
 </details>
 

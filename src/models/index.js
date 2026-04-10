@@ -35,6 +35,7 @@ const ManifestAcceptance = require('./ManifestAcceptance');
 const Tag = require('./Tag');
 const TaggableItem = require('./TaggableItem');
 const Notification = require('./Notification');
+const IpAccessRule = require('./IpAccessRule');
 
 // Define associations
 User.hasMany(Article, {
@@ -354,6 +355,9 @@ Notification.belongsTo(User, { foreignKey: 'userId', as: 'recipient' });
 Notification.belongsTo(User, { foreignKey: 'actorId', as: 'actor' });
 User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 
+// IpAccessRule associations
+IpAccessRule.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+
 module.exports = {
   sequelize,
   User,
@@ -392,4 +396,5 @@ module.exports = {
   Tag,
   TaggableItem,
   Notification,
+  IpAccessRule,
 };
