@@ -179,6 +179,10 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  twitchChannel: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
   isVerified: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

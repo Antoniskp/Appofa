@@ -99,7 +99,7 @@ Appofa/
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
-| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
+| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge, twitchChannel | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
 | Poll | Polls | id, title, description, category, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
@@ -397,7 +397,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `layout/` | 8 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout |
 | `locations/` | 4 | LocationBreadcrumb, LocationEditForm, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
-| `profile/` | 12 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection |
+| `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
@@ -551,6 +551,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260407300000-add-nationality-languages-to-users.js | User nationality/languages |
 | — | 20260408000000-create-unified-tags.js | Tags/TaggableItems tables; removes tags JSON from Articles and Polls |
 | — | 20260410000000-create-ip-access-rules.js | IpAccessRules table (whitelist/blacklist) |
+| — | 20260410100000-add-twitch-channel-to-users.js | Add twitchChannel to Users |
 
 </details>
 
