@@ -157,7 +157,7 @@ const authController = {
     }
   },
 
-  // Get all users (admin/moderator only)
+  // Get all users (admin/moderator only) — legacy, fetches all at once
   getUsers: async (req, res) => {
     try {
       const { users, stats } = await userService.getUsers(req.user.id, req.user.role);
@@ -167,6 +167,23 @@ const authController = {
         return res.status(error.status).json({ success: false, message: error.message });
       }
       console.error('Get users error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching users.' });
+    }
+  },
+
+  // Get users with server-side pagination/filtering (admin/moderator only)
+  getAdminUsers: async (req, res) => {
+    try {
+      const { search, role, verified, placeholder, page, limit } = req.query;
+      const result = await userService.getAdminUsers(req.user.id, req.user.role, {
+        search, role, verified, placeholder, page, limit
+      });
+      res.status(200).json({ success: true, data: result });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Get admin users error:', error);
       res.status(500).json({ success: false, message: 'Error fetching users.' });
     }
   },

@@ -4,13 +4,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   HomeIcon, PencilSquareIcon, MapPinIcon, EnvelopeIcon,
-  UserGroupIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon,
+  UserGroupIcon, UsersIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon,
   Bars3Icon, XMarkIcon, DocumentTextIcon, ShieldExclamationIcon
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: HomeIcon },
+  { href: '/admin/users', label: 'Users', icon: UsersIcon },
   { href: '/editor', label: 'Create Article', icon: PencilSquareIcon },
   { href: '/admin/locations', label: 'Locations', icon: MapPinIcon },
   { href: '/admin/messages', label: 'Messages', icon: EnvelopeIcon },

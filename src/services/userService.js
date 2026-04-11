@@ -579,6 +579,113 @@ async function getUsers(actorId, actorRole) {
   return { users, stats };
 }
 
+async function getAdminUsers(actorId, actorRole, { search, role, verified, placeholder, page, limit } = {}) {
+  const pageNum = Math.max(1, parseInt(page) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
+  const offset = (pageNum - 1) * limitNum;
+
+  const whereClause = {};
+
+  // Search by text (username, email, name)
+  if (search && typeof search === 'string' && search.trim()) {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    const sanitizedRaw = sanitizeForLike(search.trim());
+    const sanitizedNorm = sanitizeForLike(normalizeGreek(search.trim()));
+    const conditions = [
+      { username: { [likeOp]: `%${sanitizedRaw}%` } },
+      { email: { [likeOp]: `%${sanitizedRaw}%` } },
+      { firstNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+      { firstNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+      { lastNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+      { nickname: { [likeOp]: `%${sanitizedRaw}%` } },
+    ];
+    if (sanitizedNorm !== sanitizedRaw) {
+      conditions.push(
+        { username: { [likeOp]: `%${sanitizedNorm}%` } },
+        { firstNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+        { firstNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+        { lastNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+        { nickname: { [likeOp]: `%${sanitizedNorm}%` } }
+      );
+    }
+    whereClause[Op.or] = conditions;
+  }
+
+  // Filter by role
+  if (role && typeof role === 'string') {
+    whereClause.role = role;
+  }
+
+  // Filter by verification status
+  if (verified === 'true') {
+    whereClause.isVerified = true;
+  } else if (verified === 'false') {
+    whereClause.isVerified = false;
+  }
+
+  // Filter by placeholder status
+  if (placeholder === 'true') {
+    whereClause.isPlaceholder = true;
+  } else if (placeholder === 'false') {
+    whereClause.isPlaceholder = { [Op.or]: [false, null] };
+  }
+
+  // Scope for moderators
+  if (actorRole !== 'admin') {
+    const actor = await User.findByPk(actorId, {
+      attributes: ['id', 'role', 'homeLocationId']
+    });
+
+    if (!actor || actor.role !== 'moderator') {
+      throw new ServiceError(403, 'Insufficient permissions.');
+    }
+
+    if (!actor.homeLocationId) {
+      throw new ServiceError(403, 'Moderator must have an assigned location.');
+    }
+
+    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+    if (manageableLocationIds.length > 0) {
+      whereClause.homeLocationId = { [Op.in]: manageableLocationIds };
+    } else {
+      return { users: [], stats: null, pagination: { currentPage: pageNum, totalPages: 0, totalItems: 0, itemsPerPage: limitNum } };
+    }
+  }
+
+  const { count, rows: users } = await User.findAndCountAll({
+    where: whereClause,
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'isPlaceholder'],
+    include: [
+      {
+        model: Location,
+        as: 'homeLocation',
+        attributes: ['id', 'name', 'type', 'slug'],
+        required: false
+      }
+    ],
+    order: [['createdAt', 'DESC']],
+    limit: limitNum,
+    offset
+  });
+
+  const totalPages = Math.ceil(count / limitNum);
+  const stats = actorRole === 'admin' ? await buildUserStats() : buildUserStatsFromList(users);
+
+  return {
+    users,
+    stats,
+    pagination: {
+      currentPage: pageNum,
+      totalPages,
+      totalItems: count,
+      itemsPerPage: limitNum
+    }
+  };
+}
+
 async function getUserStats(actorId, actorRole) {
   if (actorRole === 'admin') {
     return await buildUserStats();
@@ -909,6 +1016,7 @@ module.exports = {
   deleteUserAccount,
   adminDeleteUser,
   getUsers,
+  getAdminUsers,
   getUserStats,
   updateUserRole,
   verifyUser,
