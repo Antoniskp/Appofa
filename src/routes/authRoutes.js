@@ -30,6 +30,7 @@ router.delete('/google/unlink', apiLimiter, authMiddleware, csrfProtection, auth
 router.post('/logout', apiLimiter, authMiddleware, csrfProtection, authController.logout);
 router.delete('/profile', apiLimiter, authMiddleware, csrfProtection, authController.deleteAccount);
 router.get('/users', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUsers);
+router.get('/users/admin', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getAdminUsers);
 router.get('/users/stats', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), authController.getUserStats);
 router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.updateUserRole);
 router.put('/users/:id/verify', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.verifyUser);
