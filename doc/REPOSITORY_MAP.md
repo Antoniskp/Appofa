@@ -57,7 +57,7 @@ Appofa/
 │
 ├── app/                    # Frontend (Next.js App Router, 97 pages)
 │   ├── (statics)/          # Static content pages (46 pages)
-│   ├── admin/              # Admin dashboard (15 pages)
+│   ├── admin/              # Admin dashboard (17 pages)
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
 │   ├── suggestions/        # Suggestion pages
@@ -157,6 +157,15 @@ Appofa/
 | GET | /google/callback | — | Google callback |
 | DELETE | /github/unlink | ✅ | Unlink GitHub |
 | DELETE | /google/unlink | ✅ | Unlink Google |
+| GET | /users | admin | List all users (legacy) |
+| GET | /users/admin | admin | List users with server-side pagination/filtering |
+| GET | /users/stats | admin | User stats |
+| PUT | /users/:id/role | admin | Update user role |
+| PUT | /users/:id/verify | admin | Verify/unverify user |
+| DELETE | /users/:id | admin | Delete user |
+| GET | /users/search | ✅ | Search users (public) |
+| GET | /users/:id/public | ✅ | Public user profile |
+| GET | /users/public-stats | — | Public user stats |
 
 ### Articles (`/api/articles`)
 | Method | Path | Auth | Description |
@@ -364,10 +373,11 @@ Appofa/
 | `/manifest-supporters` | Manifest supporters |
 | `/request-removal` | Profile removal request |
 
-### Admin (16 pages)
+### Admin (17 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
+| `/admin/users` | User management (search, filter, role change, verify, delete) |
 | `/admin/status` | System status |
 | `/admin/persons/*` | Person management (list, detail, edit, create) |
 | `/admin/candidates/*` | Candidate management (backward-compat) |

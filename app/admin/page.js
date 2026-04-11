@@ -143,9 +143,6 @@ function AdminDashboardContent() {
         if (s) setUserStats(s);
         return s;
       },
-      onError: (error) => {
-        console.error('Failed to fetch user stats:', error);
-      }
     }
   );
 

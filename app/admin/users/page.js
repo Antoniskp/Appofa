@@ -66,12 +66,13 @@ function AdminUsersContent() {
   const stats = usersData?.stats || { total: 0, byRole: {} };
   const pagination = usersData?.pagination || { currentPage: 1, totalPages: 1, totalItems: 0 };
 
-  // Fetch locations for moderator assignment
+  // Fetch locations for moderator assignment (sorted alphabetically)
   const { data: locations } = useAsyncData(
     async () => {
       const response = await locationAPI.getAll({ limit: 500 });
       if (response.success) {
-        return response.locations || [];
+        const locs = response.locations || [];
+        return locs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'el'));
       }
       return [];
     },
