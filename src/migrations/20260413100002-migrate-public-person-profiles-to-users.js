@@ -31,6 +31,10 @@ module.exports = {
       return;
     }
 
+    // Check if isPlaceholder column still exists on Users (dropped in migration 004)
+    const userCols = await queryInterface.describeTable('Users');
+    const hasIsPlaceholder = !!userCols.isPlaceholder;
+
     // Collect all placeholder user ids so we can update them rather than creating duplicates
     const placeholderUserIds = profiles
       .map((p) => p.placeholderUserId)
@@ -72,8 +76,8 @@ module.exports = {
           `"claimToken" = ${profile.claimToken ? `'${profile.claimToken}'` : 'NULL'}`,
           `"claimTokenExpiresAt" = ${profile.claimTokenExpiresAt ? `'${profile.claimTokenExpiresAt}'` : 'NULL'}`,
           `"searchable" = true`,
-          `"isPlaceholder" = false`,
         ];
+        if (hasIsPlaceholder) sets.push(`"isPlaceholder" = false`);
 
         // Update name fields if profile has them
         if (profile.firstNameNative) sets.push(`"firstNameNative" = '${profile.firstNameNative.replace(/'/g, "''")}'`);

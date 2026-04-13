@@ -13,9 +13,8 @@ const personRemovalRequestController = {
       return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(requesterEmail)) {
+    // Validate email format (simple, non-backtracking pattern)
+    if (!/^[^@\s]{1,64}@[^@\s]{1,255}$/.test(requesterEmail)) {
       return res.status(400).json({ success: false, message: 'Invalid email address.' });
     }
 

@@ -163,7 +163,6 @@ async function getPersonBySlug(slug) {
 
 async function getPersonById(id) {
   const profile = await User.findByPk(id, {
-    where: { claimStatus: { [Op.ne]: null } },
     include: PROFILE_INCLUDE
   });
   if (!profile || profile.claimStatus === null) throw new ServiceError(404, 'Person profile not found.');
