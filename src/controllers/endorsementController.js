@@ -62,7 +62,7 @@ const endorsementController = {
       const [endorsement, created] = await Endorsement.findOrCreate({
         where: {
           endorserId: req.user.id,
-          endorsedId: endorsedId,
+          endorsedId,
           endorsedPersonId: targetPersonId,
           topic
         }
@@ -117,7 +117,7 @@ const endorsementController = {
       const deleted = await Endorsement.destroy({
         where: {
           endorserId: req.user.id,
-          endorsedId: endorsedId,
+          endorsedId,
           endorsedPersonId: targetPersonId,
           topic
         }

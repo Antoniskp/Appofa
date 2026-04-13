@@ -303,10 +303,9 @@ export default function LocationRoleManager({ locationId, locationType }) {
     if (!(def.key in localAssignments)) return def;
     const localA = localAssignments[def.key];
     const serverA = def.assignment;
-    const changed = (
+    const changed =
       localA.userId !== (serverA?.userId || null) ||
-      localA.personId !== (serverA?.personId || null)
-    );
+      localA.personId !== (serverA?.personId || null);
     if (!changed) return def;
     return {
       ...def,

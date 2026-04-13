@@ -99,7 +99,7 @@ Appofa/
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
-| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge, twitchChannel | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
+| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, searchable, expertiseArea, displayBadge, twitchChannel | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
 | Poll | Polls | id, title, description, category, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
@@ -116,16 +116,16 @@ Appofa/
 | Message | Messages | id, type, userId, email, name, subject, message, locationId, status | belongsTo: User, Location |
 | Follow | Follows | id, followerId, followingId | belongsTo: User (×2) |
 | Bookmark | Bookmarks | id, userId, entityType, entityId | belongsTo: User |
-| Endorsement | Endorsements | id, endorserId, endorsedId, topic | belongsTo: User (×2) |
+| Endorsement | Endorsements | id, endorserId, endorsedId (nullable), endorsedPersonId (nullable), topic | belongsTo: User (endorser, endorsed); belongsTo: PublicPersonProfile (endorsedPerson) |
 | Report | Reports | id, contentType, contentId, category, message, reporterEmail, status | — |
 | Formation | Formations | id, userId, name, description, slug, totalVotes, isPublished | belongsTo: User; hasMany: FormationPick, FormationLike, DreamTeamVote |
 | FormationPick | FormationPicks | id, formationId, positionId, candidateId, pickOrder | belongsTo: Formation, GovernmentPosition |
 | FormationLike | FormationLikes | id, formationId, userId | belongsTo: Formation, User |
-| DreamTeamVote | DreamTeamVotes | id, candidateUserId, positionId, voteCount | belongsTo: GovernmentPosition |
+| DreamTeamVote | DreamTeamVotes | id, candidateUserId (nullable), candidatePersonId (nullable), positionId, personName | belongsTo: GovernmentPosition; belongsTo: User (candidateUser); belongsTo: PublicPersonProfile (candidatePerson) |
 | GovernmentPosition | GovernmentPositions | id, name, description, isActive | hasMany: GovernmentCurrentHolder, GovernmentPositionSuggestion, DreamTeamVote, FormationPick |
 | GovernmentCurrentHolder | GovernmentCurrentHolders | id, positionId, personId, firstName, lastName, isActive | belongsTo: GovernmentPosition |
 | GovernmentPositionSuggestion | GovernmentPositionSuggestions | id, positionId, suggestedFirstName, suggestedLastName, reason | belongsTo: GovernmentPosition |
-| PublicPersonProfile | PublicPersonProfiles | id, slug, position, bio, imageUrl, isApproved, claimedByUserId, placeholderUserId, firstNameNative, lastNameNative | belongsTo: User (×2) |
+| PublicPersonProfile | PublicPersonProfiles | id, slug, bio, photo, claimStatus, claimedByUserId, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nationality, countryCode | belongsTo: User (claimedBy, claimVerifiedBy, createdBy); hasMany: Endorsement (endorsedPersonId), DreamTeamVote (candidatePersonId) |
 | PersonRemovalRequest | PersonRemovalRequests | id, publicPersonProfileId, reason, status, submittedBy | — |
 | LinkPreviewCache | LinkPreviewCaches | id, url, title, description, imageUrl, favicon, domain, expiresAt | — |
 | Manifest | Manifests | id, slug, title, description, content, createdBy, status | belongsTo: User; hasMany: ManifestAcceptance |
@@ -249,6 +249,8 @@ Appofa/
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | / | opt | List persons |
+| GET | /search | — | Search person profiles by name |
+| GET | /unified-search | — | Unified search: persons + users deduplicated |
 | GET | /claims | admin | List claims |
 | POST | /claims/:id/approve | admin | Approve claim |
 | POST | /claims/:id/reject | admin | Reject claim |
@@ -320,7 +322,7 @@ Appofa/
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management |
 | oauthService.js | OAuth integration (GitHub, Google) |
-| personService.js | Person profile management, claims, placeholders |
+| personService.js | Person profile management, claim flow (submit/approve/reject), searchPersons, unifiedSearch |
 | pollService.js | Poll operations & calculations |
 | userService.js | User management & utilities |
 
@@ -556,7 +558,11 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260406000000-create-hero-settings.js | Hero settings |
 | — | 20260406100000-rename-name-fields.js | Rename name fields |
 | — | 20260406200000-create-manifests.js | Manifests |
-| — | 20260407100000-add-placeholder-fields.js | Placeholder user fields |
+| — | 20260407100000-add-placeholder-fields.js | Placeholder user fields (legacy) |
+| — | 20260413000001-add-endorsed-person-id-to-endorsements.js | Add endorsedPersonId FK to Endorsements |
+| — | 20260413000002-add-candidate-person-id-to-dream-team-votes.js | Add candidatePersonId FK to DreamTeamVotes |
+| — | 20260413000003-drop-placeholder-user-id-from-person-profiles.js | Drop placeholderUserId from PublicPersonProfiles |
+| — | 20260413000004-drop-is-placeholder-from-users.js | Drop isPlaceholder from Users |
 | — | 20260407200000-remove-person-id-columns.js | Remove person ID cols |
 | — | 20260407300000-add-nationality-languages-to-users.js | User nationality/languages |
 | — | 20260408000000-create-unified-tags.js | Tags/TaggableItems tables; removes tags JSON from Articles and Polls |
