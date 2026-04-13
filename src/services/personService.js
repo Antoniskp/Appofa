@@ -1,6 +1,8 @@
+'use strict';
+
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { PublicPersonProfile, User, Location, Endorsement, DreamTeamVote } = require('../models');
+const { User, Location, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick } = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike, transliterateGreek } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
@@ -31,13 +33,13 @@ function generateSlug(firstNameNative, lastNameNative) {
 }
 
 async function ensureUniqueSlug(base) {
-  const existing = await PublicPersonProfile.findOne({ where: { slug: base } });
+  const existing = await User.findOne({ where: { slug: base } });
   if (!existing) return base;
 
   let counter = 2;
   while (true) {
     const nextSlug = `${base}-${counter}`;
-    const conflict = await PublicPersonProfile.findOne({ where: { slug: nextSlug } });
+    const conflict = await User.findOne({ where: { slug: nextSlug } });
     if (!conflict) return nextSlug;
     counter++;
   }
@@ -46,7 +48,7 @@ async function ensureUniqueSlug(base) {
 // ─── Attribute helpers ───────────────────────────────────────────────────────
 
 const PROFILE_INCLUDE = [
-  { model: Location, as: 'location', attributes: ['id', 'name', 'slug'] },
+  { model: Location, as: 'homeLocation', attributes: ['id', 'name', 'slug'] },
   { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] },
   {
     model: User,
@@ -56,88 +58,16 @@ const PROFILE_INCLUDE = [
   },
   {
     model: User,
-    as: 'createdBy',
+    as: 'createdByModerator',
     attributes: ['id', 'username'],
     required: false
   }
 ];
 
-const SAFE_USER_ATTRS = ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'email', 'role'];
-
-// ─── Public ──────────────────────────────────────────────────────────────────
-
-async function getPersons({ page = 1, limit = 12, constituencyId, search, claimStatus, position, expertiseArea } = {}) {
-  const pageNum = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
-  const offset = (pageNum - 1) * limitNum;
-
-  const where = {};
-  if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
-  if (claimStatus && claimStatus !== 'all') where.claimStatus = claimStatus;
-  if (search) {
-    const isPostgres = dbConfig.getDialect() === 'postgres';
-    const likeOp = isPostgres ? Op.iLike : Op.like;
-    const sanitizedRaw = sanitizeForLike(search);
-    const sanitizedNorm = sanitizeForLike(normalizeGreek(search));
-    const conditions = [
-      { firstNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
-      { lastNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
-      { firstNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
-      { lastNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
-      { nickname: { [likeOp]: `%${sanitizedRaw}%` } },
-    ];
-    if (sanitizedNorm !== sanitizedRaw) {
-      conditions.push(
-        { firstNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
-        { lastNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
-        { firstNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
-        { lastNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
-        { nickname: { [likeOp]: `%${sanitizedNorm}%` } }
-      );
-    }
-    where[Op.or] = conditions;
-  }
-  if (expertiseArea && typeof expertiseArea === 'string') {
-    const isPostgres = dbConfig.getDialect() === 'postgres';
-    const likeOp = isPostgres ? Op.iLike : Op.like;
-    where.expertiseArea = { [likeOp]: `%${expertiseArea.replace(/[%_\\]/g, '\\$&')}%` };
-  }
-
-  const { count, rows } = await PublicPersonProfile.findAndCountAll({
-    where,
-    include: PROFILE_INCLUDE,
-    limit: limitNum,
-    offset,
-    order: [['createdAt', 'DESC']]
-  });
-
-  return {
-    profiles: rows,
-    pagination: {
-      currentPage: pageNum,
-      totalPages: Math.ceil(count / limitNum),
-      totalItems: count,
-      itemsPerPage: limitNum
-    }
-  };
-}
-
-async function getPersonBySlug(slug) {
-  const profile = await PublicPersonProfile.findOne({
-    where: { slug },
-    include: PROFILE_INCLUDE
-  });
-  if (!profile) throw new ServiceError(404, 'Person profile not found.');
-  return profile;
-}
-
-async function getPersonById(id) {
-  const profile = await PublicPersonProfile.findByPk(id, {
-    include: PROFILE_INCLUDE
-  });
-  if (!profile) throw new ServiceError(404, 'Person profile not found.');
-  return profile;
-}
+const SAFE_USER_ATTRS = [
+  'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
+  'nickname', 'avatar', 'email', 'role', 'claimStatus', 'slug'
+];
 
 // ─── Expertise area validation helper ────────────────────────────────────────
 
@@ -159,14 +89,99 @@ function validatePartyId(partyId) {
   return partyId;
 }
 
-// ─── Path B — Moderator Creates / Claim Flow ─────────────────────────────────
+// ─── Where clause for name search ────────────────────────────────────────────
+
+function buildNameSearchWhere(search) {
+  const isPostgres = dbConfig.getDialect() === 'postgres';
+  const likeOp = isPostgres ? Op.iLike : Op.like;
+  const sanitizedRaw = sanitizeForLike(search);
+  const sanitizedNorm = sanitizeForLike(normalizeGreek(search));
+  const conditions = [
+    { firstNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+    { lastNameNative: { [likeOp]: `%${sanitizedRaw}%` } },
+    { firstNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+    { lastNameEn: { [likeOp]: `%${sanitizedRaw}%` } },
+    { nickname: { [likeOp]: `%${sanitizedRaw}%` } },
+  ];
+  if (sanitizedNorm !== sanitizedRaw) {
+    conditions.push(
+      { firstNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+      { lastNameNative: { [likeOp]: `%${sanitizedNorm}%` } },
+      { firstNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+      { lastNameEn: { [likeOp]: `%${sanitizedNorm}%` } },
+      { nickname: { [likeOp]: `%${sanitizedNorm}%` } }
+    );
+  }
+  return { [Op.or]: conditions };
+}
+
+// ─── Public read ─────────────────────────────────────────────────────────────
+
+async function getPersons({ page = 1, limit = 12, constituencyId, search, claimStatus, expertiseArea } = {}) {
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
+  const offset = (pageNum - 1) * limitNum;
+
+  // Only public person profiles (claimStatus IS NOT NULL)
+  const where = { claimStatus: { [Op.ne]: null } };
+  if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
+  if (claimStatus && claimStatus !== 'all') where.claimStatus = claimStatus;
+  if (search) Object.assign(where, buildNameSearchWhere(search));
+  if (expertiseArea && typeof expertiseArea === 'string') {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    where.expertiseArea = { [likeOp]: `%${expertiseArea.replace(/[%_\\]/g, '\\$&')}%` };
+  }
+
+  const { count, rows } = await User.findAndCountAll({
+    where,
+    include: PROFILE_INCLUDE,
+    limit: limitNum,
+    offset,
+    order: [['createdAt', 'DESC']]
+  });
+
+  return {
+    profiles: rows,
+    pagination: {
+      currentPage: pageNum,
+      totalPages: Math.ceil(count / limitNum),
+      totalItems: count,
+      itemsPerPage: limitNum
+    }
+  };
+}
+
+async function getPersonBySlug(slug) {
+  const profile = await User.findOne({
+    where: { slug, claimStatus: { [Op.ne]: null } },
+    include: PROFILE_INCLUDE
+  });
+  if (!profile) throw new ServiceError(404, 'Person profile not found.');
+  return profile;
+}
+
+async function getPersonById(id) {
+  const profile = await User.findByPk(id, {
+    include: PROFILE_INCLUDE
+  });
+  if (!profile || profile.claimStatus === null) throw new ServiceError(404, 'Person profile not found.');
+  return profile;
+}
+
+// ─── Moderator creates unclaimed profile ─────────────────────────────────────
 
 async function createProfile(moderatorUserId, moderatorRole, data) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
     throw new ServiceError(403, 'Only admins and moderators can create person profiles.');
   }
 
-  const { firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, locationId, constituencyId, bio, photo, contactEmail, socialLinks, politicalPositions, manifesto, position, expertiseArea, partyId, nationality, countryCode } = data;
+  const {
+    firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname,
+    locationId, constituencyId, bio, photo, contactEmail, socialLinks,
+    politicalPositions, manifesto, expertiseArea, partyId, nationality, countryCode
+  } = data;
+
   if (!firstNameNative || !firstNameNative.trim()) throw new ServiceError(400, 'First name is required.');
   if (!lastNameNative || !lastNameNative.trim()) throw new ServiceError(400, 'Last name is required.');
 
@@ -176,34 +191,22 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   const base = generateSlug(firstNameNative.trim(), lastNameNative.trim());
   const slug = await ensureUniqueSlug(base);
 
-  // Country-prefix the placeholder credentials to avoid slug collisions across countries
-  const countryPrefix = (countryCode || 'gr').toLowerCase();
-  // Create a placeholder User record for this unclaimed profile so that
-  // endorsements, dream-team votes, and search all work via the Users table.
-  const placeholderEmail = `unclaimed-${countryPrefix}-${slug}@placeholder.appofasi.gr`;
-  const placeholderUsername = `person-${countryPrefix}-${slug}`;
-  const placeholderUser = await User.create({
-    username: placeholderUsername,
-    email: placeholderEmail,
+  const profile = await User.create({
+    username: null,
+    email: null,
     password: null,
     role: 'viewer',
-    isPlaceholder: true,
-    searchable: false,
-    firstNameNative: firstNameNative.trim(),
-    lastNameNative: lastNameNative.trim(),
-    firstNameEn: firstNameEn ? firstNameEn.trim() : null,
-    lastNameEn: lastNameEn ? lastNameEn.trim() : null,
-    nickname: nickname ? nickname.trim() : null,
-  });
-
-  const profile = await PublicPersonProfile.create({
+    searchable: true,
+    claimStatus: 'unclaimed',
+    createdByUserId: moderatorUserId,
+    claimedByUserId: null,
     slug,
     firstNameNative: firstNameNative.trim(),
     lastNameNative: lastNameNative.trim(),
     firstNameEn: firstNameEn ? firstNameEn.trim() : null,
     lastNameEn: lastNameEn ? lastNameEn.trim() : null,
     nickname: nickname ? nickname.trim() : null,
-    locationId: locationId || null,
+    homeLocationId: locationId || null,
     constituencyId: constituencyId || null,
     bio: bio || null,
     photo: photo || null,
@@ -211,28 +214,25 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     socialLinks: socialLinks || null,
     politicalPositions: politicalPositions || null,
     manifesto: manifesto || null,
-    position: position || null,
     expertiseArea: validatedExpertiseArea,
     partyId: validatedPartyId,
     nationality: nationality || null,
     countryCode: countryCode ? countryCode.toUpperCase() : null,
-    claimStatus: 'unclaimed',
-    createdByUserId: moderatorUserId,
-    claimedByUserId: placeholderUser.id,
-    placeholderUserId: placeholderUser.id,
     source: 'moderator'
   });
 
   return profile;
 }
 
+// ─── Claim flow ───────────────────────────────────────────────────────────────
+
 async function submitClaim(userId, profileId, supportingStatement) {
   if (!supportingStatement || !supportingStatement.trim()) {
     throw new ServiceError(400, 'Supporting statement is required.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(profileId);
-  if (!profile) throw new ServiceError(404, 'Person profile not found.');
+  const profile = await User.findByPk(profileId);
+  if (!profile || profile.claimStatus === null) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus === 'claimed') throw new ServiceError(400, 'This profile has already been claimed.');
   if (profile.claimStatus === 'pending') throw new ServiceError(409, 'A claim is already pending for this profile.');
 
@@ -255,34 +255,31 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
     throw new ServiceError(403, 'Only admins and moderators can approve claims.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(profileId);
-  if (!profile) throw new ServiceError(404, 'Person profile not found.');
-  if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
+  // profileId is the unclaimed User row
+  const unclaimedProfile = await User.findByPk(profileId);
+  if (!unclaimedProfile || unclaimedProfile.claimStatus === null) {
+    throw new ServiceError(404, 'Person profile not found.');
+  }
+  if (unclaimedProfile.claimStatus !== 'pending') {
+    throw new ServiceError(400, 'No pending claim for this profile.');
+  }
 
-  const claimingUserId = profile.claimedByUserId;
-  const placeholderUserId = profile.placeholderUserId;
-
-  // Transfer relationships from the placeholder user to the real claiming user.
-  // The guard `placeholderUserId !== claimingUserId` prevents a no-op transfer in the
-  // unlikely case where the placeholder was somehow set as the claimedByUserId (it should
-  // not happen in normal flow, but this makes the code safe against re-approvals or bugs).
+  const claimingUserId = unclaimedProfile.claimedByUserId;
   const claimingUser = claimingUserId ? await User.findByPk(claimingUserId) : null;
-  const isClaimingUserReal = claimingUser && !claimingUser.isPlaceholder;
 
-  if (placeholderUserId && claimingUserId && placeholderUserId !== claimingUserId && isClaimingUserReal) {
-    // Transfer endorsements: handle potential unique-constraint conflicts.
-    // Fetch all placeholder endorsements and all existing claiming-user endorsements in two queries,
-    // then resolve conflicts in-memory to avoid N+1 queries.
-    const [placeholderEndorsements, existingClaimingEndorsements] = await Promise.all([
-      Endorsement.findAll({ where: { endorsedId: placeholderUserId } }),
-      Endorsement.findAll({ where: { endorsedId: claimingUserId } }),
+  // Transfer all FK references from unclaimed profile → real claiming user
+  if (claimingUser && claimingUser.claimStatus === null) {
+    // Transfer endorsements received by the unclaimed profile
+    const [profileEndorsements, existingClaimingEndorsements] = await Promise.all([
+      Endorsement.findAll({ where: { endorsedId: profileId } }),
+      Endorsement.findAll({ where: { endorsedId: claimingUserId } })
     ]);
     const existingKey = new Set(
       existingClaimingEndorsements.map((e) => `${e.endorserId}:${e.topic}`)
     );
     const toDestroy = [];
     const toUpdate = [];
-    for (const endorsement of placeholderEndorsements) {
+    for (const endorsement of profileEndorsements) {
       const key = `${endorsement.endorserId}:${endorsement.topic}`;
       if (existingKey.has(key)) {
         toDestroy.push(endorsement.id);
@@ -297,70 +294,73 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
       await Endorsement.update({ endorsedId: claimingUserId }, { where: { id: { [Op.in]: toUpdate } } });
     }
 
-    // Transfer dream-team votes (candidateUserId column)
+    // Transfer dream-team votes
     await DreamTeamVote.update(
       { candidateUserId: claimingUserId },
-      { where: { candidateUserId: placeholderUserId } }
+      { where: { candidateUserId: profileId } }
     );
 
-    // Ensure claiming user is searchable
-    // claimingUser was already fetched above; re-use it.
-    {
-      const nameUpdates = { searchable: true };
-      if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
-      if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
-      if (profile.firstNameEn) nameUpdates.firstNameEn = profile.firstNameEn;
-      if (profile.lastNameEn) nameUpdates.lastNameEn = profile.lastNameEn;
-      if (profile.nickname) nameUpdates.nickname = profile.nickname;
-      await claimingUser.update(nameUpdates);
-    }
+    // Transfer location roles
+    await LocationRole.update(
+      { userId: claimingUserId },
+      { where: { userId: profileId } }
+    );
 
-    // Delete the placeholder user (all FKs to it have been transferred or will be SET NULL)
-    const placeholderUser = await User.findByPk(placeholderUserId);
-    if (placeholderUser && placeholderUser.isPlaceholder) {
-      await placeholderUser.destroy();
-    }
-  } else if (claimingUser) {
-    // No placeholder (or claiming user IS the placeholder - shouldn't happen): sync name fields
-    const nameUpdates = {};
-    if (profile.firstNameNative) nameUpdates.firstNameNative = profile.firstNameNative;
-    if (profile.lastNameNative) nameUpdates.lastNameNative = profile.lastNameNative;
-    if (profile.firstNameEn) nameUpdates.firstNameEn = profile.firstNameEn;
-    if (profile.lastNameEn) nameUpdates.lastNameEn = profile.lastNameEn;
-    if (profile.nickname) nameUpdates.nickname = profile.nickname;
-    if (Object.keys(nameUpdates).length > 0) {
-      await claimingUser.update(nameUpdates);
-    }
+    // Transfer government holders
+    await GovernmentCurrentHolder.update(
+      { userId: claimingUserId },
+      { where: { userId: profileId } }
+    );
+
+    // Transfer government suggestions
+    await GovernmentPositionSuggestion.update(
+      { userId: claimingUserId },
+      { where: { userId: profileId } }
+    );
+
+    // Transfer formation picks
+    await FormationPick.update(
+      { candidateUserId: claimingUserId },
+      { where: { candidateUserId: profileId } }
+    );
+
+    // Sync name fields to claiming user if not already set
+    const nameUpdates = { searchable: true };
+    if (!claimingUser.firstNameNative && unclaimedProfile.firstNameNative) nameUpdates.firstNameNative = unclaimedProfile.firstNameNative;
+    if (!claimingUser.lastNameNative && unclaimedProfile.lastNameNative) nameUpdates.lastNameNative = unclaimedProfile.lastNameNative;
+    if (!claimingUser.firstNameEn && unclaimedProfile.firstNameEn) nameUpdates.firstNameEn = unclaimedProfile.firstNameEn;
+    if (!claimingUser.lastNameEn && unclaimedProfile.lastNameEn) nameUpdates.lastNameEn = unclaimedProfile.lastNameEn;
+    if (!claimingUser.nickname && unclaimedProfile.nickname) nameUpdates.nickname = unclaimedProfile.nickname;
+    await claimingUser.update(nameUpdates);
+
+    // Delete the unclaimed User row (all its FKs have been transferred)
+    await unclaimedProfile.destroy();
+  } else {
+    // No valid claiming user found — just mark as claimed
+    await unclaimedProfile.update({
+      claimStatus: 'claimed',
+      claimVerifiedAt: new Date(),
+      claimVerifiedByUserId: moderatorUserId,
+      claimToken: null,
+      claimTokenExpiresAt: null
+    });
   }
 
-  await profile.update({
-    claimStatus: 'claimed',
-    claimVerifiedAt: new Date(),
-    claimVerifiedByUserId: moderatorUserId,
-    claimToken: null,
-    claimTokenExpiresAt: null,
-    placeholderUserId: null,
-  });
-
-  return profile;
+  return claimingUser || unclaimedProfile;
 }
 
-async function rejectClaim(moderatorUserId, moderatorRole, profileId, reason) {
+async function rejectClaim(moderatorUserId, moderatorRole, profileId, _reason) {
   if (!['admin', 'moderator'].includes(moderatorRole)) {
     throw new ServiceError(403, 'Only admins and moderators can reject claims.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(profileId);
-  if (!profile) throw new ServiceError(404, 'Person profile not found.');
+  const profile = await User.findByPk(profileId);
+  if (!profile || profile.claimStatus === null) throw new ServiceError(404, 'Person profile not found.');
   if (profile.claimStatus !== 'pending') throw new ServiceError(400, 'No pending claim for this profile.');
-
-  // Restore claimedByUserId to the placeholder user (if one exists) so the profile
-  // remains endorsable and searchable after rejection.
-  const restoredClaimedByUserId = profile.placeholderUserId || null;
 
   await profile.update({
     claimStatus: 'unclaimed',
-    claimedByUserId: restoredClaimedByUserId,
+    claimedByUserId: null,
     claimRequestedAt: null,
     claimToken: null,
     claimTokenExpiresAt: null
@@ -369,9 +369,11 @@ async function rejectClaim(moderatorUserId, moderatorRole, profileId, reason) {
   return profile;
 }
 
+// ─── Update / Delete ──────────────────────────────────────────────────────────
+
 async function updateProfile(requestingUserId, requestingRole, profileId, data) {
-  const profile = await PublicPersonProfile.findByPk(profileId);
-  if (!profile) throw new ServiceError(404, 'Person profile not found.');
+  const profile = await User.findByPk(profileId);
+  if (!profile || profile.claimStatus === null) throw new ServiceError(404, 'Person profile not found.');
 
   const isOwner = profile.claimedByUserId === requestingUserId;
   const isModerator = ['admin', 'moderator'].includes(requestingRole);
@@ -380,13 +382,21 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
     throw new ServiceError(403, 'You do not have permission to update this profile.');
   }
 
-  const allowedFields = ['firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'locationId', 'bio', 'photo', 'contactEmail', 'socialLinks', 'politicalPositions', 'manifesto', 'position', 'nationality'];
-  if (isModerator) allowedFields.push('constituencyId', 'claimStatus', 'slug', 'countryCode');
+  const allowedFields = [
+    'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname',
+    'homeLocationId', 'bio', 'photo', 'contactEmail', 'socialLinks',
+    'politicalPositions', 'manifesto', 'nationality'
+  ];
+  if (isModerator) {
+    allowedFields.push('constituencyId', 'claimStatus', 'slug', 'countryCode');
+  }
 
   const updates = {};
   allowedFields.forEach((field) => {
     if (data[field] !== undefined) updates[field] = data[field];
   });
+  // Support 'locationId' as alias for 'homeLocationId'
+  if (data.locationId !== undefined) updates.homeLocationId = data.locationId;
 
   if (data.expertiseArea !== undefined) {
     updates.expertiseArea = validateExpertiseArea(data.expertiseArea);
@@ -405,8 +415,8 @@ async function deleteProfile(requestingUserId, requestingRole, profileId) {
     throw new ServiceError(403, 'Only admins and moderators can delete person profiles.');
   }
 
-  const profile = await PublicPersonProfile.findByPk(profileId);
-  if (!profile) throw new ServiceError(404, 'Person profile not found.');
+  const profile = await User.findByPk(profileId);
+  if (!profile || profile.claimStatus === null) throw new ServiceError(404, 'Person profile not found.');
 
   if (requestingRole === 'moderator' && profile.claimStatus !== 'unclaimed') {
     throw new ServiceError(403, 'Moderators can only delete unclaimed profiles.');
@@ -427,10 +437,10 @@ async function getPendingClaims(moderatorUserId, moderatorRole, { page = 1, limi
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const offset = (pageNum - 1) * limitNum;
 
-  const { count, rows } = await PublicPersonProfile.findAndCountAll({
+  const { count, rows } = await User.findAndCountAll({
     where: { claimStatus: 'pending' },
     include: [
-      { model: User, as: 'claimedBy', attributes: SAFE_USER_ATTRS },
+      { model: User, as: 'claimedBy', attributes: SAFE_USER_ATTRS, required: false },
       { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] }
     ],
     limit: limitNum,
@@ -449,6 +459,80 @@ async function getPendingClaims(moderatorUserId, moderatorRole, { page = 1, limi
   };
 }
 
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+async function searchPersons(search, limit = 8) {
+  if (!search || !search.trim()) return [];
+
+  const where = {
+    claimStatus: { [Op.ne]: null },
+    ...buildNameSearchWhere(search)
+  };
+
+  const users = await User.findAll({
+    where,
+    attributes: ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'photo', 'avatar', 'claimStatus'],
+    limit: Math.min(50, limit),
+    order: [['firstNameNative', 'ASC']]
+  });
+
+  return users;
+}
+
+async function unifiedSearch(search, limit = 8) {
+  const lim = Math.min(50, parseInt(limit, 10) || 8);
+
+  // 1. Search real users (claimStatus IS NULL)
+  let realUsers = [];
+  if (search && search.trim()) {
+    const nameWhere = buildNameSearchWhere(search);
+    realUsers = await User.findAll({
+      where: { searchable: true, claimStatus: null, ...nameWhere },
+      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus'],
+      limit: lim
+    });
+  } else {
+    realUsers = await User.findAll({
+      where: { searchable: true, claimStatus: null },
+      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus'],
+      limit: lim,
+      order: [['createdAt', 'DESC']]
+    });
+  }
+
+  // 2. Search person profiles (claimStatus IS NOT NULL)
+  let persons = [];
+  if (search && search.trim()) {
+    const nameWhere = buildNameSearchWhere(search);
+    persons = await User.findAll({
+      where: { claimStatus: { [Op.ne]: null }, ...nameWhere },
+      attributes: ['id', 'slug', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'photo', 'avatar', 'claimStatus', 'claimedByUserId'],
+      limit: lim
+    });
+  }
+
+  // 3. Merge: if a person profile has claimedByUserId matching a real user in results,
+  //    show only the profile (use profile photo) and remove the real user from results.
+  const claimedByUserIds = new Set(
+    persons.filter((p) => p.claimedByUserId).map((p) => p.claimedByUserId)
+  );
+  const filteredRealUsers = realUsers.filter((u) => !claimedByUserIds.has(u.id));
+
+  const personResults = persons.map((p) => ({
+    ...p.toJSON(),
+    entityType: 'person',
+    displayPhoto: p.photo || p.avatar || null
+  }));
+
+  const userResults = filteredRealUsers.map((u) => ({
+    ...u.toJSON(),
+    entityType: 'user',
+    displayPhoto: u.avatar || null
+  }));
+
+  return [...personResults, ...userResults];
+}
+
 module.exports = {
   getPersons,
   getPersonBySlug,
@@ -460,6 +544,8 @@ module.exports = {
   updateProfile,
   deleteProfile,
   getPendingClaims,
+  searchPersons,
+  unifiedSearch,
   // Export for testing
   generateSlug
 };

@@ -18,12 +18,6 @@ const LocationRole = sequelize.define('LocationRole', {
     allowNull: false,
     comment: 'Predefined role key, e.g. "mayor", "regional_governor"',
   },
-  personId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: { model: 'PublicPersonProfiles', key: 'id' },
-    onDelete: 'SET NULL',
-  },
   userId: {
     type: DataTypes.INTEGER,
     allowNull: true,
@@ -46,7 +40,6 @@ const LocationRole = sequelize.define('LocationRole', {
   indexes: [
     { unique: true, fields: ['locationId', 'roleKey'], name: 'idx_location_roles_unique' },
     { fields: ['locationId'], name: 'idx_location_roles_location_id' },
-    { fields: ['personId'], name: 'idx_location_roles_person_id' },
     { fields: ['userId'], name: 'idx_location_roles_user_id' },
   ],
 });

@@ -99,7 +99,7 @@ Appofa/
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
-| User | Users | id, username, email, password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, isPlaceholder, searchable, expertiseArea, displayBadge, twitchChannel | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows) |
+| User | Users | id, username (nullable), email (nullable), password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
 | Poll | Polls | id, title, description, category, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
@@ -107,7 +107,7 @@ Appofa/
 | Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole; belongsTo: parent |
 | LocationLink | LocationLinks | id, locationId, url, type, pollId | belongsTo: Location, Poll |
 | LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
-| LocationRole | LocationRoles | id, locationId, roleName, isActive | belongsTo: Location |
+| LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
 | Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
 | Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
@@ -125,8 +125,7 @@ Appofa/
 | GovernmentPosition | GovernmentPositions | id, name, description, isActive | hasMany: GovernmentCurrentHolder, GovernmentPositionSuggestion, DreamTeamVote, FormationPick |
 | GovernmentCurrentHolder | GovernmentCurrentHolders | id, positionId, personId, firstName, lastName, isActive | belongsTo: GovernmentPosition |
 | GovernmentPositionSuggestion | GovernmentPositionSuggestions | id, positionId, suggestedFirstName, suggestedLastName, reason | belongsTo: GovernmentPosition |
-| PublicPersonProfile | PublicPersonProfiles | id, slug, position, bio, imageUrl, isApproved, claimedByUserId, placeholderUserId, firstNameNative, lastNameNative | belongsTo: User (×2) |
-| PersonRemovalRequest | PersonRemovalRequests | id, publicPersonProfileId, reason, status, submittedBy | — |
+| PersonRemovalRequest | PersonRemovalRequests | id, userId (FK→Users, unclaimed profile), requesterName, requesterEmail, message, status, adminNotes, reviewedBy | belongsTo: User (person), User (reviewer) |
 | LinkPreviewCache | LinkPreviewCaches | id, url, title, description, imageUrl, favicon, domain, expiresAt | — |
 | Manifest | Manifests | id, slug, title, description, content, createdBy, status | belongsTo: User; hasMany: ManifestAcceptance |
 | ManifestAcceptance | ManifestAcceptances | id, manifestId, userId, acceptedAt | belongsTo: Manifest, User |
@@ -248,18 +247,18 @@ Appofa/
 ### Persons (`/api/persons`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | / | opt | List persons |
-| GET | /claims | admin | List claims |
+| GET | / | opt | List persons (claimStatus IS NOT NULL users) |
+| GET | /search | — | Search person profiles by name |
+| GET | /unified-search | — | Unified search: person profiles + real users merged |
+| GET | /claims | admin | List pending claims |
 | POST | /claims/:id/approve | admin | Approve claim |
 | POST | /claims/:id/reject | admin | Reject claim |
-| POST | / | admin | Create person |
+| POST | / | admin | Create unclaimed person profile |
 | DELETE | /:id | admin | Delete person |
-| POST | /:id/claim | ✅ | Claim profile |
-| PUT | /:id | ✅ | Update person |
-| GET | /profile/:id | — | Get by ID |
+| POST | /:id/claim | ✅ | Submit a claim for a person profile |
+| PUT | /:id | ✅ | Update person profile |
+| GET | /profile/:id | admin | Get by numeric ID |
 | GET | /:slug | opt | Get by slug |
-
-> Note: `/api/candidates` is a backward-compatible alias for `/api/persons`
 
 ### Other Route Files
 | File | Base Path | Key Endpoints |
@@ -556,12 +555,16 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260406000000-create-hero-settings.js | Hero settings |
 | — | 20260406100000-rename-name-fields.js | Rename name fields |
 | — | 20260406200000-create-manifests.js | Manifests |
-| — | 20260407100000-add-placeholder-fields.js | Placeholder user fields |
+| — | 20260407100000-add-placeholder-fields.js | Placeholder user fields (superseded) |
 | — | 20260407200000-remove-person-id-columns.js | Remove person ID cols |
 | — | 20260407300000-add-nationality-languages-to-users.js | User nationality/languages |
 | — | 20260408000000-create-unified-tags.js | Tags/TaggableItems tables; removes tags JSON from Articles and Polls |
 | — | 20260410000000-create-ip-access-rules.js | IpAccessRules table (whitelist/blacklist) |
 | — | 20260410100000-add-twitch-channel-to-users.js | Add twitchChannel to Users |
+| — | 20260413100001-add-claim-fields-to-users.js | Add claim fields + person profile fields to Users; make email/username nullable; add slug |
+| — | 20260413100002-migrate-public-person-profiles-to-users.js | Data migration: copy PublicPersonProfiles rows to Users; update FK references |
+| — | 20260413100003-drop-public-person-profiles-table.js | Drop PublicPersonProfiles; remove personId from LocationRoles; finalize PersonRemovalRequests |
+| — | 20260413100004-drop-placeholder-user-id-and-is-placeholder.js | Drop isPlaceholder from Users |
 
 </details>
 

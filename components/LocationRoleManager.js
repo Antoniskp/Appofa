@@ -41,49 +41,16 @@ function AssigneePicker({ onSelect, onClose }) {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const encodedQ = encodeURIComponent(query);
-        const [usersRes, personsRes] = await Promise.all([
-          apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=5`).catch(() => null),
-          apiRequest(`/api/persons?search=${encodedQ}&limit=5`).catch(() => null),
-        ]);
-
-        const userResults = (usersRes?.data?.users || []).map((u) => ({
-          userId: u.id,
-          name: formatPersonName(u.firstNameNative, u.lastNameNative, u.username),
-          photo: u.avatar,
-          username: u.username,
-          isPerson: false,
-        }));
-
-        const personResults = (personsRes?.data?.profiles || [])
-          .map((p) => {
-            // For claimed profiles use the real owner; for unclaimed/pending use the
-            // placeholder (the claim hasn't been approved yet in pending state).
-            let userId;
-            if (p.claimStatus === 'claimed') {
-              userId = p.claimedByUserId;
-            } else if (p.claimStatus === 'unclaimed' || p.claimStatus === 'pending') {
-              userId = p.placeholderUserId;
-            } else {
-              return null;
-            }
-            if (!userId) return null;
-            return {
-              userId,
-              name: formatPersonName(p.firstNameNative, p.lastNameNative),
-              photo: p.photo,
-              claimStatus: p.claimStatus,
-              isPerson: true,
-            };
-          })
-          .filter(Boolean);
-
-        // Person results take priority; skip user results whose userId is already
-        // covered by a person result to avoid duplicates.
-        const personUserIds = new Set(personResults.map((r) => r.userId));
-        const filteredUsers = userResults.filter((r) => !personUserIds.has(r.userId));
-
-        setResults([...personResults, ...filteredUsers]);
+        const res = await apiRequest(`/api/persons/unified-search?search=${encodeURIComponent(query)}&limit=8`).catch(() => null);
+        const items = res?.data?.results || [];
+        setResults(items.map((r) => ({
+          userId: r.id,
+          name: formatPersonName(r.firstNameNative, r.lastNameNative, r.username),
+          photo: r.displayPhoto || r.photo || r.avatar || null,
+          username: r.username,
+          claimStatus: r.claimStatus,
+          entityType: r.entityType,
+        })));
       } catch {
         // ignore search errors silently
       } finally {

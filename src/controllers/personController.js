@@ -26,6 +26,32 @@ const personController = {
     }
   },
 
+  // GET /api/persons/search?search=...&limit=...
+  searchPersons: async (req, res) => {
+    try {
+      const { search, limit } = req.query;
+      const users = await personService.searchPersons(search, limit);
+      return res.status(200).json({ success: true, data: { users } });
+    } catch (error) {
+      if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+      console.error('searchPersons error:', error);
+      return res.status(500).json({ success: false, message: 'Error searching persons.' });
+    }
+  },
+
+  // GET /api/persons/unified-search?search=...&limit=...
+  unifiedSearch: async (req, res) => {
+    try {
+      const { search, limit } = req.query;
+      const results = await personService.unifiedSearch(search, limit);
+      return res.status(200).json({ success: true, data: { results } });
+    } catch (error) {
+      if (error.status) return res.status(error.status).json({ success: false, message: error.message });
+      console.error('unifiedSearch error:', error);
+      return res.status(500).json({ success: false, message: 'Error performing unified search.' });
+    }
+  },
+
   // GET /api/persons/:slug
   getPersonBySlug: async (req, res) => {
     try {

@@ -10,7 +10,7 @@ const User = sequelize.define('User', {
   },
   username: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
     unique: true,
     validate: {
       len: [3, 50]
@@ -18,7 +18,7 @@ const User = sequelize.define('User', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
+    allowNull: true,
     unique: true,
     validate: {
       isEmail: true
@@ -108,7 +108,7 @@ const User = sequelize.define('User', {
     allowNull: true
   },
   bio: {
-    type: DataTypes.STRING(280),
+    type: DataTypes.TEXT,
     allowNull: true
   },
   socialLinks: {
@@ -227,10 +227,91 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(5),
     allowNull: true
   },
-  isPlaceholder: {
-    type: DataTypes.BOOLEAN,
-    allowNull: false,
-    defaultValue: false
+  // ─── Person profile fields (for unclaimed/claimed public person profiles) ────
+  slug: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    unique: true
+  },
+  photo: {
+    type: DataTypes.STRING(500),
+    allowNull: true
+  },
+  contactEmail: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  politicalPositions: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('politicalPositions');
+      if (!raw) return null;
+      try { return JSON.parse(raw); } catch { return null; }
+    },
+    set(val) {
+      this.setDataValue('politicalPositions', val ? JSON.stringify(val) : null);
+    }
+  },
+  manifesto: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  countryCode: {
+    type: DataTypes.STRING(5),
+    allowNull: true
+  },
+  constituencyId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Locations', key: 'id' },
+    onDelete: 'SET NULL'
+  },
+  source: {
+    type: DataTypes.ENUM('moderator', 'application', 'self'),
+    allowNull: true,
+    defaultValue: null
+  },
+  // ─── Claim fields ─────────────────────────────────────────────────────────
+  claimStatus: {
+    type: DataTypes.ENUM('unclaimed', 'pending', 'claimed', 'rejected'),
+    allowNull: true,
+    defaultValue: null
+    // null = regular user, never involved in claim flow
+  },
+  claimedByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL'
+  },
+  claimRequestedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  claimVerifiedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  claimVerifiedByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL'
+  },
+  claimToken: {
+    type: DataTypes.STRING(255),
+    allowNull: true
+  },
+  claimTokenExpiresAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  createdByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL'
   },
   fullNameNative: {
     type: DataTypes.VIRTUAL,

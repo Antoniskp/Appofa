@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, PublicPersonProfile, PersonRemovalRequest } = require('../../src/models');
+const { sequelize, User, PersonRemovalRequest } = require('../../src/models');
 
 const express = require('express');
 const cors = require('cors');
@@ -59,11 +59,15 @@ describe('Person Removal Request API', () => {
     ({ token: adminToken, id: adminUserId } = await registerAndLogin('remov_admin', 'admin'));
     ({ token: viewerToken, id: viewerUserId } = await registerAndLogin('remov_viewer', 'viewer'));
 
-    // Create a test public person profile
-    const person = await PublicPersonProfile.create({
+    // Create a test unclaimed person profile (now a User row with claimStatus='unclaimed')
+    const person = await User.create({
       firstNameNative: 'Test',
       lastNameNative: 'Person',
       slug: 'test-person-removal',
+      username: null,
+      email: null,
+      role: 'viewer',
+      claimStatus: 'unclaimed',
     });
     testPersonId = person.id;
   });
@@ -80,7 +84,7 @@ describe('Person Removal Request API', () => {
         .post('/api/person-removal-requests')
         .set(publicCsrfHeaders())
         .send({
-          publicPersonProfileId: testPersonId,
+          userId: testPersonId,
           requesterName: 'Jane Doe',
           requesterEmail: 'jane@example.com',
           message: 'I want to be removed from the platform.',
@@ -95,7 +99,7 @@ describe('Person Removal Request API', () => {
       const res = await request(app)
         .post('/api/person-removal-requests')
         .set(publicCsrfHeaders())
-        .send({ publicPersonProfileId: testPersonId, requesterName: 'Jane Doe' });
+        .send({ userId: testPersonId, requesterName: 'Jane Doe' });
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
     });
@@ -105,7 +109,7 @@ describe('Person Removal Request API', () => {
         .post('/api/person-removal-requests')
         .set(publicCsrfHeaders())
         .send({
-          publicPersonProfileId: testPersonId,
+          userId: testPersonId,
           requesterName: 'Jane Doe',
           requesterEmail: 'not-an-email',
           message: 'Remove me.',
@@ -114,12 +118,12 @@ describe('Person Removal Request API', () => {
       expect(res.body.success).toBe(false);
     });
 
-    it('404 — non-existent publicPersonProfileId', async () => {
+    it('404 — non-existent userId', async () => {
       const res = await request(app)
         .post('/api/person-removal-requests')
         .set(publicCsrfHeaders())
         .send({
-          publicPersonProfileId: 99999,
+          userId: 99999,
           requesterName: 'Jane Doe',
           requesterEmail: 'jane@example.com',
           message: 'Remove me.',
@@ -162,7 +166,7 @@ describe('Person Removal Request API', () => {
 
     beforeAll(async () => {
       const record = await PersonRemovalRequest.create({
-        publicPersonProfileId: testPersonId,
+        userId: testPersonId,
         requesterName: 'Review Test',
         requesterEmail: 'review@example.com',
         message: 'Please remove.',
@@ -184,7 +188,7 @@ describe('Person Removal Request API', () => {
     it('200 — admin can reject a request', async () => {
       // Create another pending request to reject
       const record2 = await PersonRemovalRequest.create({
-        publicPersonProfileId: testPersonId,
+        userId: testPersonId,
         requesterName: 'Reject Test',
         requesterEmail: 'reject@example.com',
         message: 'Remove please.',

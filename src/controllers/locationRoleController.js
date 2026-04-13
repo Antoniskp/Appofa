@@ -1,4 +1,4 @@
-const { LocationRole, Location, PublicPersonProfile, User, GovernmentPosition, GovernmentCurrentHolder } = require('../models');
+const { LocationRole, Location, User, GovernmentPosition, GovernmentCurrentHolder } = require('../models');
 const locationRolesConfig = require('../../config/locationRoles.json');
 
 // Maps LocationRole roleKey → universal positionTypeKey used in GovernmentPositions.
@@ -85,24 +85,10 @@ exports.getRoles = async (req, res) => {
       where: { locationId },
       include: [
         {
-          model: PublicPersonProfile,
-          as: 'person',
-          attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo', 'slug'],
-          required: false,
-        },
-        {
           model: User,
           as: 'user',
           attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
           required: false,
-          include: [
-            {
-              model: PublicPersonProfile,
-              as: 'placeholderPersonProfile',
-              attributes: ['id', 'photo', 'slug'],
-              required: false,
-            },
-          ],
         },
       ],
     });
@@ -133,10 +119,10 @@ exports.getRoles = async (req, res) => {
 /**
  * PUT /api/locations/:locationId/roles
  * Moderator/Admin only.
- * Body: { roles: [{ roleKey, personId?, userId? }, ...] }
+ * Body: { roles: [{ roleKey, userId? }, ...] }
  *
  * Bulk upsert: creates or updates LocationRole records for the location.
- * If both personId and userId are null, the slot is cleared (kept but unassigned).
+ * If userId is null, the slot is cleared (kept but unassigned).
  */
 exports.upsertRoles = async (req, res) => {
   try {
@@ -166,12 +152,6 @@ exports.upsertRoles = async (req, res) => {
           message: `Invalid roleKey "${entry.roleKey}" for location type "${location.type}"`,
         });
       }
-      if (entry.personId != null) {
-        const person = await PublicPersonProfile.findByPk(entry.personId, { attributes: ['id'] });
-        if (!person) {
-          return res.status(400).json({ success: false, message: `Person with id ${entry.personId} not found` });
-        }
-      }
       if (entry.userId != null) {
         const user = await User.findByPk(entry.userId, { attributes: ['id'] });
         if (!user) {
@@ -186,16 +166,15 @@ exports.upsertRoles = async (req, res) => {
     // Upsert each role
     const upserted = [];
     for (const entry of roles) {
-      const { roleKey, personId = null, userId = null } = entry;
+      const { roleKey, userId = null } = entry;
       const sortOrder = defByKey[roleKey]?.order ?? 0;
 
       const [record] = await LocationRole.findOrCreate({
         where: { locationId, roleKey },
-        defaults: { locationId, roleKey, personId, userId, sortOrder },
+        defaults: { locationId, roleKey, userId, sortOrder },
       });
 
-      if (record.personId !== personId || record.userId !== userId) {
-        record.personId = personId;
+      if (record.userId !== userId) {
         record.userId = userId;
         await record.save();
       }
@@ -208,24 +187,10 @@ exports.upsertRoles = async (req, res) => {
       where: { locationId },
       include: [
         {
-          model: PublicPersonProfile,
-          as: 'person',
-          attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo', 'slug'],
-          required: false,
-        },
-        {
           model: User,
           as: 'user',
           attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
           required: false,
-          include: [
-            {
-              model: PublicPersonProfile,
-              as: 'placeholderPersonProfile',
-              attributes: ['id', 'photo', 'slug'],
-              required: false,
-            },
-          ],
         },
       ],
     });

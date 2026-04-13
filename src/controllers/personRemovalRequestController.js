@@ -1,32 +1,31 @@
 'use strict';
 
-const { PersonRemovalRequest, PublicPersonProfile, User } = require('../models');
+const { PersonRemovalRequest, User } = require('../models');
 const { Op } = require('sequelize');
 
 const personRemovalRequestController = {
   // POST /api/person-removal-requests — public
   submitRemovalRequest: async (req, res) => {
-    const { publicPersonProfileId, requesterName, requesterEmail, message } = req.body;
+    const { userId, requesterName, requesterEmail, message } = req.body;
 
     // Validate required fields
-    if (!publicPersonProfileId || !requesterName || !requesterEmail || !message) {
+    if (!userId || !requesterName || !requesterEmail || !message) {
       return res.status(400).json({ success: false, message: 'All fields are required.' });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(requesterEmail)) {
+    // Validate email format (simple, non-backtracking pattern)
+    if (!/^[^@\s]{1,64}@[^@\s]{1,255}$/.test(requesterEmail)) {
       return res.status(400).json({ success: false, message: 'Invalid email address.' });
     }
 
-    // Check person exists
-    const person = await PublicPersonProfile.findByPk(publicPersonProfileId);
-    if (!person) {
-      return res.status(404).json({ success: false, message: 'Public person profile not found.' });
+    // Check person (unclaimed User profile) exists
+    const person = await User.findByPk(userId);
+    if (!person || person.claimStatus === null) {
+      return res.status(404).json({ success: false, message: 'Person profile not found.' });
     }
 
     const removalRequest = await PersonRemovalRequest.create({
-      publicPersonProfileId,
+      userId,
       requesterName,
       requesterEmail,
       message,
@@ -47,7 +46,7 @@ const personRemovalRequestController = {
     const { count, rows } = await PersonRemovalRequest.findAndCountAll({
       where,
       include: [
-        { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'firstNameNative', 'lastNameNative', 'slug'] },
+        { model: User, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'slug'] },
         { model: User, as: 'reviewer', attributes: ['id', 'username'], required: false }
       ],
       limit: parseInt(limit),
@@ -72,7 +71,7 @@ const personRemovalRequestController = {
   getRemovalRequestById: async (req, res) => {
     const removalRequest = await PersonRemovalRequest.findByPk(req.params.id, {
       include: [
-        { model: PublicPersonProfile, as: 'publicPersonProfile', attributes: ['id', 'firstNameNative', 'lastNameNative', 'slug'] },
+        { model: User, as: 'person', attributes: ['id', 'firstNameNative', 'lastNameNative', 'slug'] },
         { model: User, as: 'reviewer', attributes: ['id', 'username'], required: false }
       ]
     });
