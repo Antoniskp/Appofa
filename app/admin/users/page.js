@@ -363,9 +363,9 @@ function AdminUsersContent() {
                           <p className="text-xs text-gray-400">
                             {[u.firstNameNative, u.lastNameNative].filter(Boolean).join(' ') || '—'}
                           </p>
-                          {u.isPlaceholder && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 mt-0.5">
-                              Placeholder
+                          {u.claimStatus !== null && u.claimStatus !== undefined && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-600 mt-0.5">
+                              {u.claimStatus === 'unclaimed' ? 'Αδιεκδίκητο' : u.claimStatus === 'pending' ? 'Σε Αναμονή' : 'Διεκδικημένο'}
                             </span>
                           )}
                         </td>
@@ -444,7 +444,7 @@ function AdminUsersContent() {
 
                         {/* Actions */}
                         <td className="px-4 py-3 text-right">
-                          {user?.role === 'admin' && u.role !== 'admin' && u.id !== user?.id && !u.isPlaceholder && (
+                          {user?.role === 'admin' && u.role !== 'admin' && u.id !== user?.id && u.claimStatus === null && (
                             <TooltipIconButton
                               icon={TrashIcon}
                               tooltip="Διαγραφή χρήστη"

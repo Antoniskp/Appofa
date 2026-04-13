@@ -251,7 +251,7 @@ async function updateNotificationPreferences(userId, preferences) {
  * @returns {number} count of notifications created
  */
 async function broadcastNotification(payload, targetRole = null) {
-  const where = { isPlaceholder: false };
+  const where = { claimStatus: null };
   if (targetRole) where.role = targetRole;
 
   const users = await User.findAll({ where, attributes: ['id'] });

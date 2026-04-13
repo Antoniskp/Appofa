@@ -4,7 +4,7 @@ const sequelize = require('../config/database');
 
 const PersonRemovalRequest = sequelize.define('PersonRemovalRequest', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  publicPersonProfileId: { type: DataTypes.INTEGER, allowNull: false },
+  userId: { type: DataTypes.INTEGER, allowNull: true },
   requesterName: { type: DataTypes.STRING, allowNull: false },
   requesterEmail: {
     type: DataTypes.STRING,

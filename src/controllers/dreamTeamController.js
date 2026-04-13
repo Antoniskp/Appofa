@@ -10,7 +10,6 @@ const {
   GovernmentPositionSuggestion,
   DreamTeamVote,
   User,
-  PublicPersonProfile,
   Formation,
   FormationPick,
   FormationLike,
@@ -36,29 +35,6 @@ async function generateShareSlug() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-/**
- * Build a Map<userId, photo> from PublicPersonProfile for placeholder holder users.
- * Performs a single batch query for all unique holder userIds.
- */
-async function buildHolderPhotoMap(positions) {
-  const holderUserIds = new Set();
-  positions.forEach((p) => {
-    (p.currentHolders || []).forEach((h) => {
-      if (h.userId) holderUserIds.add(h.userId);
-    });
-  });
-  const photoMap = new Map();
-  if (holderUserIds.size > 0) {
-    const profiles = await PublicPersonProfile.findAll({
-      where: { placeholderUserId: { [Op.in]: Array.from(holderUserIds) } },
-      attributes: ['placeholderUserId', 'photo'],
-      raw: true,
-    });
-    profiles.forEach((prof) => photoMap.set(prof.placeholderUserId, prof.photo));
-  }
-  return photoMap;
-}
-
 const dreamTeamController = {
   // GET /api/dream-team/positions
   getPositionsWithData: async (req, res) => {
@@ -77,7 +53,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
                 required: false,
               },
             ],
@@ -92,7 +68,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
                 required: false,
               },
             ],
@@ -121,7 +97,7 @@ const dreamTeamController = {
       if (votedUserIds.length > 0) {
         const votedUsers = await User.findAll({
           where: { id: { [Op.in]: votedUserIds } },
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
           raw: true,
         });
         const userMap = {};
@@ -141,9 +117,6 @@ const dreamTeamController = {
         });
       }
 
-      // Batch-fetch PublicPersonProfile photos for placeholder holder users
-      const holderPhotoMap = await buildHolderPhotoMap(positions);
-
       // Build lookup maps
       const votesByPosition = {};
       voteCounts.forEach((v) => {
@@ -160,7 +133,7 @@ const dreamTeamController = {
         const posJson = position.toJSON();
         posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
           ...holder,
-          holderPhoto: holderPhotoMap.get(holder.userId) || null,
+          holderPhoto: holder.user ? (holder.user.photo || holder.user.avatar || null) : null,
         }));
         return {
           ...posJson,
@@ -319,19 +292,16 @@ const dreamTeamController = {
         Object.values(winnerByPosition).map((v) => v.candidateUserId).filter(Boolean)
       )];
 
-      // Step 3: fetch avatars for User-based winners
+      // Step 3: fetch photos for User-based winners (avatar or photo for person profiles)
       const userAvatars = {};
       if (winnerUserIds.length > 0) {
         const users = await User.findAll({
           where: { id: { [Op.in]: winnerUserIds } },
-          attributes: ['id', 'avatar'],
+          attributes: ['id', 'avatar', 'photo'],
           raw: true,
         });
-        users.forEach((u) => { userAvatars[u.id] = u.avatar; });
+        users.forEach((u) => { userAvatars[u.id] = u.photo || u.avatar; });
       }
-
-      // Step 4: batch-fetch PublicPersonProfile photos for placeholder holder users
-      const holderPhotoMap = await buildHolderPhotoMap(positions);
 
       // Total votes per position
       const totalByPosition = {};
@@ -345,7 +315,7 @@ const dreamTeamController = {
         const posJson = position.toJSON();
         posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
           ...holder,
-          holderPhoto: holderPhotoMap.get(holder.userId) || null,
+          holderPhoto: holder.user ? (holder.user.photo || holder.user.avatar || null) : null,
         }));
         return {
           position: posJson,
@@ -474,11 +444,11 @@ const dreamTeamController = {
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+      if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
         return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
       const suggestion = await GovernmentPositionSuggestion.create({
@@ -509,11 +479,11 @@ const dreamTeamController = {
       }
       const { userId, reason, order: ord, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+        if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }
@@ -572,11 +542,11 @@ const dreamTeamController = {
           message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
         });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+      if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
         return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
 
@@ -620,11 +590,11 @@ const dreamTeamController = {
       }
       const { userId, since, notes, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+        if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }

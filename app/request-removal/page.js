@@ -6,7 +6,7 @@ import { personRemovalRequestAPI, personAPI } from '@/lib/api';
 export default function RequestRemovalPage() {
   const [persons, setPersons] = useState([]);
   const [formData, setFormData] = useState({
-    publicPersonProfileId: '',
+    userId: '',
     requesterName: '',
     requesterEmail: '',
     message: '',
@@ -24,7 +24,7 @@ export default function RequestRemovalPage() {
 
   const validate = () => {
     const errors = {};
-    if (!formData.publicPersonProfileId) errors.publicPersonProfileId = 'Please select a person.';
+    if (!formData.userId) errors.userId = 'Please select a person.';
     if (!formData.requesterName.trim()) errors.requesterName = 'Full name is required.';
     if (!formData.requesterEmail.trim()) errors.requesterEmail = 'Email is required.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.requesterEmail)) errors.requesterEmail = 'Invalid email address.';
@@ -42,7 +42,7 @@ export default function RequestRemovalPage() {
     try {
       const res = await personRemovalRequestAPI.submit({
         ...formData,
-        publicPersonProfileId: parseInt(formData.publicPersonProfileId),
+        userId: parseInt(formData.userId),
       });
       if (res.success) {
         setSuccess(true);
@@ -91,18 +91,18 @@ export default function RequestRemovalPage() {
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
-              <label htmlFor="publicPersonProfileId" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
                 Your Profile <span className="text-red-500">*</span>
               </label>
               <select
-                id="publicPersonProfileId"
-                name="publicPersonProfileId"
-                value={formData.publicPersonProfileId}
-                onChange={(e) => setFormData({ ...formData, publicPersonProfileId: e.target.value })}
+                id="userId"
+                name="userId"
+                value={formData.userId}
+                onChange={(e) => setFormData({ ...formData, userId: e.target.value })}
                 aria-required="true"
-                aria-invalid={!!fieldErrors.publicPersonProfileId}
-                aria-describedby={fieldErrors.publicPersonProfileId ? 'person-error' : undefined}
-                className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.publicPersonProfileId ? 'border-red-500' : 'border-gray-300'}`}
+                aria-invalid={!!fieldErrors.userId}
+                aria-describedby={fieldErrors.userId ? 'person-error' : undefined}
+                className={`w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldErrors.userId ? 'border-red-500' : 'border-gray-300'}`}
               >
                 <option value="">Select a person...</option>
                 {persons.map((p) => (
@@ -111,8 +111,8 @@ export default function RequestRemovalPage() {
                   </option>
                 ))}
               </select>
-              {fieldErrors.publicPersonProfileId && (
-                <p id="person-error" className="mt-1 text-sm text-red-600" role="alert">{fieldErrors.publicPersonProfileId}</p>
+              {fieldErrors.userId && (
+                <p id="person-error" className="mt-1 text-sm text-red-600" role="alert">{fieldErrors.userId}</p>
               )}
             </div>
 

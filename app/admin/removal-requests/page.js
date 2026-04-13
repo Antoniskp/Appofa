@@ -62,7 +62,7 @@ function RemovalRequestsContent() {
 
   const columns = [
     { key: 'id', label: 'ID' },
-    { key: 'person', label: 'Person', render: (row) => row.publicPersonProfile ? `${row.publicPersonProfile.firstNameNative} ${row.publicPersonProfile.lastNameNative}` : '-' },
+    { key: 'person', label: 'Person', render: (row) => row.person ? `${row.person.firstNameNative} ${row.person.lastNameNative}` : '-' },
     { key: 'requesterName', label: 'Requester Name' },
     { key: 'requesterEmail', label: 'Email' },
     {
@@ -134,7 +134,7 @@ function RemovalRequestsContent() {
             </div>
 
             <dl className="grid grid-cols-2 gap-4 mb-6 text-sm">
-              <div><dt className="font-medium text-gray-500">Person</dt><dd>{selectedRequest.publicPersonProfile ? `${selectedRequest.publicPersonProfile.firstNameNative} ${selectedRequest.publicPersonProfile.lastNameNative}` : '-'}</dd></div>
+              <div><dt className="font-medium text-gray-500">Person</dt><dd>{selectedRequest.person ? `${selectedRequest.person.firstNameNative} ${selectedRequest.person.lastNameNative}` : '-'}</dd></div>
               <div><dt className="font-medium text-gray-500">Status</dt><dd><span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_COLORS[selectedRequest.status] || 'bg-gray-100 text-gray-700'}`}>{selectedRequest.status}</span></dd></div>
               <div><dt className="font-medium text-gray-500">Requester</dt><dd>{selectedRequest.requesterName}</dd></div>
               <div><dt className="font-medium text-gray-500">Email</dt><dd>{selectedRequest.requesterEmail}</dd></div>

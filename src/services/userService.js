@@ -508,8 +508,8 @@ async function adminDeleteUser(actorId, actorRole, targetId) {
     throw new ServiceError(403, 'Cannot delete another admin.');
   }
 
-  if (target.isPlaceholder) {
-    throw new ServiceError(400, 'Cannot delete placeholder users. Delete the person profile instead.');
+  if (target.claimStatus !== null) {
+    throw new ServiceError(400, 'Cannot delete person profiles here. Use the person profiles admin instead.');
   }
 
   await sequelize.transaction(async (t) => {
@@ -533,7 +533,7 @@ async function adminDeleteUser(actorId, actorRole, targetId) {
 
 async function getUsers(actorId, actorRole) {
   const baseQuery = {
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'isPlaceholder'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
     include: [
       {
         model: Location,
@@ -626,11 +626,11 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
     whereClause.isVerified = false;
   }
 
-  // Filter by placeholder status
+  // Filter by claim status (person profiles have claimStatus !== null)
   if (placeholder === 'true') {
-    whereClause.isPlaceholder = true;
+    whereClause.claimStatus = { [Op.ne]: null };
   } else if (placeholder === 'false') {
-    whereClause.isPlaceholder = { [Op.or]: [false, null] };
+    whereClause.claimStatus = null;
   }
 
   // Scope for moderators
@@ -657,7 +657,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'isPlaceholder'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
     include: [
       {
         model: Location,
@@ -908,7 +908,7 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
 
-  const whereClause = { searchable: true, isPlaceholder: { [Op.or]: [false, null] } };
+  const whereClause = { searchable: true, claimStatus: null };
 
   if (search && typeof search === 'string') {
     const isPostgres = dbConfig.getDialect() === 'postgres';
@@ -952,7 +952,7 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'isPlaceholder', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier'],
     order: [['username', 'ASC']],
     limit: limitNum,
     offset

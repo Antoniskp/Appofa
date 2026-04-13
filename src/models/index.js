@@ -22,7 +22,6 @@ const Suggestion = require('./Suggestion');
 const Solution = require('./Solution');
 const SuggestionVote = require('./SuggestionVote');
 const LinkPreviewCache = require('./LinkPreviewCache');
-const PublicPersonProfile = require('./PublicPersonProfile');
 const PersonRemovalRequest = require('./PersonRemovalRequest');
 const Report = require('./Report');
 const Formation = require('./Formation');
@@ -215,7 +214,6 @@ LocationSection.belongsTo(User, { foreignKey: 'updatedByUserId', as: 'updatedBy'
 // LocationRole associations
 LocationRole.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
 Location.hasMany(LocationRole, { foreignKey: 'locationId', as: 'roles' });
-LocationRole.belongsTo(PublicPersonProfile, { foreignKey: 'personId', as: 'person' });
 LocationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 // Endorsement associations
@@ -239,19 +237,15 @@ User.hasMany(Solution, { foreignKey: 'authorId', as: 'solutions' });
 SuggestionVote.belongsTo(User, { foreignKey: 'userId', as: 'voter' });
 User.hasMany(SuggestionVote, { foreignKey: 'userId', as: 'suggestionVotes' });
 
-// PublicPersonProfile associations
-PublicPersonProfile.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
-PublicPersonProfile.belongsTo(Location, { foreignKey: 'constituencyId', as: 'constituency' });
-PublicPersonProfile.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
-PublicPersonProfile.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
-PublicPersonProfile.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
-PublicPersonProfile.belongsTo(User, { foreignKey: 'placeholderUserId', as: 'placeholderUser' });
-User.hasOne(PublicPersonProfile, { foreignKey: 'claimedByUserId', as: 'publicPersonProfile' });
-User.hasOne(PublicPersonProfile, { foreignKey: 'placeholderUserId', as: 'placeholderPersonProfile' });
-PublicPersonProfile.hasMany(PersonRemovalRequest, { foreignKey: 'publicPersonProfileId', as: 'removalRequests' });
+// User self-referential claim associations
+User.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
+User.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
+User.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdByModerator' });
+User.hasMany(User, { foreignKey: 'claimedByUserId', as: 'claimedProfiles' });
+User.belongsTo(Location, { foreignKey: 'constituencyId', as: 'constituency' });
 
 // PersonRemovalRequest associations
-PersonRemovalRequest.belongsTo(PublicPersonProfile, { foreignKey: 'publicPersonProfileId', as: 'publicPersonProfile' });
+PersonRemovalRequest.belongsTo(User, { foreignKey: 'userId', as: 'person' });
 PersonRemovalRequest.belongsTo(User, { foreignKey: 'reviewedBy', as: 'reviewer' });
 User.hasMany(PersonRemovalRequest, { foreignKey: 'reviewedBy', as: 'reviewedRemovalRequests' });
 
@@ -379,7 +373,6 @@ module.exports = {
   Solution,
   SuggestionVote,
   LinkPreviewCache,
-  PublicPersonProfile,
   PersonRemovalRequest,
   Report,
   GovernmentPosition,
