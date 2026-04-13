@@ -2,13 +2,18 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
-import { apiRequest } from '@/lib/api/client.js';
+import { personAPI } from '@/lib/api';
 
 /**
- * Shared person-search dropdown component.
+ * Shared person/user-search dropdown component.
+ *
+ * Uses the unified /api/persons/unified-search endpoint which returns both
+ * real users and public person profiles in a single response. Callers receive
+ * an `entityType` field on the selected object to distinguish the two cases.
  *
  * Props:
- *   onSelect(user)         – called with the selected user object
+ *   onSelect(result)       – called with the selected result object
+ *                            { entityType: 'user'|'person', id, displayName, ... }
  *   placeholder            – input placeholder text
  *   showTopSuggestions     – on focus with empty query, load top suggestions
  *   value                  – controlled input value (optional)
@@ -34,8 +39,6 @@ export default function PersonSearch({
   const timer = useRef(null);
   const requestIdRef = useRef(0);
   const ref = useRef(null);
-  // Mirror of results so the search callback can read the current count without
-  // needing results in its dependency array (avoids the stale-closure recreation bug).
   const resultsRef = useRef([]);
 
   useEffect(() => {
@@ -59,13 +62,13 @@ export default function PersonSearch({
     const myId = ++requestIdRef.current;
     setSearching(true);
     try {
-      const res = await apiRequest('/api/auth/users/search?limit=8');
+      const res = await personAPI.unifiedSearch({ limit: 8 });
       if (myId !== requestIdRef.current) return;
-      const users = res?.data?.users || [];
-      setResults(users);
+      const items = res?.data?.results || [];
+      setResults(items);
       setIsTopSuggestions(true);
-      setOpen(users.length > 0);
-      setSearchStatus(users.length > 0 ? null : 'empty');
+      setOpen(items.length > 0);
+      setSearchStatus(items.length > 0 ? null : 'empty');
     } catch {
       if (myId !== requestIdRef.current) return;
       setResults([]);
@@ -74,8 +77,6 @@ export default function PersonSearch({
     }
   }, [showTopSuggestions]);
 
-  // Debounced search — dependency array intentionally excludes results state.
-  // resultsRef is used for the 1-char guard so the callback is never stale.
   const search = useCallback((q) => {
     clearTimeout(timer.current);
     setSearchStatus(null);
@@ -87,28 +88,23 @@ export default function PersonSearch({
       return;
     }
 
-    // For very short queries (1 char) keep whatever is currently visible and
-    // wait for more input before hitting the server.
     if (q.trim().length < 2) {
       setOpen(resultsRef.current.length > 0);
       return;
     }
 
-    // 2+ characters: fire debounced search; keep old results visible until new ones arrive.
     setOpen(true);
 
     timer.current = setTimeout(async () => {
       const myId = ++requestIdRef.current;
       setSearching(true);
       try {
-        // Send raw query; backend already handles Greek normalization + raw matching.
-        const encodedQ = encodeURIComponent(q.trim());
-        const res = await apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=8`);
+        const res = await personAPI.unifiedSearch({ search: q.trim(), limit: 8 });
         if (myId !== requestIdRef.current) return;
-        const users = res?.data?.users || [];
-        setResults(users);
+        const items = res?.data?.results || [];
+        setResults(items);
         setIsTopSuggestions(false);
-        setSearchStatus(users.length > 0 ? null : 'empty');
+        setSearchStatus(items.length > 0 ? null : 'empty');
         setOpen(true);
       } catch {
         if (myId !== requestIdRef.current) return;
@@ -127,13 +123,12 @@ export default function PersonSearch({
     search(q);
   };
 
-  const handleSelect = (person) => {
-    const displayName = (`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username;
-    if (!isControlled) setInternalQuery(displayName);
-    if (onChange) onChange({ target: { value: displayName } });
+  const handleSelect = (result) => {
+    if (!isControlled) setInternalQuery(result.displayName || '');
+    if (onChange) onChange({ target: { value: result.displayName || '' } });
     setOpen(false);
     setSearchStatus(null);
-    onSelect(person);
+    onSelect(result);
   };
 
   return (
@@ -176,27 +171,39 @@ export default function PersonSearch({
               Δημοφιλείς Προτάσεις
             </li>
           )}
-          {results.map((person) => {
-            const displayName = (`${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()) || person.username;
-            const badge = person.isPlaceholder
-              ? { label: '📋 Δημόσιο Προφίλ', cls: 'bg-gray-100 text-gray-500' }
-              : person.isVerified
-                ? { label: '🧑 Επαληθευμένος', cls: 'bg-green-100 text-green-600' }
-                : { label: '🧑 Χρήστης', cls: 'bg-blue-100 text-blue-600' };
+          {results.map((result) => {
+            const photo = result.entityType === 'person' ? result.photo || result.avatar : result.avatar;
+            const key = `${result.entityType}-${result.id}`;
+
+            let badge;
+            if (result.entityType === 'person') {
+              if (result.claimStatus === 'unclaimed') {
+                badge = { label: '🏷️ Αδιεκδίκητο', cls: 'bg-amber-100 text-amber-700' };
+              } else if (result.claimStatus === 'pending') {
+                badge = { label: '⏳ Σε Αναμονή', cls: 'bg-gray-100 text-gray-600' };
+              } else {
+                badge = { label: '📋 Δημόσιο Προφίλ', cls: 'bg-gray-100 text-gray-500' };
+              }
+            } else if (result.isVerified) {
+              badge = { label: '✅ Επαληθευμένος', cls: 'bg-green-100 text-green-600' };
+            } else {
+              badge = { label: '👤 Χρήστης', cls: 'bg-blue-100 text-blue-600' };
+            }
+
             return (
               <li
-                key={`user-${person.id}`}
+                key={key}
                 role="option"
-                onClick={() => handleSelect(person)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSelect(person)}
+                onClick={() => handleSelect(result)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSelect(result)}
                 tabIndex={0}
                 className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-gray-50 cursor-pointer transition-colors"
               >
-                {person.avatar
-                  ? <img src={person.avatar} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
+                {photo
+                  ? <img src={photo} alt="" className="h-7 w-7 rounded-full object-cover flex-shrink-0" />
                   : <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0"><UserCircleIcon className="h-4 w-4 text-gray-400" /></div>}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{displayName}</p>
+                  <p className="font-medium truncate">{result.displayName}</p>
                   <span className={`text-xs px-1.5 py-0.5 rounded ${badge.cls}`}>{badge.label}</span>
                 </div>
               </li>

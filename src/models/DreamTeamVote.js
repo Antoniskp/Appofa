@@ -23,10 +23,18 @@ const DreamTeamVote = sequelize.define('DreamTeamVote', {
     type: DataTypes.STRING(200),
     allowNull: true,
   },
+  /** FK → Users.id — set when voting for a real (authenticated) user. */
   candidateUserId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
+    allowNull: true,
     references: { model: 'Users', key: 'id' },
+    onDelete: 'CASCADE',
+  },
+  /** FK → PublicPersonProfiles.id — set when voting for an unclaimed/pending person profile. */
+  candidatePersonId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'PublicPersonProfiles', key: 'id' },
     onDelete: 'CASCADE',
   },
 }, {

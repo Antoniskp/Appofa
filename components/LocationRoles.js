@@ -42,11 +42,10 @@ export default function LocationRoles({ locationId, compact = false }) {
             const { assignment } = role;
             const person = assignment?.person;
             const user = assignment?.user;
-            const placeholderProfile = user?.placeholderPersonProfile;
             const name = person
               ? `${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()
               : (user?.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user?.username);
-            const profileSlug = person?.slug || placeholderProfile?.slug;
+            const profileSlug = person?.slug;
             return (
               <li key={role.key} className="flex items-center gap-1">
                 <span className="text-gray-500">{role.title}:</span>
@@ -73,12 +72,11 @@ export default function LocationRoles({ locationId, compact = false }) {
           const { assignment } = role;
           const person = assignment?.person;
           const user = assignment?.user;
-          const placeholderProfile = user?.placeholderPersonProfile;
-          const photo = person?.photo || user?.avatar || placeholderProfile?.photo;
+          const photo = person?.photo || user?.avatar;
           const name = person
             ? `${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()
             : (user?.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user?.username);
-          const profileSlug = person?.slug || placeholderProfile?.slug;
+          const profileSlug = person?.slug;
           const profileHref = profileSlug ? `/persons/${profileSlug}` : null;
 
           return (

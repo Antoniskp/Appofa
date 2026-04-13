@@ -95,14 +95,6 @@ exports.getRoles = async (req, res) => {
           as: 'user',
           attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
           required: false,
-          include: [
-            {
-              model: PublicPersonProfile,
-              as: 'placeholderPersonProfile',
-              attributes: ['id', 'photo', 'slug'],
-              required: false,
-            },
-          ],
         },
       ],
     });
@@ -218,14 +210,6 @@ exports.upsertRoles = async (req, res) => {
           as: 'user',
           attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
           required: false,
-          include: [
-            {
-              model: PublicPersonProfile,
-              as: 'placeholderPersonProfile',
-              attributes: ['id', 'photo', 'slug'],
-              required: false,
-            },
-          ],
         },
       ],
     });

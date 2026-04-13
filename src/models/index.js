@@ -245,10 +245,14 @@ PublicPersonProfile.belongsTo(Location, { foreignKey: 'constituencyId', as: 'con
 PublicPersonProfile.belongsTo(User, { foreignKey: 'claimedByUserId', as: 'claimedBy' });
 PublicPersonProfile.belongsTo(User, { foreignKey: 'claimVerifiedByUserId', as: 'claimVerifiedBy' });
 PublicPersonProfile.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
-PublicPersonProfile.belongsTo(User, { foreignKey: 'placeholderUserId', as: 'placeholderUser' });
 User.hasOne(PublicPersonProfile, { foreignKey: 'claimedByUserId', as: 'publicPersonProfile' });
-User.hasOne(PublicPersonProfile, { foreignKey: 'placeholderUserId', as: 'placeholderPersonProfile' });
 PublicPersonProfile.hasMany(PersonRemovalRequest, { foreignKey: 'publicPersonProfileId', as: 'removalRequests' });
+// Endorsements on person profiles (unclaimed/pending)
+Endorsement.belongsTo(PublicPersonProfile, { foreignKey: 'endorsedPersonId', as: 'endorsedPerson' });
+PublicPersonProfile.hasMany(Endorsement, { foreignKey: 'endorsedPersonId', as: 'receivedPersonEndorsements' });
+// DreamTeamVotes on person profiles (unclaimed/pending)
+DreamTeamVote.belongsTo(PublicPersonProfile, { foreignKey: 'candidatePersonId', as: 'candidatePerson' });
+PublicPersonProfile.hasMany(DreamTeamVote, { foreignKey: 'candidatePersonId', as: 'candidateDreamTeamVotes' });
 
 // PersonRemovalRequest associations
 PersonRemovalRequest.belongsTo(PublicPersonProfile, { foreignKey: 'publicPersonProfileId', as: 'publicPersonProfile' });

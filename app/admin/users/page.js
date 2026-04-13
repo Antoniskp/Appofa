@@ -29,7 +29,6 @@ function AdminUsersContent() {
   const [searchInput, setSearchInput] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [verifiedFilter, setVerifiedFilter] = useState('');
-  const [placeholderFilter, setPlaceholderFilter] = useState('');
   const [page, setPage] = useState(1);
 
   // Dialogs
@@ -49,14 +48,13 @@ function AdminUsersContent() {
       if (searchQuery.trim()) params.search = searchQuery.trim();
       if (roleFilter) params.role = roleFilter;
       if (verifiedFilter) params.verified = verifiedFilter;
-      if (placeholderFilter) params.placeholder = placeholderFilter;
       const response = await authAPI.getAdminUsers(params);
       if (response.success) {
         return response.data;
       }
       return { users: [], stats: null, pagination: { currentPage: 1, totalPages: 1, totalItems: 0 } };
     },
-    [page, searchQuery, roleFilter, verifiedFilter, placeholderFilter],
+    [page, searchQuery, roleFilter, verifiedFilter],
     {
       initialData: { users: [], stats: null, pagination: { currentPage: 1, totalPages: 1, totalItems: 0 } },
     }
@@ -289,26 +287,14 @@ function AdminUsersContent() {
                   <option value="false">Μη επαληθευμένοι</option>
                 </select>
               </div>
-              <div>
-                <label htmlFor="placeholderFilter" className="block text-xs font-medium text-gray-500 mb-1">Τύπος</label>
-                <select
-                  id="placeholderFilter"
-                  value={placeholderFilter}
-                  onChange={(e) => { setPlaceholderFilter(e.target.value); setPage(1); }}
-                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Όλοι</option>
-                  <option value="false">Κανονικοί</option>
-                  <option value="true">Placeholder</option>
-                </select>
-              </div>
+
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Αναζήτηση
               </button>
-              {(searchQuery || roleFilter || verifiedFilter || placeholderFilter) && (
+              {(searchQuery || roleFilter || verifiedFilter) && (
                 <button
                   type="button"
                   onClick={() => {
@@ -316,7 +302,6 @@ function AdminUsersContent() {
                     setSearchQuery('');
                     setRoleFilter('');
                     setVerifiedFilter('');
-                    setPlaceholderFilter('');
                     setPage(1);
                   }}
                   className="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
@@ -363,11 +348,7 @@ function AdminUsersContent() {
                           <p className="text-xs text-gray-400">
                             {[u.firstNameNative, u.lastNameNative].filter(Boolean).join(' ') || '—'}
                           </p>
-                          {u.isPlaceholder && (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500 mt-0.5">
-                              Placeholder
-                            </span>
-                          )}
+
                         </td>
 
                         {/* Email */}
@@ -444,7 +425,7 @@ function AdminUsersContent() {
 
                         {/* Actions */}
                         <td className="px-4 py-3 text-right">
-                          {user?.role === 'admin' && u.role !== 'admin' && u.id !== user?.id && !u.isPlaceholder && (
+                          {user?.role === 'admin' && u.role !== 'admin' && u.id !== user?.id && (
                             <TooltipIconButton
                               icon={TrashIcon}
                               tooltip="Διαγραφή χρήστη"

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { locationRoleAPI } from '@/lib/api';
-import { apiRequest } from '@/lib/api';
+import { locationRoleAPI, personAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import {
   UserCircleIcon,
@@ -19,7 +18,7 @@ function formatPersonName(firstNameNative, lastNameNative, fallback) {
 }
 
 // ---------------------------------------------------------------------------
-// Person / User search picker
+// Unified person / user search picker (uses /api/persons/unified-search)
 // ---------------------------------------------------------------------------
 function AssigneePicker({ onSelect, onClose }) {
   const [query, setQuery] = useState('');
@@ -41,49 +40,8 @@ function AssigneePicker({ onSelect, onClose }) {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const encodedQ = encodeURIComponent(query);
-        const [usersRes, personsRes] = await Promise.all([
-          apiRequest(`/api/auth/users/search?search=${encodedQ}&limit=5`).catch(() => null),
-          apiRequest(`/api/persons?search=${encodedQ}&limit=5`).catch(() => null),
-        ]);
-
-        const userResults = (usersRes?.data?.users || []).map((u) => ({
-          userId: u.id,
-          name: formatPersonName(u.firstNameNative, u.lastNameNative, u.username),
-          photo: u.avatar,
-          username: u.username,
-          isPerson: false,
-        }));
-
-        const personResults = (personsRes?.data?.profiles || [])
-          .map((p) => {
-            // For claimed profiles use the real owner; for unclaimed/pending use the
-            // placeholder (the claim hasn't been approved yet in pending state).
-            let userId;
-            if (p.claimStatus === 'claimed') {
-              userId = p.claimedByUserId;
-            } else if (p.claimStatus === 'unclaimed' || p.claimStatus === 'pending') {
-              userId = p.placeholderUserId;
-            } else {
-              return null;
-            }
-            if (!userId) return null;
-            return {
-              userId,
-              name: formatPersonName(p.firstNameNative, p.lastNameNative),
-              photo: p.photo,
-              claimStatus: p.claimStatus,
-              isPerson: true,
-            };
-          })
-          .filter(Boolean);
-
-        // Person results take priority; skip user results whose userId is already
-        // covered by a person result to avoid duplicates.
-        const personUserIds = new Set(personResults.map((r) => r.userId));
-        const filteredUsers = userResults.filter((r) => !personUserIds.has(r.userId));
-
-        setResults([...personResults, ...filteredUsers]);
+        const res = await personAPI.unifiedSearch({ search: query, limit: 8 });
+        setResults(res?.data?.results || []);
       } catch {
         // ignore search errors silently
       } finally {
@@ -118,30 +76,34 @@ function AssigneePicker({ onSelect, onClose }) {
 
       {results.length > 0 && (
         <div>
-          {results.map((r) => (
-            <button
-              key={r.userId}
-              type="button"
-              onClick={() => onSelect({ type: 'user', id: r.userId, name: r.name, photo: r.photo })}
-              className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"
-            >
-              {r.photo ? (
-                <img src={r.photo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
-              ) : (
-                <UserCircleIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
-              )}
-              <span className="truncate">{r.name}</span>
-              {r.username && (
-                <span className="text-xs text-gray-400">@{r.username}</span>
-              )}
-              {r.isPerson && r.claimStatus === 'unclaimed' && (
-                <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Αδιεκδίκητο</span>
-              )}
-              {r.isPerson && r.claimStatus === 'pending' && (
-                <span className="ml-auto text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">Σε Αναμονή</span>
-              )}
-            </button>
-          ))}
+          {results.map((r) => {
+            const photo = r.entityType === 'person' ? r.photo || r.avatar : r.avatar;
+            const key = r.entityType === 'person' ? `person-${r.id}` : `user-${r.id}`;
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => onSelect(r)}
+                className="flex items-center gap-2 w-full text-left px-2 py-1.5 rounded hover:bg-blue-50 text-sm"
+              >
+                {photo ? (
+                  <img src={photo} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <UserCircleIcon className="w-7 h-7 text-gray-400 flex-shrink-0" />
+                )}
+                <span className="truncate">{r.displayName}</span>
+                {r.entityType === 'person' && r.claimStatus === 'unclaimed' && (
+                  <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">Αδιεκδίκητο</span>
+                )}
+                {r.entityType === 'person' && r.claimStatus === 'pending' && (
+                  <span className="ml-auto text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">⏳ Σε Αναμονή</span>
+                )}
+                {r.entityType === 'user' && r.isVerified && (
+                  <span className="ml-auto text-xs bg-green-100 text-green-600 px-1.5 py-0.5 rounded">✅ Επαληθευμένος</span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -162,17 +124,27 @@ function AssigneePicker({ onSelect, onClose }) {
 function RoleSlotRow({ definition, assignment, onChange }) {
   const [picking, setPicking] = useState(false);
 
+  const person = assignment?.person || null;
   const user = assignment?.user || null;
-  const displayName = user ? formatPersonName(user.firstNameNative, user.lastNameNative, user.username) : null;
-  const photo = user?.avatar || user?.placeholderPersonProfile?.photo || null;
+  const displayName = person
+    ? formatPersonName(person.firstNameNative, person.lastNameNative)
+    : user
+      ? formatPersonName(user.firstNameNative, user.lastNameNative, user.username)
+      : null;
+  const photo = person?.photo || user?.avatar || null;
+  const hasAssignment = !!(person || user);
 
-  const handleSelect = ({ id }) => {
+  const handleSelect = (result) => {
     setPicking(false);
-    onChange(definition.key, { userId: id });
+    if (result.entityType === 'person') {
+      onChange(definition.key, { personId: result.id, userId: null });
+    } else {
+      onChange(definition.key, { userId: result.id, personId: null });
+    }
   };
 
   const handleClear = () => {
-    onChange(definition.key, { userId: null });
+    onChange(definition.key, { userId: null, personId: null });
   };
 
   return (
@@ -184,7 +156,7 @@ function RoleSlotRow({ definition, assignment, onChange }) {
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
-          {user ? (
+          {hasAssignment ? (
             <>
               {photo ? (
                 <img src={photo} alt="" className="w-8 h-8 rounded-full object-cover" />
@@ -247,18 +219,18 @@ export default function LocationRoleManager({ locationId, locationType }) {
       const res = await locationRoleAPI.getRoles(locationId);
       if (res?.success) {
         setRolesData(res);
-        // Build local assignments map from fetched data
         const map = {};
         for (const role of res.roles) {
           if (role.assignment) {
             map[role.key] = {
               userId: role.assignment.userId || null,
+              personId: role.assignment.personId || null,
             };
           }
         }
         setLocalAssignments(map);
       }
-    } catch (err) {
+    } catch {
       toastError('Failed to load location roles');
     } finally {
       setLoading(false);
@@ -269,36 +241,36 @@ export default function LocationRoleManager({ locationId, locationType }) {
     load();
   }, [load]);
 
-  const handleChange = (roleKey, { userId }) => {
+  const handleChange = (roleKey, { userId, personId }) => {
     setLocalAssignments((prev) => ({
       ...prev,
-      [roleKey]: { userId },
+      [roleKey]: { userId: userId || null, personId: personId || null },
     }));
   };
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Build the roles array from all definitions + current local assignments
       const definitions = rolesData?.roles || [];
       const roles = definitions.map((def) => {
         const a = localAssignments[def.key] || {};
         return {
           roleKey: def.key,
           userId: a.userId || null,
+          personId: a.personId || null,
         };
       });
 
       const res = await locationRoleAPI.upsertRoles(locationId, roles);
       if (res?.success) {
         toastSuccess('Roles saved successfully');
-        // Update rolesData with fresh data from server
         setRolesData(res);
         const map = {};
         for (const role of res.roles) {
           if (role.assignment) {
             map[role.key] = {
               userId: role.assignment.userId || null,
+              personId: role.assignment.personId || null,
             };
           }
         }
@@ -327,21 +299,23 @@ export default function LocationRoleManager({ locationId, locationType }) {
     );
   }
 
-  // Merge server definitions with local assignment state for display
   const displayRoles = rolesData.roles.map((def) => {
     if (!(def.key in localAssignments)) return def;
     const localA = localAssignments[def.key];
-    // If local differs from server assignment, use local (for optimistic display)
     const serverA = def.assignment;
-    const changed = (localA.userId !== (serverA?.userId || null));
+    const changed = (
+      localA.userId !== (serverA?.userId || null) ||
+      localA.personId !== (serverA?.personId || null)
+    );
     if (!changed) return def;
     return {
       ...def,
       assignment: {
         ...serverA,
         userId: localA.userId,
-        // user object will be stale until save — show name via local state only
+        personId: localA.personId,
         user: localA.userId ? serverA?.user : null,
+        person: localA.personId ? serverA?.person : null,
       },
     };
   });

@@ -20,9 +20,15 @@ const Endorsement = sequelize.define('Endorsement', {
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  /** FK → Users.id — set for endorsements on real user accounts. */
   endorsedId: {
     type: DataTypes.INTEGER,
-    allowNull: false
+    allowNull: true
+  },
+  /** FK → PublicPersonProfiles.id — set for endorsements on unclaimed/pending person profiles. */
+  endorsedPersonId: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   },
   topic: {
     type: DataTypes.ENUM(...ENDORSEMENT_TOPICS),
@@ -37,8 +43,8 @@ const Endorsement = sequelize.define('Endorsement', {
   indexes: [
     {
       unique: true,
-      fields: ['endorserId', 'endorsedId', 'topic'],
-      name: 'endorsements_unique_endorser_endorsed_topic'
+      fields: ['endorserId', 'endorsedId', 'endorsedPersonId', 'topic'],
+      name: 'endorsements_unique_endorser_endorsed_person_topic'
     }
   ]
 });

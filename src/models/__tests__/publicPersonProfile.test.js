@@ -89,7 +89,9 @@ describe('PublicPersonProfile Model', () => {
     expect(assocNames).toContain('claimedBy');
     expect(assocNames).toContain('claimVerifiedBy');
     expect(assocNames).toContain('createdBy');
-    expect(assocNames).toContain('applications');
+    expect(assocNames).toContain('removalRequests');
+    expect(assocNames).toContain('receivedPersonEndorsements');
+    expect(assocNames).toContain('candidateDreamTeamVotes');
   });
 
   it('location association is BelongsTo Location', () => {

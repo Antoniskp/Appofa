@@ -36,29 +36,6 @@ async function generateShareSlug() {
   return crypto.randomBytes(16).toString('hex');
 }
 
-/**
- * Build a Map<userId, photo> from PublicPersonProfile for placeholder holder users.
- * Performs a single batch query for all unique holder userIds.
- */
-async function buildHolderPhotoMap(positions) {
-  const holderUserIds = new Set();
-  positions.forEach((p) => {
-    (p.currentHolders || []).forEach((h) => {
-      if (h.userId) holderUserIds.add(h.userId);
-    });
-  });
-  const photoMap = new Map();
-  if (holderUserIds.size > 0) {
-    const profiles = await PublicPersonProfile.findAll({
-      where: { placeholderUserId: { [Op.in]: Array.from(holderUserIds) } },
-      attributes: ['placeholderUserId', 'photo'],
-      raw: true,
-    });
-    profiles.forEach((prof) => photoMap.set(prof.placeholderUserId, prof.photo));
-  }
-  return photoMap;
-}
-
 const dreamTeamController = {
   // GET /api/dream-team/positions
   getPositionsWithData: async (req, res) => {
@@ -107,11 +84,12 @@ const dreamTeamController = {
         attributes: [
           'positionId',
           'candidateUserId',
+          'candidatePersonId',
           'personName',
           [sequelize.fn('COUNT', sequelize.col('id')), 'voteCount'],
         ],
         where: { positionId: { [Op.in]: positionIds } },
-        group: ['positionId', 'candidateUserId', 'personName'],
+        group: ['positionId', 'candidateUserId', 'candidatePersonId', 'personName'],
         order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
         raw: true,
       });
@@ -129,6 +107,19 @@ const dreamTeamController = {
         voteCounts.forEach((v) => { v.candidateUser = userMap[v.candidateUserId] || null; });
       }
 
+      // Enrich vote counts with PublicPersonProfile data
+      const votedPersonIds = [...new Set(voteCounts.map((v) => v.candidatePersonId).filter(Boolean))];
+      if (votedPersonIds.length > 0) {
+        const votedPersons = await PublicPersonProfile.findAll({
+          where: { id: { [Op.in]: votedPersonIds } },
+          attributes: ['id', 'firstNameNative', 'lastNameNative', 'photo'],
+          raw: true,
+        });
+        const personMap = {};
+        votedPersons.forEach((p) => { personMap[p.id] = p; });
+        voteCounts.forEach((v) => { v.candidatePerson = personMap[v.candidatePersonId] || null; });
+      }
+
       // Fetch current user's votes
       let myVotes = [];
       if (req.user) {
@@ -140,9 +131,6 @@ const dreamTeamController = {
           raw: true,
         });
       }
-
-      // Batch-fetch PublicPersonProfile photos for placeholder holder users
-      const holderPhotoMap = await buildHolderPhotoMap(positions);
 
       // Build lookup maps
       const votesByPosition = {};
@@ -158,10 +146,6 @@ const dreamTeamController = {
 
       const data = positions.map((position) => {
         const posJson = position.toJSON();
-        posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
-          ...holder,
-          holderPhoto: holderPhotoMap.get(holder.userId) || null,
-        }));
         return {
           ...posJson,
           votes: votesByPosition[position.id] || [],
@@ -179,12 +163,18 @@ const dreamTeamController = {
   // POST /api/dream-team/vote
   vote: async (req, res) => {
     try {
-      const { positionId, candidateUserId } = req.body;
+      const { positionId, candidateUserId, candidatePersonId } = req.body;
 
-      if (!positionId || !candidateUserId) {
+      if (!positionId || (!candidateUserId && !candidatePersonId)) {
         return res.status(400).json({
           success: false,
-          message: 'Απαιτούνται positionId και candidateUserId.',
+          message: 'Απαιτείται positionId και ένα από candidateUserId ή candidatePersonId.',
+        });
+      }
+      if (candidateUserId && candidatePersonId) {
+        return res.status(400).json({
+          success: false,
+          message: 'Παρέχετε μόνο ένα από candidateUserId ή candidatePersonId.',
         });
       }
 
@@ -192,37 +182,66 @@ const dreamTeamController = {
         where: { id: positionId, isActive: true },
       });
       if (!position) {
-        return res.status(404).json({
-          success: false,
-          message: 'Η θέση δεν βρέθηκε.',
-        });
+        return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
 
-      const candidateUser = await User.findByPk(candidateUserId, {
-        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'],
-      });
-      if (!candidateUser) {
-        return res.status(404).json({
-          success: false,
-          message: 'Ο χρήστης δεν βρέθηκε.',
-        });
-      }
-      const personName = (`${candidateUser.firstNameNative || ''} ${candidateUser.lastNameNative || ''}`.trim()) || candidateUser.username;
+      let personName;
+      let resolvedCandidateUserId = null;
+      let resolvedCandidatePersonId = null;
 
-      // Check if the same person is already voted for in a different position
-      const duplicateVote = await DreamTeamVote.findOne({
-        where: {
-          userId: req.user.id,
-          candidateUserId,
-          positionId: { [Op.ne]: positionId },
-        },
-        include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
-      });
-      if (duplicateVote) {
-        return res.status(400).json({
-          success: false,
-          message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
+      if (candidateUserId) {
+        const candidateUser = await User.findByPk(candidateUserId, {
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative'],
         });
+        if (!candidateUser) {
+          return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
+        }
+        personName = (`${candidateUser.firstNameNative || ''} ${candidateUser.lastNameNative || ''}`.trim()) || candidateUser.username;
+        resolvedCandidateUserId = candidateUser.id;
+
+        // Prevent voting for the same user in multiple positions
+        const duplicateVote = await DreamTeamVote.findOne({
+          where: {
+            userId: req.user.id,
+            candidateUserId: resolvedCandidateUserId,
+            positionId: { [Op.ne]: positionId },
+          },
+          include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
+        });
+        if (duplicateVote) {
+          return res.status(400).json({
+            success: false,
+            message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
+          });
+        }
+      } else {
+        const candidatePerson = await PublicPersonProfile.findByPk(candidatePersonId, {
+          attributes: ['id', 'firstNameNative', 'lastNameNative', 'claimStatus'],
+        });
+        if (!candidatePerson) {
+          return res.status(404).json({ success: false, message: 'Το προφίλ δεν βρέθηκε.' });
+        }
+        if (candidatePerson.claimStatus === 'rejected') {
+          return res.status(400).json({ success: false, message: 'Δεν επιτρέπεται ψηφοφορία για απορριφθέν προφίλ.' });
+        }
+        personName = `${candidatePerson.firstNameNative || ''} ${candidatePerson.lastNameNative || ''}`.trim();
+        resolvedCandidatePersonId = candidatePerson.id;
+
+        // Prevent voting for the same person profile in multiple positions
+        const duplicateVote = await DreamTeamVote.findOne({
+          where: {
+            userId: req.user.id,
+            candidatePersonId: resolvedCandidatePersonId,
+            positionId: { [Op.ne]: positionId },
+          },
+          include: [{ model: GovernmentPosition, as: 'position', attributes: ['title'] }],
+        });
+        if (duplicateVote) {
+          return res.status(400).json({
+            success: false,
+            message: `Αυτό το πρόσωπο έχει ήδη επιλεγεί σε άλλη θέση${duplicateVote.position?.title ? ` (${duplicateVote.position.title})` : ''}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
+          });
+        }
       }
 
       const existing = await DreamTeamVote.findOne({
@@ -230,19 +249,20 @@ const dreamTeamController = {
       });
 
       if (existing) {
-        await existing.update({ candidateUserId, personName });
+        await existing.update({ candidateUserId: resolvedCandidateUserId, candidatePersonId: resolvedCandidatePersonId, personName });
       } else {
         await DreamTeamVote.create({
           userId: req.user.id,
           positionId,
-          candidateUserId,
+          candidateUserId: resolvedCandidateUserId,
+          candidatePersonId: resolvedCandidatePersonId,
           personName,
         });
       }
 
       return res.status(200).json({
         success: true,
-        data: { positionId, candidateUserId, personName },
+        data: { positionId, candidateUserId: resolvedCandidateUserId, candidatePersonId: resolvedCandidatePersonId, personName },
         message: 'Ψήφος καταγράφηκε επιτυχώς.',
       });
     } catch (error) {
@@ -298,16 +318,17 @@ const dreamTeamController = {
         attributes: [
           'positionId',
           'candidateUserId',
+          'candidatePersonId',
           'personName',
           [sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'voteCount'],
         ],
         where: { positionId: { [Op.in]: positionIds } },
-        group: ['positionId', 'candidateUserId', 'personName'],
+        group: ['positionId', 'candidateUserId', 'candidatePersonId', 'personName'],
         order: [[sequelize.fn('COUNT', sequelize.col('DreamTeamVote.id')), 'DESC']],
         raw: true,
       });
 
-      // Step 2: determine winner per position and collect their candidateUserIds
+      // Step 2: determine winner per position and collect their candidateUserIds/candidatePersonIds
       const winnerByPosition = {};
       voteCounts.forEach((v) => {
         if (!winnerByPosition[v.positionId]) {
@@ -330,9 +351,6 @@ const dreamTeamController = {
         users.forEach((u) => { userAvatars[u.id] = u.avatar; });
       }
 
-      // Step 4: batch-fetch PublicPersonProfile photos for placeholder holder users
-      const holderPhotoMap = await buildHolderPhotoMap(positions);
-
       // Total votes per position
       const totalByPosition = {};
       voteCounts.forEach((v) => {
@@ -343,15 +361,12 @@ const dreamTeamController = {
         const winner = winnerByPosition[position.id];
         const total = totalByPosition[position.id] || 0;
         const posJson = position.toJSON();
-        posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
-          ...holder,
-          holderPhoto: holderPhotoMap.get(holder.userId) || null,
-        }));
         return {
           position: posJson,
           winner: winner
             ? {
                 candidateUserId: winner.candidateUserId,
+                candidatePersonId: winner.candidatePersonId || null,
                 personName: winner.personName,
                 avatar: userAvatars[winner.candidateUserId] || null,
                 voteCount: parseInt(winner.voteCount, 10),
@@ -474,11 +489,11 @@ const dreamTeamController = {
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+      if (!user.isVerified && !user.searchable) {
         return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
       const suggestion = await GovernmentPositionSuggestion.create({
@@ -509,11 +524,11 @@ const dreamTeamController = {
       }
       const { userId, reason, order: ord, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+        if (!user.isVerified && !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }
@@ -572,11 +587,11 @@ const dreamTeamController = {
           message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
         });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+      if (!user.isVerified && !user.searchable) {
         return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
       }
 
@@ -620,11 +635,11 @@ const dreamTeamController = {
       }
       const { userId, since, notes, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'isPlaceholder'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if ((!user.isVerified && !user.isPlaceholder) || !user.searchable) {
+        if (!user.isVerified && !user.searchable) {
           return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
         }
       }

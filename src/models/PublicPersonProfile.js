@@ -187,12 +187,6 @@ const PublicPersonProfile = sequelize.define('PublicPersonProfile', {
     references: { model: 'Users', key: 'id' },
     onDelete: 'SET NULL'
   },
-  placeholderUserId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: { model: 'Users', key: 'id' },
-    onDelete: 'SET NULL'
-  },
   source: {
     type: DataTypes.ENUM('moderator', 'application', 'self'),
     defaultValue: 'moderator',
