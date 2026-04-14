@@ -173,6 +173,19 @@ exports.createSection = async (req, res) => {
       return res.status(400).json({ success: false, message: contentError });
     }
 
+    // For news_sources, enforce a single section per location by merging into the existing one
+    if (type === 'news_sources') {
+      const existing = await LocationSection.findOne({ where: { locationId, type: 'news_sources' } });
+      if (existing) {
+        const existingSources = existing.content?.sources || [];
+        const newSources = content.sources || [];
+        existing.content = { sources: [...existingSources, ...newSources] };
+        existing.updatedByUserId = req.user.id;
+        await existing.save();
+        return res.status(200).json({ success: true, section: existing });
+      }
+    }
+
     // Default sortOrder to end of list
     let order = sortOrder;
     if (order === undefined || order === null) {

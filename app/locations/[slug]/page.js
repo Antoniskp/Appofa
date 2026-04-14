@@ -14,6 +14,7 @@ import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
 export default function LocationDetailPage() {
@@ -299,15 +300,46 @@ export default function LocationDetailPage() {
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
 
   const TAB_LABELS = {
-    polls: `Polls${activePolls.length ? ` (${activePolls.length})` : ''}`,
-    news: `News${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
-    articles: `Articles${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
-    users: `Users${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
-    suggestions: `Suggestions${suggestions.length ? ` (${suggestions.length})` : ''}`,
+    polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
+    news: `Ειδήσεις${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
+    articles: `Άρθρα${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
+    users: `Χρήστες${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
+    suggestions: `Προτάσεις${suggestions.length ? ` (${suggestions.length})` : ''}`,
     persons: `Πρόσωπα${persons.length ? ` (${persons.length})` : ''}`,
   };
 
+  // Determine which tabs have content (for hiding empty tabs)
+  const TAB_COUNTS = {
+    polls: activePolls.length,
+    news: newsArticles.length,
+    articles: regularArticles.length,
+    users: entities.usersCount,
+    suggestions: suggestions.length,
+    persons: persons.length,
+  };
+  const visibleTabs = secondaryLoading
+    ? VALID_TABS
+    : VALID_TABS.filter(tab => TAB_COUNTS[tab] > 0);
+  // If current active tab is hidden, fall back to first visible tab
+  const resolvedActiveTab = visibleTabs.includes(activeTab)
+    ? activeTab
+    : (visibleTabs[0] || DEFAULT_TAB);
+
   const bodySections = sections.filter(s => s.isPublished && !HEADER_SECTION_TYPES.includes(s.type));
+
+  // Merge all news_sources sections into a single one to prevent duplicate boxes
+  const mergedBodySections = (() => {
+    const newsSections = bodySections.filter(s => s.type === 'news_sources');
+    const otherSections = bodySections.filter(s => s.type !== 'news_sources');
+    if (newsSections.length <= 1) return bodySections;
+    const merged = {
+      ...newsSections[0],
+      content: {
+        sources: newsSections.flatMap(s => s.content?.sources || [])
+      }
+    };
+    return [...otherSections, merged];
+  })();
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -344,9 +376,13 @@ export default function LocationDetailPage() {
         </div>
 
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
-        {!isEditing && bodySections.length > 0 && (
+        {!isEditing && (
           <div className="mb-6">
-            <LocationSections sections={bodySections} />
+            {secondaryLoading ? (
+              <SkeletonLoader type="card" count={2} />
+            ) : mergedBodySections.length > 0 ? (
+              <LocationSections sections={mergedBodySections} />
+            ) : null}
           </div>
         )}
 
@@ -360,7 +396,7 @@ export default function LocationDetailPage() {
         {/* Tabbed content — only shown when not editing */}
         {!isEditing && (
           <LocationTabs
-            activeTab={activeTab}
+            activeTab={resolvedActiveTab}
             onTabChange={handleTabChange}
             activePolls={activePolls}
             newsArticles={newsArticles}
@@ -370,6 +406,7 @@ export default function LocationDetailPage() {
             persons={persons}
             isAuthenticated={isAuthenticated}
             TAB_LABELS={TAB_LABELS}
+            visibleTabs={visibleTabs}
             loading={secondaryLoading}
           />
         )}
