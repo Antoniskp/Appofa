@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { MagnifyingGlassIcon, UserCircleIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { personAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
@@ -78,6 +78,7 @@ function PersonCard({ profile }) {
 }
 
 export default function PersonsPage() {
+  const { user } = useAuth();
   const {
     filters,
     page,
@@ -111,9 +112,19 @@ export default function PersonsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Δημόσια Πρόσωπα</h1>
-          <p className="mt-1 text-gray-500">Περιηγηθείτε και ανακαλύψτε δημόσια πρόσωπα της κοινότητας.</p>
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Δημόσια Πρόσωπα</h1>
+            <p className="mt-1 text-gray-500">Περιηγηθείτε και ανακαλύψτε δημόσια πρόσωπα της κοινότητας.</p>
+          </div>
+          {(user?.role === 'moderator' || user?.role === 'admin') && (
+            <Link
+              href="/admin/persons/create"
+              className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+            >
+              + Δημιουργία
+            </Link>
+          )}
         </div>
 
         {/* Filters */}

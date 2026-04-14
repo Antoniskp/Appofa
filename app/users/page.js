@@ -122,12 +122,22 @@ export default function UsersPage() {
                 <p className="text-xs text-gray-500">Προφίλ πολιτικών και αξιόλογων προσώπων.</p>
               </div>
             </div>
-            <Link
-              href="/persons"
-              className="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-            >
-              Πρόσωπα →
-            </Link>
+            <div className="flex items-center gap-2">
+              {isAuthenticated && (user?.role === 'moderator' || user?.role === 'admin') && (
+                <Link
+                  href="/admin/persons/create"
+                  className="inline-flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
+                >
+                  + Δημιουργία
+                </Link>
+              )}
+              <Link
+                href="/persons"
+                className="inline-flex items-center px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
+              >
+                Πρόσωπα →
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -175,30 +185,6 @@ export default function UsersPage() {
         {/* Show user cards only for authenticated users */}
         {isAuthenticated && (
           <>
-            {/* Role-based banners — grouped together */}
-            <div className="mb-6 flex flex-col gap-3">
-              {/* Create public person profile banner — shown only to moderators and admins */}
-              {(user?.role === 'moderator' || user?.role === 'admin') && (
-                <div className="bg-white rounded-lg shadow-sm border border-purple-200 px-4 py-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🧑</span>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">Δημιουργία Δημόσιου Προφίλ</p>
-                      <p className="text-xs text-gray-500">Δημιουργήστε προφίλ για αξιόλογα πρόσωπα της κοινότητας.</p>
-                    </div>
-                  </div>
-                  <Link
-                    href="/admin/persons/create"
-                    className="inline-flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-                  >
-                    Δημιουργία →
-                  </Link>
-                </div>
-              )}
-
-
-            </div>
-
             {/* Search using FilterBar */}
             <FilterBar
               filters={filters}
@@ -241,10 +227,10 @@ export default function UsersPage() {
             {error && (
               <EmptyState
                 type="error"
-                title="Error Loading Users"
+                title="Σφάλμα φόρτωσης χρηστών"
                 description={error}
                 action={{
-                  text: 'Try Again',
+                  text: 'Δοκιμάστε ξανά',
                   onClick: () => window.location.reload()
                 }}
               />
@@ -254,10 +240,10 @@ export default function UsersPage() {
             {!loading && !error && users.length === 0 && (
               <EmptyState
                 type="empty"
-                title="No Users Found"
+                title="Δεν βρέθηκαν χρήστες"
                 description={filters.search 
-                  ? "No users match your search. Try a different search term." 
-                  : "No users available to display."}
+                  ? "Κανένας χρήστης δεν ταιριάζει με την αναζήτησή σας. Δοκιμάστε διαφορετικό όρο." 
+                  : "Δεν υπάρχουν διαθέσιμοι χρήστες."}
               />
             )}
 
