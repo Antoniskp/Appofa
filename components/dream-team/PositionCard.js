@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
@@ -19,20 +18,30 @@ const positionIconMap = positionsData.positions.reduce((acc, p) => {
 
 const DEFAULT_META = { labelGr: 'Θέση', color: 'bg-indigo-100 text-indigo-700', icon: '⚖️' };
 
-function PersonAvatar({ photo, name, size = 'md' }) {
-  const sizes = { sm: 'h-8 w-8 text-sm', md: 'h-12 w-12 text-base', lg: 'h-16 w-16 text-xl' };
+function PersonAvatar({ photo, name, avatarColor, size = 'md' }) {
+  const sizes = {
+    sm: 'h-8 w-8 text-xs',
+    md: 'h-12 w-12 text-sm',
+    lg: 'h-16 w-16 text-base',
+  };
   if (photo) {
     return (
       <img
         src={photo}
-        alt={name}
+        alt={name || ''}
         className={`${sizes[size]} rounded-full object-cover flex-shrink-0`}
       />
     );
   }
+  const initial = name ? name.trim().charAt(0).toUpperCase() : '?';
+  const bg = avatarColor || '#6b7280';
   return (
-    <div className={`${sizes[size]} rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0`}>
-      <UserCircleIcon className="h-5 w-5 text-gray-400" />
+    <div
+      className={`${sizes[size]} rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white`}
+      style={{ backgroundColor: bg }}
+      aria-label={name || ''}
+    >
+      {initial}
     </div>
   );
 }
@@ -119,6 +128,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                   : currentHolder.user
                     ? ((`${currentHolder.user.firstNameNative || ''} ${currentHolder.user.lastNameNative || ''}`.trim()) || currentHolder.user.username)
                     : '—'}
+                avatarColor={currentHolder.holderAvatarColor || currentHolder.user?.avatarColor || null}
               />
               <div>
                 <p className="font-semibold text-gray-800 text-sm">
@@ -178,7 +188,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                 const count = parseInt(v.voteCount, 10);
                 const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
                 const isMyVote = v.candidateUserId && v.candidateUserId === myVote?.candidateUserId;
-                const photo = v.candidateUser?.avatar || null;
+                const photo = v.candidateUser?.photo || v.candidateUser?.avatar || null;
                 return (
                   <div key={`${v.candidateUserId}-${idx}`}>
                     <div className="flex items-center justify-between text-xs mb-1">

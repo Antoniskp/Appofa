@@ -53,7 +53,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo', 'avatarColor'],
                 required: false,
               },
             ],
@@ -68,7 +68,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo', 'avatarColor'],
                 required: false,
               },
             ],
@@ -97,7 +97,7 @@ const dreamTeamController = {
       if (votedUserIds.length > 0) {
         const votedUsers = await User.findAll({
           where: { id: { [Op.in]: votedUserIds } },
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo', 'avatarColor'],
           raw: true,
         });
         const userMap = {};
@@ -134,6 +134,7 @@ const dreamTeamController = {
         posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
           ...holder,
           holderPhoto: holder.user ? (holder.user.photo || holder.user.avatar || null) : null,
+          holderAvatarColor: holder.user?.avatarColor || null,
         }));
         return {
           ...posJson,
@@ -241,7 +242,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
                 required: false,
               },
             ],
@@ -256,7 +257,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
                 required: false,
               },
             ],
@@ -354,7 +355,7 @@ const dreamTeamController = {
           {
             model: User,
             as: 'candidateUser',
-            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
             required: false,
           },
         ],
@@ -403,7 +404,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
                 required: false,
               },
             ],
@@ -417,7 +418,7 @@ const dreamTeamController = {
               {
                 model: User,
                 as: 'user',
-                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'],
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'],
                 required: false,
               },
             ],
@@ -460,7 +461,7 @@ const dreamTeamController = {
       });
       const suggestionWithUser = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
         include: [
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'], required: false },
         ],
       });
       return res.status(201).json({ success: true, data: suggestionWithUser });
@@ -495,7 +496,7 @@ const dreamTeamController = {
       });
       const updated = await GovernmentPositionSuggestion.findByPk(suggestion.id, {
         include: [
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'], required: false },
         ],
       });
       return res.status(200).json({ success: true, data: updated });
@@ -563,7 +564,7 @@ const dreamTeamController = {
 
       const holderWithUser = await GovernmentCurrentHolder.findByPk(holder.id, {
         include: [
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'], required: false },
         ],
       });
 
@@ -606,7 +607,7 @@ const dreamTeamController = {
       });
       const updated = await GovernmentCurrentHolder.findByPk(holder.id, {
         include: [
-          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'], required: false },
+          { model: User, as: 'user', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo'], required: false },
         ],
       });
 
