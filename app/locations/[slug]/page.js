@@ -323,14 +323,20 @@ export default function LocationDetailPage() {
   // If current active tab is hidden, fall back to first visible tab
   const resolvedActiveTab = visibleTabs.includes(activeTab)
     ? activeTab
-    : (visibleTabs[0] || DEFAULT_TAB);
+    : (visibleTabs[0] ?? DEFAULT_TAB);
 
   const bodySections = sections.filter(s => s.isPublished && !HEADER_SECTION_TYPES.includes(s.type));
 
   // Merge all news_sources sections into a single one to prevent duplicate boxes
   const mergedBodySections = (() => {
-    const newsSections = bodySections.filter(s => s.type === 'news_sources');
-    const otherSections = bodySections.filter(s => s.type !== 'news_sources');
+    const { newsSections, otherSections } = bodySections.reduce(
+      (acc, s) => {
+        if (s.type === 'news_sources') acc.newsSections.push(s);
+        else acc.otherSections.push(s);
+        return acc;
+      },
+      { newsSections: [], otherSections: [] }
+    );
     if (newsSections.length <= 1) return bodySections;
     const merged = {
       ...newsSections[0],

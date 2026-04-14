@@ -231,7 +231,8 @@ function SourceFavicon({ url, size = 'sm' }) {
 
   let faviconUrl = null;
   try {
-    faviconUrl = `${new URL(url).origin}/favicon.ico`;
+    const origin = new URL(url).origin;
+    faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(origin)}&sz=32`;
   } catch {
     // invalid URL — fall through to icon fallback
   }

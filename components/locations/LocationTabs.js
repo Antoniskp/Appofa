@@ -28,7 +28,7 @@ export default function LocationTabs({
   const tabs = visibleTabs && visibleTabs.length > 0 ? visibleTabs : VALID_TABS;
 
   // If no tabs have content (and we're not loading), show an empty state
-  if (!loading && visibleTabs && visibleTabs.length === 0) {
+  if (!loading && visibleTabs?.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-8 text-center">
         <p className="text-gray-400 text-sm">Δεν υπάρχει περιεχόμενο για αυτή την τοποθεσία ακόμα.</p>
