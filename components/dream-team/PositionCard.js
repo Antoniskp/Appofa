@@ -33,7 +33,7 @@ function PersonAvatar({ photo, name, avatarColor, size = 'md' }) {
       />
     );
   }
-  const initial = name ? name.trim().charAt(0).toUpperCase() : '?';
+  const initial = (name?.trim() || '').charAt(0).toUpperCase() || '?';
   const bg = avatarColor || '#6b7280';
   return (
     <div
