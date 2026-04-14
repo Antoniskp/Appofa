@@ -102,13 +102,13 @@ export default function LocationHeader({
               <div className="flex items-center gap-2 mt-2 text-sm">
                 <span className="font-medium text-gray-700">Συντονιστής:</span>
                 {locationNeedsModerator ? (
-                  <a
+                  <Link
                     href={`/locations/${location.slug}?apply=moderator`}
                     className="inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-semibold hover:bg-amber-200 transition-colors"
                     title="Γίνε συντονιστής αυτής της τοποθεσίας"
                   >
                     Χρειάζεται Συντονιστή →
-                  </a>
+                  </Link>
                 ) : location.moderatorPreview ? (
                   <div className="inline-flex items-center gap-1.5">
                     <div

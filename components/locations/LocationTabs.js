@@ -30,7 +30,7 @@ export default function LocationTabs({
   // If no tabs have content (and we're not loading), show an empty state
   if (!loading && visibleTabs?.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-md p-8 text-center">
+      <div className="bg-white rounded-lg shadow-md p-8 text-center" role="status">
         <p className="text-gray-400 text-sm">Δεν υπάρχει περιεχόμενο για αυτή την τοποθεσία ακόμα.</p>
       </div>
     );
