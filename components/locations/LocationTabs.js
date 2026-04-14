@@ -21,8 +21,21 @@ export default function LocationTabs({
   persons,
   isAuthenticated,
   TAB_LABELS,
+  visibleTabs,
   loading,
 }) {
+  // Fall back to all tabs if visibleTabs not provided (e.g. during initial load)
+  const tabs = visibleTabs && visibleTabs.length > 0 ? visibleTabs : VALID_TABS;
+
+  // If no tabs have content (and we're not loading), show an empty state
+  if (!loading && visibleTabs?.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-8 text-center" role="status">
+        <p className="text-gray-400 text-sm">Δεν υπάρχει περιεχόμενο για αυτή την τοποθεσία ακόμα.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-md">
       {/* Tab bar */}
@@ -31,7 +44,7 @@ export default function LocationTabs({
         role="tablist"
         aria-label="Location content tabs"
       >
-        {VALID_TABS.map((tab) => (
+        {tabs.map((tab) => (
           <button
             key={tab}
             role="tab"
@@ -45,12 +58,12 @@ export default function LocationTabs({
                 onTabChange(tab);
               }
               if (e.key === 'ArrowRight') {
-                const next = VALID_TABS[(VALID_TABS.indexOf(tab) + 1) % VALID_TABS.length];
+                const next = tabs[(tabs.indexOf(tab) + 1) % tabs.length];
                 onTabChange(next);
                 document.getElementById(`tab-${next}`)?.focus();
               }
               if (e.key === 'ArrowLeft') {
-                const prev = VALID_TABS[(VALID_TABS.indexOf(tab) - 1 + VALID_TABS.length) % VALID_TABS.length];
+                const prev = tabs[(tabs.indexOf(tab) - 1 + tabs.length) % tabs.length];
                 onTabChange(prev);
                 document.getElementById(`tab-${prev}`)?.focus();
               }

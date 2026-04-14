@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { GlobeAltIcon, PhoneIcon, VideoCameraIcon, MegaphoneIcon, NewspaperIcon } from '@heroicons/react/24/outline';
 
 // ---------------------------------------------------------------------------
@@ -223,6 +224,33 @@ function AnnouncementsSection({ content }) {
   );
 }
 
+// Small inner component that loads a site's favicon with a fallback to NewspaperIcon
+function SourceFavicon({ url, size = 'sm' }) {
+  const [imgError, setImgError] = useState(false);
+  const sizeClass = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
+
+  let faviconUrl = null;
+  try {
+    const origin = new URL(url).origin;
+    faviconUrl = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(origin)}&sz=32`;
+  } catch {
+    // invalid URL — fall through to icon fallback
+  }
+
+  if (!faviconUrl || imgError) {
+    return <NewspaperIcon className={`${sizeClass} text-blue-500 flex-shrink-0`} />;
+  }
+
+  return (
+    <img
+      src={faviconUrl}
+      alt=""
+      className={`${sizeClass} flex-shrink-0 object-contain`}
+      onError={() => setImgError(true)}
+    />
+  );
+}
+
 function NewsSourcesSection({ content, compact = false }) {
   const sources = content?.sources || [];
   if (sources.length === 0) return <p className="text-gray-500 text-sm">No news sources listed.</p>;
@@ -232,7 +260,7 @@ function NewsSourcesSection({ content, compact = false }) {
       <ul className="space-y-1">
         {sources.map((source, i) => (
           <li key={i} className="flex items-center gap-2">
-            <NewspaperIcon className="w-4 h-4 text-blue-500 flex-shrink-0" />
+            <SourceFavicon url={source.url} size="sm" />
             <a
               href={source.url}
               target="_blank"
@@ -251,7 +279,7 @@ function NewsSourcesSection({ content, compact = false }) {
     <div className="space-y-2">
       {sources.map((source, i) => (
         <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-          <NewspaperIcon className="w-5 h-5 text-blue-500 flex-shrink-0" />
+          <SourceFavicon url={source.url} size="lg" />
           <div className="min-w-0 flex-1">
             <a
               href={source.url}

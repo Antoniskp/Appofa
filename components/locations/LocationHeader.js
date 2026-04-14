@@ -102,7 +102,13 @@ export default function LocationHeader({
               <div className="flex items-center gap-2 mt-2 text-sm">
                 <span className="font-medium text-gray-700">Συντονιστής:</span>
                 {locationNeedsModerator ? (
-                  <span className="font-semibold text-amber-700">Χρειάζεται Συντονιστή</span>
+                  <Link
+                    href={`/locations/${location.slug}?apply=moderator`}
+                    className="inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-semibold hover:bg-amber-200 transition-colors"
+                    title="Γίνε συντονιστής αυτής της τοποθεσίας"
+                  >
+                    Χρειάζεται Συντονιστή →
+                  </Link>
                 ) : location.moderatorPreview ? (
                   <div className="inline-flex items-center gap-1.5">
                     <div
@@ -125,21 +131,33 @@ export default function LocationHeader({
                 ) : null}
               </div>
 
-              {/* Stats chips */}
-              <div className="flex flex-wrap gap-2 mt-3">
-                <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-medium">
-                  Polls: {activePolls.length}
-                </span>
-                <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-xs font-medium">
-                  News: {newsArticles.length}
-                </span>
-                <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
-                  Articles: {regularArticles.length}
-                </span>
-                <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-full text-xs font-medium">
-                  Users: {entities.usersCount}
-                </span>
-              </div>
+              {/* Stats chips — only show non-zero counts */}
+              {(activePolls.length > 0 || newsArticles.length > 0 || regularArticles.length > 0 || entities.usersCount > 0) ? (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {activePolls.length > 0 && (
+                    <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-medium">
+                      Ψηφοφορίες: {activePolls.length}
+                    </span>
+                  )}
+                  {newsArticles.length > 0 && (
+                    <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-xs font-medium">
+                      Ειδήσεις: {newsArticles.length}
+                    </span>
+                  )}
+                  {regularArticles.length > 0 && (
+                    <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
+                      Άρθρα: {regularArticles.length}
+                    </span>
+                  )}
+                  {entities.usersCount > 0 && (
+                    <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-full text-xs font-medium">
+                      Χρήστες: {entities.usersCount}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-gray-400 italic">Δεν υπάρχει περιεχόμενο ακόμα</p>
+              )}
             </div>
           </div>
 

@@ -263,6 +263,32 @@ describe('Location Sections', () => {
       expect(res.body.section.content.sources[0].name).toBe('Εφημερίδα Θεσσαλίας');
     });
 
+    it('merges into existing news_sources section instead of creating a duplicate', async () => {
+      // A news_sources section already exists from the previous test; posting again should merge
+      const res = await request(app)
+        .post(`/api/locations/${testLocation.id}/sections`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          type: 'news_sources',
+          content: { sources: [{ name: 'Ταχυδρόμος', url: 'https://taxydromos.gr' }] },
+          isPublished: true
+        })
+        .expect(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.section.type).toBe('news_sources');
+      // Both sources should be present in the merged section
+      const names = res.body.section.content.sources.map(s => s.name);
+      expect(names).toContain('Εφημερίδα Θεσσαλίας');
+      expect(names).toContain('Ταχυδρόμος');
+      // Only one news_sources section should exist for this location
+      const listRes = await request(app)
+        .get(`/api/locations/${testLocation.id}/sections`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .expect(200);
+      const newsSections = listRes.body.sections.filter(s => s.type === 'news_sources');
+      expect(newsSections.length).toBe(1);
+    });
+
     it('rejects invalid content', async () => {
       const res = await request(app)
         .post(`/api/locations/${testLocation.id}/sections`)
