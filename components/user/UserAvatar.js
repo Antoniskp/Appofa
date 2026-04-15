@@ -9,10 +9,22 @@ const DEFAULT_AVATAR_COLOR = '#64748b';
 const BADGE_TIER_EMOJI = { bronze: '🥉', silver: '🥈', gold: '🥇', verified: '✅' };
 
 /**
+ * Derives a proportional badge overlay size class from the avatar size prop.
+ * h-6 or smaller → h-3 w-3 · h-8/h-10 → h-4 w-4 · h-12 or larger → h-5 w-5
+ */
+function deriveBadgeSize(avatarSize = '') {
+  const match = avatarSize.match(/h-(\d+)/);
+  const h = match ? parseInt(match[1], 10) : 10;
+  if (h <= 6) return 'h-3 w-3';
+  if (h <= 10) return 'h-4 w-4';
+  return 'h-5 w-5';
+}
+
+/**
  * Small overlay image for a selected display badge.
  * Falls back to emoji if the SVG is missing.
  */
-function DisplayBadgeOverlay({ slug, tier }) {
+function DisplayBadgeOverlay({ slug, tier, size }) {
   const [imgError, setImgError] = useState(false);
 
   if (!imgError) {
@@ -20,7 +32,7 @@ function DisplayBadgeOverlay({ slug, tier }) {
       <img
         src={`/images/badges/${slug}-${tier}.svg`}
         alt={`${slug} ${tier}`}
-        className="absolute bottom-0 right-0 h-8 w-8 object-contain"
+        className={`absolute bottom-0 right-0 ${size} object-contain`}
         onError={() => setImgError(true)}
       />
     );
@@ -28,7 +40,7 @@ function DisplayBadgeOverlay({ slug, tier }) {
 
   // Fallback: for the verified badge show the green checkmark; others show emoji
   if (slug === 'verified') {
-    return <VerifiedBadge overlay className="absolute bottom-0 right-0 h-8 w-8" />;
+    return <VerifiedBadge overlay className={`absolute bottom-0 right-0 ${size}`} />;
   }
 
   return (
@@ -57,6 +69,7 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
   }, [user?.avatar]);
 
   const hasDisplayBadge = user?.displayBadgeSlug && user?.displayBadgeTier;
+  const badgeSize = deriveBadgeSize(size);
 
   return (
     <div className="relative inline-flex flex-shrink-0">
@@ -76,11 +89,11 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
         )}
       </div>
       {hasDisplayBadge ? (
-        <DisplayBadgeOverlay slug={user.displayBadgeSlug} tier={user.displayBadgeTier} />
+        <DisplayBadgeOverlay slug={user.displayBadgeSlug} tier={user.displayBadgeTier} size={badgeSize} />
       ) : user.isVerified ? (
         <VerifiedBadge
           overlay
-          className="absolute bottom-0 right-0 h-8 w-8"
+          className={`absolute bottom-0 right-0 ${badgeSize}`}
         />
       ) : null}
       {user.partyId && (
