@@ -280,9 +280,21 @@ const getLocation = async (id) => {
     const articleCount = await LocationLink.count({
       where: { location_id: locationId, entity_type: 'article' }
     });
-    const userCount = await LocationLink.count({
-      where: { location_id: locationId, entity_type: 'user' }
+    const linkedUserIds = await LocationLink.findAll({
+      where: { location_id: locationId, entity_type: 'user' },
+      attributes: ['entity_id'],
+      raw: true
+    }).then((rows) => rows.map((r) => r.entity_id));
+    const homeLocationUsers = await User.findAll({
+      where: {
+        homeLocationId: locationId,
+        searchable: true,
+        ...(linkedUserIds.length > 0 ? { id: { [Op.notIn]: linkedUserIds } } : {})
+      },
+      attributes: ['id'],
+      raw: true
     });
+    const userCount = linkedUserIds.length + homeLocationUsers.length;
     const pollCount = await LocationLink.count({
       where: { location_id: locationId, entity_type: 'poll' }
     });
@@ -647,6 +659,19 @@ const getLocationEntities = async (locationId, queryParams, user) => {
         const childUserIds = childUserLinks.map((link) => link.entity_id);
         combinedUserIds = Array.from(new Set([...combinedUserIds, ...childUserIds]));
       }
+
+      // Also include users whose homeLocationId is in the location tree
+      // (e.g. moderators assigned via homeLocationId but not via LocationLink)
+      const homeLocationUsers = await User.findAll({
+        where: {
+          homeLocationId: { [Op.in]: [locationId, ...descendantIds] },
+          searchable: true
+        },
+        attributes: ['id']
+      });
+
+      const homeLocationUserIds = homeLocationUsers.map((u) => u.id);
+      combinedUserIds = Array.from(new Set([...combinedUserIds, ...homeLocationUserIds]));
     }
 
     const articles = articleIds.length > 0 ? await Article.findAll({

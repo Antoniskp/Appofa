@@ -398,6 +398,103 @@ describe('Location API Tests', () => {
     });
   });
 
+  describe('Moderator appears in location users tab', () => {
+    let moderatorLocation;
+    let moderatorUser;
+    let moderatorToken;
+
+    beforeAll(async () => {
+      // Create a location for the moderator
+      const locRes = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({ name: 'ModeratorCity', type: 'municipality', code: 'MC' })
+        .expect(201);
+      moderatorLocation = locRes.body.location;
+
+      // Create a moderator user with homeLocationId pointing to the location
+      moderatorUser = await User.create({
+        username: 'testmoderator',
+        email: 'testmoderator@test.com',
+        password: 'password123',
+        role: 'moderator',
+        homeLocationId: moderatorLocation.id,
+        searchable: true
+      });
+
+      const modLogin = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'testmoderator@test.com', password: 'password123' });
+      moderatorToken = modLogin.headers['set-cookie']
+        .find(c => c.startsWith('auth_token='))
+        .split(';')[0]
+        .replace('auth_token=', '');
+    });
+
+    it('should show moderator in location users tab via homeLocationId', async () => {
+      const response = await request(app)
+        .get(`/api/locations/${moderatorLocation.id}/entities`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.users).toBeDefined();
+      const mod = response.body.users.find(u => u.id === moderatorUser.id);
+      expect(mod).toBeDefined();
+      expect(mod.username).toBe('testmoderator');
+    });
+
+    it('should count moderator in usersCount stat for the location', async () => {
+      const response = await request(app)
+        .get(`/api/locations/${moderatorLocation.id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.stats.userCount).toBeGreaterThanOrEqual(1);
+    });
+
+    it('should not duplicate moderator if also linked via LocationLink', async () => {
+      // Also link the moderator via LocationLink
+      await LocationLink.findOrCreate({
+        where: {
+          location_id: moderatorLocation.id,
+          entity_type: 'user',
+          entity_id: moderatorUser.id
+        }
+      });
+
+      const response = await request(app)
+        .get(`/api/locations/${moderatorLocation.id}/entities`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const modUsers = response.body.users.filter(u => u.id === moderatorUser.id);
+      expect(modUsers.length).toBe(1);
+
+      // Clean up
+      await LocationLink.destroy({
+        where: { location_id: moderatorLocation.id, entity_type: 'user', entity_id: moderatorUser.id }
+      });
+    });
+
+    it('should not show moderator with searchable=false in users tab', async () => {
+      await moderatorUser.update({ searchable: false });
+
+      const response = await request(app)
+        .get(`/api/locations/${moderatorLocation.id}/entities`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const mod = response.body.users.find(u => u.id === moderatorUser.id);
+      expect(mod).toBeUndefined();
+
+      // Restore
+      await moderatorUser.update({ searchable: true });
+    });
+  });
+
   describe('User homeLocationId syncing with LocationLinks', () => {
     let testLocationForSync;
     let anotherTestLocation;
