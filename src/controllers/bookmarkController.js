@@ -158,7 +158,7 @@ const bookmarkController = {
           {
             model: User,
             as: 'author',
-            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor']
           }
         ]
       }) : [];
@@ -183,7 +183,7 @@ const bookmarkController = {
           {
             model: User,
             as: 'creator',
-            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor']
           },
           {
             model: PollOption,
