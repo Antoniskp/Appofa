@@ -221,7 +221,8 @@ export default function PollForm({
     
     const payload = {
       ...formData,
-      options: validOptions,
+      // Only include `options` for non-binary polls — backend rejects any options field on binary polls
+      ...(formData.type !== 'binary' && { options: validOptions }),
       deadline: formData.deadline || null,
       binaryColors: formData.useCustomColors ? formData.binaryColors : undefined,
     };
