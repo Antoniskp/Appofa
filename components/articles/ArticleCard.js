@@ -5,6 +5,7 @@ import Badge, { TypeBadge } from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import { FilmIcon } from '@heroicons/react/24/outline';
+import UserAvatar from '@/components/user/UserAvatar';
 
 /**
  * Helper function to strip markdown syntax from text
@@ -66,7 +67,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const defaultBannerImageUrl = '/images/branding/news default.png';
   const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
   const createdAt = new Date(article.createdAt);
-  const formattedDate = createdAt.toLocaleDateString();
+  const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
   const articleHref = article.type === 'news'
@@ -126,7 +127,16 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           </p>
         )}
         <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
-          <span>By {authorLabel}</span>
+          <div className="flex items-center gap-1.5">
+            {article.hideAuthor ? (
+              <span>Anonymous</span>
+            ) : article.author ? (
+              <>
+                <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" />
+                <span>{article.author.username}</span>
+              </>
+            ) : null}
+          </div>
           <span>{formattedDate} {formattedTime}</span>
         </div>
       </ImageTopCard>
@@ -169,7 +179,16 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             
             {/* Meta */}
             <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-              <span>By {authorLabel}</span>
+              <div className="flex items-center gap-1.5">
+                {article.hideAuthor ? (
+                  <span>Anonymous</span>
+                ) : article.author ? (
+                  <>
+                    <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" />
+                    <span>{article.author.username}</span>
+                  </>
+                ) : null}
+              </div>
               <span>•</span>
               <span>{formattedDate} {formattedTime}</span>
               {article.status !== 'published' && (
@@ -212,7 +231,16 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 150)}...` : ''))}
       </p>
       <div className="flex justify-between items-center text-sm text-gray-500">
-        <span>By {authorLabel}</span>
+        <div className="flex items-center gap-1.5">
+          {article.hideAuthor ? (
+            <span>Anonymous</span>
+          ) : article.author ? (
+            <>
+              <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" />
+              <span>{article.author.username}</span>
+            </>
+          ) : null}
+        </div>
         <span>{formattedDate} {formattedTime}</span>
       </div>
     </ImageTopCard>

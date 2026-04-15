@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Badge from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import InlineSuggestionVote from '@/components/InlineSuggestionVote';
+import UserAvatar from '@/components/user/UserAvatar';
 
 const TYPE_LABELS = {
   idea: 'Ιδέα',
@@ -38,9 +39,19 @@ export default function SuggestionCard({ suggestion }) {
         </h3>
       </Link>
       <div className="flex items-center justify-between text-sm text-gray-500">
-        {suggestion.author && (
-          <span>@{suggestion.author.username}</span>
-        )}
+        <div className="flex items-center gap-2">
+          {suggestion.author && (
+            <>
+              <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" />
+              <span>{suggestion.author.username}</span>
+            </>
+          )}
+          {suggestion.createdAt && (
+            <span className="text-xs text-gray-400">
+              {new Date(suggestion.createdAt).toLocaleDateString('el-GR')}
+            </span>
+          )}
+        </div>
         <InlineSuggestionVote
           suggestionId={suggestion.id}
           type={suggestion.type}

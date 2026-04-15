@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import { idSlug } from '@/lib/utils/slugify';
 import { pollAPI } from '@/lib/api';
+import UserAvatar from '@/components/user/UserAvatar';
 
 /**
  * Reusable poll card component
@@ -480,7 +481,16 @@ export default function PollCard({ poll, variant = 'grid' }) {
           <ChartBarIcon className="h-4 w-4 inline mr-1" />
           {totalVotes} {totalVotes === 1 ? 'ψήφος' : 'ψήφοι'}
         </span>
-        <span>{creatorLabel}</span>
+        <span>
+          {poll.hideCreator ? (
+            <span>Ανώνυμος</span>
+          ) : poll.creator ? (
+            <span className="flex items-center gap-1.5">
+              <UserAvatar user={poll.creator} size="h-6 w-6" textSize="text-xs" />
+              <span>{poll.creator.username}</span>
+            </span>
+          ) : null}
+        </span>
       </div>
       
       <div className="mt-3 text-xs text-gray-400">

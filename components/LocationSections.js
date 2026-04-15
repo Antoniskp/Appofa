@@ -206,7 +206,7 @@ function AnnouncementsSection({ content }) {
             </h4>
             {ann.startsAt && (
               <span className="text-xs text-gray-500 flex-shrink-0">
-                {new Date(ann.startsAt).toLocaleDateString()}
+                {new Date(ann.startsAt).toLocaleDateString('el-GR')}
               </span>
             )}
           </div>
@@ -215,7 +215,7 @@ function AnnouncementsSection({ content }) {
           )}
           {ann.endsAt && (
             <p className="text-xs text-gray-400 mt-2">
-              Until: {new Date(ann.endsAt).toLocaleDateString()}
+              Until: {new Date(ann.endsAt).toLocaleDateString('el-GR')}
             </p>
           )}
         </div>
