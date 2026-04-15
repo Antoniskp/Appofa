@@ -22,8 +22,8 @@ const TYPE_VARIANTS = {
 
 export default function SuggestionCard({ suggestion }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow duration-200">
-      <Link href={`/suggestions/${suggestion.id}`} className="block">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
+      <Link href={`/suggestions/${suggestion.id}`} className="block flex-1">
         <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
             {TYPE_LABELS[suggestion.type] || suggestion.type}
@@ -38,7 +38,7 @@ export default function SuggestionCard({ suggestion }) {
           </TruncatedTextTooltip>
         </h3>
       </Link>
-      <div className="flex items-center justify-between text-sm text-gray-500">
+      <div className="mt-auto flex items-center justify-between text-sm text-gray-500 pt-2 border-t border-gray-100">
         <div className="flex items-center gap-2">
           {suggestion.author && (
             <>

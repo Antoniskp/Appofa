@@ -465,7 +465,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
 
   // Render poll info
   const pollInfoContent = (
-    <>
+    <div className="flex flex-col flex-1">
       <h3 className="headline hover:text-blue-600 mb-2">
         <TruncatedTextTooltip maxLines={2}>
           {poll.title}
@@ -476,68 +476,70 @@ export default function PollCard({ poll, variant = 'grid' }) {
         {poll.description || 'Χωρίς περιγραφή'}
       </p>
       
-      <div className="flex justify-between items-center text-sm text-gray-500">
-        <span>
-          <ChartBarIcon className="h-4 w-4 inline mr-1" />
-          {totalVotes} {totalVotes === 1 ? 'ψήφος' : 'ψήφοι'}
-        </span>
-        <span>
-          {poll.hideCreator ? (
-            <span>Ανώνυμος</span>
-          ) : poll.creator ? (
-            <span className="flex items-center gap-1.5">
-              <UserAvatar user={poll.creator} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-              <span>{poll.creator.username}</span>
-            </span>
-          ) : null}
-        </span>
-      </div>
-      
-      <div className="mt-3 text-xs text-gray-400">
-        {formattedDate} {formattedTime}
-      </div>
-      
-      {isInlineVotable && !showResults ? (
-        renderInlineVoting()
-      ) : (
-        <div className="mt-4">
-          {isPollActive ? (
-            hasVoted ? (
-              <Link
-                href={pollHref}
-                className="inline-flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm font-medium"
-              >
-                <CheckCircleIcon className="h-4 w-4" />
-                Αλλαγή Ψήφου
-              </Link>
+      <div className="mt-auto">
+        <div className="flex justify-between items-center text-sm text-gray-500">
+          <span>
+            <ChartBarIcon className="h-4 w-4 inline mr-1" />
+            {totalVotes} {totalVotes === 1 ? 'ψήφος' : 'ψήφοι'}
+          </span>
+          <span>
+            {poll.hideCreator ? (
+              <span>Ανώνυμος</span>
+            ) : poll.creator ? (
+              <span className="flex items-center gap-1.5">
+                <UserAvatar user={poll.creator} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                <span>{poll.creator.username}</span>
+              </span>
+            ) : null}
+          </span>
+        </div>
+        
+        <div className="mt-1 text-xs text-gray-400">
+          {formattedDate} {formattedTime}
+        </div>
+        
+        {isInlineVotable && !showResults ? (
+          renderInlineVoting()
+        ) : (
+          <div className="mt-4">
+            {isPollActive ? (
+              hasVoted ? (
+                <Link
+                  href={pollHref}
+                  className="inline-flex items-center gap-1.5 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition text-sm font-medium"
+                >
+                  <CheckCircleIcon className="h-4 w-4" />
+                  Αλλαγή Ψήφου
+                </Link>
+              ) : (
+                <Link
+                  href={pollHref}
+                  className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+                >
+                  Ψηφοφορία Τώρα
+                </Link>
+              )
             ) : (
               <Link
                 href={pollHref}
-                className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium"
+                className="inline-block bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition text-sm font-medium"
               >
-                Ψηφοφορία Τώρα
+                Προβολή Αποτελεσμάτων
               </Link>
-            )
-          ) : (
-            <Link
-              href={pollHref}
-              className="inline-block bg-gray-600 text-white px-4 py-2 rounded-md hover:bg-gray-700 transition text-sm font-medium"
-            >
-              Προβολή Αποτελεσμάτων
-            </Link>
-          )}
-        </div>
-      )}
-    </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
   
   // Render with results bars instead of image
   if (showResults) {
     return (
-      <Link href={pollHref} className="block">
-        <Card hoverable className="overflow-hidden h-full">
+      <Link href={pollHref} className="block h-full">
+        <Card hoverable padding="none" className="overflow-hidden h-full flex flex-col">
           {renderDonutChart()}
-          <div className="p-6">
+          <div className="p-6 flex flex-col flex-1">
             {badgesContent}
             {pollInfoContent}
           </div>
@@ -550,7 +552,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   // (not wrapped in a link) so the vote buttons work without triggering navigation.
   if (isInlineVotable && !showResults) {
     return (
-      <Card hoverable className="overflow-hidden h-full">
+      <Card hoverable padding="none" className="overflow-hidden h-full flex flex-col">
         <Link href={pollHref} className="block">
           {poll.bannerImageUrl ? (
             <img
@@ -563,7 +565,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
             renderInfoPanel()
           )}
         </Link>
-        <div className="p-6">
+        <div className="p-6 flex flex-col flex-1">
           <Link href={pollHref} className="block">
             {badgesContent}
           </Link>
