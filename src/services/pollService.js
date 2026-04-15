@@ -365,7 +365,7 @@ const createPoll = async (userId, pollData) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
         },
         {
           model: PollOption,
@@ -556,7 +556,7 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
         },
         {
           model: PollOption,
@@ -666,7 +666,7 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
         },
         {
           model: Location,
@@ -970,7 +970,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
         },
         {
           model: PollOption,
@@ -1329,7 +1329,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         {
           model: User,
           as: 'creator',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
         },
         {
           model: PollOption,
@@ -1495,7 +1495,7 @@ const getMyVotedPolls = async (userId, page, limit) => {
             {
               model: User,
               as: 'creator',
-              attributes: ['id', 'username', 'firstNameNative', 'lastNameNative']
+              attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'isVerified']
             },
             {
               model: PollOption,
