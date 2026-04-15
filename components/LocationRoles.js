@@ -40,13 +40,11 @@ export default function LocationRoles({ locationId, compact = false }) {
         <ul className="space-y-0.5">
           {roles.map((role) => {
             const { assignment } = role;
-            const person = assignment?.person;
             const user = assignment?.user;
-            const placeholderProfile = user?.placeholderPersonProfile;
-            const name = person
-              ? `${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()
-              : (user?.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user?.username);
-            const profileSlug = person?.slug || placeholderProfile?.slug;
+            const name = user?.firstNameNative
+              ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim()
+              : user?.username;
+            const profileSlug = user?.slug;
             return (
               <li key={role.key} className="flex items-center gap-1">
                 <span className="text-gray-500">{role.title}:</span>
@@ -71,14 +69,12 @@ export default function LocationRoles({ locationId, compact = false }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {roles.map((role) => {
           const { assignment } = role;
-          const person = assignment?.person;
           const user = assignment?.user;
-          const placeholderProfile = user?.placeholderPersonProfile;
-          const photo = person?.photo || user?.avatar || placeholderProfile?.photo;
-          const name = person
-            ? `${person.firstNameNative || ''} ${person.lastNameNative || ''}`.trim()
-            : (user?.firstNameNative ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim() : user?.username);
-          const profileSlug = person?.slug || placeholderProfile?.slug;
+          const photo = user?.photo || user?.avatar;
+          const name = user?.firstNameNative
+            ? `${user.firstNameNative} ${user.lastNameNative || ''}`.trim()
+            : user?.username;
+          const profileSlug = user?.slug;
           const profileHref = profileSlug ? `/persons/${profileSlug}` : null;
 
           return (
