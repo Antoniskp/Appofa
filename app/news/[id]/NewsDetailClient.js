@@ -224,13 +224,13 @@ export default function NewsDetailPage() {
                 </div>
                 <span>•</span>
                 <div>
-                  <span>Published: {new Date(article.createdAt).toLocaleDateString()}</span>
+                  <span>Published: {new Date(article.createdAt).toLocaleDateString('el-GR')}</span>
                 </div>
                 {article.updatedAt !== article.createdAt && (
                   <>
                     <span>•</span>
                     <div>
-                      <span>Updated: {new Date(article.updatedAt).toLocaleDateString()}</span>
+                      <span>Updated: {new Date(article.updatedAt).toLocaleDateString('el-GR')}</span>
                     </div>
                   </>
                 )}

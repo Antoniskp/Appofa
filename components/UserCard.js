@@ -33,7 +33,7 @@ export default function UserCard({ user }) {
           )}
           
           <p className="text-xs text-gray-500 mt-1">
-            Member since {new Date(user.createdAt).toLocaleDateString()}
+            Member since {new Date(user.createdAt).toLocaleDateString('el-GR')}
           </p>
         </div>
       </div>

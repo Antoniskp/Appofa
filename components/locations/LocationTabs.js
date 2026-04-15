@@ -115,7 +115,7 @@ export default function LocationTabs({
                     {poll.createdAt && (
                       <>
                         <span>•</span>
-                        <span>{new Date(poll.createdAt).toLocaleDateString()}</span>
+                        <span>{new Date(poll.createdAt).toLocaleDateString('el-GR')}</span>
                       </>
                     )}
                   </div>
@@ -155,7 +155,7 @@ export default function LocationTabs({
                     {article.createdAt && (
                       <>
                         <span>•</span>
-                        <span>{new Date(article.createdAt).toLocaleDateString()}</span>
+                        <span>{new Date(article.createdAt).toLocaleDateString('el-GR')}</span>
                       </>
                     )}
                   </div>
@@ -282,7 +282,7 @@ export default function LocationTabs({
                     {suggestion.createdAt && (
                       <>
                         <span>•</span>
-                        <span>{new Date(suggestion.createdAt).toLocaleDateString()}</span>
+                        <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
                       </>
                     )}
                   </div>
