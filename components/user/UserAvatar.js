@@ -61,7 +61,7 @@ function DisplayBadgeOverlay({ slug, tier, size }) {
  *   size        - tailwind size class for width/height (default: 'h-10 w-10')
  *   textSize    - tailwind text size for initials (default: 'text-sm')
  */
-export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-sm' }) {
+export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-sm', showBadges = true }) {
   const [avatarLoadError, setAvatarLoadError] = useState(false);
 
   useEffect(() => {
@@ -88,15 +88,15 @@ export default function UserAvatar({ user, size = 'h-10 w-10', textSize = 'text-
           <span>{(user.username || 'U').charAt(0).toUpperCase()}</span>
         )}
       </div>
-      {hasDisplayBadge ? (
+      {showBadges && hasDisplayBadge ? (
         <DisplayBadgeOverlay slug={user.displayBadgeSlug} tier={user.displayBadgeTier} size={badgeSize} />
-      ) : user.isVerified ? (
+      ) : showBadges && user.isVerified ? (
         <VerifiedBadge
           overlay
           className={`absolute bottom-0 right-0 ${badgeSize}`}
         />
       ) : null}
-      {user.partyId && (
+      {showBadges && user.partyId && (
         <PartyBadge partyId={user.partyId} className="absolute -top-1 -right-1 h-5 w-5" />
       )}
     </div>
