@@ -111,7 +111,9 @@ const createPoll = async (userId, pollData) => {
       options,
       hideCreator,
       useCustomColors,
-      binaryColors
+      binaryColors,
+      commentsEnabled,
+      commentsLocked
     } = pollData;
 
     // Validate title
@@ -252,7 +254,9 @@ const createPoll = async (userId, pollData) => {
         creatorId: userId,
         status: 'active',
         hideCreator: hideCreatorResult.value !== undefined ? hideCreatorResult.value : false,
-        useCustomColors: useCustomColors === true
+        useCustomColors: useCustomColors === true,
+        commentsEnabled: commentsEnabled !== false,
+        commentsLocked: Boolean(commentsLocked)
       },
       { transaction }
     );
@@ -690,7 +694,8 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
     }
 
     // Check visibility permissions
-    if (poll.visibility === 'private' && (!user || user.id !== poll.creatorId)) {
+    // 'private' = any authenticated user can view (Μόνο Συνδεδεμένοι)
+    if (poll.visibility === 'private' && !user) {
       return { success: false, status: 403, message: 'Access denied. This poll is private.' };
     }
 

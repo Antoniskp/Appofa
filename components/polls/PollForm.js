@@ -257,7 +257,7 @@ export default function PollForm({
           value={formData.description}
           onChange={handleInputChange}
           rows={4}
-          maxLength={1000}
+          maxLength={2000}
           showCharCount
           placeholder="Προσθέστε μια περιγραφή (προαιρετικό)"
         />
