@@ -157,49 +157,49 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         className="overflow-hidden"
       >
         <div className="flex flex-col flex-1">
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              {article.type && <TypeBadge type={article.type} />}
-              {article.category && <Badge variant="primary">{article.category}</Badge>}
-              {Array.isArray(article.tags) && article.tags.length > 0 && (
-                <Badge variant="purple">{article.tags.join(', ')}</Badge>
-              )}
-            </div>
-            
-            {/* Title */}
-            <h2 className="text-2xl font-semibold mb-2 hover:text-blue-600">
-              <TruncatedTextTooltip maxLines={2}>
-                {article.title}
-              </TruncatedTextTooltip>
-            </h2>
-            
-            {/* Summary */}
-            <p className="body-copy mb-4">
-              {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 200)}...` : ''))}
-            </p>
-            
-            {/* Meta */}
-            <div className="mt-auto flex flex-wrap gap-4 text-sm text-gray-500 pt-2 border-t border-gray-100">
-              <div className="flex items-center gap-1.5">
-                {article.hideAuthor ? (
-                  <span>Anonymous</span>
-                ) : article.author ? (
-                  <>
-                    <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-                    <span>{article.author.username}</span>
-                  </>
-                ) : null}
-              </div>
-              <span>•</span>
-              <span>{formattedDate} {formattedTime}</span>
-              {article.status !== 'published' && (
-                <>
-                  <span>•</span>
-                  <span className="text-orange-600 font-medium">{article.status}</span>
-                </>
-              )}
-            </div>
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {article.type && <TypeBadge type={article.type} />}
+            {article.category && <Badge variant="primary">{article.category}</Badge>}
+            {Array.isArray(article.tags) && article.tags.length > 0 && (
+              <Badge variant="purple">{article.tags.join(', ')}</Badge>
+            )}
           </div>
+          
+          {/* Title */}
+          <h2 className="text-2xl font-semibold mb-2 hover:text-blue-600">
+            <TruncatedTextTooltip maxLines={2}>
+              {article.title}
+            </TruncatedTextTooltip>
+          </h2>
+          
+          {/* Summary */}
+          <p className="body-copy mb-4">
+            {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 200)}...` : ''))}
+          </p>
+          
+          {/* Meta */}
+          <div className="mt-auto flex flex-wrap gap-4 text-sm text-gray-500 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1.5">
+              {article.hideAuthor ? (
+                <span>Anonymous</span>
+              ) : article.author ? (
+                <>
+                  <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                  <span>{article.author.username}</span>
+                </>
+              ) : null}
+            </div>
+            <span>•</span>
+            <span>{formattedDate} {formattedTime}</span>
+            {article.status !== 'published' && (
+              <>
+                <span>•</span>
+                <span className="text-orange-600 font-medium">{article.status}</span>
+              </>
+            )}
+          </div>
+        </div>
       </ImageCard>
     );
   }
