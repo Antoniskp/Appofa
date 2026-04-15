@@ -3,123 +3,25 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { PlusCircleIcon, MapPinIcon, LightBulbIcon, ExclamationTriangleIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
-import Badge from '@/components/ui/Badge';
-import InlineSuggestionVote from '@/components/InlineSuggestionVote';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import articleCategories from '@/config/articleCategories.json';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
-import TruncatedTextTooltip from '@/components/ui/Tooltip';
-
-const TYPE_LABELS = {
-  idea: 'Ιδέα',
-  problem: 'Πρόβλημα',
-  problem_request: 'Ερώτημα Κοινότητας',
-  location_suggestion: 'Τοποθεσία',
-};
-
-const TYPE_ICONS = {
-  idea: LightBulbIcon,
-  problem: ExclamationTriangleIcon,
-  problem_request: QuestionMarkCircleIcon,
-  location_suggestion: MapPinIcon,
-};
-
-const TYPE_VARIANTS = {
-  idea: 'primary',
-  problem: 'warning',
-  problem_request: 'danger',
-  location_suggestion: 'success',
-};
-
-const STATUS_LABELS = {
-  open: 'Ανοιχτό',
-  under_review: 'Σε Εξέταση',
-  implemented: 'Υλοποιήθηκε',
-  rejected: 'Απορρίφθηκε',
-};
-
-const STATUS_VARIANTS = {
-  open: 'info',
-  under_review: 'warning',
-  implemented: 'success',
-  rejected: 'danger',
-};
+import SuggestionCard from '@/components/SuggestionCard';
 
 const suggestionCategoryOptions = (articleCategories.suggestionCategories || []).map((cat) => ({
   value: cat,
   label: cat,
 }));
-
-function SuggestionCard({ suggestion }) {
-  const TypeIcon = TYPE_ICONS[suggestion.type] || LightBulbIcon;
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all duration-200">
-      <Link href={`/suggestions/${suggestion.id}`} className="block">
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 mt-1">
-            <TypeIcon className="h-5 w-5 text-blue-500" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
-                {TYPE_LABELS[suggestion.type] || suggestion.type}
-              </Badge>
-              <Badge variant={STATUS_VARIANTS[suggestion.status] || 'default'}>
-                {STATUS_LABELS[suggestion.status] || suggestion.status}
-              </Badge>
-              {suggestion.category && (
-                <Badge variant="default">
-                  {suggestion.category}
-                </Badge>
-              )}
-              {suggestion.location && (
-                <span className="text-xs text-gray-500 flex items-center gap-1">
-                  <MapPinIcon className="h-3 w-3" />
-                  {suggestion.location.name}
-                </span>
-              )}
-            </div>
-            <h3 className="text-base font-semibold text-gray-900">
-              <TruncatedTextTooltip maxLines={2}>
-                {suggestion.title}
-              </TruncatedTextTooltip>
-            </h3>
-            <p className="text-sm text-gray-600 mt-1 line-clamp-2">{suggestion.body}</p>
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-500">
-              {suggestion.author && (
-                <span>@{suggestion.author.username}</span>
-              )}
-              <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
-              {suggestion.solutions && (
-                <span>{suggestion.solutions?.length ?? 0} λύσεις</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </Link>
-      <div className="mt-3 flex justify-end">
-        <InlineSuggestionVote
-          suggestionId={suggestion.id}
-          type={suggestion.type}
-          initialUpvotes={suggestion.upvotes ?? 0}
-          initialDownvotes={suggestion.downvotes ?? 0}
-          initialMyVote={suggestion.myVote ?? null}
-        />
-      </div>
-    </div>
-  );
-}
 
 function SuggestionsContent() {
   const { user } = useAuth();
