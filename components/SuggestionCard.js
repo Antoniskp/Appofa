@@ -42,7 +42,7 @@ export default function SuggestionCard({ suggestion }) {
         <div className="flex items-center gap-2">
           {suggestion.author && (
             <>
-              <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" />
+              <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
               <span>{suggestion.author.username}</span>
             </>
           )}

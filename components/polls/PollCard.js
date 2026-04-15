@@ -486,7 +486,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
             <span>Ανώνυμος</span>
           ) : poll.creator ? (
             <span className="flex items-center gap-1.5">
-              <UserAvatar user={poll.creator} size="h-6 w-6" textSize="text-xs" />
+              <UserAvatar user={poll.creator} size="h-6 w-6" textSize="text-xs" showBadges={false} />
               <span>{poll.creator.username}</span>
             </span>
           ) : null}

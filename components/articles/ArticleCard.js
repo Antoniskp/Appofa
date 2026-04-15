@@ -132,7 +132,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
               <span>Anonymous</span>
             ) : article.author ? (
               <>
-                <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" />
+                <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
                 <span>{article.author.username}</span>
               </>
             ) : null}
@@ -184,7 +184,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
                   <span>Anonymous</span>
                 ) : article.author ? (
                   <>
-                    <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" />
+                    <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
                     <span>{article.author.username}</span>
                   </>
                 ) : null}
@@ -236,7 +236,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             <span>Anonymous</span>
           ) : article.author ? (
             <>
-              <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" />
+              <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
               <span>{article.author.username}</span>
             </>
           ) : null}
