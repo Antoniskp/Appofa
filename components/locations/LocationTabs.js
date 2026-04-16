@@ -12,6 +12,12 @@ const POSITION_LABELS = {
   parliamentary: 'Βουλευτής',
 };
 
+const CLAIM_STATUS_BADGES = {
+  unclaimed: { label: 'Αδιεκδίκητο', cls: 'bg-amber-100 text-amber-700' },
+  pending: { label: 'Σε Αναμονή', cls: 'bg-blue-100 text-blue-700' },
+  claimed: { label: 'Επαληθευμένο', cls: 'bg-green-100 text-green-700' },
+};
+
 export default function LocationTabs({
   activeTab,
   onTabChange,
@@ -264,12 +270,11 @@ export default function LocationTabs({
             entities.unclaimed.length > 0 ? (
               <div className="space-y-1 border border-gray-200 rounded-md divide-y divide-gray-100">
                 {entities.unclaimed.map(person => {
-                  const fullName = [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ') || person.username || 'Άγνωστο';
-                  const claimBadge = person.claimStatus === 'unclaimed'
-                    ? { label: 'Αδιεκδίκητο', cls: 'bg-amber-100 text-amber-700' }
-                    : person.claimStatus === 'pending'
-                      ? { label: 'Σε Αναμονή', cls: 'bg-blue-100 text-blue-700' }
-                      : { label: 'Επαληθευμένο', cls: 'bg-green-100 text-green-700' };
+                  const fullName = [person.firstNameNative, person.lastNameNative]
+                    .filter(v => v?.trim())
+                    .join(' ')
+                    .trim() || person.username?.trim() || 'Άγνωστο';
+                  const claimBadge = CLAIM_STATUS_BADGES[person.claimStatus] || CLAIM_STATUS_BADGES.claimed;
                   const content = (
                     <div className="flex items-center gap-4 px-4 py-3">
                       {person.photo
