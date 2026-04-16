@@ -90,7 +90,7 @@ export default function LocationElectionsTab({
             <h3 className="text-base font-semibold text-gray-900">{election.roleTitle}</h3>
             {election.currentHolder ? (
               <span className="inline-flex items-center rounded-full bg-green-100 text-green-700 px-3 py-1 text-xs font-medium">
-                Τρέχων: @{election.currentHolder.username}
+                Τρέχων: {election.currentHolder.username ? `@${election.currentHolder.username}` : displayName(election.currentHolder)}
               </span>
             ) : (
               <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-700 px-3 py-1 text-xs font-medium">
