@@ -409,7 +409,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
 | `layout/` | 8 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout |
-| `locations/` | 7 | LocationBreadcrumb, LocationDiscoveryStrip, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
+| `locations/` | 6 | LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |

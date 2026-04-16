@@ -21,6 +21,11 @@ const TYPE_COLORS = {
  * @param {{ location: { id: number, name: string, name_local?: string, type: string, slug?: string, parent?: { name: string } } }} props
  */
 export default function LocationCard({ location }) {
+  const parsedUserCount = typeof location.userCount === 'number'
+    ? location.userCount
+    : Number.parseInt(location.userCount, 10);
+  const showUserCount = Number.isFinite(parsedUserCount) && parsedUserCount > 0;
+
   return (
     <Link
       href={`/locations/${location.slug || location.id}`}
@@ -40,10 +45,17 @@ export default function LocationCard({ location }) {
       {location.name_local && (
         <p className="text-sm text-gray-500">{location.name_local}</p>
       )}
-      <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between">
-        <span className="text-xs text-gray-400">
-          {location.parent?.name || ''}
-        </span>
+      <div className="mt-auto pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-gray-400">
+            {location.parent?.name || ''}
+          </span>
+          {showUserCount && (
+            <span className="text-xs text-gray-500">
+              👥 {parsedUserCount} χρήστες
+            </span>
+          )}
+        </div>
         <span className="text-xs text-blue-600 font-medium group-hover:underline">
           Εξερεύνηση →
         </span>
