@@ -6,6 +6,7 @@ const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Location Elections API', () => {
   let municipality;
+  let prefecture;
   let country;
   let residentA;
   let residentB;
@@ -26,17 +27,25 @@ describe('Location Elections API', () => {
   beforeAll(async () => {
     await sequelize.sync({ force: true });
 
-    municipality = await Location.create({
-      name: 'Election Municipality',
-      type: 'municipality',
-      slug: 'municipality-election-municipality',
-    });
-
     country = await Location.create({
       name: 'Election Country',
       type: 'country',
       slug: 'country-election-country',
       code: 'EL',
+    });
+
+    prefecture = await Location.create({
+      name: 'Election Prefecture',
+      type: 'prefecture',
+      slug: 'prefecture-election-prefecture',
+      parent_id: country.id,
+    });
+
+    municipality = await Location.create({
+      name: 'Election Municipality',
+      type: 'municipality',
+      slug: 'municipality-election-municipality',
+      parent_id: prefecture.id,
     });
 
     residentA = await User.create({
@@ -106,6 +115,32 @@ describe('Location Elections API', () => {
     expect(response.body.success).toBe(true);
     expect(response.body.locationType).toBe('country');
     expect(response.body.elections.map((election) => election.roleKey)).toEqual(['moderator']);
+  });
+
+  it('includes descendant residents as candidates and canVote for parent elections', async () => {
+    const response = await request(app)
+      .get(`/api/locations/${prefecture.id}/elections`)
+      .set('Authorization', `Bearer ${residentAToken}`)
+      .expect(200);
+
+    expect(response.body.success).toBe(true);
+    expect(response.body.canVote).toBe(true);
+
+    const moderatorElection = response.body.elections.find((election) => election.roleKey === 'moderator');
+    const candidateIds = moderatorElection.results.map((candidate) => candidate.userId);
+    expect(candidateIds).toContain(residentA.id);
+    expect(candidateIds).toContain(residentB.id);
+
+    await request(app)
+      .post(`/api/locations/${prefecture.id}/elections/moderator/vote`)
+      .set(csrfHeaders(residentAToken, residentA.id))
+      .send({ candidateUserId: residentB.id })
+      .expect(200);
+
+    await request(app)
+      .delete(`/api/locations/${prefecture.id}/elections/moderator/vote`)
+      .set(csrfHeaders(residentAToken, residentA.id))
+      .expect(200);
   });
 
   it('allows a location member to cast, change and remove vote', async () => {
