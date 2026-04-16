@@ -424,7 +424,6 @@ export default function LocationDetailPage() {
               locationType: location.type,
               isAuthenticated,
               currentUserId: user?.id ?? null,
-              userHomeLocationId: user?.homeLocation?.id ?? null,
             }}
           />
         )}

@@ -7,6 +7,26 @@ const MODERATOR_ROLE = {
   titleEn: 'Moderator',
 };
 
+async function getDescendantLocationIds(locationId) {
+  const ids = [];
+  const queue = [locationId];
+
+  while (queue.length > 0) {
+    const batch = queue.splice(0, queue.length);
+    const children = await Location.findAll({
+      where: { parent_id: batch },
+      attributes: ['id'],
+    });
+
+    for (const child of children) {
+      ids.push(child.id);
+      queue.push(child.id);
+    }
+  }
+
+  return ids;
+}
+
 function getElectionRolesForType(locationType) {
   if (locationType === 'country') {
     return [MODERATOR_ROLE];
@@ -37,9 +57,11 @@ exports.getElections = async (req, res) => {
 
     const electionRoles = getElectionRolesForType(location.type);
     const roleKeys = electionRoles.map((r) => r.key);
+    const descendantIds = await getDescendantLocationIds(locationId);
+    const allLocationIds = [locationId, ...descendantIds];
 
     const candidates = await User.findAll({
-      where: { homeLocationId: locationId },
+      where: { homeLocationId: allLocationIds },
       attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'slug'],
       order: [['username', 'ASC']],
     });
@@ -85,6 +107,11 @@ exports.getElections = async (req, res) => {
     const myVoteByRole = Object.fromEntries(
       myVotes.map((vote) => [vote.roleKey, vote])
     );
+    const canVote = req.user
+      ? allLocationIds.includes(
+        (await User.findByPk(req.user.id, { attributes: ['homeLocationId'] }))?.homeLocationId
+      )
+      : false;
 
     const elections = electionRoles.map((role) => {
       const roleVotes = votesByRole[role.key] || [];
@@ -141,6 +168,7 @@ exports.getElections = async (req, res) => {
     return res.status(200).json({
       success: true,
       locationType: location.type,
+      canVote,
       elections,
     });
   } catch (err) {
@@ -174,7 +202,10 @@ exports.castVote = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Location not found' });
     }
 
-    if (!voter || voter.homeLocationId !== locationId) {
+    const descendantIds = await getDescendantLocationIds(locationId);
+    const allLocationIds = [locationId, ...descendantIds];
+
+    if (!voter || !allLocationIds.includes(voter.homeLocationId)) {
       return res.status(403).json({
         success: false,
         message: 'Μπορείτε να ψηφίσετε μόνο για την τοποθεσία σας.',
@@ -186,7 +217,7 @@ exports.castVote = async (req, res) => {
     }
 
     const candidate = await User.findOne({
-      where: { id: candidateUserId, homeLocationId: locationId },
+      where: { id: candidateUserId, homeLocationId: allLocationIds },
       attributes: ['id'],
     });
 
@@ -235,7 +266,10 @@ exports.removeVote = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Location not found' });
     }
 
-    if (!voter || voter.homeLocationId !== locationId) {
+    const descendantIds = await getDescendantLocationIds(locationId);
+    const allLocationIds = [locationId, ...descendantIds];
+
+    if (!voter || !allLocationIds.includes(voter.homeLocationId)) {
       return res.status(403).json({
         success: false,
         message: 'Μπορείτε να ψηφίσετε μόνο για την τοποθεσία σας.',

@@ -342,7 +342,6 @@ export default function LocationTabs({
               locationType={electionData.locationType}
               isAuthenticated={electionData.isAuthenticated}
               currentUserId={electionData.currentUserId}
-              userHomeLocationId={electionData.userHomeLocationId}
             />
           )}
         </div>

@@ -226,7 +226,7 @@ Appofa/
 | DELETE | /:locationId/sections/:id | mod | Delete section |
 | GET | /:locationId/roles | — | Get roles |
 | PUT | /:locationId/roles | mod | Upsert roles |
-| GET | /:locationId/elections | opt | Get elections and live results |
+| GET | /:locationId/elections | opt | Get elections/live results with hierarchical `canVote` (includes descendant locations) |
 | POST | /:locationId/elections/:roleKey/vote | ✅ | Cast or change vote |
 | DELETE | /:locationId/elections/:roleKey/vote | ✅ | Remove vote |
 
