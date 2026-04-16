@@ -23,11 +23,13 @@ This instruction is permanent and must never be removed.
 - **Service layer**: `src/services/` — complex logic extracted from controllers
 - **Errors**: `{ success: false, message }` — never leak stack traces in production
 - **Migrations**: timestamp-prefixed `YYYYMMDDHHMMSS-name.js`, dialect-aware (ENUM for postgres, STRING for sqlite)
+- **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: always use `useAsyncData` hook — never bare `useEffect` + `fetch`
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
+- **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)

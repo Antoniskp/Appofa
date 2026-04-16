@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { idSlug } from '@/lib/utils/slugify';
 import UserRow from '@/components/user/UserRow';
 import LoginLink from '@/components/ui/LoginLink';
+import LocationElectionsTab from '@/components/locations/LocationElectionsTab';
 import { VALID_TABS } from '@/lib/constants/locations';
 
 const POSITION_LABELS = {
@@ -23,6 +24,7 @@ export default function LocationTabs({
   TAB_LABELS,
   visibleTabs,
   loading,
+  electionData,
 }) {
   // Fall back to all tabs if visibleTabs not provided (e.g. during initial load)
   const tabs = visibleTabs && visibleTabs.length > 0 ? visibleTabs : VALID_TABS;
@@ -324,6 +326,24 @@ export default function LocationTabs({
                 </Link>
               ))}
             </div>
+          )}
+        </div>
+
+        {/* Elections tab */}
+        <div
+          id="tabpanel-elections"
+          role="tabpanel"
+          aria-labelledby="tab-elections"
+          hidden={activeTab !== 'elections'}
+        >
+          {activeTab === 'elections' && electionData && (
+            <LocationElectionsTab
+              locationId={electionData.locationId}
+              locationType={electionData.locationType}
+              isAuthenticated={electionData.isAuthenticated}
+              currentUserId={electionData.currentUserId}
+              userHomeLocationId={electionData.userHomeLocationId}
+            />
           )}
         </div>
       </div>

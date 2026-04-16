@@ -15,7 +15,7 @@ import LocationHeader from '@/components/locations/LocationHeader';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import { VALID_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
+import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
 export default function LocationDetailPage() {
   const params = useParams();
@@ -306,6 +306,7 @@ export default function LocationDetailPage() {
     users: `Χρήστες${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
     suggestions: `Προτάσεις${suggestions.length ? ` (${suggestions.length})` : ''}`,
     persons: `Πρόσωπα${persons.length ? ` (${persons.length})` : ''}`,
+    elections: '🗳️ Εκλογές',
   };
 
   // Determine which tabs have content (for hiding empty tabs)
@@ -316,10 +317,14 @@ export default function LocationDetailPage() {
     users: entities.usersCount,
     suggestions: suggestions.length,
     persons: persons.length,
+    elections: 1,
   };
   const visibleTabs = secondaryLoading
     ? VALID_TABS
-    : VALID_TABS.filter(tab => TAB_COUNTS[tab] > 0);
+    : [
+      ...VALID_TABS.filter(tab => !ALWAYS_VISIBLE_TABS.includes(tab) && TAB_COUNTS[tab] > 0),
+      ...ALWAYS_VISIBLE_TABS,
+    ].sort((a, b) => VALID_TABS.indexOf(a) - VALID_TABS.indexOf(b));
   // If current active tab is hidden, fall back to first visible tab
   const resolvedActiveTab = visibleTabs.includes(activeTab)
     ? activeTab
@@ -414,6 +419,13 @@ export default function LocationDetailPage() {
             TAB_LABELS={TAB_LABELS}
             visibleTabs={visibleTabs}
             loading={secondaryLoading}
+            electionData={{
+              locationId: location.id,
+              locationType: location.type,
+              isAuthenticated,
+              currentUserId: user?.id ?? null,
+              userHomeLocationId: user?.homeLocation?.id ?? null,
+            }}
           />
         )}
       </div>
