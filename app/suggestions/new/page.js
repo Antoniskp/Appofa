@@ -237,7 +237,7 @@ export default function NewSuggestionPage() {
             {/* Tags (optional) */}
             <div>
               <TagInput
-                label="Tags (προαιρετικό)"
+                label="Ετικέτες (προαιρετικό)"
                 value={form.tags}
                 onChange={(tags) => setForm((prev) => ({ ...prev, tags }))}
                 suggestions={tagSuggestions}
