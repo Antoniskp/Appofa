@@ -103,41 +103,43 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         hoverable
         className={`overflow-hidden ${accentClass}`}
       >
-        <div className="flex flex-wrap gap-2 mb-2">
-          {article.type && <TypeBadge type={article.type} />}
-          {article.category && <Badge variant="primary">{article.category}</Badge>}
-          {Array.isArray(article.tags) && article.tags.length > 0 && (
-            <Badge variant="purple">{article.tags.join(', ')}</Badge>
-          )}
-        </div>
-        <h3 className="headline hover:text-blue-600 flex items-start gap-1.5">
-          <FilmIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-          <span className="sr-only">(Video) </span>
-          <TruncatedTextTooltip maxLines={2}>
-            {article.title}
-          </TruncatedTextTooltip>
-        </h3>
-        {providerLabel && (
-          <p className="text-xs text-gray-500 mt-1">
-            {isYouTube ? (
-              <span className="text-red-600 font-medium">▶ Watch on {providerLabel}</span>
-            ) : (
-              <span className="font-medium">▶ Watch on {providerLabel}</span>
+        <div className="flex flex-col flex-1">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {article.type && <TypeBadge type={article.type} />}
+            {article.category && <Badge variant="primary">{article.category}</Badge>}
+            {Array.isArray(article.tags) && article.tags.length > 0 && (
+              <Badge variant="purple">{article.tags.join(', ')}</Badge>
             )}
-          </p>
-        )}
-        <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
-          <div className="flex items-center gap-1.5">
-            {article.hideAuthor ? (
-              <span>Anonymous</span>
-            ) : article.author ? (
-              <>
-                <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-                <span>{article.author.username}</span>
-              </>
-            ) : null}
           </div>
-          <span>{formattedDate} {formattedTime}</span>
+          <h3 className="headline hover:text-blue-600 flex items-start gap-1.5">
+            <FilmIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
+            <span className="sr-only">(Video) </span>
+            <TruncatedTextTooltip maxLines={2}>
+              {article.title}
+            </TruncatedTextTooltip>
+          </h3>
+          {providerLabel && (
+            <p className="text-xs text-gray-500 mt-1">
+              {isYouTube ? (
+                <span className="text-red-600 font-medium">▶ Watch on {providerLabel}</span>
+              ) : (
+                <span className="font-medium">▶ Watch on {providerLabel}</span>
+              )}
+            </p>
+          )}
+          <div className="mt-auto flex justify-between items-center text-sm text-gray-500 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1.5">
+              {article.hideAuthor ? (
+                <span>Anonymous</span>
+              ) : article.author ? (
+                <>
+                  <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                  <span>{article.author.username}</span>
+                </>
+              ) : null}
+            </div>
+            <span>{formattedDate} {formattedTime}</span>
+          </div>
         </div>
       </ImageTopCard>
     );
@@ -154,50 +156,48 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         hoverable
         className="overflow-hidden"
       >
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between">
-          <div className="flex-grow">
-            {/* Badges */}
-            <div className="flex flex-wrap gap-2 mb-2">
-              {article.type && <TypeBadge type={article.type} />}
-              {article.category && <Badge variant="primary">{article.category}</Badge>}
-              {Array.isArray(article.tags) && article.tags.length > 0 && (
-                <Badge variant="purple">{article.tags.join(', ')}</Badge>
-              )}
-            </div>
-            
-            {/* Title */}
-            <h2 className="text-2xl font-semibold mb-2 hover:text-blue-600">
-              <TruncatedTextTooltip maxLines={2}>
-                {article.title}
-              </TruncatedTextTooltip>
-            </h2>
-            
-            {/* Summary */}
-            <p className="body-copy mb-4">
-              {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 200)}...` : ''))}
-            </p>
-            
-            {/* Meta */}
-            <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-              <div className="flex items-center gap-1.5">
-                {article.hideAuthor ? (
-                  <span>Anonymous</span>
-                ) : article.author ? (
-                  <>
-                    <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-                    <span>{article.author.username}</span>
-                  </>
-                ) : null}
-              </div>
-              <span>•</span>
-              <span>{formattedDate} {formattedTime}</span>
-              {article.status !== 'published' && (
+        <div className="flex flex-col flex-1">
+          {/* Badges */}
+          <div className="flex flex-wrap gap-2 mb-2">
+            {article.type && <TypeBadge type={article.type} />}
+            {article.category && <Badge variant="primary">{article.category}</Badge>}
+            {Array.isArray(article.tags) && article.tags.length > 0 && (
+              <Badge variant="purple">{article.tags.join(', ')}</Badge>
+            )}
+          </div>
+          
+          {/* Title */}
+          <h2 className="text-2xl font-semibold mb-2 hover:text-blue-600">
+            <TruncatedTextTooltip maxLines={2}>
+              {article.title}
+            </TruncatedTextTooltip>
+          </h2>
+          
+          {/* Summary */}
+          <p className="body-copy mb-4">
+            {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 200)}...` : ''))}
+          </p>
+          
+          {/* Meta */}
+          <div className="mt-auto flex flex-wrap gap-4 text-sm text-gray-500 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1.5">
+              {article.hideAuthor ? (
+                <span>Anonymous</span>
+              ) : article.author ? (
                 <>
-                  <span>•</span>
-                  <span className="text-orange-600 font-medium">{article.status}</span>
+                  <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                  <span>{article.author.username}</span>
                 </>
-              )}
+              ) : null}
             </div>
+            <span>•</span>
+            <span>{formattedDate} {formattedTime}</span>
+            {article.status !== 'published' && (
+              <>
+                <span>•</span>
+                <span className="text-orange-600 font-medium">{article.status}</span>
+              </>
+            )}
           </div>
         </div>
       </ImageCard>
@@ -215,33 +215,35 @@ export default function ArticleCard({ article, variant = 'grid' }) {
       hoverable
       className="overflow-hidden"
     >
-      <div className="flex flex-wrap gap-2 mb-2">
-        {article.type && <TypeBadge type={article.type} />}
-        {article.category && <Badge variant="primary">{article.category}</Badge>}
-        {Array.isArray(article.tags) && article.tags.length > 0 && (
-          <Badge variant="purple">{article.tags.join(', ')}</Badge>
-        )}
-      </div>
-      <h3 className="headline hover:text-blue-600">
-        <TruncatedTextTooltip maxLines={2}>
-          {article.title}
-        </TruncatedTextTooltip>
-      </h3>
-      <p className="body-copy mb-4 line-clamp-3">
-        {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 150)}...` : ''))}
-      </p>
-      <div className="flex justify-between items-center text-sm text-gray-500">
-        <div className="flex items-center gap-1.5">
-          {article.hideAuthor ? (
-            <span>Anonymous</span>
-          ) : article.author ? (
-            <>
-              <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-              <span>{article.author.username}</span>
-            </>
-          ) : null}
+      <div className="flex flex-col flex-1">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {article.type && <TypeBadge type={article.type} />}
+          {article.category && <Badge variant="primary">{article.category}</Badge>}
+          {Array.isArray(article.tags) && article.tags.length > 0 && (
+            <Badge variant="purple">{article.tags.join(', ')}</Badge>
+          )}
         </div>
-        <span>{formattedDate} {formattedTime}</span>
+        <h3 className="headline hover:text-blue-600">
+          <TruncatedTextTooltip maxLines={2}>
+            {article.title}
+          </TruncatedTextTooltip>
+        </h3>
+        <p className="body-copy mb-4 line-clamp-3">
+          {stripMarkdown(article.summary || (article.content ? `${article.content.substring(0, 150)}...` : ''))}
+        </p>
+        <div className="mt-auto flex justify-between items-center text-sm text-gray-500 pt-2 border-t border-gray-100">
+          <div className="flex items-center gap-1.5">
+            {article.hideAuthor ? (
+              <span>Anonymous</span>
+            ) : article.author ? (
+              <>
+                <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                <span>{article.author.username}</span>
+              </>
+            ) : null}
+          </div>
+          <span>{formattedDate} {formattedTime}</span>
+        </div>
       </div>
     </ImageTopCard>
   );

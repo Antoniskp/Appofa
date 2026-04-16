@@ -51,7 +51,21 @@ const Card = forwardRef(function Card({
   
   const baseClasses = `${variants[variant]} ${hoverClasses} ${className}`;
   
-  const cardContent = (
+  const cardContent = padding === 'none' ? (
+    <>
+      {header && (
+        <div className="border-b border-gray-200">
+          {header}
+        </div>
+      )}
+      {children}
+      {footer && (
+        <div className="border-t border-gray-200 bg-gray-50">
+          {footer}
+        </div>
+      )}
+    </>
+  ) : (
     <>
       {header && (
         <div className={`border-b border-gray-200 ${paddings[padding]}`}>
@@ -142,7 +156,7 @@ export function ImageCard({
           }}
         />
       </div>
-      <div className="p-6 flex-1 min-w-0">
+      <div className="p-6 flex-1 min-w-0 flex flex-col">
         {children}
       </div>
     </div>
@@ -195,7 +209,7 @@ export function ImageTopCard({
         />
         {imageOverlay}
       </div>
-      <div className="p-6">
+      <div className="p-6 flex flex-col flex-1">
         {children}
       </div>
       {footer && (
@@ -211,7 +225,7 @@ export function ImageTopCard({
       hoverable={hoverable} 
       href={href}
       padding="none" 
-      className={className}
+      className={`flex flex-col h-full ${className}`}
     >
       {content}
     </Card>
