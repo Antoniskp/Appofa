@@ -272,12 +272,12 @@ export default function PollForm({
         />
 
         <TagInput
-          label="Tags"
+          label="Ετικέτες"
           value={formData.tags}
           onChange={(tags) => setFormData((prev) => ({ ...prev, tags }))}
           suggestions={tagSuggestions}
           onSearch={handleTagSearch}
-          placeholder="e.g. programming, education"
+          placeholder="π.χ. πολιτική, εκπαίδευση"
         />
       </div>
 
