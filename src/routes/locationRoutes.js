@@ -3,6 +3,7 @@ const router = express.Router();
 const locationController = require('../controllers/locationController');
 const locationSectionController = require('../controllers/locationSectionController');
 const locationRoleController = require('../controllers/locationRoleController');
+const locationElectionController = require('../controllers/locationElectionController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
@@ -37,6 +38,9 @@ router.delete('/:locationId/sections/:id', apiLimiter, authMiddleware, checkRole
 // Location roles routes
 router.get('/:locationId/roles', apiLimiter, optionalAuthMiddleware, locationRoleController.getRoles);
 router.put('/:locationId/roles', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, locationRoleController.upsertRoles);
+router.get('/:locationId/elections', apiLimiter, optionalAuthMiddleware, locationElectionController.getElections);
+router.post('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.castVote);
+router.delete('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.removeVote);
 
 // Admin/Moderator only routes
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationController.createLocation);

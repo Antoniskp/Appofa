@@ -21,7 +21,7 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (35)](#models-35)
+- [Models (37)](#models-37)
 - [API Routes (23 files, 150+ endpoints)](#api-routes-23-files-150-endpoints)
 - [Controllers (21)](#controllers-21)
 - [Services (8)](#services-8)
@@ -45,7 +45,7 @@ Appofa/
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
-│   ├── models/             # Sequelize models (33 models)
+│   ├── models/             # Sequelize models (37 models)
 │   ├── routes/             # Express route definitions (23 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, error handling (6 files)
 │   ├── migrations/         # DB migrations (70 files)
@@ -95,7 +95,7 @@ Appofa/
 
 ---
 
-## Models (36)
+## Models (37)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -104,10 +104,11 @@ Appofa/
 | Poll | Polls | id, title, description, category, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
 | PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
-| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole; belongsTo: parent |
+| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote; belongsTo: parent |
 | LocationLink | LocationLinks | id, locationId, url, type, pollId | belongsTo: Location, Poll |
 | LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
 | LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User |
+| LocationElectionVote | LocationElectionVotes | id, locationId, roleKey, voterId, candidateUserId | belongsTo: Location, User(voter), User(candidate) |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
 | Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
 | Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
@@ -224,6 +225,10 @@ Appofa/
 | PUT | /:locationId/sections/:id | mod | Update section |
 | DELETE | /:locationId/sections/:id | mod | Delete section |
 | GET | /:locationId/roles | — | Get roles |
+| PUT | /:locationId/roles | mod | Upsert roles |
+| GET | /:locationId/elections | opt | Get elections and live results |
+| POST | /:locationId/elections/:roleKey/vote | ✅ | Cast or change vote |
+| DELETE | /:locationId/elections/:roleKey/vote | ✅ | Remove vote |
 
 ### Dream Team (`/api/dream-team`)
 | Method | Path | Auth | Description |
@@ -404,7 +409,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
 | `layout/` | 8 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout |
-| `locations/` | 4 | LocationBreadcrumb, LocationEditForm, LocationHeader, LocationTabs |
+| `locations/` | 5 | LocationBreadcrumb, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
@@ -565,18 +570,19 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260413100002-migrate-public-person-profiles-to-users.js | Data migration: copy PublicPersonProfiles rows to Users; update FK references |
 | — | 20260413100003-drop-public-person-profiles-table.js | Drop PublicPersonProfiles; remove personId from LocationRoles; finalize PersonRemovalRequests |
 | — | 20260413100004-drop-placeholder-user-id-and-is-placeholder.js | Drop isPlaceholder from Users |
+| — | 20260416000000-create-location-election-votes.js | Create LocationElectionVotes for per-role location elections |
 
 </details>
 
 ---
 
-## Tests (46 files)
+## Tests (47 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, link-preview, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, user-profiles-verification, user-stats, wikipediaFetcher
+api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, user-profiles-verification, user-stats, wikipediaFetcher
 
 ### Hook Tests
 useAsyncData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
