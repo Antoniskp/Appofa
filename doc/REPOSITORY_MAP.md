@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-10
+> **Last updated**: 2026-04-16
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -322,7 +322,7 @@ Appofa/
 | authService.js | Authentication & authorization |
 | badgeService.js | Badge evaluation & assignment |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
-| locationService.js | Location data management |
+| locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders |
 | pollService.js | Poll operations & calculations |
@@ -472,7 +472,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | File | Contents |
 |------|----------|
 | expertiseAreas.js | Expertise areas (ESM mirror) |
-| locations.js | Location type definitions |
+| locations.js | Location type definitions + location detail tab constants (`VALID_TABS`, includes `unclaimed`) |
 | profile.js | Profile field definitions |
 
 ### Config (`config/`)

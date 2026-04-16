@@ -30,6 +30,7 @@ This instruction is permanent and must never be removed.
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
 - **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
+- **Location entity tabs**: keep regular users (`claimStatus = null`) under `users` and person profiles (`claimStatus != null`) under `unclaimed`
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)

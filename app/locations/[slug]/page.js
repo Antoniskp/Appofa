@@ -25,7 +25,7 @@ export default function LocationDetailPage() {
   const { user, loading: authLoading } = useAuth();
   const { canManageLocations } = usePermissions();
   const isAuthenticated = !authLoading && !!user;
-  const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0 });
+  const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 });
   const [suggestions, setSuggestions] = useState([]);
   const [persons, setPersons] = useState([]);
   const [children, setChildren] = useState([]);
@@ -60,7 +60,7 @@ export default function LocationDetailPage() {
     {
       onSuccess: async (loc) => {
         // Reset secondary state to prevent stale data from previous location
-        setEntities({ articles: [], users: [], polls: [], usersCount: 0 });
+        setEntities({ articles: [], users: [], polls: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 });
         setSuggestions([]);
         setPersons([]);
         setChildren([]);
@@ -107,6 +107,8 @@ export default function LocationDetailPage() {
             users: entitiesRes.value.users || [],
             polls: entitiesRes.value.polls || [],
             usersCount: entitiesRes.value.usersCount || 0,
+            unclaimed: entitiesRes.value.unclaimed || [],
+            unclaimedCount: entitiesRes.value.unclaimedCount || 0,
           });
         } else if (entitiesRes.status === 'rejected') {
           console.error('Failed to load entities:', entitiesRes.reason);
@@ -304,6 +306,7 @@ export default function LocationDetailPage() {
     news: `Ειδήσεις${newsArticles.length ? ` (${newsArticles.length})` : ''}`,
     articles: `Άρθρα${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
     users: `Χρήστες${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
+    unclaimed: `Αδιεκδίκητα${entities.unclaimedCount ? ` (${entities.unclaimedCount})` : ''}`,
     suggestions: `Προτάσεις${suggestions.length ? ` (${suggestions.length})` : ''}`,
     persons: `Πρόσωπα${persons.length ? ` (${persons.length})` : ''}`,
     elections: '🗳️ Εκλογές',
@@ -315,6 +318,7 @@ export default function LocationDetailPage() {
     news: newsArticles.length,
     articles: regularArticles.length,
     users: entities.usersCount,
+    unclaimed: entities.unclaimedCount,
     suggestions: suggestions.length,
     persons: persons.length,
     elections: 1,

@@ -145,6 +145,8 @@ exports.getLocationEntities = async (req, res) => {
     articles: result.articles,
     users: result.users,
     usersCount: result.usersCount,
+    unclaimed: result.unclaimed,
+    unclaimedCount: result.unclaimedCount,
     polls: result.polls
   });
 };

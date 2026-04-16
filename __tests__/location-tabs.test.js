@@ -1,6 +1,6 @@
 // Tests for Location page tab navigation logic
 
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'suggestions', 'persons', 'elections'];
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'unclaimed', 'suggestions', 'persons', 'elections'];
 const DEFAULT_TAB = 'polls';
 
 /**
@@ -29,20 +29,24 @@ describe('Location page tab navigation', () => {
       expect(VALID_TABS[3]).toBe('users');
     });
 
-    it('should have suggestions as the fifth tab', () => {
-      expect(VALID_TABS[4]).toBe('suggestions');
+    it('should have unclaimed as the fifth tab', () => {
+      expect(VALID_TABS[4]).toBe('unclaimed');
     });
 
-    it('should have persons as the sixth tab', () => {
-      expect(VALID_TABS[5]).toBe('persons');
+    it('should have suggestions as the sixth tab', () => {
+      expect(VALID_TABS[5]).toBe('suggestions');
     });
 
-    it('should have elections as the seventh tab', () => {
-      expect(VALID_TABS[6]).toBe('elections');
+    it('should have persons as the seventh tab', () => {
+      expect(VALID_TABS[6]).toBe('persons');
     });
 
-    it('should contain exactly seven tabs', () => {
-      expect(VALID_TABS).toHaveLength(7);
+    it('should have elections as the eighth tab', () => {
+      expect(VALID_TABS[7]).toBe('elections');
+    });
+
+    it('should contain exactly eight tabs', () => {
+      expect(VALID_TABS).toHaveLength(8);
     });
   });
 
@@ -67,6 +71,10 @@ describe('Location page tab navigation', () => {
 
     it('should resolve a valid "users" param to "users"', () => {
       expect(resolveTab('users')).toBe('users');
+    });
+
+    it('should resolve a valid "unclaimed" param to "unclaimed"', () => {
+      expect(resolveTab('unclaimed')).toBe('unclaimed');
     });
 
     it('should resolve a valid "suggestions" param to "suggestions"', () => {
