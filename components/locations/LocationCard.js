@@ -52,7 +52,7 @@ export default function LocationCard({ location }) {
           </span>
           {showUserCount && (
             <span className="text-xs text-gray-500">
-              👥 {parsedUserCount} χρήστες
+              <span aria-hidden="true">👥</span> {parsedUserCount} {parsedUserCount === 1 ? 'χρήστης' : 'χρήστες'}
             </span>
           )}
         </div>
