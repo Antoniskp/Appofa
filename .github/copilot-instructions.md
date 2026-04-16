@@ -29,6 +29,7 @@ This instruction is permanent and must never be removed.
 - **Data fetching**: always use `useAsyncData` hook — never bare `useEffect` + `fetch`
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
+- **Homepage locations highlight**: use `LocationDiscoveryStrip` under `<HomeHero />` and `LocationCard` inside `HomepageSection`
 - **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
 - **Location entity tabs**: keep regular users (`claimStatus = null`) under `users` and person profiles (`claimStatus != null`) under `unclaimed`
 - **Auth**: use `useAuth` from `lib/auth-context.js`

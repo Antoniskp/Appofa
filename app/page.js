@@ -3,13 +3,15 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { articleAPI, pollAPI, suggestionAPI, manifestAPI } from '@/lib/api';
+import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
+import LocationCard from '@/components/locations/LocationCard';
+import LocationDiscoveryStrip from '@/components/locations/LocationDiscoveryStrip';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
 
@@ -38,6 +40,8 @@ export default function HomePage() {
 
   const [manifestData, setManifestData] = useState([]);
   const [manifestLoading, setManifestLoading] = useState(true);
+  const [locationDiscovery, setLocationDiscovery] = useState([]);
+  const [locationDiscoveryLoading, setLocationDiscoveryLoading] = useState(true);
 
   useEffect(() => {
     const fetchLatestArticles = async () => {
@@ -126,11 +130,25 @@ export default function HomePage() {
       }
     };
 
+    const fetchLocationDiscovery = async () => {
+      try {
+        const response = await locationAPI.getAll({ type: 'prefecture', limit: 10 });
+        if (response.success) {
+          setLocationDiscovery(response.locations || []);
+        }
+      } catch {
+        // non-critical — fail silently
+      } finally {
+        setLocationDiscoveryLoading(false);
+      }
+    };
+
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
     fetchLatestNews();
     fetchVideos();
+    fetchLocationDiscovery();
 
     // Fetch manifest supporters for homepage
     const fetchManifestSupporters = async () => {
@@ -165,6 +183,7 @@ export default function HomePage() {
   return (
     <div className="bg-gray-50">
       <HomeHero />
+      <LocationDiscoveryStrip locations={locationDiscovery} loading={locationDiscoveryLoading} />
 
       <HomepageSection
         title="Τελευταία Άρθρα"
@@ -208,6 +227,23 @@ export default function HomePage() {
         renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
       />
 
+      {/* Featured Locations Section */}
+      {(locationDiscoveryLoading || locationDiscovery.length > 0) && (
+        <HomepageSection
+          title="🗺️ Εξερεύνησε Περιοχές"
+          subtitle="Ανακάλυψε άρθρα, ψηφοφορίες και πολίτες ανά περιοχή"
+          linkHref="/locations"
+          loading={locationDiscoveryLoading}
+          error={null}
+          items={locationDiscovery.slice(0, 3)}
+          emptyTitle=""
+          emptyDescription=""
+          skeletonCount={3}
+          bgColor="bg-gray-50"
+          renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
+        />
+      )}
+
       {/* CTA / Engagement Banner */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800">
         <div className="app-container py-12 text-center">
@@ -231,12 +267,25 @@ export default function HomePage() {
               </Link>
             </div>
           ) : (
-            <Link
-              href="/register"
-              className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
-            >
-              Εγγραφή
-            </Link>
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-blue-100 text-sm">
+                Εγγράψου για να παρακολουθείς την περιοχή σου και να συμμετέχεις στα τοπικά νέα!
+              </p>
+              <div className="flex justify-center gap-3 flex-wrap">
+                <Link
+                  href="/locations"
+                  className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
+                >
+                  🗺️ Δες Περιοχές
+                </Link>
+                <Link
+                  href="/register"
+                  className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  Εγγραφή
+                </Link>
+              </div>
+            </div>
           )}
         </div>
       </section>
