@@ -1,7 +1,7 @@
 'use strict';
 
 const { Location, LocationLink, Article, User, Poll, LocationRequest } = require('../models');
-const { Op, fn, col, where } = require('sequelize');
+const { Op, fn, col, where, literal } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 
@@ -129,7 +129,7 @@ const createLocation = async (locationData) => {
  */
 const getLocations = async (queryParams) => {
   try {
-    const { type, parent_id, search, limit = 100, offset = 0 } = queryParams;
+    const { type, parent_id, search, limit = 100, offset = 0, sort } = queryParams;
 
     const whereClause = {};
 
@@ -148,11 +148,22 @@ const getLocations = async (queryParams) => {
       ];
     }
 
-    const locations = await Location.findAll({
+    const mostUsersSubquery = literal(`(
+      SELECT COUNT(*)
+      FROM "LocationLinks"
+      WHERE "LocationLinks"."entity_type" = 'user'
+        AND "LocationLinks"."location_id" = "Location"."id"
+    )`);
+
+    const order = sort === 'mostUsers'
+      ? [[literal('"userCount"'), 'DESC'], ['name', 'ASC']]
+      : [['name', 'ASC']];
+
+    const findOptions = {
       where: whereClause,
       limit: parseInt(limit),
       offset: parseInt(offset),
-      order: [['name', 'ASC']],
+      order,
       include: [
         {
           model: Location,
@@ -160,7 +171,15 @@ const getLocations = async (queryParams) => {
           attributes: ['id', 'name', 'type']
         }
       ]
-    });
+    };
+
+    if (sort === 'mostUsers') {
+      findOptions.attributes = {
+        include: [[mostUsersSubquery, 'userCount']]
+      };
+    }
+
+    const locations = await Location.findAll(findOptions);
 
     const locationIds = locations.map((location) => location.id);
     const moderatorLocationIds = new Set();
@@ -198,8 +217,10 @@ const getLocations = async (queryParams) => {
 
     const locationsWithModeratorStatus = locations.map((location) => {
       const serializedLocation = location.toJSON();
+      const hasUserCount = serializedLocation.userCount !== undefined && serializedLocation.userCount !== null;
       return {
         ...serializedLocation,
+        ...(hasUserCount ? { userCount: Number.parseInt(serializedLocation.userCount, 10) || 0 } : {}),
         hasModerator: moderatorLocationIds.has(Number(location.id)),
         moderatorPreview: moderatorPreviewByLocationId.get(Number(location.id)) || null
       };

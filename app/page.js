@@ -11,7 +11,6 @@ import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
 import LocationCard from '@/components/locations/LocationCard';
-import LocationDiscoveryStrip from '@/components/locations/LocationDiscoveryStrip';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
 
@@ -132,7 +131,7 @@ export default function HomePage() {
 
     const fetchLocationDiscovery = async () => {
       try {
-        const response = await locationAPI.getAll({ type: 'prefecture', limit: 10 });
+        const response = await locationAPI.getAll({ sort: 'mostUsers', limit: 6 });
         if (response.success) {
           setLocationDiscovery(response.locations || []);
         }
@@ -183,7 +182,6 @@ export default function HomePage() {
   return (
     <div className="bg-gray-50">
       <HomeHero />
-      <LocationDiscoveryStrip locations={locationDiscovery} loading={locationDiscoveryLoading} />
 
       <HomepageSection
         title="Τελευταία Άρθρα"
@@ -235,10 +233,10 @@ export default function HomePage() {
           linkHref="/locations"
           loading={locationDiscoveryLoading}
           error={null}
-          items={locationDiscovery.slice(0, 3)}
+          items={locationDiscovery}
           emptyTitle=""
           emptyDescription=""
-          skeletonCount={3}
+          skeletonCount={6}
           bgColor="bg-gray-50"
           renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
         />

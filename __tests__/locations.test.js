@@ -65,6 +65,45 @@ describe('Location API Tests', () => {
       expect(response.body.success).toBe(true);
       expect(Array.isArray(response.body.locations)).toBe(true);
     });
+
+    it('should sort locations by most users with name as tie-breaker', async () => {
+      const [alpha, beta, gamma] = await Promise.all([
+        Location.create({ name: 'Alpha Users', slug: 'alpha-users', type: 'prefecture' }),
+        Location.create({ name: 'Beta Users', slug: 'beta-users', type: 'prefecture' }),
+        Location.create({ name: 'Gamma Users', slug: 'gamma-users', type: 'prefecture' })
+      ]);
+
+      const [u1, u2, u3, u4, u5] = await Promise.all([
+        User.create({ username: 'locsortuser1', email: 'locsortuser1@test.com', password: 'password123', role: 'viewer' }),
+        User.create({ username: 'locsortuser2', email: 'locsortuser2@test.com', password: 'password123', role: 'viewer' }),
+        User.create({ username: 'locsortuser3', email: 'locsortuser3@test.com', password: 'password123', role: 'viewer' }),
+        User.create({ username: 'locsortuser4', email: 'locsortuser4@test.com', password: 'password123', role: 'viewer' }),
+        User.create({ username: 'locsortuser5', email: 'locsortuser5@test.com', password: 'password123', role: 'viewer' })
+      ]);
+
+      await Promise.all([
+        LocationLink.create({ location_id: alpha.id, entity_type: 'user', entity_id: u1.id }),
+        LocationLink.create({ location_id: beta.id, entity_type: 'user', entity_id: u2.id }),
+        LocationLink.create({ location_id: beta.id, entity_type: 'user', entity_id: u3.id }),
+        LocationLink.create({ location_id: gamma.id, entity_type: 'user', entity_id: u4.id }),
+        LocationLink.create({ location_id: gamma.id, entity_type: 'user', entity_id: u5.id })
+      ]);
+
+      const response = await request(app)
+        .get('/api/locations')
+        .query({ sort: 'mostUsers', limit: 3 })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.locations).toHaveLength(3);
+      expect(response.body.locations.map((location) => location.name)).toEqual([
+        'Beta Users',
+        'Gamma Users',
+        'Alpha Users'
+      ]);
+      expect(response.body.locations.map((location) => location.userCount)).toEqual([2, 2, 1]);
+      expect(response.body.locations[0].userCount).toEqual(expect.any(Number));
+    });
   });
 
   describe('POST /api/locations', () => {
