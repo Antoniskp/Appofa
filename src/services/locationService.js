@@ -686,14 +686,16 @@ const getLocationEntities = async (locationId, queryParams, user) => {
       ]
     }) : [];
 
-    const usersCount = combinedUserIds.length;
-    const users = isAuthenticated && usersCount > 0 ? await User.findAll({
+    const userEntities = combinedUserIds.length > 0 ? await User.findAll({
       where: {
         id: combinedUserIds,
         searchable: true
       },
-      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor']
+      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'claimStatus', 'photo', 'slug']
     }) : [];
+    const users = userEntities.map((u) => (u.toJSON ? u.toJSON() : u));
+    const regularUsers = users.filter((u) => u.claimStatus === null);
+    const unclaimedUsers = users.filter((u) => u.claimStatus !== null);
 
     const polls = pollIds.length > 0 ? await Poll.findAll({
       where: { id: pollIds },
@@ -726,8 +728,10 @@ const getLocationEntities = async (locationId, queryParams, user) => {
     return {
       success: true,
       articles: articlesWithVisibility,
-      users,
-      usersCount,
+      users: isAuthenticated ? regularUsers : [],
+      usersCount: regularUsers.length,
+      unclaimed: isAuthenticated ? unclaimedUsers : [],
+      unclaimedCount: unclaimedUsers.length,
       polls: pollsWithVisibility
     };
   } catch (error) {

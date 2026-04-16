@@ -401,6 +401,7 @@ describe('Location API Tests', () => {
   describe('Moderator appears in location users tab', () => {
     let moderatorLocation;
     let moderatorUser;
+    let unclaimedProfile;
     let moderatorToken;
 
     beforeAll(async () => {
@@ -420,6 +421,23 @@ describe('Location API Tests', () => {
         role: 'moderator',
         homeLocationId: moderatorLocation.id,
         searchable: true
+      });
+
+      unclaimedProfile = await User.create({
+        username: 'person-moderator-city',
+        email: 'person-moderator-city@placeholder.appofasi.gr',
+        password: 'password123',
+        firstNameNative: 'Αδιεκδίκητο',
+        lastNameNative: 'Πρόσωπο',
+        claimStatus: 'unclaimed',
+        slug: 'adiekdikito-prosopo',
+        searchable: true
+      });
+
+      await LocationLink.create({
+        location_id: moderatorLocation.id,
+        entity_type: 'user',
+        entity_id: unclaimedProfile.id
       });
 
       const modLogin = await request(app)
@@ -492,6 +510,22 @@ describe('Location API Tests', () => {
 
       // Restore
       await moderatorUser.update({ searchable: true });
+    });
+
+    it('should split regular users and unclaimed person profiles in entities payload', async () => {
+      const response = await request(app)
+        .get(`/api/locations/${moderatorLocation.id}/entities`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.users.find(u => u.id === moderatorUser.id)).toBeDefined();
+      expect(response.body.users.find(u => u.id === unclaimedProfile.id)).toBeUndefined();
+      const foundUnclaimed = response.body.unclaimed.find(u => u.id === unclaimedProfile.id);
+      expect(foundUnclaimed).toBeDefined();
+      expect(response.body.unclaimedCount).toBeGreaterThanOrEqual(1);
+      expect(foundUnclaimed).toHaveProperty('photo');
+      expect(foundUnclaimed).toHaveProperty('slug');
     });
   });
 

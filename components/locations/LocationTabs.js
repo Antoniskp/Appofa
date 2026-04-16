@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { UserCircleIcon } from '@heroicons/react/24/outline';
 import { idSlug } from '@/lib/utils/slugify';
 import UserRow from '@/components/user/UserRow';
 import LoginLink from '@/components/ui/LoginLink';
@@ -242,6 +243,69 @@ export default function LocationTabs({
                   className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
                 >
                   Register
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Unclaimed persons tab */}
+        <div
+          id="tabpanel-unclaimed"
+          role="tabpanel"
+          aria-labelledby="tab-unclaimed"
+          hidden={activeTab !== 'unclaimed'}
+        >
+          {loading ? (
+            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
+          ) : entities.unclaimedCount === 0 ? (
+            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν αδιεκδίκητα πρόσωπα σε αυτή την τοποθεσία.</p>
+          ) : isAuthenticated ? (
+            entities.unclaimed.length > 0 ? (
+              <div className="space-y-1 border border-gray-200 rounded-md divide-y divide-gray-100">
+                {entities.unclaimed.map(person => {
+                  const fullName = [person.firstNameNative, person.lastNameNative].filter(Boolean).join(' ') || person.username || 'Άγνωστο';
+                  const claimBadge = person.claimStatus === 'unclaimed'
+                    ? { label: 'Αδιεκδίκητο', cls: 'bg-amber-100 text-amber-700' }
+                    : person.claimStatus === 'pending'
+                      ? { label: 'Σε Αναμονή', cls: 'bg-blue-100 text-blue-700' }
+                      : { label: 'Επαληθευμένο', cls: 'bg-green-100 text-green-700' };
+                  const content = (
+                    <div className="flex items-center gap-4 px-4 py-3">
+                      {person.photo
+                        ? <img src={person.photo} alt={fullName} className="h-10 w-10 rounded-full object-cover flex-shrink-0" />
+                        : <UserCircleIcon className="h-10 w-10 text-gray-300 flex-shrink-0" />
+                      }
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-gray-900 truncate">{fullName}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${claimBadge.cls}`}>{claimBadge.label}</span>
+                        </div>
+                        {person.username && <p className="text-xs text-gray-500">@{person.username}</p>}
+                      </div>
+                    </div>
+                  );
+                  return person.slug ? (
+                    <Link key={person.id} href={`/persons/${person.slug}`} className="block hover:bg-gray-50 transition-colors rounded-lg">{content}</Link>
+                  ) : (
+                    <div key={person.id}>{content}</div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-600">Δεν υπάρχουν ορατά πρόσωπα.</p>
+            )
+          ) : (
+            <div className="py-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Συνδεθείτε για να δείτε {entities.unclaimedCount} αδιεκδίκητα πρόσωπα από αυτή την τοποθεσία.
+              </p>
+              <div className="flex gap-3">
+                <LoginLink className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                  Σύνδεση
+                </LoginLink>
+                <Link href="/register" className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                  Εγγραφή
                 </Link>
               </div>
             </div>
