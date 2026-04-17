@@ -50,6 +50,9 @@ async function saveSlides(settings, slides) {
 }
 
 function isValidUrl(str) {
+  if (str.startsWith('/')) {
+    return !str.startsWith('//');
+  }
   try {
     const url = new URL(str);
     return url.protocol === 'http:' || url.protocol === 'https:';
