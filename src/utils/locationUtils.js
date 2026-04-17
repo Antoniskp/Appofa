@@ -33,6 +33,36 @@ const getDescendantLocationIds = async (rootId, includeSelf = false) => {
   return descendantIds;
 };
 
+/**
+ * Collect the ancestor location IDs for a given location (walking up parent_id).
+ * @param {number|string} locationId
+ * @param {boolean} includeSelf
+ * @returns {Promise<number[]>}
+ */
+const getAncestorLocationIds = async (locationId, includeSelf = false) => {
+  if (locationId === null || locationId === undefined) {
+    return [];
+  }
+
+  const parsedLocationId = Number(locationId);
+  if (!Number.isInteger(parsedLocationId) || parsedLocationId < 1) {
+    return [];
+  }
+
+  const ancestorIds = includeSelf ? [parsedLocationId] : [];
+  let currentId = parsedLocationId;
+
+  while (currentId) {
+    const location = await Location.findByPk(currentId, { attributes: ['id', 'parent_id'] });
+    if (!location || !location.parent_id) break;
+    ancestorIds.push(location.parent_id);
+    currentId = location.parent_id;
+  }
+
+  return ancestorIds;
+};
+
 module.exports = {
-  getDescendantLocationIds
+  getDescendantLocationIds,
+  getAncestorLocationIds
 };

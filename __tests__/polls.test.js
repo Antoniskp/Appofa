@@ -626,6 +626,198 @@ describe('Poll API Tests', () => {
     });
   });
 
+  describe('Locals-only poll access control', () => {
+    let localsOnlyPollId;
+    let localsOnlyPollOptionId;
+    let insiderUserId;
+    let outsiderUserId;
+    let noHomeUserId;
+    let insiderToken;
+    let outsiderToken;
+    let noHomeToken;
+
+    beforeAll(async () => {
+      const localRoot = await Location.create({
+        name: 'Locals Root',
+        type: 'country',
+        slug: 'locals-root',
+        parent_id: 1
+      });
+      const localChild = await Location.create({
+        name: 'Locals Child',
+        type: 'municipality',
+        slug: 'locals-child',
+        parent_id: localRoot.id
+      });
+      const otherLocation = await Location.create({
+        name: 'Locals Other',
+        type: 'country',
+        slug: 'locals-other',
+        parent_id: 1
+      });
+
+      const insiderUser = await User.create({
+        username: 'locals-insider',
+        email: 'locals-insider@test.com',
+        password: 'test12345',
+        firstNameNative: 'Locals',
+        lastNameNative: 'Insider',
+        homeLocationId: localChild.id
+      });
+      insiderUserId = insiderUser.id;
+
+      const outsiderUser = await User.create({
+        username: 'locals-outsider',
+        email: 'locals-outsider@test.com',
+        password: 'test12345',
+        firstNameNative: 'Locals',
+        lastNameNative: 'Outsider',
+        homeLocationId: otherLocation.id
+      });
+      outsiderUserId = outsiderUser.id;
+
+      const noHomeUser = await User.create({
+        username: 'locals-no-home',
+        email: 'locals-no-home@test.com',
+        password: 'test12345',
+        firstNameNative: 'Locals',
+        lastNameNative: 'NoHome'
+      });
+      noHomeUserId = noHomeUser.id;
+
+      const insiderLogin = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'locals-insider@test.com', password: 'test12345' });
+      insiderToken = insiderLogin.headers['set-cookie']
+        .find((cookie) => cookie.startsWith('auth_token='))
+        .split(';')[0]
+        .replace('auth_token=', '');
+
+      const outsiderLogin = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'locals-outsider@test.com', password: 'test12345' });
+      outsiderToken = outsiderLogin.headers['set-cookie']
+        .find((cookie) => cookie.startsWith('auth_token='))
+        .split(';')[0]
+        .replace('auth_token=', '');
+
+      const noHomeLogin = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'locals-no-home@test.com', password: 'test12345' });
+      noHomeToken = noHomeLogin.headers['set-cookie']
+        .find((cookie) => cookie.startsWith('auth_token='))
+        .split(';')[0]
+        .replace('auth_token=', '');
+
+      const csrfToken = 'test-csrf-token-locals-only-create';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Locals Only Access Poll',
+          type: 'simple',
+          visibility: 'locals_only',
+          resultsVisibility: 'always',
+          locationId: localRoot.id,
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      localsOnlyPollId = createResponse.body.data.id;
+      localsOnlyPollOptionId = createResponse.body.data.options[0].id;
+    });
+
+    test('should deny getPollById for authenticated non-local user', async () => {
+      const response = await request(app)
+        .get(`/api/polls/${localsOnlyPollId}`)
+        .set('Cookie', `auth_token=${outsiderToken}`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should allow getPollById for local member', async () => {
+      const response = await request(app)
+        .get(`/api/polls/${localsOnlyPollId}`)
+        .set('Cookie', `auth_token=${insiderToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+    test('should deny getResults for unauthenticated user on locals_only poll', async () => {
+      const response = await request(app)
+        .get(`/api/polls/${localsOnlyPollId}/results`);
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should deny explicit locals_only visibility filter for unauthenticated user', async () => {
+      const response = await request(app)
+        .get('/api/polls')
+        .query({ visibility: 'locals_only' });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should hide locals_only polls from authenticated non-local list', async () => {
+      const response = await request(app)
+        .get('/api/polls')
+        .set('Cookie', `auth_token=${outsiderToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      const pollIds = response.body.data.map((p) => p.id);
+      expect(pollIds).not.toContain(localsOnlyPollId);
+    });
+
+    test('should include locals_only polls for authenticated local member list', async () => {
+      const response = await request(app)
+        .get('/api/polls')
+        .set('Cookie', `auth_token=${insiderToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      const pollIds = response.body.data.map((p) => p.id);
+      expect(pollIds).toContain(localsOnlyPollId);
+    });
+
+    test('should deny vote for authenticated non-local user on locals_only poll', async () => {
+      const csrfToken = 'test-csrf-token-locals-vote-outsider';
+      const headers = csrfHeaderFor(csrfToken, outsiderUserId);
+
+      const response = await request(app)
+        .post(`/api/polls/${localsOnlyPollId}/vote`)
+        .set('Cookie', [`auth_token=${outsiderToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({ optionId: localsOnlyPollOptionId });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+
+    test('should deny vote for authenticated user without home location on locals_only poll', async () => {
+      const csrfToken = 'test-csrf-token-locals-vote-no-home';
+      const headers = csrfHeaderFor(csrfToken, noHomeUserId);
+
+      const response = await request(app)
+        .post(`/api/polls/${localsOnlyPollId}/vote`)
+        .set('Cookie', [`auth_token=${noHomeToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({ optionId: localsOnlyPollOptionId });
+
+      expect(response.status).toBe(403);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
   describe('POST /api/polls/:id/vote - Vote on Poll', () => {
     test('should allow authenticated user to vote', async () => {
       const csrfToken = 'test-csrf-token-vote';
