@@ -3,7 +3,7 @@
  * Run with: node src/models/__tests__/poll-models.test.js
  */
 
-const { sequelize, Poll, PollOption, PollVote, User, Location } = require('../index');
+const { Poll, PollOption, PollVote } = require('../index');
 
 async function testModels() {
   console.log('🧪 Testing Poll System Models\n');

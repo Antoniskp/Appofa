@@ -124,29 +124,29 @@ module.exports = {
     console.log('Messages table created successfully');
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     // Drop indexes first
     try {
       await queryInterface.removeIndex('Messages', 'message_createdAt_index');
-    } catch (error) {
+    } catch {
       console.warn('Index message_createdAt_index does not exist');
     }
 
     try {
       await queryInterface.removeIndex('Messages', 'message_userId_index');
-    } catch (error) {
+    } catch {
       console.warn('Index message_userId_index does not exist');
     }
 
     try {
       await queryInterface.removeIndex('Messages', 'message_status_index');
-    } catch (error) {
+    } catch {
       console.warn('Index message_status_index does not exist');
     }
 
     try {
       await queryInterface.removeIndex('Messages', 'message_type_index');
-    } catch (error) {
+    } catch {
       console.warn('Index message_type_index does not exist');
     }
 

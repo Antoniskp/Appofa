@@ -5,7 +5,7 @@ module.exports = {
     const describeOrNull = async (tableName) => {
       try {
         return await queryInterface.describeTable(tableName);
-      } catch (error) {
+      } catch {
         return null;
       }
     };
@@ -48,7 +48,7 @@ module.exports = {
     const describeOrNull = async (tableName) => {
       try {
         return await queryInterface.describeTable(tableName);
-      } catch (error) {
+      } catch {
         return null;
       }
     };

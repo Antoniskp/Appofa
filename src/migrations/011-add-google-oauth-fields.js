@@ -48,7 +48,7 @@ module.exports = {
     console.log('Google OAuth fields migration completed successfully');
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     const tableDescription = await queryInterface.describeTable('Users');
 
     // Remove googleAccessToken column if it exists
@@ -62,7 +62,7 @@ module.exports = {
       // Try to remove the unique index first
       try {
         await queryInterface.removeIndex('Users', 'users_google_id_unique');
-      } catch (error) {
+      } catch {
         // Ignore if index doesn't exist
       }
       

@@ -39,7 +39,7 @@ module.exports = {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     await queryInterface.removeColumn('Locations', 'wikipedia_data_updated_at');
     console.log('wikipedia_data_updated_at column removed from Locations table');
     

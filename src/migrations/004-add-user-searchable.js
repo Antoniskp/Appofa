@@ -19,7 +19,7 @@ module.exports = {
     console.log('Users searchable migration completed successfully');
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     const tableDescription = await queryInterface.describeTable('Users');
 
     // Remove searchable column if it exists

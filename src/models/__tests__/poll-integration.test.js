@@ -64,7 +64,7 @@ async function testPollCreation() {
       creatorId: user.id
     });
     console.log('  ✗ Title validation failed - should have rejected short title');
-  } catch (error) {
+  } catch {
     console.log('  ✓ Title length validation works correctly');
   }
   
@@ -119,7 +119,7 @@ async function testVoting() {
   });
   
   // Test authenticated vote
-  const vote = await PollVote.create({
+  await PollVote.create({
     pollId: poll.id,
     optionId: option.id,
     userId: user.id,
@@ -137,12 +137,12 @@ async function testVoting() {
       isAuthenticated: true
     });
     console.log('  ✗ Unique constraint failed - user voted twice!');
-  } catch (error) {
+  } catch {
     console.log('  ✓ Unique vote constraint enforced correctly');
   }
   
   // Test anonymous vote
-  const anonVote = await PollVote.create({
+  await PollVote.create({
     pollId: poll.id,
     optionId: option.id,
     userId: null,
@@ -223,7 +223,7 @@ async function testCascadeDeletes() {
   });
   
   const option1 = await PollOption.create({ pollId: poll.id, text: 'Option 1' });
-  const option2 = await PollOption.create({ pollId: poll.id, text: 'Option 2' });
+  await PollOption.create({ pollId: poll.id, text: 'Option 2' });
   
   await PollVote.create({
     pollId: poll.id,

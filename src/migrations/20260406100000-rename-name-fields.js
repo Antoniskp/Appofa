@@ -57,7 +57,7 @@ module.exports = {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     const tables = await queryInterface.showAllTables();
 
     for (const tableName of ['Users', 'PublicPersonProfiles']) {

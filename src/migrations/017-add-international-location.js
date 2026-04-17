@@ -28,7 +28,7 @@ module.exports = {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     await queryInterface.bulkDelete('Locations', {
       type: 'international',
       slug: 'international'

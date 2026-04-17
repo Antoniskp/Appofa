@@ -69,6 +69,10 @@ jest.mock('@/lib/api', () => ({
     getAll: jest.fn(() => Promise.resolve({
       success: true,
       data: { articles: [], pagination: { totalPages: 1 } }
+    })),
+    getCategoryCounts: jest.fn(() => Promise.resolve({
+      success: true,
+      data: { counts: {} }
     }))
   },
   statsAPI: {
@@ -192,7 +196,7 @@ describe('Frontend smoke tests', () => {
     const { container, root } = await renderPage(HomePage);
 
     expect(container.textContent).toContain('Αποφάσεις που ξεκινούν από εσένα.');
-    expect(container.textContent).toContain('Τελευταίες ειδήσεις');
+    expect(container.textContent).toContain('Τελευταίες Ειδήσεις');
 
     await act(async () => {
       root.unmount();
@@ -231,8 +235,8 @@ describe('Frontend smoke tests', () => {
     const LoginPage = require('../app/login/page').default;
     const { container, root } = await renderPage(LoginPage);
 
-    expect(container.textContent).toContain('Sign in to your account');
-    expect(container.textContent).toContain('Or continue with');
+    expect(container.textContent).toContain('Σύνδεση στον λογαριασμό σας');
+    expect(container.textContent).toContain('Ή συνεχίστε με');
 
     await act(async () => {
       root.unmount();
@@ -245,8 +249,8 @@ describe('Frontend smoke tests', () => {
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
 
-    expect(container.textContent).toContain('Create your account');
-    expect(container.textContent).toContain('Confirm Password');
+    expect(container.textContent).toContain('Δημιουργία λογαριασμού');
+    expect(container.textContent).toContain('Επιβεβαίωση κωδικού');
 
     await act(async () => {
       root.unmount();

@@ -12,7 +12,6 @@
  */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const dialect = queryInterface.sequelize.getDialect();
     const tables = await queryInterface.showAllTables();
 
     if (!tables.includes('PublicPersonProfiles')) {
@@ -221,7 +220,7 @@ module.exports = {
     console.log(`Migration complete: ${profiles.length} profiles migrated to Users.`);
   },
 
-  async down(queryInterface) {
+  async down(_queryInterface) {
     // This migration is not easily reversible (data was moved).
     console.log('Down migration for migrate-public-person-profiles-to-users is a no-op.');
   },

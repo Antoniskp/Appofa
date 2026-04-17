@@ -15,6 +15,6 @@ module.exports = {
   },
 
   async down() {
-    throw new Error('This migration cannot be reversed as permanently deleted holder rows cannot be restored.');
+    // No-op: deleted inactive rows cannot be restored.
   },
 };

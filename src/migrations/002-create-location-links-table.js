@@ -75,23 +75,23 @@ module.exports = {
     console.log('LocationLinks table created successfully');
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     // Drop indexes first
     try {
       await queryInterface.removeIndex('LocationLinks', 'location_index');
-    } catch (error) {
+    } catch {
       console.warn('Index location_index does not exist');
     }
 
     try {
       await queryInterface.removeIndex('LocationLinks', 'entity_index');
-    } catch (error) {
+    } catch {
       console.warn('Index entity_index does not exist');
     }
 
     try {
       await queryInterface.removeIndex('LocationLinks', 'unique_location_entity_link');
-    } catch (error) {
+    } catch {
       console.warn('Index unique_location_entity_link does not exist');
     }
 

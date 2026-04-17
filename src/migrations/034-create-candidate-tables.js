@@ -250,7 +250,7 @@ module.exports = {
     });
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     await queryInterface.dropTable('CandidateApplications');
     await queryInterface.dropTable('PublicPersonProfiles');
   }

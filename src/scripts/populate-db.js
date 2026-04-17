@@ -29,7 +29,7 @@ const populateDatabase = async () => {
       // Create admin account
       // NOTE: Passwords are automatically hashed by the User model's beforeCreate hook
       // These are development/testing credentials only - NOT for production use
-      const admin = await User.create({
+      await User.create({
         username: 'admin',
         email: 'admin@admin.gr',
         password: 'admin123', // Will be hashed automatically
@@ -40,7 +40,7 @@ const populateDatabase = async () => {
       console.log('✓ Admin account created');
 
       // Create moderator account
-      const moderator = await User.create({
+      await User.create({
         username: 'moderator',
         email: 'moderator@moderator.gr',
         password: 'moderator123',
@@ -51,7 +51,7 @@ const populateDatabase = async () => {
       console.log('✓ Moderator account created');
 
       // Create editor account
-      const editor = await User.create({
+      await User.create({
         username: 'editor',
         email: 'editor@editor.gr',
         password: 'editor123',

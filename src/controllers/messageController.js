@@ -10,7 +10,6 @@ const {
 // Allowed values for message type
 const MESSAGE_TYPES = ['contact', 'moderator_application', 'general', 'bug_report', 'feature_request'];
 const MESSAGE_STATUSES = ['pending', 'read', 'in_progress', 'responded', 'archived'];
-const MESSAGE_PRIORITIES = ['low', 'normal', 'high', 'urgent'];
 
 const messageController = {
   /**

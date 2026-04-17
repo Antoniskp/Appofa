@@ -6,7 +6,7 @@ module.exports = {
       try {
         await queryInterface.describeTable(tableName);
         return true;
-      } catch (error) {
+      } catch {
         return false;
       }
     };

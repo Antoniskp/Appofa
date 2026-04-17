@@ -2,6 +2,7 @@
 
 module.exports = {
   async up(queryInterface) {
+    if (queryInterface.sequelize.getDialect() !== 'postgres') return;
     await queryInterface.sequelize.query(`
       ALTER TYPE "enum_LocationSections_type" ADD VALUE IF NOT EXISTS 'news_sources';
     `);

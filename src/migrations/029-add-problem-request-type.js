@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up(queryInterface, _Sequelize) {
     const dialect = queryInterface.sequelize.getDialect();
 
     if (dialect === 'postgres') {

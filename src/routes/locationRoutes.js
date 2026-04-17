@@ -7,7 +7,7 @@ const locationElectionController = require('../controllers/locationElectionContr
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
-const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
+const { apiLimiter } = require('../middleware/rateLimiter');
 const csrfProtection = require('../middleware/csrfProtection');
 
 // Public routes

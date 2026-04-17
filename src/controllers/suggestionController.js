@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location, Tag, TaggableItem, sequelize } = require('../models');
-const { normalizeRequiredText, normalizeOptionalText, normalizeEnum, normalizeInteger } = require('../utils/validators');
+const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
@@ -11,16 +11,6 @@ const VOTE_VALUES = [-1, 1];
 
 /**
  * Compute the aggregate score (sum of vote values) for a given target.
- */
-async function computeScore(targetType, targetId) {
-  const result = await SuggestionVote.sum('value', {
-    where: { targetType, targetId }
-  });
-  return result || 0;
-}
-
-/**
- * Compute separate upvote and downvote counts for a given target.
  */
 async function computeCounts(targetType, targetId) {
   const [upvotes, downvotes] = await Promise.all([
@@ -215,7 +205,7 @@ const suggestionController = {
    */
   createSuggestion: async (req, res) => {
     try {
-      const { title, body, type, locationId, status, category, tags } = req.body;
+      const { title, body, type, locationId, category, tags } = req.body;
 
       const titleResult = normalizeRequiredText(title, 'Title', 5, 200);
       if (titleResult.error) return res.status(400).json({ success: false, message: titleResult.error });

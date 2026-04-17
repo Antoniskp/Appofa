@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up(queryInterface, _Sequelize) {
     const dialect = queryInterface.sequelize.getDialect();
 
     // PostgreSQL enum update: add 'poll' to LocationLinks.entity_type.
@@ -17,7 +17,7 @@ module.exports = {
     console.log(`Skipped enum alteration for dialect: ${dialect}`);
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     const dialect = queryInterface.sequelize.getDialect();
 
     if (dialect === 'postgres') {

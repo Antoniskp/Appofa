@@ -150,7 +150,7 @@ module.exports = {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     // Drop Articles table first (has foreign key to Users)
     const tables = await queryInterface.showAllTables();
     
