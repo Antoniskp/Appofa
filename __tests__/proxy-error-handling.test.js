@@ -164,6 +164,38 @@ describe('API Proxy Error Handling', () => {
     );
   });
 
+  test('forwards cookie header even when not enumerable in entries()', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        status: 200,
+        statusText: 'OK',
+        body: JSON.stringify({ success: true }),
+        headers: new Headers({
+          'Content-Type': 'application/json'
+        })
+      })
+    );
+
+    const { GET } = require('../app/api/[...path]/route.js');
+
+    const mockRequest = {
+      method: 'GET',
+      nextUrl: {
+        pathname: '/api/auth/csrf',
+        search: ''
+      },
+      headers: {
+        entries: () => [['content-type', 'application/json']],
+        get: (key) => (key.toLowerCase() === 'cookie' ? 'auth_token=test; csrf_token=abc' : null)
+      }
+    };
+
+    await GET(mockRequest);
+    const forwardedHeaders = global.fetch.mock.calls[0][1].headers;
+
+    expect(forwardedHeaders.get('cookie')).toBe('auth_token=test; csrf_token=abc');
+  });
+
   test('logs errors for debugging', async () => {
     const testError = new Error('Connection failed');
     global.fetch = jest.fn(() => Promise.reject(testError));
