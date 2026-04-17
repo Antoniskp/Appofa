@@ -107,6 +107,21 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
+  test('treats same-origin absolute CTA links as internal navigation', async () => {
+    const sameOriginUrl = `${window.location.origin}/polls?tab=open#latest`;
+    const { container, root } = await renderHero(buildSlide(sameOriginUrl));
+    const ctaLink = [...container.querySelectorAll('a')].find((anchor) => anchor.textContent.includes('Δες τώρα'));
+
+    expect(ctaLink).toBeTruthy();
+    expect(ctaLink.getAttribute('href')).toBe('/polls?tab=open#latest');
+    expect(ctaLink.getAttribute('target')).toBeNull();
+    expect(ctaLink.getAttribute('rel')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('keeps CTA wrapper hidden when linkUrl is not internal or external', async () => {
     const { container, root } = await renderHero(buildSlide('polls'));
     const wrapper = container.querySelector('div.mb-3.transition-opacity.duration-500');

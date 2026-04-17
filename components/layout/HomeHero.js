@@ -174,8 +174,22 @@ export default function HomeHero() {
 
   // Determine current slide for CTA
   const currentSlide = activeSlides.length > 0 ? activeSlides[currentSlideIdx] : null;
-  const isExternalLink = currentSlide && currentSlide.linkUrl && /^https?:\/\//.test(currentSlide.linkUrl);
-  const isInternalLink = currentSlide && currentSlide.linkUrl && currentSlide.linkUrl.startsWith('/');
+  // Normalize the slide linkUrl: if absolute but same-origin, strip to path
+  const rawLinkUrl = currentSlide?.linkUrl || null;
+  let normalizedLinkUrl = rawLinkUrl;
+  if (rawLinkUrl && /^https?:\/\//.test(rawLinkUrl)) {
+    try {
+      const parsed = new URL(rawLinkUrl);
+      if (typeof window !== 'undefined' && parsed.origin === window.location.origin) {
+        normalizedLinkUrl = parsed.pathname + parsed.search + parsed.hash;
+      }
+    } catch (_) {
+      // malformed URL — leave as-is
+    }
+  }
+
+  const isExternalLink = !!(normalizedLinkUrl && /^https?:\/\//.test(normalizedLinkUrl));
+  const isInternalLink = !!(normalizedLinkUrl && normalizedLinkUrl.startsWith('/'));
   const hasLink = !!(isExternalLink || isInternalLink);
   const linkText = (currentSlide && currentSlide.linkText) ? currentSlide.linkText : 'Μάθε περισσότερα';
   const showArrows = activeSlides.length >= 2;
@@ -239,7 +253,7 @@ export default function HomeHero() {
               <div className={`mb-3 transition-opacity duration-500 ${hasLink ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 {isInternalLink ? (
                   <Link
-                    href={currentSlide.linkUrl}
+                    href={normalizedLinkUrl}
                     tabIndex={hasLink ? 0 : -1}
                     className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
                   >
@@ -248,7 +262,7 @@ export default function HomeHero() {
                   </Link>
                 ) : (
                   <a
-                    href={currentSlide?.linkUrl || '#'}
+                    href={normalizedLinkUrl || '#'}
                     target="_blank"
                     rel="noopener noreferrer"
                     tabIndex={hasLink ? 0 : -1}
