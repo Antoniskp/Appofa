@@ -10,6 +10,10 @@ const buildHeaders = (request) => {
       headers.set(key, value);
     }
   }
+  const cookieHeader = request.headers.get('cookie');
+  if (cookieHeader) {
+    headers.set('cookie', cookieHeader);
+  }
   return headers;
 };
 

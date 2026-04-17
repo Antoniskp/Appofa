@@ -980,22 +980,44 @@ describe('Poll API Tests', () => {
 
   describe('PUT /api/polls/:id - Update Poll', () => {
     test('should allow creator to update poll', async () => {
+      const createCsrfToken = 'test-csrf-token-update-create';
+      const createHeaders = csrfHeaderFor(createCsrfToken, adminUserId);
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...createHeaders.Cookie])
+        .set('x-csrf-token', createCsrfToken)
+        .send({
+          title: 'Poll To Update Visibility',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Yes' },
+            { text: 'No' }
+          ]
+        });
+      const pollToUpdateId = createResponse.body.data.id;
+
       const csrfToken = 'test-csrf-token-update';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
 
       const response = await request(app)
-        .put(`/api/polls/${testPollId}`)
+        .put(`/api/polls/${pollToUpdateId}`)
         .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
         .set('x-csrf-token', csrfToken)
         .send({
           title: 'Updated Poll Title',
-          description: 'Updated description'
+          description: 'Updated description',
+          visibility: 'locals_only',
+          resultsVisibility: 'after_deadline'
         });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.title).toBe('Updated Poll Title');
       expect(response.body.data.description).toBe('Updated description');
+      expect(response.body.data.visibility).toBe('locals_only');
+      expect(response.body.data.resultsVisibility).toBe('after_deadline');
     });
 
     test('should allow admin to update any poll', async () => {

@@ -151,6 +151,7 @@ describe('apiRequest CSRF retry logic', () => {
   const originalFetch = global.fetch;
   const originalWindow = global.window;
   const originalDocument = global.document;
+  const originalCustomEvent = global.CustomEvent;
 
   beforeEach(() => {
     delete global.window;
@@ -168,6 +169,11 @@ describe('apiRequest CSRF retry logic', () => {
       delete global.document;
     } else {
       global.document = originalDocument;
+    }
+    if (originalCustomEvent === undefined) {
+      delete global.CustomEvent;
+    } else {
+      global.CustomEvent = originalCustomEvent;
     }
   });
 
@@ -223,5 +229,33 @@ describe('apiRequest CSRF retry logic', () => {
 
     await expect(apiRequest('/api/articles/1', { method: 'PUT', body: '{}' })).rejects.toThrow('Invalid CSRF token.');
     expect(global.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  test('dispatches session-expired event when CSRF refresh fails after auth 401', async () => {
+    const authFailResponse = {
+      ok: false,
+      status: 401,
+      headers: jsonHeaders,
+      text: () => Promise.resolve(JSON.stringify({ success: false, message: 'No token provided. Authentication required.' })),
+    };
+    const csrfRefreshUnauthorizedResponse = {
+      ok: false,
+      status: 401,
+      headers: jsonHeaders,
+      text: () => Promise.resolve(JSON.stringify({ success: false, message: 'No token provided. Authentication required.' })),
+    };
+    global.window = { dispatchEvent: jest.fn() };
+    global.CustomEvent = class CustomEvent {
+      constructor(type) {
+        this.type = type;
+      }
+    };
+
+    global.fetch = jest.fn()
+      .mockResolvedValueOnce(authFailResponse)
+      .mockResolvedValueOnce(csrfRefreshUnauthorizedResponse);
+
+    await expect(apiRequest('/api/articles/1', { method: 'PUT', body: '{}' })).rejects.toThrow('No token provided. Authentication required.');
+    expect(global.window.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'auth:session-expired' }));
   });
 });

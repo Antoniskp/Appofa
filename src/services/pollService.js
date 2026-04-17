@@ -771,7 +771,20 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const { title, description, category, tags, deadline, status, locationId, hideCreator, options, useCustomColors } = updateData;
+    const {
+      title,
+      description,
+      category,
+      tags,
+      deadline,
+      status,
+      locationId,
+      visibility,
+      resultsVisibility,
+      hideCreator,
+      options,
+      useCustomColors
+    } = updateData;
 
     const poll = await Poll.findByPk(pollId, {
       include: [
@@ -873,6 +886,26 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
         return { success: false, status: 400, message: statusResult.error };
       }
       updates.status = statusResult.value;
+    }
+
+    // Validate and update visibility
+    if (visibility !== undefined) {
+      const visibilityResult = normalizeEnum(visibility, POLL_VISIBILITIES, 'Visibility');
+      if (visibilityResult.error) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: visibilityResult.error };
+      }
+      updates.visibility = visibilityResult.value;
+    }
+
+    // Validate and update results visibility
+    if (resultsVisibility !== undefined) {
+      const resultsVisibilityResult = normalizeEnum(resultsVisibility, RESULTS_VISIBILITIES, 'Results visibility');
+      if (resultsVisibilityResult.error) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: resultsVisibilityResult.error };
+      }
+      updates.resultsVisibility = resultsVisibilityResult.value;
     }
 
     // Validate and update locationId

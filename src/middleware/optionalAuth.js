@@ -9,19 +9,14 @@ const optionalAuthMiddleware = async (req, res, next) => {
     const bearerToken = req.headers.authorization?.split(' ')[1];
     const cookieToken = getCookie(req, 'auth_token');
     const token = bearerToken || cookieToken;
-    
-    if (token) {
-      // Ensure JWT_SECRET is set in production
-      if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-        throw new Error('JWT_SECRET must be set in production environment');
-      }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this-in-production');
+    if (token && process.env.JWT_SECRET) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       req.user = decoded;
     }
     // If no token, req.user remains undefined - this is expected
     next();
-  } catch (error) {
+  } catch {
     // If token is invalid, continue without authentication
     next();
   }
