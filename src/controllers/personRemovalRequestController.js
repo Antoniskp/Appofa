@@ -1,7 +1,6 @@
 'use strict';
 
 const { PersonRemovalRequest, User } = require('../models');
-const { Op } = require('sequelize');
 
 const personRemovalRequestController = {
   // POST /api/person-removal-requests — public

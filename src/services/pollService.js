@@ -577,7 +577,7 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
     });
 
     // Add vote counts to each option
-    let pollsWithCounts = polls.map(poll => {
+    const pollsWithCounts = polls.map(poll => {
       const pollData = poll.toJSON();
       pollData.options = pollData.options.map(option => ({
         ...option,
@@ -1297,7 +1297,7 @@ const addPollOption = async (pollId, userId, optionData) => {
     }
 
     // Validate based on poll type
-    let newOptionData = {
+    const newOptionData = {
       pollId,
       addedByUserId: userId,
       order: poll.options.length,

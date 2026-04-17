@@ -112,29 +112,29 @@ module.exports = {
     console.log('Locations table created successfully');
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     // Drop indexes first
     try {
       await queryInterface.removeIndex('Locations', 'unique_location_name_per_parent');
-    } catch (error) {
+    } catch {
       console.warn('Index unique_location_name_per_parent does not exist');
     }
 
     try {
       await queryInterface.removeIndex('Locations', 'location_slug_index');
-    } catch (error) {
+    } catch {
       console.warn('Index location_slug_index does not exist');
     }
 
     try {
       await queryInterface.removeIndex('Locations', 'location_code_index');
-    } catch (error) {
+    } catch {
       console.warn('Index location_code_index does not exist');
     }
 
     try {
       await queryInterface.removeIndex('Locations', 'location_parent_index');
-    } catch (error) {
+    } catch {
       console.warn('Index location_parent_index does not exist');
     }
 

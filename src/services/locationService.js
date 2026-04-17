@@ -18,7 +18,7 @@ const isValidWikipediaUrl = (url) => {
   try {
     const parsedUrl = new URL(url);
     return parsedUrl.hostname.endsWith('.wikipedia.org');
-  } catch (error) {
+  } catch {
     return false;
   }
 };
@@ -401,7 +401,7 @@ const updateLocation = async (id, updateData) => {
       }
     }
 
-    let locationUpdateData = {
+    const locationUpdateData = {
       name: name || location.name,
       name_local: name_local !== undefined ? name_local : location.name_local,
       type: type || location.type,

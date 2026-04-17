@@ -75,32 +75,54 @@ module.exports = {
     });
 
     // 3. Remove tags column from Articles
-    const articleTable = await queryInterface.describeTable('Articles');
-    if (articleTable.tags) {
-      await queryInterface.removeColumn('Articles', 'tags');
+    try {
+      const articleTable = await queryInterface.describeTable('Articles');
+      if (articleTable.tags) {
+        await queryInterface.removeColumn('Articles', 'tags');
+      }
+    } catch {
+      // Articles table may not exist in partial migration runs.
     }
 
     // 4. Remove tags column from Polls
-    const pollTable = await queryInterface.describeTable('Polls');
-    if (pollTable.tags) {
-      await queryInterface.removeColumn('Polls', 'tags');
+    try {
+      const pollTable = await queryInterface.describeTable('Polls');
+      if (pollTable.tags) {
+        await queryInterface.removeColumn('Polls', 'tags');
+      }
+    } catch {
+      // Polls table may not exist in partial migration runs.
     }
   },
 
   async down(queryInterface, Sequelize) {
     // Restore tags column to Articles
-    await queryInterface.addColumn('Articles', 'tags', {
-      type: Sequelize.JSON,
-      allowNull: true,
-      defaultValue: '[]'
-    });
+    try {
+      const articleTable = await queryInterface.describeTable('Articles');
+      if (!articleTable.tags) {
+        await queryInterface.addColumn('Articles', 'tags', {
+          type: Sequelize.JSON,
+          allowNull: true,
+          defaultValue: '[]'
+        });
+      }
+    } catch {
+      // Articles table may not exist in partial rollback runs.
+    }
 
     // Restore tags column to Polls
-    await queryInterface.addColumn('Polls', 'tags', {
-      type: Sequelize.JSON,
-      allowNull: true,
-      defaultValue: '[]'
-    });
+    try {
+      const pollTable = await queryInterface.describeTable('Polls');
+      if (!pollTable.tags) {
+        await queryInterface.addColumn('Polls', 'tags', {
+          type: Sequelize.JSON,
+          allowNull: true,
+          defaultValue: '[]'
+        });
+      }
+    } catch {
+      // Polls table may not exist in partial rollback runs.
+    }
 
     // Remove TaggableItems table
     await queryInterface.dropTable('TaggableItems');

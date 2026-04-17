@@ -339,7 +339,7 @@ const fetchTikTokOEmbed = async (originalUrl) => {
   }
 
   return {
-    title: truncate(data.title, 200) || null,
+    title: truncate(data.title) || null,
     authorName: truncate(data.author_name) || null,
     thumbnailUrl: data.thumbnail_url || null,
     providerName: data.provider_name || 'TikTok',

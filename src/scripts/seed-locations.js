@@ -91,7 +91,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of atticaMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Attica'].id } 
       });
       
@@ -122,7 +122,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of centralMacedoniaMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Central Macedonia'].id } 
       });
       
@@ -151,7 +151,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of creteMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Crete'].id } 
       });
       
@@ -180,7 +180,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of thessalyMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Thessaly'].id } 
       });
       
@@ -211,7 +211,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of peloponneseMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Peloponnese'].id } 
       });
       
@@ -240,7 +240,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of ionianIslandsMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Ionian Islands'].id } 
       });
       
@@ -267,7 +267,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of westernGreeceMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Western Greece'].id } 
       });
       
@@ -295,7 +295,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of easternMacedoniaMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Eastern Macedonia and Thrace'].id } 
       });
       
@@ -322,7 +322,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of westernMacedoniaMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Western Macedonia'].id } 
       });
       
@@ -349,7 +349,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of epirusMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Epirus'].id } 
       });
       
@@ -376,7 +376,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of centralGreeceMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['Central Greece'].id } 
       });
       
@@ -403,7 +403,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of northAegeanMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['North Aegean'].id } 
       });
       
@@ -433,7 +433,7 @@ const seedLocations = async () => {
     ];
 
     for (const munData of southAegeanMunicipalities) {
-      let municipality = await Location.findOne({ 
+      const municipality = await Location.findOne({ 
         where: { name: munData.name, type: 'municipality', parent_id: createdPrefectures['South Aegean'].id } 
       });
       

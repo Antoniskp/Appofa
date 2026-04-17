@@ -44,11 +44,30 @@ module.exports = {
 
     // ── Add slug ──────────────────────────────────────────────────────────────
     if (!tableDescription.slug) {
-      await queryInterface.addColumn('Users', 'slug', {
-        type: Sequelize.STRING(255),
-        allowNull: true,
-        unique: true,
-      });
+      if (dialect === 'sqlite') {
+        await queryInterface.addColumn('Users', 'slug', {
+          type: Sequelize.STRING(255),
+          allowNull: true,
+        });
+        try {
+          await queryInterface.addIndex('Users', ['slug'], {
+            unique: true,
+            name: 'users_slug_unique',
+          });
+        } catch (error) {
+          const isDuplicateIndex = error.name === 'SequelizeDatabaseError'
+            && (error.original?.code === '42P07'
+              || error.message?.includes('already exists')
+              || error.message?.includes('UNIQUE'));
+          if (!isDuplicateIndex) throw error;
+        }
+      } else {
+        await queryInterface.addColumn('Users', 'slug', {
+          type: Sequelize.STRING(255),
+          allowNull: true,
+          unique: true,
+        });
+      }
     }
 
     // ── Add person profile fields ─────────────────────────────────────────────
@@ -174,6 +193,14 @@ module.exports = {
 
   async down(queryInterface) {
     const tableDescription = await queryInterface.describeTable('Users');
+
+    if (tableDescription.slug) {
+      try {
+        await queryInterface.removeIndex('Users', 'users_slug_unique');
+      } catch {
+        // Index may not exist on all dialects/environments.
+      }
+    }
 
     const claimCols = [
       'claimStatus', 'claimedByUserId', 'claimRequestedAt', 'claimVerifiedAt',

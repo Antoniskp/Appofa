@@ -202,7 +202,7 @@ const normalizeUrl = (value, fieldLabel = 'URL', allowRelative = true) => {
   let parsedUrl;
   try {
     parsedUrl = new URL(trimmedValue);
-  } catch (parseError) {
+  } catch {
     return { error: `${fieldLabel} is malformed.` };
   }
   if (!['http:', 'https:'].includes(parsedUrl.protocol)) {

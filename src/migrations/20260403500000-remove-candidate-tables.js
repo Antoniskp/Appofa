@@ -1,7 +1,7 @@
 'use strict';
 
 module.exports = {
-  async up(queryInterface, Sequelize) {
+  async up(queryInterface, _Sequelize) {
     const tables = await queryInterface.showAllTables();
 
     // Drop legacy tables
@@ -23,7 +23,7 @@ module.exports = {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(_queryInterface, _Sequelize) {
     // Not implementing full rollback as this is a simplification migration
   }
 };

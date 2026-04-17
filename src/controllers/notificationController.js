@@ -9,7 +9,7 @@ exports.getNotifications = async (req, res) => {
       unreadOnly: unreadOnly === 'true'
     });
     res.json({ success: true, data: result });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false, message: 'Failed to fetch notifications.' });
   }
 };
@@ -18,7 +18,7 @@ exports.getUnreadCount = async (req, res) => {
   try {
     const count = await notificationService.getUnreadCount(req.user.id);
     res.json({ success: true, data: { count } });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false, message: 'Failed to fetch unread count.' });
   }
 };
@@ -34,7 +34,7 @@ exports.markAsRead = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Notification not found.' });
     }
     res.json({ success: true, message: 'Marked as read.' });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false, message: 'Failed to mark notification as read.' });
   }
 };
@@ -43,7 +43,7 @@ exports.markAllAsRead = async (req, res) => {
   try {
     await notificationService.markAllAsRead(req.user.id);
     res.json({ success: true, message: 'All notifications marked as read.' });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false, message: 'Failed to mark all notifications as read.' });
   }
 };
@@ -59,7 +59,7 @@ exports.deleteNotification = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Notification not found.' });
     }
     res.json({ success: true, message: 'Notification deleted.' });
-  } catch (err) {
+  } catch {
     res.status(500).json({ success: false, message: 'Failed to delete notification.' });
   }
 };

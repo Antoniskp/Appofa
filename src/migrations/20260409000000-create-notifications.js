@@ -83,7 +83,9 @@ module.exports = {
   async down(queryInterface) {
     await queryInterface.dropTable('Notifications');
     // Drop ENUM types for PostgreSQL
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Notifications_type";');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Notifications_entityType";');
+    if (queryInterface.sequelize.getDialect() === 'postgres') {
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Notifications_type";');
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Notifications_entityType";');
+    }
   }
 };

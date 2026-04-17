@@ -21,7 +21,7 @@ module.exports = {
       // Drop old sessionId index if it exists
       try {
         await queryInterface.removeIndex('PollVotes', 'PollVotes_pollId_sessionId');
-      } catch (e) {
+      } catch {
         // Index might not exist, continue
       }
 
@@ -46,7 +46,7 @@ module.exports = {
     }
   },
 
-  down: async (queryInterface, Sequelize) => {
+  down: async (queryInterface, _Sequelize) => {
     try {
       // Remove the composite unique constraint
       try {
@@ -54,7 +54,7 @@ module.exports = {
           'PollVotes',
           'unique_device_vote_per_poll'
         );
-      } catch (e) {
+      } catch {
         // Constraint might not exist
       }
 

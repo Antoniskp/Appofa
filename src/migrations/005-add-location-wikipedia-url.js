@@ -19,7 +19,7 @@ module.exports = {
     console.log('wikipedia_url column added to Locations table');
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     await queryInterface.removeColumn('Locations', 'wikipedia_url');
     console.log('wikipedia_url column removed from Locations table');
   }

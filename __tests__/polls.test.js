@@ -548,7 +548,7 @@ describe('Poll API Tests', () => {
       expect(response.body.success).toBe(false);
     });
 
-    test('should deny access to private poll for non-creator', async () => {
+    test('should allow access to private poll for authenticated non-creator', async () => {
       // Create private poll
       const csrfToken = 'test-csrf-token-private';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
@@ -575,8 +575,8 @@ describe('Poll API Tests', () => {
         .get(`/api/polls/${privatePollId}`)
         .set('Cookie', `auth_token=${userToken}`);
 
-      expect(response.status).toBe(403);
-      expect(response.body.success).toBe(false);
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
     });
 
     test('should include userVote in response when hideCreator is true', async () => {

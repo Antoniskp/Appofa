@@ -108,10 +108,10 @@ describe('ArticleForm Component', () => {
     expect(container.querySelector('select[name="status"]')).toBeTruthy();
 
     // Check that "Create Article" button is shown
-    expect(container.textContent).toContain('Create Article');
+    expect(container.textContent).toContain('Δημιουργία Άρθρου');
 
     // Check that location info message is shown (create mode)
-    expect(container.textContent).toContain('Locations can be added after creating the article');
+    expect(container.textContent).toContain('Οι τοποθεσίες μπορούν να προστεθούν μετά τη δημιουργία του άρθρου');
 
     await act(async () => {
       root.unmount();
@@ -149,11 +149,11 @@ describe('ArticleForm Component', () => {
     expect(container.querySelector('select[name="type"]').value).toBe('articles');
 
     // Check that "Save Changes" button is shown
-    expect(container.textContent).toContain('Save Changes');
+    expect(container.textContent).toContain('Αποθήκευση Αλλαγών');
 
     // Check that location selector section is shown (edit mode)
     // Note: The actual selector might not render due to mocked API, but the section should be present
-    expect(container.textContent).toContain('Locations');
+    expect(container.textContent).toContain('Τοποθεσίες');
 
     await act(async () => {
       root.unmount();
@@ -213,7 +213,7 @@ describe('ArticleForm Component', () => {
     });
 
     const cancelButton = Array.from(container.querySelectorAll('button'))
-      .find(btn => btn.textContent === 'Cancel');
+      .find(btn => btn.textContent.includes('Ακύρωση'));
 
     await act(async () => {
       cancelButton.click();
@@ -262,7 +262,7 @@ describe('ArticleForm Component', () => {
     });
 
     const submitButton = Array.from(container.querySelectorAll('button'))
-      .find(btn => btn.textContent === 'Creating...');
+      .find(btn => btn.textContent.includes('Δημιουργία...'));
 
     expect(submitButton).toBeTruthy();
     expect(submitButton.disabled).toBe(true);
@@ -362,7 +362,7 @@ describe('ArticleForm Component', () => {
     const approvedCheckbox = container.querySelector('input[name="approved"]');
     expect(approvedCheckbox).toBeTruthy();
     expect(approvedCheckbox.type).toBe('checkbox');
-    expect(container.textContent).toContain('Approved');
+    expect(container.textContent).toContain('Εγκεκριμένο');
 
     await act(async () => { root.unmount(); });
   });

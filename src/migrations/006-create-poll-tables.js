@@ -237,7 +237,7 @@ module.exports = {
     }
   },
 
-  async down(queryInterface, Sequelize) {
+  async down(queryInterface, _Sequelize) {
     // Drop tables in reverse order (to handle foreign key constraints)
     const tables = await queryInterface.showAllTables();
     

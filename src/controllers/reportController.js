@@ -1,7 +1,6 @@
 'use strict';
 
 const { Report, User } = require('../models');
-const { Op } = require('sequelize');
 
 const CONTENT_TYPES = ['article', 'person', 'poll', 'comment', 'candidate', 'user'];
 const CATEGORIES = ['misinformation', 'harassment', 'spam', 'privacy_violation', 'impersonation', 'inappropriate_content', 'other'];

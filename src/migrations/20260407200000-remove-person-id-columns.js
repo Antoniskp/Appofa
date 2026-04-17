@@ -126,7 +126,6 @@ module.exports = {
   },
 
   async down(queryInterface, Sequelize) {
-    const dialect = queryInterface.sequelize.getDialect();
     // Restore the personId columns (no data is restored — this is a destructive migration)
     async function columnExists(table, column) {
       const columns = await queryInterface.describeTable(table);

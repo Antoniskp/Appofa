@@ -6,7 +6,7 @@
  * Generic error handler middleware
  * Catches errors from async routes and provides consistent error responses
  */
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res, _next) => {
   // Log error for debugging
   console.error('Error occurred:', {
     path: req.path,
