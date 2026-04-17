@@ -13,6 +13,11 @@ import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
 import { getAndClearReturnTo } from '@/lib/auth-redirect';
 
+const resolvePostLoginDestination = () => {
+  const destination = getAndClearReturnTo();
+  return destination === '/login' || destination === '/register' ? '/' : destination;
+};
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,7 +40,7 @@ function LoginForm() {
         .then((response) => {
           if (response.success) {
             success('Καλώς ήρθατε! Ανακατεύθυνση...');
-            router.push(getAndClearReturnTo());
+            router.push(resolvePostLoginDestination());
           }
         })
         .catch((err) => {
@@ -57,7 +62,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push(getAndClearReturnTo());
+      router.push(resolvePostLoginDestination());
     }
   }, [user, authLoading, router]);
 
@@ -75,7 +80,7 @@ function LoginForm() {
     try {
       await login(formData);
       success('Καλώς ήρθατε! Ανακατεύθυνση...');
-      router.push(getAndClearReturnTo());
+      router.push(resolvePostLoginDestination());
     } catch (err) {
       error(err.message || 'Λάθος email ή κωδικός. Παρακαλώ δοκιμάστε ξανά.');
     } finally {

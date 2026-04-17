@@ -153,6 +153,21 @@ describe('Auth pages redirect behavior', () => {
     });
   });
 
+  test('login page avoids redirecting authenticated users back to auth pages', async () => {
+    localStorage.setItem('returnTo', '/login');
+    useAuth.mockReturnValue(buildAuthState({ user: { id: 1 }, loading: false }));
+    const LoginPage = require('../app/login/page').default;
+
+    const { root } = await renderPage(LoginPage);
+
+    expect(mockRouter.push).toHaveBeenCalledTimes(1);
+    expect(mockRouter.push).toHaveBeenCalledWith('/');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('register page renders form but does not redirect while auth is loading', async () => {
     useAuth.mockReturnValue(buildAuthState({ loading: true }));
     const RegisterPage = require('../app/register/page').default;
