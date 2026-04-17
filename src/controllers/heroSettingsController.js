@@ -51,10 +51,7 @@ async function saveSlides(settings, slides) {
 
 function isValidUrl(str) {
   if (str.startsWith('/')) {
-    if (str.startsWith('//')) {
-      return false;
-    }
-    return true;
+    return !str.startsWith('//');
   }
   try {
     const url = new URL(str);
