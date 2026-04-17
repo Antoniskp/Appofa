@@ -149,10 +149,23 @@ const getLocations = async (queryParams) => {
     }
 
     const mostUsersSubquery = literal(`(
-      SELECT COUNT(*)
-      FROM "LocationLinks"
-      WHERE "LocationLinks"."entity_type" = 'user'
-        AND "LocationLinks"."location_id" = "Location"."id"
+      SELECT COUNT(*) FROM (
+        SELECT "LocationLinks"."entity_id" AS id
+        FROM "LocationLinks"
+        WHERE "LocationLinks"."entity_type" = 'user'
+          AND "LocationLinks"."location_id" = "Location"."id"
+        UNION
+        SELECT "Users"."id"
+        FROM "Users"
+        WHERE "Users"."homeLocationId" = "Location"."id"
+          AND "Users"."searchable" = true
+          AND "Users"."id" NOT IN (
+            SELECT "LocationLinks"."entity_id"
+            FROM "LocationLinks"
+            WHERE "LocationLinks"."entity_type" = 'user'
+              AND "LocationLinks"."location_id" = "Location"."id"
+          )
+      ) combined_users
     )`);
 
     const order = sort === 'mostUsers'

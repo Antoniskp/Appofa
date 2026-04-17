@@ -104,6 +104,65 @@ describe('Location API Tests', () => {
       expect(response.body.locations.map((location) => location.userCount)).toEqual([2, 2, 1]);
       expect(response.body.locations[0].userCount).toEqual(expect.any(Number));
     });
+
+    it('should include searchable home-location users once in most users count', async () => {
+      const [alpha, beta] = await Promise.all([
+        Location.create({ name: 'MostUsersUnion Alpha', slug: 'mostusersunion-alpha', type: 'international' }),
+        Location.create({ name: 'MostUsersUnion Beta', slug: 'mostusersunion-beta', type: 'international' })
+      ]);
+
+      const [linkedAndHome, homeOnlySearchable, homeOnlyNotSearchable, betaLinked] = await Promise.all([
+        User.create({
+          username: 'mostusersunion_linked_home',
+          email: 'mostusersunion_linked_home@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: alpha.id,
+          searchable: true
+        }),
+        User.create({
+          username: 'mostusersunion_home_only',
+          email: 'mostusersunion_home_only@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: alpha.id,
+          searchable: true
+        }),
+        User.create({
+          username: 'mostusersunion_hidden_home',
+          email: 'mostusersunion_hidden_home@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: alpha.id,
+          searchable: false
+        }),
+        User.create({
+          username: 'mostusersunion_beta_linked',
+          email: 'mostusersunion_beta_linked@test.com',
+          password: 'password123',
+          role: 'viewer',
+          searchable: true
+        })
+      ]);
+
+      await Promise.all([
+        LocationLink.create({ location_id: alpha.id, entity_type: 'user', entity_id: linkedAndHome.id }),
+        LocationLink.create({ location_id: beta.id, entity_type: 'user', entity_id: betaLinked.id })
+      ]);
+
+      const response = await request(app)
+        .get('/api/locations')
+        .query({ sort: 'mostUsers', type: 'international', limit: 2 })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.locations).toHaveLength(2);
+      expect(response.body.locations.map((location) => location.name)).toEqual([
+        'MostUsersUnion Alpha',
+        'MostUsersUnion Beta'
+      ]);
+      expect(response.body.locations.map((location) => location.userCount)).toEqual([2, 1]);
+    });
   });
 
   describe('POST /api/locations', () => {
