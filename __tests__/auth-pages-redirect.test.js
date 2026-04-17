@@ -94,7 +94,8 @@ const buildAuthState = (overrides = {}) => ({
   ...overrides
 });
 
-const flushPromises = async () => {
+const flushMicrotaskQueue = async () => {
+  // Some page effects enqueue additional microtasks, so we flush twice.
   await Promise.resolve();
   await Promise.resolve();
 };
@@ -108,7 +109,7 @@ const renderPage = async (Component) => {
     root.render(React.createElement(Component));
   });
   await act(async () => {
-    await flushPromises();
+    await flushMicrotaskQueue();
   });
 
   return { container, root };
