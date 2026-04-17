@@ -147,6 +147,17 @@ describe('Hero Settings API Tests', () => {
       expect(created.linkUrl).toBe('/polls');
     });
 
+    it('should reject protocol-relative linkUrl when creating a slide', async () => {
+      const res = await request(app)
+        .post('/api/hero-settings/slides')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ title: 'Slide Invalid Relative', subtitle: 'Subtitle', linkUrl: '//evil.com' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('linkUrl must be a valid http or https URL.');
+    });
+
     it('should create slide A', async () => {
       const res = await request(app)
         .post('/api/hero-settings/slides')
@@ -199,6 +210,17 @@ describe('Hero Settings API Tests', () => {
       const updated = res.body.data.find((s) => s.id === slideAId);
       expect(updated).toBeDefined();
       expect(updated.linkUrl).toBe('/news');
+    });
+
+    it('should reject protocol-relative linkUrl when updating a slide', async () => {
+      const res = await request(app)
+        .put(`/api/hero-settings/slides/${slideAId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ linkUrl: '//evil.com' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('linkUrl must be a valid http or https URL.');
     });
   });
 
