@@ -535,10 +535,10 @@ function HeroSettingsContent() {
                         <div>
                           <label className="block text-xs font-medium text-gray-600 mb-1">URL Link (προαιρετικό)</label>
                           <input
-                            type="url"
+                            type="text"
                             value={editForm.linkUrl}
                             onChange={(e) => setEditForm((f) => ({ ...f, linkUrl: e.target.value }))}
-                            placeholder="https://example.com"
+                            placeholder="https://example.com ή /polls"
                             className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                           />
                         </div>
@@ -605,10 +605,10 @@ function HeroSettingsContent() {
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">URL Link (προαιρετικό)</label>
                 <input
-                  type="url"
+                  type="text"
                   value={newSlideForm.linkUrl}
                   onChange={(e) => setNewSlideForm((f) => ({ ...f, linkUrl: e.target.value }))}
-                  placeholder="https://example.com"
+                  placeholder="https://example.com ή /polls"
                   className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
               </div>

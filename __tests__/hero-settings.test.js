@@ -133,6 +133,20 @@ describe('Hero Settings API Tests', () => {
       expect(res.status).toBe(400);
     });
 
+    it('should accept relative linkUrl when creating a slide', async () => {
+      const res = await request(app)
+        .post('/api/hero-settings/slides')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ title: 'Slide Relative', subtitle: 'Subtitle Relative', linkUrl: '/polls', linkText: 'Δες Ψηφοφορίες' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      const created = res.body.data.find((s) => s.title === 'Slide Relative');
+      expect(created).toBeDefined();
+      expect(created.linkUrl).toBe('/polls');
+    });
+
     it('should create slide A', async () => {
       const res = await request(app)
         .post('/api/hero-settings/slides')
@@ -167,6 +181,24 @@ describe('Hero Settings API Tests', () => {
       expect(res.status).toBe(201);
       const created = res.body.data.find((s) => s.title === 'Slide C');
       slideCId = created.id;
+    });
+  });
+
+  // ─── PUT /api/hero-settings/slides/:id ───────────────────────────────────────
+
+  describe('PUT /api/hero-settings/slides/:id', () => {
+    it('should accept relative linkUrl when updating a slide', async () => {
+      const res = await request(app)
+        .put(`/api/hero-settings/slides/${slideAId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ linkUrl: '/news', linkText: 'Νέα' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const updated = res.body.data.find((s) => s.id === slideAId);
+      expect(updated).toBeDefined();
+      expect(updated.linkUrl).toBe('/news');
     });
   });
 
