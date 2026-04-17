@@ -244,7 +244,7 @@ describe('apiRequest CSRF retry logic', () => {
       headers: jsonHeaders,
       text: () => Promise.resolve(JSON.stringify({ success: false, message: 'No token provided. Authentication required.' })),
     };
-    global.window = { dispatchEvent: jest.fn() };
+    global.window = { location: { pathname: '/profile' }, dispatchEvent: jest.fn() };
     global.CustomEvent = class CustomEvent {
       constructor(type) {
         this.type = type;
@@ -258,4 +258,31 @@ describe('apiRequest CSRF retry logic', () => {
     await expect(apiRequest('/api/articles/1', { method: 'PUT', body: '{}' })).rejects.toThrow('No token provided. Authentication required.');
     expect(global.window.dispatchEvent).toHaveBeenCalledWith(expect.objectContaining({ type: 'auth:session-expired' }));
   });
+
+  test.each(['/login', '/register'])(
+    'does not refresh CSRF or dispatch session-expired on auth page %s',
+    async (pathname) => {
+      const authFailResponse = {
+        ok: false,
+        status: 401,
+        headers: jsonHeaders,
+        text: () => Promise.resolve(JSON.stringify({ success: false, message: 'No token provided. Authentication required.' })),
+      };
+      global.window = {
+        location: { pathname },
+        dispatchEvent: jest.fn(),
+      };
+      global.CustomEvent = class CustomEvent {
+        constructor(type) {
+          this.type = type;
+        }
+      };
+
+      global.fetch = jest.fn().mockResolvedValueOnce(authFailResponse);
+
+      await expect(apiRequest('/api/auth/profile')).rejects.toThrow('No token provided. Authentication required.');
+      expect(global.fetch).toHaveBeenCalledTimes(1);
+      expect(global.window.dispatchEvent).not.toHaveBeenCalled();
+    }
+  );
 });
