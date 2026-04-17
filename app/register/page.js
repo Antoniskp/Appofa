@@ -34,10 +34,6 @@ export default function RegisterPage() {
     }
   }, [user, authLoading, router]);
 
-  if (authLoading) {
-    return null;
-  }
-
   const handleChange = (e) => {
     setFormData({
       ...formData,
