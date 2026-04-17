@@ -11,7 +11,7 @@ const {
   normalizeInteger,
   normalizeStringArray
 } = require('../utils/validators');
-const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 
 // ---------------------------------------------------------------------------
@@ -79,6 +79,24 @@ const sanitizePoll = (poll, user) => {
     return { ...data, creator: null };
   }
   return data;
+};
+
+/**
+ * Returns the poll locationIds that `user` may access for locals_only polls.
+ *   - 'all'  → admin user, bypass all location checks
+ *   - null   → unauthenticated, no access to locals_only
+ *   - []     → authenticated but no homeLocationId, no access to locals_only
+ *   - number[] → ancestor location IDs (incl. self) of the user's homeLocationId
+ * @param {object|null} user
+ * @returns {Promise<'all'|null|number[]>}
+ */
+const getLocalsOnlyLocationIds = async (user) => {
+  if (!user) return null;
+  if (user.role === 'admin') return 'all';
+  const userRecord = await User.findByPk(user.id, { attributes: ['homeLocationId'] });
+  const homeLocationId = userRecord?.homeLocationId;
+  if (!homeLocationId) return [];
+  return getAncestorLocationIds(homeLocationId, true);
 };
 
 // ---------------------------------------------------------------------------
@@ -414,6 +432,10 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
 
     const normalizedTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
     const normalizedSearch = typeof search === 'string' ? search.trim() : '';
+    let localsOnlyIds = undefined;
+    if (user) {
+      localsOnlyIds = await getLocalsOnlyLocationIds(user);
+    }
 
     // Build where clause
     const where = {};
@@ -464,11 +486,49 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       if (visibilityResult.error) {
         return { success: false, status: 400, message: visibilityResult.error };
       }
-      where.visibility = visibilityResult.value;
+      const v = visibilityResult.value;
+
+      if (!user && v !== 'public') {
+        return { success: false, status: 403, message: 'Access denied.' };
+      }
+
+      if (v === 'locals_only' && localsOnlyIds !== 'all') {
+        if (!localsOnlyIds || localsOnlyIds.length === 0) {
+          return {
+            success: true,
+            data: {
+              polls: [],
+              pagination: {
+                currentPage: 1,
+                totalPages: 0,
+                totalItems: 0,
+                itemsPerPage: parseInt(limit, 10) || 10
+              }
+            }
+          };
+        }
+        where.visibility = 'locals_only';
+        where.locationId = { [Op.in]: localsOnlyIds };
+      } else {
+        where.visibility = v;
+      }
     } else {
-      // Show only public polls for unauthenticated users
       if (!user) {
         where.visibility = 'public';
+      } else if (localsOnlyIds === 'all') {
+        // admin - no visibility restriction
+      } else if (!localsOnlyIds || localsOnlyIds.length === 0) {
+        where.visibility = { [Op.in]: ['public', 'private'] };
+      } else {
+        where[Op.and] = [
+          ...(where[Op.and] || []),
+          {
+            [Op.or]: [
+              { visibility: { [Op.in]: ['public', 'private'] } },
+              { visibility: 'locals_only', locationId: { [Op.in]: localsOnlyIds } }
+            ]
+          }
+        ];
       }
     }
 
@@ -699,12 +759,27 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
       return { success: false, status: 403, message: 'Access denied. This poll is private.' };
     }
 
-    if (poll.visibility === 'locals_only' && !user) {
-      return {
-        success: false,
-        status: 403,
-        message: 'Access denied. Authentication required for local polls.'
-      };
+    if (poll.visibility === 'locals_only') {
+      if (!user) {
+        return {
+          success: false,
+          status: 403,
+          message: 'Access denied. Authentication required for local polls.'
+        };
+      }
+      if (user.role !== 'admin') {
+        const localsOnlyIds = await getLocalsOnlyLocationIds(user);
+        if (
+          localsOnlyIds !== 'all'
+          && (!poll.locationId || !localsOnlyIds.includes(poll.locationId))
+        ) {
+          return {
+            success: false,
+            status: 403,
+            message: 'Access denied. This poll is restricted to local members.'
+          };
+        }
+      }
     }
 
     // Add vote statistics
@@ -1105,18 +1180,17 @@ const deletePoll = async (pollId, userId, userRole) => {
  * @param {number|string} pollId
  * @param {number|string} optionId
  * @param {number|null} userId - null for unauthenticated votes
+ * @param {string|null} userRole
  * @param {string} clientIp
  * @param {string} userAgent
  * @returns {Promise<{success: boolean, status?: number, message?: string, data?: object, error?: string}>}
  */
-const votePoll = async (pollId, optionId, userId, clientIp, userAgent) => {
-  const transaction = await sequelize.transaction();
-
+const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent) => {
+  let transaction;
   try {
     // Validate optionId
     const optionIdResult = normalizeInteger(optionId, 'Option ID', 1);
     if (optionIdResult.error) {
-      await transaction.rollback();
       return { success: false, status: 400, message: optionIdResult.error };
     }
 
@@ -1130,32 +1204,27 @@ const votePoll = async (pollId, optionId, userId, clientIp, userAgent) => {
     });
 
     if (!poll) {
-      await transaction.rollback();
       return { success: false, status: 404, message: 'Poll not found.' };
     }
 
     // Check if poll is active
     if (poll.status !== 'active') {
-      await transaction.rollback();
       return { success: false, status: 400, message: 'This poll is not active.' };
     }
 
     // Check if poll has expired
     if (poll.deadline && new Date(poll.deadline) < new Date()) {
-      await transaction.rollback();
       return { success: false, status: 400, message: 'This poll has expired.' };
     }
 
     // Verify option belongs to this poll
     const option = poll.options.find(opt => opt.id === optionIdResult.value);
     if (!option) {
-      await transaction.rollback();
       return { success: false, status: 400, message: 'Invalid option for this poll.' };
     }
 
     // Check if unauthenticated votes are allowed
     if (!userId && !poll.allowUnauthenticatedVotes) {
-      await transaction.rollback();
       return {
         success: false,
         status: 401,
@@ -1163,6 +1232,36 @@ const votePoll = async (pollId, optionId, userId, clientIp, userAgent) => {
       };
     }
 
+    if (poll.visibility === 'locals_only' && poll.locationId) {
+      if (!userId) {
+        return {
+          success: false,
+          status: 403,
+          message: 'Access denied. This poll is for local members only.'
+        };
+      }
+      if (userRole !== 'admin') {
+        const userRecord = await User.findByPk(userId, { attributes: ['homeLocationId'] });
+        const homeLocationId = userRecord?.homeLocationId;
+        if (!homeLocationId) {
+          return {
+            success: false,
+            status: 403,
+            message: 'Access denied. You must have a home location to vote on local polls.'
+          };
+        }
+        const ancestorIds = await getAncestorLocationIds(homeLocationId, true);
+        if (!ancestorIds.includes(poll.locationId)) {
+          return {
+            success: false,
+            status: 403,
+            message: 'Access denied. This poll is restricted to local members.'
+          };
+        }
+      }
+    }
+
+    transaction = await sequelize.transaction();
     let vote;
     const isAuthenticated = !!userId;
 
@@ -1247,7 +1346,9 @@ const votePoll = async (pollId, optionId, userId, clientIp, userAgent) => {
       }
     };
   } catch (error) {
-    await transaction.rollback();
+    if (transaction && !transaction.finished) {
+      await transaction.rollback();
+    }
     console.error('Error voting on poll:', error);
     return {
       success: false,
@@ -1382,6 +1483,32 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
 
     if (!poll) {
       return { success: false, status: 404, message: 'Poll not found.' };
+    }
+
+    if (poll.visibility === 'private' && !user) {
+      return { success: false, status: 403, message: 'Access denied. This poll is private.' };
+    }
+    if (poll.visibility === 'locals_only') {
+      if (!user) {
+        return {
+          success: false,
+          status: 403,
+          message: 'Access denied. Authentication required for local polls.'
+        };
+      }
+      if (user.role !== 'admin') {
+        const localsOnlyIds = await getLocalsOnlyLocationIds(user);
+        if (
+          localsOnlyIds !== 'all'
+          && (!poll.locationId || !localsOnlyIds.includes(poll.locationId))
+        ) {
+          return {
+            success: false,
+            status: 403,
+            message: 'Access denied. This poll is restricted to local members.'
+          };
+        }
+      }
     }
 
     // Check results visibility rules

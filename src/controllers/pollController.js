@@ -120,10 +120,12 @@ const pollController = {
   // Vote on a poll
   votePoll: async (req, res) => {
     const userId = req.user ? req.user.id : null;
+    const userRole = req.user ? req.user.role : null;
     const result = await pollService.votePoll(
       req.params.id,
       req.body.optionId,
       userId,
+      userRole,
       getClientIp(req),
       getUserAgent(req)
     );
