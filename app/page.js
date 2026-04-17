@@ -131,12 +131,10 @@ export default function HomePage() {
 
     const fetchLocationDiscovery = async () => {
       try {
-        const types = ['country', 'prefecture', 'municipality', 'international'];
-        const results = await Promise.all(
-          types.map((type) => locationAPI.getAll({ sort: 'mostUsers', limit: 3, type }))
-        );
-        const mergedLocations = results.flatMap((response) => (response.success ? response.locations || [] : []));
-        setLocationDiscovery(mergedLocations);
+        const response = await locationAPI.getAll({ sort: 'mostUsers', limit: 6 });
+        if (response.success) {
+          setLocationDiscovery(response.locations || []);
+        }
       } catch {
         // non-critical — fail silently
       } finally {
@@ -238,7 +236,7 @@ export default function HomePage() {
           items={locationDiscovery}
           emptyTitle=""
           emptyDescription=""
-          skeletonCount={12}
+          skeletonCount={6}
           bgColor="bg-gray-50"
           renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
         />

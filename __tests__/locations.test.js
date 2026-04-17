@@ -163,6 +163,67 @@ describe('Location API Tests', () => {
       ]);
       expect(response.body.locations.map((location) => location.userCount)).toEqual([2, 1]);
     });
+
+    it('should aggregate descendant real users for parents and exclude unclaimed profiles', async () => {
+      const country = await Location.create({ name: 'MostUsers Tree Country', slug: 'mostusers-tree-country', type: 'country' });
+      const prefecture = await Location.create({ name: 'MostUsers Tree Prefecture', slug: 'mostusers-tree-prefecture', type: 'prefecture', parent_id: country.id });
+      const municipality = await Location.create({ name: 'MostUsers Tree Municipality', slug: 'mostusers-tree-municipality', type: 'municipality', parent_id: prefecture.id });
+
+      const [linkedReal, linkedUnclaimed, homeReal, homeUnclaimed] = await Promise.all([
+        User.create({
+          username: 'mostusers_tree_linked_real',
+          email: 'mostusers_tree_linked_real@test.com',
+          password: 'password123',
+          role: 'viewer'
+        }),
+        User.create({
+          username: 'mostusers_tree_linked_unclaimed',
+          email: 'mostusers_tree_linked_unclaimed@placeholder.appofasi.gr',
+          password: 'password123',
+          role: 'viewer',
+          claimStatus: 'unclaimed'
+        }),
+        User.create({
+          username: 'mostusers_tree_home_real',
+          email: 'mostusers_tree_home_real@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: municipality.id,
+          searchable: true
+        }),
+        User.create({
+          username: 'mostusers_tree_home_unclaimed',
+          email: 'mostusers_tree_home_unclaimed@placeholder.appofasi.gr',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: municipality.id,
+          searchable: true,
+          claimStatus: 'unclaimed'
+        })
+      ]);
+
+      await Promise.all([
+        LocationLink.create({ location_id: municipality.id, entity_type: 'user', entity_id: linkedReal.id }),
+        LocationLink.create({ location_id: municipality.id, entity_type: 'user', entity_id: linkedUnclaimed.id })
+      ]);
+
+      const response = await request(app)
+        .get('/api/locations')
+        .query({ sort: 'mostUsers', limit: 200 })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const treeLocations = response.body.locations.filter((location) =>
+        [country.id, prefecture.id, municipality.id].includes(location.id)
+      );
+      expect(treeLocations).toHaveLength(3);
+
+      const countsById = Object.fromEntries(treeLocations.map((location) => [location.id, location.userCount]));
+      expect(countsById[country.id]).toBe(2);
+      expect(countsById[prefecture.id]).toBe(2);
+      expect(countsById[municipality.id]).toBe(2);
+      expect(treeLocations.find((location) => location.id === municipality.id)?.parent?.id).toBe(prefecture.id);
+    });
   });
 
   describe('POST /api/locations', () => {
@@ -280,6 +341,65 @@ describe('Location API Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.location.name).toBe('Greece');
+    });
+
+    it('should aggregate subtree real users in stats and exclude unclaimed profiles', async () => {
+      const parent = await Location.create({ name: 'Location Stats Parent', slug: 'location-stats-parent', type: 'country' });
+      const child = await Location.create({ name: 'Location Stats Child', slug: 'location-stats-child', type: 'municipality', parent_id: parent.id });
+
+      const [linkedHomeReal, linkedOnlyReal, homeOnlyReal, linkedUnclaimed, homeUnclaimed] = await Promise.all([
+        User.create({
+          username: 'locstats_linked_home_real',
+          email: 'locstats_linked_home_real@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: child.id,
+          searchable: true
+        }),
+        User.create({
+          username: 'locstats_linked_only_real',
+          email: 'locstats_linked_only_real@test.com',
+          password: 'password123',
+          role: 'viewer'
+        }),
+        User.create({
+          username: 'locstats_home_only_real',
+          email: 'locstats_home_only_real@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: child.id,
+          searchable: true
+        }),
+        User.create({
+          username: 'locstats_linked_unclaimed',
+          email: 'locstats_linked_unclaimed@placeholder.appofasi.gr',
+          password: 'password123',
+          role: 'viewer',
+          claimStatus: 'unclaimed'
+        }),
+        User.create({
+          username: 'locstats_home_unclaimed',
+          email: 'locstats_home_unclaimed@placeholder.appofasi.gr',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: child.id,
+          searchable: true,
+          claimStatus: 'unclaimed'
+        })
+      ]);
+
+      await Promise.all([
+        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedHomeReal.id }),
+        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedOnlyReal.id }),
+        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedUnclaimed.id })
+      ]);
+
+      const response = await request(app)
+        .get(`/api/locations/${parent.id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.stats.userCount).toBe(3);
     });
   });
 
