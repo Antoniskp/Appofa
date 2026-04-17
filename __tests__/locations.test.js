@@ -169,7 +169,7 @@ describe('Location API Tests', () => {
       const prefecture = await Location.create({ name: 'MostUsers Tree Prefecture', slug: 'mostusers-tree-prefecture', type: 'prefecture', parent_id: country.id });
       const municipality = await Location.create({ name: 'MostUsers Tree Municipality', slug: 'mostusers-tree-municipality', type: 'municipality', parent_id: prefecture.id });
 
-      const [linkedReal, linkedUnclaimed, homeReal, homeUnclaimed] = await Promise.all([
+      const [linkedRealUser, linkedUnclaimedUser, homeRealUser, homeUnclaimedUser] = await Promise.all([
         User.create({
           username: 'mostusers_tree_linked_real',
           email: 'mostusers_tree_linked_real@test.com',
@@ -203,8 +203,8 @@ describe('Location API Tests', () => {
       ]);
 
       await Promise.all([
-        LocationLink.create({ location_id: municipality.id, entity_type: 'user', entity_id: linkedReal.id }),
-        LocationLink.create({ location_id: municipality.id, entity_type: 'user', entity_id: linkedUnclaimed.id })
+        LocationLink.create({ location_id: municipality.id, entity_type: 'user', entity_id: linkedRealUser.id }),
+        LocationLink.create({ location_id: municipality.id, entity_type: 'user', entity_id: linkedUnclaimedUser.id })
       ]);
 
       const response = await request(app)
@@ -347,7 +347,7 @@ describe('Location API Tests', () => {
       const parent = await Location.create({ name: 'Location Stats Parent', slug: 'location-stats-parent', type: 'country' });
       const child = await Location.create({ name: 'Location Stats Child', slug: 'location-stats-child', type: 'municipality', parent_id: parent.id });
 
-      const [linkedHomeReal, linkedOnlyReal, homeOnlyReal, linkedUnclaimed, homeUnclaimed] = await Promise.all([
+      const [linkedHomeRealUser, linkedOnlyRealUser, homeOnlyRealUser, linkedUnclaimedUser, homeUnclaimedUser] = await Promise.all([
         User.create({
           username: 'locstats_linked_home_real',
           email: 'locstats_linked_home_real@test.com',
@@ -389,9 +389,9 @@ describe('Location API Tests', () => {
       ]);
 
       await Promise.all([
-        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedHomeReal.id }),
-        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedOnlyReal.id }),
-        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedUnclaimed.id })
+        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedHomeRealUser.id }),
+        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedOnlyRealUser.id }),
+        LocationLink.create({ location_id: child.id, entity_type: 'user', entity_id: linkedUnclaimedUser.id })
       ]);
 
       const response = await request(app)

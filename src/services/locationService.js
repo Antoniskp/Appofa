@@ -130,6 +130,7 @@ const createLocation = async (locationData) => {
 const getLocations = async (queryParams) => {
   try {
     const { type, parent_id, search, limit = 100, offset = 0, sort } = queryParams;
+    const escapedSearch = search ? search.replace(/[\\%_]/g, '\\$&') : null;
 
     const whereClause = {};
 
@@ -143,8 +144,8 @@ const getLocations = async (queryParams) => {
 
     if (search) {
       whereClause[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { name_local: { [Op.iLike]: `%${search}%` } }
+        { name: { [Op.iLike]: `%${escapedSearch}%` } },
+        { name_local: { [Op.iLike]: `%${escapedSearch}%` } }
       ];
     }
 
@@ -171,8 +172,8 @@ const getLocations = async (queryParams) => {
       }
 
       if (search) {
-        whereConditions.push('(LOWER(l."name") LIKE :search OR LOWER(COALESCE(l."name_local", \'\')) LIKE :search)');
-        replacements.search = `%${search.toLowerCase()}%`;
+        whereConditions.push('(LOWER(l."name") LIKE :search ESCAPE \'\\\\\' OR LOWER(COALESCE(l."name_local", \'\')) LIKE :search ESCAPE \'\\\\\')');
+        replacements.search = `%${escapedSearch.toLowerCase()}%`;
       }
 
       const whereSql = whereConditions.length > 0 ? ` AND ${whereConditions.join(' AND ')}` : '';
