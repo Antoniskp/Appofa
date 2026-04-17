@@ -61,10 +61,6 @@ function LoginForm() {
     }
   }, [user, authLoading, router]);
 
-  if (authLoading) {
-    return null;
-  }
-
   const handleChange = (e) => {
     setFormData({
       ...formData,

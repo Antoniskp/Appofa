@@ -125,13 +125,13 @@ describe('Auth pages redirect behavior', () => {
     document.body.innerHTML = '';
   });
 
-  test('login page does not render form while auth is loading', async () => {
+  test('login page renders form but does not redirect while auth is loading', async () => {
     useAuth.mockReturnValue(buildAuthState({ loading: true }));
     const LoginPage = require('../app/login/page').default;
 
     const { container, root } = await renderPage(LoginPage);
 
-    expect(container.textContent).toBe('');
+    expect(container.textContent).toContain('Σύνδεση στον λογαριασμό σας');
     expect(mockRouter.push).not.toHaveBeenCalled();
 
     await act(async () => {
@@ -153,13 +153,13 @@ describe('Auth pages redirect behavior', () => {
     });
   });
 
-  test('register page does not render form while auth is loading', async () => {
+  test('register page renders form but does not redirect while auth is loading', async () => {
     useAuth.mockReturnValue(buildAuthState({ loading: true }));
     const RegisterPage = require('../app/register/page').default;
 
     const { container, root } = await renderPage(RegisterPage);
 
-    expect(container.textContent).toBe('');
+    expect(container.textContent).toContain('Δημιουργία λογαριασμού');
     expect(mockRouter.push).not.toHaveBeenCalled();
 
     await act(async () => {
