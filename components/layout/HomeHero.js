@@ -183,7 +183,7 @@ export default function HomeHero() {
       if (typeof window !== 'undefined' && parsed.origin === window.location.origin) {
         normalizedLinkUrl = parsed.pathname + parsed.search + parsed.hash;
       }
-    } catch (_) {
+    } catch {
       // malformed URL — leave as-is
     }
   }
