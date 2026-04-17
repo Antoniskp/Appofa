@@ -16,7 +16,7 @@ import { getAndClearReturnTo } from '@/lib/auth-redirect';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { login, user } = useAuth();
+  const { login, user, loading: authLoading } = useAuth();
   const { success, error } = useToast();
   const [formData, setFormData] = useState({
     email: '',
@@ -55,9 +55,13 @@ function LoginForm() {
     }
   }, [searchParams, router, success, error]);
 
-  // Redirect if already logged in
-  if (user) {
-    router.push(getAndClearReturnTo());
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push(getAndClearReturnTo());
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading) {
     return null;
   }
 
