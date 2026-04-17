@@ -14,7 +14,7 @@ import Button from '@/components/ui/Button';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register, user } = useAuth();
+  const { register, user, loading: authLoading } = useAuth();
   const { success, error } = useToast();
   const [formData, setFormData] = useState({
     username: '',
@@ -28,9 +28,13 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const { config: oauthConfig } = useOAuthConfig();
 
-  // Redirect if already logged in
-  if (user) {
-    router.push('/');
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/');
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading) {
     return null;
   }
 
