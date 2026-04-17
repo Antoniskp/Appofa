@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { BellIcon } from '@heroicons/react/24/outline';
 import { notificationAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 // Simple relative time helper (Greek locale)
 function relativeTime(dateString) {
@@ -36,6 +37,7 @@ function typeIcon(type) {
 }
 
 export default function NotificationBell() {
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -55,6 +57,7 @@ export default function NotificationBell() {
 
   // Poll unread count every 30s and on window focus
   useEffect(() => {
+    if (!user) return;
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 30000);
     window.addEventListener('focus', fetchUnreadCount);
@@ -62,7 +65,7 @@ export default function NotificationBell() {
       clearInterval(interval);
       window.removeEventListener('focus', fetchUnreadCount);
     };
-  }, [fetchUnreadCount]);
+  }, [fetchUnreadCount, user]);
 
   // Load notifications when dropdown opens
   useEffect(() => {
