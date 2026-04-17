@@ -1186,7 +1186,7 @@ const deletePoll = async (pollId, userId, userRole) => {
  * @returns {Promise<{success: boolean, status?: number, message?: string, data?: object, error?: string}>}
  */
 const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent) => {
-  let transaction;
+  let transaction = null;
   try {
     // Validate optionId
     const optionIdResult = normalizeInteger(optionId, 'Option ID', 1);

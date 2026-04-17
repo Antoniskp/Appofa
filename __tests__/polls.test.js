@@ -721,7 +721,6 @@ describe('Poll API Tests', () => {
           type: 'simple',
           visibility: 'locals_only',
           resultsVisibility: 'always',
-          allowUnauthenticatedVotes: true,
           locationId: localRoot.id,
           options: [
             { text: 'Option 1' },
