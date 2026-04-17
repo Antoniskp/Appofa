@@ -56,8 +56,7 @@ module.exports = {
           });
         } catch (error) {
           const isDuplicateIndex = error.name === 'SequelizeDatabaseError'
-            && (error.original?.code === '42P07'
-              || error.message?.includes('already exists')
+            && (error.message?.includes('already exists')
               || error.message?.includes('UNIQUE'));
           if (!isDuplicateIndex) throw error;
         }

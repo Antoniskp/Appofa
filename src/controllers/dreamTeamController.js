@@ -28,7 +28,6 @@ const NATIONAL_POSITION_SLUGS = new Set(['proedros-dimokratias', 'prothypoyrgos'
 async function generateShareSlug() {
   for (let attempt = 0; attempt < 5; attempt++) {
     const candidate = crypto.randomBytes(8).toString('hex');
-     
     const existing = await Formation.findOne({ where: { shareSlug: candidate }, attributes: ['id'] });
     if (!existing) return candidate;
   }
