@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
+import { LockClosedIcon } from '@heroicons/react/24/outline';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
 import PersonSearch from './PersonSearch';
@@ -155,24 +156,43 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
           </p>
 
           <div className="relative">
-            <PersonSearch
-              onSelect={handleSelectPerson}
-              showTopSuggestions={true}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Αναζητήστε πρόσωπο..."
-            />
-            {searchQuery && (
-              <button
-                onClick={() => {
-                  setSelectedPerson(null);
-                  setSearchQuery('');
-                }}
-                className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors z-10"
-                aria-label="Καθαρισμός αναζήτησης"
-              >
-                ✕
-              </button>
+            {onVote ? (
+              <>
+                <PersonSearch
+                  onSelect={handleSelectPerson}
+                  showTopSuggestions={true}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Αναζητήστε πρόσωπο..."
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => {
+                      setSelectedPerson(null);
+                      setSearchQuery('');
+                    }}
+                    className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors z-10"
+                    aria-label="Καθαρισμός αναζήτησης"
+                  >
+                    ✕
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <span id={`locked-vote-hint-${position.id}`} className="sr-only">
+                  Η αναζήτηση είναι κλειδωμένη. Συνδεθείτε για να ψηφίσετε.
+                </span>
+                <LockClosedIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  disabled
+                  placeholder="Συνδεθείτε για να ψηφίσετε"
+                  aria-describedby={`locked-vote-hint-${position.id}`}
+                  aria-label="Κλειδωμένη αναζήτηση. Συνδεθείτε για να ψηφίσετε"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 pl-10 text-sm bg-gray-100 text-gray-500 cursor-not-allowed"
+                />
+              </>
             )}
           </div>
         </div>
@@ -258,26 +278,28 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
         </div>
 
         {/* Vote Button */}
-        <button
-          onClick={handleVoteClick}
-          disabled={!onVote || !selectedPerson || !isVoteChanged || loading}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          aria-label={`Ψηφίστε για ${position.title}`}
-        >
-          {loading ? (
-            <>
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Καταχώρηση...
-            </>
-          ) : myVote && !isVoteChanged ? (
-            <>
-              <CheckCircleSolid className="h-4 w-4" />
-              Έχετε ψηφίσει
-            </>
-          ) : (
-            'Ψηφίστε'
-          )}
-        </button>
+        {onVote && (
+          <button
+            onClick={handleVoteClick}
+            disabled={!onVote || !selectedPerson || !isVoteChanged || loading}
+            className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            aria-label={`Ψηφίστε για ${position.title}`}
+          >
+            {loading ? (
+              <>
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Καταχώρηση...
+              </>
+            ) : myVote && !isVoteChanged ? (
+              <>
+                <CheckCircleSolid className="h-4 w-4" />
+                Έχετε ψηφίσει
+              </>
+            ) : (
+              'Ψηφίστε'
+            )}
+          </button>
+        )}
 
         {myVote && !isVoteChanged && (
           <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg border border-green-200">

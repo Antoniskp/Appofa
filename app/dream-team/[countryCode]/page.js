@@ -16,6 +16,7 @@ import Leaderboard from '@/components/dream-team/Leaderboard';
 import ActivityFeed from '@/components/dream-team/ActivityFeed';
 import FormationComparison from '@/components/dream-team/FormationComparison';
 import EmptyState from '@/components/ui/EmptyState';
+import LoginLink from '@/components/ui/LoginLink';
 import Link from 'next/link';
 
 /** Display metadata for known ISO country codes — used for flag/name enrichment only. */
@@ -378,8 +379,26 @@ function DreamTeamCountryPageInner() {
         {!error && activeTab === 'vote' && (
           <>
             {!user && (
-              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm">
-                💡 <strong>Συνδεθείτε</strong> για να καταγράψετε τις ψήφους σας και να συμβάλετε στη διαμόρφωση της ιδανικής κυβέρνησης.
+              <div className="mb-6 p-6 bg-amber-50 border border-amber-200 rounded-2xl">
+                <p className="text-amber-900 font-semibold text-base mb-2">
+                  💡 Συνδεθείτε για να ψηφίσετε
+                </p>
+                <p className="text-amber-800 text-sm mb-4">
+                  Καταγράψτε τις ψήφους σας και συμβάλετε στη διαμόρφωση της ιδανικής κυβέρνησης.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <LoginLink
+                    className="inline-flex items-center justify-center px-4 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-lg hover:bg-amber-700 transition-colors"
+                  >
+                    Σύνδεση
+                  </LoginLink>
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center justify-center px-4 py-2.5 bg-white text-amber-800 text-sm font-semibold rounded-lg border border-amber-300 hover:bg-amber-100 transition-colors"
+                  >
+                    Εγγραφή
+                  </Link>
+                </div>
               </div>
             )}
             {user && (
