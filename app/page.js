@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI } from '@/lib/api';
+import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import ArticleCard from '@/components/articles/ArticleCard';
@@ -41,6 +41,8 @@ export default function HomePage() {
   const [manifestLoading, setManifestLoading] = useState(true);
   const [locationDiscovery, setLocationDiscovery] = useState([]);
   const [locationDiscoveryLoading, setLocationDiscoveryLoading] = useState(true);
+  const [topTags, setTopTags] = useState([]);
+  const [topTagsLoading, setTopTagsLoading] = useState(true);
 
   useEffect(() => {
     const fetchLatestArticles = async () => {
@@ -142,12 +144,30 @@ export default function HomePage() {
       }
     };
 
+    const fetchTopTags = async () => {
+      try {
+        const response = await tagAPI.getSuggestions();
+        const tags = Array.isArray(response?.tags) ? response.tags : [];
+        setTopTags(
+          tags
+            .slice(0, 5)
+            .map((tag) => tag?.name || tag)
+            .filter(Boolean)
+        );
+      } catch {
+        // non-critical — fail silently
+      } finally {
+        setTopTagsLoading(false);
+      }
+    };
+
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
     fetchLatestNews();
     fetchVideos();
     fetchLocationDiscovery();
+    fetchTopTags();
 
     // Fetch manifest supporters for homepage
     const fetchManifestSupporters = async () => {
@@ -182,6 +202,31 @@ export default function HomePage() {
   return (
     <div className="bg-gray-50">
       <HomeHero />
+
+      {!topTagsLoading && topTags.length > 0 && (
+        <section className="bg-white">
+          <div className="app-container py-10">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">🏷️ Δημοφιλείς Ετικέτες</h2>
+              <Link href="/articles" className="btn-primary text-sm">
+                Δείτε όλα
+              </Link>
+            </div>
+            <p className="text-sm text-gray-500 mb-4">Τα πιο χρησιμοποιούμενα tags</p>
+            <div className="flex flex-wrap gap-2">
+              {topTags.map((tag) => (
+                <Link
+                  key={tag}
+                  href={`/articles?tag=${encodeURIComponent(tag)}`}
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+                >
+                  {tag}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <HomepageSection
         title="Τελευταία Άρθρα"
