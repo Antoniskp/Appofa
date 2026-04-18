@@ -138,6 +138,9 @@ jest.mock('@/lib/api', () => ({
         }
       }
     }))
+  },
+  tagAPI: {
+    getSuggestions: jest.fn(() => Promise.resolve({ success: true, tags: [] }))
   }
 }));
 

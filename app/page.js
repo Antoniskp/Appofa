@@ -41,8 +41,9 @@ export default function HomePage() {
   const [manifestLoading, setManifestLoading] = useState(true);
   const [locationDiscovery, setLocationDiscovery] = useState([]);
   const [locationDiscoveryLoading, setLocationDiscoveryLoading] = useState(true);
-  const [topTags, setTopTags] = useState([]);
-  const [topTagsLoading, setTopTagsLoading] = useState(true);
+  const [articleTags, setArticleTags] = useState([]);
+  const [suggestionTags, setSuggestionTags] = useState([]);
+  const [pollTags, setPollTags] = useState([]);
 
   useEffect(() => {
     const fetchLatestArticles = async () => {
@@ -144,11 +145,11 @@ export default function HomePage() {
       }
     };
 
-    const fetchTopTags = async () => {
+    const fetchTagsForType = async (entityType, setter) => {
       try {
-        const response = await tagAPI.getSuggestions();
+        const response = await tagAPI.getSuggestions({ entityType });
         const tags = Array.isArray(response?.tags) ? response.tags : [];
-        setTopTags(
+        setter(
           tags
             .slice(0, 5)
             .map((tag) => tag?.name || tag)
@@ -156,8 +157,6 @@ export default function HomePage() {
         );
       } catch {
         // non-critical — fail silently
-      } finally {
-        setTopTagsLoading(false);
       }
     };
 
@@ -167,7 +166,9 @@ export default function HomePage() {
     fetchLatestNews();
     fetchVideos();
     fetchLocationDiscovery();
-    fetchTopTags();
+    fetchTagsForType('article', setArticleTags);
+    fetchTagsForType('suggestion', setSuggestionTags);
+    fetchTagsForType('poll', setPollTags);
 
     // Fetch manifest supporters for homepage
     const fetchManifestSupporters = async () => {
@@ -203,31 +204,6 @@ export default function HomePage() {
     <div className="bg-gray-50">
       <HomeHero />
 
-      {!topTagsLoading && topTags.length > 0 && (
-        <section className="bg-white">
-          <div className="app-container py-10">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">🏷️ Δημοφιλείς Ετικέτες</h2>
-              <Link href="/articles" className="btn-primary text-sm">
-                Δείτε όλα
-              </Link>
-            </div>
-            <p className="text-sm text-gray-500 mb-4">Τα πιο χρησιμοποιούμενα tags</p>
-            <div className="flex flex-wrap gap-2">
-              {topTags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/articles?tag=${encodeURIComponent(tag)}`}
-                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
-                >
-                  {tag}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
       <HomepageSection
         title="Τελευταία Άρθρα"
         subtitle="Αναλύσεις και απόψεις από την κοινότητα"
@@ -240,6 +216,7 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
+        topTags={articleTags}
       />
 
       <HomepageSection
@@ -254,6 +231,7 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-gray-50"
         renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
+        topTags={suggestionTags}
       />
 
       <HomepageSection
@@ -268,6 +246,7 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
+        topTags={pollTags}
       />
 
       {/* Featured Locations Section */}
@@ -421,6 +400,8 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-gray-50"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
+        topTags={articleTags}
+        tagLinkPrefix="/news"
       />
 
       <HomepageSection
@@ -435,6 +416,8 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
+        topTags={articleTags}
+        tagLinkPrefix="/videos"
       />
     </div>
   );

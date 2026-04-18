@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
+import TopTagPills from '@/components/ui/TopTagPills';
 
 export default function HomepageSection({
   title,
@@ -16,16 +17,21 @@ export default function HomepageSection({
   skeletonCount = 3,
   bgColor = 'bg-white',
   renderItem,
+  topTags = [],
+  tagLinkPrefix,
 }) {
   return (
     <section className={bgColor}>
       <div className="app-container py-16">
-        <h2 className="section-title flex items-center gap-4">
-          {title}
+        <div className="flex flex-wrap items-center gap-3 mb-1">
+          <h2 className="section-title !mb-0">{title}</h2>
           <Link href={linkHref} className="btn-primary text-sm">
             Δείτε όλα
           </Link>
-        </h2>
+          {topTags.length > 0 && (
+            <TopTagPills tags={topTags} linkPrefix={tagLinkPrefix || linkHref} />
+          )}
+        </div>
         {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

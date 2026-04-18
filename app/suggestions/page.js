@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
-import { suggestionAPI } from '@/lib/api';
+import { suggestionAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
@@ -12,6 +12,7 @@ import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
+import TopTagPills from '@/components/ui/TopTagPills';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import articleCategories from '@/config/articleCategories.json';
@@ -42,12 +43,19 @@ function SuggestionsContent() {
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
   const [filterBarOpen, setFilterBarOpen] = useState(false);
+  const [topTags, setTopTags] = useState([]);
 
   useEffect(() => {
     suggestionAPI.getCategoryCounts()
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
       .catch((err) => console.error('Failed to fetch suggestion category counts:', err))
       .finally(() => setCountsLoaded(true));
+    tagAPI.getSuggestions({ entityType: 'suggestion' })
+      .then((res) => {
+        const tags = Array.isArray(res?.tags) ? res.tags : [];
+        setTopTags(tags.slice(0, 5).map((t) => t?.name || t).filter(Boolean));
+      })
+      .catch(() => {});
   }, []);
 
   const { data: suggestions, loading, error } = useAsyncData(
@@ -146,6 +154,7 @@ function SuggestionsContent() {
             counts={categoryCounts}
             countsLoaded={countsLoaded}
           />
+          {topTags.length > 0 && <TopTagPills tags={topTags} linkPrefix="/suggestions" />}
         </div>
 
         {/* Content */}

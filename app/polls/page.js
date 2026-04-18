@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
-import { pollAPI } from '@/lib/api';
+import { pollAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import PollCard from '@/components/polls/PollCard';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -14,6 +14,7 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
+import TopTagPills from '@/components/ui/TopTagPills';
 import FilterBar from '@/components/ui/FilterBar';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import articleCategories from '@/config/articleCategories.json';
@@ -40,12 +41,19 @@ export default function PollsPage() {
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
   const [filterBarOpen, setFilterBarOpen] = useState(false);
+  const [topTags, setTopTags] = useState([]);
 
   useEffect(() => {
     pollAPI.getCategoryCounts({ status: 'active' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
       .catch((err) => console.error('Failed to fetch poll category counts:', err))
       .finally(() => setCountsLoaded(true));
+    tagAPI.getSuggestions({ entityType: 'poll' })
+      .then((res) => {
+        const tags = Array.isArray(res?.tags) ? res.tags : [];
+        setTopTags(tags.slice(0, 5).map((t) => t?.name || t).filter(Boolean));
+      })
+      .catch(() => {});
   }, []);
 
   const { data: polls, loading, error } = useAsyncData(
@@ -140,6 +148,7 @@ export default function PollsPage() {
             counts={categoryCounts}
             countsLoaded={countsLoaded}
           />
+          {topTags.length > 0 && <TopTagPills tags={topTags} linkPrefix="/polls" />}
         </div>
 
         {/* Loading State */}
