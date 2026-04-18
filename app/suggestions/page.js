@@ -12,7 +12,6 @@ import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
-import TopTagPills from '@/components/ui/TopTagPills';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useFilters } from '@/hooks/useFilters';
 import articleCategories from '@/config/articleCategories.json';
@@ -28,6 +27,7 @@ function SuggestionsContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const mine = searchParams.get('mine') === 'true';
+  const initialTag = searchParams.get('tag') || '';
   const {
     filters,
     page,
@@ -38,7 +38,7 @@ function SuggestionsContent() {
     prevPage,
     goToPage,
     updateFilter,
-  } = useFilters({ type: '', status: '', sort: 'newest', category: '', search: '', locationId: null });
+  } = useFilters({ type: '', status: '', sort: 'newest', category: '', tag: initialTag, search: '', locationId: null });
 
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
@@ -153,8 +153,10 @@ function SuggestionsContent() {
             onSelect={(cat) => updateFilter('category', cat)}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+            topTags={topTags}
+            selectedTag={filters.tag}
+            onTagSelect={(tag) => updateFilter('tag', tag)}
           />
-          {topTags.length > 0 && <TopTagPills tags={topTags} linkPrefix="/suggestions" />}
         </div>
 
         {/* Content */}

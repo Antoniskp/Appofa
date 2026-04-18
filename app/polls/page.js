@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
 import { pollAPI, tagAPI } from '@/lib/api';
@@ -14,13 +15,14 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
-import TopTagPills from '@/components/ui/TopTagPills';
 import FilterBar from '@/components/ui/FilterBar';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import articleCategories from '@/config/articleCategories.json';
 
-export default function PollsPage() {
+function PollsContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const initialTag = searchParams.get('tag') || '';
   const {
     filters,
     page,
@@ -34,6 +36,7 @@ export default function PollsPage() {
   } = useFilters({
     status: '',
     category: '',
+    tag: initialTag,
     search: '',
     locationId: null,
   });
@@ -147,8 +150,10 @@ export default function PollsPage() {
             onSelect={(cat) => updateFilter('category', cat)}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+            topTags={topTags}
+            selectedTag={filters.tag}
+            onTagSelect={(tag) => updateFilter('tag', tag)}
           />
-          {topTags.length > 0 && <TopTagPills tags={topTags} linkPrefix="/polls" />}
         </div>
 
         {/* Loading State */}
@@ -205,5 +210,17 @@ export default function PollsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PollsPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-gray-50 min-h-screen py-8 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    }>
+      <PollsContent />
+    </Suspense>
   );
 }

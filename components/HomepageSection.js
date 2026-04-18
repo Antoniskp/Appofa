@@ -25,7 +25,7 @@ export default function HomepageSection({
       <div className="app-container py-16">
         <div className="flex flex-wrap items-center gap-3 mb-1">
           <h2 className="section-title !mb-0">{title}</h2>
-          <Link href={linkHref} className="btn-primary text-sm">
+          <Link href={linkHref} className="px-4 py-1 rounded-full border border-blue-600 text-sm font-medium text-blue-600 hover:bg-blue-50 transition-colors">
             Δείτε όλα
           </Link>
           {topTags.length > 0 && (

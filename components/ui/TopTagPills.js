@@ -11,12 +11,12 @@ export default function TopTagPills({ tags = [], linkPrefix = '/articles' }) {
   if (!tags.length) return null;
 
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {tags.map((tag) => (
         <Link
           key={tag}
           href={`${linkPrefix}?tag=${encodeURIComponent(tag)}`}
-          className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors"
+          className="px-4 py-1 rounded-full border text-sm font-medium bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 transition-colors"
         >
           {tag}
         </Link>
