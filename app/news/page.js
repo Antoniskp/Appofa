@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
-import { articleAPI } from '@/lib/api';
+import { articleAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/articles/ArticleCard';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -13,6 +13,7 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
+import TopTagPills from '@/components/ui/TopTagPills';
 import { useAuth } from '@/lib/auth-context';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 
@@ -36,12 +37,19 @@ export default function NewsPage() {
 
   const [categoryCounts, setCategoryCounts] = useState({});
   const [countsLoaded, setCountsLoaded] = useState(false);
+  const [topTags, setTopTags] = useState([]);
 
   useEffect(() => {
     articleAPI.getCategoryCounts({ type: 'news', status: 'published' })
       .then((res) => { if (res?.success) setCategoryCounts(res.data.counts); })
       .catch((err) => console.error('Failed to fetch news category counts:', err))
       .finally(() => setCountsLoaded(true));
+    tagAPI.getSuggestions({ entityType: 'article' })
+      .then((res) => {
+        const tags = Array.isArray(res?.tags) ? res.tags : [];
+        setTopTags(tags.slice(0, 5).map((t) => t?.name || t).filter(Boolean));
+      })
+      .catch(() => {});
   }, []);
 
   // For search input
@@ -125,6 +133,7 @@ export default function NewsPage() {
             counts={categoryCounts}
             countsLoaded={countsLoaded}
           />
+          {topTags.length > 0 && <TopTagPills tags={topTags} linkPrefix="/news" />}
         </div>
 
         {loading && (

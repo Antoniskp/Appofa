@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI } from '@/lib/api';
+import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import ArticleCard from '@/components/articles/ArticleCard';
@@ -41,6 +41,9 @@ export default function HomePage() {
   const [manifestLoading, setManifestLoading] = useState(true);
   const [locationDiscovery, setLocationDiscovery] = useState([]);
   const [locationDiscoveryLoading, setLocationDiscoveryLoading] = useState(true);
+  const [articleTags, setArticleTags] = useState([]);
+  const [suggestionTags, setSuggestionTags] = useState([]);
+  const [pollTags, setPollTags] = useState([]);
 
   useEffect(() => {
     const fetchLatestArticles = async () => {
@@ -142,12 +145,30 @@ export default function HomePage() {
       }
     };
 
+    const fetchTagsForType = async (entityType, setter) => {
+      try {
+        const response = await tagAPI.getSuggestions({ entityType });
+        const tags = Array.isArray(response?.tags) ? response.tags : [];
+        setter(
+          tags
+            .slice(0, 5)
+            .map((tag) => tag?.name || tag)
+            .filter(Boolean)
+        );
+      } catch {
+        // non-critical — fail silently
+      }
+    };
+
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
     fetchLatestNews();
     fetchVideos();
     fetchLocationDiscovery();
+    fetchTagsForType('article', setArticleTags);
+    fetchTagsForType('suggestion', setSuggestionTags);
+    fetchTagsForType('poll', setPollTags);
 
     // Fetch manifest supporters for homepage
     const fetchManifestSupporters = async () => {
@@ -195,6 +216,7 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
+        topTags={articleTags}
       />
 
       <HomepageSection
@@ -209,6 +231,7 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-gray-50"
         renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
+        topTags={suggestionTags}
       />
 
       <HomepageSection
@@ -223,6 +246,7 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
+        topTags={pollTags}
       />
 
       {/* Featured Locations Section */}
@@ -376,6 +400,8 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-gray-50"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
+        topTags={articleTags}
+        tagLinkPrefix="/news"
       />
 
       <HomepageSection
@@ -390,6 +416,8 @@ export default function HomePage() {
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
+        topTags={articleTags}
+        tagLinkPrefix="/videos"
       />
     </div>
   );
