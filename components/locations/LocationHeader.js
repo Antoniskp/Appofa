@@ -164,7 +164,7 @@ export default function LocationHeader({
           {/* Sub-locations chips */}
           {children.length > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-500 mb-2">Sub-locations ({children.length})</p>
+              <p className="text-xs font-medium text-gray-500 mb-2">Υποπεριοχές ({children.length})</p>
               <div className="flex flex-wrap gap-2">
                 {children.map(child => (
                   <Link
@@ -172,10 +172,7 @@ export default function LocationHeader({
                     href={`/locations/${child.slug}`}
                     className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 border border-blue-200 transition-colors text-sm"
                   >
-                    <span className="font-medium">{child.name}</span>
-                    {child.name_local && (
-                      <span className="text-blue-500 text-xs">({child.name_local})</span>
-                    )}
+                    <span className="font-medium">{child.name_local || child.name}</span>
                   </Link>
                 ))}
               </div>

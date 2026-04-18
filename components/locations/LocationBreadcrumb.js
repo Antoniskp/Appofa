@@ -22,7 +22,7 @@ export default function LocationBreadcrumb({ breadcrumb, homeBreadcrumb }) {
                       : 'text-amber-600 hover:text-amber-800'
                   }
                 >
-                  {crumb.name}
+                  {crumb.name_local || crumb.name}
                 </Link>
               </li>
             ))}
@@ -35,18 +35,18 @@ export default function LocationBreadcrumb({ breadcrumb, homeBreadcrumb }) {
         !isInHomeHierarchy && breadcrumb.length > 0 && (
           <nav className="mb-4">
             <ol className="flex items-center flex-wrap gap-1 text-sm text-gray-500">
-              <li className="flex items-center text-gray-500 mr-1">📍 <span className="ml-1">Currently viewing:</span></li>
+              <li className="flex items-center text-gray-500 mr-1">📍 <span className="ml-1">Προβολή:</span></li>
               {breadcrumb.map((crumb, index) => (
                 <li key={crumb.id} className="flex items-center">
                   {index > 0 && <span className="mx-1">/</span>}
                   {index === breadcrumb.length - 1 ? (
-                    <span className="text-gray-900 font-medium">{crumb.name}</span>
+                    <span className="text-gray-900 font-medium">{crumb.name_local || crumb.name}</span>
                   ) : (
                     <Link
                       href={`/locations/${crumb.slug}`}
                       className="text-blue-600 hover:text-blue-800"
                     >
-                      {crumb.name}
+                      {crumb.name_local || crumb.name}
                     </Link>
                   )}
                 </li>
@@ -62,13 +62,13 @@ export default function LocationBreadcrumb({ breadcrumb, homeBreadcrumb }) {
                 <li key={crumb.id} className="flex items-center">
                   {index > 0 && <span className="mx-1">/</span>}
                   {index === breadcrumb.length - 1 ? (
-                    <span className="text-gray-900 font-medium">{crumb.name}</span>
+                    <span className="text-gray-900 font-medium">{crumb.name_local || crumb.name}</span>
                   ) : (
                     <Link
                       href={`/locations/${crumb.slug}`}
                       className="text-blue-600 hover:text-blue-800"
                     >
-                      {crumb.name}
+                      {crumb.name_local || crumb.name}
                     </Link>
                   )}
                 </li>
