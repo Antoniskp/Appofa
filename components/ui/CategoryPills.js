@@ -1,6 +1,16 @@
 import React from 'react';
 
-export default function CategoryPills({ categories, selected, onSelect, counts = {}, countsLoaded = false, className = '' }) {
+export default function CategoryPills({
+  categories,
+  selected,
+  onSelect,
+  counts = {},
+  countsLoaded = false,
+  className = '',
+  topTags = [],
+  selectedTag = '',
+  onTagSelect,
+}) {
   if (!countsLoaded) {
     return (
       <div className={`flex flex-wrap gap-2 ${className}`}>
@@ -39,6 +49,15 @@ export default function CategoryPills({ categories, selected, onSelect, counts =
           </button>
         );
       })}
+      {topTags.map((tag) => (
+        <button
+          key={tag}
+          className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${selectedTag === tag ? 'bg-purple-600 text-white border-purple-600' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'}`}
+          onClick={() => onTagSelect?.(selectedTag === tag ? '' : tag)}
+        >
+          {tag}
+        </button>
+      ))}
     </div>
   );
 }

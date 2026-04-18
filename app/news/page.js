@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { articleAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
@@ -13,12 +14,13 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
-import TopTagPills from '@/components/ui/TopTagPills';
 import { useAuth } from '@/lib/auth-context';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 
-export default function NewsPage() {
+function NewsContent() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const initialTag = searchParams.get('tag') || '';
   const {
     filters,
     page,
@@ -31,6 +33,7 @@ export default function NewsPage() {
     updateFilter,
   } = useFilters({
     category: '',
+    tag: initialTag,
     search: '',
     locationId: null,
   });
@@ -79,8 +82,6 @@ export default function NewsPage() {
       Object.keys(params).forEach(key => {
         if (!params[key]) delete params[key];
       });
-      // Remove tag param if present
-      if (params.tag) delete params.tag;
       const response = await articleAPI.getAll(params);
       if (response.success) {
         return response;
@@ -132,8 +133,10 @@ export default function NewsPage() {
             onSelect={handleCategorySelect}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+            topTags={topTags}
+            selectedTag={filters.tag}
+            onTagSelect={(tag) => updateFilter('tag', tag)}
           />
-          {topTags.length > 0 && <TopTagPills tags={topTags} linkPrefix="/news" />}
         </div>
 
         {loading && (
@@ -181,5 +184,17 @@ export default function NewsPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function NewsPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-gray-50 min-h-screen py-8 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    }>
+      <NewsContent />
+    </Suspense>
   );
 }
