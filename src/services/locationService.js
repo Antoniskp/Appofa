@@ -1,7 +1,7 @@
 'use strict';
 
-const { Location, LocationLink, Article, User, Poll, LocationRequest } = require('../models');
-const { Op, fn, col, where, literal } = require('sequelize');
+const { sequelize, Location, LocationLink, Article, User, Poll, LocationRequest } = require('../models');
+const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 
@@ -130,6 +130,7 @@ const createLocation = async (locationData) => {
 const getLocations = async (queryParams) => {
   try {
     const { type, parent_id, search, limit = 100, offset = 0, sort } = queryParams;
+    const escapedSearch = search ? search.replace(/[\\%_]/g, '\\$&') : null;
 
     const whereClause = {};
 
@@ -143,56 +144,110 @@ const getLocations = async (queryParams) => {
 
     if (search) {
       whereClause[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { name_local: { [Op.iLike]: `%${search}%` } }
+        { name: { [Op.iLike]: `%${escapedSearch}%` } },
+        { name_local: { [Op.iLike]: `%${escapedSearch}%` } }
       ];
     }
 
-    const mostUsersSubquery = literal(`(
-      SELECT COUNT(*) FROM (
-        SELECT "LocationLinks"."entity_id" AS id
-        FROM "LocationLinks"
-        WHERE "LocationLinks"."entity_type" = 'user'
-          AND "LocationLinks"."location_id" = "Location"."id"
-        UNION
-        SELECT "Users"."id"
-        FROM "Users"
-        WHERE "Users"."homeLocationId" = "Location"."id"
-          AND "Users"."searchable" = true
-          AND "Users"."id" NOT IN (
-            SELECT "LocationLinks"."entity_id"
-            FROM "LocationLinks"
-            WHERE "LocationLinks"."entity_type" = 'user'
-              AND "LocationLinks"."location_id" = "Location"."id"
-          )
-      ) combined_users
-    )`);
-
-    const order = sort === 'mostUsers'
-      ? [[literal('"userCount"'), 'DESC'], ['name', 'ASC']]
-      : [['name', 'ASC']];
-
-    const findOptions = {
-      where: whereClause,
-      limit: parseInt(limit),
-      offset: parseInt(offset),
-      order,
-      include: [
-        {
-          model: Location,
-          as: 'parent',
-          attributes: ['id', 'name', 'type']
-        }
-      ]
-    };
+    const parsedLimit = parseInt(limit, 10);
+    const parsedOffset = parseInt(offset, 10);
+    let locations;
 
     if (sort === 'mostUsers') {
-      findOptions.attributes = {
-        include: [[mostUsersSubquery, 'userCount']]
-      };
-    }
+      const whereConditions = [];
+      const replacements = { limit: parsedLimit, offset: parsedOffset };
 
-    const locations = await Location.findAll(findOptions);
+      if (type) {
+        whereConditions.push('l."type" = :type');
+        replacements.type = type;
+      }
+
+      if (parent_id !== undefined) {
+        if (parent_id === 'null' || parent_id === '') {
+          whereConditions.push('l."parent_id" IS NULL');
+        } else {
+          whereConditions.push('l."parent_id" = :parentId');
+          replacements.parentId = parent_id;
+        }
+      }
+
+      if (search) {
+        whereConditions.push('(LOWER(l."name") LIKE :search ESCAPE \'\\\\\' OR LOWER(COALESCE(l."name_local", \'\')) LIKE :search ESCAPE \'\\\\\')');
+        replacements.search = `%${escapedSearch.toLowerCase()}%`;
+      }
+
+      const whereSql = whereConditions.length > 0 ? ` AND ${whereConditions.join(' AND ')}` : '';
+
+      const locationsRaw = await sequelize.query(
+        `WITH RECURSIVE location_tree AS (
+          SELECT l.id AS ancestor_id, l.id AS descendant_id
+          FROM "Locations" l
+          UNION ALL
+          SELECT lt.ancestor_id, child.id AS descendant_id
+          FROM location_tree lt
+          JOIN "Locations" child ON child.parent_id = lt.descendant_id
+        ),
+        real_users AS (
+          SELECT lt.ancestor_id AS location_id, ll.entity_id AS user_id
+          FROM location_tree lt
+          JOIN "LocationLinks" ll
+            ON ll.location_id = lt.descendant_id
+           AND ll.entity_type = 'user'
+          JOIN "Users" u ON u.id = ll.entity_id
+          WHERE u."claimStatus" IS NULL
+          UNION
+          SELECT lt.ancestor_id AS location_id, u.id AS user_id
+          FROM location_tree lt
+          JOIN "Users" u ON u."homeLocationId" = lt.descendant_id
+          WHERE u.searchable = true
+            AND u."claimStatus" IS NULL
+        ),
+        user_counts AS (
+          SELECT location_id, COUNT(DISTINCT user_id) AS "userCount"
+          FROM real_users
+          GROUP BY location_id
+        )
+        SELECT
+          l.*,
+          COALESCE(uc."userCount", 0) AS "userCount",
+          parent.id AS "parentId",
+          parent.name AS "parentName",
+          parent.type AS "parentType"
+        FROM "Locations" l
+        LEFT JOIN user_counts uc ON uc.location_id = l.id
+        LEFT JOIN "Locations" parent ON parent.id = l.parent_id
+        WHERE 1=1${whereSql}
+        ORDER BY "userCount" DESC, l.name ASC
+        LIMIT :limit OFFSET :offset`,
+        {
+          replacements,
+          type: QueryTypes.SELECT
+        }
+      );
+
+      locations = locationsRaw.map((row) => ({
+        ...row,
+        parent: row.parentId !== null
+          ? { id: row.parentId, name: row.parentName, type: row.parentType }
+          : null
+      }));
+    } else {
+      const findOptions = {
+        where: whereClause,
+        limit: parsedLimit,
+        offset: parsedOffset,
+        order: [['name', 'ASC']],
+        include: [
+          {
+            model: Location,
+            as: 'parent',
+            attributes: ['id', 'name', 'type']
+          }
+        ]
+      };
+
+      locations = await Location.findAll(findOptions);
+    }
 
     const locationIds = locations.map((location) => location.id);
     const moderatorLocationIds = new Set();
@@ -229,13 +284,14 @@ const getLocations = async (queryParams) => {
     }
 
     const locationsWithModeratorStatus = locations.map((location) => {
-      const serializedLocation = location.toJSON();
+      const serializedLocation = location.toJSON ? location.toJSON() : { ...location };
       const hasUserCount = serializedLocation.userCount !== undefined && serializedLocation.userCount !== null;
+      const locationId = Number(serializedLocation.id);
       return {
         ...serializedLocation,
         ...(hasUserCount ? { userCount: Number.parseInt(serializedLocation.userCount, 10) || 0 } : {}),
-        hasModerator: moderatorLocationIds.has(Number(location.id)),
-        moderatorPreview: moderatorPreviewByLocationId.get(Number(location.id)) || null
+        hasModerator: moderatorLocationIds.has(locationId),
+        moderatorPreview: moderatorPreviewByLocationId.get(locationId) || null
       };
     });
 
@@ -246,8 +302,8 @@ const getLocations = async (queryParams) => {
       locations: locationsWithModeratorStatus,
       pagination: {
         total,
-        limit: parseInt(limit),
-        offset: parseInt(offset)
+        limit: parsedLimit,
+        offset: parsedOffset
       }
     };
   } catch (error) {
@@ -314,21 +370,31 @@ const getLocation = async (id) => {
     const articleCount = await LocationLink.count({
       where: { location_id: locationId, entity_type: 'article' }
     });
-    const linkedUserIds = await LocationLink.findAll({
-      where: { location_id: locationId, entity_type: 'user' },
+    const allLocationIds = [locationId, ...(await getDescendantLocationIds(locationId))];
+    const linkedRows = await LocationLink.findAll({
+      where: { location_id: { [Op.in]: allLocationIds }, entity_type: 'user' },
       attributes: ['entity_id'],
       raw: true
-    }).then((rows) => rows.map((r) => r.entity_id));
-    const homeLocationUsers = await User.findAll({
-      where: {
-        homeLocationId: locationId,
-        searchable: true,
-        ...(linkedUserIds.length > 0 ? { id: { [Op.notIn]: linkedUserIds } } : {})
-      },
-      attributes: ['id'],
-      raw: true
     });
-    const userCount = linkedUserIds.length + homeLocationUsers.length;
+    const linkedUserIds = [...new Set(linkedRows.map((row) => row.entity_id))];
+    const realLinkedCount = linkedUserIds.length > 0
+      ? await User.count({
+        where: {
+          id: { [Op.in]: linkedUserIds },
+          claimStatus: null
+        }
+      })
+      : 0;
+
+    const homeOnlyCount = await User.count({
+      where: {
+        homeLocationId: { [Op.in]: allLocationIds },
+        searchable: true,
+        claimStatus: null,
+        ...(linkedUserIds.length > 0 ? { id: { [Op.notIn]: linkedUserIds } } : {})
+      }
+    });
+    const userCount = realLinkedCount + homeOnlyCount;
     const pollCount = await LocationLink.count({
       where: { location_id: locationId, entity_type: 'poll' }
     });
