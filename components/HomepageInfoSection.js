@@ -50,6 +50,9 @@ export default function HomepageInfoSection({ settings }) {
           <div>
             <h2 className="text-lg md:text-xl font-semibold text-amber-900">{settings?.bannerText || 'Ψήφισε ελεύθερα · Ανώνυμα'}</h2>
             <p className="text-sm text-amber-800 mt-1">{settings?.subText || 'Πριν γράψεις, καλό θα είναι να γνωρίζεις αυτά'}</p>
+            {settings?.bodyText && (
+              <p className="text-sm text-amber-900 mt-2 whitespace-pre-wrap">{settings.bodyText}</p>
+            )}
             {settings?.experimentalNotice && (
               <span className="inline-flex mt-2 items-center rounded-full bg-amber-200 text-amber-900 px-2 py-1 text-xs font-semibold">
                 ⚠️ Πειραματικό
