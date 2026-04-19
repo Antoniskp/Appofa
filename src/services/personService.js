@@ -222,10 +222,14 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   });
 
   if (locationId) {
-    await LocationLink.findOrCreate({
+    const [link, created] = await LocationLink.findOrCreate({
       where: { entity_type: 'user', entity_id: profile.id },
       defaults: { location_id: locationId }
     });
+    if (!created && link.location_id !== locationId) {
+      link.location_id = locationId;
+      await link.save();
+    }
   }
 
   return profile;
@@ -416,7 +420,7 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
   const previousHomeLocationId = profile.homeLocationId;
   await profile.update(updates);
 
-  if (updates.homeLocationId !== undefined) {
+  if (data.homeLocationId !== undefined || data.locationId !== undefined) {
     const newLocationId = profile.homeLocationId;
 
     if (newLocationId === null) {
