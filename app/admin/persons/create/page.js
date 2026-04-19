@@ -137,15 +137,21 @@ function CreatePersonProfilePageContent() {
     setSaving(true);
 
     try {
+      if (!form.firstNameEn.trim() || !form.lastNameEn.trim()) {
+        setError('English first name and last name are required.');
+        setSaving(false);
+        return;
+      }
+
       // Determine locationId
       const locationId = personSelectedMunicipalityId || personSelectedPrefectureId || personSelectedCountryId || undefined;
 
       const payload = {
-        firstNameNative: form.firstNameNative,
-        lastNameNative: form.lastNameNative,
+        firstNameEn: form.firstNameEn,
+        lastNameEn: form.lastNameEn,
       };
-      if (form.firstNameEn) payload.firstNameEn = form.firstNameEn;
-      if (form.lastNameEn) payload.lastNameEn = form.lastNameEn;
+      if (form.firstNameNative) payload.firstNameNative = form.firstNameNative;
+      if (form.lastNameNative) payload.lastNameNative = form.lastNameNative;
       if (form.nickname) payload.nickname = form.nickname;
       if (form.photo) payload.photo = form.photo;
       if (form.bio) payload.bio = form.bio;
@@ -197,44 +203,44 @@ function CreatePersonProfilePageContent() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα</label>
                 <input
                   type="text"
                   value={form.firstNameNative}
                   onChange={(e) => handleChange('firstNameNative', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Επώνυμο <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Επώνυμο</label>
                 <input
                   type="text"
                   value={form.lastNameNative}
                   onChange={(e) => handleChange('lastNameNative', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First name (English)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">First name (English) <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={form.firstNameEn}
                   onChange={(e) => handleChange('firstNameEn', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last name (English)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Last name (English) <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={form.lastNameEn}
                   onChange={(e) => handleChange('lastNameEn', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
                 />
               </div>
             </div>

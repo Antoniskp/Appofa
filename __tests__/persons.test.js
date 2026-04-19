@@ -89,7 +89,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
     it('rejects unauthenticated requests', async () => {
       const res = await request(app)
         .post('/api/persons')
-        .send({ firstNameNative: 'Test', lastNameNative: 'Person' });
+        .send({ firstNameEn: 'Test', lastNameEn: 'Person' });
       expect(res.status).toBe(401);
     });
 
@@ -97,38 +97,38 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(viewerUserId, viewerToken))
-        .send({ firstNameNative: 'Test', lastNameNative: 'Person' });
+        .send({ firstNameEn: 'Test', lastNameEn: 'Person' });
       expect(res.status).toBe(403);
     });
 
-    it('rejects request without firstNameNative (400)', async () => {
+    it('rejects request without firstNameEn (400)', async () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ lastNameNative: 'Person' });
+        .send({ lastNameEn: 'Person' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/First name/i);
+      expect(res.body.message).toMatch(/English first name/i);
     });
 
-    it('rejects request without lastNameNative (400)', async () => {
+    it('rejects request without lastNameEn (400)', async () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ firstNameNative: 'Test' });
+        .send({ firstNameEn: 'Test' });
       expect(res.status).toBe(400);
-      expect(res.body.message).toMatch(/Last name/i);
+      expect(res.body.message).toMatch(/English last name/i);
     });
 
     it('admin can create a basic person profile (201)', async () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ firstNameNative: 'John', lastNameNative: 'Doe' });
+        .send({ firstNameEn: 'John', lastNameEn: 'Doe' });
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.data.profile).toBeDefined();
-      expect(res.body.data.profile.firstNameNative).toBe('John');
-      expect(res.body.data.profile.lastNameNative).toBe('Doe');
+      expect(res.body.data.profile.firstNameEn).toBe('John');
+      expect(res.body.data.profile.lastNameEn).toBe('Doe');
       expect(res.body.data.profile.slug).toBe('john-doe');
       expect(res.body.data.profile.claimStatus).toBe('unclaimed');
       expect(res.body.data.profile.source).toBe('moderator');
@@ -138,9 +138,9 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(moderatorUserId, moderatorToken))
-        .send({ firstNameNative: 'Jane', lastNameNative: 'Smith', bio: 'A test bio' });
+        .send({ firstNameEn: 'Jane', lastNameEn: 'Smith', bio: 'A test bio' });
       expect(res.status).toBe(201);
-      expect(res.body.data.profile.firstNameNative).toBe('Jane');
+      expect(res.body.data.profile.firstNameEn).toBe('Jane');
       expect(res.body.data.profile.bio).toBe('A test bio');
     });
 
@@ -149,7 +149,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       const res1 = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ firstNameNative: 'Alice', lastNameNative: 'Test' });
+        .send({ firstNameEn: 'Alice', lastNameEn: 'Test' });
       expect(res1.status).toBe(201);
       expect(res1.body.data.profile.slug).toBe('alice-test');
 
@@ -157,7 +157,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       const res2 = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ firstNameNative: 'Alice', lastNameNative: 'Test' });
+        .send({ firstNameEn: 'Alice', lastNameEn: 'Test' });
       expect(res2.status).toBe(201);
       expect(res2.body.data.profile.slug).toBe('alice-test-2');
     });
@@ -167,8 +167,8 @@ describe('Person Profile Tests (POST /api/persons)', () => {
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
         .send({
-          firstNameNative: 'Bob',
-          lastNameNative: 'Mayor',
+          firstNameEn: 'Bob',
+          lastNameEn: 'Mayor',
         });
       expect(res.status).toBe(201);
       expect(res.body.data.profile).not.toHaveProperty('position');
@@ -179,8 +179,8 @@ describe('Person Profile Tests (POST /api/persons)', () => {
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
         .send({
-          firstNameNative: 'Carol',
-          lastNameNative: 'Links',
+          firstNameEn: 'Carol',
+          lastNameEn: 'Links',
           socialLinks: { website: 'https://example.com', x: 'https://x.com/carol' }
         });
       expect(res.status).toBe(201);
@@ -194,11 +194,11 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ firstNameNative: 'Listed', lastNameNative: 'Person' });
+        .send({ firstNameEn: 'Listed', lastNameEn: 'Person' });
 
       const listRes = await request(app).get('/api/persons');
       expect(listRes.status).toBe(200);
-      const names = listRes.body.data.profiles.map((p) => `${p.firstNameNative} ${p.lastNameNative}`);
+      const names = listRes.body.data.profiles.map((p) => `${p.firstNameEn} ${p.lastNameEn}`);
       expect(names).toContain('Listed Person');
     });
 
@@ -206,7 +206,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       const res = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ firstNameNative: 'Linked', lastNameNative: 'Profile', locationId: locationAId });
+        .send({ firstNameEn: 'Linked', lastNameEn: 'Profile', locationId: locationAId });
 
       expect(res.status).toBe(201);
       const profileId = res.body.data.profile.id;
@@ -224,7 +224,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       const createRes = await request(app)
         .post('/api/persons')
         .set(csrfHeaders(adminUserId, adminToken))
-        .send({ firstNameNative: 'Update', lastNameNative: 'Location', locationId: locationAId });
+        .send({ firstNameEn: 'Update', lastNameEn: 'Location', locationId: locationAId });
 
       expect(createRes.status).toBe(201);
       const profileId = createRes.body.data.profile.id;
