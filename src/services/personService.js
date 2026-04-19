@@ -2,7 +2,7 @@
 
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { User, Location, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick } = require('../models');
+const { User, Location, LocationLink, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick } = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike, transliterateGreek } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
@@ -221,6 +221,17 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     source: 'moderator'
   });
 
+  if (locationId) {
+    const [link, created] = await LocationLink.findOrCreate({
+      where: { entity_type: 'user', entity_id: profile.id },
+      defaults: { location_id: locationId }
+    });
+    if (!created && link.location_id !== locationId) {
+      link.location_id = locationId;
+      await link.save();
+    }
+  }
+
   return profile;
 }
 
@@ -406,7 +417,34 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
     updates.partyId = validatePartyId(data.partyId);
   }
 
+  const previousHomeLocationId = profile.homeLocationId;
   await profile.update(updates);
+
+  if (data.homeLocationId !== undefined || data.locationId !== undefined) {
+    const newLocationId = profile.homeLocationId;
+
+    if (newLocationId === null) {
+      if (previousHomeLocationId !== null) {
+        await LocationLink.destroy({
+          where: {
+            entity_type: 'user',
+            entity_id: profileId,
+            location_id: previousHomeLocationId
+          }
+        });
+      }
+    } else {
+      const [link, created] = await LocationLink.findOrCreate({
+        where: { entity_type: 'user', entity_id: profileId },
+        defaults: { location_id: newLocationId }
+      });
+      if (!created && link.location_id !== newLocationId) {
+        link.location_id = newLocationId;
+        await link.save();
+      }
+    }
+  }
+
   return profile;
 }
 

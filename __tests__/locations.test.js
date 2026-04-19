@@ -745,6 +745,45 @@ describe('Location API Tests', () => {
       expect(foundUnclaimed).toHaveProperty('photo');
       expect(foundUnclaimed).toHaveProperty('slug');
     });
+
+    it('should include unclaimed profiles in parent location when linked by constituencyId only', async () => {
+      const countryRes = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({ name: 'Constituency Country', type: 'country', code: 'COU' })
+        .expect(201);
+
+      const prefectureRes = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Constituency Prefecture',
+          type: 'prefecture',
+          parent_id: countryRes.body.location.id
+        })
+        .expect(201);
+
+      const constituencyProfile = await User.create({
+        username: 'constituency-only-unclaimed',
+        email: 'constituency-only-unclaimed@placeholder.appofasi.gr',
+        password: 'password123',
+        firstNameNative: 'Κοινοβουλευτικό',
+        lastNameNative: 'Πρόσωπο',
+        claimStatus: 'unclaimed',
+        slug: 'koinovouleftiko-prosopo',
+        searchable: true,
+        constituencyId: prefectureRes.body.location.id
+      });
+
+      const response = await request(app)
+        .get(`/api/locations/${countryRes.body.location.id}/entities`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const foundUnclaimed = response.body.unclaimed.find((u) => u.id === constituencyProfile.id);
+      expect(foundUnclaimed).toBeDefined();
+    });
   });
 
   describe('User homeLocationId syncing with LocationLinks', () => {

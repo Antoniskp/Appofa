@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, PublicPersonProfile, Location } = require('../src/models');
+const { sequelize, User, PublicPersonProfile, Location, LocationLink } = require('../src/models');
 
 const express = require('express');
 const cors = require('cors');
@@ -20,6 +20,7 @@ describe('Person Profile Tests (POST /api/persons)', () => {
   let adminToken, adminUserId;
   let moderatorToken, moderatorUserId;
   let viewerToken, viewerUserId;
+  let locationAId, locationBId;
 
   const csrfToken = 'test-csrf-token-persons';
 
@@ -58,6 +59,13 @@ describe('Person Profile Tests (POST /api/persons)', () => {
     ({ token: adminToken, id: adminUserId } = await registerAndLogin('persons_admin', 'admin'));
     ({ token: moderatorToken, id: moderatorUserId } = await registerAndLogin('persons_mod', 'moderator'));
     ({ token: viewerToken, id: viewerUserId } = await registerAndLogin('persons_viewer', 'viewer'));
+
+    const [locationA, locationB] = await Promise.all([
+      Location.create({ name: 'Persons Test Location A', slug: 'persons-test-location-a', type: 'municipality' }),
+      Location.create({ name: 'Persons Test Location B', slug: 'persons-test-location-b', type: 'municipality' })
+    ]);
+    locationAId = locationA.id;
+    locationBId = locationB.id;
   });
 
   afterAll(async () => {
@@ -192,6 +200,48 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       expect(listRes.status).toBe(200);
       const names = listRes.body.data.profiles.map((p) => `${p.firstNameNative} ${p.lastNameNative}`);
       expect(names).toContain('Listed Person');
+    });
+
+    it('creates a LocationLink when profile is created with locationId', async () => {
+      const res = await request(app)
+        .post('/api/persons')
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ firstNameNative: 'Linked', lastNameNative: 'Profile', locationId: locationAId });
+
+      expect(res.status).toBe(201);
+      const profileId = res.body.data.profile.id;
+      const link = await LocationLink.findOne({
+        where: { entity_type: 'user', entity_id: profileId }
+      });
+
+      expect(link).not.toBeNull();
+      expect(link.location_id).toBe(locationAId);
+    });
+  });
+
+  describe('PUT /api/persons/:id', () => {
+    it('updates LocationLink when profile homeLocationId changes', async () => {
+      const createRes = await request(app)
+        .post('/api/persons')
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ firstNameNative: 'Update', lastNameNative: 'Location', locationId: locationAId });
+
+      expect(createRes.status).toBe(201);
+      const profileId = createRes.body.data.profile.id;
+
+      const updateRes = await request(app)
+        .put(`/api/persons/${profileId}`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ homeLocationId: locationBId });
+
+      expect(updateRes.status).toBe(200);
+
+      const links = await LocationLink.findAll({
+        where: { entity_type: 'user', entity_id: profileId }
+      });
+
+      expect(links.length).toBe(1);
+      expect(links[0].location_id).toBe(locationBId);
     });
   });
 });
