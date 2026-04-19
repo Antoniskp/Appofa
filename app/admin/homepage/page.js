@@ -53,7 +53,7 @@ function ArrayListEditor({ title, values, onChange, placeholder = 'Νέα τιμ
       <label className="block text-sm font-medium text-gray-700">{title}</label>
       <div className="space-y-2">
         {values.map((item, index) => (
-          <div key={`${title}-${index}`} className="flex items-center gap-2">
+          <div key={index} className="flex items-center gap-2">
             <input
               type="text"
               value={item}
@@ -228,7 +228,7 @@ function HomepageSettingsContent() {
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">Quick Links</label>
             {(infoSection.quickLinks || []).map((item, index) => (
-              <div key={`quick-link-${index}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
+              <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2">
                 <input
                   type="text"
                   value={item.icon || ''}

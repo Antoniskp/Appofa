@@ -18,7 +18,7 @@ function LinkCard({ item }) {
 }
 
 export default function HomepageInfoSection({ settings }) {
-  const [dismissed, setDismissed] = useState(true);
+  const [dismissed, setDismissed] = useState(false);
   const [roadmapOpen, setRoadmapOpen] = useState(true);
   const [doneOpen, setDoneOpen] = useState(true);
 
@@ -68,7 +68,7 @@ export default function HomepageInfoSection({ settings }) {
         {quickLinks.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {quickLinks.map((item, index) => (
-              <LinkCard key={`${item.href}-${index}`} item={item} />
+              <LinkCard key={index} item={item} />
             ))}
           </div>
         )}
