@@ -9,13 +9,13 @@ import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/articles/ArticleCard';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
-import { useAsyncData } from '@/hooks/useAsyncData';
+import { useInfiniteData } from '@/hooks/useInfiniteData';
 import { useFilters } from '@/hooks/useFilters';
-import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
 import { useAuth } from '@/lib/auth-context';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
+import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
 function ArticlesContent() {
   const { user } = useAuth();
@@ -23,13 +23,6 @@ function ArticlesContent() {
   const initialTag = searchParams.get('tag') || '';
   const {
     filters,
-    page,
-    totalPages,
-    setTotalPages,
-    handleFilterChange,
-    nextPage,
-    prevPage,
-    goToPage,
     updateFilter,
   } = useFilters({
     category: '',
@@ -71,11 +64,11 @@ function ArticlesContent() {
     typeof cat === 'string' ? { value: cat, label: cat } : cat
   );
 
-  const { data: articles, loading, error } = useAsyncData(
-    async () => {
+  const { items: articles, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
+    async (p, lim) => {
       const params = {
-        page,
-        limit: 12,
+        page: p,
+        limit: lim,
         ...filters,
         status: 'published',
       };
@@ -84,19 +77,15 @@ function ArticlesContent() {
         if (!params[key]) delete params[key];
       });
       const response = await articleAPI.getAll(params);
-      if (response.success) {
-        return response;
-      }
-      return { data: { articles: [], pagination: { totalPages: 1 } } };
+      const items = response?.data?.articles || [];
+      const pagination = response?.data?.pagination || {};
+      return {
+        items,
+        hasMore: (pagination.currentPage ?? p) < (pagination.totalPages ?? 1),
+      };
     },
-    [page, filters],
-    {
-      initialData: [],
-      transform: (response) => {
-        setTotalPages(response.data.pagination?.totalPages || 1);
-        return response.data.articles || [];
-      }
-    }
+    12,
+    [filters]
   );
 
   return (
@@ -141,7 +130,7 @@ function ArticlesContent() {
         </div>
 
         {/* Loading State */}
-        {loading && (
+        {initialLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <SkeletonLoader type="card" count={6} />
           </div>
@@ -161,7 +150,7 @@ function ArticlesContent() {
         )}
 
         {/* Empty State */}
-        {!loading && !error && articles.length === 0 && (
+        {!initialLoading && !error && articles.length === 0 && (
           <EmptyState
             type="empty"
             title="No Articles Found"
@@ -170,7 +159,7 @@ function ArticlesContent() {
         )}
 
         {/* Articles Grid */}
-        {!loading && !error && articles.length > 0 && (
+        {!error && articles.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {articles.map((article) => (
               <ArticleCard key={article.id} article={article} variant="grid" />
@@ -178,14 +167,15 @@ function ArticlesContent() {
           </div>
         )}
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={goToPage}
-          onPrevious={prevPage}
-          onNext={nextPage}
-        />
+        {!initialLoading && !error && articles.length > 0 && (
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loading={loading}
+            onLoadMore={loadMore}
+            skeletonType="card"
+            skeletonCount={3}
+          />
+        )}
       </div>
     </div>
   );

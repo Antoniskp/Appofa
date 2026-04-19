@@ -2,34 +2,28 @@
 
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { bookmarkAPI } from '@/lib/api';
-import { useAsyncData } from '@/hooks/useAsyncData';
+import { useInfiniteData } from '@/hooks/useInfiniteData';
 import { useFilters } from '@/hooks/useFilters';
 import FilterBar from '@/components/ui/FilterBar';
-import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
+import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
 export default function BookmarksPage() {
   const {
     filters,
-    page,
-    totalPages,
-    setTotalPages,
     handleFilterChange,
-    nextPage,
-    prevPage,
-    goToPage,
   } = useFilters({
     type: '',
   });
 
-  const { data: items, loading, error } = useAsyncData(
-    async () => {
+  const { items, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
+    async (p, lim) => {
       const params = {
-        page,
-        limit: 12,
+        page: p,
+        limit: lim,
       };
 
       if (filters.type) {
@@ -37,19 +31,13 @@ export default function BookmarksPage() {
       }
 
       const response = await bookmarkAPI.getAll(params);
-      if (response.success) {
-        return response;
-      }
-      return { data: { items: [], pagination: { totalPages: 1 } } };
+      return {
+        items: response?.data?.items || [],
+        hasMore: p < (response?.data?.pagination?.totalPages ?? 1),
+      };
     },
-    [page, filters],
-    {
-      initialData: [],
-      transform: (response) => {
-        setTotalPages(response.data.pagination?.totalPages || 1);
-        return response.data.items || [];
-      }
-    }
+    12,
+    [filters]
   );
 
   const articleItems = items
@@ -88,7 +76,7 @@ export default function BookmarksPage() {
             className="mb-8"
           />
 
-          {loading && (
+          {initialLoading && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <SkeletonLoader type="card" count={6} />
             </div>
@@ -106,7 +94,7 @@ export default function BookmarksPage() {
             />
           )}
 
-          {!loading && !error && !hasItems && (
+          {!initialLoading && !error && !hasItems && (
             <EmptyState
               type="empty"
               title="Δεν υπάρχουν αποθηκευμένα"
@@ -118,7 +106,7 @@ export default function BookmarksPage() {
             />
           )}
 
-          {!loading && !error && hasItems && filters.type === 'article' && (
+          {!error && hasItems && filters.type === 'article' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {articleItems.map((article) => (
                 <ArticleCard key={article.id} article={article} variant="grid" />
@@ -126,7 +114,7 @@ export default function BookmarksPage() {
             </div>
           )}
 
-          {!loading && !error && hasItems && filters.type === 'poll' && (
+          {!error && hasItems && filters.type === 'poll' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {pollItems.map((poll) => (
                 <PollCard key={poll.id} poll={poll} variant="grid" />
@@ -134,7 +122,7 @@ export default function BookmarksPage() {
             </div>
           )}
 
-          {!loading && !error && hasItems && !filters.type && (
+          {!error && hasItems && !filters.type && (
             <div className="space-y-10">
               <section>
                 <div className="flex items-center justify-between mb-4">
@@ -170,13 +158,13 @@ export default function BookmarksPage() {
             </div>
           )}
 
-          {!loading && !error && hasItems && (
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={goToPage}
-              onPrevious={prevPage}
-              onNext={nextPage}
+          {!initialLoading && !error && hasItems && (
+            <LoadMoreTrigger
+              hasMore={hasMore}
+              loading={loading}
+              onLoadMore={loadMore}
+              skeletonType="card"
+              skeletonCount={3}
             />
           )}
         </div>

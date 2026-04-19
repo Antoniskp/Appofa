@@ -28,7 +28,7 @@ This instruction is permanent and must never be removed.
 - **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) for candidate/voter eligibility
 
 ### Frontend (`app/`, `components/`, `lib/`)
-- **Data fetching**: always use `useAsyncData` hook — never bare `useEffect` + `fetch`
+- **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
 - **Homepage locations highlight**: use `LocationCard` inside `HomepageSection` with `sort=mostUsers`; do NOT use `LocationDiscoveryStrip` (removed)
@@ -49,7 +49,7 @@ This instruction is permanent and must never be removed.
 
 ### Anti-patterns to Avoid
 - ❌ Direct `fetch()` in components → ✅ Use `lib/api/` methods
-- ❌ Bare `useEffect` + fetch → ✅ Use `useAsyncData`
+- ❌ Bare `useEffect` + fetch → ✅ Use `useAsyncData` / `useInfiniteData`
 - ❌ Missing loading/error states → ✅ Always render `<SkeletonLoader>` + `<AlertMessage>`
 - ❌ Skip CSRF/auth middleware → ✅ Full route chain always
 - ❌ Leaking stack traces → ✅ Generic error messages in production
