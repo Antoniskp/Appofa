@@ -18,6 +18,7 @@ const personRemovalRequestRoutes = require('./personRemovalRequestRoutes');
 const reportRoutes = require('./reportRoutes');
 const dreamTeamRoutes = require('./dreamTeamRoutes');
 const heroSettingsRoutes = require('./heroSettingsRoutes');
+const homepageSettingsRoutes = require('./homepageSettingsRoutes');
 const badgeRoutes = require('./badges');
 const manifestRoutes = require('./manifestRoutes');
 const notificationRoutes = require('./notificationRoutes');
@@ -45,6 +46,7 @@ const routes = [
   { prefix: '/api/reports', router: reportRoutes },
   { prefix: '/api/dream-team', router: dreamTeamRoutes },
   { prefix: '/api/hero-settings', router: heroSettingsRoutes },
+  { prefix: '/api/homepage-settings', router: homepageSettingsRoutes },
   { prefix: '/api/badges', router: badgeRoutes },
   { prefix: '/api/manifests', router: manifestRoutes },
   { prefix: '/api/notifications', router: notificationRoutes },

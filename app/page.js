@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI } from '@/lib/api';
+import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI, homepageSettingsAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
+import HomepageInfoSection from '@/components/HomepageInfoSection';
 import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
@@ -44,6 +45,14 @@ export default function HomePage() {
   const [articleTags, setArticleTags] = useState([]);
   const [suggestionTags, setSuggestionTags] = useState([]);
   const [pollTags, setPollTags] = useState([]);
+  const [homepageSettings, setHomepageSettings] = useState(null);
+
+  const isVisibleForAudience = (audience) => {
+    if (audience === 'all') return true;
+    if (audience === 'guest') return !user;
+    if (audience === 'registered') return !!user;
+    return false;
+  };
 
   useEffect(() => {
     const fetchLatestArticles = async () => {
@@ -160,6 +169,17 @@ export default function HomePage() {
       }
     };
 
+    const fetchHomepageSettings = async () => {
+      try {
+        const res = await homepageSettingsAPI.get();
+        if (res?.success) {
+          setHomepageSettings(res.data);
+        }
+      } catch {
+        // non-critical — fail silently
+      }
+    };
+
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
@@ -169,6 +189,7 @@ export default function HomePage() {
     fetchTagsForType('article', setArticleTags);
     fetchTagsForType('suggestion', setSuggestionTags);
     fetchTagsForType('poll', setPollTags);
+    fetchHomepageSettings();
 
     // Fetch manifest supporters for homepage
     const fetchManifestSupporters = async () => {
@@ -203,6 +224,9 @@ export default function HomePage() {
   return (
     <div className="bg-gray-50">
       <HomeHero />
+      {homepageSettings?.infoSection?.enabled && isVisibleForAudience(homepageSettings?.infoSection?.audience) && (
+        <HomepageInfoSection settings={homepageSettings.infoSection} />
+      )}
 
       <HomepageSection
         title="Τελευταία Άρθρα"
@@ -313,7 +337,9 @@ export default function HomePage() {
       </section>
 
       {/* Manifest Supporters Section */}
-      {!manifestLoading && manifestData.length > 0 && (
+      {(homepageSettings?.manifestSection?.enabled ?? true) &&
+        isVisibleForAudience(homepageSettings?.manifestSection?.audience || 'all') &&
+        !manifestLoading && manifestData.length > 0 && (
         <section className="bg-gradient-to-b from-gray-50 to-white">
           <div className="app-container py-16">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -386,7 +412,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-      )}
+        )}
 
       <HomepageSection
         title="Τελευταίες Ειδήσεις"

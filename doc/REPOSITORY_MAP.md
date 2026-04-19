@@ -21,14 +21,14 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (37)](#models-37)
-- [API Routes (23 files, 150+ endpoints)](#api-routes-23-files-150-endpoints)
+- [Models (38)](#models-38)
+- [API Routes (24 files, 150+ endpoints)](#api-routes-24-files-150-endpoints)
 - [Controllers (21)](#controllers-21)
 - [Services (8)](#services-8)
 - [Middleware (6)](#middleware-6)
-- [Frontend Pages (97)](#frontend-pages-97)
+- [Frontend Pages (98)](#frontend-pages-98)
 - [Components (120+)](#components-120)
-- [API Client Modules (22)](#api-client-modules-22)
+- [API Client Modules (24)](#api-client-modules-24)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (70)](#migrations-70)
@@ -45,19 +45,19 @@ Appofa/
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
-│   ├── models/             # Sequelize models (37 models)
-│   ├── routes/             # Express route definitions (23 files)
+│   ├── models/             # Sequelize models (38 models)
+│   ├── routes/             # Express route definitions (24 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, error handling (6 files)
-│   ├── migrations/         # DB migrations (70 files)
+│   ├── migrations/         # DB migrations (71 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
 │   ├── utils/              # Utility helpers
 │   └── index.js            # Express app entry point
 │
-├── app/                    # Frontend (Next.js App Router, 97 pages)
+├── app/                    # Frontend (Next.js App Router, 98 pages)
 │   ├── (statics)/          # Static content pages (46 pages)
-│   ├── admin/              # Admin dashboard (17 pages)
+│   ├── admin/              # Admin dashboard (18 pages)
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
 │   ├── suggestions/        # Suggestion pages
@@ -79,7 +79,7 @@ Appofa/
 │   └── ui/                 # Shared UI primitives (20+ files)
 │
 ├── lib/                    # Shared frontend utilities
-│   ├── api/                # API client modules (22 files)
+│   ├── api/                # API client modules (24 files)
 │   ├── constants/          # Frontend constants (3 files)
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
@@ -95,7 +95,7 @@ Appofa/
 
 ---
 
-## Models (37)
+## Models (38)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -132,13 +132,14 @@ Appofa/
 | ManifestAcceptance | ManifestAcceptances | id, manifestId, userId, acceptedAt | belongsTo: Manifest, User |
 | UserBadge | UserBadges | id, userId, badgeName, earnedAt | belongsTo: User |
 | HeroSettings | HeroSettings | id, isActive, slide data fields | — |
+| HomepageSettings | HomepageSettings | id, manifestSection(JSON), infoSection(JSON) | — |
 | Tag | Tags | id, name (unique lowercase) | hasMany: TaggableItem; belongsToMany: Article, Poll, Suggestion (via TaggableItems) |
 | TaggableItem | TaggableItems | id, tagId, entityType (article\|poll\|suggestion), entityId | belongsTo: Tag |
 | IpAccessRule | IpAccessRules | id, ip (STRING 45, unique), type (whitelist\|blacklist), reason, createdByUserId | belongsTo: User (createdBy) |
 
 ---
 
-## API Routes (23 files, 150+ endpoints)
+## API Routes (24 files, 150+ endpoints)
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
@@ -278,6 +279,7 @@ Appofa/
 | manifestRoutes.js | /api/manifests | GET /, POST /, PUT /:slug, DELETE /:slug, PUT /:slug/accept, DELETE /:slug/accept, GET /:slug/supporters |
 | badges.js | /api/badges | GET /my, GET /user/:userId, POST /evaluate, PUT /display |
 | heroSettingsRoutes.js | /api/hero-settings | GET /, PUT /, GET /slides, POST /slides, PUT /slides/:id, DELETE /slides/:id |
+| homepageSettingsRoutes.js | /api/homepage-settings | GET /, PUT / |
 | linkPreviewRoutes.js | /api/link-preview | POST / |
 | solutionRoutes.js | /api/solutions | POST /:id/vote |
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
@@ -377,7 +379,7 @@ Appofa/
 | `/manifest-supporters` | Manifest supporters |
 | `/request-removal` | Profile removal request |
 
-### Admin (17 pages)
+### Admin (18 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
@@ -387,6 +389,7 @@ Appofa/
 | `/admin/candidates/*` | Candidate management (backward-compat) |
 | `/admin/dream-team` | Dream team admin |
 | `/admin/hero` | Hero settings |
+| `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/locations` | Location admin |
 | `/admin/manifests` | Manifest admin |
@@ -421,7 +424,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (23)
+## API Client Modules (24)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -437,6 +440,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | dreamTeamAPI.js | Dream team |
 | endorsements.js | Endorsements |
 | heroSettings.js | Hero settings |
+| homepageSettings.js | Homepage settings |
 | ipRules.js | IP whitelist/blacklist management |
 | linkPreview.js | Link previews |
 | locations.js | Locations |
@@ -579,6 +583,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260413100003-drop-public-person-profiles-table.js | Drop PublicPersonProfiles; remove personId from LocationRoles; finalize PersonRemovalRequests |
 | — | 20260413100004-drop-placeholder-user-id-and-is-placeholder.js | Drop isPlaceholder from Users |
 | — | 20260416000000-create-location-election-votes.js | Create LocationElectionVotes for per-role location elections |
+| — | 20260419000000-create-homepage-settings.js | Create HomepageSettings single-row JSON config table |
 | — | 20260419000001-ensure-nationality-in-users.js | Safely ensure Users.nationality exists |
 
 </details>

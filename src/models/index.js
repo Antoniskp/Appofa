@@ -30,6 +30,7 @@ const FormationPick = require('./FormationPick');
 const FormationLike = require('./FormationLike');
 const UserBadge = require('./UserBadge');
 const HeroSettings = require('./HeroSettings');
+const HomepageSettings = require('./HomepageSettings');
 const Manifest = require('./Manifest');
 const ManifestAcceptance = require('./ManifestAcceptance');
 const Tag = require('./Tag');
@@ -394,6 +395,7 @@ module.exports = {
   FormationLike,
   UserBadge,
   HeroSettings,
+  HomepageSettings,
   Manifest,
   ManifestAcceptance,
   Tag,
