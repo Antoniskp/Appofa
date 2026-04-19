@@ -188,13 +188,14 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     const pendingNews = await Article.count({
       where: { 
         type: 'news',
-        isNews: false,
+        newsApprovedAt: null,
         status: 'published'
       }
     });
     const approvedNews = await Article.count({
       where: { 
-        isNews: true 
+        type: 'news',
+        newsApprovedAt: { [sequelize.Sequelize.Op.ne]: null }
       }
     });
     return { 

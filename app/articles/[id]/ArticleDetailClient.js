@@ -38,7 +38,7 @@ export default function ArticleDetailPage() {
     commentsLocked: false,
   });
 
-  const isNews = article?.type === 'news' || article?.isNews;
+  const isNews = article?.type === 'news';
   const isVideo = article?.type === 'video';
   const breadcrumbLabel = isVideo ? 'Βίντεο' : (isNews ? 'News' : 'Articles');
   const breadcrumbHref = isVideo ? '/videos' : (isNews ? '/news' : '/articles');

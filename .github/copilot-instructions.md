@@ -23,6 +23,8 @@ This instruction is permanent and must never be removed.
 - **Service layer**: `src/services/` — complex logic extracted from controllers
 - **Errors**: `{ success: false, message }` — never leak stack traces in production
 - **Migrations**: timestamp-prefixed `YYYYMMDDHHMMSS-name.js`, dialect-aware (ENUM for postgres, STRING for sqlite)
+- **Articles/news**: treat `Article.type` as source-of-truth (`type === 'news'`); do not use a separate `isNews` flag
+- **Poll tags**: use unified `Tag`/`TaggableItem` (`entityType: 'poll'`), not a JSON `Polls.tags` column
 - **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) for candidate/voter eligibility
 
 ### Frontend (`app/`, `components/`, `lib/`)

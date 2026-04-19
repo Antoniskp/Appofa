@@ -112,7 +112,6 @@ The poll system uses three main database models with proper associations and con
 | `title` | STRING | Yes | - | Poll title (5-200 chars) |
 | `description` | TEXT | No | - | Optional poll description |
 | `category` | STRING | No | - | Optional poll category |
-| `tags` | JSON | No | Empty array | Optional array of tags (similar to Article tags) |
 | `type` | ENUM | Yes | 'simple' | Poll type: 'simple' or 'complex' |
 | `allowUserContributions` | BOOLEAN | Yes | false | Allow users to add options |
 | `allowUnauthenticatedVotes` | BOOLEAN | Yes | false | Allow unauthenticated voting |
@@ -148,12 +147,11 @@ const poll = await Poll.create({
   status: 'active'
 });
 
-// Create a poll with tags (works similarly to Article tags)
+// Create a poll with tags (persisted via Tag/TaggableItem relation)
 const pollWithTags = await Poll.create({
   title: 'Best Local Restaurant 2024',
   description: 'Vote for your favorite local restaurant',
   category: 'food',
-  tags: ['restaurants', 'local-business', 'community'],
   type: 'complex',
   creatorId: userId,
   visibility: 'public',
@@ -212,6 +210,8 @@ await PollOption.create({
   order: 1
 });
 ```
+
+> Poll tags are managed through the unified `Tags`/`TaggableItems` system (`entityType = 'poll'`), not a JSON column on `Polls`.
 
 ### 3. PollVote Model
 

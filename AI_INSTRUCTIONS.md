@@ -77,6 +77,7 @@ Use `'use client'` for state, effects, event handlers, browser APIs, or context 
 - Success: `{ success: true, data: ..., message: "..." }` with 2xx status
 - Error: `{ success: false, message: "..." }` — never leak stack traces in production
 - Routes: rate limiter → authMiddleware → csrfProtection → controller
+- Articles/news: use `Article.type` as source-of-truth (`type === 'news'`); `isNews` is deprecated/removed
 - Reference: `src/controllers/articleController.js`, `src/routes/articles.js`
 
 ### Naming

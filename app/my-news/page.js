@@ -20,7 +20,7 @@ import { ConfirmDialog } from '@/components/ui/Modal';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 
 function NewsApprovalBadge({ article }) {
-  if (!article.isNews && article.type !== 'news') return null;
+  if (article.type !== 'news') return null;
   if (article.newsApprovedAt) {
     return <Badge variant="success">Εγκεκριμένο</Badge>;
   }
@@ -58,7 +58,7 @@ function MyNewsContent() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      const response = await articleAPI.create({ ...formData, type: 'news', isNews: true });
+      const response = await articleAPI.create({ ...formData, type: 'news' });
       if (response.success) {
         addToast('Η είδηση δημιουργήθηκε! Αναμένει έγκριση για να εμφανιστεί δημόσια.', { type: 'success' });
         setShowForm(false);
