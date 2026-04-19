@@ -46,8 +46,10 @@ function EditPersonProfilePageContent({ params }) {
   const [expertiseArea, setExpertiseArea] = useState([]);
 
   // Person location cascading picker
+  const [personCountries, setPersonCountries] = useState([]);
   const [personPrefectures, setPersonPrefectures] = useState([]);
   const [personMunicipalities, setPersonMunicipalities] = useState([]);
+  const [personSelectedCountryId, setPersonSelectedCountryId] = useState('');
   const [personSelectedPrefectureId, setPersonSelectedPrefectureId] = useState('');
   const [personSelectedMunicipalityId, setPersonSelectedMunicipalityId] = useState('');
 
@@ -82,12 +84,24 @@ function EditPersonProfilePageContent({ params }) {
     { initialData: null }
   );
 
-  // Load person prefectures on mount
+  // Load person countries on mount
   useEffect(() => {
-    locationAPI.getAll({ type: 'prefecture', limit: 500 })
-      .then((res) => setPersonPrefectures(res.locations || []))
+    locationAPI.getAll({ type: 'country', limit: 200 })
+      .then((res) => setPersonCountries(res.locations || []))
       .catch(() => {});
   }, []);
+
+  // Load person prefectures when country changes
+  useEffect(() => {
+    if (!personSelectedCountryId) {
+      setPersonPrefectures([]);
+      setPersonMunicipalities([]);
+      return;
+    }
+    locationAPI.getAll({ type: 'prefecture', parent_id: personSelectedCountryId, limit: 500 })
+      .then((res) => setPersonPrefectures(res.locations || []))
+      .catch(() => {});
+  }, [personSelectedCountryId]);
 
   // Load person municipalities when prefecture changes
   useEffect(() => {
@@ -130,14 +144,21 @@ function EditPersonProfilePageContent({ params }) {
     // Pre-populate location pickers from saved homeLocation
     if (profile.homeLocation) {
       const loc = profile.homeLocation;
-      if (loc.type === 'municipality' && loc.parent_id) {
-        setPersonSelectedPrefectureId(String(loc.parent_id));
+      if (loc.type === 'municipality') {
+        setPersonSelectedCountryId(loc.parent?.parent_id ? String(loc.parent.parent_id) : '');
+        setPersonSelectedPrefectureId(loc.parent_id ? String(loc.parent_id) : '');
         setPersonSelectedMunicipalityId(String(loc.id));
       } else if (loc.type === 'prefecture') {
+        setPersonSelectedCountryId(loc.parent_id ? String(loc.parent_id) : '');
         setPersonSelectedPrefectureId(String(loc.id));
+        setPersonSelectedMunicipalityId('');
+      } else if (loc.type === 'country') {
+        setPersonSelectedCountryId(String(loc.id));
+        setPersonSelectedPrefectureId('');
         setPersonSelectedMunicipalityId('');
       }
     } else {
+      setPersonSelectedCountryId('');
       setPersonSelectedPrefectureId('');
       setPersonSelectedMunicipalityId('');
     }
@@ -208,7 +229,7 @@ function EditPersonProfilePageContent({ params }) {
     setSaving(true);
 
     try {
-      const locationId = personSelectedMunicipalityId || personSelectedPrefectureId || undefined;
+      const locationId = personSelectedMunicipalityId || personSelectedPrefectureId || personSelectedCountryId || undefined;
 
       const payload = {
         firstNameNative: form.firstNameNative,
@@ -221,7 +242,7 @@ function EditPersonProfilePageContent({ params }) {
       if (form.bio) payload.bio = form.bio;
       if (form.contactEmail) payload.contactEmail = form.contactEmail;
       if (form.nationality !== undefined) payload.nationality = form.nationality || null;
-      if (locationId) payload.locationId = parseInt(locationId, 10);
+      payload.locationId = locationId ? parseInt(locationId, 10) : null;
 
       // Social links — only non-empty
       const slObj = {};
@@ -358,11 +379,26 @@ function EditPersonProfilePageContent({ params }) {
               />
             </div>
 
-            {/* Person Location cascading picker */}
+            {/* Person Location cascading picker — Country → Prefecture → Municipality */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Τοποθεσία Προσώπου</label>
               <div className="space-y-2">
                 <select
+                  value={personSelectedCountryId}
+                  onChange={(e) => {
+                    setPersonSelectedCountryId(e.target.value);
+                    setPersonSelectedPrefectureId('');
+                    setPersonSelectedMunicipalityId('');
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Επιλέξτε Χώρα (προαιρετικό)</option>
+                  {personCountries.map((loc) => (
+                    <option key={loc.id} value={loc.id}>{loc.name}</option>
+                  ))}
+                </select>
+                {personSelectedCountryId && (
+                  <select
                   value={personSelectedPrefectureId}
                   onChange={(e) => {
                     setPersonSelectedPrefectureId(e.target.value);
@@ -370,11 +406,12 @@ function EditPersonProfilePageContent({ params }) {
                   }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Επιλέξτε Περιφέρεια</option>
+                  <option value="">Επιλέξτε Περιφέρεια (προαιρετικό)</option>
                   {personPrefectures.map((loc) => (
                     <option key={loc.id} value={loc.id}>{loc.name}</option>
                   ))}
                 </select>
+                )}
                 {personSelectedPrefectureId && (
                   <select
                     value={personSelectedMunicipalityId}
