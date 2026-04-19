@@ -38,12 +38,12 @@ export default function SuggestionCard({ suggestion }) {
           </TruncatedTextTooltip>
         </h3>
       </Link>
-      <div className="mt-auto flex items-center justify-between text-sm text-gray-500 pt-2 border-t border-gray-100">
-        <div className="flex items-center gap-2">
+      <div className="mt-auto flex items-center justify-between text-sm text-gray-500 pt-2 border-t border-gray-100 gap-3">
+        <div className="flex items-center gap-2 min-w-0">
           {suggestion.author && (
             <>
               <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-              <span>{suggestion.author.username}</span>
+              <span className="truncate">{suggestion.author.username}</span>
             </>
           )}
           {suggestion.createdAt && (
@@ -52,13 +52,15 @@ export default function SuggestionCard({ suggestion }) {
             </span>
           )}
         </div>
-        <InlineSuggestionVote
-          suggestionId={suggestion.id}
-          type={suggestion.type}
-          initialUpvotes={suggestion.upvotes ?? 0}
-          initialDownvotes={suggestion.downvotes ?? 0}
-          initialMyVote={suggestion.myVote ?? null}
-        />
+        <div className="shrink-0">
+          <InlineSuggestionVote
+            suggestionId={suggestion.id}
+            type={suggestion.type}
+            initialUpvotes={suggestion.upvotes ?? 0}
+            initialDownvotes={suggestion.downvotes ?? 0}
+            initialMyVote={suggestion.myVote ?? null}
+          />
+        </div>
       </div>
     </div>
   );

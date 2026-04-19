@@ -275,39 +275,37 @@ export default function HomeHero() {
               </div>
 
               {/* Arrow navigation */}
-              {showArrows && (
-                <div className="flex items-center gap-3 mb-4">
-                  <button
-                    onClick={goToPrev}
-                    aria-label="Προηγούμενο slide"
-                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/20"
-                  >
-                    <ArrowLeftIcon className="w-5 h-5" />
-                  </button>
-                  {/* Dot indicators */}
-                  <div className="flex gap-1.5" role="tablist" aria-label="Slides">
-                    {activeSlides.map((slide, idx) => (
-                      <button
-                        key={slide.id}
-                        role="tab"
-                        aria-selected={idx === currentSlideIdx}
-                        aria-label={`Slide ${idx + 1}`}
-                        onClick={() => setCurrentSlideIdx(idx)}
-                        className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 ${
-                          idx === currentSlideIdx ? 'bg-white w-4' : 'bg-white/40 hover:bg-white/60'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  <button
-                    onClick={goToNext}
-                    aria-label="Επόμενο slide"
-                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/20"
-                  >
-                    <ArrowRightIcon className="w-5 h-5" />
-                  </button>
+              <div className={`flex items-center gap-3 mb-4 ${showArrows ? '' : 'invisible'}`}>
+                <button
+                  onClick={goToPrev}
+                  aria-label="Προηγούμενο slide"
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/20"
+                >
+                  <ArrowLeftIcon className="w-5 h-5" />
+                </button>
+                {/* Dot indicators */}
+                <div className="flex gap-1.5" role="tablist" aria-label="Slides">
+                  {activeSlides.map((slide, idx) => (
+                    <button
+                      key={slide.id}
+                      role="tab"
+                      aria-selected={idx === currentSlideIdx}
+                      aria-label={`Slide ${idx + 1}`}
+                      onClick={() => setCurrentSlideIdx(idx)}
+                      className={`w-2 h-2 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-white/50 ${
+                        idx === currentSlideIdx ? 'bg-white w-4' : 'bg-white/40 hover:bg-white/60'
+                      }`}
+                    />
+                  ))}
                 </div>
-              )}
+                <button
+                  onClick={goToNext}
+                  aria-label="Επόμενο slide"
+                  className="p-2 rounded-xl bg-white/10 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/20"
+                >
+                  <ArrowRightIcon className="w-5 h-5" />
+                </button>
+              </div>
 
               <div className="flex flex-wrap gap-3">
                 <Link 
