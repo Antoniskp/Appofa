@@ -22,8 +22,8 @@ class ServiceError extends Error {
 
 // ─── Slug utilities ──────────────────────────────────────────────────────────
 
-function generateSlug(firstName, lastName) {
-  const fullName = `${firstName} ${lastName}`;
+function generateSlug(firstNameEn, lastNameEn) {
+  const fullName = `${firstNameEn} ${lastNameEn}`;
   return fullName
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')

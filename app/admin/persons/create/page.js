@@ -203,7 +203,7 @@ function CreatePersonProfilePageContent() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Όνομα <span className="text-gray-400">(προαιρετικό)</span></label>
                 <input
                   type="text"
                   value={form.firstNameNative}
@@ -212,7 +212,7 @@ function CreatePersonProfilePageContent() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Επώνυμο</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Επώνυμο <span className="text-gray-400">(προαιρετικό)</span></label>
                 <input
                   type="text"
                   value={form.lastNameNative}
