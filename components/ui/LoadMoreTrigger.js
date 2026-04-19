@@ -3,6 +3,16 @@
 import { useEffect, useRef } from 'react';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 
+/**
+ * Sentinel-based auto load-more trigger for infinite lists.
+ *
+ * @param {object} props
+ * @param {boolean} props.hasMore whether more pages are available
+ * @param {boolean} props.loading whether a next-page request is in progress
+ * @param {Function} props.onLoadMore callback to request the next page
+ * @param {string} [props.skeletonType='card'] SkeletonLoader type for incremental loading
+ * @param {number} [props.skeletonCount=3] SkeletonLoader count for incremental loading
+ */
 export default function LoadMoreTrigger({
   hasMore,
   loading,

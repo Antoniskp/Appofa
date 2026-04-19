@@ -2,6 +2,22 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 
+/**
+ * Infinite pagination hook that accumulates items across pages.
+ *
+ * @param {Function} fetchFn async function `(page, limit) => Promise<{ items: Array, hasMore: boolean }>`
+ * @param {number} limit page size
+ * @param {Array} resetDeps dependency array that resets the list and reloads page 1
+ * @returns {{
+ *   items: Array,
+ *   loading: boolean,
+ *   initialLoading: boolean,
+ *   error: string|null,
+ *   hasMore: boolean,
+ *   loadMore: Function,
+ *   reset: Function
+ * }}
+ */
 export function useInfiniteData(fetchFn, limit = 15, resetDeps = []) {
   const [items, setItems] = useState([]);
   const [page, setPage] = useState(1);

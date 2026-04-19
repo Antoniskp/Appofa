@@ -90,7 +90,7 @@ export default function WorthyCitizensPage() {
         ...(selectedTopic ? { topic: selectedTopic } : {}),
       });
       const items = data?.data?.users ?? [];
-      setTotalItems((prev) => data?.data?.pagination?.totalItems ?? prev);
+      setTotalItems(data?.data?.pagination?.totalItems ?? 0);
       return {
         items,
         hasMore: p < (data?.data?.pagination?.totalPages ?? 1),
