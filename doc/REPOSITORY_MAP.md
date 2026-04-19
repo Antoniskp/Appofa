@@ -258,7 +258,7 @@ Appofa/
 | GET | /claims | admin | List pending claims |
 | POST | /claims/:id/approve | admin | Approve claim |
 | POST | /claims/:id/reject | admin | Reject claim |
-| POST | / | admin | Create unclaimed person profile |
+| POST | / | admin | Create unclaimed person profile (requires `firstNameEn` + `lastNameEn`; slug derived from English name) |
 | DELETE | /:id | admin | Delete person |
 | POST | /:id/claim | ✅ | Submit a claim for a person profile |
 | PUT | /:id | ✅ | Update person profile |
@@ -324,7 +324,7 @@ Appofa/
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
 | oauthService.js | OAuth integration (GitHub, Google) |
-| personService.js | Person profile management, claims, placeholders |
+| personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
 | pollService.js | Poll operations & calculations |
 | userService.js | User management & utilities |
 

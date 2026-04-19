@@ -4,7 +4,7 @@ const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { User, Location, LocationLink, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick } = require('../models');
 const dbConfig = require('../config/database');
-const { normalizeGreek, sanitizeForLike, transliterateGreek } = require('../utils/greekNormalize');
+const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
 const politicalParties = require('../../config/politicalParties.json');
 
@@ -22,9 +22,9 @@ class ServiceError extends Error {
 
 // ─── Slug utilities ──────────────────────────────────────────────────────────
 
-function generateSlug(firstNameNative, lastNameNative) {
-  const fullName = `${firstNameNative} ${lastNameNative}`;
-  return transliterateGreek(fullName)
+function generateSlug(firstNameEn, lastNameEn) {
+  const fullName = `${firstNameEn} ${lastNameEn}`;
+  return fullName
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
@@ -182,13 +182,13 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     politicalPositions, manifesto, expertiseArea, partyId, nationality, countryCode
   } = data;
 
-  if (!firstNameNative || !firstNameNative.trim()) throw new ServiceError(400, 'First name is required.');
-  if (!lastNameNative || !lastNameNative.trim()) throw new ServiceError(400, 'Last name is required.');
+  if (!firstNameEn || !firstNameEn.trim()) throw new ServiceError(400, 'English first name is required.');
+  if (!lastNameEn || !lastNameEn.trim()) throw new ServiceError(400, 'English last name is required.');
 
   const validatedExpertiseArea = validateExpertiseArea(expertiseArea);
   const validatedPartyId = validatePartyId(partyId);
 
-  const base = generateSlug(firstNameNative.trim(), lastNameNative.trim());
+  const base = generateSlug(firstNameEn.trim(), lastNameEn.trim());
   const slug = await ensureUniqueSlug(base);
 
   const profile = await User.create({
@@ -201,10 +201,10 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     createdByUserId: moderatorUserId,
     claimedByUserId: null,
     slug,
-    firstNameNative: firstNameNative.trim(),
-    lastNameNative: lastNameNative.trim(),
-    firstNameEn: firstNameEn ? firstNameEn.trim() : null,
-    lastNameEn: lastNameEn ? lastNameEn.trim() : null,
+    firstNameNative: firstNameNative ? firstNameNative.trim() : null,
+    lastNameNative: lastNameNative ? lastNameNative.trim() : null,
+    firstNameEn: firstNameEn.trim(),
+    lastNameEn: lastNameEn.trim(),
     nickname: nickname ? nickname.trim() : null,
     homeLocationId: locationId || null,
     constituencyId: constituencyId || null,
