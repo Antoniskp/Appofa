@@ -48,7 +48,7 @@ async function ensureUniqueSlug(base) {
 // ─── Attribute helpers ───────────────────────────────────────────────────────
 
 const PROFILE_INCLUDE = [
-  { model: Location, as: 'homeLocation', attributes: ['id', 'name', 'slug'] },
+  { model: Location, as: 'homeLocation', attributes: ['id', 'name', 'slug', 'type', 'parent_id'] },
   { model: Location, as: 'constituency', attributes: ['id', 'name', 'slug'] },
   {
     model: User,

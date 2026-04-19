@@ -483,7 +483,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (71)
+## Migrations (72)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -564,6 +564,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260407200000-remove-person-id-columns.js | Remove person ID cols |
 | — | 20260407300000-add-nationality-languages-to-users.js | User nationality/languages |
 | — | 20260408000000-create-unified-tags.js | Tags/TaggableItems tables; removes tags JSON from Articles and Polls |
+| — | 20260408000001-add-nationality-fields.js | Add nationality to Users and (if present) PublicPersonProfiles |
 | — | 20260410000000-create-ip-access-rules.js | IpAccessRules table (whitelist/blacklist) |
 | — | 20260410100000-add-twitch-channel-to-users.js | Add twitchChannel to Users |
 | — | 20260413100001-add-claim-fields-to-users.js | Add claim fields + person profile fields to Users; make email/username nullable; add slug |
@@ -571,6 +572,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260413100003-drop-public-person-profiles-table.js | Drop PublicPersonProfiles; remove personId from LocationRoles; finalize PersonRemovalRequests |
 | — | 20260413100004-drop-placeholder-user-id-and-is-placeholder.js | Drop isPlaceholder from Users |
 | — | 20260416000000-create-location-election-votes.js | Create LocationElectionVotes for per-role location elections |
+| — | 20260419000001-ensure-nationality-in-users.js | Safely ensure Users.nationality exists |
 
 </details>
 

@@ -36,7 +36,6 @@ function EditPersonProfilePageContent({ params }) {
     lastNameEn: '',
     nickname: '',
     nationality: '',
-    countryCode: '',
     photo: '',
     bio: '',
     contactEmail: '',
@@ -126,8 +125,22 @@ function EditPersonProfilePageContent({ params }) {
       bio: profile.bio || '',
       contactEmail: profile.contactEmail || '',
       nationality: profile.nationality || '',
-      countryCode: profile.countryCode || '',
     });
+
+    // Pre-populate location pickers from saved homeLocation
+    if (profile.homeLocation) {
+      const loc = profile.homeLocation;
+      if (loc.type === 'municipality' && loc.parent_id) {
+        setPersonSelectedPrefectureId(String(loc.parent_id));
+        setPersonSelectedMunicipalityId(String(loc.id));
+      } else if (loc.type === 'prefecture') {
+        setPersonSelectedPrefectureId(String(loc.id));
+        setPersonSelectedMunicipalityId('');
+      }
+    } else {
+      setPersonSelectedPrefectureId('');
+      setPersonSelectedMunicipalityId('');
+    }
 
     // Social links
     const sl = profile.socialLinks || {};
@@ -208,7 +221,6 @@ function EditPersonProfilePageContent({ params }) {
       if (form.bio) payload.bio = form.bio;
       if (form.contactEmail) payload.contactEmail = form.contactEmail;
       if (form.nationality !== undefined) payload.nationality = form.nationality || null;
-      if (form.countryCode !== undefined) payload.countryCode = form.countryCode ? form.countryCode.toUpperCase() : null;
       if (locationId) payload.locationId = parseInt(locationId, 10);
 
       // Social links — only non-empty
@@ -336,25 +348,14 @@ function EditPersonProfilePageContent({ params }) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Εθνικότητα
-                </label>
-                <NationalitySelector
-                  value={form.nationality}
-                  onChange={(code) => handleChange('nationality', code)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Κωδικός Χώρας
-                </label>
-                <NationalitySelector
-                  value={form.countryCode}
-                  onChange={(code) => handleChange('countryCode', code)}
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Εθνικότητα
+              </label>
+              <NationalitySelector
+                value={form.nationality}
+                onChange={(code) => handleChange('nationality', code)}
+              />
             </div>
 
             {/* Person Location cascading picker */}

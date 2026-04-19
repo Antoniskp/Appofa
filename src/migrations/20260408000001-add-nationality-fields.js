@@ -11,19 +11,26 @@ module.exports = {
       });
     }
 
-    // Add nationality and countryCode to PublicPersonProfiles table
-    const profileColumns = await queryInterface.describeTable('PublicPersonProfiles');
-    if (!profileColumns.nationality) {
-      await queryInterface.addColumn('PublicPersonProfiles', 'nationality', {
-        type: Sequelize.STRING(5),
-        allowNull: true,
-      });
-    }
-    if (!profileColumns.countryCode) {
-      await queryInterface.addColumn('PublicPersonProfiles', 'countryCode', {
-        type: Sequelize.STRING(5),
-        allowNull: true,
-      });
+    // Add nationality and countryCode to PublicPersonProfiles table when it exists
+    const tables = await queryInterface.showAllTables();
+    const hasPublicPersonProfiles = tables
+      .map((table) => (typeof table === 'string' ? table : table.tableName || table.name || ''))
+      .some((name) => String(name).toLowerCase() === 'publicpersonprofiles');
+
+    if (hasPublicPersonProfiles) {
+      const profileColumns = await queryInterface.describeTable('PublicPersonProfiles');
+      if (!profileColumns.nationality) {
+        await queryInterface.addColumn('PublicPersonProfiles', 'nationality', {
+          type: Sequelize.STRING(5),
+          allowNull: true,
+        });
+      }
+      if (!profileColumns.countryCode) {
+        await queryInterface.addColumn('PublicPersonProfiles', 'countryCode', {
+          type: Sequelize.STRING(5),
+          allowNull: true,
+        });
+      }
     }
   },
 
@@ -33,12 +40,19 @@ module.exports = {
       await queryInterface.removeColumn('Users', 'nationality');
     }
 
-    const profileColumns = await queryInterface.describeTable('PublicPersonProfiles');
-    if (profileColumns.nationality) {
-      await queryInterface.removeColumn('PublicPersonProfiles', 'nationality');
-    }
-    if (profileColumns.countryCode) {
-      await queryInterface.removeColumn('PublicPersonProfiles', 'countryCode');
+    const tables = await queryInterface.showAllTables();
+    const hasPublicPersonProfiles = tables
+      .map((table) => (typeof table === 'string' ? table : table.tableName || table.name || ''))
+      .some((name) => String(name).toLowerCase() === 'publicpersonprofiles');
+
+    if (hasPublicPersonProfiles) {
+      const profileColumns = await queryInterface.describeTable('PublicPersonProfiles');
+      if (profileColumns.nationality) {
+        await queryInterface.removeColumn('PublicPersonProfiles', 'nationality');
+      }
+      if (profileColumns.countryCode) {
+        await queryInterface.removeColumn('PublicPersonProfiles', 'countryCode');
+      }
     }
   },
 };
