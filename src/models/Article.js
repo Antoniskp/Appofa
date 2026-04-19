@@ -56,11 +56,6 @@ const Article = sequelize.define('Article', {
     defaultValue: 'personal',
     allowNull: false
   },
-  isNews: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    allowNull: false
-  },
   newsApprovedAt: {
     type: DataTypes.DATE,
     allowNull: true

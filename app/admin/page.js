@@ -118,7 +118,7 @@ function AdminDashboardContent() {
           published: allArticles.filter(a => a.status === 'published').length,
           draft: allArticles.filter(a => a.status === 'draft').length,
           archived: allArticles.filter(a => a.status === 'archived').length,
-          pendingNews: allArticles.filter(a => a.isNews && !a.newsApprovedAt).length,
+          pendingNews: allArticles.filter(a => a.type === 'news' && !a.newsApprovedAt).length,
         }));
         return allArticles;
       },
@@ -390,7 +390,7 @@ function AdminDashboardContent() {
                 header: 'News Status',
                 width: 'w-28',
                 render: (article) => (
-                  article.isNews ? (
+                  article.type === 'news' ? (
                     <Badge variant={article.newsApprovedAt ? 'success' : 'warning'}>
                       {article.newsApprovedAt ? '✓ Approved' : '⏳ Pending'}
                     </Badge>
@@ -428,7 +428,7 @@ function AdminDashboardContent() {
                       tooltip="Προβολή άρθρου"
                       onClick={() => router.push(article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`)}
                     />
-                    {article.isNews && !article.newsApprovedAt && (
+                    {article.type === 'news' && !article.newsApprovedAt && (
                       <TooltipIconButton
                         icon={CheckIcon}
                         tooltip="Έγκριση άρθρου"

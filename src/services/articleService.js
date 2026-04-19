@@ -83,7 +83,7 @@ const canModeratorManageArticle = async (articleId, homeLocationId) => {
  */
 const createArticle = async (userId, userRole, articleData) => {
   try {
-    const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved,
+    const { title, content, summary, category, status, type, tags, bannerImageUrl, hideAuthor, newsApproved,
       sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = articleData;
 
     // Validate sourceUrl if provided
@@ -152,11 +152,6 @@ const createArticle = async (userId, userRole, articleData) => {
       return { success: false, status: 400, message: typeResult.error };
     }
 
-    const isNewsResult = normalizeBoolean(isNews, 'isNews');
-    if (isNewsResult.error) {
-      return { success: false, status: 400, message: isNewsResult.error };
-    }
-
     const tagsResult = normalizeTags(tags);
     if (tagsResult.error) {
       return { success: false, status: 400, message: tagsResult.error };
@@ -172,10 +167,7 @@ const createArticle = async (userId, userRole, articleData) => {
       return { success: false, status: 400, message: hideAuthorResult.error };
     }
 
-    let articleType = typeResult.value || 'personal';
-    if (isNewsResult.value && !typeResult.value) {
-      articleType = 'news';
-    }
+    const articleType = typeResult.value || 'personal';
 
     const resolvedBannerImageUrl = bannerImageResult.value ?? DEFAULT_BANNER_IMAGE_URL;
     const resolvedStatus = statusResult.value || 'draft';
@@ -193,7 +185,6 @@ const createArticle = async (userId, userRole, articleData) => {
       authorId: userId,
       publishedAt: resolvedStatus === 'published' ? new Date() : null,
       type: articleType,
-      isNews: articleType === 'news' || isNewsResult.value,
       bannerImageUrl: resolvedBannerImageUrl,
       hideAuthor: hideAuthorResult.value !== undefined ? hideAuthorResult.value : false,
       newsApprovedAt: isPreApproved ? new Date() : null,
@@ -459,7 +450,7 @@ const getArticleById = async (articleId, user) => {
  */
 const updateArticle = async (articleId, user, updateData) => {
   try {
-    const { title, content, summary, category, status, isNews, type, tags, bannerImageUrl, hideAuthor, newsApproved,
+    const { title, content, summary, category, status, type, tags, bannerImageUrl, hideAuthor, newsApproved,
       sourceUrl, sourceProvider, sourceMeta, embedUrl, embedHtml } = updateData;
 
     const article = await Article.findByPk(articleId);
@@ -553,22 +544,7 @@ const updateArticle = async (articleId, user, updateData) => {
 
     if (typeResult.value) {
       article.type = typeResult.value;
-      article.isNews = typeResult.value === 'news';
       if (typeResult.value !== 'news') {
-        article.newsApprovedAt = null;
-        article.newsApprovedBy = null;
-      }
-    }
-
-    const canModifyNewsFlag = article.authorId === user.id || ['admin', 'editor', 'moderator'].includes(user.role);
-    const isNewsResult = normalizeBoolean(isNews, 'isNews');
-    if (isNewsResult.error) {
-      return { success: false, status: 400, message: isNewsResult.error };
-    }
-    if (isNewsResult.value !== undefined && typeResult.value === undefined && canModifyNewsFlag) {
-      article.isNews = isNewsResult.value;
-      article.type = isNewsResult.value ? 'news' : 'personal';
-      if (!isNewsResult.value) {
         article.newsApprovedAt = null;
         article.newsApprovedBy = null;
       }
@@ -685,7 +661,7 @@ const approveNews = async (articleId, user) => {
       return { success: false, status: 404, message: 'Article not found.' };
     }
 
-    if (!article.isNews && article.type !== 'news') {
+    if (article.type !== 'news') {
       return { success: false, status: 400, message: 'Article is not flagged as news.' };
     }
 

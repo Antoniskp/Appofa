@@ -1052,7 +1052,7 @@ describe('News Application Integration Tests', () => {
   describe('News Workflow Tests', () => {
     let newsArticleId;
 
-    test('should create article with isNews flag', async () => {
+    test('should create article with news type', async () => {
       const csrfToken = 'csrf-viewer-news';
       setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
@@ -1065,12 +1065,12 @@ describe('News Application Integration Tests', () => {
           summary: 'Breaking news summary',
           category: 'News',
           status: 'draft',
-          isNews: true
+          type: 'news'
         });
 
       expect(response.status).toBe(201);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.article.isNews).toBe(true);
+      expect(response.body.data.article.type).toBe('news');
       expect(response.body.data.article.newsApprovedAt).toBeNull();
       newsArticleId = response.body.data.article.id;
     });
@@ -1113,7 +1113,7 @@ describe('News Application Integration Tests', () => {
           content: 'This news item should not appear in public listings.',
           summary: 'Unapproved news summary',
           status: 'published',
-          isNews: true
+          type: 'news'
         });
 
       const unapprovedNewsId = createResponse.body.data.article.id;
@@ -1142,7 +1142,7 @@ describe('News Application Integration Tests', () => {
           content: 'This is another news item that will be approved later.',
           summary: 'Second approved news summary',
           status: 'draft',
-          isNews: true
+          type: 'news'
         });
 
       const secondNewsId = createSecondNewsResponse.body.data.article.id;
@@ -1189,7 +1189,7 @@ describe('News Application Integration Tests', () => {
           title: 'Regular Article',
           content: 'This is not a news article.',
           status: 'draft',
-          isNews: false
+          type: 'personal'
         });
 
       const regularArticleId = createResponse.body.data.article.id;
@@ -1206,7 +1206,7 @@ describe('News Application Integration Tests', () => {
       expect(response.body.message).toContain('not flagged as news');
     });
 
-    test('should update article and maintain isNews flag', async () => {
+    test('should update article and maintain news type', async () => {
       const csrfToken = 'csrf-viewer-update-news';
       setCsrfToken(csrfToken, viewerUserId);
       const response = await request(app)
@@ -1219,10 +1219,10 @@ describe('News Application Integration Tests', () => {
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.article.isNews).toBe(true);
+      expect(response.body.data.article.type).toBe('news');
     });
 
-    test('should allow author to unflag article as news', async () => {
+    test('should allow author to change article from news to personal', async () => {
       // Create a news article
       const csrfToken = 'csrf-viewer-unflag';
       setCsrfToken(csrfToken, viewerUserId);
@@ -1233,7 +1233,7 @@ describe('News Application Integration Tests', () => {
         .send({
           title: 'News to Unflag',
           content: 'This will be unflagged as news.',
-          isNews: true
+          type: 'news'
         });
 
       const articleId = createResponse.body.data.article.id;
@@ -1246,12 +1246,12 @@ describe('News Application Integration Tests', () => {
         .set('Authorization', `Bearer ${viewerToken}`)
         .set(csrfHeaderFor(csrfTokenUpdate))
         .send({
-          isNews: false
+          type: 'personal'
         });
 
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
-      expect(response.body.data.article.isNews).toBe(false);
+      expect(response.body.data.article.type).toBe('personal');
       expect(response.body.data.article.newsApprovedAt).toBeNull();
     });
   });

@@ -62,9 +62,8 @@ If you have an existing database with articles, run the migration script:
 npm run migrate:article-types
 ```
 
-This will:
-- Set existing articles' type based on their `isNews` field
-- Keep the `isNews` field for backward compatibility
+This script is now deprecated and no longer updates article data.
+Article/news behavior is driven only by `type` and `newsApprovedAt`.
 
 Before running the script, ensure you have applied the Sequelize migration for the `type` field in your environment.
 
@@ -136,12 +135,11 @@ Before running the script, ensure you have applied the Sequelize migration for t
 3. Create a Personal article without a category
    - This should work fine (no category required)
 
-### 5. Test Backward Compatibility
+### 5. Test Type-Only News Workflow
 
-The `isNews` field is kept for backward compatibility:
-- Old API calls using `isNews: true` will create News type articles
-- Old API calls using `isNews: false` will create Personal type articles
-- The new `type` field takes precedence if both are provided
+- Use `type: "news"` to create news articles.
+- Use `type` updates to move articles between news/non-news types.
+- Use `newsApprovedAt`/`newsApprovedBy` for moderation status.
 
 ## UI/UX Features
 

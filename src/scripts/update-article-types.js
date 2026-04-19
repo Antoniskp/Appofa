@@ -1,42 +1,21 @@
 /**
- * Migration script to update existing articles with the new type field
- * This script updates articles to have proper type values based on their isNews field
+ * Deprecated migration helper.
+ * `Articles.isNews` has been removed; article type is now source-of-truth.
  */
 
-const { sequelize, Article } = require('../models');
+const { sequelize } = require('../models');
 require('dotenv').config();
 
 const updateArticleTypes = async () => {
   try {
-    console.log('Starting article type migration...');
-    
-    // Authenticate database connection
+    console.log('This script is deprecated and no longer performs any updates.');
+    console.log('Reason: Articles.isNews was removed; article type now fully drives news behavior.');
     await sequelize.authenticate();
-    console.log('Database connection established.');
-
-    console.log('Skipping automatic schema sync. Run explicit migrations before this script.');
-
-    // Update articles based on isNews field
-    const articles = await Article.findAll();
-    console.log(`Found ${articles.length} articles to process.`);
-
-    let updated = 0;
-    for (const article of articles) {
-      // If the article doesn't have a type yet, set it based on isNews
-      if (!article.type) {
-        article.type = article.isNews ? 'news' : 'personal';
-        await article.save();
-        updated++;
-      }
-    }
-
-    console.log(`✓ Updated ${updated} articles with type field.`);
-    console.log('Migration completed successfully!');
-    
+    console.log('No action taken.');
     await sequelize.close();
     process.exit(0);
   } catch (error) {
-    console.error('Migration failed:', error);
+    console.error('Script failed:', error);
     process.exit(1);
   }
 };

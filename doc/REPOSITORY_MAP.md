@@ -525,8 +525,10 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | 029b | 029-add-problem-request-type.js | Problem request type |
 | 030 | 030-create-link-preview-cache-table.js | Link preview cache |
 | 031 | 031-add-video-article-type.js | Video article type |
-| 032 | 032-alter-link-preview-cache-title-to-text.js | Cache title → TEXT |
-| 033 | 033-add-candidate-role-to-users.js | Candidate role |
+| 032a | 032-remove-isnews-from-articles.js | Backfill `type='news'` from legacy `isNews`, then drop `Articles.isNews` |
+| 032b | 032-alter-link-preview-cache-title-to-text.js | Cache title → TEXT |
+| 033a | 033-migrate-poll-tags-to-taggable-items.js | Migrate legacy `Polls.tags` JSON into `TaggableItems`, then drop column |
+| 033b | 033-add-candidate-role-to-users.js | Candidate role |
 | 034 | 034-create-candidate-tables.js | PublicPersonProfiles, CandidateApplications |
 | 035 | 035-add-position-to-candidates.js | Candidate position |
 | 036 | 036-add-appointment-fields.js | Appointment fields |
@@ -617,6 +619,7 @@ npm run migrate              # Run migrations
 npm run migrate:up           # Run migrations up
 npm run migrate:down         # Roll back last migration
 npm run migrate:status       # Migration status
+npm run migrate:article-types # Deprecated no-op helper (legacy isNews backfill script)
 npm run seed                 # Seed database
 npm run seed:locations       # Seed locations
 npm run seed:government-positions        # Seed positions

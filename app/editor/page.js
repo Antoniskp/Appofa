@@ -193,7 +193,7 @@ function EditorDashboardContent() {
                       <div className="flex flex-wrap gap-3 text-sm text-gray-500">
                         <StatusBadge status={article.status} />
                         {article.type && <TypeBadge type={article.type} />}
-                        {article.isNews && (
+                        {article.type === 'news' && (
                           <Badge
                             variant={article.newsApprovedAt ? 'success' : 'warning'}
                             aria-label={article.newsApprovedAt ? 'Approved News' : 'Pending News'}

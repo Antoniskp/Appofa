@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { sequelize, User, Article, Location, LocationLink, Poll, PollOption, PollVote } = require('../models');
+const { Op } = require('sequelize');
 const authMiddleware = require('../middleware/auth');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
@@ -122,7 +123,7 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
       attributes: [[sequelize.fn('DISTINCT', sequelize.col('category')), 'category']],
       where: { 
         status: 'published',
-        category: { [sequelize.Sequelize.Op.ne]: null }
+        category: { [Op.ne]: null }
       },
       raw: true
     });
@@ -188,13 +189,14 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     const pendingNews = await Article.count({
       where: { 
         type: 'news',
-        isNews: false,
+        newsApprovedAt: null,
         status: 'published'
       }
     });
     const approvedNews = await Article.count({
       where: { 
-        isNews: true 
+        type: 'news',
+        newsApprovedAt: { [Op.ne]: null }
       }
     });
     return { 

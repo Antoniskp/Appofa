@@ -94,7 +94,7 @@ const populateDatabase = async () => {
           status: 'published',
           publishedAt: new Date(),
           authorId: admin.id,
-          isNews: true,
+          type: 'news',
           newsApprovedAt: new Date(),
           newsApprovedBy: admin.id
         },
@@ -107,7 +107,7 @@ const populateDatabase = async () => {
           status: 'published',
           publishedAt: new Date(),
           authorId: editor.id,
-          isNews: true,
+          type: 'news',
           newsApprovedAt: new Date(),
           newsApprovedBy: admin.id
         },
@@ -120,7 +120,7 @@ const populateDatabase = async () => {
           status: 'published',
           publishedAt: new Date(),
           authorId: admin.id,
-          isNews: true,
+          type: 'news',
           newsApprovedAt: new Date(),
           newsApprovedBy: admin.id
         },
@@ -132,8 +132,7 @@ const populateDatabase = async () => {
           tags: ['Space', 'Exploration'],
           status: 'published',
           publishedAt: new Date(),
-          authorId: editor.id,
-          isNews: false
+          authorId: editor.id
         },
         {
           title: 'Economic Growth Surpasses Expectations in Q1',
@@ -143,8 +142,7 @@ const populateDatabase = async () => {
           tags: ['Economy', 'Markets'],
           status: 'published',
           publishedAt: new Date(),
-          authorId: admin.id,
-          isNews: false
+          authorId: admin.id
         },
         {
           title: 'Revolutionary Electric Vehicle Battery Unveiled',
@@ -155,7 +153,7 @@ const populateDatabase = async () => {
           status: 'published',
           publishedAt: new Date(),
           authorId: editor.id,
-          isNews: true,
+          type: 'news',
           newsApprovedAt: new Date(),
           newsApprovedBy: admin.id
         },
@@ -167,8 +165,7 @@ const populateDatabase = async () => {
           tags: ['Archaeology', 'History'],
           status: 'published',
           publishedAt: new Date(),
-          authorId: admin.id,
-          isNews: false
+          authorId: admin.id
         },
         {
           title: 'Cybersecurity Concerns Rise with New Threats',
@@ -177,8 +174,7 @@ const populateDatabase = async () => {
           category: 'Technology',
           tags: ['Security', 'Technology'],
           status: 'draft',
-          authorId: editor.id,
-          isNews: false
+          authorId: editor.id
         },
         {
           title: 'Sustainable Agriculture Practices Gain Momentum',
@@ -188,8 +184,7 @@ const populateDatabase = async () => {
           tags: ['Sustainability', 'Agriculture'],
           status: 'published',
           publishedAt: new Date(),
-          authorId: admin.id,
-          isNews: false
+          authorId: admin.id
         },
         {
           title: 'Educational Technology Transforms Learning Experience',
@@ -199,8 +194,7 @@ const populateDatabase = async () => {
           tags: ['Education', 'Technology'],
           status: 'published',
           publishedAt: new Date(),
-          authorId: editor.id,
-          isNews: false
+          authorId: editor.id
         }
       ];
 
@@ -396,7 +390,6 @@ Video: https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBigg
             status: 'published',
             publishedAt: new Date(),
             authorId: admin.id,
-            isNews: true,
             type: 'news',
             newsApprovedAt: new Date(),
             newsApprovedBy: admin.id,
@@ -471,7 +464,6 @@ Video: https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGo
             status: 'published',
             publishedAt: new Date(),
             authorId: admin.id,
-            isNews: false,
             type: 'articles',
             bannerImageUrl: articleSeed.bannerImageUrl
           });
