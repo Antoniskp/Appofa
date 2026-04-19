@@ -1,5 +1,11 @@
 'use strict';
 
+function hasTable(tables, expectedTableName) {
+  return tables
+    .map((table) => (typeof table === 'string' ? table : table.tableName || table.name || ''))
+    .some((name) => String(name).toLowerCase() === expectedTableName.toLowerCase());
+}
+
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Add nationality to Users table
@@ -13,9 +19,7 @@ module.exports = {
 
     // Add nationality and countryCode to PublicPersonProfiles table when it exists
     const tables = await queryInterface.showAllTables();
-    const hasPublicPersonProfiles = tables
-      .map((table) => (typeof table === 'string' ? table : table.tableName || table.name || ''))
-      .some((name) => String(name).toLowerCase() === 'publicpersonprofiles');
+    const hasPublicPersonProfiles = hasTable(tables, 'PublicPersonProfiles');
 
     if (hasPublicPersonProfiles) {
       const profileColumns = await queryInterface.describeTable('PublicPersonProfiles');
@@ -41,9 +45,7 @@ module.exports = {
     }
 
     const tables = await queryInterface.showAllTables();
-    const hasPublicPersonProfiles = tables
-      .map((table) => (typeof table === 'string' ? table : table.tableName || table.name || ''))
-      .some((name) => String(name).toLowerCase() === 'publicpersonprofiles');
+    const hasPublicPersonProfiles = hasTable(tables, 'PublicPersonProfiles');
 
     if (hasPublicPersonProfiles) {
       const profileColumns = await queryInterface.describeTable('PublicPersonProfiles');
