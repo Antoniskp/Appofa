@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-16
+> **Last updated**: 2026-04-19
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -29,10 +29,10 @@ This instruction is permanent and must never be removed.
 - [Frontend Pages (97)](#frontend-pages-97)
 - [Components (120+)](#components-120)
 - [API Client Modules (22)](#api-client-modules-22)
-- [Hooks (5)](#hooks-5)
+- [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (70)](#migrations-70)
-- [Tests (46 files)](#tests-46-files)
+- [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -84,7 +84,7 @@ Appofa/
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
 │
-├── hooks/                  # Custom React hooks (5 files)
+├── hooks/                  # Custom React hooks (6 files)
 ├── config/                 # articleCategories.json, badges.json
 ├── __tests__/              # Jest test suites (46 files)
 ├── doc/                    # Documentation (30+ files)
@@ -412,7 +412,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `locations/` | 6 | LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
-| `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
+| `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ---
@@ -448,11 +448,12 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Hooks (5)
+## Hooks (6)
 
 | Hook | Purpose |
 |------|---------|
 | useAsyncData.js | Async data fetching with loading/error/refetch |
+| useInfiniteData.js | Infinite pagination with accumulated items + reset dependencies |
 | useFetchArticle.js | Fetch single article with metadata |
 | useFilters.js | Filter + pagination state management |
 | useOAuthConfig.js | OAuth configuration & provider detection |
@@ -580,16 +581,16 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (47 files)
+## Tests (49 files)
 
 ### Component Tests
-AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
+AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
 api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, user-profiles-verification, user-stats, wikipediaFetcher
 
 ### Hook Tests
-useAsyncData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
+useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
 
 ---
 

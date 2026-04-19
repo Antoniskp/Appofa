@@ -6,10 +6,11 @@ import { MagnifyingGlassIcon, UserCircleIcon, MapPinIcon } from '@heroicons/reac
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { personAPI, locationAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
+import { useInfiniteData } from '@/hooks/useInfiniteData';
 import { useFilters } from '@/hooks/useFilters';
-import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
+import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
 function ClaimStatusBadge({ status }) {
   if (status === 'unclaimed') {
@@ -70,13 +71,7 @@ function PersonCard({ profile }) {
 export default function PersonsPage() {
   const {
     filters,
-    page,
-    totalPages,
-    setTotalPages,
-    handleFilterChange,
-    nextPage,
-    prevPage,
-    goToPage
+    updateFilter
   } = useFilters({ search: '', constituencyId: '', claimStatus: '' });
 
   const { data: locations } = useAsyncData(
@@ -88,24 +83,20 @@ export default function PersonsPage() {
     { initialData: [] }
   );
 
-  const { data: persons, loading, error } = useAsyncData(
-    async () => {
-      const params = { page, limit: 12 };
+  const { items: persons, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
+    async (p, lim) => {
+      const params = { page: p, limit: lim };
       if (filters.search) params.search = filters.search;
       if (filters.constituencyId) params.constituencyId = filters.constituencyId;
       if (filters.claimStatus) params.claimStatus = filters.claimStatus;
       const res = await personAPI.getAll(params);
-      if (res.success) return res;
-      return { data: { profiles: [], pagination: { totalPages: 1 } } };
+      return {
+        items: res?.data?.profiles || [],
+        hasMore: p < (res?.data?.pagination?.totalPages ?? 1),
+      };
     },
-    [page, filters],
-    {
-      initialData: [],
-      transform: (res) => {
-        setTotalPages(res.data?.pagination?.totalPages || 1);
-        return res.data?.profiles || [];
-      }
-    }
+    12,
+    [filters]
   );
 
   return (
@@ -124,13 +115,13 @@ export default function PersonsPage() {
               type="text"
               placeholder="Search by name..."
               value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
+              onChange={(e) => updateFilter('search', e.target.value)}
               className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <select
             value={filters.constituencyId}
-            onChange={(e) => handleFilterChange('constituencyId', e.target.value)}
+            onChange={(e) => updateFilter('constituencyId', e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Constituencies</option>
@@ -140,7 +131,7 @@ export default function PersonsPage() {
           </select>
           <select
             value={filters.claimStatus}
-            onChange={(e) => handleFilterChange('claimStatus', e.target.value)}
+            onChange={(e) => updateFilter('claimStatus', e.target.value)}
             className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">All Statuses</option>
@@ -150,14 +141,14 @@ export default function PersonsPage() {
           </select>
         </div>
 
-        {loading && <SkeletonLoader count={6} type="card" />}
+        {initialLoading && <SkeletonLoader count={6} type="card" />}
         {error && <p className="text-red-500 text-center py-8">Failed to load persons.</p>}
 
-        {!loading && !error && persons.length === 0 && (
+        {!initialLoading && !error && persons.length === 0 && (
           <EmptyState message="No persons found." />
         )}
 
-        {!loading && persons.length > 0 && (
+        {!error && persons.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {persons.map((profile) => (
               <PersonCard key={profile.id} profile={profile} />
@@ -165,16 +156,14 @@ export default function PersonsPage() {
           </div>
         )}
 
-        {totalPages > 1 && (
-          <div className="mt-8">
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onNext={nextPage}
-              onPrevious={prevPage}
-              onPageChange={goToPage}
-            />
-          </div>
+        {!initialLoading && !error && persons.length > 0 && (
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loading={loading}
+            onLoadMore={loadMore}
+            skeletonType="card"
+            skeletonCount={3}
+          />
         )}
       </div>
     </div>

@@ -8,15 +8,15 @@ import { suggestionAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
-import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
-import { useAsyncData } from '@/hooks/useAsyncData';
+import { useInfiniteData } from '@/hooks/useInfiniteData';
 import { useFilters } from '@/hooks/useFilters';
 import articleCategories from '@/config/articleCategories.json';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import SuggestionCard from '@/components/SuggestionCard';
+import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
 const suggestionCategoryOptions = (articleCategories.suggestionCategories || []).map((cat) => ({
   value: cat,
@@ -30,13 +30,7 @@ function SuggestionsContent() {
   const initialTag = searchParams.get('tag') || '';
   const {
     filters,
-    page,
-    totalPages,
-    setTotalPages,
     handleFilterChange,
-    nextPage,
-    prevPage,
-    goToPage,
     updateFilter,
   } = useFilters({ type: '', status: '', sort: 'newest', category: '', tag: initialTag, search: '', locationId: null });
 
@@ -58,23 +52,21 @@ function SuggestionsContent() {
       .catch(() => {});
   }, []);
 
-  const { data: suggestions, loading, error } = useAsyncData(
-    async () => {
-      const params = { page, limit: 12, ...filters };
+  const { items: suggestions, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
+    async (p, lim) => {
+      const params = { page: p, limit: lim, ...filters };
       if (mine && user?.id) params.authorId = user.id;
       Object.keys(params).forEach((k) => { if (!params[k]) delete params[k]; });
       const response = await suggestionAPI.getAll(params);
-      if (response.success) return response;
-      return { data: [], pagination: { totalPages: 1 } };
+      const items = response?.data || [];
+      const pagination = response?.pagination || {};
+      return {
+        items,
+        hasMore: (pagination.currentPage ?? p) < (pagination.totalPages ?? 1),
+      };
     },
-    [page, filters, mine, user?.id],
-    {
-      initialData: [],
-      transform: (response) => {
-        setTotalPages(response.pagination?.totalPages || 1);
-        return response.data || [];
-      },
-    }
+    12,
+    [filters, mine, user?.id]
   );
 
   return (
@@ -160,7 +152,7 @@ function SuggestionsContent() {
         </div>
 
         {/* Content */}
-        {loading ? (
+        {initialLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
             <SkeletonLoader count={6} type="card" />
           </div>
@@ -183,15 +175,13 @@ function SuggestionsContent() {
                 <SuggestionCard key={suggestion.id} suggestion={suggestion} />
               ))}
             </div>
-            <div className="mt-6">
-              <Pagination
-                currentPage={page}
-                totalPages={totalPages}
-                onNext={nextPage}
-                onPrevious={prevPage}
-                onPageChange={goToPage}
-              />
-            </div>
+            <LoadMoreTrigger
+              hasMore={hasMore}
+              loading={loading}
+              onLoadMore={loadMore}
+              skeletonType="card"
+              skeletonCount={3}
+            />
           </>
         )}
       </div>

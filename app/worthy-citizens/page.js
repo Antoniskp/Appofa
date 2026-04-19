@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import { endorsementAPI } from '@/lib/api';
-import { useAsyncData } from '@/hooks/useAsyncData';
+import { useInfiniteData } from '@/hooks/useInfiniteData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
-import Pagination from '@/components/ui/Pagination';
 import Badge from '@/components/ui/Badge';
 import Link from 'next/link';
+import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
 const TOPICS = [
   'Education',
@@ -80,24 +80,29 @@ function UserLeaderboardCard({ user, rank }) {
 
 export default function WorthyCitizensPage() {
   const [selectedTopic, setSelectedTopic] = useState('');
-  const [page, setPage] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
 
-  const { data, loading, error } = useAsyncData(
-    async () => {
-      const params = { page };
-      if (selectedTopic) params.topic = selectedTopic;
-      return endorsementAPI.getLeaderboard(params);
+  const { items: users, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
+    async (p, lim) => {
+      const data = await endorsementAPI.getLeaderboard({
+        page: p,
+        limit: lim,
+        ...(selectedTopic ? { topic: selectedTopic } : {}),
+      });
+      const items = data?.data?.users ?? [];
+      setTotalItems((prev) => data?.data?.pagination?.totalItems ?? prev);
+      return {
+        items,
+        hasMore: p < (data?.data?.pagination?.totalPages ?? 1),
+      };
     },
-    [selectedTopic, page],
-    { initialData: null }
+    PAGE_SIZE,
+    [selectedTopic]
   );
-
-  const users = data?.data?.users ?? [];
-  const pagination = data?.data?.pagination ?? { currentPage: 1, totalPages: 1, totalItems: 0 };
 
   const handleTopicChange = (topic) => {
     setSelectedTopic(topic);
-    setPage(1);
+    setTotalItems(0);
   };
 
   return (
@@ -138,15 +143,15 @@ export default function WorthyCitizensPage() {
         </div>
 
         {/* Results header */}
-        {!loading && (
+        {!initialLoading && (
           <p className="text-sm text-gray-500 mb-4">
-            {pagination.totalItems} πολίτες βρέθηκαν
+            {totalItems} πολίτες βρέθηκαν
             {selectedTopic ? ` για θέμα: ${TOPIC_LABELS[selectedTopic]}` : ''}
           </p>
         )}
 
         {/* List */}
-        {loading ? (
+        {initialLoading ? (
           <div className="space-y-3">
             <SkeletonLoader type="card" count={5} />
           </div>
@@ -167,24 +172,23 @@ export default function WorthyCitizensPage() {
         ) : (
           <div className="space-y-3">
             {users.map((user, index) => (
-              <UserLeaderboardCard
-                key={user.id}
-                user={user}
-                rank={(page - 1) * PAGE_SIZE + index + 1}
-              />
-            ))}
-          </div>
-        )}
+                <UserLeaderboardCard
+                  key={user.id}
+                  user={user}
+                  rank={index + 1}
+                />
+              ))}
+            </div>
+          )}
 
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="mt-6">
-            <Pagination
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              onPageChange={setPage}
-            />
-          </div>
+        {!initialLoading && !error && users.length > 0 && (
+          <LoadMoreTrigger
+            hasMore={hasMore}
+            loading={loading}
+            onLoadMore={loadMore}
+            skeletonType="card"
+            skeletonCount={3}
+          />
         )}
       </div>
     </div>
