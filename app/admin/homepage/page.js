@@ -171,6 +171,11 @@ function HomepageSettingsContent() {
               <option value="registered">Μόνο εγγεγραμμένοι</option>
             </select>
           </div>
+          {manifestSection.audience === 'registered' && (
+            <p className="text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+              ℹ️ Με κοινό «Μόνο εγγεγραμμένοι», το Manifest Section δεν εμφανίζεται σε επισκέπτες.
+            </p>
+          )}
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 space-y-4">
@@ -195,6 +200,12 @@ function HomepageSettingsContent() {
               <option value="registered">Μόνο εγγεγραμμένοι</option>
             </select>
           </div>
+          {infoSection.audience === 'guest' && (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              ℹ️ Με κοινό «Μόνο επισκέπτες», το Info Section δεν εμφανίζεται σε συνδεδεμένους χρήστες
+              (συμπεριλαμβανομένου του admin). Αλλάξτε σε «Όλοι» για να το δείτε και εσείς.
+            </p>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Banner text</label>

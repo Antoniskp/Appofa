@@ -69,6 +69,7 @@ describe('Homepage Settings API', () => {
     expect(res.body.data.manifestSection).toEqual({ enabled: true, audience: 'all' });
     expect(res.body.data.infoSection.enabled).toBe(false);
     expect(res.body.data.infoSection.audience).toBe('guest');
+    expect(res.body.data.infoSection.bodyText).toBe('');
   });
 
   it('PUT should reject unauthenticated requests', async () => {
@@ -95,6 +96,7 @@ describe('Homepage Settings API', () => {
         audience: 'guest',
         bannerText: 'Καλώς ήρθες',
         subText: 'Μάθε πρώτα τα βασικά',
+        bodyText: '  Αναλυτικό μήνυμα δοκιμής  ',
         experimentalNotice: false,
         quickLinks: [{ icon: '🧭', text: 'Οδηγίες', href: '/instructions' }],
         roadmap: ['Βήμα Α'],
@@ -110,7 +112,11 @@ describe('Homepage Settings API', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.manifestSection).toEqual(payload.manifestSection);
-    expect(res.body.data.infoSection).toMatchObject(payload.infoSection);
+    expect(res.body.data.infoSection).toMatchObject({
+      ...payload.infoSection,
+      bodyText: 'Αναλυτικό μήνυμα δοκιμής',
+    });
+    expect(res.body.data.infoSection.bodyText).toBe('Αναλυτικό μήνυμα δοκιμής');
   });
 
   it('PUT should validate object payloads', async () => {

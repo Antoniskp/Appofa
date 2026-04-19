@@ -175,8 +175,9 @@ export default function HomePage() {
         if (res?.success) {
           setHomepageSettings(res.data);
         }
-      } catch {
-        // non-critical — fail silently
+      } catch (err) {
+        // Non-critical but log for debugging
+        console.warn('[HomepageSettings] Failed to load:', err?.message || err);
       }
     };
 
