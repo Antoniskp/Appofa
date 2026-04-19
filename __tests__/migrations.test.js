@@ -324,6 +324,37 @@ describe('Database Migrations', () => {
     });
   });
 
+  describe('20260408000001-add-nationality-fields', () => {
+    test('adds Users.nationality even when PublicPersonProfiles table is missing', async () => {
+      await expect(runMigration('20260408000001-add-nationality-fields.js')).resolves.not.toThrow();
+
+      const usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).toHaveProperty('nationality');
+    });
+
+    test('rollback succeeds when PublicPersonProfiles table is missing', async () => {
+      await runMigration('20260408000001-add-nationality-fields.js');
+      await expect(rollbackMigration('20260408000001-add-nationality-fields.js')).resolves.not.toThrow();
+
+      const usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).not.toHaveProperty('nationality');
+    });
+  });
+
+  describe('20260419000001-ensure-nationality-in-users', () => {
+    test('adds Users.nationality only when missing and rolls back cleanly', async () => {
+      await runMigration('20260419000001-ensure-nationality-in-users.js');
+      await expect(runMigration('20260419000001-ensure-nationality-in-users.js')).resolves.not.toThrow();
+
+      let usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).toHaveProperty('nationality');
+
+      await rollbackMigration('20260419000001-ensure-nationality-in-users.js');
+      usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).not.toHaveProperty('nationality');
+    });
+  });
+
   describe('Full Migration Suite', () => {
     test('should run all migrations in order', async () => {
       const files = getMigrationFiles();

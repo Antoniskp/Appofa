@@ -34,7 +34,6 @@ function CreatePersonProfilePageContent() {
     lastNameEn: '',
     nickname: '',
     nationality: '',
-    countryCode: '',
     photo: '',
     bio: '',
     contactEmail: '',
@@ -138,7 +137,6 @@ function CreatePersonProfilePageContent() {
       if (form.bio) payload.bio = form.bio;
       if (form.contactEmail) payload.contactEmail = form.contactEmail;
       if (form.nationality) payload.nationality = form.nationality;
-      if (form.countryCode) payload.countryCode = form.countryCode.toUpperCase();
       if (locationId) payload.locationId = parseInt(locationId, 10);
 
       // Social links — only non-empty
@@ -258,25 +256,14 @@ function CreatePersonProfilePageContent() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Εθνικότητα
-                </label>
-                <NationalitySelector
-                  value={form.nationality}
-                  onChange={(code) => handleChange('nationality', code)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Κωδικός Χώρας
-                </label>
-                <NationalitySelector
-                  value={form.countryCode}
-                  onChange={(code) => handleChange('countryCode', code)}
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Εθνικότητα
+              </label>
+              <NationalitySelector
+                value={form.nationality}
+                onChange={(code) => handleChange('nationality', code)}
+              />
             </div>
 
             {/* Person Location cascading picker */}
