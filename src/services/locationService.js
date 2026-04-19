@@ -771,7 +771,16 @@ const getLocationEntities = async (locationId, queryParams, user) => {
       });
 
       const homeLocationUserIds = homeLocationUsers.map((u) => u.id);
-      combinedUserIds = Array.from(new Set([...combinedUserIds, ...homeLocationUserIds]));
+      const constituencyPersons = await User.findAll({
+        where: {
+          constituencyId: { [Op.in]: [locationId, ...descendantIds] },
+          claimStatus: { [Op.ne]: null }
+        },
+        attributes: ['id']
+      });
+
+      const constituencyPersonIds = constituencyPersons.map((u) => u.id);
+      combinedUserIds = Array.from(new Set([...combinedUserIds, ...homeLocationUserIds, ...constituencyPersonIds]));
     }
 
     const articles = articleIds.length > 0 ? await Article.findAll({
