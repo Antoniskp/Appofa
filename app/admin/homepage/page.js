@@ -198,21 +198,32 @@ function HomepageSettingsContent() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Banner text</label>
-            <input
-              type="text"
+            <textarea
+              rows={3}
               value={infoSection.bannerText || ''}
               onChange={(e) => setInfoSection((prev) => ({ ...prev, bannerText: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-            />
+            ></textarea>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Sub text</label>
-            <input
-              type="text"
+            <textarea
+              rows={2}
               value={infoSection.subText || ''}
               onChange={(e) => setInfoSection((prev) => ({ ...prev, subText: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            ></textarea>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Κείμενο σώματος (προαιρετικό)</label>
+            <textarea
+              rows={5}
+              value={infoSection.bodyText || ''}
+              onChange={(e) => setInfoSection((prev) => ({ ...prev, bodyText: e.target.value }))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              placeholder="Γράψτε εδώ το κύριο κείμενο της ενότητας..."
             />
           </div>
 
@@ -278,6 +289,23 @@ function HomepageSettingsContent() {
             values={Array.isArray(infoSection.done) ? infoSection.done : []}
             onChange={(done) => setInfoSection((prev) => ({ ...prev, done }))}
           />
+          <div className="pt-2 border-t border-gray-100">
+            <p className="text-xs text-gray-500 mb-2">
+              Το Info Section μπορεί να έχει κλειστεί από επισκέπτες μέσω του κουμπιού «Απόκρυψη». Πατήστε παρακάτω για να το επαναφέρετε στον τρέχοντα browser σας.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== 'undefined') {
+                  window.localStorage.removeItem('infoBannerDismissed');
+                  addToast('Το Info Section θα εμφανιστεί ξανά στην αρχική σελίδα.', { type: 'success' });
+                }
+              }}
+              className="px-3 py-2 rounded-lg border border-amber-300 text-amber-800 text-sm hover:bg-amber-50 transition"
+            >
+              🔁 Επαναφορά εμφάνισης Info Section
+            </button>
+          </div>
         </div>
 
         <button
