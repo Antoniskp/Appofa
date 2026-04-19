@@ -86,7 +86,7 @@ export default function InlineSuggestionVote({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 shrink-0">
       {/* Upvote */}
       <button
         type="button"

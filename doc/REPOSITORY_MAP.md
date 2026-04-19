@@ -415,6 +415,10 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
+### Layout resilience notes (mobile)
+- `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading.
+- `components/SuggestionCard.js`, `components/InlineSuggestionVote.js`, `app/suggestions/[id]/page.js`: vote rows use `min-w-0`/`truncate` for author text and `shrink-0` for vote controls to avoid off-screen vote buttons on narrow viewports.
+
 ---
 
 ## API Client Modules (23)

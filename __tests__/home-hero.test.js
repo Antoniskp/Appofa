@@ -61,7 +61,8 @@ const renderHero = async (slide) => {
       }
       return { data: null, loading: false };
     }
-    return { data: slide ? [slide] : [], loading: false };
+    const slides = Array.isArray(slide) ? slide : (slide ? [slide] : []);
+    return { data: slides, loading: false };
   });
 
   const container = document.createElement('div');
@@ -129,6 +130,33 @@ describe('HomeHero CTA link behavior', () => {
     expect(wrapper).toBeTruthy();
     expect(wrapper.className).toContain('opacity-0');
     expect(wrapper.className).toContain('pointer-events-none');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('keeps arrow navigation row rendered but invisible with a single slide', async () => {
+    const { container, root } = await renderHero(buildSlide('/polls'));
+    const prevButton = container.querySelector('button[aria-label="Προηγούμενο slide"]');
+
+    expect(prevButton).toBeTruthy();
+    expect(prevButton.parentElement.className).toContain('invisible');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('shows arrow navigation row when multiple slides are available', async () => {
+    const { container, root } = await renderHero([
+      buildSlide('/polls', 'Δες τώρα'),
+      { ...buildSlide('/news', 'Δες περισσότερα'), id: 2, title: 'Second slide' },
+    ]);
+    const prevButton = container.querySelector('button[aria-label="Προηγούμενο slide"]');
+
+    expect(prevButton).toBeTruthy();
+    expect(prevButton.parentElement.className).not.toContain('invisible');
 
     await act(async () => {
       root.unmount();

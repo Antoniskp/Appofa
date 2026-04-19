@@ -34,6 +34,8 @@ This instruction is permanent and must never be removed.
 - **Homepage locations highlight**: use `LocationCard` inside `HomepageSection` with `sort=mostUsers`; do NOT use `LocationDiscoveryStrip` (removed)
 - **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
 - **Location entity tabs**: keep regular users (`claimStatus = null`) under `users` and person profiles (`claimStatus != null`) under `unclaimed`
+- **Mobile flex stability**: for metadata + vote rows, use `min-w-0` + `truncate` on the text side and `shrink-0` on vote controls to prevent off-screen overflow
+- **Home hero nav stability**: keep the arrow/dots row always rendered and toggle with `invisible` (not conditional mount) to avoid layout jumps when slides load
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)
