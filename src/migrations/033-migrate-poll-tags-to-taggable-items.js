@@ -50,7 +50,7 @@ module.exports = {
           }
 
           const [tag] = await queryInterface.sequelize.query(
-            'SELECT "id" FROM "Tags" WHERE lower("name") = :name LIMIT 1;',
+            'SELECT "id" FROM "Tags" WHERE "name" = :name LIMIT 1;',
             { replacements: { name: tagName }, type: Sequelize.QueryTypes.SELECT }
           );
 
