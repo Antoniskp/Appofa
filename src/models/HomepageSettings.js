@@ -7,6 +7,7 @@ const DEFAULT_INFO_SECTION = {
   audience: 'guest',
   bannerText: 'Ψήφισε ελεύθερα · Ανώνυμα',
   subText: 'Πριν γράψεις, καλό θα είναι να γνωρίζεις αυτά',
+  bodyText: '',
   experimentalNotice: true,
   quickLinks: [],
   roadmap: [],

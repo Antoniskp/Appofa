@@ -6,6 +6,7 @@ const DEFAULT_INFO_SECTION = {
   audience: 'guest',
   bannerText: 'Ψήφισε ελεύθερα · Ανώνυμα',
   subText: 'Πριν γράψεις, καλό θα είναι να γνωρίζεις αυτά',
+  bodyText: '',
   experimentalNotice: true,
   quickLinks: [],
   roadmap: [],
@@ -50,6 +51,7 @@ function normalizeInfoSection(input = {}) {
     audience: sanitizeAudience(input.audience, DEFAULT_INFO_SECTION.audience),
     bannerText: typeof input.bannerText === 'string' ? input.bannerText.trim() : DEFAULT_INFO_SECTION.bannerText,
     subText: typeof input.subText === 'string' ? input.subText.trim() : DEFAULT_INFO_SECTION.subText,
+    bodyText: typeof input.bodyText === 'string' ? input.bodyText.trim() : '',
     experimentalNotice: typeof input.experimentalNotice === 'boolean'
       ? input.experimentalNotice
       : DEFAULT_INFO_SECTION.experimentalNotice,
