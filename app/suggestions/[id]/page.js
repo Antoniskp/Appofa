@@ -155,21 +155,19 @@ function SolutionCard({ solution, user, onVote, votingId }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4">
       <p className="text-sm text-gray-800 whitespace-pre-wrap">{solution.body}</p>
-      <div className="flex items-center justify-between mt-3 gap-3">
-        <div className="flex items-center gap-3 text-xs text-gray-500 min-w-0">
-          {solution.author && <span className="truncate">@{solution.author.username}</span>}
+      <div className="flex flex-wrap items-center justify-between mt-3 gap-3">
+        <div className="flex items-center gap-3 text-xs text-gray-500">
+          {solution.author && <span>@{solution.author.username}</span>}
           <span>{new Date(solution.createdAt).toLocaleDateString('el-GR')}</span>
         </div>
-        <div className="shrink-0">
-          <VoteButtons
-            upvotes={solution.upvotes ?? 0}
-            downvotes={solution.downvotes ?? 0}
-            myVote={solution.myVote}
-            onVote={(val) => onVote(solution.id, val)}
-            disabled={!user || votingId === `sol-${solution.id}`}
-            type="idea"
-          />
-        </div>
+        <VoteButtons
+          upvotes={solution.upvotes ?? 0}
+          downvotes={solution.downvotes ?? 0}
+          myVote={solution.myVote}
+          onVote={(val) => onVote(solution.id, val)}
+          disabled={!user || votingId === `sol-${solution.id}`}
+          type="idea"
+        />
       </div>
     </div>
   );
@@ -378,10 +376,10 @@ export default function SuggestionDetailPage() {
           <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{suggestion.body}</p>
 
           {/* Footer row */}
-          <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-3">
-            <div className="flex items-center gap-4 text-xs text-gray-500 min-w-0 flex-wrap">
+          <div className="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-3">
+            <div className="flex items-center gap-4 text-xs text-gray-500">
               {suggestion.author && (
-                <span className="font-medium truncate">@{suggestion.author.username}</span>
+                <span className="font-medium">@{suggestion.author.username}</span>
               )}
               <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
               {(isOwner || isPrivileged) && (
@@ -409,16 +407,14 @@ export default function SuggestionDetailPage() {
               />
             </div>
 
-            <div className="shrink-0">
-              <VoteButtons
-                upvotes={suggestion.upvotes ?? 0}
-                downvotes={suggestion.downvotes ?? 0}
-                myVote={suggestion.myVote}
-                onVote={handleSuggestionVote}
-                disabled={!user || votingId === 'suggestion'}
-                type={suggestion.type}
-              />
-            </div>
+            <VoteButtons
+              upvotes={suggestion.upvotes ?? 0}
+              downvotes={suggestion.downvotes ?? 0}
+              myVote={suggestion.myVote}
+              onVote={handleSuggestionVote}
+              disabled={!user || votingId === 'suggestion'}
+              type={suggestion.type}
+            />
           </div>
 
           {!user && (

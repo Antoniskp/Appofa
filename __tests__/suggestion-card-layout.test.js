@@ -39,7 +39,7 @@ describe('SuggestionCard layout', () => {
     document.body.innerHTML = '';
   });
 
-  test('allows author metadata to shrink/truncate and keeps vote controls fixed', async () => {
+  test('uses a wrapping footer row for metadata and vote controls', async () => {
     const suggestion = {
       id: 1,
       type: 'idea',
@@ -60,14 +60,11 @@ describe('SuggestionCard layout', () => {
       root.render(React.createElement(SuggestionCard, { suggestion }));
     });
 
-    const username = [...container.querySelectorAll('span')].find((el) => el.textContent === suggestion.author.username);
-    const voteRoot = container.querySelector('[data-testid="inline-vote"]');
+    const footerRow = [...container.querySelectorAll('div')]
+      .find((el) => el.className.includes('mt-auto') && el.className.includes('justify-between'));
 
-    expect(username).toBeTruthy();
-    expect(username.className).toContain('truncate');
-    expect(username.closest('div').className).toContain('min-w-0');
-    expect(voteRoot).toBeTruthy();
-    expect(voteRoot.parentElement.className).toContain('shrink-0');
+    expect(footerRow).toBeTruthy();
+    expect(footerRow.className).toContain('flex-wrap');
 
     await act(async () => {
       root.unmount();
