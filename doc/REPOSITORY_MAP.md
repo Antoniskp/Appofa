@@ -26,9 +26,9 @@ This instruction is permanent and must never be removed.
 - [Controllers (21)](#controllers-21)
 - [Services (8)](#services-8)
 - [Middleware (7)](#middleware-7)
-- [Frontend Pages (98)](#frontend-pages-98)
+- [Frontend Pages (99)](#frontend-pages-99)
 - [Components (120+)](#components-120)
-- [API Client Modules (25)](#api-client-modules-25)
+- [API Client Modules (26)](#api-client-modules-26)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (77)](#migrations-77)
@@ -55,7 +55,7 @@ Appofa/
 │   ├── utils/              # Utility helpers
 │   └── index.js            # Express app entry point
 │
-├── app/                    # Frontend (Next.js App Router, 98 pages)
+├── app/                    # Frontend (Next.js App Router, 99 pages)
 │   ├── (statics)/          # Static content pages (46 pages)
 │   ├── admin/              # Admin dashboard (18 pages)
 │   ├── articles/           # Article CRUD pages
@@ -79,7 +79,7 @@ Appofa/
 │   └── ui/                 # Shared UI primitives (20+ files)
 │
 ├── lib/                    # Shared frontend utilities
-│   ├── api/                # API client modules (25 files)
+│   ├── api/                # API client modules (26 files)
 │   ├── constants/          # Frontend constants (3 files)
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
@@ -350,7 +350,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (97)
+## Frontend Pages (99)
 
 ### Main Pages
 | Route | Description |
@@ -384,7 +384,7 @@ Appofa/
 | `/manifest-supporters` | Manifest supporters |
 | `/request-removal` | Profile removal request |
 
-### Admin (18 pages)
+### Admin (19 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
@@ -394,6 +394,7 @@ Appofa/
 | `/admin/candidates/*` | Candidate management (backward-compat) |
 | `/admin/dream-team` | Dream team admin |
 | `/admin/hero` | Hero settings |
+| `/admin/geo` | Geo traffic dashboard + country funding management |
 | `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/locations` | Location admin |
@@ -429,7 +430,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (25)
+## API Client Modules (26)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -445,6 +446,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | dreamTeamAPI.js | Dream team |
 | endorsements.js | Endorsements |
 | geo.js | Geo detect + public country funding |
+| geoAdmin.js | Admin geo-traffic analytics + country funding CRUD |
 | heroSettings.js | Hero settings |
 | homepageSettings.js | Homepage settings |
 | ipRules.js | IP whitelist/blacklist management |
