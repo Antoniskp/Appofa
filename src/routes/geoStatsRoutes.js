@@ -244,7 +244,7 @@ router.post('/country-funding', apiLimiter, authMiddleware, checkRole('admin'), 
 
     const created = await CountryFunding.create({
       locationId: location.id,
-      goalAmount: goalAmount != null ? goalAmount : undefined,
+      ...(goalAmount != null ? { goalAmount } : {}),
       donationUrl: donationUrl || null,
       notes: notes || null,
     });

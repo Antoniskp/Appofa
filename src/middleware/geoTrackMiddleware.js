@@ -81,6 +81,7 @@ const geoTrackMiddleware = (req, res, next) => {
   GeoVisit.create({
     countryCode,
     countryName,
+    // Intentionally non-blocking analytics: only token presence is checked here.
     isAuthenticated: Boolean(token && token.trim()),
     isDiaspora: null,
     sessionHash,
