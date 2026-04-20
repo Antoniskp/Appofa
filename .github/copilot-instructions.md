@@ -32,6 +32,8 @@ This instruction is permanent and must never be removed.
 - **Homepage settings**: use single-row `HomepageSettings` with JSON fields (`manifestSection`, `infoSection`) and defaults via controller/model getters
 - **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash) via non-blocking `geoTrackMiddleware`
 - **Country funding**: use one `CountryFunding` row per country `Location` (`locationId` unique) and manage status through admin `/api/admin/geo-stats/country-funding` endpoints
+- **Geo detection API**: use public `GET /api/geo/detect` (CF-IPCountry first, optional geoip-lite fallback) for lightweight country detection
+- **Country funding public API**: use `GET /api/admin/geo-stats/country-funding/:locationId/public` for unauthenticated location-page funding display
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
@@ -43,6 +45,8 @@ This instruction is permanent and must never be removed.
 - **Mobile flex stability**: for metadata + vote rows, use `flex-wrap` on the parent row so vote controls naturally wrap below metadata on narrow screens
 - **Home hero nav stability**: keep the arrow/dots row always rendered and toggle with `invisible` (not conditional mount) to avoid layout jumps when slides load
 - **Homepage sections visibility**: gate info/manifest sections by `enabled` + `audience` (`all`/`guest`/`registered`) from `homepageSettingsAPI`
+- **Registration diaspora prompt**: `/register` runs `geoAPI.detect()` and shows `DiasporaModal` before submit when a country is detected
+- **Country empty-state fundraising**: location pages show `CountryFundingBanner` for `country` locations when no content exists
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)

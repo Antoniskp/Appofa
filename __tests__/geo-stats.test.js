@@ -224,4 +224,24 @@ describe('Geo Stats Admin API', () => {
     expect(deleteRes.status).toBe(200);
     expect(deleteRes.body.success).toBe(true);
   });
+
+  it('GET /country-funding/:locationId/public returns funding without auth', async () => {
+    const res = await request(app)
+      .get(`/api/admin/geo-stats/country-funding/${grLocation.id}/public`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBeTruthy();
+    expect(res.body.data.locationId).toBe(grLocation.id);
+    expect(res.body.data.location).toBeTruthy();
+    expect(res.body.data.location.id).toBe(grLocation.id);
+  });
+
+  it('GET /country-funding/:locationId/public validates locationId', async () => {
+    const res = await request(app)
+      .get('/api/admin/geo-stats/country-funding/not-a-number/public');
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
 });

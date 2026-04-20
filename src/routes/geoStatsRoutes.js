@@ -27,6 +27,23 @@ const getDateFilterForPeriod = (period) => {
 const toInt = (value) => Number.parseInt(value, 10) || 0;
 const toNumber = (value) => Number.parseFloat(value || 0);
 
+// Public: get country funding status for a location
+router.get('/country-funding/:locationId/public', apiLimiter, async (req, res, next) => {
+  try {
+    const locationId = Number.parseInt(req.params.locationId, 10);
+    if (Number.isNaN(locationId)) {
+      return res.status(400).json({ success: false, message: 'Invalid locationId.' });
+    }
+    const record = await CountryFunding.findOne({
+      where: { locationId },
+      include: [{ model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'code'] }],
+    });
+    return res.json({ success: true, data: record || null });
+  } catch (err) {
+    return next(err);
+  }
+});
+
 router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req, res, next) => {
   try {
     const period = VALID_PERIODS.has(req.query.period) ? req.query.period : '7d';

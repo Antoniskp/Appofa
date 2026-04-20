@@ -8,9 +8,10 @@ import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/ui/FormInput';
 import OAuthButtons from '@/components/ui/OAuthButtons';
 import AuthDivider from '@/components/ui/AuthDivider';
-import { authAPI } from '@/lib/api';
+import { authAPI, geoAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
+import DiasporaModal from '@/components/DiasporaModal';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -26,6 +27,9 @@ export default function RegisterPage() {
     searchable: true,
   });
   const [loading, setLoading] = useState(false);
+  const [detectedCountry, setDetectedCountry] = useState({ countryCode: null, countryName: null });
+  const [showDiasporaModal, setShowDiasporaModal] = useState(false);
+  const [pendingRegisterData, setPendingRegisterData] = useState(null);
   const { config: oauthConfig } = useOAuthConfig();
 
   useEffect(() => {
@@ -34,11 +38,39 @@ export default function RegisterPage() {
     }
   }, [user, authLoading, router]);
 
+  useEffect(() => {
+    geoAPI.detect()
+      .then((res) => {
+        if (res?.success && res.data?.countryCode) {
+          setDetectedCountry({ countryCode: res.data.countryCode, countryName: res.data.countryName });
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const prepareRegistrationData = (data = {}) => {
+    const { confirmPassword, ...registerData } = data;
+    return registerData;
+  };
+
+  const doRegister = async (data) => {
+    setLoading(true);
+    try {
+      await register(prepareRegistrationData(data));
+      success('Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!');
+      router.push('/');
+    } catch (err) {
+      error(err.message || 'Αποτυχία εγγραφής. Παρακαλώ δοκιμάστε ξανά.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -50,18 +82,27 @@ export default function RegisterPage() {
       return;
     }
 
-    setLoading(true);
-
-    try {
-      const { confirmPassword, ...registerData } = formData;
-      await register(registerData);
-      success('Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!');
-      router.push('/');
-    } catch (err) {
-      error(err.message || 'Αποτυχία εγγραφής. Παρακαλώ δοκιμάστε ξανά.');
-    } finally {
-      setLoading(false);
+    if (detectedCountry.countryCode) {
+      setPendingRegisterData(prepareRegistrationData(formData));
+      setShowDiasporaModal(true);
+      return;
     }
+    await doRegister(formData);
+  };
+
+  const handleDiasporaConfirm = async (homeLocationId) => {
+    setShowDiasporaModal(false);
+    await doRegister({
+      ...pendingRegisterData,
+      isDiaspora: true,
+      residenceCountryCode: detectedCountry.countryCode,
+      homeLocationId,
+    });
+  };
+
+  const handleDiasporaDecline = async () => {
+    setShowDiasporaModal(false);
+    await doRegister(pendingRegisterData);
   };
 
   const handleGithubSignup = async () => {
@@ -205,6 +246,13 @@ export default function RegisterPage() {
           </div>
         </form>
       </div>
+      <DiasporaModal
+        isOpen={showDiasporaModal}
+        detectedCountryName={detectedCountry.countryName}
+        onConfirmDiaspora={handleDiasporaConfirm}
+        onDecline={handleDiasporaDecline}
+        onSkip={handleDiasporaDecline}
+      />
     </div>
   );
 }
