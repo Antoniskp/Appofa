@@ -22,13 +22,13 @@ This instruction is permanent and must never be removed.
 
 - [Directory Structure](#directory-structure)
 - [Models (40)](#models-40)
-- [API Routes (25 files, 155+ endpoints)](#api-routes-25-files-155-endpoints)
+- [API Routes (26 files, 157+ endpoints)](#api-routes-26-files-157-endpoints)
 - [Controllers (21)](#controllers-21)
 - [Services (8)](#services-8)
 - [Middleware (7)](#middleware-7)
 - [Frontend Pages (98)](#frontend-pages-98)
 - [Components (120+)](#components-120)
-- [API Client Modules (24)](#api-client-modules-24)
+- [API Client Modules (25)](#api-client-modules-25)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (77)](#migrations-77)
@@ -46,7 +46,7 @@ Appofa/
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
 │   ├── models/             # Sequelize models (40 models)
-│   ├── routes/             # Express route definitions (25 files)
+│   ├── routes/             # Express route definitions (26 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, error handling (7 files)
 │   ├── migrations/         # DB migrations (77 files)
 │   ├── config/             # database.js, securityHeaders.js
@@ -79,7 +79,7 @@ Appofa/
 │   └── ui/                 # Shared UI primitives (20+ files)
 │
 ├── lib/                    # Shared frontend utilities
-│   ├── api/                # API client modules (24 files)
+│   ├── api/                # API client modules (25 files)
 │   ├── constants/          # Frontend constants (3 files)
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
@@ -141,7 +141,7 @@ Appofa/
 
 ---
 
-## API Routes (25 files, 155+ endpoints)
+## API Routes (26 files, 157+ endpoints)
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
@@ -287,7 +287,8 @@ Appofa/
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
-| geoStatsRoutes.js | /api/admin/geo-stats | GET /visits, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
+| geoStatsRoutes.js | /api/admin/geo-stats | GET /country-funding/:locationId/public, GET /visits, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
+| geoDetectRoutes.js | /api/geo | GET /detect |
 
 ---
 
@@ -416,11 +417,11 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
 | `layout/` | 8 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout |
-| `locations/` | 6 | LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
+| `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
-| Root | 20+ | ContactForm, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
+| Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading.
@@ -428,7 +429,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (24)
+## API Client Modules (25)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -443,6 +444,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | comments.js | Comments |
 | dreamTeamAPI.js | Dream team |
 | endorsements.js | Endorsements |
+| geo.js | Geo detect + public country funding |
 | heroSettings.js | Hero settings |
 | homepageSettings.js | Homepage settings |
 | ipRules.js | IP whitelist/blacklist management |

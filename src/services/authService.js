@@ -38,7 +38,17 @@ function generateToken(user) {
   );
 }
 
-async function registerUser({ username, email, password, firstNameNative, lastNameNative, searchable }) {
+async function registerUser({
+  username,
+  email,
+  password,
+  firstNameNative,
+  lastNameNative,
+  searchable,
+  isDiaspora,
+  residenceCountryCode,
+  homeLocationId
+}) {
   const usernameResult = normalizeRequiredText(username, 'Username', USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH);
   if (usernameResult.error) throw new ServiceError(400, usernameResult.error);
 
@@ -64,6 +74,10 @@ async function registerUser({ username, email, password, firstNameNative, lastNa
     throw new ServiceError(400, 'User with this email or username already exists.');
   }
 
+  const parsedHomeLocationId = homeLocationId == null || homeLocationId === ''
+    ? null
+    : Number.parseInt(homeLocationId, 10);
+
   const user = await User.create({
     username: usernameResult.value,
     email: emailResult.value,
@@ -71,7 +85,10 @@ async function registerUser({ username, email, password, firstNameNative, lastNa
     role: 'viewer',
     firstNameNative: firstNameNativeResult.value,
     lastNameNative: lastNameNativeResult.value,
-    searchable: searchable !== undefined ? Boolean(searchable) : true
+    searchable: searchable !== undefined ? Boolean(searchable) : true,
+    isDiaspora: Boolean(isDiaspora),
+    residenceCountryCode: residenceCountryCode ? String(residenceCountryCode).trim().toUpperCase() : null,
+    homeLocationId: Number.isNaN(parsedHomeLocationId) ? null : parsedHomeLocationId,
   });
 
   const token = generateToken(user);

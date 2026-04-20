@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI, locationSectionAPI, suggestionAPI, personAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI, suggestionAPI, personAPI, geoAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -14,6 +14,7 @@ import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
+import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
@@ -37,6 +38,8 @@ export default function LocationDetailPage() {
   const [imageError, setImageError] = useState(false);
   const [sections, setSections] = useState([]);
   const [secondaryLoading, setSecondaryLoading] = useState(false);
+  const [fundingData, setFundingData] = useState(null);
+  const [fundingLoaded, setFundingLoaded] = useState(false);
 
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
@@ -67,6 +70,8 @@ export default function LocationDetailPage() {
         setSections([]);
         setImageError(false);
         setIsEditing(false);
+        setFundingData(null);
+        setFundingLoaded(false);
         setSecondaryLoading(true);
 
         // Build breadcrumb
@@ -139,6 +144,14 @@ export default function LocationDetailPage() {
         }
 
         setSecondaryLoading(false);
+        if (loc.type === 'country') {
+          geoAPI.getCountryFunding(loc.id)
+            .then((res) => { if (res?.success) setFundingData(res.data); })
+            .catch(() => {})
+            .finally(() => setFundingLoaded(true));
+        } else {
+          setFundingLoaded(true);
+        }
       },
       onError: (err) => {
         console.error('Failed to load location:', err);
@@ -300,6 +313,7 @@ export default function LocationDetailPage() {
 
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
+  const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0;
 
   const TAB_LABELS = {
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
@@ -410,6 +424,16 @@ export default function LocationDetailPage() {
 
         {/* Tabbed content — only shown when not editing */}
         {!isEditing && (
+          <>
+            {location?.type === 'country' && fundingLoaded && (
+              <div className="mb-6">
+                <CountryFundingBanner
+                  funding={fundingData}
+                  locationName={location.name_local || location.name}
+                  hasContent={hasContent}
+                />
+              </div>
+            )}
           <LocationTabs
             activeTab={resolvedActiveTab}
             onTabChange={handleTabChange}
@@ -430,6 +454,7 @@ export default function LocationDetailPage() {
               currentUserId: user?.id ?? null,
             }}
           />
+          </>
         )}
       </div>
     </div>

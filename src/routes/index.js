@@ -23,6 +23,7 @@ const badgeRoutes = require('./badges');
 const manifestRoutes = require('./manifestRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const geoStatsRoutes = require('./geoStatsRoutes');
+const geoDetectRoutes = require('./geoDetectRoutes');
 
 const routes = [
   { prefix: '/api/auth', router: authRoutes },
@@ -52,6 +53,7 @@ const routes = [
   { prefix: '/api/manifests', router: manifestRoutes },
   { prefix: '/api/notifications', router: notificationRoutes },
   { prefix: '/api/admin/geo-stats', router: geoStatsRoutes },
+  { prefix: '/api/geo', router: geoDetectRoutes },
 ];
 
 function registerRoutes(app) {
