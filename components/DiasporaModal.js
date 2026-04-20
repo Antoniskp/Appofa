@@ -28,7 +28,7 @@ export default function DiasporaModal({ isOpen, detectedCountryName, onConfirmDi
 
         <p className="text-gray-600 mb-5 text-sm leading-relaxed">
           {detectedCountryName ? `Εντοπίσαμε ότι βρίσκεστε στη ${detectedCountryName}. ` : ''}
-          Είστε μέλος της Ελληνικής Διασποράς ή άλλης κοινότητας που ζει εκτός της χώρας καταγωγής σας;
+          Είστε μέλος της ελληνικής Διασποράς ή άλλης κοινότητας που ζει εκτός της χώρας καταγωγής σας;
         </p>
 
         <div className="mb-6">
