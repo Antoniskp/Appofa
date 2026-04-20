@@ -57,6 +57,32 @@ const detectCountry = (req) => {
   };
 };
 
+const sanitizePath = (rawPath) => {
+  if (typeof rawPath !== 'string' || !rawPath) {
+    return null;
+  }
+
+  let decoded = rawPath;
+  try {
+    for (let i = 0; i < 10; i += 1) {
+      const nextDecoded = decodeURIComponent(decoded);
+      if (nextDecoded === decoded) {
+        break;
+      }
+      decoded = nextDecoded;
+    }
+  } catch {
+    return null;
+  }
+
+  if (decoded.includes('..')) {
+    console.warn('geoTrackMiddleware: suspicious path discarded:', rawPath);
+    return null;
+  }
+
+  return rawPath.slice(0, 500) || null;
+};
+
 const geoTrackMiddleware = (req, res, next) => {
   if (process.env.NODE_ENV === 'test') {
     return next();
@@ -85,7 +111,7 @@ const geoTrackMiddleware = (req, res, next) => {
     isAuthenticated: Boolean(token && token.trim()),
     isDiaspora: null,
     sessionHash,
-    path: requestPath.slice(0, 500) || null,
+    path: sanitizePath(requestPath),
     locale,
   }).catch((err) => {
     console.error('GeoVisit tracking failed:', err?.message || err);
