@@ -64,7 +64,7 @@ const sanitizePath = (rawPath) => {
 
   let decoded = rawPath;
   try {
-    for (let i = 0; i < 3; i += 1) {
+    for (let i = 0; i < 10; i += 1) {
       const nextDecoded = decodeURIComponent(decoded);
       if (nextDecoded === decoded) {
         break;
