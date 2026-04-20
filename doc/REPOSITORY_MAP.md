@@ -432,6 +432,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 ### Layout resilience notes (mobile)
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading.
 - `components/SuggestionCard.js`, `components/InlineSuggestionVote.js`, `app/suggestions/[id]/page.js`: vote rows use `flex-wrap` on the parent footer row so vote controls wrap below metadata on narrow viewports.
+- `components/layout/TopNav.js`: `LanguageSwitcher` is rendered inside authenticated user dropdown menus (desktop/mobile), not as a standalone navbar item; profile page also exposes it under preferences.
 
 ---
 

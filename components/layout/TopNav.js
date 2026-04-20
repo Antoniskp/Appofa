@@ -63,6 +63,17 @@ export default function TopNav() {
     ? `/locations/${user.homeLocation.slug}`
     : '/profile';
 
+  const createLanguageSwitcherMenuItem = () => ({
+    id: 'language-switcher',
+    className: 'px-4 py-2',
+    customContent: (
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Γλώσσα / Language</p>
+        <LanguageSwitcher />
+      </div>
+    )
+  });
+
   // Build user menu items for DropdownMenu (desktop - smaller icons)
   const userMenuItems = [
     {
@@ -138,7 +149,9 @@ export default function TopNav() {
       icon: <ArrowRightOnRectangleIcon className="h-4 w-4" />,
       onClick: handleLogout,
       variant: 'danger'
-    }
+    },
+    { divider: true },
+    createLanguageSwitcherMenuItem()
   ];
 
   // Build mobile menu items (larger icons and font)
@@ -217,7 +230,9 @@ export default function TopNav() {
       onClick: handleLogout,
       variant: 'danger',
       className: 'text-base font-medium'
-    }
+    },
+    { divider: true },
+    createLanguageSwitcherMenuItem()
   ];
 
   return (
@@ -287,7 +302,6 @@ export default function TopNav() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-4 ml-auto">
-            <LanguageSwitcher />
             {loading ? (
               <div className="flex items-center gap-4">
                 <SkeletonLoader type="button" count={2} className="flex gap-4" />
@@ -397,7 +411,6 @@ export default function TopNav() {
           </Link>
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
-          <LanguageSwitcher />
           {loading ? (
             <div className="space-y-2">
               <SkeletonLoader type="button" count={2} className="space-y-2" />

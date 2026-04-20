@@ -10,6 +10,7 @@ import Card from '@/components/ui/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 import ProfileHeader from '@/components/profile/ProfileHeader';
 import ProfileBasicInfoForm from '@/components/profile/ProfileBasicInfoForm';
 import ProfilePrivacySection from '@/components/profile/ProfilePrivacySection';
@@ -644,6 +645,15 @@ function ProfileContent() {
             onLinkGoogle={handleLinkGoogle}
             onUnlinkGoogle={handleUnlinkGoogle}
           />
+        </Card>
+
+        {/* Προτιμήσεις */}
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Προτιμήσεις</h2>
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-gray-700">Γλώσσα / Language</p>
+            <LanguageSwitcher />
+          </div>
         </Card>
 
         {/* Επικίνδυνη Ζώνη */}

@@ -51,7 +51,7 @@ This instruction is permanent and must never be removed.
 - **Country empty-state fundraising**: location pages show `CountryFundingBanner` for `country` locations when no content exists
 - **Admin geo dashboard**: use `/admin/geo` for country traffic analytics and country funding management (tabs: traffic + country management)
 - **Admin geo API module**: use `geoAdminAPI` (`lib/api/geoAdmin.js`) for `/api/admin/geo-stats/*` admin calls instead of direct request code
-- **Language switcher**: use `components/ui/LanguageSwitcher.js` in top navigation for locale cookie toggling
+- **Language switcher**: use `components/ui/LanguageSwitcher.js` inside authenticated user dropdowns (not standalone in TopNav) and in profile preferences for locale cookie toggling
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)

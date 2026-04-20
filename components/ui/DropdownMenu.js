@@ -64,7 +64,7 @@ export default function DropdownMenu({
 
   // Filter out dividers and disabled items for keyboard navigation
   const focusableItems = useMemo(
-    () => items.filter(item => !item.divider && !item.disabled),
+    () => items.filter(item => !item.divider && !item.disabled && !item.customContent),
     [items]
   );
 
@@ -244,6 +244,18 @@ export default function DropdownMenu({
                   className="my-1 border-t border-gray-200"
                   role="separator"
                 />
+              );
+            }
+
+            if (item.customContent) {
+              return (
+                <div
+                  key={item.id || `item-${index}`}
+                  className={item.className || 'px-4 py-2'}
+                  role="none"
+                >
+                  {item.customContent}
+                </div>
               );
             }
 
