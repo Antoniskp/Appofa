@@ -41,6 +41,19 @@ jest.mock('next/image', () => {
   };
 });
 
+jest.mock('next-intl', () => ({
+  useTranslations: (namespace) => (key) => {
+    const messages = {
+      auth: {
+        register_title: 'Δημιουργία λογαριασμού',
+        confirm_password: 'Επιβεβαίωση κωδικού'
+      }
+    };
+
+    return messages[namespace]?.[key] || key;
+  }
+}));
+
 const mockRouter = { push: jest.fn() };
 const mockSearchParams = { get: jest.fn(() => null) };
 

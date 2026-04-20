@@ -32,7 +32,7 @@ This instruction is permanent and must never be removed.
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (77)](#migrations-77)
-- [Tests (49 files)](#tests-49-files)
+- [Tests (50 files)](#tests-50-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -43,6 +43,8 @@ This instruction is permanent and must never be removed.
 ```
 Appofa/
 ├── proxy.js                 # Next.js edge proxy (country redirect)
+├── i18n.js                  # next-intl request config (locale from NEXT_LOCALE cookie)
+├── messages/                # next-intl translation bundles (el.json, en.json)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
@@ -424,7 +426,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
-| `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
+| `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
@@ -606,10 +608,10 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (49 files)
+## Tests (50 files)
 
 ### Component Tests
-AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
+AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LanguageSwitcher, LoadMoreTrigger, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
 api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, user-profiles-verification, user-stats, wikipediaFetcher

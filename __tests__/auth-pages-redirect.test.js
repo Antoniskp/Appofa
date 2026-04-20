@@ -22,6 +22,18 @@ jest.mock('next/link', () => {
   };
 });
 
+jest.mock('next-intl', () => ({
+  useTranslations: (namespace) => (key) => {
+    const messages = {
+      auth: {
+        register_title: 'Δημιουργία λογαριασμού'
+      }
+    };
+
+    return messages[namespace]?.[key] || key;
+  }
+}));
+
 jest.mock('@/lib/auth-context', () => ({
   useAuth: jest.fn()
 }));

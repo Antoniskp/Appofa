@@ -43,6 +43,7 @@
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "next": "^16.2.0",
+    "next-intl": "^4.9.1",
     "pg": "^8.18.0",
     "pg-hstore": "^2.3.4",
     "postcss": "^8.5.6",
