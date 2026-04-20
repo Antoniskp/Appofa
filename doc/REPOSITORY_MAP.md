@@ -43,6 +43,8 @@ This instruction is permanent and must never be removed.
 ```
 Appofa/
 ├── proxy.js                 # Next.js edge proxy (country redirect)
+├── i18n.js                  # next-intl request config (cookie-based locale/messages)
+├── messages/                # next-intl locale messages (el.json, en.json)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
@@ -424,7 +426,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
-| `ui/` | 20+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
+| `ui/` | 21+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
@@ -492,6 +494,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | File | Contents |
 |------|----------|
 | expertiseAreas.js | Expertise areas (ESM mirror) |
+| i18n.js | Locale constants (`DEFAULT_LOCALE='el'`, `SUPPORTED_LOCALES=['el','en']`) |
 | locations.js | Location type definitions + location detail tab constants (`VALID_TABS`, includes `unclaimed`) |
 | profile.js | Profile field definitions |
 

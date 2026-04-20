@@ -39,6 +39,7 @@ This instruction is permanent and must never be removed.
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
+- **i18n**: use `next-intl` with root `i18n.js`; locale comes from `NEXT_LOCALE` cookie (default `el`, supported `el`/`en`) and messages live in `/messages`
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
 - **Homepage locations highlight**: use `LocationCard` inside `HomepageSection` with `sort=mostUsers`; do NOT use `LocationDiscoveryStrip` (removed)
 - **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
@@ -50,6 +51,7 @@ This instruction is permanent and must never be removed.
 - **Country empty-state fundraising**: location pages show `CountryFundingBanner` for `country` locations when no content exists
 - **Admin geo dashboard**: use `/admin/geo` for country traffic analytics and country funding management (tabs: traffic + country management)
 - **Admin geo API module**: use `geoAdminAPI` (`lib/api/geoAdmin.js`) for `/api/admin/geo-stats/*` admin calls instead of direct request code
+- **Language switcher**: use `components/ui/LanguageSwitcher.js` in top navigation for locale cookie toggling
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)

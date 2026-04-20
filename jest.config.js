@@ -43,6 +43,8 @@ const esmPackages = [
   'space-separated-tokens',
   'comma-separated-tokens',
   'date-fns',
+  'next-intl',
+  'use-intl',
 ];
 
 const customJestConfig = {

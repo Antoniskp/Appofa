@@ -12,8 +12,10 @@ import { authAPI, geoAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
 import DiasporaModal from '@/components/DiasporaModal';
+import { useTranslations } from 'next-intl';
 
 export default function RegisterPage() {
+  const t = useTranslations('auth');
   const router = useRouter();
   const { register, user, loading: authLoading } = useAuth();
   const { success, error } = useToast();
@@ -65,10 +67,10 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register(prepareRegistrationData(data));
-      success('Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!');
+      success(t('register_success'));
       router.push('/');
     } catch (err) {
-      error(err.message || 'Αποτυχία εγγραφής. Παρακαλώ δοκιμάστε ξανά.');
+      error(err.message || t('register_fail'));
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ export default function RegisterPage() {
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      error('Οι κωδικοί δεν ταιριάζουν');
+      error(t('passwords_no_match'));
       return;
     }
 
@@ -114,7 +116,7 @@ export default function RegisterPage() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Αποτυχία εκκίνησης εγγραφής με GitHub');
+      error(err.message || t('github_fail'));
       setLoading(false);
     }
   };
@@ -127,7 +129,7 @@ export default function RegisterPage() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Αποτυχία εκκίνησης εγγραφής με Google');
+      error(err.message || t('google_fail'));
       setLoading(false);
     }
   };
@@ -137,12 +139,12 @@ export default function RegisterPage() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Δημιουργία λογαριασμού
+            {t('register_title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Έχετε ήδη λογαριασμό;{' '}
+            {t('already_have_account')}{' '}
             <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              Σύνδεση
+              {t('submit_login')}
             </Link>
           </p>
         </div>
@@ -155,73 +157,73 @@ export default function RegisterPage() {
           disabled={loading}
         />
 
-        <AuthDivider text="Ή εγγραφή με" />
+        <AuthDivider text={t('or_register_with')} />
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
             <FormInput
               name="username"
               type="text"
-              label="Όνομα χρήστη"
+              label={t('username')}
               value={formData.username}
               onChange={handleChange}
               required
               autoComplete="username"
-              placeholder="Όνομα χρήστη"
+              placeholder={t('username')}
             />
 
             <FormInput
               name="email"
               type="email"
-              label="Διεύθυνση email"
+              label={t('email')}
               value={formData.email}
               onChange={handleChange}
               required
               autoComplete="email"
-              placeholder="Διεύθυνση email"
+              placeholder={t('email')}
             />
 
             <div className="grid grid-cols-2 gap-4">
               <FormInput
                 name="firstNameNative"
                 type="text"
-                label="Όνομα"
+                label={t('first_name')}
                 value={formData.firstNameNative}
                 onChange={handleChange}
                 autoComplete="given-name"
-                placeholder="Όνομα"
+                placeholder={t('first_name')}
               />
               <FormInput
                 name="lastNameNative"
                 type="text"
-                label="Επώνυμο"
+                label={t('last_name')}
                 value={formData.lastNameNative}
                 onChange={handleChange}
                 autoComplete="family-name"
-                placeholder="Επώνυμο"
+                placeholder={t('last_name')}
               />
             </div>
 
             <FormInput
               name="password"
               type="password"
-              label="Κωδικός πρόσβασης"
+              label={t('password')}
               value={formData.password}
               onChange={handleChange}
               required
               autoComplete="new-password"
-              placeholder="Κωδικός πρόσβασης"
+              placeholder={t('password')}
             />
 
             <FormInput
               name="confirmPassword"
               type="password"
-              label="Επιβεβαίωση κωδικού"
+              label={t('confirm_password')}
               value={formData.confirmPassword}
               onChange={handleChange}
               required
               autoComplete="new-password"
-              placeholder="Επιβεβαίωση κωδικού"
+              placeholder={t('confirm_password')}
             />
 
             <div className="flex items-center">
@@ -234,7 +236,7 @@ export default function RegisterPage() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="searchable" className="ml-2 block text-sm text-gray-900">
-                Να με βρίσκουν άλλοι χρήστες στην αναζήτηση
+                {t('searchable')}
               </label>
             </div>
 
@@ -242,7 +244,7 @@ export default function RegisterPage() {
 
           <div>
             <Button type="submit" loading={loading} size="md" className="w-full">
-              Δημιουργία λογαριασμού
+              {t('submit_register')}
             </Button>
           </div>
         </form>

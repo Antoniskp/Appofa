@@ -1,3 +1,7 @@
+const createNextIntlPlugin = require('next-intl/plugin');
+
+const withNextIntl = createNextIntlPlugin('./i18n.js');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // API proxying is handled by app/api/[...path]/route.js
@@ -28,6 +32,6 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig);
