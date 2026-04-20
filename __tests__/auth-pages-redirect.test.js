@@ -22,6 +22,34 @@ jest.mock('next/link', () => {
   };
 });
 
+jest.mock('next-intl', () => ({
+  useTranslations: (namespace) => {
+    const messages = {
+      auth: {
+        register_title: 'Δημιουργία λογαριασμού',
+        already_have_account: 'Έχετε ήδη λογαριασμό;',
+        submit_login: 'Σύνδεση',
+        or_register_with: 'Ή εγγραφή με',
+        username: 'Όνομα χρήστη',
+        email: 'Διεύθυνση email',
+        first_name: 'Όνομα',
+        last_name: 'Επώνυμο',
+        password: 'Κωδικός πρόσβασης',
+        confirm_password: 'Επιβεβαίωση κωδικού',
+        searchable: 'Να με βρίσκουν άλλοι χρήστες στην αναζήτηση',
+        submit_register: 'Δημιουργία λογαριασμού',
+        register_success: 'Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!',
+        register_fail: 'Αποτυχία εγγραφής. Παρακαλώ δοκιμάστε ξανά.',
+        passwords_no_match: 'Οι κωδικοί δεν ταιριάζουν',
+        github_fail: 'Αποτυχία εκκίνησης εγγραφής με GitHub',
+        google_fail: 'Αποτυχία εκκίνησης εγγραφής με Google',
+      },
+    };
+
+    return (key) => messages[namespace]?.[key] || key;
+  },
+}));
+
 jest.mock('@/lib/auth-context', () => ({
   useAuth: jest.fn()
 }));

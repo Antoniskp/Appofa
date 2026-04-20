@@ -41,6 +41,29 @@ jest.mock('next/image', () => {
   };
 });
 
+jest.mock('next-intl', () => ({
+  useTranslations: (namespace) => {
+    const messages = {
+      auth: {
+        register_title: 'Δημιουργία λογαριασμού',
+        already_have_account: 'Έχετε ήδη λογαριασμό;',
+        submit_login: 'Σύνδεση',
+        or_register_with: 'Ή εγγραφή με',
+        username: 'Όνομα χρήστη',
+        email: 'Διεύθυνση email',
+        first_name: 'Όνομα',
+        last_name: 'Επώνυμο',
+        password: 'Κωδικός πρόσβασης',
+        confirm_password: 'Επιβεβαίωση κωδικού',
+        searchable: 'Να με βρίσκουν άλλοι χρήστες στην αναζήτηση',
+        submit_register: 'Δημιουργία λογαριασμού',
+      },
+    };
+
+    return (key) => messages[namespace]?.[key] || key;
+  },
+}));
+
 const mockRouter = { push: jest.fn() };
 const mockSearchParams = { get: jest.fn(() => null) };
 

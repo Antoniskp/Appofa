@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { articleAPI, geoAPI, locationAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
+import { useTranslations } from 'next-intl';
 
 const countryCodeToFlag = (code) => (
   code
@@ -24,6 +25,8 @@ const renderArticleLink = (article) => (
 );
 
 export default function CountryLandingPage() {
+  const tCountry = useTranslations('country_page');
+  const tCommon = useTranslations('common');
   const params = useParams();
   const router = useRouter();
   const code = String(params.code || '').toUpperCase();
@@ -75,7 +78,7 @@ export default function CountryLandingPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
-        <div className="app-container text-center text-gray-600">Φόρτωση...</div>
+        <div className="app-container text-center text-gray-600">{tCommon('loading')}</div>
       </div>
     );
   }
@@ -84,8 +87,8 @@ export default function CountryLandingPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="app-container bg-white rounded-xl border border-gray-200 p-6 text-center">
-          <p className="text-red-600 mb-3">Παρουσιάστηκε σφάλμα κατά τη φόρτωση.</p>
-          <Link href="/" className="text-blue-700 hover:underline">Επιστροφή στην αρχική</Link>
+          <p className="text-red-600 mb-3">{tCommon('error')}</p>
+          <Link href="/" className="text-blue-700 hover:underline">{tCommon('back')}</Link>
         </div>
       </div>
     );
@@ -95,8 +98,8 @@ export default function CountryLandingPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="app-container bg-white rounded-xl border border-gray-200 p-6 text-center">
-          <p className="text-gray-700 mb-3">Δεν βρέθηκε περιεχόμενο για αυτή τη χώρα.</p>
-          <Link href="/" className="text-blue-700 hover:underline">Επιστροφή στην αρχική</Link>
+          <p className="text-gray-700 mb-3">{tCountry('not_found')}</p>
+          <Link href="/" className="text-blue-700 hover:underline">{tCommon('back')}</Link>
         </div>
       </div>
     );
@@ -109,10 +112,10 @@ export default function CountryLandingPage() {
       <div className="app-container space-y-6">
         <section className="bg-white border border-gray-200 rounded-xl p-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {countryCodeToFlag(code)} Καλώς ήρθατε από {countryName}!
+            {countryCodeToFlag(code)} {tCountry('welcome', { country: countryName })}
           </h1>
           <p className="text-gray-700">
-            Βρέθηκε η τοποθεσία σας. Εξερευνήστε περιεχόμενο από και για την περιοχή σας.
+            {tCountry('subtitle')}
           </p>
         </section>
 
@@ -126,24 +129,24 @@ export default function CountryLandingPage() {
 
         <section className="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">Τελευταία Νέα</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">{tCountry('latest_news')}</h2>
             {data.news.length > 0 ? (
               <ul className="space-y-2 text-sm">
                 {data.news.map(renderArticleLink)}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500">Δεν υπάρχουν διαθέσιμα νέα.</p>
+              <p className="text-sm text-gray-500">{tCommon('not_found')}</p>
             )}
           </div>
 
           <div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">Τελευταία Άρθρα</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-3">{tCountry('latest_articles')}</h2>
             {data.articles.length > 0 ? (
               <ul className="space-y-2 text-sm">
                 {data.articles.map(renderArticleLink)}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500">Δεν υπάρχουν διαθέσιμα άρθρα.</p>
+              <p className="text-sm text-gray-500">{tCommon('not_found')}</p>
             )}
           </div>
         </section>
@@ -154,7 +157,7 @@ export default function CountryLandingPage() {
             onClick={handleContinue}
             className="inline-flex items-center px-5 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
           >
-            Συνέχεια στην αρχική →
+            {tCountry('continue')}
           </button>
         </div>
       </div>

@@ -3,6 +3,8 @@ import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
 import { ToastProvider } from '@/components/ToastProvider';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
@@ -34,20 +36,25 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="el">
+    <html lang={locale}>
       <body className="flex flex-col min-h-screen">
         <GoogleAnalytics />
-        <AuthProvider>
-          <ToastProvider>
-            <TopNav />
-            <main className="flex-grow">
-              {children}
-            </main>
-            <Footer />
-          </ToastProvider>
-        </AuthProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <AuthProvider>
+            <ToastProvider>
+              <TopNav />
+              <main className="flex-grow">
+                {children}
+              </main>
+              <Footer />
+            </ToastProvider>
+          </AuthProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

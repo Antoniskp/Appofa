@@ -25,6 +25,7 @@ import DropdownMenu from '@/components/ui/DropdownMenu';
 import Tooltip from '@/components/ui/Tooltip';
 import LoginLink from '@/components/ui/LoginLink';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 export default function TopNav() {
   const { user, loading, logout } = useAuth();
@@ -286,6 +287,7 @@ export default function TopNav() {
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-4 ml-auto">
+            <LanguageSwitcher />
             {loading ? (
               <div className="flex items-center gap-4">
                 <SkeletonLoader type="button" count={2} className="flex gap-4" />
@@ -395,6 +397,7 @@ export default function TopNav() {
           </Link>
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
+          <LanguageSwitcher />
           {loading ? (
             <div className="space-y-2">
               <SkeletonLoader type="button" count={2} className="space-y-2" />

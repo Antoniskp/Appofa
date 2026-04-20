@@ -1,0 +1,95 @@
+{
+  "nav": {
+    "news": "News",
+    "articles": "Articles",
+    "login": "Login",
+    "register": "Register",
+    "profile": "Profile",
+    "admin": "Admin",
+    "editor": "Editor",
+    "logout": "Logout"
+  },
+  "home": {
+    "hero_title": "Stay informed. Keep learning. Get involved.",
+    "hero_subtitle": "News, articles and polls from and for the Greek world.",
+    "latest_news": "Latest News",
+    "latest_articles": "Latest Articles",
+    "view_all": "View all"
+  },
+  "auth": {
+    "login_title": "Sign in to your account",
+    "register_title": "Create an account",
+    "email": "Email address",
+    "password": "Password",
+    "confirm_password": "Confirm password",
+    "username": "Username",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "searchable": "Allow other users to find me in search",
+    "already_have_account": "Already have an account?",
+    "no_account": "Don't have an account?",
+    "submit_login": "Sign in",
+    "submit_register": "Create account",
+    "or_login_with": "Or sign in with",
+    "or_register_with": "Or sign up with",
+    "passwords_no_match": "Passwords do not match",
+    "register_success": "Account created! Welcome!",
+    "register_fail": "Registration failed. Please try again.",
+    "github_fail": "Failed to initiate GitHub sign up",
+    "google_fail": "Failed to initiate Google sign up"
+  },
+  "articles": {
+    "title": "Articles",
+    "category": "Category",
+    "all_categories": "All categories",
+    "tag": "Tag",
+    "status_published": "Published",
+    "status_draft": "Draft",
+    "status_archived": "Archived",
+    "no_results": "No articles found.",
+    "read_more": "Read more",
+    "by": "By",
+    "create": "Create article",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "news": {
+    "title": "News"
+  },
+  "country_page": {
+    "welcome": "Welcome from {country}!",
+    "subtitle": "We detected your location. Explore content from and about your region.",
+    "latest_news": "Latest News",
+    "latest_articles": "Latest Articles",
+    "continue": "Continue to home →",
+    "not_found": "No content found for this country."
+  },
+  "funding": {
+    "goal": "Goal",
+    "raised": "Raised",
+    "donors": "Donors",
+    "donate": "Support this country",
+    "locked": "Locked",
+    "funding": "Funding",
+    "unlocked": "Unlocked"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "back": "Back",
+    "not_found": "Not found."
+  },
+  "footer": {
+    "rights": "All rights reserved.",
+    "instructions": "Instructions",
+    "rules": "Rules",
+    "mission": "Mission",
+    "contribute": "Contribute",
+    "contact": "Contact"
+  }
+}
