@@ -43,6 +43,7 @@ export default function RegisterPage() {
       .then((res) => {
         if (res?.success && res.data?.countryCode) {
           setDetectedCountry({ countryCode: res.data.countryCode, countryName: res.data.countryName });
+          document.cookie = `appofa_detected_country=${res.data.countryCode}; path=/; max-age=3600; SameSite=Lax`;
         }
       })
       .catch(() => {});

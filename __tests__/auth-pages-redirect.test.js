@@ -81,10 +81,14 @@ jest.mock('@/lib/api', () => ({
     getProfile: jest.fn(() => Promise.resolve({ success: true })),
     initiateGithubOAuth: jest.fn(() => Promise.resolve({ success: true })),
     initiateGoogleOAuth: jest.fn(() => Promise.resolve({ success: true }))
+  },
+  geoAPI: {
+    detect: jest.fn(() => Promise.resolve({ success: true, data: { countryCode: null, countryName: null } })),
   }
 }));
 
 const { useAuth } = require('@/lib/auth-context');
+const { geoAPI } = require('@/lib/api');
 
 const buildAuthState = (overrides = {}) => ({
   user: null,
@@ -118,6 +122,8 @@ const renderPage = async (Component) => {
 describe('Auth pages redirect behavior', () => {
   afterEach(() => {
     useAuth.mockReset();
+    geoAPI.detect.mockReset();
+    geoAPI.detect.mockResolvedValue({ success: true, data: { countryCode: null, countryName: null } });
     mockRouter.push.mockReset();
     mockSearchParams.get.mockReset();
     mockSearchParams.get.mockReturnValue(null);
@@ -190,6 +196,20 @@ describe('Auth pages redirect behavior', () => {
 
     expect(mockRouter.push).toHaveBeenCalledTimes(1);
     expect(mockRouter.push).toHaveBeenCalledWith('/');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('register page stores detected country cookie after geo detection', async () => {
+    geoAPI.detect.mockResolvedValue({ success: true, data: { countryCode: 'DE', countryName: 'Germany' } });
+    useAuth.mockReturnValue(buildAuthState({ user: null, loading: false }));
+    const RegisterPage = require('../app/register/page').default;
+
+    const { root } = await renderPage(RegisterPage);
+
+    expect(document.cookie).toContain('appofa_detected_country=DE');
 
     await act(async () => {
       root.unmount();

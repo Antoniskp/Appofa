@@ -141,6 +141,9 @@ jest.mock('@/lib/api', () => ({
   },
   tagAPI: {
     getSuggestions: jest.fn(() => Promise.resolve({ success: true, tags: [] }))
+  },
+  geoAPI: {
+    detect: jest.fn(() => Promise.resolve({ success: true, data: { countryCode: null, countryName: null } })),
   }
 }));
 
