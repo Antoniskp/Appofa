@@ -1,25 +1,58 @@
-// Migration file for adding poll vote restriction
+'use strict';
 
-exports.up = function (knex) {
-    return knex.schema.table('polls', function(table) {
-        table.enu('voteRestriction', ['any', 'voters', 'participants'])
-            .defaultTo('any')
-            .alter();
-    }).then(function() {
-        return knex.raw(`
-            UPDATE polls
-            SET voteRestriction = CASE
-                WHEN condition1 THEN 'any'::enum_Polls_voteRestriction
-                WHEN condition2 THEN 'voters'::enum_Polls_voteRestriction
-                WHEN condition3 THEN 'participants'::enum_Polls_voteRestriction
-                ELSE voteRestriction
-            END
-        `);
-    });
-};
+module.exports = {
+  async up(queryInterface, Sequelize) {
+    const table = await queryInterface.describeTable('Polls');
 
-exports.down = function (knex) {
-    return knex.schema.table('polls', function(table) {
-        table.dropColumn('voteRestriction');
-    });
+    if (!table.voteRestriction) {
+      await queryInterface.addColumn('Polls', 'voteRestriction', {
+        type: Sequelize.ENUM('anyone', 'authenticated', 'locals_only'),
+        allowNull: false,
+        defaultValue: 'authenticated'
+      });
+    }
+
+    if (table.allowUnauthenticatedVotes) {
+      // PostgreSQL requires explicit cast when assigning string literals to an ENUM column
+      // inside a CASE expression, otherwise it infers the type as `text` and throws 42804.
+      await queryInterface.sequelize.query(`
+        UPDATE "Polls"
+        SET "voteRestriction" = CASE
+          WHEN "visibility" = 'locals_only' THEN 'locals_only'::"enum_Polls_voteRestriction"
+          WHEN "allowUnauthenticatedVotes" = true THEN 'anyone'::"enum_Polls_voteRestriction"
+          ELSE 'authenticated'::"enum_Polls_voteRestriction"
+        END
+      `);
+
+      await queryInterface.removeColumn('Polls', 'allowUnauthenticatedVotes');
+    }
+  },
+
+  async down(queryInterface, Sequelize) {
+    const table = await queryInterface.describeTable('Polls');
+
+    if (!table.allowUnauthenticatedVotes) {
+      await queryInterface.addColumn('Polls', 'allowUnauthenticatedVotes', {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false
+      });
+    }
+
+    if (table.voteRestriction) {
+      await queryInterface.sequelize.query(`
+        UPDATE "Polls"
+        SET "allowUnauthenticatedVotes" = CASE
+          WHEN "voteRestriction" = 'anyone' THEN true
+          ELSE false
+        END
+      `);
+
+      await queryInterface.removeColumn('Polls', 'voteRestriction');
+    }
+
+    if (queryInterface.sequelize.getDialect() === 'postgres') {
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Polls_voteRestriction";');
+    }
+  }
 };
