@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { articleAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import ArticleCard from '@/components/articles/ArticleCard';
@@ -18,6 +19,8 @@ import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
 function ArticlesContent() {
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
@@ -102,7 +105,7 @@ function ArticlesContent() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <SearchInput
               name="search"
-              placeholder="Search articles..."
+               placeholder={tArticles('search_placeholder')}
               value={filters.search}
               onChange={handleSearchChange}
               className="w-full sm:flex-grow sm:max-w-md min-w-0"
@@ -113,7 +116,7 @@ function ArticlesContent() {
                 className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
               >
                 <PlusCircleIcon className="h-5 w-5" />
-                Νέο Άρθρο
+                 {tArticles('create_new')}
               </Link>
             )}
           </div>
@@ -140,10 +143,10 @@ function ArticlesContent() {
         {error && (
           <EmptyState
             type="error"
-            title="Error Loading Articles"
+             title={tArticles('error_loading')}
             description={error}
             action={{
-              text: 'Try Again',
+               text: tCommon('try_again'),
               onClick: () => window.location.reload()
             }}
           />
@@ -153,8 +156,8 @@ function ArticlesContent() {
         {!initialLoading && !error && articles.length === 0 && (
           <EmptyState
             type="empty"
-            title="No Articles Found"
-            description="No articles match your current filters. Try adjusting your search criteria."
+             title={tArticles('no_articles_found')}
+             description={tArticles('no_articles_description')}
           />
         )}
 
@@ -182,10 +185,11 @@ function ArticlesContent() {
 }
 
 export default function ArticlesPage() {
+  const tCommon = useTranslations('common');
   return (
     <Suspense fallback={
       <div className="bg-gray-50 min-h-screen py-8 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+         <p className="text-gray-600">{tCommon('loading')}</p>
       </div>
     }>
       <ArticlesContent />

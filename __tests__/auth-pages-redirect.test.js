@@ -26,6 +26,7 @@ jest.mock('next-intl', () => ({
   useTranslations: (namespace) => {
     const messages = {
       auth: {
+        login_title: 'Σύνδεση στον λογαριασμό σας',
         register_title: 'Δημιουργία λογαριασμού',
         already_have_account: 'Έχετε ήδη λογαριασμό;',
         submit_login: 'Σύνδεση',
@@ -43,6 +44,9 @@ jest.mock('next-intl', () => ({
         passwords_no_match: 'Οι κωδικοί δεν ταιριάζουν',
         github_fail: 'Αποτυχία εκκίνησης εγγραφής με GitHub',
         google_fail: 'Αποτυχία εκκίνησης εγγραφής με Google',
+      },
+      common: {
+        loading: 'Φόρτωση...',
       },
     };
 

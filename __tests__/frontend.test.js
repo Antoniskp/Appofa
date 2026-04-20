@@ -44,7 +44,38 @@ jest.mock('next/image', () => {
 jest.mock('next-intl', () => ({
   useTranslations: (namespace) => {
     const messages = {
+      home: {
+        latest_articles_title: 'Τελευταία Άρθρα',
+        latest_articles_subtitle: 'Αναλύσεις και απόψεις από την κοινότητα',
+        empty_articles_title: 'Δεν βρέθηκαν άρθρα',
+        empty_articles_description: 'Δεν υπάρχουν άρθρα αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!',
+        top_suggestions_title: 'Κορυφαίες Προτάσεις',
+        top_suggestions_subtitle: 'Οι πιο δημοφιλείς προτάσεις πολιτών',
+        empty_suggestions_title: 'Δεν βρέθηκαν προτάσεις',
+        empty_suggestions_description: 'Δεν υπάρχουν προτάσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!',
+        top_polls_title: 'Μεγαλύτερες Ψηφοφορίες',
+        top_polls_subtitle: 'Ψηφίστε στα πιο δημοφιλή θέματα',
+        empty_polls_title: 'Δεν βρέθηκαν ψηφοφορίες',
+        empty_polls_description: 'Δεν υπάρχουν ψηφοφορίες αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!',
+        cta_title: 'Έχεις κάτι να πεις;',
+        cta_description: 'Γράψε ένα άρθρο, κατέθεσε πρόταση ή ψήφισε σε ανοιχτές ψηφοφορίες!',
+        cta_guest_description: 'Εγγράψου για να παρακολουθείς την περιοχή σου και να συμμετέχεις στα τοπικά νέα!',
+        cta_view_locations: '🗺️ Δες Περιοχές',
+        latest_news_title: 'Τελευταίες Ειδήσεις',
+        latest_news_subtitle: 'Τα τελευταία νέα από εγκεκριμένες πηγές',
+        empty_news_title: 'Δεν βρέθηκαν ειδήσεις',
+        empty_news_description: 'Δεν υπάρχουν εγκεκριμένες ειδήσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!',
+        latest_videos_title: 'Τελευταία Βίντεο',
+        latest_videos_subtitle: 'Βίντεο αναλύσεις και συζητήσεις',
+        empty_videos_title: 'Δεν βρέθηκαν βίντεο',
+        empty_videos_description: 'Δεν υπάρχουν βίντεο αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!'
+      },
+      common: {
+        register: 'Εγγραφή',
+      },
       auth: {
+        login_title: 'Σύνδεση στον λογαριασμό σας',
+        create_new_account: 'δημιουργήστε νέο λογαριασμό',
         register_title: 'Δημιουργία λογαριασμού',
         already_have_account: 'Έχετε ήδη λογαριασμό;',
         submit_login: 'Σύνδεση',
@@ -57,6 +88,12 @@ jest.mock('next-intl', () => ({
         confirm_password: 'Επιβεβαίωση κωδικού',
         searchable: 'Να με βρίσκουν άλλοι χρήστες στην αναζήτηση',
         submit_register: 'Δημιουργία λογαριασμού',
+      },
+      articles: {
+        no_articles_found: 'No Articles Found',
+      },
+      news: {
+        no_news_available: 'No News Available',
       },
     };
 
@@ -164,6 +201,23 @@ jest.mock('@/lib/api', () => ({
   },
   tagAPI: {
     getSuggestions: jest.fn(() => Promise.resolve({ success: true, tags: [] }))
+  },
+  pollAPI: {
+    getAll: jest.fn(() => Promise.resolve({ success: true, data: [] })),
+    getCategoryCounts: jest.fn(() => Promise.resolve({ success: true, data: { counts: {} } })),
+  },
+  suggestionAPI: {
+    getAll: jest.fn(() => Promise.resolve({ success: true, data: { suggestions: [] } })),
+  },
+  manifestAPI: {
+    getAll: jest.fn(() => Promise.resolve({ success: true, data: { manifests: [] } })),
+    getRandomSupporters: jest.fn(() => Promise.resolve({ success: true, data: { users: [] } })),
+  },
+  locationAPI: {
+    getAll: jest.fn(() => Promise.resolve({ success: true, locations: [] })),
+  },
+  homepageSettingsAPI: {
+    get: jest.fn(() => Promise.resolve({ success: true, data: null })),
   },
   geoAPI: {
     detect: jest.fn(() => Promise.resolve({ success: true, data: { countryCode: null, countryName: null } })),

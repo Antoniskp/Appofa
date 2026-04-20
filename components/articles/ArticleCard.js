@@ -5,6 +5,7 @@ import Badge, { TypeBadge } from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import { FilmIcon } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import UserAvatar from '@/components/user/UserAvatar';
 
 /**
@@ -64,12 +65,14 @@ export function stripMarkdown(text) {
  * @param {string} variant - 'grid' for grid layout (compact) or 'list' for list layout (detailed)
  */
 export default function ArticleCard({ article, variant = 'grid' }) {
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const defaultBannerImageUrl = '/images/branding/news default.png';
   const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
   const createdAt = new Date(article.createdAt);
   const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
+  const authorLabel = article.hideAuthor ? tCommon('anonymous') : (article.author?.username || tCommon('unknown'));
   const articleHref = article.type === 'news'
     ? `/news/${idSlug(article.id, article.title)}`
     : `/articles/${idSlug(article.id, article.title)}`;
@@ -79,6 +82,11 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const isVideoArticle =
     (article.sourceProvider === 'youtube' || article.sourceProvider === 'tiktok') &&
     !!(article.embedUrl || article.embedHtml || article.sourceUrl);
+  const statusLabelMap = {
+    published: tArticles('status_published'),
+    draft: tArticles('status_draft'),
+    archived: tArticles('status_archived'),
+  };
 
   // Video card layout – thumbnail with no fake play button; a coloured left
   // border accent and "Watch on …" label make it clear this is a video article.
@@ -113,7 +121,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           </div>
           <h3 className="headline hover:text-blue-600 flex items-start gap-1.5">
             <FilmIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
-            <span className="sr-only">(Video) </span>
+             <span className="sr-only">{tArticles('video')}</span>
             <TruncatedTextTooltip maxLines={2}>
               {article.title}
             </TruncatedTextTooltip>
@@ -121,16 +129,16 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           {providerLabel && (
             <p className="text-xs text-gray-500 mt-1">
               {isYouTube ? (
-                <span className="text-red-600 font-medium">▶ Watch on {providerLabel}</span>
-              ) : (
-                <span className="font-medium">▶ Watch on {providerLabel}</span>
-              )}
+                 <span className="text-red-600 font-medium">{tArticles('watch_on', { provider: providerLabel })}</span>
+               ) : (
+                 <span className="font-medium">{tArticles('watch_on', { provider: providerLabel })}</span>
+               )}
             </p>
           )}
           <div className="mt-auto flex justify-between items-center text-sm text-gray-500 pt-2 border-t border-gray-100">
             <div className="flex items-center gap-1.5">
               {article.hideAuthor ? (
-                <span>Anonymous</span>
+                 <span>{tCommon('anonymous')}</span>
               ) : article.author ? (
                 <>
                   <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
@@ -182,7 +190,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
           <div className="mt-auto flex flex-wrap gap-4 text-sm text-gray-500 pt-2 border-t border-gray-100">
             <div className="flex items-center gap-1.5">
               {article.hideAuthor ? (
-                <span>Anonymous</span>
+               <span>{tCommon('anonymous')}</span>
               ) : article.author ? (
                 <>
                   <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
@@ -195,7 +203,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
             {article.status !== 'published' && (
               <>
                 <span>•</span>
-                <span className="text-orange-600 font-medium">{article.status}</span>
+               <span className="text-orange-600 font-medium">{statusLabelMap[article.status] || article.status}</span>
               </>
             )}
           </div>
@@ -234,7 +242,7 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         <div className="mt-auto flex justify-between items-center text-sm text-gray-500 pt-2 border-t border-gray-100">
           <div className="flex items-center gap-1.5">
             {article.hideAuthor ? (
-              <span>Anonymous</span>
+               <span>{tCommon('anonymous')}</span>
             ) : article.author ? (
               <>
                 <UserAvatar user={article.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />

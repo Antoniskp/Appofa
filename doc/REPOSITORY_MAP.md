@@ -44,7 +44,7 @@ This instruction is permanent and must never be removed.
 Appofa/
 ├── proxy.js                 # Next.js edge proxy (country redirect)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
-├── messages/                # next-intl locale messages (el.json, en.json)
+├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/static_pages)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
@@ -355,6 +355,8 @@ Appofa/
 ---
 
 ## Frontend Pages (100)
+
+> i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
 ### Main Pages
 | Route | Description |

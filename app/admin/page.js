@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon, MapPinIcon, EnvelopeIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon, PencilSquareIcon, UsersIcon, GlobeEuropeAfricaIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI, notificationAPI } from '@/lib/api';
@@ -20,6 +21,9 @@ import AdminHeader from '@/components/admin/AdminHeader';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 function AdminDashboardContent() {
+  const tAdmin = useTranslations('admin');
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const { addToast } = useToast();
   const router = useRouter();
@@ -67,11 +71,11 @@ function AdminDashboardContent() {
         actionUrl: broadcastForm.actionUrl || undefined,
         targetRole: broadcastForm.targetRole || undefined,
       });
-      setBroadcastResult({ success: true, message: res.data?.message || `Εστάλη σε ${res.data?.count} χρήστες` });
+      setBroadcastResult({ success: true, message: res.data?.message || tAdmin('broadcast_sent_count', { count: res.data?.count ?? 0 }) });
       setBroadcastForm({ title: '', body: '', actionUrl: '', targetRole: '' });
       setTimeout(() => setBroadcastResult(null), 5000);
     } catch (err) {
-      setBroadcastResult({ success: false, message: err.message || 'Αποτυχία αποστολής' });
+      setBroadcastResult({ success: false, message: err.message || tAdmin('broadcast_failed') });
     } finally {
       setBroadcastLoading(false);
     }
@@ -152,9 +156,9 @@ function AdminDashboardContent() {
     try {
       await articleAPI.delete(selectedArticle.id);
       refetch();
-      addToast('Article deleted successfully', { type: 'success' });
+      addToast(tArticles('deleted_successfully'), { type: 'success' });
     } catch (error) {
-      addToast(`Failed to delete article: ${error.message}`, { type: 'error' });
+      addToast(`${tArticles('delete_failed_prefix')}: ${error.message}`, { type: 'error' });
     }
   };
 
@@ -165,10 +169,10 @@ function AdminDashboardContent() {
       const response = await articleAPI.approveNews(selectedArticle.id);
       if (response.success) {
         refetch();
-        addToast('News approved and published successfully!', { type: 'success' });
+        addToast(tAdmin('news_approved_success'), { type: 'success' });
       }
     } catch (error) {
-      addToast(`Failed to approve news: ${error.message}`, { type: 'error' });
+      addToast(`${tAdmin('approve_news_failed')}: ${error.message}`, { type: 'error' });
     }
   };
 
@@ -188,40 +192,43 @@ function AdminDashboardContent() {
     <AdminLayout>
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <AdminHeader title="Admin Dashboard" />
+        <AdminHeader title={tAdmin('title')} />
 
         {/* Welcome Message */}
         <Card className="mb-8">
-          <h2 className="text-xl font-semibold mb-2">Welcome, {user?.username}!</h2>
+          <h2 className="text-xl font-semibold mb-2">{tAdmin('welcome', { username: user?.username || '' })}</h2>
           <p className="text-gray-600">
-            You have {user?.role} access. You can {user?.role === 'admin' ? 'create, edit, and delete all articles' : 'approve news submissions and manage content'}.
+            {tAdmin('role_access', {
+              role: user?.role || '',
+              permissions: user?.role === 'admin' ? tAdmin('role_admin_permissions') : tAdmin('role_moderator_permissions'),
+            })}
           </p>
         </Card>
 
         {/* Article Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <StatsCard
-            title="Total Articles"
+             title={tAdmin('total_articles')}
             value={stats.total}
             icon={DocumentTextIcon}
           />
           <StatsCard
-            title="Published"
+             title={tAdmin('published')}
             value={stats.published}
             icon={CheckIcon}
           />
           <StatsCard
-            title="Drafts"
+             title={tAdmin('drafts')}
             value={stats.draft}
             icon={PencilIcon}
           />
           <StatsCard
-            title="Archived"
+             title={tAdmin('archived')}
             value={stats.archived}
             icon={ArchiveBoxIcon}
           />
           <StatsCard
-            title="Pending News"
+             title={tAdmin('pending_news')}
             value={stats.pendingNews}
             icon={NewspaperIcon}
             variant="elevated"
@@ -232,27 +239,27 @@ function AdminDashboardContent() {
         <Link href="/admin/users" className="block mb-8 group">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
             <StatsCard
-              title="Total Users"
+               title={tAdmin('total_users')}
               value={userStats.total}
               icon={UserGroupIcon}
             />
             <StatsCard
-              title="Admins"
+               title={tAdmin('admins')}
               value={userStats.byRole.admin}
               icon={ShieldCheckIcon}
             />
             <StatsCard
-              title="Moderators"
+               title={tAdmin('moderators')}
               value={userStats.byRole.moderator}
               icon={UserIcon}
             />
             <StatsCard
-              title="Editors"
+               title={tAdmin('editors')}
               value={userStats.byRole.editor}
               icon={UserIcon}
             />
             <StatsCard
-              title="Viewers"
+               title={tAdmin('viewers')}
               value={userStats.byRole.viewer}
               icon={UserIcon}
             />
@@ -261,27 +268,27 @@ function AdminDashboardContent() {
 
         {/* Quick Actions */}
         <Card className="mb-8">
-          <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+          <h2 className="text-xl font-semibold mb-4">{tAdmin('quick_actions')}</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {[
-              { href: '/admin/users', label: 'Manage Users', icon: UsersIcon },
-              { href: '/editor', label: 'Create Article', icon: PencilSquareIcon },
-              { href: '/articles', label: 'View Articles', icon: DocumentTextIcon },
-              { href: '/admin/locations', label: 'Manage Locations', icon: MapPinIcon },
-              { href: '/admin/messages', label: 'Manage Messages', icon: EnvelopeIcon },
-              { href: '/admin/persons', label: 'Manage Persons', icon: UserGroupIcon },
-              { href: '/admin/removal-requests', label: 'Removal Requests', icon: XCircleIcon },
-              { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
-              { href: '/admin/dream-team', label: 'Dream Team', icon: StarIcon },
-               { href: '/admin/manifests', label: 'Manage Manifests', icon: DocumentTextIcon },
-               { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
-               {
-                 href: '/admin/geo',
-                 label: '🌍 Γεωγραφικά & Χώρες',
-                 description: 'Επισκεψιμότητα ανά χώρα, διασπορά, χρηματοδότηση',
-                 icon: GlobeEuropeAfricaIcon,
-               },
-               { href: '/admin/status', label: 'System Health', icon: HeartIcon },
+               { href: '/admin/users', label: tAdmin('manage_users'), icon: UsersIcon },
+               { href: '/editor', label: tAdmin('create_article'), icon: PencilSquareIcon },
+               { href: '/articles', label: tAdmin('view_articles'), icon: DocumentTextIcon },
+               { href: '/admin/locations', label: tAdmin('manage_locations'), icon: MapPinIcon },
+               { href: '/admin/messages', label: tAdmin('manage_messages'), icon: EnvelopeIcon },
+               { href: '/admin/persons', label: tAdmin('manage_persons'), icon: UserGroupIcon },
+               { href: '/admin/removal-requests', label: tAdmin('removal_requests'), icon: XCircleIcon },
+               { href: '/admin/reports', label: tAdmin('reports'), icon: FlagIcon },
+               { href: '/admin/dream-team', label: tAdmin('dream_team'), icon: StarIcon },
+                { href: '/admin/manifests', label: tAdmin('manage_manifests'), icon: DocumentTextIcon },
+                { href: '/admin/hero', label: tAdmin('hero_settings'), icon: PhotoIcon },
+                {
+                  href: '/admin/geo',
+                  label: tAdmin('geo_countries'),
+                  description: tAdmin('geo_countries_description'),
+                  icon: GlobeEuropeAfricaIcon,
+                },
+                { href: '/admin/status', label: tAdmin('system_health'), icon: HeartIcon },
              ].map(action => (
                <Link
                  key={action.href}
@@ -304,7 +311,7 @@ function AdminDashboardContent() {
           className="overflow-hidden"
           header={
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-xl font-semibold">All Articles</h2>
+               <h2 className="text-xl font-semibold">{tAdmin('all_articles')}</h2>
               <div className="flex flex-wrap gap-2 items-center">
                 <select
                   id="statusFilter"
@@ -315,10 +322,10 @@ function AdminDashboardContent() {
                     setPage(1);
                   }}
                 >
-                  <option value="">All Statuses</option>
-                  <option value="published">Published</option>
-                  <option value="draft">Draft</option>
-                  <option value="archived">Archived</option>
+                  <option value="">{tCommon('all_statuses')}</option>
+                  <option value="published">{tAdmin('published')}</option>
+                  <option value="draft">{tAdmin('drafts')}</option>
+                  <option value="archived">{tAdmin('archived')}</option>
                 </select>
                 
                 <select
@@ -330,13 +337,13 @@ function AdminDashboardContent() {
                     setPage(1);
                   }}
                 >
-                  <option value="">All Categories</option>
+                   <option value="">{tCommon('all_categories')}</option>
                   {allCategories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
                 
-                <label htmlFor="sortBy" className="text-sm mr-1">Sort by:</label>
+                 <label htmlFor="sortBy" className="text-sm mr-1">{tCommon('sort_by')}</label>
                 <select
                   id="sortBy"
                   className="border rounded px-2 py-1 text-sm"
@@ -346,18 +353,18 @@ function AdminDashboardContent() {
                     setPage(1);
                   }}
                 >
-                  <option value="lastModified">Last Modified</option>
-                  <option value="createdAt">Created Date</option>
-                  <option value="title">Alphabetical</option>
+                   <option value="lastModified">{tCommon('last_modified')}</option>
+                   <option value="createdAt">{tCommon('created_date')}</option>
+                   <option value="title">{tCommon('alphabetical')}</option>
                 </select>
                 <button
                   className="ml-1 px-2 py-1 border rounded text-sm"
-                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                   title={sortOrder === 'asc' ? tCommon('ascending') : tCommon('descending')}
                   onClick={() => {
                     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
                     setPage(1);
                   }}
-                  aria-label="Toggle sort order"
+                   aria-label={tCommon('toggle_sort_order')}
                 >
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
@@ -370,7 +377,7 @@ function AdminDashboardContent() {
             columns={[
               {
                 key: 'title',
-                header: 'Title',
+                 header: tArticles('table_title'),
                 className: 'whitespace-normal',
                 render: (article) => (
                   <Link
@@ -384,24 +391,24 @@ function AdminDashboardContent() {
               },
               {
                 key: 'author',
-                header: 'Author',
+                 header: tArticles('table_author'),
                 width: 'w-28',
-                render: (article) => (article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown'))
+                 render: (article) => (article.hideAuthor ? tCommon('anonymous') : (article.author?.username || tCommon('unknown')))
               },
               {
                 key: 'status',
-                header: 'Status',
+                 header: tArticles('table_status'),
                 width: 'w-24',
                 render: (article) => <StatusBadge status={article.status} />
               },
               {
                 key: 'newsStatus',
-                header: 'News Status',
+                 header: tAdmin('news_status'),
                 width: 'w-28',
                 render: (article) => (
                   article.type === 'news' ? (
                     <Badge variant={article.newsApprovedAt ? 'success' : 'warning'}>
-                      {article.newsApprovedAt ? '✓ Approved' : '⏳ Pending'}
+                       {article.newsApprovedAt ? tAdmin('approved_badge') : tAdmin('pending_badge')}
                     </Badge>
                   ) : (
                     <span className="text-gray-400 text-xs">-</span>
@@ -410,37 +417,37 @@ function AdminDashboardContent() {
               },
               {
                 key: 'category',
-                header: 'Category',
+                 header: tArticles('table_category'),
                 width: 'w-32',
                 render: (article) => article.category || '-'
               },
               {
                 key: 'tags',
-                header: 'Tags',
+                 header: tArticles('table_tags'),
                 width: 'w-40',
                 render: (article) => Array.isArray(article.tags) && article.tags.length > 0 ? article.tags.join(', ') : '-'
               },
               {
                 key: 'createdAt',
-                header: 'Created',
+                 header: tCommon('created'),
                 width: 'w-28',
                 render: (article) => new Date(article.createdAt).toLocaleDateString()
               },
               {
                 key: 'actions',
-                header: 'Actions',
+                 header: tCommon('actions'),
                 width: 'w-24',
                 render: (article) => (
                   <div className="flex gap-2 items-center justify-end">
                     <TooltipIconButton
                       icon={EyeIcon}
-                      tooltip="Προβολή άρθρου"
+                       tooltip={tArticles('view_article')}
                       onClick={() => router.push(article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`)}
                     />
                     {article.type === 'news' && !article.newsApprovedAt && (
                       <TooltipIconButton
                         icon={CheckIcon}
-                        tooltip="Έγκριση άρθρου"
+                         tooltip={tAdmin('approve_article')}
                         onClick={() => {
                           setSelectedArticle(article);
                           setApproveDialogOpen(true);
@@ -450,7 +457,7 @@ function AdminDashboardContent() {
                     )}
                     <TooltipIconButton
                       icon={TrashIcon}
-                      tooltip="Διαγραφή άρθρου"
+                       tooltip={tArticles('delete_article')}
                       onClick={() => {
                         setSelectedArticle(article);
                         setDeleteDialogOpen(true);
@@ -463,7 +470,7 @@ function AdminDashboardContent() {
             ]}
             data={articles}
             loading={loading}
-            emptyMessage="No articles found."
+             emptyMessage={tAdmin('no_articles_found')}
             actions={false}
           />
 
@@ -478,11 +485,11 @@ function AdminDashboardContent() {
 
         {/* Broadcast panel — admin only */}
         {user?.role === 'admin' && (
-          <Card className="mt-8" header={<h2 className="text-xl font-semibold flex items-center gap-2">📣 Ανακοινώσεις</h2>}>
+          <Card className="mt-8" header={<h2 className="text-xl font-semibold flex items-center gap-2">{tAdmin('announcements')}</h2>}>
             <form onSubmit={handleBroadcast} className="space-y-4 max-w-xl">
               <div>
                 <label htmlFor="broadcastTitle" className="block text-sm font-medium text-gray-700 mb-1">
-                  Τίτλος <span className="text-red-500">*</span>
+                  {tAdmin('announcement_title')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   id="broadcastTitle"
@@ -490,7 +497,7 @@ function AdminDashboardContent() {
                   maxLength={200}
                   value={broadcastForm.title}
                   onChange={e => setBroadcastForm(f => ({ ...f, title: e.target.value }))}
-                  placeholder="Τίτλος ανακοίνωσης"
+                  placeholder={tAdmin('announcement_title_placeholder')}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -498,7 +505,7 @@ function AdminDashboardContent() {
               </div>
               <div>
                 <label htmlFor="broadcastBody" className="block text-sm font-medium text-gray-700 mb-1">
-                  Περιεχόμενο <span className="text-gray-400 text-xs">(προαιρετικό)</span>
+                  {tAdmin('announcement_content')} <span className="text-gray-400 text-xs">({tCommon('optional')})</span>
                 </label>
                 <textarea
                   id="broadcastBody"
@@ -506,14 +513,14 @@ function AdminDashboardContent() {
                   rows={3}
                   value={broadcastForm.body}
                   onChange={e => setBroadcastForm(f => ({ ...f, body: e.target.value }))}
-                  placeholder="Σύντομο κείμενο ανακοίνωσης..."
+                  placeholder={tAdmin('announcement_content_placeholder')}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
                 <p className="text-xs text-gray-400 mt-0.5 text-right" aria-live="polite">{broadcastForm.body.length}/500</p>
               </div>
               <div>
                 <label htmlFor="broadcastActionUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                  URL ενέργειας <span className="text-gray-400 text-xs">(προαιρετικό)</span>
+                  {tAdmin('action_url')} <span className="text-gray-400 text-xs">({tCommon('optional')})</span>
                 </label>
                 <input
                   id="broadcastActionUrl"
@@ -526,7 +533,7 @@ function AdminDashboardContent() {
               </div>
               <div>
                 <label htmlFor="broadcastTargetRole" className="block text-sm font-medium text-gray-700 mb-1">
-                  Κοινό <span className="text-red-500">*</span>
+                  {tAdmin('audience')} <span className="text-red-500">*</span>
                 </label>
                 <select
                   id="broadcastTargetRole"
@@ -534,11 +541,11 @@ function AdminDashboardContent() {
                   onChange={e => setBroadcastForm(f => ({ ...f, targetRole: e.target.value }))}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Όλοι οι χρήστες</option>
-                  <option value="citizen">Χρήστες (citizen)</option>
-                  <option value="candidate">Υποψήφιοι (candidate)</option>
-                  <option value="admin">Διαχειριστές (admin)</option>
-                  <option value="moderator">Συντονιστές (moderator)</option>
+                  <option value="">{tAdmin('audience_all')}</option>
+                  <option value="citizen">{tAdmin('audience_citizens')}</option>
+                  <option value="candidate">{tAdmin('audience_candidates')}</option>
+                  <option value="admin">{tAdmin('audience_admins')}</option>
+                  <option value="moderator">{tAdmin('audience_moderators')}</option>
                 </select>
               </div>
               <div className="flex items-center gap-3 pt-2">
@@ -547,7 +554,7 @@ function AdminDashboardContent() {
                   disabled={broadcastLoading || !broadcastForm.title.trim()}
                   className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
                 >
-                  {broadcastLoading ? 'Αποστολή...' : '📣 Αποστολή ανακοίνωσης'}
+                   {broadcastLoading ? tCommon('sending') : tAdmin('send_announcement')}
                 </button>
                 {broadcastResult && (
                   <span className={`text-sm ${broadcastResult.success ? 'text-green-600' : 'text-red-600'}`}>
@@ -565,10 +572,10 @@ function AdminDashboardContent() {
         isOpen={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
-        title="Delete Article"
-        message="Are you sure you want to delete this article? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+         title={tArticles('delete_confirm_title')}
+         message={tArticles('delete_confirm_message')}
+         confirmText={tCommon('delete')}
+         cancelText={tCommon('cancel')}
         variant="danger"
       />
 
@@ -577,10 +584,10 @@ function AdminDashboardContent() {
         isOpen={approveDialogOpen}
         onClose={() => setApproveDialogOpen(false)}
         onConfirm={handleApproveNews}
-        title="Approve News"
-        message="Approve this article as news and publish it?"
-        confirmText="Approve & Publish"
-        cancelText="Cancel"
+         title={tAdmin('approve_news_title')}
+         message={tAdmin('approve_news_message')}
+         confirmText={tAdmin('approve_publish')}
+         cancelText={tCommon('cancel')}
         variant="primary"
       />
     </div>

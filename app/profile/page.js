@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, locationAPI, commentAPI, badgeAPI, manifestAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -24,8 +25,11 @@ import ProfileInterestsSection from '@/components/profile/ProfileInterestsSectio
 import ProfileExpertiseSection from '@/components/profile/ProfileExpertiseSection';
 import ProfileBadgesSection from '@/components/profile/ProfileBadgesSection';
 import ProfileTwitchSection from '@/components/profile/ProfileTwitchSection';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 function ProfileContent() {
+  const tProfile = useTranslations('profile');
+  const tCommon = useTranslations('common');
   const { user, updateProfile, deleteAccount } = useAuth();
   const { success, error } = useToast();
   const searchParams = useSearchParams();
@@ -112,7 +116,7 @@ function ProfileContent() {
       if (response.success) {
         return response.data.user;
       }
-      throw new Error('Failed to load profile');
+      throw new Error(tProfile('load_failed'));
     },
     [],
     {
@@ -180,7 +184,7 @@ function ProfileContent() {
         }
       },
       onError: (err) => {
-        error(err || 'Failed to load profile.');
+          error(err || tProfile('load_failed'));
       }
     }
   );
@@ -191,19 +195,19 @@ function ProfileContent() {
     const errorParam = searchParams.get('error');
 
     if (successParam === 'github_linked') {
-      success('GitHub account linked successfully!');
+      success(tProfile('github_linked_success'));
       setGithubLinked(true);
     } else if (successParam === 'google_linked') {
-      success('Google account linked successfully!');
+      success(tProfile('google_linked_success'));
       setGoogleLinked(true);
     } else if (errorParam) {
       const errorMessages = {
-        unauthorized: 'Unauthorized to link account',
-        user_not_found: 'User not found',
-        github_already_linked: 'This GitHub account is already linked to another user',
-        google_already_linked: 'This Google account is already linked to another user'
+        unauthorized: tProfile('link_unauthorized'),
+        user_not_found: tCommon('user_not_found'),
+        github_already_linked: tProfile('github_already_linked'),
+        google_already_linked: tProfile('google_already_linked')
       };
-      error(errorMessages[errorParam] || 'Failed to link account');
+      error(errorMessages[errorParam] || tProfile('link_failed'));
     }
     if (successParam || errorParam) {
       const nextParams = new URLSearchParams(searchParams.toString());
@@ -260,10 +264,10 @@ function ProfileContent() {
       const res = await badgeAPI.setDisplayBadge(slug, tier);
       if (res?.success) {
         setDisplayBadge({ slug, tier });
-        success('Εμφάνιση badge ενημερώθηκε!');
+        success(tProfile('display_badge_updated'));
       }
     } catch (_err) {
-      error('Αποτυχία ενημέρωσης badge εμφάνισης.');
+      error(tProfile('display_badge_update_failed'));
     } finally {
       setSavingDisplayBadge(false);
     }
@@ -275,10 +279,10 @@ function ProfileContent() {
       const res = await badgeAPI.clearDisplayBadge();
       if (res?.success) {
         setDisplayBadge({ slug: null, tier: null });
-        success('Η επιλογή badge αφαιρέθηκε.');
+        success(tProfile('display_badge_cleared'));
       }
     } catch (_err) {
-      error('Αποτυχία αφαίρεσης badge εμφάνισης.');
+      error(tProfile('display_badge_clear_failed'));
     } finally {
       setSavingDisplayBadge(false);
     }
@@ -289,10 +293,10 @@ function ProfileContent() {
       const res = await manifestAPI.accept(slug);
       if (res?.success) {
         setManifestAcceptances((prev) => [...prev, { slug, acceptedAt: res.data?.acceptedAt || new Date().toISOString() }]);
-        success('Το μανιφέστο αποδεχτήκατε επιτυχώς!');
+        success(tProfile('manifest_accept_success'));
       }
     } catch (_err) {
-      error('Αποτυχία αποδοχής μανιφέστου.');
+      error(tProfile('manifest_accept_failed'));
     }
   };
 
@@ -301,10 +305,10 @@ function ProfileContent() {
       const res = await manifestAPI.withdraw(slug);
       if (res?.success) {
         setManifestAcceptances((prev) => prev.filter((a) => a.slug !== slug));
-        success('Η αποδοχή αποσύρθηκε.');
+        success(tProfile('manifest_withdraw_success'));
       }
     } catch (_err) {
-      error('Αποτυχία απόσυρσης αποδοχής.');
+      error(tProfile('manifest_withdraw_failed'));
     }
   };
 
@@ -332,9 +336,9 @@ function ProfileContent() {
       await updateProfile(profileData);
       setSavedProfileData({ ...profileData });
       setIsDirty(false);
-      success('Profile updated successfully!');
+      success(tProfile('updated_successfully'));
     } catch (err) {
-      error(err.message || 'Failed to update profile.');
+      error(err.message || tProfile('update_failed'));
     } finally {
       setIsSaving(false);
     }
@@ -355,11 +359,11 @@ function ProfileContent() {
     event.preventDefault();
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      error('New password and confirmation do not match.');
+      error(tProfile('password_mismatch'));
       return;
     }
     if (passwordData.newPassword.length < 6) {
-      error('New password must be at least 6 characters.');
+      error(tProfile('password_min_length'));
       return;
     }
 
@@ -368,9 +372,9 @@ function ProfileContent() {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword,
       });
-      success('Password updated successfully!');
+      success(tProfile('password_updated'));
     } catch (err) {
-      error(err.message || 'Failed to update password.');
+      error(err.message || tProfile('password_update_failed'));
     } finally {
       resetPasswordData();
     }
@@ -383,20 +387,20 @@ function ProfileContent() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Failed to initiate GitHub linking');
+      error(err.message || tProfile('github_link_failed'));
     }
   };
 
   const handleUnlinkGithub = async () => {
-    if (!confirm('Are you sure you want to unlink your GitHub account?')) return;
+    if (!confirm(tProfile('confirm_unlink_github'))) return;
     try {
       const response = await authAPI.unlinkGithub();
       if (response.success) {
-        success('GitHub account disconnected');
+        success(tProfile('github_unlinked'));
         setGithubLinked(false);
       }
     } catch (err) {
-      error(err.message || 'Failed to unlink GitHub account.');
+      error(err.message || tProfile('github_unlink_failed'));
     }
   };
 
@@ -407,20 +411,20 @@ function ProfileContent() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Failed to initiate Google linking');
+      error(err.message || tProfile('google_link_failed'));
     }
   };
 
   const handleUnlinkGoogle = async () => {
-    if (!confirm('Are you sure you want to unlink your Google account?')) return;
+    if (!confirm(tProfile('confirm_unlink_google'))) return;
     try {
       const response = await authAPI.unlinkGoogle();
       if (response.success) {
-        success('Google account disconnected');
+        success(tProfile('google_unlinked'));
         setGoogleLinked(false);
       }
     } catch (err) {
-      error(err.message || 'Failed to unlink Google account.');
+      error(err.message || tProfile('google_unlink_failed'));
     }
   };
 
@@ -432,9 +436,9 @@ function ProfileContent() {
     setSavingInteraction(true);
     try {
       await commentAPI.updateUserProfileCommentSettings(user.id, interactionSettings);
-      success('Settings saved successfully!');
+      success(tProfile('settings_saved'));
     } catch (err) {
-      error(err.message || 'Failed to save settings.');
+      error(err.message || tProfile('settings_save_failed'));
     } finally {
       setSavingInteraction(false);
     }
@@ -494,7 +498,7 @@ function ProfileContent() {
 
         {/* Στοιχεία Χρήστη */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Στοιχεία Χρήστη</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('personal_info')}</h2>
           <ProfileBasicInfoForm
             profileData={profileData}
             onChange={handleProfileChange}
@@ -504,7 +508,7 @@ function ProfileContent() {
 
         {/* Τοποθεσία & Εθνικότητα */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Τοποθεσία &amp; Εθνικότητα</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('location_nationality')}</h2>
           <ProfileLocationSection
             profileData={profileData}
             onChange={handleProfileChange}
@@ -518,7 +522,7 @@ function ProfileContent() {
 
         {/* Πολιτική Τοποθέτηση */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Πολιτική Τοποθέτηση</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('political_position')}</h2>
           <ProfilePoliticsSection
             profileData={profileData}
             onChange={handleProfileChange}
@@ -534,7 +538,7 @@ function ProfileContent() {
 
         {/* Σχετικά με εμένα & Επικοινωνία */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Σχετικά με εμένα &amp; Επικοινωνία</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('about_contact')}</h2>
           <ProfileBioSection
             profileData={profileData}
             onChange={handleProfileChange}
@@ -543,7 +547,7 @@ function ProfileContent() {
 
         {/* Social Links */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Social Links</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('social_links')}</h2>
           <ProfileSocialLinksSection
             profileData={profileData}
             onSocialLinkChange={handleSocialLinkChange}
@@ -553,7 +557,7 @@ function ProfileContent() {
         {/* Twitch Channel */}
         {(user?.isVerified || ['admin', 'moderator', 'editor'].includes(user?.role)) && (
           <Card>
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Twitch Channel</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('twitch_channel')}</h2>
             <ProfileTwitchSection
               twitchChannel={profileData.twitchChannel}
               onChange={handleProfileChange}
@@ -563,8 +567,8 @@ function ProfileContent() {
 
         {/* Επαγγέλματα & Τομέας Εμπειρογνωμοσύνης */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Επαγγέλματα &amp; Τομέας Εμπειρογνωμοσύνης</h2>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Επαγγέλματα <span className="text-gray-400 text-xs font-normal">(max 5)</span></h3>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('professions_expertise')}</h2>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">{tProfile('professions')} <span className="text-gray-400 text-xs font-normal">({tCommon('max_count', { count: 5 })})</span></h3>
           <ProfileProfessionsSection
             professions={profileData.professions}
             picker={profPicker}
@@ -578,7 +582,7 @@ function ProfileContent() {
             onRemove={(idx) => setProfileData((prev) => ({ ...prev, professions: prev.professions.filter((_, i) => i !== idx) }))}
           />
           <hr className="my-6 border-gray-200" />
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Τομέας Εμπειρογνωμοσύνης <span className="text-gray-400 text-xs font-normal">(max 5)</span></h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">{tProfile('expertise_area')} <span className="text-gray-400 text-xs font-normal">({tCommon('max_count', { count: 5 })})</span></h3>
           <ProfileExpertiseSection
             expertiseArea={profileData.expertiseArea}
             onAdd={(area) => setProfileData((prev) => ({ ...prev, expertiseArea: [...(prev.expertiseArea || []), area] }))}
@@ -588,7 +592,7 @@ function ProfileContent() {
 
         {/* Ενδιαφέροντα */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ενδιαφέροντα</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('interests')}</h2>
           <ProfileInterestsSection
             interests={profileData.interests}
             picker={intPicker}
@@ -617,6 +621,12 @@ function ProfileContent() {
         </Card>
 
         {/* Απόρρητο & Αλληλεπίδραση */}
+        <Card>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('preferences')}</h2>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{tProfile('language')}</label>
+          <LanguageSwitcher />
+        </Card>
+
         <Card>
           <ProfilePrivacySection
             searchable={interactionSettings.searchable}
@@ -659,9 +669,9 @@ function ProfileContent() {
       <div className="fixed bottom-0 inset-x-0 z-50 border-t border-gray-200 bg-white shadow-lg">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           {isDirty ? (
-            <p className="text-sm text-amber-600 font-medium">● You have unsaved changes</p>
+            <p className="text-sm text-amber-600 font-medium">● {tProfile('unsaved_changes')}</p>
           ) : (
-            <p className="text-sm text-gray-400">All changes saved</p>
+            <p className="text-sm text-gray-400">{tProfile('all_changes_saved')}</p>
           )}
           <button
             type="button"
@@ -669,7 +679,7 @@ function ProfileContent() {
             disabled={isSaving || !isDirty}
             className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
           >
-            {isSaving ? 'Saving…' : 'Save changes'}
+            {isSaving ? tProfile('saving') : tProfile('save_changes')}
           </button>
         </div>
       </div>
@@ -682,7 +692,7 @@ export default function ProfilePage() {
     <ProtectedRoute allowedRoles={['admin', 'moderator', 'editor', 'viewer']}>
       <Suspense fallback={
         <div className="min-h-screen flex items-center justify-center">
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-600">{tProfile('loading_profile')}</p>
         </div>
       }>
         <ProfileContent />
