@@ -62,9 +62,15 @@ const sanitizePath = (rawPath) => {
     return null;
   }
 
-  let decoded;
+  let decoded = rawPath;
   try {
-    decoded = decodeURIComponent(rawPath);
+    for (let i = 0; i < 3; i += 1) {
+      const nextDecoded = decodeURIComponent(decoded);
+      if (nextDecoded === decoded) {
+        break;
+      }
+      decoded = nextDecoded;
+    }
   } catch {
     return null;
   }

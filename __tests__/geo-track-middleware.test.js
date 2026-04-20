@@ -81,6 +81,7 @@ describe('geoTrackMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(GeoVisit.create).toHaveBeenCalledTimes(1);
     expect(GeoVisit.create.mock.calls[0][0].path).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith('geoTrackMiddleware: suspicious path discarded:', '/..%2F..%2Fetc%2Fpasswd');
 
     warnSpy.mockRestore();
   });
@@ -100,6 +101,27 @@ describe('geoTrackMiddleware', () => {
     expect(next).toHaveBeenCalledTimes(1);
     expect(GeoVisit.create).toHaveBeenCalledTimes(1);
     expect(GeoVisit.create.mock.calls[0][0].path).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith('geoTrackMiddleware: suspicious path discarded:', '/../etc/passwd');
+
+    warnSpy.mockRestore();
+  });
+
+  it('stores null path for double-encoded traversal probes', () => {
+    process.env.NODE_ENV = 'development';
+    GeoVisit.create.mockResolvedValueOnce({});
+    const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const next = jest.fn();
+
+    geoTrackMiddleware({
+      path: '/%252e%252e%252fetc%252fpasswd',
+      headers: {},
+      ip: '2.2.2.2',
+    }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(GeoVisit.create).toHaveBeenCalledTimes(1);
+    expect(GeoVisit.create.mock.calls[0][0].path).toBeNull();
+    expect(warnSpy).toHaveBeenCalledWith('geoTrackMiddleware: suspicious path discarded:', '/%252e%252e%252fetc%252fpasswd');
 
     warnSpy.mockRestore();
   });
