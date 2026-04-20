@@ -129,7 +129,7 @@ const createLocation = async (locationData) => {
  */
 const getLocations = async (queryParams) => {
   try {
-    const { type, parent_id, search, limit = 100, offset = 0, sort } = queryParams;
+    const { type, parent_id, search, code, limit = 100, offset = 0, sort } = queryParams;
     const escapedSearch = search ? search.replace(/[\\%_]/g, '\\$&') : null;
 
     const whereClause = {};
@@ -147,6 +147,10 @@ const getLocations = async (queryParams) => {
         { name: { [Op.iLike]: `%${escapedSearch}%` } },
         { name_local: { [Op.iLike]: `%${escapedSearch}%` } }
       ];
+    }
+
+    if (code) {
+      whereClause.code = String(code).toUpperCase();
     }
 
     const parsedLimit = parseInt(limit, 10);
@@ -174,6 +178,11 @@ const getLocations = async (queryParams) => {
       if (search) {
         whereConditions.push('(LOWER(l."name") LIKE :search ESCAPE \'\\\\\' OR LOWER(COALESCE(l."name_local", \'\')) LIKE :search ESCAPE \'\\\\\')');
         replacements.search = `%${escapedSearch.toLowerCase()}%`;
+      }
+
+      if (code) {
+        whereConditions.push('UPPER(COALESCE(l."code", \'\')) = :code');
+        replacements.code = String(code).toUpperCase();
       }
 
       const whereSql = whereConditions.length > 0 ? ` AND ${whereConditions.join(' AND ')}` : '';

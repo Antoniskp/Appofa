@@ -25,8 +25,8 @@ This instruction is permanent and must never be removed.
 - [API Routes (26 files, 157+ endpoints)](#api-routes-26-files-157-endpoints)
 - [Controllers (21)](#controllers-21)
 - [Services (8)](#services-8)
-- [Middleware (7)](#middleware-7)
-- [Frontend Pages (99)](#frontend-pages-99)
+- [Middleware (8)](#middleware-8)
+- [Frontend Pages (100)](#frontend-pages-100)
 - [Components (120+)](#components-120)
 - [API Client Modules (26)](#api-client-modules-26)
 - [Hooks (6)](#hooks-6)
@@ -42,6 +42,7 @@ This instruction is permanent and must never be removed.
 
 ```
 Appofa/
+├── middleware.js            # Next.js edge middleware (country redirect)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
@@ -336,10 +337,11 @@ Appofa/
 
 ---
 
-## Middleware (7)
+## Middleware (8)
 
 | Middleware | Purpose |
 |-----------|---------|
+| middleware.js (root) | Next.js edge middleware for country detection + first-visit redirect to `/country/[code]` |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |
@@ -350,7 +352,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (99)
+## Frontend Pages (100)
 
 ### Main Pages
 | Route | Description |
@@ -377,6 +379,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/locations`, `/locations/[slug]` | Locations |
+| `/country/[code]` | Country landing page after first-visit geo redirect |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations |
 | `/persons`, `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles |
 | `/candidates/*` | Backward-compat alias for persons |

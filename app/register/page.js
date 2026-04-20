@@ -39,10 +39,13 @@ export default function RegisterPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
+    if (typeof geoAPI?.detect !== 'function') return;
+
     geoAPI.detect()
       .then((res) => {
         if (res?.success && res.data?.countryCode) {
           setDetectedCountry({ countryCode: res.data.countryCode, countryName: res.data.countryName });
+          document.cookie = `appofa_detected_country=${res.data.countryCode}; path=/; max-age=3600; SameSite=Lax`;
         }
       })
       .catch(() => {});
