@@ -347,9 +347,9 @@ export default function HomePage() {
         <section className="bg-gradient-to-b from-gray-50 to-white">
           <div className="app-container py-16">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-               {tHome('manifest_supporters_title')}
+              {tHome('manifest_supporters_title')}
             </h2>
-              <p className="text-sm text-gray-500 mb-8">{tHome('manifest_supporters_subtitle')}</p>
+            <p className="text-sm text-gray-500 mb-8">{tHome('manifest_supporters_subtitle')}</p>
             <div className="space-y-10">
               {manifestData.map((manifest) => (
                 <div key={manifest.slug}>

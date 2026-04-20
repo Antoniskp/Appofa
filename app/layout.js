@@ -7,7 +7,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://appofasi.gr';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://appofasi.gr';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 
 export const metadata = {
