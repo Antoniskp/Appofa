@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon, MapPinIcon, EnvelopeIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon, PencilSquareIcon, UsersIcon } from '@heroicons/react/24/outline';
+import { EyeIcon, CheckIcon, TrashIcon, PencilIcon, DocumentTextIcon, UserGroupIcon, NewspaperIcon, ArchiveBoxIcon, ShieldCheckIcon, UserIcon, MapPinIcon, EnvelopeIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon, PencilSquareIcon, UsersIcon, GlobeEuropeAfricaIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI, authAPI, notificationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -273,19 +273,28 @@ function AdminDashboardContent() {
               { href: '/admin/removal-requests', label: 'Removal Requests', icon: XCircleIcon },
               { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
               { href: '/admin/dream-team', label: 'Dream Team', icon: StarIcon },
-              { href: '/admin/manifests', label: 'Manage Manifests', icon: DocumentTextIcon },
-              { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
-              { href: '/admin/status', label: 'System Health', icon: HeartIcon },
-            ].map(action => (
-              <Link
-                key={action.href}
-                href={action.href}
+               { href: '/admin/manifests', label: 'Manage Manifests', icon: DocumentTextIcon },
+               { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
+               {
+                 href: '/admin/geo',
+                 label: '🌍 Γεωγραφικά & Χώρες',
+                 description: 'Επισκεψιμότητα ανά χώρα, διασπορά, χρηματοδότηση',
+                 icon: GlobeEuropeAfricaIcon,
+               },
+               { href: '/admin/status', label: 'System Health', icon: HeartIcon },
+             ].map(action => (
+               <Link
+                 key={action.href}
+                 href={action.href}
                 className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition group"
               >
-                <action.icon className="h-8 w-8 text-gray-500 group-hover:text-blue-600 transition" />
-                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 text-center">{action.label}</span>
-              </Link>
-            ))}
+                 <action.icon className="h-8 w-8 text-gray-500 group-hover:text-blue-600 transition" />
+                 <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 text-center">{action.label}</span>
+                 {action.description && (
+                   <span className="text-xs text-gray-500 text-center">{action.description}</span>
+                 )}
+               </Link>
+             ))}
           </div>
         </Card>
 
