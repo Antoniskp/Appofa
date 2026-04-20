@@ -42,7 +42,7 @@ This instruction is permanent and must never be removed.
 
 ```
 Appofa/
-├── middleware.js            # Next.js edge middleware (country redirect)
+├── proxy.js                 # Next.js edge proxy (country redirect)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
@@ -341,7 +341,7 @@ Appofa/
 
 | Middleware | Purpose |
 |-----------|---------|
-| middleware.js (root) | Next.js edge middleware for country detection + first-visit redirect to `/country/[code]` |
+| proxy.js (root) | Next.js edge proxy for country detection + first-visit redirect to `/country/[code]` |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |
