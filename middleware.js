@@ -48,7 +48,7 @@ export function middleware(request) {
   response.cookies.set('appofa_country_visited', '1', {
     path: '/',
     maxAge: 86400,
-    sameSite: 'lax',
+    sameSite: 'Lax',
   });
   return response;
 }

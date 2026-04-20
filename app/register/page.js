@@ -39,8 +39,6 @@ export default function RegisterPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (typeof geoAPI?.detect !== 'function') return;
-
     geoAPI.detect()
       .then((res) => {
         if (res?.success && res.data?.countryCode) {

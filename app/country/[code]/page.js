@@ -53,7 +53,7 @@ export default function CountryLandingPage() {
         location,
         funding: fundingResponse?.success ? fundingResponse.data : null,
         news: feed.filter((item) => item.type === 'news').slice(0, 3),
-        articles: feed.filter((item) => item.type === 'articles').slice(0, 3),
+        articles: feed.filter((item) => item.type !== 'news').slice(0, 3),
       };
     },
     [code],
