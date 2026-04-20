@@ -32,9 +32,9 @@ const Poll = sequelize.define('Poll', {
     defaultValue: false,
     allowNull: false
   },
-  allowUnauthenticatedVotes: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
+  voteRestriction: {
+    type: DataTypes.ENUM('anyone', 'authenticated', 'locals_only'),
+    defaultValue: 'authenticated',
     allowNull: false
   },
   visibility: {

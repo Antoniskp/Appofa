@@ -68,7 +68,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const options = poll.options || [];
   const isInlineVotable =
     isPollActive &&
-    (user || poll.allowUnauthenticatedVotes) &&
+    (user || poll.voteRestriction === 'anyone') &&
     (poll.type === 'binary' ||
       (poll.type === 'simple' && options.length >= 2 && options.length <= 3));
 
@@ -369,8 +369,25 @@ export default function PollCard({ poll, variant = 'grid' }) {
       {Array.isArray(poll.tags) && poll.tags.length > 0 && (
         <Badge variant="purple">{poll.tags.join(', ')}</Badge>
       )}
+      {poll.voteRestriction === 'locals_only' && poll.location && (
+        <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+          📍 {poll.location.name}
+        </span>
+      )}
+      {poll.voteRestriction === 'locals_only' && !poll.location && (
+        <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+          📍 Μόνο τοπικοί
+        </span>
+      )}
+      {poll.visibility === 'private' && (
+        <span className="inline-flex items-center gap-1 text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+          🔒 Μόνο συνδεδεμένοι
+        </span>
+      )}
       {poll.visibility === 'locals_only' && (
-        <Badge variant="orange">Τοπική</Badge>
+        <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+          👥 Τοπική ορατότητα
+        </span>
       )}
     </div>
   );

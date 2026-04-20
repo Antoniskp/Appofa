@@ -27,6 +27,8 @@ Users can post ideas, problems, or location suggestions. Admins and moderators c
 | `locationId` | INTEGER FK → Locations | optional |
 | `authorId` | INTEGER FK → Users | cascade delete |
 | `status` | ENUM | `open`, `under_review`, `implemented`, `rejected` |
+| `visibility` | ENUM | `public`, `private`, `locals_only` (default `public`) |
+| `voteRestriction` | ENUM | `authenticated`, `locals_only` (default `authenticated`) |
 
 ### Solution
 | Field | Type | Notes |
@@ -191,4 +193,3 @@ npm run migrate
 
 - Migration `028-create-suggestions-tables.js` creates `Suggestions`, `Solutions`, and `SuggestionVotes` tables with all required indexes.
 - Migration `029-add-problem-request-type.js` adds `problem_request` to the `enum_Suggestions_type` ENUM in PostgreSQL (no-op for SQLite test environment).
-

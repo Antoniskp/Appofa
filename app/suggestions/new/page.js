@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
@@ -33,10 +33,11 @@ export default function NewSuggestionPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  const [form, setForm] = useState({ title: '', body: '', type: 'idea', locationId: null, category: '', tags: [] });
+  const [form, setForm] = useState({ title: '', body: '', type: 'idea', locationId: null, voteRestriction: 'authenticated', category: '', tags: [] });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [tagSuggestions, setTagSuggestions] = useState([]);
+  const hasAutoFilledLocation = useRef(false);
 
   // Fetch existing tag suggestions for autocomplete
   useEffect(() => {
@@ -56,6 +57,13 @@ export default function NewSuggestionPage() {
       })
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!hasAutoFilledLocation.current && user?.homeLocationId && !form.locationId) {
+      hasAutoFilledLocation.current = true;
+      setForm((prev) => ({ ...prev, locationId: user.homeLocationId }));
+    }
+  }, [user?.homeLocationId, form.locationId]);
 
   // Redirect if not logged in
   if (!user) {
@@ -93,6 +101,14 @@ export default function NewSuggestionPage() {
     }
   };
 
+  const handleLocationChange = (locationId) => {
+    setForm((prev) => ({
+      ...prev,
+      locationId: locationId || null,
+      voteRestriction: locationId ? 'locals_only' : 'authenticated',
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
@@ -107,6 +123,7 @@ export default function NewSuggestionPage() {
         body: form.body,
         type: form.type,
         ...(form.locationId ? { locationId: form.locationId } : { locationId: null }),
+        voteRestriction: form.voteRestriction,
         ...(form.category ? { category: form.category } : {}),
         tags: form.tags,
       };
@@ -229,9 +246,27 @@ export default function NewSuggestionPage() {
               </label>
               <CascadingLocationSelector
                 value={form.locationId}
-                onChange={(locationId) => setForm((prev) => ({ ...prev, locationId: locationId || null }))}
+                onChange={handleLocationChange}
                 allowClear
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Ποιος μπορεί να ψηφίσει
+              </label>
+              <select
+                name="voteRestriction"
+                value={form.voteRestriction}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="authenticated">Μόνο συνδεδεμένοι χρήστες</option>
+                <option value="locals_only">Μόνο τοπικοί χρήστες</option>
+              </select>
+              {form.voteRestriction === 'locals_only' && !form.locationId && (
+                <p className="text-amber-600 text-xs mt-1">⚠️ Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία</p>
+              )}
             </div>
 
             {/* Tags (optional) */}

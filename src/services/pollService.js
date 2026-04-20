@@ -21,6 +21,7 @@ const { syncTags, attachTags } = require('../utils/tagUtils');
 const POLL_TYPES = ['simple', 'complex', 'binary'];
 const BINARY_STYLES = ['yes_no', 'agree_disagree'];
 const POLL_VISIBILITIES = ['public', 'private', 'locals_only'];
+const VOTE_RESTRICTIONS = ['anyone', 'authenticated', 'locals_only'];
 const RESULTS_VISIBILITIES = ['always', 'after_vote', 'after_deadline'];
 const POLL_STATUSES = ['active', 'closed', 'archived'];
 const ANSWER_TYPES = ['person', 'article', 'custom'];
@@ -121,7 +122,7 @@ const createPoll = async (userId, pollData) => {
       type,
       binaryStyle,
       allowUserContributions,
-      allowUnauthenticatedVotes,
+      voteRestriction,
       visibility,
       resultsVisibility,
       deadline,
@@ -183,6 +184,12 @@ const createPoll = async (userId, pollData) => {
       return { success: false, status: 400, message: resultsVisibilityResult.error };
     }
 
+    const voteRestrictionResult = normalizeEnum(voteRestriction, VOTE_RESTRICTIONS, 'Vote restriction');
+    if (voteRestrictionResult.error) {
+      await transaction.rollback();
+      return { success: false, status: 400, message: voteRestrictionResult.error };
+    }
+
     // Validate deadline (optional)
     let deadlineValue = null;
     if (deadline) {
@@ -223,17 +230,16 @@ const createPoll = async (userId, pollData) => {
       }
     }
 
+    if (voteRestrictionResult.value === 'locals_only' && !locationIdValue) {
+      await transaction.rollback();
+      return { success: false, status: 400, message: 'Location is required when vote restriction is locals_only.' };
+    }
+
     // Validate booleans
     const allowUserContributionsResult = normalizeBoolean(allowUserContributions, 'Allow user contributions');
     if (allowUserContributionsResult.error) {
       await transaction.rollback();
       return { success: false, status: 400, message: allowUserContributionsResult.error };
-    }
-
-    const allowUnauthenticatedVotesResult = normalizeBoolean(allowUnauthenticatedVotes, 'Allow unauthenticated votes');
-    if (allowUnauthenticatedVotesResult.error) {
-      await transaction.rollback();
-      return { success: false, status: 400, message: allowUnauthenticatedVotesResult.error };
     }
 
     const hideCreatorResult = normalizeBoolean(hideCreator, 'hideCreator');
@@ -263,8 +269,7 @@ const createPoll = async (userId, pollData) => {
         type: typeResult.value,
         allowUserContributions:
           allowUserContributionsResult.value !== undefined ? allowUserContributionsResult.value : false,
-        allowUnauthenticatedVotes:
-          allowUnauthenticatedVotesResult.value !== undefined ? allowUnauthenticatedVotesResult.value : false,
+        voteRestriction: voteRestrictionResult.value,
         visibility: visibilityResult.value,
         resultsVisibility: resultsVisibilityResult.value,
         deadline: deadlineValue,
@@ -389,6 +394,12 @@ const createPoll = async (userId, pollData) => {
           model: PollOption,
           as: 'options',
           attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
+        },
+        {
+          model: Location,
+          as: 'location',
+          attributes: ['id', 'name', 'slug'],
+          required: false
         }
       ]
     });
@@ -629,6 +640,12 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
               attributes: ['id']
             }
           ]
+        },
+        {
+          model: Location,
+          as: 'location',
+          attributes: ['id', 'name', 'slug'],
+          required: false
         }
       ],
       limit: limitNum,
@@ -731,7 +748,8 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
         {
           model: Location,
           as: 'location',
-          attributes: ['id', 'name', 'type']
+          attributes: ['id', 'name', 'slug'],
+          required: false
         },
         {
           model: PollOption,
@@ -855,6 +873,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       status,
       locationId,
       visibility,
+      voteRestriction,
       resultsVisibility,
       hideCreator,
       options,
@@ -973,6 +992,15 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       updates.visibility = visibilityResult.value;
     }
 
+    if (voteRestriction !== undefined) {
+      const voteRestrictionResult = normalizeEnum(voteRestriction, VOTE_RESTRICTIONS, 'Vote restriction');
+      if (voteRestrictionResult.error) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: voteRestrictionResult.error };
+      }
+      updates.voteRestriction = voteRestrictionResult.value;
+    }
+
     // Validate and update results visibility
     if (resultsVisibility !== undefined) {
       const resultsVisibilityResult = normalizeEnum(resultsVisibility, RESULTS_VISIBILITIES, 'Results visibility');
@@ -1009,6 +1037,13 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
         }
         updates.locationId = locationIdResult.value;
       }
+    }
+
+    const nextVoteRestriction = updates.voteRestriction ?? poll.voteRestriction;
+    const nextLocationId = updates.locationId !== undefined ? updates.locationId : poll.locationId;
+    if (nextVoteRestriction === 'locals_only' && !nextLocationId) {
+      await transaction.rollback();
+      return { success: false, status: 400, message: 'Location is required when vote restriction is locals_only.' };
     }
 
     if (hideCreator !== undefined) {
@@ -1084,6 +1119,12 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
           model: PollOption,
           as: 'options',
           attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
+        },
+        {
+          model: Location,
+          as: 'location',
+          attributes: ['id', 'name', 'slug'],
+          required: false
         }
       ],
       order: [[{ model: PollOption, as: 'options' }, 'order', 'ASC']]
@@ -1223,21 +1264,20 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
       return { success: false, status: 400, message: 'Invalid option for this poll.' };
     }
 
-    // Check if unauthenticated votes are allowed
-    if (!userId && !poll.allowUnauthenticatedVotes) {
-      return {
-        success: false,
-        status: 401,
-        message: 'Authentication required to vote on this poll.'
-      };
-    }
-
-    if (poll.visibility === 'locals_only' && poll.locationId) {
+    if (poll.voteRestriction === 'authenticated') {
+      if (!userId) {
+        return {
+          success: false,
+          status: 401,
+          message: 'Authentication required to vote on this poll.'
+        };
+      }
+    } else if (poll.voteRestriction === 'locals_only') {
       if (!userId) {
         return {
           success: false,
           status: 403,
-          message: 'Access denied. This poll is for local members only.'
+          message: 'Authentication required. This poll is for local members only.'
         };
       }
       if (userRole !== 'admin') {
@@ -1248,6 +1288,13 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
             success: false,
             status: 403,
             message: 'Access denied. You must have a home location to vote on local polls.'
+          };
+        }
+        if (!poll.locationId) {
+          return {
+            success: false,
+            status: 403,
+            message: 'Access denied. This poll has no associated location.'
           };
         }
         const ancestorIds = await getAncestorLocationIds(homeLocationId, true);
@@ -1871,6 +1918,7 @@ module.exports = {
   // Constants (exported for use in controller or tests if needed)
   POLL_TYPES,
   POLL_VISIBILITIES,
+  VOTE_RESTRICTIONS,
   RESULTS_VISIBILITIES,
   POLL_STATUSES,
   ANSWER_TYPES,

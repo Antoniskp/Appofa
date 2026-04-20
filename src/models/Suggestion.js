@@ -46,6 +46,16 @@ const Suggestion = sequelize.define('Suggestion', {
     defaultValue: 'open',
     allowNull: false
   },
+  visibility: {
+    type: DataTypes.ENUM('public', 'private', 'locals_only'),
+    defaultValue: 'public',
+    allowNull: false
+  },
+  voteRestriction: {
+    type: DataTypes.ENUM('authenticated', 'locals_only'),
+    defaultValue: 'authenticated',
+    allowNull: false
+  },
   category: {
     type: DataTypes.STRING,
     allowNull: true
