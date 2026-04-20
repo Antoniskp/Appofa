@@ -355,6 +355,103 @@ describe('Database Migrations', () => {
     });
   });
 
+  describe('20260420000000-create-geo-visits', () => {
+    test('creates GeoVisits table with all columns', async () => {
+      await runMigration('20260420000000-create-geo-visits.js');
+
+      const tables = await queryInterface.showAllTables();
+      expect(tables).toContain('GeoVisits');
+
+      const tableDescription = await queryInterface.describeTable('GeoVisits');
+      expect(tableDescription).toHaveProperty('id');
+      expect(tableDescription).toHaveProperty('countryCode');
+      expect(tableDescription).toHaveProperty('countryName');
+      expect(tableDescription).toHaveProperty('isAuthenticated');
+      expect(tableDescription).toHaveProperty('isDiaspora');
+      expect(tableDescription).toHaveProperty('sessionHash');
+      expect(tableDescription).toHaveProperty('path');
+      expect(tableDescription).toHaveProperty('locale');
+      expect(tableDescription).toHaveProperty('createdAt');
+      expect(tableDescription).toHaveProperty('updatedAt');
+    });
+
+    test('is idempotent (can run multiple times)', async () => {
+      await runMigration('20260420000000-create-geo-visits.js');
+      await expect(runMigration('20260420000000-create-geo-visits.js')).resolves.not.toThrow();
+    });
+
+    test('rolls back cleanly', async () => {
+      await runMigration('20260420000000-create-geo-visits.js');
+      await rollbackMigration('20260420000000-create-geo-visits.js');
+
+      const tables = await queryInterface.showAllTables();
+      expect(tables).not.toContain('GeoVisits');
+    });
+  });
+
+  describe('20260420000001-create-country-fundings', () => {
+    test('creates CountryFundings table with all columns', async () => {
+      await runMigration('001-create-locations-table.js');
+      await runMigration('20260420000001-create-country-fundings.js');
+
+      const tables = await queryInterface.showAllTables();
+      expect(tables).toContain('CountryFundings');
+
+      const tableDescription = await queryInterface.describeTable('CountryFundings');
+      expect(tableDescription).toHaveProperty('id');
+      expect(tableDescription).toHaveProperty('locationId');
+      expect(tableDescription).toHaveProperty('goalAmount');
+      expect(tableDescription).toHaveProperty('currentAmount');
+      expect(tableDescription).toHaveProperty('donorCount');
+      expect(tableDescription).toHaveProperty('status');
+      expect(tableDescription).toHaveProperty('donationUrl');
+      expect(tableDescription).toHaveProperty('notes');
+      expect(tableDescription).toHaveProperty('unlockedAt');
+      expect(tableDescription).toHaveProperty('unlockedByUserId');
+      expect(tableDescription).toHaveProperty('createdAt');
+      expect(tableDescription).toHaveProperty('updatedAt');
+    });
+
+    test('is idempotent (can run multiple times)', async () => {
+      await runMigration('001-create-locations-table.js');
+      await runMigration('20260420000001-create-country-fundings.js');
+      await expect(runMigration('20260420000001-create-country-fundings.js')).resolves.not.toThrow();
+    });
+
+    test('rolls back cleanly', async () => {
+      await runMigration('001-create-locations-table.js');
+      await runMigration('20260420000001-create-country-fundings.js');
+      await rollbackMigration('20260420000001-create-country-fundings.js');
+
+      const tables = await queryInterface.showAllTables();
+      expect(tables).not.toContain('CountryFundings');
+    });
+  });
+
+  describe('20260420000002-add-diaspora-fields-to-users', () => {
+    test('adds Users.isDiaspora and Users.residenceCountryCode', async () => {
+      await runMigration('20260420000002-add-diaspora-fields-to-users.js');
+
+      const usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).toHaveProperty('isDiaspora');
+      expect(usersTable).toHaveProperty('residenceCountryCode');
+    });
+
+    test('is idempotent (can run multiple times)', async () => {
+      await runMigration('20260420000002-add-diaspora-fields-to-users.js');
+      await expect(runMigration('20260420000002-add-diaspora-fields-to-users.js')).resolves.not.toThrow();
+    });
+
+    test('rolls back cleanly', async () => {
+      await runMigration('20260420000002-add-diaspora-fields-to-users.js');
+      await rollbackMigration('20260420000002-add-diaspora-fields-to-users.js');
+
+      const usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).not.toHaveProperty('isDiaspora');
+      expect(usersTable).not.toHaveProperty('residenceCountryCode');
+    });
+  });
+
   describe('Full Migration Suite', () => {
     test('should run all migrations in order', async () => {
       const files = getMigrationFiles();

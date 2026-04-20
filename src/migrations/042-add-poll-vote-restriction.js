@@ -13,14 +13,26 @@ module.exports = {
     }
 
     if (table.allowUnauthenticatedVotes) {
+      const dialect = queryInterface.sequelize.getDialect();
       // PostgreSQL requires explicit cast when assigning string literals to an ENUM column
       // inside a CASE expression, otherwise it infers the type as `text` and throws 42804.
+      // SQLite does not support this cast syntax.
+      const localsOnlyValue = dialect === 'postgres'
+        ? '\'locals_only\'::"enum_Polls_voteRestriction"'
+        : '\'locals_only\'';
+      const anyoneValue = dialect === 'postgres'
+        ? '\'anyone\'::"enum_Polls_voteRestriction"'
+        : '\'anyone\'';
+      const authenticatedValue = dialect === 'postgres'
+        ? '\'authenticated\'::"enum_Polls_voteRestriction"'
+        : '\'authenticated\'';
+
       await queryInterface.sequelize.query(`
         UPDATE "Polls"
         SET "voteRestriction" = CASE
-          WHEN "visibility" = 'locals_only' THEN 'locals_only'::"enum_Polls_voteRestriction"
-          WHEN "allowUnauthenticatedVotes" = true THEN 'anyone'::"enum_Polls_voteRestriction"
-          ELSE 'authenticated'::"enum_Polls_voteRestriction"
+          WHEN "visibility" = 'locals_only' THEN ${localsOnlyValue}
+          WHEN "allowUnauthenticatedVotes" = true THEN ${anyoneValue}
+          ELSE ${authenticatedValue}
         END
       `);
 
