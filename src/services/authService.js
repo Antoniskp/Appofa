@@ -74,9 +74,10 @@ async function registerUser({
     throw new ServiceError(400, 'User with this email or username already exists.');
   }
 
-  const parsedHomeLocationId = homeLocationId == null || homeLocationId === ''
+  const parsedHomeLocationId = Number.parseInt(homeLocationId, 10);
+  const normalizedHomeLocationId = homeLocationId == null || homeLocationId === '' || Number.isNaN(parsedHomeLocationId)
     ? null
-    : Number.parseInt(homeLocationId, 10);
+    : parsedHomeLocationId;
 
   const user = await User.create({
     username: usernameResult.value,
@@ -88,7 +89,7 @@ async function registerUser({
     searchable: searchable !== undefined ? Boolean(searchable) : true,
     isDiaspora: Boolean(isDiaspora),
     residenceCountryCode: residenceCountryCode ? String(residenceCountryCode).trim().toUpperCase() : null,
-    homeLocationId: Number.isNaN(parsedHomeLocationId) ? null : parsedHomeLocationId,
+    homeLocationId: normalizedHomeLocationId,
   });
 
   const token = generateToken(user);
