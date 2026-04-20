@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI, homepageSettingsAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
@@ -16,6 +17,8 @@ import LocationCard from '@/components/locations/LocationCard';
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
 
 export default function HomePage() {
+  const tHome = useTranslations('home');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
 
   const [latestArticles, setLatestArticles] = useState([]);
@@ -229,15 +232,15 @@ export default function HomePage() {
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
 
-      <HomepageSection
-        title="Τελευταία Άρθρα"
-        subtitle="Αναλύσεις και απόψεις από την κοινότητα"
+        <HomepageSection
+        title={tHome('latest_articles_title')}
+        subtitle={tHome('latest_articles_subtitle')}
         linkHref="/articles"
         loading={articlesLoading}
         error={articlesError}
         items={latestArticles}
-        emptyTitle="Δεν βρέθηκαν άρθρα"
-        emptyDescription="Δεν υπάρχουν άρθρα αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        emptyTitle={tHome('empty_articles_title')}
+        emptyDescription={tHome('empty_articles_description')}
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
@@ -245,14 +248,14 @@ export default function HomePage() {
       />
 
       <HomepageSection
-        title="Κορυφαίες Προτάσεις"
-        subtitle="Οι πιο δημοφιλείς προτάσεις πολιτών"
+        title={tHome('top_suggestions_title')}
+        subtitle={tHome('top_suggestions_subtitle')}
         linkHref="/suggestions"
         loading={suggestionsLoading}
         error={suggestionsError}
         items={suggestions}
-        emptyTitle="Δεν βρέθηκαν προτάσεις"
-        emptyDescription="Δεν υπάρχουν προτάσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        emptyTitle={tHome('empty_suggestions_title')}
+        emptyDescription={tHome('empty_suggestions_description')}
         skeletonCount={3}
         bgColor="bg-gray-50"
         renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
@@ -260,14 +263,14 @@ export default function HomePage() {
       />
 
       <HomepageSection
-        title="Μεγαλύτερες Ψηφοφορίες"
-        subtitle="Ψηφίστε στα πιο δημοφιλή θέματα"
+        title={tHome('top_polls_title')}
+        subtitle={tHome('top_polls_subtitle')}
         linkHref="/polls"
         loading={pollsLoading}
         error={pollsError}
         items={polls}
-        emptyTitle="Δεν βρέθηκαν ψηφοφορίες"
-        emptyDescription="Δεν υπάρχουν ψηφοφορίες αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+        emptyTitle={tHome('empty_polls_title')}
+        emptyDescription={tHome('empty_polls_description')}
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
@@ -277,8 +280,8 @@ export default function HomePage() {
       {/* Featured Locations Section */}
       {(locationDiscoveryLoading || locationDiscovery.length > 0) && (
         <HomepageSection
-          title="🗺️ Εξερεύνησε Περιοχές"
-          subtitle="Ανακάλυψε άρθρα, ψηφοφορίες και πολίτες ανά περιοχή"
+          title={tHome('explore_locations_title')}
+          subtitle={tHome('explore_locations_subtitle')}
           linkHref="/locations"
           loading={locationDiscoveryLoading}
           error={null}
@@ -294,9 +297,9 @@ export default function HomePage() {
       {/* CTA / Engagement Banner */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800">
         <div className="app-container py-12 text-center">
-          <h2 className="text-3xl font-bold text-white mb-2">Έχεις κάτι να πεις;</h2>
+          <h2 className="text-3xl font-bold text-white mb-2">{tHome('cta_title')}</h2>
           <p className="text-blue-100 mb-6">
-            Γράψε ένα άρθρο, κατέθεσε πρόταση ή ψήφισε σε ανοιχτές ψηφοφορίες!
+            {tHome('cta_description')}
           </p>
           {user ? (
             <div className="flex justify-center gap-4 flex-wrap">
@@ -304,32 +307,32 @@ export default function HomePage() {
                 href="/articles/new"
                 className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
               >
-                Γράψε Άρθρο
+                {tHome('cta_write_article')}
               </Link>
               <Link
                 href="/suggestions/new"
                 className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
               >
-                Κατέθεσε Πρόταση
+                {tHome('cta_submit_suggestion')}
               </Link>
             </div>
           ) : (
             <div className="flex flex-col items-center gap-4">
               <p className="text-blue-100 text-sm">
-                Εγγράψου για να παρακολουθείς την περιοχή σου και να συμμετέχεις στα τοπικά νέα!
+                {tHome('cta_guest_description')}
               </p>
               <div className="flex justify-center gap-3 flex-wrap">
                 <Link
                   href="/locations"
                   className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
                 >
-                  🗺️ Δες Περιοχές
+                  {tHome('cta_view_locations')}
                 </Link>
                 <Link
                   href="/register"
                   className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
                 >
-                  Εγγραφή
+                  {tCommon('register')}
                 </Link>
               </div>
             </div>
@@ -344,11 +347,9 @@ export default function HomePage() {
         <section className="bg-gradient-to-b from-gray-50 to-white">
           <div className="app-container py-16">
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              📜 Υποστηρικτές Μανιφέστου
+               {tHome('manifest_supporters_title')}
             </h2>
-            <p className="text-sm text-gray-500 mb-8">
-              Μέλη που αποδέχτηκαν τα μανιφέστα μας
-            </p>
+              <p className="text-sm text-gray-500 mb-8">{tHome('manifest_supporters_subtitle')}</p>
             <div className="space-y-10">
               {manifestData.map((manifest) => (
                 <div key={manifest.slug}>
@@ -356,14 +357,14 @@ export default function HomePage() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800">{manifest.title}</h3>
                       <p className="text-xs text-gray-400">
-                        {manifest.supportersCount || 0} συνολικά υποστηρικτές
+                         {tHome('manifest_total_supporters', { count: manifest.supportersCount || 0 })}
                       </p>
                     </div>
                     <Link
                       href={`/manifest-supporters?manifest=${encodeURIComponent(manifest.slug)}`}
                       className="text-sm text-blue-600 hover:text-blue-800 font-medium"
                     >
-                      Δείτε όλους →
+                       {tHome('view_all')}
                     </Link>
                   </div>
                   {manifest.randomSupporters.length > 0 ? (
@@ -406,7 +407,7 @@ export default function HomePage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-400">Δεν υπάρχουν ακόμα υποστηρικτές.</p>
+                     <p className="text-sm text-gray-400">{tHome('no_manifest_supporters')}</p>
                   )}
                 </div>
               ))}
@@ -416,14 +417,14 @@ export default function HomePage() {
         )}
 
       <HomepageSection
-        title="Τελευταίες Ειδήσεις"
-        subtitle="Τα τελευταία νέα από εγκεκριμένες πηγές"
+         title={tHome('latest_news_title')}
+         subtitle={tHome('latest_news_subtitle')}
         linkHref="/news"
         loading={newsLoading}
         error={newsError}
         items={latestNews}
-        emptyTitle="Δεν βρέθηκαν ειδήσεις"
-        emptyDescription="Δεν υπάρχουν εγκεκριμένες ειδήσεις αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+         emptyTitle={tHome('empty_news_title')}
+         emptyDescription={tHome('empty_news_description')}
         skeletonCount={3}
         bgColor="bg-gray-50"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
@@ -432,14 +433,14 @@ export default function HomePage() {
       />
 
       <HomepageSection
-        title="Τελευταία Βίντεο"
-        subtitle="Βίντεο αναλύσεις και συζητήσεις"
+         title={tHome('latest_videos_title')}
+         subtitle={tHome('latest_videos_subtitle')}
         linkHref="/videos"
         loading={videosLoading}
         error={videosError}
         items={videos}
-        emptyTitle="Δεν βρέθηκαν βίντεο"
-        emptyDescription="Δεν υπάρχουν βίντεο αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+         emptyTitle={tHome('empty_videos_title')}
+         emptyDescription={tHome('empty_videos_description')}
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}

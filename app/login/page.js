@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import FormInput from '@/components/ui/FormInput';
@@ -19,6 +20,8 @@ const resolvePostLoginDestination = () => {
 };
 
 function LoginForm() {
+  const tAuth = useTranslations('auth');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, user, loading: authLoading } = useAuth();
@@ -39,24 +42,24 @@ function LoginForm() {
       authAPI.getProfile()
         .then((response) => {
           if (response.success) {
-            success('Καλώς ήρθατε! Ανακατεύθυνση...');
+            success(tAuth('welcome_redirect'));
             router.push(resolvePostLoginDestination());
           }
         })
         .catch((err) => {
           console.error('OAuth login failed:', err);
-          error('Αποτυχία OAuth');
+          error(tAuth('oauth_failed'));
           setLoading(false);
         });
     } else if (errorParam) {
       const errorMessages = {
-        missing_params: 'Αποτυχία OAuth: Λείπουν παράμετροι',
-        invalid_state: 'Αποτυχία OAuth: Μη έγκυρο token κατάστασης',
-        token_exchange_failed: 'Αποτυχία OAuth: Δεν ήταν δυνατή η ανταλλαγή token',
-        oauth_failed: 'Αποτυχία OAuth',
-        google_already_linked: 'Αυτός ο λογαριασμός Google είναι ήδη συνδεδεμένος με άλλον χρήστη'
+        missing_params: tAuth('oauth_missing_params'),
+        invalid_state: tAuth('oauth_invalid_state'),
+        token_exchange_failed: tAuth('oauth_token_exchange_failed'),
+        oauth_failed: tAuth('oauth_failed'),
+        google_already_linked: tAuth('google_already_linked')
       };
-      error(errorMessages[errorParam] || 'Αποτυχία OAuth');
+      error(errorMessages[errorParam] || tAuth('oauth_failed'));
     }
   }, [searchParams, router, success, error]);
 
@@ -79,10 +82,10 @@ function LoginForm() {
 
     try {
       await login(formData);
-      success('Καλώς ήρθατε! Ανακατεύθυνση...');
+      success(tAuth('welcome_redirect'));
       router.push(resolvePostLoginDestination());
     } catch (err) {
-      error(err.message || 'Λάθος email ή κωδικός. Παρακαλώ δοκιμάστε ξανά.');
+      error(err.message || tAuth('invalid_credentials'));
     } finally {
       setLoading(false);
     }
@@ -96,7 +99,7 @@ function LoginForm() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Αποτυχία εκκίνησης σύνδεσης με GitHub');
+      error(err.message || tAuth('github_login_fail'));
       setLoading(false);
     }
   };
@@ -109,7 +112,7 @@ function LoginForm() {
         window.location.href = response.data.authUrl;
       }
     } catch (err) {
-      error(err.message || 'Αποτυχία εκκίνησης σύνδεσης με Google');
+      error(err.message || tAuth('google_login_fail'));
       setLoading(false);
     }
   };
@@ -119,12 +122,12 @@ function LoginForm() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Σύνδεση στον λογαριασμό σας
+            {tAuth('login_title')}
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Ή{' '}
+            {tAuth('or')}{' '}
             <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
-              δημιουργήστε νέο λογαριασμό
+              {tAuth('create_new_account')}
             </Link>
           </p>
         </div>
@@ -144,28 +147,28 @@ function LoginForm() {
             <FormInput
               name="email"
               type="email"
-              label="Διεύθυνση email"
+               label={tAuth('email')}
               value={formData.email}
               onChange={handleChange}
               required
               autoComplete="email"
-              placeholder="Διεύθυνση email"
+               placeholder={tAuth('email')}
             />
             <FormInput
               name="password"
               type="password"
-              label="Κωδικός πρόσβασης"
+               label={tAuth('password')}
               value={formData.password}
               onChange={handleChange}
               required
               autoComplete="current-password"
-              placeholder="Κωδικός πρόσβασης"
+               placeholder={tAuth('password')}
             />
           </div>
 
           <div>
             <Button type="submit" loading={loading} size="md" className="w-full">
-              Σύνδεση
+              {tAuth('submit_login')}
             </Button>
           </div>
         </form>
@@ -175,10 +178,12 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const tCommon = useTranslations('common');
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Φόρτωση...</p>
+          <p className="text-gray-600">{tCommon('loading')}</p>
       </div>
     }>
       <LoginForm />

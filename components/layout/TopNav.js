@@ -18,6 +18,7 @@ import {
   UserCircleIcon,
   UserPlusIcon
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -25,9 +26,9 @@ import DropdownMenu from '@/components/ui/DropdownMenu';
 import Tooltip from '@/components/ui/Tooltip';
 import LoginLink from '@/components/ui/LoginLink';
 import NotificationBell from '@/components/notifications/NotificationBell';
-import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 export default function TopNav() {
+  const tNav = useTranslations('nav');
   const { user, loading, logout } = useAuth();
   const { isAdmin, canAccessAdmin } = usePermissions();
   const pathname = usePathname();
@@ -67,49 +68,49 @@ export default function TopNav() {
   const userMenuItems = [
     {
       id: 'profile',
-      label: 'Το προφίλ μου',
+      label: tNav('my_profile'),
       href: '/profile',
       icon: <UserCircleIcon className="h-4 w-4" />,
       className: isActive('/profile')
     },
     {
       id: 'my-articles',
-      label: 'Τα άρθρα μου',
+      label: tNav('my_articles'),
       href: '/editor',
       icon: <PencilSquareIcon className="h-4 w-4" />,
       className: isActive('/editor')
     },
     {
       id: 'my-news',
-      label: 'Τα νέα μου',
+      label: tNav('my_news'),
       href: '/my-news',
       icon: <NewspaperIcon className="h-4 w-4" />,
       className: isActive('/my-news')
     },
     {
       id: 'my-polls',
-      label: 'Οι δημοσκοπήσεις μου',
+      label: tNav('my_polls'),
       href: '/my-polls',
       icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
       className: isActive('/my-polls')
     },
     {
       id: 'my-votes',
-      label: 'Οι ψήφοι μου',
+      label: tNav('my_votes'),
       href: '/my-votes',
       icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
       className: isActive('/my-votes')
     },
     {
       id: 'my-location',
-      label: 'Η τοποθεσία μου',
+      label: tNav('my_location'),
       href: myLocationHref,
       icon: <MapPinIcon className="h-4 w-4" />,
       className: isActive(myLocationHref)
     },
     {
       id: 'suggest',
-      label: 'Οι προτάσεις μου',
+      label: tNav('my_suggestions'),
       href: '/suggestions?mine=true',
       icon: <LightBulbIcon className="h-4 w-4" />,
       className: isActive('/suggestions')
@@ -118,14 +119,14 @@ export default function TopNav() {
       { divider: true },
       {
         id: 'admin',
-        label: 'Διαχείριση',
+        label: tNav('admin'),
         href: '/admin',
         icon: <ShieldCheckIcon className="h-4 w-4" />,
         className: isActive('/admin')
       },
       ...(isAdmin ? [{
         id: 'admin-status',
-        label: 'Διαγνωστικά',
+          label: tNav('admin_diagnostics'),
         href: '/admin/status',
         icon: <ServerIcon className="h-4 w-4" />,
         className: isActive('/admin/status')
@@ -134,7 +135,7 @@ export default function TopNav() {
     { divider: true },
     {
       id: 'logout',
-      label: 'Αποσύνδεση',
+      label: tNav('logout'),
       icon: <ArrowRightOnRectangleIcon className="h-4 w-4" />,
       onClick: handleLogout,
       variant: 'danger'
@@ -145,49 +146,49 @@ export default function TopNav() {
   const mobileMenuItems = [
     {
       id: 'profile',
-      label: 'Το προφίλ μου',
+      label: tNav('my_profile'),
       href: '/profile',
       icon: <UserCircleIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/profile')}`
     },
     {
       id: 'my-articles',
-      label: 'Τα άρθρα μου',
+      label: tNav('my_articles'),
       href: '/editor',
       icon: <PencilSquareIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/editor')}`
     },
     {
       id: 'my-news',
-      label: 'Τα νέα μου',
+      label: tNav('my_news'),
       href: '/my-news',
       icon: <NewspaperIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/my-news')}`
     },
     {
       id: 'my-polls',
-      label: 'Οι δημοσκοπήσεις μου',
+      label: tNav('my_polls'),
       href: '/my-polls',
       icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/my-polls')}`
     },
     {
       id: 'my-votes',
-      label: 'Οι ψήφοι μου',
+      label: tNav('my_votes'),
       href: '/my-votes',
       icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/my-votes')}`
     },
     {
       id: 'my-location',
-      label: 'Η τοποθεσία μου',
+      label: tNav('my_location'),
       href: myLocationHref,
       icon: <MapPinIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive(myLocationHref)}`
     },
     {
       id: 'suggest',
-      label: 'Οι προτάσεις μου',
+      label: tNav('my_suggestions'),
       href: '/suggestions?mine=true',
       icon: <LightBulbIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/suggestions')}`
@@ -196,14 +197,14 @@ export default function TopNav() {
       { divider: true },
       {
         id: 'admin',
-        label: 'Διαχείριση',
+        label: tNav('admin'),
         href: '/admin',
         icon: <ShieldCheckIcon className="h-5 w-5" />,
         className: `text-base font-medium ${isActive('/admin')}`
       },
       ...(isAdmin ? [{
         id: 'admin-status',
-        label: 'Διαγνωστικά',
+          label: tNav('admin_diagnostics'),
         href: '/admin/status',
         icon: <ServerIcon className="h-5 w-5" />,
         className: `text-base font-medium ${isActive('/admin/status')}`
@@ -212,7 +213,7 @@ export default function TopNav() {
     { divider: true },
     {
       id: 'logout',
-      label: 'Αποσύνδεση',
+      label: tNav('logout'),
       icon: <ArrowRightOnRectangleIcon className="h-5 w-5" />,
       onClick: handleLogout,
       variant: 'danger',
@@ -240,54 +241,53 @@ export default function TopNav() {
                 href="/articles"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/articles')}`}
               >
-                Άρθρα
+                {tNav('articles')}
               </Link>
               <Link
                 href="/news"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/news')}`}
               >
-                Ειδήσεις
+                {tNav('news')}
               </Link>
               <Link
                 href="/videos"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/videos')}`}
               >
-                Βίντεο
+                {tNav('videos')}
               </Link>
               <Link
                 href="/polls"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/polls')}`}
               >
-                Ψηφοφορίες
+                {tNav('polls')}
               </Link>
               <Link
                 href="/suggestions"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/suggestions')}`}
               >
-                Προτάσεις
+                {tNav('suggestions')}
               </Link>
               <Link
                 href="/locations"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/locations')}`}
               >
-                Τοποθεσίες
+                {tNav('locations')}
               </Link>
               <Link
                 href="/users"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/users')}`}
               >
-                Χρήστες
+                {tNav('users')}
               </Link>
               <Link
                 href="/pages"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/pages')}`}
               >
-                Σελίδες
+                {tNav('pages')}
               </Link>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-4 ml-auto">
-            <LanguageSwitcher />
             {loading ? (
               <div className="flex items-center gap-4">
                 <SkeletonLoader type="button" count={2} className="flex gap-4" />
@@ -296,7 +296,7 @@ export default function TopNav() {
               <div className="flex items-center gap-2">
                 <NotificationBell />
                 <DropdownMenu
-                  triggerText={`Γεια σου ${user.username}`}
+                   triggerText={`${tNav('greeting')} ${user.username}`}
                   items={userMenuItems}
                   align="right"
                   showChevron={true}
@@ -311,19 +311,19 @@ export default function TopNav() {
                   className="inline-flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-700"
                 >
                   <ArrowLeftOnRectangleIcon className="h-4 w-4" aria-hidden="true" />
-                  Είσοδος
+                  {tNav('login')}
                 </LoginLink>
                 <Link
                   href="/register"
                   className="inline-flex items-center gap-2 text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
                 >
                   <UserPlusIcon className="h-4 w-4" aria-hidden="true" />
-                  Εγγραφή
+                  {tNav('register')}
                 </Link>
               </>
             )}
           </div>
-          <Tooltip content={isMenuOpen ? "Κλείσιμο μενού" : "Άνοιγμα μενού"} position="bottom">
+          <Tooltip content={isMenuOpen ? tNav('close_menu') : tNav('open_menu')} position="bottom">
             <button
               type="button"
               className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 sm:hidden"
@@ -331,7 +331,7 @@ export default function TopNav() {
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((open) => !open)}
             >
-              <span className="sr-only">Open main menu</span>
+              <span className="sr-only">{tNav('open_menu')}</span>
               {isMenuOpen ? (
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -351,53 +351,52 @@ export default function TopNav() {
             href="/articles"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/articles')}`}
           >
-            Άρθρα
+            {tNav('articles')}
           </Link>
           <Link
             href="/news"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/news')}`}
           >
-            Ειδήσεις
+            {tNav('news')}
           </Link>
           <Link
             href="/videos"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/videos')}`}
           >
-            Βίντεο
+            {tNav('videos')}
           </Link>
           <Link
             href="/polls"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/polls')}`}
           >
-            Ψηφοφορίες
+            {tNav('polls')}
           </Link>
           <Link
             href="/suggestions"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/suggestions')}`}
           >
-            Προτάσεις
+            {tNav('suggestions')}
           </Link>
           <Link
             href="/locations"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/locations')}`}
           >
-            Τοποθεσίες
+            {tNav('locations')}
           </Link>
           <Link
             href="/users"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/users')}`}
           >
-            Χρήστες
+            {tNav('users')}
           </Link>
           <Link
             href="/pages"
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/pages')}`}
           >
-            Σελίδες
+            {tNav('pages')}
           </Link>
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
-          <LanguageSwitcher />
           {loading ? (
             <div className="space-y-2">
               <SkeletonLoader type="button" count={2} className="space-y-2" />
@@ -406,7 +405,7 @@ export default function TopNav() {
             <>
               <div className="flex items-center gap-2 mb-2">
                 <NotificationBell />
-                <span className="text-sm text-gray-500">Ειδοποιήσεις</span>
+                 <span className="text-sm text-gray-500">{tNav('notifications')}</span>
               </div>
               <DropdownMenu
                 trigger={
@@ -414,7 +413,7 @@ export default function TopNav() {
                     type="button"
                     className="flex w-full items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
                   >
-                    <span>Γεια σου {user.username}</span>
+                     <span>{tNav('greeting')} {user.username}</span>
                     <ChevronDownIcon
                       className={`h-4 w-4 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
@@ -435,14 +434,14 @@ export default function TopNav() {
                 className="inline-flex items-center gap-2 text-base font-medium text-blue-900 hover:text-blue-700"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
-                Έισοδος
+                {tNav('login')}
               </LoginLink>
               <Link
                 href="/register"
                 className="inline-flex w-full items-center justify-center gap-2 text-base font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
                 <UserPlusIcon className="h-5 w-5" aria-hidden="true" />
-                Εγγραφή
+                {tNav('register')}
               </Link>
             </>
           )}

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { EyeIcon, TrashIcon, PencilIcon, PlusCircleIcon } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { articleAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -21,6 +22,9 @@ import { TooltipIconButton } from '@/components/ui/Tooltip';
 const PAGE_LIMIT = 10;
 
 function EditorDashboardContent() {
+  const tEditor = useTranslations('editor');
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const router = useRouter();
   const { addToast } = useToast();
@@ -93,15 +97,15 @@ function EditorDashboardContent() {
     try {
       const response = await articleAPI.create(formData);
       if (response.success) {
-        addToast('Article created successfully!', { type: 'success' });
+        addToast(tArticles('created_successfully'), { type: 'success' });
         const articleId = response.data.article.id;
         // Redirect to edit page where users can add locations
         router.push(`/articles/${articleId}/edit`);
       } else {
-        setSubmitError(response.message || 'Failed to create article. Please try again.');
+        setSubmitError(response.message || tArticles('create_failed'));
       }
     } catch (error) {
-      setSubmitError(`Failed to create article: ${error.message}`);
+      setSubmitError(`${tArticles('create_failed_prefix')}: ${error.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -111,9 +115,9 @@ function EditorDashboardContent() {
     try {
       await articleAPI.delete(id);
       refetch();
-      addToast('Article deleted successfully', { type: 'success' });
+      addToast(tArticles('deleted_successfully'), { type: 'success' });
     } catch (error) {
-      addToast(`Failed to delete article: ${error.message}`, { type: 'error' });
+      addToast(`${tArticles('delete_failed_prefix')}: ${error.message}`, { type: 'error' });
     }
   };
 
@@ -121,15 +125,15 @@ function EditorDashboardContent() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Τα άρθρα μου</h1>
+          <h1 className="text-3xl font-bold">{tEditor('my_articles')}</h1>
           <Button onClick={() => setShowForm(!showForm)} variant="primary" icon={<PlusCircleIcon className="h-5 w-5" />}>
-            Δημιουργία άρθρου
+            {tEditor('create_new')}
           </Button>
         </div>
 
         {showForm && (
           <Card className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">Νέο Άρθρο</h2>
+            <h2 className="text-xl font-semibold mb-4">{tEditor('create_new')}</h2>
             <ArticleForm
               article={null}
               onSubmit={handleSubmit}
@@ -144,23 +148,23 @@ function EditorDashboardContent() {
         <Card
           header={
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-              <h2 className="text-xl font-semibold">Τα άρθρα μου</h2>
+              <h2 className="text-xl font-semibold">{tEditor('my_articles')}</h2>
               <div className="flex gap-2 items-center">
-                <label htmlFor="sortBy" className="text-sm mr-1">Sort by:</label>
+                <label htmlFor="sortBy" className="text-sm mr-1">{tCommon('sort_by')}</label>
                 <select
                   id="sortBy"
                   className="border rounded px-2 py-1 text-sm"
                   value={sortBy}
                   onChange={e => setSortBy(e.target.value)}
                 >
-                  <option value="lastModified">Last Modified</option>
-                  <option value="title">Alphabetical</option>
+                  <option value="lastModified">{tCommon('last_modified')}</option>
+                  <option value="title">{tCommon('alphabetical')}</option>
                 </select>
                 <button
                   className="ml-1 px-2 py-1 border rounded text-sm"
-                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                   title={sortOrder === 'asc' ? tCommon('ascending') : tCommon('descending')}
                   onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-                  aria-label="Toggle sort order"
+                   aria-label={tCommon('toggle_sort_order')}
                 >
                   {sortOrder === 'asc' ? '↑' : '↓'}
                 </button>
@@ -173,8 +177,8 @@ function EditorDashboardContent() {
           ) : articles.length === 0 ? (
             <EmptyState
               type="empty"
-              title="No articles found"
-              description="Create your first article!"
+               title={tEditor('no_articles')}
+               description={tEditor('create_first')}
             />
           ) : (
             <div className="divide-y divide-gray-200">
@@ -196,9 +200,9 @@ function EditorDashboardContent() {
                         {article.type === 'news' && (
                           <Badge
                             variant={article.newsApprovedAt ? 'success' : 'warning'}
-                            aria-label={article.newsApprovedAt ? 'Approved News' : 'Pending News'}
+                             aria-label={article.newsApprovedAt ? tArticles('approved_news') : tArticles('pending_news')}
                           >
-                            {article.newsApprovedAt ? '✓ Approved News' : '⏳ Pending News'}
+                             {article.newsApprovedAt ? tArticles('approved_news_badge') : tArticles('pending_news_badge')}
                           </Badge>
                         )}
                         {article.category && (
@@ -207,7 +211,7 @@ function EditorDashboardContent() {
                         {Array.isArray(article.tags) && article.tags.length > 0 && (
                           <Badge variant="purple">{article.tags.join(', ')}</Badge>
                         )}
-                        <span>By {article.User?.username || user?.username || 'Unknown'}</span>
+                         <span>{tArticles('by')} {article.User?.username || user?.username || tCommon('unknown')}</span>
                         <span>•</span>
                         <span>{new Date(article.createdAt).toLocaleDateString()}</span>
                       </div>
@@ -215,13 +219,13 @@ function EditorDashboardContent() {
                     <div className="flex gap-2 ml-4">
                       <TooltipIconButton
                         icon={EyeIcon}
-                        tooltip="Προβολή άρθρου"
+                         tooltip={tArticles('view_article')}
                         onClick={() => router.push(article.type === 'news' ? `/news/${article.id}` : `/articles/${article.id}`)}
                       />
                       {canEditArticle(article) && (
                         <TooltipIconButton
                           icon={PencilIcon}
-                          tooltip="Επεξεργασία άρθρου"
+                           tooltip={tArticles('edit_article')}
                           onClick={() => router.push(`/articles/${article.id}/edit`)}
                           variant="primary"
                         />
@@ -229,7 +233,7 @@ function EditorDashboardContent() {
                       {canDeleteArticle(article) && (
                         <TooltipIconButton
                           icon={TrashIcon}
-                          tooltip="Διαγραφή άρθρου"
+                           tooltip={tArticles('delete_article')}
                           onClick={() => {
                             setArticleToDelete(article.id);
                             setDeleteDialogOpen(true);
@@ -247,7 +251,7 @@ function EditorDashboardContent() {
           {hasMore && (
             <div className="px-6 py-4 text-center">
               <Button onClick={handleLoadMore} variant="secondary" disabled={loadingMore}>
-                {loadingMore ? 'Loading...' : 'Load more'}
+                 {loadingMore ? tCommon('loading') : tCommon('load_more')}
               </Button>
             </div>
           )}
@@ -259,10 +263,10 @@ function EditorDashboardContent() {
         isOpen={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={() => handleDelete(articleToDelete)}
-        title="Delete Article"
-        message="Are you sure you want to delete this article? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+         title={tArticles('delete_confirm_title')}
+         message={tArticles('delete_confirm_message')}
+         confirmText={tCommon('delete')}
+         cancelText={tCommon('cancel')}
         variant="danger"
       />
     </div>

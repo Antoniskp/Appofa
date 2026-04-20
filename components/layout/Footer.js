@@ -1,44 +1,46 @@
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 export default function Footer() {
+  const t = useTranslations('footer');
   const currentYear = new Date().getFullYear();
   const footerColumns = [
     {
-      title: 'Περιεχόμενο',
+      title: t('content_title'),
       links: [
-        { href: '/news', label: 'Ειδήσεις', type: 'internal' },
-        { href: '/articles', label: 'Άρθρα', type: 'internal' },
-        { href: '/polls', label: 'Δημοσκοπήσεις', type: 'internal' },
-        { href: '/locations', label: 'Τοποθεσίες', type: 'internal' },
+        { href: '/news', label: t('news'), type: 'internal' },
+        { href: '/articles', label: t('articles'), type: 'internal' },
+        { href: '/polls', label: t('polls'), type: 'internal' },
+        { href: '/locations', label: t('locations'), type: 'internal' },
       ],
     },
     {
-      title: 'Βοήθεια',
+      title: t('help_title'),
       links: [
-        { href: '/faq', label: 'Συχνές Ερωτήσεις', type: 'internal' },
-        { href: '/instructions', label: 'Οδηγίες Χρήσης', type: 'internal' },
-        { href: '/rules', label: 'Κανόνες', type: 'internal' },
-        { href: '/contribute', label: 'Συνεισφορά', type: 'internal' },
-        { href: '/become-moderator', label: 'Γίνε Moderator', type: 'internal' },
+        { href: '/faq', label: t('faq'), type: 'internal' },
+        { href: '/instructions', label: t('instructions'), type: 'internal' },
+        { href: '/rules', label: t('rules'), type: 'internal' },
+        { href: '/contribute', label: t('contribute'), type: 'internal' },
+        { href: '/become-moderator', label: t('become_moderator'), type: 'internal' },
       ],
     },
     {
-      title: 'Πληροφορίες',
+      title: t('info_title'),
       links: [
-        { href: '/about', label: 'Σχετικά με εμάς', type: 'internal' },
-        { href: '/mission', label: 'Αποστολή', type: 'internal' },
-        { href: '/transparency', label: 'Διαφάνεια', type: 'internal' },
-        { href: '/privacy', label: 'Πολιτική Απορρήτου', type: 'internal' },
-        { href: '/terms', label: 'Όροι Χρήσης', type: 'internal' },
+        { href: '/about', label: t('about'), type: 'internal' },
+        { href: '/mission', label: t('mission'), type: 'internal' },
+        { href: '/transparency', label: t('transparency'), type: 'internal' },
+        { href: '/privacy', label: t('privacy'), type: 'internal' },
+        { href: '/terms', label: t('terms'), type: 'internal' },
       ],
     },
     {
-      title: 'Απόφαση & Επικοινωνία',
-      description: 'Η αξιόπιστη πηγή σας για τις πιο πρόσφατες ειδήσεις και άρθρα. Απάντησε και κάνε τα αποτελέσματα εγκυρότερα.',
+      title: t('brand_contact_title'),
+      description: t('brand_description'),
       links: [
-        { href: '/contact', label: 'Επικοινωνία', type: 'internal' },
-        { href: 'mailto:eimaiautospou@gmail.com', label: 'Email: eimaiautospou@gmail.com', type: 'external' },
-        { label: 'Τηλέφωνο: Προσεχώς', type: 'static' },
+        { href: '/contact', label: t('contact'), type: 'internal' },
+        { href: 'mailto:eimaiautospou@gmail.com', label: t('email_label'), type: 'external' },
+        { label: t('phone_soon'), type: 'static' },
       ],
     },
   ];
@@ -78,11 +80,11 @@ export default function Footer() {
           ))}
         </div>
         <div className="border-t border-gray-700 mt-4 pt-4 text-center">
-          <p className="text-gray-400 text-sm">
-            © {currentYear} Απόφαση. Με επιφύλαξη παντός δικαιώματος. Ο κώδικας είναι διαθέσιμος για έλεγχο και βελτιώσεις στο Github.
-          </p>
+            <p className="text-gray-400 text-sm">
+              © {currentYear} {t('copyright')}
+            </p>
+          </div>
         </div>
-      </div>
     </footer>
   );
 }

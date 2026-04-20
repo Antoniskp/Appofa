@@ -1,5 +1,6 @@
 import ArticleDetailClient from './ArticleDetailClient';
 import { idSlug } from '@/lib/utils/slugify';
+import { getTranslations } from 'next-intl/server';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
@@ -21,9 +22,10 @@ async function fetchArticle(id) {
 }
 
 export async function generateMetadata({ params }) {
+  const tArticles = await getTranslations('articles');
   const article = await fetchArticle(params.id);
   if (!article) {
-    return { title: 'Άρθρο | Απόφαση' };
+    return { title: `${tArticles('single_title')} | Απόφαση` };
   }
 
   const slug = idSlug(article.id, article.title);

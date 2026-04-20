@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
+import { useTranslations } from 'next-intl';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
@@ -23,8 +24,9 @@ export const metadata = {
 };
 
 export default function RulesPage() {
+  const tStatic = useTranslations('static_pages');
   return (
-    <StaticPageLayout title="Κανόνες Κοινότητας" maxWidth="max-w-3xl" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
+    <StaticPageLayout title={tStatic('rules_title')} maxWidth="max-w-3xl" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← {tStatic('pages')}</Link>}>
       <p className="text-gray-700 mb-6">
         Οι κατευθυντήριες γραμμές μας για μια υγιή, εποικοδομητική και σεβαστική κοινότητα.
       </p>

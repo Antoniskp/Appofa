@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
 import { StarIcon } from '@heroicons/react/24/solid';
+import { useTranslations } from 'next-intl';
 import { pollAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import PollCard from '@/components/polls/PollCard';
@@ -20,6 +21,8 @@ import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import articleCategories from '@/config/articleCategories.json';
 
 function PollsContent() {
+  const tPolls = useTranslations('polls');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
@@ -102,7 +105,7 @@ function PollsContent() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <SearchInput
               name="search"
-              placeholder="Αναζήτηση δημοσκοπήσεων..."
+               placeholder={tPolls('search_placeholder')}
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
               className="w-full sm:flex-grow sm:max-w-md min-w-0"
@@ -116,12 +119,12 @@ function PollsContent() {
                 filterConfig={[
                   {
                     name: 'status',
-                    label: 'Κατάσταση',
+                     label: tPolls('status'),
                     type: 'select',
                     options: [
-                      { value: '', label: 'Όλες οι καταστάσεις' },
-                      { value: 'active', label: 'Ενεργές' },
-                      { value: 'closed', label: 'Κλειστές' },
+                       { value: '', label: tPolls('all_statuses') },
+                       { value: 'active', label: tPolls('active') },
+                       { value: 'closed', label: tPolls('closed') },
                     ],
                   },
                 ]}
@@ -131,7 +134,7 @@ function PollsContent() {
                 className="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium whitespace-nowrap"
               >
                 <StarIcon className="h-5 w-5" />
-                Ιδανική Κυβέρνηση
+                 {tPolls('dream_team')}
               </Link>
               {user && (
                 <Link
@@ -139,7 +142,7 @@ function PollsContent() {
                   className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
                 >
                   <PlusCircleIcon className="h-5 w-5" />
-                  Νέα Δημοσκόπηση
+                   {tPolls('new_poll')}
                 </Link>
               )}
             </div>
@@ -167,10 +170,10 @@ function PollsContent() {
         {error && (
           <EmptyState
             type="error"
-            title="Σφάλμα Φόρτωσης Δημοσκοπήσεων"
+             title={tPolls('error_loading')}
             description={error}
             action={{
-              text: 'Δοκιμάστε Ξανά',
+               text: tCommon('try_again'),
               onClick: () => window.location.reload()
             }}
           />
@@ -180,12 +183,12 @@ function PollsContent() {
         {!loading && !error && polls.length === 0 && (
           <EmptyState
             type="empty"
-            title="Δεν Βρέθηκαν Δημοσκοπήσεις"
-            description="Δεν υπάρχουν δημοσκοπήσεις που να ταιριάζουν με τα κριτήρια αναζήτησης σας."
-            action={user ? {
-              text: 'Δημιουργήστε μια Δημοσκόπηση',
-              onClick: () => window.location.href = '/polls/create'
-            } : undefined}
+             title={tPolls('not_found_title')}
+             description={tPolls('not_found_description')}
+             action={user ? {
+               text: tPolls('create_one'),
+               onClick: () => window.location.href = '/polls/create'
+             } : undefined}
           />
         )}
 
@@ -214,10 +217,11 @@ function PollsContent() {
 }
 
 export default function PollsPage() {
+  const tCommon = useTranslations('common');
   return (
     <Suspense fallback={
       <div className="bg-gray-50 min-h-screen py-8 flex items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+         <p className="text-gray-600">{tCommon('loading')}</p>
       </div>
     }>
       <PollsContent />

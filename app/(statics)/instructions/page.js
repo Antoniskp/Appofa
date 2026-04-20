@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
+import { useTranslations } from 'next-intl';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
@@ -23,8 +24,9 @@ export const metadata = {
 };
 
 export default function InstructionsPage() {
+  const tStatic = useTranslations('static_pages');
   return (
-    <StaticPageLayout title="Οδηγίες Χρήσης" breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← Σελίδες</Link>}>
+    <StaticPageLayout title={tStatic('instructions_title')} breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← {tStatic('pages')}</Link>}>
       {/* Section 1: Introduction */}
       <section>
         <h2 className="text-2xl font-semibold mb-3">Καλώς ήρθατε στην Απόφαση</h2>
