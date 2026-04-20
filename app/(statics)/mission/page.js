@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
@@ -23,8 +23,8 @@ export const metadata = {
   },
 };
 
-export default function MissionPage() {
-  const tStatic = useTranslations('static_pages');
+export default async function MissionPage() {
+  const tStatic = await getTranslations('static_pages');
   return (
     <StaticPageLayout title={tStatic('mission_title')} breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← {tStatic('pages')}</Link>}>
       <section>
