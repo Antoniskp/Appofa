@@ -494,6 +494,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | File | Contents |
 |------|----------|
 | expertiseAreas.js | Expertise areas (ESM mirror) |
+| i18n.js | Shared i18n constants (`DEFAULT_LOCALE`, `SUPPORTED_LOCALES`) |
 | locations.js | Location type definitions + location detail tab constants (`VALID_TABS`, includes `unclaimed`) |
 | profile.js | Profile field definitions |
 

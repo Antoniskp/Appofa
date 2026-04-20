@@ -1,28 +1,33 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { DEFAULT_LOCALE } from '@/lib/constants/i18n';
 
 const LOCALE_COOKIE_MAX_AGE_SECONDS = 31536000;
+const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
+
+const getLocaleCookie = () => {
+  const localeCookie = document.cookie
+    .split(';')
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith(`${LOCALE_COOKIE_NAME}=`));
+
+  if (!localeCookie) return null;
+
+  const cookieValue = localeCookie.substring(`${LOCALE_COOKIE_NAME}=`.length);
+  return cookieValue ? decodeURIComponent(cookieValue) : null;
+};
 
 export default function LanguageSwitcher() {
-  const [current, setCurrent] = useState('el');
+  const [current, setCurrent] = useState(DEFAULT_LOCALE);
 
   useEffect(() => {
-    const localeCookie = document.cookie
-      .split(';')
-      .map((cookie) => cookie.trim())
-      .find((cookie) => cookie.startsWith('NEXT_LOCALE='));
-
-    if (!localeCookie) return;
-
-    const cookieValue = localeCookie.substring('NEXT_LOCALE='.length);
-    if (cookieValue) {
-      setCurrent(decodeURIComponent(cookieValue));
-    }
+    const locale = getLocaleCookie();
+    if (locale) setCurrent(locale);
   }, []);
 
   const handleSwitch = (locale) => {
-    document.cookie = `NEXT_LOCALE=${encodeURIComponent(locale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
+    document.cookie = `${LOCALE_COOKIE_NAME}=${encodeURIComponent(locale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
     window.location.reload();
   };
 
