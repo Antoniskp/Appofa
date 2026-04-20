@@ -56,7 +56,8 @@ export default function RegisterPage() {
   };
 
   const toRegisterData = (data = {}) => {
-    const { confirmPassword: _confirmPassword, ...registerData } = data;
+    const { confirmPassword: confirmPasswordToRemove, ...registerData } = data;
+    void confirmPasswordToRemove;
     return registerData;
   };
 
