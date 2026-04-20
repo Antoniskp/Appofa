@@ -55,7 +55,7 @@ export default function RegisterPage() {
     });
   };
 
-  const toRegisterData = (data = {}) => {
+  const prepareRegistrationData = (data = {}) => {
     const { confirmPassword, ...registerData } = data;
     return registerData;
   };
@@ -63,7 +63,7 @@ export default function RegisterPage() {
   const doRegister = async (data) => {
     setLoading(true);
     try {
-      await register(toRegisterData(data));
+      await register(prepareRegistrationData(data));
       success('Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!');
       router.push('/');
     } catch (err) {
@@ -83,7 +83,7 @@ export default function RegisterPage() {
     }
 
     if (detectedCountry.countryCode) {
-      setPendingRegisterData(toRegisterData(formData));
+      setPendingRegisterData(prepareRegistrationData(formData));
       setShowDiasporaModal(true);
       return;
     }
