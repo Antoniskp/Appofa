@@ -227,6 +227,15 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(5),
     allowNull: true
   },
+  isDiaspora: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  residenceCountryCode: {
+    type: DataTypes.STRING(5),
+    allowNull: true
+  },
   // ─── Person profile fields (for unclaimed/claimed public person profiles) ────
   slug: {
     type: DataTypes.STRING(255),

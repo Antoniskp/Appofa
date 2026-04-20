@@ -30,6 +30,8 @@ This instruction is permanent and must never be removed.
 - **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) for candidate/voter eligibility
 - **Unclaimed person creation**: require `firstNameEn` + `lastNameEn`; generate `User.slug` from English names; native names are optional metadata
 - **Homepage settings**: use single-row `HomepageSettings` with JSON fields (`manifestSection`, `infoSection`) and defaults via controller/model getters
+- **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash) via non-blocking `geoTrackMiddleware`
+- **Country funding**: use one `CountryFunding` row per country `Location` (`locationId` unique) and manage status through admin `/api/admin/geo-stats/country-funding` endpoints
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`

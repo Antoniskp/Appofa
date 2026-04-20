@@ -37,6 +37,8 @@ const Tag = require('./Tag');
 const TaggableItem = require('./TaggableItem');
 const Notification = require('./Notification');
 const IpAccessRule = require('./IpAccessRule');
+const GeoVisit = require('./GeoVisit');
+const CountryFunding = require('./CountryFunding');
 
 // Define associations
 User.hasMany(Article, {
@@ -362,6 +364,11 @@ User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 // IpAccessRule associations
 IpAccessRule.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 
+// CountryFunding associations
+CountryFunding.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+Location.hasOne(CountryFunding, { foreignKey: 'locationId', as: 'funding' });
+CountryFunding.belongsTo(User, { foreignKey: 'unlockedByUserId', as: 'unlockedBy' });
+
 module.exports = {
   sequelize,
   User,
@@ -402,4 +409,6 @@ module.exports = {
   TaggableItem,
   Notification,
   IpAccessRule,
+  GeoVisit,
+  CountryFunding,
 };

@@ -22,6 +22,7 @@ const homepageSettingsRoutes = require('./homepageSettingsRoutes');
 const badgeRoutes = require('./badges');
 const manifestRoutes = require('./manifestRoutes');
 const notificationRoutes = require('./notificationRoutes');
+const geoStatsRoutes = require('./geoStatsRoutes');
 
 const routes = [
   { prefix: '/api/auth', router: authRoutes },
@@ -50,6 +51,7 @@ const routes = [
   { prefix: '/api/badges', router: badgeRoutes },
   { prefix: '/api/manifests', router: manifestRoutes },
   { prefix: '/api/notifications', router: notificationRoutes },
+  { prefix: '/api/admin/geo-stats', router: geoStatsRoutes },
 ];
 
 function registerRoutes(app) {

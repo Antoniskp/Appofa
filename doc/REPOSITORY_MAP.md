@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-19
+> **Last updated**: 2026-04-20
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -21,17 +21,17 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (38)](#models-38)
-- [API Routes (24 files, 150+ endpoints)](#api-routes-24-files-150-endpoints)
+- [Models (40)](#models-40)
+- [API Routes (25 files, 155+ endpoints)](#api-routes-25-files-155-endpoints)
 - [Controllers (21)](#controllers-21)
 - [Services (8)](#services-8)
-- [Middleware (6)](#middleware-6)
+- [Middleware (7)](#middleware-7)
 - [Frontend Pages (98)](#frontend-pages-98)
 - [Components (120+)](#components-120)
 - [API Client Modules (24)](#api-client-modules-24)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (74)](#migrations-74)
+- [Migrations (77)](#migrations-77)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -45,10 +45,10 @@ Appofa/
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
 │   ├── services/           # Business logic (8 files)
-│   ├── models/             # Sequelize models (38 models)
-│   ├── routes/             # Express route definitions (24 files)
-│   ├── middleware/         # Auth, CSRF, rate-limit, error handling (6 files)
-│   ├── migrations/         # DB migrations (73 files)
+│   ├── models/             # Sequelize models (40 models)
+│   ├── routes/             # Express route definitions (25 files)
+│   ├── middleware/         # Auth, CSRF, rate-limit, error handling (7 files)
+│   ├── migrations/         # DB migrations (77 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
@@ -95,7 +95,7 @@ Appofa/
 
 ---
 
-## Models (38)
+## Models (40)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -136,10 +136,12 @@ Appofa/
 | Tag | Tags | id, name (unique lowercase) | hasMany: TaggableItem; belongsToMany: Article, Poll, Suggestion (via TaggableItems) |
 | TaggableItem | TaggableItems | id, tagId, entityType (article\|poll\|suggestion), entityId | belongsTo: Tag |
 | IpAccessRule | IpAccessRules | id, ip (STRING 45, unique), type (whitelist\|blacklist), reason, createdByUserId | belongsTo: User (createdBy) |
+| GeoVisit | GeoVisits | id, countryCode, countryName, isAuthenticated, isDiaspora, sessionHash, path, locale | Standalone analytics table |
+| CountryFunding | CountryFundings | id, locationId (unique), goalAmount, currentAmount, donorCount, status, donationUrl, unlockedAt, unlockedByUserId | belongsTo: Location (`location`), User (`unlockedBy`) |
 
 ---
 
-## API Routes (24 files, 150+ endpoints)
+## API Routes (25 files, 155+ endpoints)
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
@@ -285,6 +287,7 @@ Appofa/
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
+| geoStatsRoutes.js | /api/admin/geo-stats | GET /visits, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 
 ---
 
@@ -332,7 +335,7 @@ Appofa/
 
 ---
 
-## Middleware (6)
+## Middleware (7)
 
 | Middleware | Purpose |
 |-----------|---------|
@@ -342,6 +345,7 @@ Appofa/
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
 | rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier |
 
 ---
 
@@ -492,7 +496,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (74)
+## Migrations (77)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -587,6 +591,9 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260416000000-create-location-election-votes.js | Create LocationElectionVotes for per-role location elections |
 | — | 20260419000000-create-homepage-settings.js | Create HomepageSettings single-row JSON config table |
 | — | 20260419000001-ensure-nationality-in-users.js | Safely ensure Users.nationality exists |
+| — | 20260420000000-create-geo-visits.js | Create GeoVisits analytics table + countryCode/createdAt indexes |
+| — | 20260420000001-create-country-fundings.js | Create CountryFundings table with location unique index + status lifecycle fields |
+| — | 20260420000002-add-diaspora-fields-to-users.js | Add Users.isDiaspora and Users.residenceCountryCode |
 
 </details>
 
