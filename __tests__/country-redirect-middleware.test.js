@@ -8,7 +8,7 @@ jest.mock('next/server', () => ({
   }
 }));
 
-const { middleware } = require('../middleware');
+const { proxy: middleware } = require('../proxy');
 
 const makeRequest = ({ pathname = '/', countryHeader = null, cookies = {} } = {}) => ({
   nextUrl: { pathname },
