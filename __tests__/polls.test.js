@@ -122,7 +122,7 @@ describe('Poll API Tests', () => {
           description: 'Choose your favorite color from the options below.',
           type: 'simple',
           allowUserContributions: false,
-          allowUnauthenticatedVotes: true,
+          voteRestriction: 'anyone',
           visibility: 'public',
           resultsVisibility: 'always',
           options: [
@@ -206,6 +206,31 @@ describe('Poll API Tests', () => {
       expect(response.body.message).toContain('At least 2 options');
     });
 
+    test('should fail when vote restriction is locals_only without location', async () => {
+      const csrfToken = 'test-csrf-token-locals-without-location';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Local voting without location',
+          type: 'simple',
+          visibility: 'public',
+          voteRestriction: 'locals_only',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Location is required');
+    });
+
     test('should allow creating poll with 0 options when user contributions are enabled', async () => {
       const csrfToken = 'test-csrf-token-zero-options';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
@@ -243,7 +268,7 @@ describe('Poll API Tests', () => {
           description: 'Vote for the best restaurant',
           type: 'complex',
           allowUserContributions: true,
-          allowUnauthenticatedVotes: false,
+          voteRestriction: 'authenticated',
           visibility: 'public',
           resultsVisibility: 'after_vote',
           options: [
@@ -279,7 +304,7 @@ describe('Poll API Tests', () => {
           description: 'Vote for the best product',
           type: 'complex',
           allowUserContributions: false,
-          allowUnauthenticatedVotes: false,
+          voteRestriction: 'authenticated',
           visibility: 'public',
           resultsVisibility: 'after_vote',
           options: [
@@ -381,7 +406,7 @@ describe('Poll API Tests', () => {
           description: 'Testing poll creation with international location',
           type: 'simple',
           allowUserContributions: false,
-          allowUnauthenticatedVotes: true,
+          voteRestriction: 'anyone',
           visibility: 'public',
           resultsVisibility: 'always',
           locationId: internationalLocation.id,
@@ -720,6 +745,7 @@ describe('Poll API Tests', () => {
           title: 'Locals Only Access Poll',
           type: 'simple',
           visibility: 'locals_only',
+          voteRestriction: 'locals_only',
           resultsVisibility: 'always',
           locationId: localRoot.id,
           options: [
@@ -936,7 +962,7 @@ describe('Poll API Tests', () => {
           type: 'simple',
           visibility: 'public',
           resultsVisibility: 'always',
-          allowUnauthenticatedVotes: false,
+          voteRestriction: 'authenticated',
           options: [
             { text: 'Yes' },
             { text: 'No' }
@@ -1251,6 +1277,41 @@ describe('Poll API Tests', () => {
       expect(response.body.data.status).toBe('closed');
     });
 
+    test('should reject update when setting locals_only vote restriction without location', async () => {
+      const createCsrfToken = 'test-csrf-token-update-locals-create';
+      const createHeaders = csrfHeaderFor(createCsrfToken, adminUserId);
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...createHeaders.Cookie])
+        .set('x-csrf-token', createCsrfToken)
+        .send({
+          title: 'Poll update vote restriction',
+          type: 'simple',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Yes' },
+            { text: 'No' }
+          ]
+        });
+
+      const pollToUpdateId = createResponse.body.data.id;
+      const csrfToken = 'test-csrf-token-update-locals';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+      const response = await request(app)
+        .put(`/api/polls/${pollToUpdateId}`)
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          voteRestriction: 'locals_only',
+          locationId: null
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Location is required');
+    });
+
     test('should deny non-creator non-admin from updating', async () => {
       const csrfToken = 'test-csrf-token-deny-update';
       const headers = csrfHeaderFor(csrfToken, regularUserId);
@@ -1291,7 +1352,7 @@ describe('Poll API Tests', () => {
           type: 'simple',
           visibility: 'public',
           resultsVisibility: 'always',
-          allowUnauthenticatedVotes: true,
+          voteRestriction: 'anyone',
           locationId: testLocation.id,
           options: [
             { text: 'Option 1' },
@@ -1443,7 +1504,7 @@ describe('Poll API Tests', () => {
           type: 'simple',
           visibility: 'public',
           resultsVisibility: 'always',
-          allowUnauthenticatedVotes: true,
+          voteRestriction: 'anyone',
           options: [
             { text: 'Option 1' },
             { text: 'Option 2' }
@@ -1806,7 +1867,7 @@ describe('Poll API Tests', () => {
         .send({
           title: 'IP Extraction Test Poll',
           type: 'simple',
-          allowUnauthenticatedVotes: true,
+          voteRestriction: 'anyone',
           visibility: 'public',
           resultsVisibility: 'always',
           options: [{ text: 'Option A' }, { text: 'Option B' }]
@@ -2018,7 +2079,7 @@ describe('Poll API Tests', () => {
           title: 'Export test poll',
           type: 'simple',
           allowUserContributions: false,
-          allowUnauthenticatedVotes: false,
+          voteRestriction: 'authenticated',
           visibility: 'public',
           resultsVisibility: 'always',
           options: [{ text: 'Option A' }, { text: 'Option B' }]

@@ -2,11 +2,13 @@ const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location, Tag, TaggableItem, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
-const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
+const SUGGESTION_VISIBILITIES = ['public', 'private', 'locals_only'];
+const SUGGESTION_VOTE_RESTRICTIONS = ['authenticated', 'locals_only'];
 const VOTE_VALUES = [-1, 1];
 
 /**
@@ -51,6 +53,7 @@ const suggestionController = {
       const { type, status, locationId, authorId, sort = 'newest', page = 1, limit = 12, category, search, tag } = req.query;
 
       const where = {};
+      const user = req.user || null;
       if (type && SUGGESTION_TYPES.includes(type)) where.type = type;
       if (status && SUGGESTION_STATUSES.includes(status)) where.status = status;
       if (category) where.category = category;
@@ -64,12 +67,33 @@ const suggestionController = {
         const parsedLocationId = parseInt(locationId, 10);
         if (!isNaN(parsedLocationId)) {
           const locationIds = await getDescendantLocationIds(parsedLocationId, true);
-          where.locationId = { [Op.in]: locationIds };
+          where.locationId = { [Op.in]: locationIds.length > 0 ? locationIds : [-1] };
         }
       }
       if (authorId) {
         const parsedAuthorId = parseInt(authorId, 10);
         if (!isNaN(parsedAuthorId)) where.authorId = parsedAuthorId;
+      }
+
+      if (!user) {
+        where.visibility = 'public';
+      } else if (user.role !== 'admin') {
+        const userRecord = await User.findByPk(user.id, { attributes: ['homeLocationId'] });
+        const homeLocationId = userRecord?.homeLocationId;
+        if (!homeLocationId) {
+          where.visibility = { [Op.in]: ['public', 'private'] };
+        } else {
+          const ancestorIds = await getAncestorLocationIds(homeLocationId, true);
+          where[Op.and] = [
+            ...(where[Op.and] || []),
+            {
+              [Op.or]: [
+                { visibility: { [Op.in]: ['public', 'private'] } },
+                { [Op.and]: [{ visibility: 'locals_only' }, { locationId: { [Op.in]: ancestorIds } }] }
+              ]
+            }
+          ];
+        }
       }
 
       // Filter by tag using TaggableItems
@@ -110,7 +134,7 @@ const suggestionController = {
         where,
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-          { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'type'] }
+          { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false }
         ],
         order,
         limit: parsedLimit,
@@ -162,7 +186,7 @@ const suggestionController = {
       const suggestion = await Suggestion.findByPk(id, {
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-          { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'type'] },
+          { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false },
           {
             model: Solution,
             as: 'solutions',
@@ -175,6 +199,26 @@ const suggestionController = {
 
       if (!suggestion) {
         return res.status(404).json({ success: false, message: 'Suggestion not found.' });
+      }
+
+      if (suggestion.visibility === 'private' && !req.user) {
+        return res.status(403).json({ success: false, message: 'Access denied.' });
+      }
+      if (suggestion.visibility === 'locals_only') {
+        if (!req.user) {
+          return res.status(403).json({ success: false, message: 'Access denied.' });
+        }
+        if (req.user.role !== 'admin') {
+          const userRecord = await User.findByPk(req.user.id, { attributes: ['homeLocationId'] });
+          const homeLocationId = userRecord?.homeLocationId;
+          if (!homeLocationId || !suggestion.locationId) {
+            return res.status(403).json({ success: false, message: 'Access denied.' });
+          }
+          const ancestorIds = await getAncestorLocationIds(homeLocationId, true);
+          if (!ancestorIds.includes(suggestion.locationId)) {
+            return res.status(403).json({ success: false, message: 'Access denied.' });
+          }
+        }
       }
 
       const userId = req.user?.id;
@@ -205,7 +249,7 @@ const suggestionController = {
    */
   createSuggestion: async (req, res) => {
     try {
-      const { title, body, type, locationId, category, tags } = req.body;
+      const { title, body, type, locationId, category, tags, visibility, voteRestriction } = req.body;
 
       const titleResult = normalizeRequiredText(title, 'Title', 5, 200);
       if (titleResult.error) return res.status(400).json({ success: false, message: titleResult.error });
@@ -215,6 +259,12 @@ const suggestionController = {
 
       const typeResult = normalizeEnum(type || 'idea', SUGGESTION_TYPES, 'Type');
       if (typeResult.error) return res.status(400).json({ success: false, message: typeResult.error });
+
+      const visibilityResult = normalizeEnum(visibility, SUGGESTION_VISIBILITIES, 'Visibility');
+      if (visibilityResult.error) return res.status(400).json({ success: false, message: visibilityResult.error });
+
+      const voteRestrictionResult = normalizeEnum(voteRestriction, SUGGESTION_VOTE_RESTRICTIONS, 'Vote restriction');
+      if (voteRestrictionResult.error) return res.status(400).json({ success: false, message: voteRestrictionResult.error });
 
       let parsedLocationId = null;
       if (locationId !== undefined && locationId !== null && locationId !== '') {
@@ -235,6 +285,8 @@ const suggestionController = {
         locationId: parsedLocationId,
         authorId: req.user.id,
         status: 'open',
+        visibility: visibilityResult.value || 'public',
+        voteRestriction: voteRestrictionResult.value || 'authenticated',
         ...(category ? { category } : {})
       });
 
@@ -246,7 +298,7 @@ const suggestionController = {
       const created = await Suggestion.findByPk(suggestion.id, {
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-          { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'type'] }
+          { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false }
         ]
       });
 
@@ -308,6 +360,18 @@ const suggestionController = {
         updates.status = r.value;
       }
 
+      if (req.body.visibility !== undefined) {
+        const r = normalizeEnum(req.body.visibility, SUGGESTION_VISIBILITIES, 'Visibility');
+        if (r.error) return res.status(400).json({ success: false, message: r.error });
+        updates.visibility = r.value;
+      }
+
+      if (req.body.voteRestriction !== undefined) {
+        const r = normalizeEnum(req.body.voteRestriction, SUGGESTION_VOTE_RESTRICTIONS, 'Vote restriction');
+        if (r.error) return res.status(400).json({ success: false, message: r.error });
+        updates.voteRestriction = r.value;
+      }
+
       if (req.body.locationId !== undefined) {
         const locId = req.body.locationId;
         if (locId === null || locId === '') {
@@ -339,7 +403,7 @@ const suggestionController = {
       const updated = await Suggestion.findByPk(suggestion.id, {
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-          { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'type'] }
+          { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false }
         ]
       });
 
@@ -440,6 +504,22 @@ const suggestionController = {
 
       const suggestion = await Suggestion.findByPk(targetId);
       if (!suggestion) return res.status(404).json({ success: false, message: 'Suggestion not found.' });
+
+      if (suggestion.voteRestriction === 'locals_only' && suggestion.locationId) {
+        if (!req.user) {
+          return res.status(403).json({ success: false, message: 'Authentication required.' });
+        }
+        if (req.user.role !== 'admin') {
+          const userRecord = await User.findByPk(req.user.id, { attributes: ['homeLocationId'] });
+          if (!userRecord?.homeLocationId) {
+            return res.status(403).json({ success: false, message: 'Πρέπει να έχετε αρχική τοποθεσία για να ψηφίσετε σε αυτή την πρόταση.' });
+          }
+          const ancestorIds = await getAncestorLocationIds(userRecord.homeLocationId, true);
+          if (!ancestorIds.includes(suggestion.locationId)) {
+            return res.status(403).json({ success: false, message: 'Αυτή η πρόταση είναι μόνο για τοπικούς χρήστες.' });
+          }
+        }
+      }
 
       return handleVote(req, res, 'suggestion', targetId);
     } catch (error) {

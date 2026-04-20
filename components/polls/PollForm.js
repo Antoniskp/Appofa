@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { PlusIcon, TrashIcon, InformationCircleIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import AlertMessage from '@/components/ui/AlertMessage';
@@ -10,7 +10,8 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import TagInput from '@/components/ui/TagInput';
 import Tooltip from '@/components/ui/Tooltip';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { tagAPI } from '@/lib/api';
+import { locationAPI, tagAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 
 /**
@@ -31,6 +32,7 @@ export default function PollForm({
   submitError = '',
   mode = 'create'
 }) {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -39,9 +41,9 @@ export default function PollForm({
     type: 'simple',
     binaryStyle: 'yes_no',
     visibility: 'public',
+    voteRestriction: 'authenticated',
     resultsVisibility: 'after_vote',
     allowUserContributions: false,
-    allowUnauthenticatedVotes: false,
     deadline: '',
     locationId: null,
     hideCreator: false,
@@ -52,6 +54,7 @@ export default function PollForm({
   });
 
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const hasAutoFilledLocation = useRef(false);
 
   const [options, setOptions] = useState([
     { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#3b82f6' },
@@ -60,6 +63,7 @@ export default function PollForm({
 
   const [imageErrors, setImageErrors] = useState({});
   const [tagSuggestions, setTagSuggestions] = useState([]);
+  const [selectedLocationName, setSelectedLocationName] = useState('');
 
   // Initialize form data from poll prop (edit mode)
   useEffect(() => {
@@ -72,9 +76,9 @@ export default function PollForm({
         type: poll.type || 'simple',
         binaryStyle: 'yes_no',
         visibility: poll.visibility || 'public',
+        voteRestriction: poll.voteRestriction || 'authenticated',
         resultsVisibility: poll.resultsVisibility || 'after_vote',
         allowUserContributions: Boolean(poll.allowUserContributions),
-        allowUnauthenticatedVotes: Boolean(poll.allowUnauthenticatedVotes),
         deadline: poll.deadline ? new Date(poll.deadline).toISOString().slice(0, 16) : '',
         locationId: poll.locationId || null,
         hideCreator: Boolean(poll.hideCreator),
@@ -99,6 +103,31 @@ export default function PollForm({
       }
     }
   }, [poll]);
+
+  useEffect(() => {
+    if (!hasAutoFilledLocation.current && mode === 'create' && user?.homeLocationId && formData.locationId === null) {
+      hasAutoFilledLocation.current = true;
+      setFormData((prev) => ({ ...prev, locationId: user.homeLocationId }));
+    }
+  }, [mode, user?.homeLocationId, formData.locationId]);
+
+  useEffect(() => {
+    let active = true;
+    if (!formData.locationId) {
+      setSelectedLocationName('');
+      return () => { active = false; };
+    }
+    locationAPI.getById(formData.locationId)
+      .then((res) => {
+        if (active && res?.success) {
+          setSelectedLocationName(res.location?.name || '');
+        }
+      })
+      .catch(() => {
+        if (active) setSelectedLocationName('');
+      });
+    return () => { active = false; };
+  }, [formData.locationId]);
 
   // Fetch existing tag suggestions for autocomplete
   useEffect(() => {
@@ -217,6 +246,11 @@ export default function PollForm({
         alert(`Πρέπει να προσθέσετε τουλάχιστον ${minOptions} επιλογές`);
         return;
       }
+    }
+
+    if (formData.voteRestriction === 'locals_only' && !formData.locationId) {
+      alert('Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία');
+      return;
     }
     
     const payload = {
@@ -378,19 +412,6 @@ export default function PollForm({
           <label className="flex items-center">
             <input
               type="checkbox"
-              name="allowUnauthenticatedVotes"
-              checked={formData.allowUnauthenticatedVotes}
-              onChange={handleInputChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <span className="ml-2 text-sm text-gray-700">
-              Επιτρέπεται ψηφοφορία χωρίς σύνδεση
-            </span>
-          </label>
-
-          <label className="flex items-center">
-            <input
-              type="checkbox"
               name="hideCreator"
               checked={formData.hideCreator}
               onChange={handleInputChange}
@@ -400,6 +421,19 @@ export default function PollForm({
               Απόκρυψη δημιουργού
             </span>
           </label>
+
+          <FormSelect
+            name="voteRestriction"
+            label="Ποιος μπορεί να ψηφίσει"
+            value={formData.voteRestriction}
+            onChange={handleInputChange}
+            required
+            options={[
+              { value: 'anyone', label: 'Όλοι (συμπ. επισκέπτες)' },
+              { value: 'authenticated', label: 'Μόνο συνδεδεμένοι χρήστες' },
+              { value: 'locals_only', label: 'Μόνο τοπικοί χρήστες' },
+            ]}
+          />
 
           <label className="flex items-center">
             <input
@@ -480,7 +514,7 @@ export default function PollForm({
 
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Τοποθεσία (Προαιρετικό)
+            Τοποθεσία {formData.voteRestriction === 'locals_only' ? <span className="text-red-500">*</span> : <span className="text-gray-500">(Προαιρετικό)</span>}
           </label>
           <CascadingLocationSelector
             value={formData.locationId}
@@ -489,7 +523,11 @@ export default function PollForm({
             allowClear={true}
           />
           <p className="mt-1 text-sm text-gray-500">
-            Η δημοσκόπηση θα εμφανίζεται στη σελίδα της επιλεγμένης τοποθεσίας
+            {!formData.locationId
+              ? 'Προεπιλογή από την τοποθεσία σας. Μπορείτε να επιλέξετε ανώτερο επίπεδο (νομό, χώρα) για ευρύτερη εμβέλεια.'
+              : (formData.voteRestriction === 'locals_only'
+                ? `Θα μπορούν να ψηφίσουν χρήστες από: ${selectedLocationName || 'την επιλεγμένη τοποθεσία'} και υποτοποθεσίες της.`
+                : 'Η δημοσκόπηση θα εμφανίζεται στη σελίδα της επιλεγμένης τοποθεσίας')}
           </p>
         </div>
       </div>

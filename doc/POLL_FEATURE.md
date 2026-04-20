@@ -114,7 +114,7 @@ The poll system uses three main database models with proper associations and con
 | `category` | STRING | No | - | Optional poll category |
 | `type` | ENUM | Yes | 'simple' | Poll type: 'simple' or 'complex' |
 | `allowUserContributions` | BOOLEAN | Yes | false | Allow users to add options |
-| `allowUnauthenticatedVotes` | BOOLEAN | Yes | false | Allow unauthenticated voting |
+| `voteRestriction` | ENUM | Yes | 'authenticated' | Who can vote: 'anyone', 'authenticated', 'locals_only' |
 | `visibility` | ENUM | Yes | 'public' | Who can see: 'public', 'private', 'locals_only' |
 | `resultsVisibility` | ENUM | Yes | 'always' | When results shown: 'always', 'after_vote', 'after_deadline' |
 | `deadline` | DATE | No | - | Optional voting deadline |
@@ -482,7 +482,8 @@ All poll endpoints are available at `/api/polls`
 
 **Field Descriptions:**
 - `type`: "simple" (text-based) or "complex" (rich options with photos/links)
-- `visibility`: "public" (anyone can see), "private" (only authenticated), "locals_only" (location-based)
+- `visibility`: controls who can see a poll ("public", "private", "locals_only")
+- `voteRestriction`: controls who can vote ("anyone", "authenticated", "locals_only")
 - `resultsVisibility`: "always", "after_vote", "after_deadline"
 - `category`: Optional category for organizing polls
 - `tags`: Optional array of strings for categorization (works like Article tags, backward compatible)

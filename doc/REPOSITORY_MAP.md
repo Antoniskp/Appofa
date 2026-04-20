@@ -31,7 +31,7 @@ This instruction is permanent and must never be removed.
 - [API Client Modules (24)](#api-client-modules-24)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (70)](#migrations-70)
+- [Migrations (74)](#migrations-74)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -48,7 +48,7 @@ Appofa/
 │   ├── models/             # Sequelize models (38 models)
 │   ├── routes/             # Express route definitions (24 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, error handling (6 files)
-│   ├── migrations/         # DB migrations (71 files)
+│   ├── migrations/         # DB migrations (73 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
@@ -101,7 +101,7 @@ Appofa/
 |-------|-------|-----------|------------------|
 | User | Users | id, username (nullable), email (nullable), password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
-| Poll | Polls | id, title, description, category, type, visibility, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
+| Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
 | PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
 | Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote; belongsTo: parent |
@@ -110,7 +110,7 @@ Appofa/
 | LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User |
 | LocationElectionVote | LocationElectionVotes | id, locationId, roleKey, voterId, candidateUserId | belongsTo: Location, User(voter), User(candidate) |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
-| Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
+| Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, visibility, voteRestriction, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
 | Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
 | SuggestionVote | SuggestionVotes | id, suggestionId, userId, voteType | belongsTo: Suggestion, User |
 | Comment | Comments | id, entityType, entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
@@ -492,7 +492,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (72)
+## Migrations (74)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -546,6 +546,8 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | 039 | 039-add-binary-poll-type.js | Binary poll type |
 | 040 | 040-add-poll-custom-colours.js | Poll colours |
 | 041 | 041-add-news-sources-section-type.js | News sources section |
+| 042 | 042-add-poll-vote-restriction.js | Poll voteRestriction enum + remove allowUnauthenticatedVotes |
+| 043 | 043-add-suggestion-visibility-vote-restriction.js | Suggestion visibility/voteRestriction enums |
 | — | 20260330120000-create-person-removal-requests.js | Removal requests |
 | — | 20260330130000-create-reports.js | Reports |
 | — | 20260331000000-create-dream-team-tables.js | Dream team core |

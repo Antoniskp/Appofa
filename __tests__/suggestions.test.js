@@ -598,6 +598,108 @@ describe('Suggestions & Solutions API Tests', () => {
     });
   });
 
+  describe('Suggestion visibility and vote restrictions', () => {
+    let parentLocationId;
+    let childLocationId;
+    let outsiderLocationId;
+    let localsOnlySuggestionId;
+    let privateSuggestionId;
+
+    beforeAll(async () => {
+      const country = await Location.create({ name: 'Greece', type: 'country', slug: 'greece-test-sug' });
+      const prefecture = await Location.create({ name: 'Attica', type: 'prefecture', slug: 'attica-test-sug', parent_id: country.id });
+      const municipality = await Location.create({ name: 'Athens', type: 'municipality', slug: 'athens-test-sug', parent_id: prefecture.id });
+      const outsiderMunicipality = await Location.create({ name: 'Patra', type: 'municipality', slug: 'patra-test-sug', parent_id: prefecture.id });
+
+      parentLocationId = country.id;
+      childLocationId = municipality.id;
+      outsiderLocationId = outsiderMunicipality.id;
+
+      await User.update({ homeLocationId: childLocationId }, { where: { id: user1Id } });
+      await User.update({ homeLocationId: outsiderLocationId }, { where: { id: user2Id } });
+
+      const localsCreate = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Local traffic issue',
+          body: 'Need better traffic management in our local area urgently.',
+          type: 'problem',
+          locationId: childLocationId,
+          visibility: 'public',
+          voteRestriction: 'locals_only'
+        });
+
+      localsOnlySuggestionId = localsCreate.body.data.id;
+
+      const privateCreate = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Private planning thread',
+          body: 'This should be visible only to authenticated users for planning.',
+          type: 'idea',
+          visibility: 'private'
+        });
+
+      privateSuggestionId = privateCreate.body.data.id;
+    });
+
+    it('should include voteRestriction in create response', async () => {
+      const res = await request(app).get(`/api/suggestions/${localsOnlySuggestionId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.voteRestriction).toBe('locals_only');
+      expect(res.body.data.visibility).toBe('public');
+    });
+
+    it('should hide private suggestions from unauthenticated listing', async () => {
+      const res = await request(app).get('/api/suggestions');
+      expect(res.status).toBe(200);
+      const ids = res.body.data.map((s) => s.id);
+      expect(ids).not.toContain(privateSuggestionId);
+    });
+
+    it('should allow authenticated listing to include private suggestions', async () => {
+      const res = await request(app)
+        .get('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', [`auth_token=${user1Token}`]);
+      expect(res.status).toBe(200);
+      const ids = res.body.data.map((s) => s.id);
+      expect(ids).toContain(privateSuggestionId);
+    });
+
+    it('should filter by parent location and include descendant-tagged suggestions', async () => {
+      const res = await request(app).get(`/api/suggestions?locationId=${parentLocationId}`);
+      expect(res.status).toBe(200);
+      const ids = res.body.data.map((s) => s.id);
+      expect(ids).toContain(localsOnlySuggestionId);
+    });
+
+    it('should deny vote on locals_only suggestion for non-local user', async () => {
+      const res = await request(app)
+        .post(`/api/suggestions/${localsOnlySuggestionId}/vote`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .set(csrfHeadersFor(csrf2, user2Id))
+        .send({ value: 1 });
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('should allow vote on locals_only suggestion for local user', async () => {
+      const res = await request(app)
+        .post(`/api/suggestions/${localsOnlySuggestionId}/vote`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({ value: 1 });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.myVote).toBe(1);
+    });
+  });
+
   // ─── problem_request type — flows ────────────────────────────────────────────
 
   describe('problem_request type — flows', () => {

@@ -28,6 +28,11 @@ export default function SuggestionCard({ suggestion }) {
           <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
             {TYPE_LABELS[suggestion.type] || suggestion.type}
           </Badge>
+          {suggestion.voteRestriction === 'locals_only' && suggestion.location && (
+            <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+              📍 {suggestion.location.name}
+            </span>
+          )}
           {Array.isArray(suggestion.tags) && suggestion.tags.map((t) => (
             <Badge key={t} variant="purple">{t}</Badge>
           ))}

@@ -56,6 +56,7 @@ export default function EditSuggestionPage() {
         type: data.type,
         status: data.status,
         locationId: data.locationId || null,
+        voteRestriction: data.voteRestriction || 'authenticated',
         category: data.category || '',
         tags: Array.isArray(data.tags) ? data.tags : [],
       });
@@ -140,7 +141,11 @@ export default function EditSuggestionPage() {
   };
 
   const handleLocationChange = (locationId) => {
-    setForm((prev) => ({ ...prev, locationId: locationId || null }));
+    setForm((prev) => ({
+      ...prev,
+      locationId: locationId || null,
+      voteRestriction: locationId ? 'locals_only' : 'authenticated',
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -157,6 +162,7 @@ export default function EditSuggestionPage() {
         body: form.body,
         type: form.type,
         locationId: form.locationId,
+        voteRestriction: form.voteRestriction,
         category: form.category || null,
         tags: form.tags,
       };
@@ -283,6 +289,24 @@ export default function EditSuggestionPage() {
                 onChange={handleLocationChange}
                 allowClear
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Ποιος μπορεί να ψηφίσει
+              </label>
+              <select
+                name="voteRestriction"
+                value={form.voteRestriction}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="authenticated">Μόνο συνδεδεμένοι χρήστες</option>
+                <option value="locals_only">Μόνο τοπικοί χρήστες</option>
+              </select>
+              {form.voteRestriction === 'locals_only' && !form.locationId && (
+                <p className="text-amber-600 text-xs mt-1">⚠️ Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία</p>
+              )}
             </div>
 
             {/* Tags (optional) */}

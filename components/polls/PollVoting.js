@@ -40,7 +40,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   }, [poll]);
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
-  const canVote = isPollActive && (user || poll.allowUnauthenticatedVotes);
+  const canVote = isPollActive && (user || poll.voteRestriction === 'anyone');
   
   const resetAddOptionForm = () => {
     setNewOptionText('');
@@ -124,7 +124,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
         <p className="text-gray-600">
           {!isPollActive
             ? 'Αυτή η δημοσκόπηση έχει κλείσει ή έληξε.'
-            : !user && !poll.allowUnauthenticatedVotes
+            : !user && poll.voteRestriction !== 'anyone'
             ? 'Πρέπει να συνδεθείτε για να ψηφίσετε.'
             : 'Δεν μπορείτε να ψηφίσετε σε αυτή τη δημοσκόπηση.'}
         </p>
