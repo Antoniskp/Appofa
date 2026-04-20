@@ -2,16 +2,27 @@
 
 import { useEffect, useState } from 'react';
 
+const LOCALE_COOKIE_MAX_AGE_SECONDS = 31536000;
+
 export default function LanguageSwitcher() {
   const [current, setCurrent] = useState('el');
 
   useEffect(() => {
-    const match = document.cookie.split('; ').find((cookie) => cookie.startsWith('NEXT_LOCALE='));
-    if (match) setCurrent(match.split('=')[1]);
+    const localeCookie = document.cookie
+      .split(';')
+      .map((cookie) => cookie.trim())
+      .find((cookie) => cookie.startsWith('NEXT_LOCALE='));
+
+    if (!localeCookie) return;
+
+    const cookieValue = localeCookie.substring('NEXT_LOCALE='.length);
+    if (cookieValue) {
+      setCurrent(decodeURIComponent(cookieValue));
+    }
   }, []);
 
   const handleSwitch = (locale) => {
-    document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; SameSite=Lax`;
+    document.cookie = `NEXT_LOCALE=${encodeURIComponent(locale)}; path=/; max-age=${LOCALE_COOKIE_MAX_AGE_SECONDS}; SameSite=Lax`;
     window.location.reload();
   };
 
