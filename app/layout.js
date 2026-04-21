@@ -8,7 +8,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://appofasi.gr';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/appofasi-high-resolution-logo-transparent.png`;
 
 export const metadata = {
   metadataBase: new URL(SITE_URL),
@@ -26,7 +26,7 @@ export const metadata = {
     images: [{ url: DEFAULT_OG_IMAGE }],
   },
   twitter: {
-    card: 'summary_large_image',
+    card: 'summary',
     title: 'Απόφαση',
     description: 'Η πύλη σας για τελευταίες ειδήσεις, δημοσκοπήσεις και τοπικά νέα',
     images: [DEFAULT_OG_IMAGE],
