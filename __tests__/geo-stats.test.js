@@ -27,6 +27,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/geo-stats', geoStatsRoutes);
+app.use('/api/geo', geoStatsRoutes);
 
 function csrfHeadersFor(token, userId) {
   storeCsrfToken(token, userId);
@@ -283,5 +284,42 @@ describe('Geo Stats Admin API', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
+  });
+
+  it('POST /api/geo/track creates a visit record for proxy tracking', async () => {
+    const res = await request(app)
+      .post('/api/geo/track')
+      .send({
+        path: '/articles',
+        countryCode: 'gr!!',
+        ipAddress: '::ffff:185.230.31.201',
+        locale: 'el-GR',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const created = await GeoVisit.findOne({
+      where: { path: '/articles' },
+      order: [['createdAt', 'DESC']],
+    });
+
+    expect(created).toBeTruthy();
+    expect(created.countryCode).toBe('GR');
+    expect(created.countryName).toBe('Greece');
+    expect(created.isAuthenticated).toBe(false);
+    expect(created.ipAddress).toBe('::ffff:185.230.31.201');
+    expect(created.locale).toBe('el-GR');
+    expect(created.sessionHash).toMatch(/^[a-f0-9]{64}$/);
+  });
+
+  it('POST /api/geo/track validates required path', async () => {
+    const res = await request(app)
+      .post('/api/geo/track')
+      .send({ countryCode: 'GR' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('path is required.');
   });
 });
