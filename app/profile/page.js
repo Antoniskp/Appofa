@@ -667,7 +667,7 @@ function ProfileContent() {
 
       {/* Sticky save bar */}
       <div className="fixed bottom-0 inset-x-0 z-50 border-t border-gray-200 bg-white shadow-lg">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4"> 
           {isDirty ? (
             <p className="text-sm text-amber-600 font-medium">● {tProfile('unsaved_changes')}</p>
           ) : (
@@ -689,10 +689,10 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'moderator', 'editor', 'viewer']}>
+    <ProtectedRoute allowedRoles={['admin', 'moderator', 'editor', 'viewer']}> 
       <Suspense fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <p className="text-gray-600">{tProfile('loading_profile')}</p>
+        <div className="min-h-screen flex items-center justify-center"> 
+          <SkeletonLoader />
         </div>
       }>
         <ProfileContent />
