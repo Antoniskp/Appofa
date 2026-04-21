@@ -232,7 +232,7 @@ const deleteSlide = async (req, res) => {
 };
 
 // PATCH /api/hero-settings/slides/reorder
-// Accepts { ids: string[] } — the new ordering of ALL slide ids.
+// Accepts { ids: string[] } — listed slide ids are moved first; unlisted slides are appended.
 const reorderSlides = async (req, res) => {
   try {
     const { ids } = req.body;
@@ -253,10 +253,6 @@ const reorderSlides = async (req, res) => {
     if (uniqueIds.size !== ids.length) {
       return res.status(400).json({ success: false, message: 'Duplicate slide ids are not allowed.' });
     }
-    if (ids.length !== slides.length) {
-      return res.status(400).json({ success: false, message: 'ids must include every existing slide exactly once.' });
-    }
-
     const slideMap = new Map(slides.map((s) => [s.id, s]));
     for (const id of ids) {
       if (!slideMap.has(id)) {
@@ -264,7 +260,9 @@ const reorderSlides = async (req, res) => {
       }
     }
 
-    const reordered = ids.map((id) => slideMap.get(id));
+    const listed = ids.map((id) => slideMap.get(id));
+    const unlisted = slides.filter((s) => !uniqueIds.has(s.id));
+    const reordered = [...listed, ...unlisted];
     const saved = await saveSlides(settings, reordered);
     return res.json({ success: true, data: saved, message: 'Slides reordered.' });
   } catch {

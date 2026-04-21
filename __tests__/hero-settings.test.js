@@ -261,12 +261,12 @@ describe('Hero Settings API Tests', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should reject ids that do not include every existing slide', async () => {
+    it('should reject ids that do not exist', async () => {
       const res = await request(app)
         .patch('/api/hero-settings/slides/reorder')
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeadersFor(csrfAdmin, adminId))
-        .send({ ids: [slideAId, slideBId] }); // missing slideC and default slide
+        .send({ ids: [slideAId, 'not-a-real-slide-id'] });
       expect(res.status).toBe(400);
     });
 
@@ -330,15 +330,22 @@ describe('Hero Settings API Tests', () => {
       expect(res.body.data.map((s) => s.id)).toEqual(reordered);
     });
 
-    it('should reject a stale/partial id list (regression: rapid-click race)', async () => {
-      // Simulates the in-flight race condition where a stale snapshot sends
-      // fewer IDs than the server currently holds — the fix must reject this 400.
+    it('should accept a stale/partial id list and append unlisted slides at the end', async () => {
+      const getRes = await request(app)
+        .get('/api/hero-settings/slides')
+        .set('Authorization', `Bearer ${adminToken}`);
+      const currentIds = getRes.body.data.map((s) => s.id);
+      const partial = currentIds.filter((id) => id !== slideCId);
+
       const res = await request(app)
         .patch('/api/hero-settings/slides/reorder')
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeadersFor(csrfAdmin, adminId))
-        .send({ ids: [slideAId] }); // only one of many — stale partial list
-      expect(res.status).toBe(400);
+        .send({ ids: partial });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.map((s) => s.id)).toEqual([...partial, slideCId]);
     });
 
     it('should reject an id list containing non-string values', async () => {
