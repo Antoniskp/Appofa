@@ -9,6 +9,7 @@ require('dotenv').config();
 const registerRoutes = require('./routes');
 const { ipBlockMiddleware } = require('./middleware/rateLimiter');
 const { geoTrackMiddleware } = require('./middleware/geoTrackMiddleware');
+const { deduplicateHeroSettings } = require('./controllers/heroSettingsController');
 
 const app = express();
 
@@ -94,6 +95,8 @@ const startServer = async () => {
     } else {
       console.log('Skipping Sequelize sync in production. Run migrations before starting the server.');
     }
+
+    await deduplicateHeroSettings();
 
     // Start server
     app.listen(PORT, () => {

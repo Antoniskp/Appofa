@@ -29,7 +29,7 @@ function cleanSlides(slides = []) {
 }
 
 async function getOrCreateSettings() {
-  let settings = await HeroSettings.findOne();
+  let settings = await HeroSettings.findOne({ order: [['id', 'ASC']] });
   if (!settings) {
     settings = await HeroSettings.create({
       backgroundImageUrl: DEFAULT_SETTINGS.backgroundImageUrl,
@@ -38,6 +38,15 @@ async function getOrCreateSettings() {
     });
   }
   return settings;
+}
+
+async function deduplicateHeroSettings() {
+  const all = await HeroSettings.findAll({ order: [['id', 'ASC']] });
+  if (all.length > 1) {
+    const idsToDelete = all.slice(1).map((row) => row.id);
+    await HeroSettings.destroy({ where: { id: idsToDelete } });
+    console.log(`[HeroSettings] Removed ${idsToDelete.length} duplicate row(s).`);
+  }
 }
 
 /** Persist slides array and return the cleaned version. */
@@ -288,4 +297,4 @@ const toggleSlide = async (req, res) => {
   }
 };
 
-module.exports = { getHeroSettings, updateHeroSettings, getSlides, createSlide, updateSlide, deleteSlide, toggleSlide, reorderSlides };
+module.exports = { getHeroSettings, updateHeroSettings, getSlides, createSlide, updateSlide, deleteSlide, toggleSlide, reorderSlides, deduplicateHeroSettings };
