@@ -162,7 +162,7 @@ function ProfileContent() {
         setShowHomeLocation(false);
         setGithubLinked(!!githubId);
         setGoogleLinked(!!googleId);
-        setHasPassword(!!userData.hasPassword);
+        setHasPassword(typeof userData.hasPassword === 'boolean' ? userData.hasPassword : !!userData.password);
 
         if (homeLocationId) {
           try {
@@ -373,10 +373,17 @@ function ProfileContent() {
     }
 
     try {
-      await authAPI.updatePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
+      if (hasPassword) {
+        await authAPI.updatePassword({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+        });
+      } else {
+        await authAPI.updatePassword({
+          newPassword: passwordData.newPassword,
+        });
+        setHasPassword(true);
+      }
       success(tProfile('password_updated'));
     } catch (err) {
       error(err.message || tProfile('password_update_failed'));
@@ -676,6 +683,7 @@ function ProfileContent() {
         <Card>
           <ProfileSecuritySection
             passwordData={passwordData}
+            hasPassword={hasPassword}
             onPasswordChange={handlePasswordChange}
             onPasswordSubmit={handlePasswordSubmit}
             showPasswordFields={showPasswordFields}

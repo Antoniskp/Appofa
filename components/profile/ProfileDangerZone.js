@@ -33,13 +33,17 @@ export default function ProfileDangerZone({ hasPassword, onDeleteAccount }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    if (!password) {
+    if (hasPassword && !password) {
       setErrorMsg('Please enter your password to confirm.');
+      return;
+    }
+    if (!hasPassword && password !== 'DELETE') {
+      setErrorMsg('Please type DELETE exactly to confirm.');
       return;
     }
     setLoading(true);
     try {
-      await onDeleteAccount({ password, mode });
+      await onDeleteAccount({ password: hasPassword ? password : null, mode });
     } catch (err) {
       setErrorMsg(err.message || 'Failed to delete account.');
     } finally {
@@ -54,23 +58,11 @@ export default function ProfileDangerZone({ hasPassword, onDeleteAccount }) {
         Deleting your account is permanent and cannot be undone.
       </p>
 
-      {!hasPassword && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded-md text-sm text-yellow-800">
-          Your account does not have a password set. Please set a password in your Security settings
-          before you can delete your account.
-        </div>
-      )}
-
       {!isOpen ? (
         <button
           type="button"
           onClick={handleOpen}
-          disabled={!hasPassword}
-          className={`px-4 py-2 text-sm font-medium rounded border transition ${
-            hasPassword
-              ? 'text-red-600 border-red-600 hover:bg-red-50'
-              : 'text-gray-400 border-gray-300 cursor-not-allowed bg-gray-50'
-          }`}
+          className="px-4 py-2 text-sm font-medium rounded border transition text-red-600 border-red-600 hover:bg-red-50"
         >
           Delete my account
         </button>
@@ -110,14 +102,30 @@ export default function ProfileDangerZone({ hasPassword, onDeleteAccount }) {
             </label>
           </div>
 
-          <FormInput
-            name="deletePassword"
-            type="password"
-            label="Confirm your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
+          {hasPassword ? (
+            <FormInput
+              name="deletePassword"
+              type="password"
+              label="Confirm your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+            />
+          ) : (
+            <div>
+              <label htmlFor="deleteConfirmationText" className="block text-sm font-medium text-gray-700 mb-1">
+                Type "DELETE" to confirm
+              </label>
+              <input
+                id="deleteConfirmationText"
+                type="text"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                autoComplete="off"
+              />
+            </div>
+          )}
 
           {errorMsg && (
             <p className="text-sm text-red-600">{errorMsg}</p>

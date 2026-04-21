@@ -436,15 +436,13 @@ async function deleteUserAccount(userId, password, mode) {
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
 
-  if (!user.password) {
-    throw new ServiceError(400, 'Please set a password before deleting your account.');
+  if (user.password) {
+    const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
+    if (passwordResult.error) throw new ServiceError(400, passwordResult.error);
+
+    const isValidPassword = await user.comparePassword(passwordResult.value);
+    if (!isValidPassword) throw new ServiceError(400, 'Incorrect password.');
   }
-
-  const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
-  if (passwordResult.error) throw new ServiceError(400, passwordResult.error);
-
-  const isValidPassword = await user.comparePassword(passwordResult.value);
-  if (!isValidPassword) throw new ServiceError(400, 'Incorrect password.');
 
   if (mode === 'purge') {
     await sequelize.transaction(async (t) => {
