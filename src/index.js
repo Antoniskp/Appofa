@@ -9,6 +9,7 @@ require('dotenv').config();
 const registerRoutes = require('./routes');
 const { ipBlockMiddleware } = require('./middleware/rateLimiter');
 const { geoTrackMiddleware } = require('./middleware/geoTrackMiddleware');
+const { deduplicateHeroSettings } = require('./controllers/heroSettingsController');
 
 const app = express();
 
@@ -93,6 +94,12 @@ const startServer = async () => {
       }
     } else {
       console.log('Skipping Sequelize sync in production. Run migrations before starting the server.');
+    }
+
+    try {
+      await deduplicateHeroSettings();
+    } catch (error) {
+      console.warn('Warning: Failed to deduplicate hero settings:', error.message);
     }
 
     // Start server
