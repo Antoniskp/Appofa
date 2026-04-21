@@ -33,13 +33,18 @@ export default function ProfileDangerZone({ hasPassword, onDeleteAccount }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-    if (!password) {
-      setErrorMsg('Please enter your password to confirm.');
+    if (hasPassword) {
+      if (!password) {
+        setErrorMsg('Please enter your password to confirm.');
+        return;
+      }
+    } else if (password !== 'DELETE') {
+      setErrorMsg('Type "DELETE" to confirm account deletion.');
       return;
     }
     setLoading(true);
     try {
-      await onDeleteAccount({ password, mode });
+      await onDeleteAccount({ password: hasPassword ? password : null, mode });
     } catch (err) {
       setErrorMsg(err.message || 'Failed to delete account.');
     } finally {
@@ -54,23 +59,11 @@ export default function ProfileDangerZone({ hasPassword, onDeleteAccount }) {
         Deleting your account is permanent and cannot be undone.
       </p>
 
-      {!hasPassword && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-300 rounded-md text-sm text-yellow-800">
-          Your account does not have a password set. Please set a password in your Security settings
-          before you can delete your account.
-        </div>
-      )}
-
       {!isOpen ? (
         <button
           type="button"
           onClick={handleOpen}
-          disabled={!hasPassword}
-          className={`px-4 py-2 text-sm font-medium rounded border transition ${
-            hasPassword
-              ? 'text-red-600 border-red-600 hover:bg-red-50'
-              : 'text-gray-400 border-gray-300 cursor-not-allowed bg-gray-50'
-          }`}
+          className="px-4 py-2 text-sm font-medium rounded border transition text-red-600 border-red-600 hover:bg-red-50"
         >
           Delete my account
         </button>
@@ -112,11 +105,11 @@ export default function ProfileDangerZone({ hasPassword, onDeleteAccount }) {
 
           <FormInput
             name="deletePassword"
-            type="password"
-            label="Confirm your password"
+            type={hasPassword ? 'password' : 'text'}
+            label={hasPassword ? 'Confirm your password' : 'Type "DELETE" to confirm'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
+            autoComplete={hasPassword ? 'current-password' : 'off'}
           />
 
           {errorMsg && (

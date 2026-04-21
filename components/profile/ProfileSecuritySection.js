@@ -32,6 +32,7 @@ function GoogleIcon({ className }) {
  *
  * @param {Object} props
  * @param {Object} props.passwordData - { currentPassword, newPassword, confirmPassword }
+ * @param {boolean} [props.hasPassword=true] - Whether user currently has a password set
  * @param {Function} props.onPasswordChange - (event) => void
  * @param {Function} props.onPasswordSubmit - (event) => void
  * @param {boolean} props.showPasswordFields - Whether the password form is expanded
@@ -52,6 +53,7 @@ function GoogleIcon({ className }) {
  */
 export default function ProfileSecuritySection({
   passwordData,
+  hasPassword = true,
   onPasswordChange,
   onPasswordSubmit,
   showPasswordFields,
@@ -91,7 +93,7 @@ export default function ProfileSecuritySection({
           aria-controls="password-panel"
           className="w-full h-11 flex items-center justify-between text-gray-900"
         >
-          <span className="text-lg font-semibold">Change password</span>
+          <span className="text-lg font-semibold">{hasPassword ? 'Change password' : 'Set password'}</span>
           <span className="text-xs text-gray-500">{showPasswordFields ? 'Hide' : 'Edit'}</span>
         </button>
         <div
@@ -104,13 +106,15 @@ export default function ProfileSecuritySection({
           }`}
         >
           <form className="space-y-4" onSubmit={onPasswordSubmit}>
-            <FormInput
-              name="currentPassword"
-              type="password"
-              label="Current password"
-              value={passwordData.currentPassword}
-              onChange={onPasswordChange}
-            />
+            {hasPassword && (
+              <FormInput
+                name="currentPassword"
+                type="password"
+                label="Current password"
+                value={passwordData.currentPassword}
+                onChange={onPasswordChange}
+              />
+            )}
             <FormInput
               name="newPassword"
               type="password"
@@ -129,7 +133,7 @@ export default function ProfileSecuritySection({
               type="submit"
               className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
             >
-              Update password
+              {hasPassword ? 'Change password' : 'Set password'}
             </button>
           </form>
         </div>

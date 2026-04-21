@@ -36,6 +36,8 @@ This instruction is permanent and must never be removed.
 - **Country funding public API**: use `GET /api/admin/geo-stats/country-funding/:locationId/public` for unauthenticated location-page funding display
 - **Next.js edge entrypoint**: use root `proxy.js` (not `middleware.js`) for country redirect and request proxy logic
 - **OAuth avatars**: persist provider photos in `User.githubAvatar` / `User.googleAvatar`; keep `User.avatar` as active source and switch it via `PUT /api/auth/avatar-source`
+- **OAuth-only passwords**: allow first-time password creation via `authService.setPassword` when `User.password` is `null`; use regular `changePassword` only for accounts that already have a password
+- **OAuth-only account deletion**: in `userService.deleteUserAccount`, skip password verification when `User.password` is `null` (authenticated JWT session is sufficient)
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
@@ -55,6 +57,7 @@ This instruction is permanent and must never be removed.
 - **Admin geo API module**: use `geoAdminAPI` (`lib/api/geoAdmin.js`) for `/api/admin/geo-stats/*` admin calls instead of direct request code
 - **Admin article management**: keep article stats/table actions (view/delete/approve news) on `/admin/articles`; keep `/admin` focused on overview cards, quick actions, and announcements
 - **Language switcher**: use `components/ui/LanguageSwitcher.js` in the Profile preferences card (not in TopNav)
+- **Profile Security/Danger flows**: when `hasPassword === false`, show a set-password form (no current password) and allow delete-account confirmation via typed `DELETE` instead of password
 - **Translations hook**: frontend pages/components should read UI labels via `useTranslations(...)` instead of hard-coded literals
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE

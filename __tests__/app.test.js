@@ -458,6 +458,40 @@ describe('News Application Integration Tests', () => {
       expect(response.body.success).toBe(true);
     });
 
+    test('should set password for OAuth-only user without current password', async () => {
+      const oauthUser = await User.create({
+        username: 'oauth-password-user',
+        email: 'oauth-password@test.com',
+        password: null,
+        githubId: 'oauth-gh-id',
+        role: 'viewer'
+      });
+
+      const jwt = require('jsonwebtoken');
+      const oauthToken = jwt.sign({ id: oauthUser.id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+      const csrfToken = 'csrf-oauth-set-password';
+      setCsrfToken(csrfToken, oauthUser.id);
+
+      const response = await request(app)
+        .put('/api/auth/password')
+        .set('Authorization', `Bearer ${oauthToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({
+          newPassword: 'oauthNewPass123'
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+
+      const updatedUser = await User.findByPk(oauthUser.id);
+      expect(updatedUser.password).not.toBeNull();
+      const canLogin = await updatedUser.comparePassword('oauthNewPass123');
+      expect(canLogin).toBe(true);
+
+      await oauthUser.destroy();
+    });
+
     test('should login with new password', async () => {
       const response = await request(app)
         .post('/api/auth/login')

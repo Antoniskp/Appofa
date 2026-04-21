@@ -84,7 +84,7 @@ function ProfileContent() {
   const [githubLinked, setGithubLinked] = useState(false);
   const [googleLinked, setGoogleLinked] = useState(false);
   const [avatarSourceUpdating, setAvatarSourceUpdating] = useState(false);
-  const [hasPassword, setHasPassword] = useState(false);
+  const [hasPassword, setHasPassword] = useState(true);
   const [profPicker, setProfPicker] = useState({ categoryId: '', professionId: '', subProfessionId: '' });
   const [intPicker, setIntPicker] = useState({ categoryId: '', interestId: '', subInterestId: '' });
   const [followersCount, setFollowersCount] = useState(undefined);
@@ -373,11 +373,18 @@ function ProfileContent() {
     }
 
     try {
-      await authAPI.updatePassword({
-        currentPassword: passwordData.currentPassword,
-        newPassword: passwordData.newPassword,
-      });
+      const payload = hasPassword
+        ? {
+            currentPassword: passwordData.currentPassword,
+            newPassword: passwordData.newPassword,
+          }
+        : { newPassword: passwordData.newPassword };
+
+      await authAPI.updatePassword(payload);
       success(tProfile('password_updated'));
+      if (!hasPassword) {
+        setHasPassword(true);
+      }
     } catch (err) {
       error(err.message || tProfile('password_update_failed'));
     } finally {
@@ -676,6 +683,7 @@ function ProfileContent() {
         <Card>
           <ProfileSecuritySection
             passwordData={passwordData}
+            hasPassword={hasPassword}
             onPasswordChange={handlePasswordChange}
             onPasswordSubmit={handlePasswordSubmit}
             showPasswordFields={showPasswordFields}

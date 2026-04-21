@@ -157,7 +157,7 @@ describe('Delete Account endpoint', () => {
     expect(deleted).toBeNull();
   });
 
-  test('should return 400 when user has no password set', async () => {
+  test('should allow account deletion for OAuth-only user (no password)', async () => {
     const oauthUser = await User.create({
       username: 'oauth-only',
       email: 'oauth@test.com',
@@ -180,8 +180,8 @@ describe('Delete Account endpoint', () => {
       .set('x-csrf-token', oauthCsrf)
       .send({ password: 'anything', mode: 'purge' });
 
-    expect(response.status).toBe(400);
-    expect(response.body.message).toMatch(/password/i);
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
   });
 
   test('getProfile response includes hasPassword field', async () => {

@@ -329,14 +329,14 @@ Appofa/
 | Service | Purpose |
 |---------|---------|
 | articleService.js | Article business logic |
-| authService.js | Authentication & authorization |
+| authService.js | Authentication & authorization (including OAuth-only first-time password setup) |
 | badgeService.js | Badge evaluation & assignment |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
 | pollService.js | Poll operations & calculations |
-| userService.js | User management & utilities |
+| userService.js | User management & utilities (including account deletion/anonymization with OAuth-only no-password support) |
 
 ---
 
