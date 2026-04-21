@@ -57,6 +57,14 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  githubAvatar: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  googleAvatar: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
   avatarColor: {
     type: DataTypes.STRING,
     allowNull: true

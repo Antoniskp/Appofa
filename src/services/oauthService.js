@@ -86,6 +86,7 @@ async function handleGithubCallback(code, state) {
 
     user.githubId = githubUser.id.toString();
     user.githubAccessToken = encryptToken(accessToken);
+    user.githubAvatar = githubUser.avatar_url || null;
     if (!user.avatar && githubUser.avatar_url) {
       user.avatar = githubUser.avatar_url;
     }
@@ -99,6 +100,7 @@ async function handleGithubCallback(code, state) {
 
     if (user) {
       user.githubAccessToken = encryptToken(accessToken);
+      user.githubAvatar = githubUser.avatar_url || null;
       if (githubUser.avatar_url) {
         user.avatar = githubUser.avatar_url;
       }
@@ -111,6 +113,7 @@ async function handleGithubCallback(code, state) {
       if (existingEmailUser) {
         existingEmailUser.githubId = githubUser.id.toString();
         existingEmailUser.githubAccessToken = encryptToken(accessToken);
+        existingEmailUser.githubAvatar = githubUser.avatar_url || null;
         if (!existingEmailUser.avatar && githubUser.avatar_url) {
           existingEmailUser.avatar = githubUser.avatar_url;
         }
@@ -126,6 +129,7 @@ async function handleGithubCallback(code, state) {
           email: primaryEmail,
           githubId: githubUser.id.toString(),
           githubAccessToken: encryptToken(accessToken),
+          githubAvatar: githubUser.avatar_url || null,
           firstNameNative: nameParts[0] || githubUser.login,
           lastNameNative: nameParts.slice(1).join(' ') || '',
           avatar: githubUser.avatar_url,
@@ -233,6 +237,7 @@ async function handleGoogleCallback(code, state) {
 
     user.googleId = googleUser.id.toString();
     user.googleAccessToken = encryptToken(accessToken);
+    user.googleAvatar = googleUser.picture || null;
     if (!user.avatar && googleUser.picture) {
       user.avatar = googleUser.picture;
     }
@@ -246,6 +251,7 @@ async function handleGoogleCallback(code, state) {
 
     if (user) {
       user.googleAccessToken = encryptToken(accessToken);
+      user.googleAvatar = googleUser.picture || null;
       if (googleUser.picture) {
         user.avatar = googleUser.picture;
       }
@@ -258,6 +264,7 @@ async function handleGoogleCallback(code, state) {
       if (existingEmailUser) {
         existingEmailUser.googleId = googleUser.id.toString();
         existingEmailUser.googleAccessToken = encryptToken(accessToken);
+        existingEmailUser.googleAvatar = googleUser.picture || null;
         if (!existingEmailUser.avatar && googleUser.picture) {
           existingEmailUser.avatar = googleUser.picture;
         }
@@ -273,6 +280,7 @@ async function handleGoogleCallback(code, state) {
           email: googleUser.email,
           googleId: googleUser.id.toString(),
           googleAccessToken: encryptToken(accessToken),
+          googleAvatar: googleUser.picture || null,
           firstNameNative: googleUser.given_name || nameParts[0] || '',
           lastNameNative: googleUser.family_name || nameParts.slice(1).join(' ') || '',
           avatar: googleUser.picture,
@@ -311,6 +319,46 @@ async function unlinkGoogleAccount(userId) {
   await user.save();
 }
 
+async function updateAvatarSource(userId, source) {
+  const normalizedSource = typeof source === 'string' ? source.trim().toLowerCase() : '';
+  if (!['github', 'google'].includes(normalizedSource)) {
+    const err = new Error('Invalid avatar source.');
+    err.status = 400;
+    throw err;
+  }
+
+  const user = await User.findByPk(userId);
+  if (!user) {
+    const err = new Error('User not found.');
+    err.status = 404;
+    throw err;
+  }
+
+  if (normalizedSource === 'github' && !user.githubId) {
+    const err = new Error('GitHub account is not linked.');
+    err.status = 400;
+    throw err;
+  }
+
+  if (normalizedSource === 'google' && !user.googleId) {
+    const err = new Error('Google account is not linked.');
+    err.status = 400;
+    throw err;
+  }
+
+  const selectedAvatar = normalizedSource === 'github' ? user.githubAvatar : user.googleAvatar;
+  if (!selectedAvatar) {
+    const err = new Error('Selected avatar source does not have an avatar.');
+    err.status = 400;
+    throw err;
+  }
+
+  user.avatar = selectedAvatar;
+  await user.save();
+
+  return user;
+}
+
 function getOAuthConfig() {
   return {
     github: isOAuthConfigured('github'),
@@ -327,5 +375,6 @@ module.exports = {
   initiateGoogleOAuth,
   handleGoogleCallback,
   unlinkGoogleAccount,
+  updateAvatarSource,
   getOAuthConfig
 };
