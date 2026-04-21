@@ -2,6 +2,7 @@ const authService = require('../services/authService');
 const oauthService = require('../services/oauthService');
 const userService = require('../services/userService');
 const badgeService = require('../services/badgeService');
+const { User } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 require('dotenv').config();
@@ -146,7 +147,16 @@ const authController = {
   updatePassword: async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-      await authService.changePassword(req.user.id, currentPassword, newPassword);
+      const user = await User.findByPk(req.user.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      if (user.password === null) {
+        await authService.setPassword(req.user.id, newPassword);
+      } else {
+        await authService.changePassword(req.user.id, currentPassword, newPassword);
+      }
       res.status(200).json({ success: true, message: 'Password updated successfully.' });
     } catch (error) {
       if (error.status) {

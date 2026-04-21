@@ -130,10 +130,25 @@ async function changePassword(userId, currentPassword, newPassword) {
   await user.save();
 }
 
+async function setPassword(userId, newPassword) {
+  const newPasswordResult = normalizePassword(newPassword, 'New password', PASSWORD_MIN_LENGTH);
+  if (newPasswordResult.error) throw new ServiceError(400, newPasswordResult.error);
+
+  const user = await User.findByPk(userId);
+  if (!user) throw new ServiceError(404, 'User not found.');
+  if (user.password) {
+    throw new ServiceError(400, 'Account already has a password. Use change password instead.');
+  }
+
+  user.password = newPasswordResult.value;
+  await user.save();
+}
+
 module.exports = {
   ServiceError,
   generateToken,
   registerUser,
   loginUser,
-  changePassword
+  changePassword,
+  setPassword
 };
