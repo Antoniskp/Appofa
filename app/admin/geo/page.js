@@ -10,13 +10,14 @@ import Modal, { ConfirmDialog } from '@/components/ui/Modal';
 import { useToast } from '@/components/ToastProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import { geoAdminAPI } from '@/lib/api';
+import { addIpRule, geoAdminAPI } from '@/lib/api';
 
 const PERIODS = [
   { key: '7d', label: '7 ημέρες' },
   { key: '30d', label: '30 ημέρες' },
   { key: 'all', label: 'Όλο το ιστορικό' },
 ];
+const LOG_RETENTION_OPTIONS = [30, 90, 180];
 
 const STATUS_META = {
   unlocked: { label: 'Ξεκλείδωτη', className: 'bg-emerald-100 text-emerald-700' },
@@ -40,6 +41,9 @@ function GeoAdminContent() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isBlockingIp, setIsBlockingIp] = useState(null);
+  const [clearOlderThanDays, setClearOlderThanDays] = useState(String(LOG_RETENTION_OPTIONS[0]));
+  const [isClearingLogs, setIsClearingLogs] = useState(false);
   const [fundingForm, setFundingForm] = useState({
     id: null,
     locationId: '',
@@ -59,11 +63,15 @@ function GeoAdminContent() {
     async () => {
       const res = await geoAdminAPI.getVisits({ period });
       if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης επισκεψιμότητας.');
-      return res.data || { totalVisits: 0, byCountry: [], topPaths: [] };
+      return res.data || {
+        totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [],
+      };
     },
     [period],
     {
-      initialData: { totalVisits: 0, byCountry: [], topPaths: [] },
+      initialData: {
+        totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [],
+      },
       onError: (message) => addToast(message || 'Αποτυχία φόρτωσης επισκεψιμότητας.', { type: 'error' }),
     }
   );
@@ -207,6 +215,42 @@ function GeoAdminContent() {
     }
   };
 
+  const handleBlockIp = async (ipAddress) => {
+    if (!ipAddress) {
+      addToast('Δεν υπάρχει IP για αποκλεισμό.', { type: 'error' });
+      return;
+    }
+
+    setIsBlockingIp(ipAddress);
+    try {
+      await addIpRule(ipAddress, 'blacklist', 'Blocked from geo admin');
+      addToast(`Η IP ${ipAddress} μπήκε στη blacklist.`, { type: 'success' });
+    } catch (error) {
+      addToast(error.message || 'Αποτυχία αποκλεισμού IP.', { type: 'error' });
+    } finally {
+      setIsBlockingIp(null);
+    }
+  };
+
+  const handleClearOldLogs = async () => {
+    const days = Number(clearOlderThanDays);
+
+    if (!window.confirm(`Να διαγραφούν logs παλαιότερα από ${days} ημέρες;`)) {
+      return;
+    }
+
+    setIsClearingLogs(true);
+    try {
+      const res = await geoAdminAPI.clearVisitsOlderThan(days);
+      await refetchVisits();
+      addToast(res?.message || `Διαγράφηκαν logs παλαιότερα από ${days} ημέρες.`, { type: 'success' });
+    } catch (error) {
+      addToast(error.message || 'Αποτυχία διαγραφής logs.', { type: 'error' });
+    } finally {
+      setIsClearingLogs(false);
+    }
+  };
+
   if (!isAdmin) return null;
 
   return (
@@ -239,20 +283,44 @@ function GeoAdminContent() {
 
         {activeTab === 'traffic' ? (
           <div className="space-y-6">
-            <div className="flex flex-wrap gap-2">
-              {PERIODS.map((item) => (
-                <button
-                  key={item.key}
-                  onClick={() => setPeriod(item.key)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    period === item.key
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
-                  }`}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap gap-2">
+                {PERIODS.map((item) => (
+                  <button
+                    key={item.key}
+                    onClick={() => setPeriod(item.key)}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      period === item.key
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+              <div className="ml-auto flex items-center gap-2">
+                <label htmlFor="clear-old-logs-days" className="text-sm text-gray-600">Καθαρισμός logs:</label>
+                <select
+                  id="clear-old-logs-days"
+                  value={clearOlderThanDays}
+                  onChange={(e) => setClearOlderThanDays(e.target.value)}
+                  className="px-3 py-2 rounded-lg border border-gray-300 text-sm text-gray-700 bg-white"
                 >
-                  {item.label}
+                  {LOG_RETENTION_OPTIONS.map((days) => (
+                    <option key={days} value={days}>
+                      {days} ημέρες
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleClearOldLogs}
+                  disabled={isClearingLogs}
+                  className="px-3 py-2 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {isClearingLogs ? 'Διαγραφή...' : 'Καθαρισμός παλιών logs'}
                 </button>
-              ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -274,8 +342,9 @@ function GeoAdminContent() {
                 <SkeletonLoader count={3} />
               </div>
             ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <>
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 font-semibold">Χώρες</div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -313,7 +382,7 @@ function GeoAdminContent() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
                   <div className="px-4 py-3 border-b border-gray-100 font-semibold">Κορυφαίες Διαδρομές</div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -338,8 +407,54 @@ function GeoAdminContent() {
                       </tbody>
                     </table>
                   </div>
+                  </div>
                 </div>
-              </div>
+
+                <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100 font-semibold">Πρόσφατες Επισκέψεις</div>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Διαδρομή</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημερομηνία</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ενέργεια</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {(visits?.recentVisits || []).map((row, index) => (
+                          <tr key={`${row.createdAt || 'no-date'}-${row.ipAddress || 'no-ip'}-${index}`} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              {countryCodeToFlag(row.countryCode)} {row.countryName || row.countryCode || 'Άγνωστη χώρα'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700 break-all">{row.path || '—'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700 font-mono">{row.ipAddress || '—'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <button
+                                onClick={() => handleBlockIp(row.ipAddress)}
+                                disabled={!row.ipAddress || isBlockingIp === row.ipAddress}
+                                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                              >
+                                {isBlockingIp === row.ipAddress ? 'Αποκλεισμός...' : 'Αποκλεισμός IP'}
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {(visits?.recentVisits || []).length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν δεδομένα.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </>
             )}
           </div>
         ) : (

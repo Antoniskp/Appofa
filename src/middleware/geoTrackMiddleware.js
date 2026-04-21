@@ -42,6 +42,17 @@ const detectCountry = (req) => {
     }
   }
 
+  const forwardedCountryHeader = req.headers['x-detected-country'];
+  if (typeof forwardedCountryHeader === 'string') {
+    const normalized = forwardedCountryHeader.trim().toUpperCase();
+    if (normalized && normalized !== 'XX' && normalized !== 'T1') {
+      return {
+        countryCode: normalized,
+        countryName: getCountryName(normalized),
+      };
+    }
+  }
+
   if (!geoip) {
     return { countryCode: null, countryName: null };
   }
@@ -111,6 +122,7 @@ const geoTrackMiddleware = (req, res, next) => {
     isAuthenticated: Boolean(token && token.trim()),
     isDiaspora: null,
     sessionHash,
+    ipAddress: ip || null,
     path: sanitizePath(requestPath),
     locale,
   }).catch((err) => {

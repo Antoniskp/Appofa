@@ -97,6 +97,7 @@ describe('Geo Stats Admin API', () => {
         isAuthenticated: true,
         isDiaspora: true,
         sessionHash: 'a'.repeat(64),
+        ipAddress: '1.1.1.1',
         path: '/',
       },
       {
@@ -105,6 +106,7 @@ describe('Geo Stats Admin API', () => {
         isAuthenticated: false,
         isDiaspora: false,
         sessionHash: 'b'.repeat(64),
+        ipAddress: '2.2.2.2',
         path: '/articles',
       },
       {
@@ -113,6 +115,7 @@ describe('Geo Stats Admin API', () => {
         isAuthenticated: false,
         isDiaspora: false,
         sessionHash: 'c'.repeat(64),
+        ipAddress: '3.3.3.3',
         path: '/',
       },
       {
@@ -121,6 +124,7 @@ describe('Geo Stats Admin API', () => {
         isAuthenticated: true,
         isDiaspora: false,
         sessionHash: 'd'.repeat(64),
+        ipAddress: '4.4.4.4',
         path: '/old',
         createdAt: tenDaysAgo,
         updatedAt: tenDaysAgo,
@@ -159,6 +163,42 @@ describe('Geo Stats Admin API', () => {
       diaspora: 1,
     });
     expect(res.body.data.topPaths.length).toBeGreaterThan(0);
+    expect(res.body.data.recentVisits.length).toBeGreaterThan(0);
+    expect(res.body.data.recentVisits[0]).toEqual(expect.objectContaining({
+      ipAddress: expect.any(String),
+      path: expect.any(String),
+      countryCode: expect.any(String),
+      createdAt: expect.any(String),
+    }));
+  });
+
+  it('DELETE /visits validates olderThanDays query', async () => {
+    const invalidRes = await request(app)
+      .delete('/api/admin/geo-stats/visits')
+      .query({ olderThanDays: 0 })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set(csrfHeadersFor('csrf-geo-visits-invalid', adminId));
+
+    expect(invalidRes.status).toBe(400);
+    expect(invalidRes.body.success).toBe(false);
+  });
+
+  it('DELETE /visits deletes old visit logs for admin', async () => {
+    const beforeCount = await GeoVisit.count();
+    expect(beforeCount).toBeGreaterThan(0);
+
+    const res = await request(app)
+      .delete('/api/admin/geo-stats/visits')
+      .query({ olderThanDays: 7 })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set(csrfHeadersFor('csrf-geo-visits-delete', adminId));
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toContain('older than 7 days');
+
+    const oldVisit = await GeoVisit.findOne({ where: { path: '/old' } });
+    expect(oldVisit).toBeNull();
   });
 
   it('GET /countries includes funding and hasContent fields', async () => {

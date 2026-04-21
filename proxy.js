@@ -26,21 +26,28 @@ const normalizeCountryCode = (value) => {
 
 export function proxy(request) {
   const { pathname } = request.nextUrl;
+  const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
+  const nextResponse = () => {
+    const response = NextResponse.next();
+    if (headerCountry) {
+      response.headers.set('x-detected-country', headerCountry);
+    }
+    return response;
+  };
 
   if (isSkippablePath(pathname)) {
-    return NextResponse.next();
+    return nextResponse();
   }
 
   if (request.cookies.get('appofa_country_visited')?.value) {
-    return NextResponse.next();
+    return nextResponse();
   }
 
-  const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
   const countryCode = headerCountry || cookieCountry;
 
   if (!countryCode) {
-    return NextResponse.next();
+    return nextResponse();
   }
 
   const url = new URL(`/country/${countryCode}`, request.url);
