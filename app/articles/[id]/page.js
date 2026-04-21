@@ -30,7 +30,7 @@ export async function generateMetadata({ params }) {
 
   const slug = idSlug(article.id, article.title);
   const canonicalUrl = `${SITE_URL}/articles/${slug}`;
-  const image = article.bannerImageUrl || DEFAULT_OG_IMAGE;
+  const image = `${SITE_URL}/images/branding/appofasi-high-resolution-logo-transparent.png`;
   const description = article.summary || article.content?.substring(0, 160) || '';
 
   return {
@@ -47,7 +47,7 @@ export async function generateMetadata({ params }) {
       modifiedTime: article.updatedAt,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       title: article.title,
       description,
       images: [image],
