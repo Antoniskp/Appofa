@@ -291,7 +291,7 @@ Appofa/
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
-| geoStatsRoutes.js | /api/admin/geo-stats | GET /country-funding/:locationId/public, GET /visits, DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
+| geoStatsRoutes.js | /api/admin/geo-stats | POST /track, GET /country-funding/:locationId/public, GET /visits, DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
 
 ---
@@ -344,7 +344,7 @@ Appofa/
 
 | Middleware | Purpose |
 |-----------|---------|
-| proxy.js (root) | Next.js edge proxy for country detection + first-visit redirect to `/country/[code]` |
+| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/geo/track` + first-visit redirect to `/country/[code]` |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |

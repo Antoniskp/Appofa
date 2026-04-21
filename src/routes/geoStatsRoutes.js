@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const { fn, col, literal, Op, QueryTypes } = require('sequelize');
 const {
   sequelize,
@@ -12,6 +13,44 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 const csrfProtection = require('../middleware/csrfProtection');
 
 const router = express.Router();
+
+const getCountryNameLocal = (code) => {
+  if (!code) return null;
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) || null;
+  } catch {
+    return null;
+  }
+};
+
+router.post('/track', apiLimiter, async (req, res, next) => {
+  try {
+    const { path: visitPath, countryCode, ipAddress, locale } = req.body;
+    if (!visitPath || typeof visitPath !== 'string') {
+      return res.status(400).json({ success: false, message: 'path is required.' });
+    }
+    const sanitizedCode = countryCode
+      ? String(countryCode).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || null
+      : null;
+    const validCode = sanitizedCode && /^[A-Z]{2}$/.test(sanitizedCode) ? sanitizedCode : null;
+    const sessionHash = ipAddress
+      ? crypto.createHash('sha256').update(String(ipAddress)).digest('hex')
+      : null;
+    await GeoVisit.create({
+      countryCode: validCode,
+      countryName: getCountryNameLocal(validCode),
+      isAuthenticated: false,
+      isDiaspora: null,
+      sessionHash,
+      ipAddress: ipAddress ? String(ipAddress).slice(0, 45) : null,
+      path: String(visitPath).slice(0, 500),
+      locale: locale ? String(locale).slice(0, 10) : null,
+    });
+    return res.json({ success: true });
+  } catch (err) {
+    return next(err);
+  }
+});
 
 const VALID_PERIODS = new Set(['7d', '30d', 'all']);
 const VALID_STATUSES = new Set(['locked', 'funding', 'unlocked']);
