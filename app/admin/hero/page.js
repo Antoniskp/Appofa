@@ -32,9 +32,9 @@ function HeroSettingsContent() {
 
   // --- Slides state ---
   const [slidesSaving, setSlidesSaving] = useState(false);
-  // Synchronous in-flight guard — prevents overlapping reorder requests from rapid clicks
+  // Synchronous in-flight guard — prevents overlapping mutations from rapid clicks
   // before the async React state update for slidesSaving becomes visible.
-  const reorderInFlightRef = useRef(false);
+  const mutationInFlightRef = useRef(false);
   const [slidesSuccessMsg, setSlidesSuccessMsg] = useState('');
   const [slidesErrorMsg, setSlidesErrorMsg] = useState('');
   const [newSlideForm, setNewSlideForm] = useState(EMPTY_SLIDE_FORM);
@@ -53,6 +53,7 @@ function HeroSettingsContent() {
 
   const clearMessages = () => { setSuccessMsg(''); setErrorMsg(''); };
   const clearSlidesMessages = () => { setSlidesSuccessMsg(''); setSlidesErrorMsg(''); };
+  const isBusy = slidesSaving || slidesLoading;
 
   // Sanitize image URL to ensure it's a valid http/https URL before using in DOM
   const safePreviewUrl = useMemo(() => {
@@ -105,6 +106,8 @@ function HeroSettingsContent() {
   // All mutations replace the entire slides state from the server response,
   // preventing frontend/backend state drift.
   const handleToggleSlide = async (id) => {
+    if (mutationInFlightRef.current) return;
+    mutationInFlightRef.current = true;
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
@@ -118,11 +121,14 @@ function HeroSettingsContent() {
     } catch (err) {
       setSlidesErrorMsg(err?.message || 'Αποτυχία αλλαγής κατάστασης.');
     } finally {
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
     }
   };
 
   const handleDeleteSlide = async (id) => {
+    if (mutationInFlightRef.current) return;
+    mutationInFlightRef.current = true;
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
@@ -137,6 +143,7 @@ function HeroSettingsContent() {
     } catch (err) {
       setSlidesErrorMsg(err?.message || 'Αποτυχία διαγραφής.');
     } finally {
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
     }
   };
@@ -145,8 +152,8 @@ function HeroSettingsContent() {
     // Use a synchronous ref guard in addition to React state so rapid repeated
     // clicks cannot send overlapping reorder requests before slidesSaving is
     // visible in React's next render cycle.
-    if (reorderInFlightRef.current || slidesSaving) return;
-    reorderInFlightRef.current = true;
+    if (mutationInFlightRef.current) return;
+    mutationInFlightRef.current = true;
     setSlidesSaving(true);
     clearSlidesMessages();
 
@@ -154,14 +161,14 @@ function HeroSettingsContent() {
     const snapshot = [...slides];
     const currentIdx = snapshot.findIndex((s) => s.id === id);
     if (currentIdx === -1) {
-      reorderInFlightRef.current = false;
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
       return;
     }
 
     const swapIdx = direction === 'up' ? currentIdx - 1 : currentIdx + 1;
     if (swapIdx < 0 || swapIdx >= snapshot.length) {
-      reorderInFlightRef.current = false;
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
       return;
     }
@@ -176,7 +183,7 @@ function HeroSettingsContent() {
     const allUnique = new Set(reorderedIds).size === reorderedIds.length;
     if (!allStrings || !allUnique) {
       // Local state is corrupt — refetch canonical list from server
-      reorderInFlightRef.current = false;
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
       setSlidesErrorMsg('Αδύνατη η αναδιάταξη: μη έγκυρα δεδομένα slide. Ανανεώστε τη σελίδα.');
       try {
@@ -215,7 +222,7 @@ function HeroSettingsContent() {
         // ignore refetch errors; snapshot already restored
       }
     } finally {
-      reorderInFlightRef.current = false;
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
     }
   };
@@ -236,6 +243,7 @@ function HeroSettingsContent() {
   };
 
   const handleSaveEdit = async () => {
+    if (mutationInFlightRef.current) return;
     if (!editForm.title.trim()) {
       setSlidesErrorMsg('Ο τίτλος είναι υποχρεωτικός.');
       return;
@@ -244,6 +252,7 @@ function HeroSettingsContent() {
       setSlidesErrorMsg('Ο υπότιτλος είναι υποχρεωτικός.');
       return;
     }
+    mutationInFlightRef.current = true;
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
@@ -259,11 +268,13 @@ function HeroSettingsContent() {
     } catch (err) {
       setSlidesErrorMsg(err?.message || 'Αποτυχία ενημέρωσης.');
     } finally {
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
     }
   };
 
   const handleCreateSlide = async () => {
+    if (mutationInFlightRef.current) return;
     if (!newSlideForm.title.trim()) {
       setSlidesErrorMsg('Ο τίτλος είναι υποχρεωτικός.');
       return;
@@ -272,6 +283,7 @@ function HeroSettingsContent() {
       setSlidesErrorMsg('Ο υπότιτλος είναι υποχρεωτικός.');
       return;
     }
+    mutationInFlightRef.current = true;
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
@@ -286,6 +298,7 @@ function HeroSettingsContent() {
     } catch (err) {
       setSlidesErrorMsg(err?.message || 'Αποτυχία δημιουργίας.');
     } finally {
+      mutationInFlightRef.current = false;
       setSlidesSaving(false);
     }
   };
@@ -420,7 +433,7 @@ function HeroSettingsContent() {
                     <div className="flex flex-col gap-0.5 shrink-0 pt-0.5">
                       <button
                         onClick={() => handleMoveSlide(slide.id, 'up')}
-                        disabled={slidesSaving || idx === 0}
+                        disabled={isBusy || idx === 0}
                         className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition"
                         aria-label="Μετακίνηση πάνω"
                       >
@@ -428,7 +441,7 @@ function HeroSettingsContent() {
                       </button>
                       <button
                         onClick={() => handleMoveSlide(slide.id, 'down')}
-                        disabled={slidesSaving || idx === sortedSlides.length - 1}
+                        disabled={isBusy || idx === sortedSlides.length - 1}
                         className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-30 transition"
                         aria-label="Μετακίνηση κάτω"
                       >
@@ -463,7 +476,7 @@ function HeroSettingsContent() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => handleToggleSlide(slide.id)}
-                        disabled={slidesSaving}
+                        disabled={isBusy}
                         className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition disabled:opacity-50 ${
                           slide.isActive
                             ? 'bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100'
@@ -474,7 +487,7 @@ function HeroSettingsContent() {
                       </button>
                       <button
                         onClick={() => handleStartEdit(slide)}
-                        disabled={slidesSaving}
+                        disabled={isBusy}
                         className="p-1.5 rounded-lg text-indigo-600 hover:bg-indigo-50 disabled:opacity-50 transition"
                         aria-label="Επεξεργασία"
                       >
@@ -484,7 +497,7 @@ function HeroSettingsContent() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleDeleteSlide(slide.id)}
-                            disabled={slidesSaving}
+                            disabled={isBusy}
                             className="px-2 py-1 bg-red-600 text-white text-xs font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 transition"
                           >
                             Επιβεβαίωση
@@ -499,7 +512,7 @@ function HeroSettingsContent() {
                       ) : (
                         <button
                           onClick={() => setConfirmDeleteId(slide.id)}
-                          disabled={slidesSaving}
+                          disabled={isBusy}
                           className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 disabled:opacity-50 transition"
                           aria-label="Διαγραφή"
                         >
@@ -556,7 +569,7 @@ function HeroSettingsContent() {
                       <div className="flex gap-2 pt-1">
                         <button
                           onClick={handleSaveEdit}
-                          disabled={slidesSaving}
+                          disabled={isBusy}
                           className="px-4 py-2 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition"
                         >
                           {slidesSaving ? 'Αποθήκευση...' : 'Αποθήκευση'}
@@ -626,7 +639,7 @@ function HeroSettingsContent() {
             <div className="mt-4">
               <button
                 onClick={handleCreateSlide}
-                disabled={slidesSaving}
+                disabled={isBusy}
                 className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-50 transition"
               >
                 {slidesSaving ? 'Δημιουργία...' : 'Δημιουργία Slide'}

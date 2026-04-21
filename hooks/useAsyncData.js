@@ -47,8 +47,10 @@ export function useAsyncData(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const isMountedRef = useRef(true);
+  const fetchGenRef = useRef(0);
 
   const fetchData = useCallback(async () => {
+    const gen = ++fetchGenRef.current;
     setLoading(true);
     setError(null);
     
@@ -56,6 +58,7 @@ export function useAsyncData(
       const response = await fetchFunction();
       
       if (!isMountedRef.current) return;
+      if (gen !== fetchGenRef.current) return;
       
       const transformedData = transform(response);
       if (transformedData !== undefined) {
@@ -67,6 +70,7 @@ export function useAsyncData(
       }
     } catch (err) {
       if (!isMountedRef.current) return;
+      if (gen !== fetchGenRef.current) return;
       
       const errorMessage = err.message || 'An error occurred';
       setError(errorMessage);
@@ -75,7 +79,7 @@ export function useAsyncData(
         onError(errorMessage);
       }
     } finally {
-      if (isMountedRef.current) {
+      if (isMountedRef.current && gen === fetchGenRef.current) {
         setLoading(false);
       }
     }
@@ -93,5 +97,10 @@ export function useAsyncData(
     };
   }, []);
 
-  return { data, setData, loading, error, refetch: fetchData };
+  const setDataExternal = useCallback((value) => {
+    fetchGenRef.current++;
+    setData(value);
+  }, []);
+
+  return { data, setData: setDataExternal, loading, error, refetch: fetchData };
 }
