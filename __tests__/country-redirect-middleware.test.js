@@ -10,22 +10,24 @@ jest.mock('next/server', () => ({
 
 const { proxy: middleware } = require('../proxy');
 
-const makeRequest = ({ pathname = '/', countryHeader = null, cookies = {} } = {}) => ({
-  nextUrl: { pathname },
-  headers: {
-    get: (name) => (name === 'CF-IPCountry' ? countryHeader : null),
-  },
-  cookies: {
-    get: (name) => (cookies[name] !== undefined ? { value: cookies[name] } : undefined),
-  },
-  url: 'https://appofasi.gr/',
-});
+const makeRequest = ({ pathname = '/', countryHeader = null, cookies = {} } = {}) => {
+  const headers = new Headers();
+  if (countryHeader !== null) {
+    headers.set('CF-IPCountry', countryHeader);
+  }
+
+  return {
+    nextUrl: { pathname },
+    headers,
+    cookies: {
+      get: (name) => (cookies[name] !== undefined ? { value: cookies[name] } : undefined),
+    },
+    url: 'https://appofasi.gr/',
+  };
+};
 
 describe('country redirect middleware', () => {
-  const createNextResponse = () => ({
-    type: 'next',
-    headers: { set: jest.fn() },
-  });
+  const createNextResponse = () => ({ type: 'next' });
 
   beforeEach(() => {
     mockNext.mockReset();
@@ -41,7 +43,14 @@ describe('country redirect middleware', () => {
   test('skips configured paths', () => {
     const response = middleware(makeRequest({ pathname: '/api/geo/detect', countryHeader: 'GR' }));
     expect(response.type).toBe('next');
-    expect(response.headers.set).toHaveBeenCalledWith('x-detected-country', 'GR');
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          headers: expect.any(Headers),
+        }),
+      })
+    );
+    expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
@@ -52,7 +61,14 @@ describe('country redirect middleware', () => {
       cookies: { appofa_country_visited: '1' }
     }));
     expect(response.type).toBe('next');
-    expect(response.headers.set).toHaveBeenCalledWith('x-detected-country', 'GR');
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          headers: expect.any(Headers),
+        }),
+      })
+    );
+    expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
@@ -80,7 +96,7 @@ describe('country redirect middleware', () => {
   test('does not redirect when no valid country is found', () => {
     const response = middleware(makeRequest({ pathname: '/', countryHeader: null }));
     expect(response.type).toBe('next');
-    expect(response.headers.set).not.toHaveBeenCalled();
+    expect(mockNext).toHaveBeenCalledWith();
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 });
