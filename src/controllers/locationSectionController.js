@@ -1,4 +1,5 @@
-const { LocationSection, Location } = require('../models');
+const { LocationSection, Location, User } = require('../models');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
 
 // ---------------------------------------------------------------------------
 // Validation helpers
@@ -130,6 +131,11 @@ exports.getSections = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Location not found' });
     }
 
+    const scopeError = await ensureModeratorWithinScope(req, locationId);
+    if (scopeError) {
+      return res.status(scopeError.status).json({ success: false, message: scopeError.message });
+    }
+
     const where = { locationId };
     if (!isModerator) {
       where.isPublished = true;
@@ -159,6 +165,11 @@ exports.createSection = async (req, res) => {
     const location = await Location.findByPk(locationId);
     if (!location) {
       return res.status(404).json({ success: false, message: 'Location not found' });
+    }
+
+    const scopeError = await ensureModeratorWithinScope(req, locationId);
+    if (scopeError) {
+      return res.status(scopeError.status).json({ success: false, message: scopeError.message });
     }
 
     if (!type || !LocationSection.SECTION_TYPES.includes(type)) {
@@ -220,6 +231,11 @@ exports.updateSection = async (req, res) => {
     const { locationId, id } = req.params;
     const { title, content, isPublished, sortOrder } = req.body;
 
+    const scopeError = await ensureModeratorWithinScope(req, locationId);
+    if (scopeError) {
+      return res.status(scopeError.status).json({ success: false, message: scopeError.message });
+    }
+
     const section = await LocationSection.findOne({
       where: { id, locationId }
     });
@@ -257,6 +273,11 @@ exports.updateSection = async (req, res) => {
 exports.deleteSection = async (req, res) => {
   try {
     const { locationId, id } = req.params;
+
+    const scopeError = await ensureModeratorWithinScope(req, locationId);
+    if (scopeError) {
+      return res.status(scopeError.status).json({ success: false, message: scopeError.message });
+    }
 
     const section = await LocationSection.findOne({ where: { id, locationId } });
     if (!section) {
@@ -308,3 +329,16 @@ exports.reorderSections = async (req, res) => {
 // Export validateContent for use in tests
 exports.validateContent = validateContent;
 exports.isValidHttpsUrl = isValidHttpsUrl;
+const ensureModeratorWithinScope = async (req, locationId) => {
+  if (!(req.user && req.user.role === 'moderator')) return null;
+  const actor = await User.findByPk(req.user.id, { attributes: ['id', 'homeLocationId'] });
+  if (!actor || !actor.homeLocationId) {
+    return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
+  }
+  const allowedIds = await getDescendantLocationIds(actor.homeLocationId, true);
+  const allowedIdSet = new Set(allowedIds.map(Number));
+  if (!allowedIdSet.has(Number(locationId))) {
+    return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
+  }
+  return null;
+};

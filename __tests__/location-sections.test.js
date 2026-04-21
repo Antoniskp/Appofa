@@ -7,15 +7,44 @@ describe('Location Sections', () => {
   let adminToken;
   let moderatorToken;
   let editorToken;
+  let parentLocation;
   let testLocation;
+  let outOfScopeLocation;
+
+  const moderatorAuthHeader = () => ({
+    Authorization: `Bearer ${moderatorToken}`
+  });
 
   beforeAll(async () => {
     await sequelize.sync({ force: true });
 
     // Create test users
     await User.create({ username: 'admin', email: 'admin@test.com', password: 'password123', role: 'admin' });
-    await User.create({ username: 'moderator', email: 'mod@test.com', password: 'password123', role: 'moderator' });
     await User.create({ username: 'editor', email: 'editor@test.com', password: 'password123', role: 'editor' });
+
+    // Create test locations
+    parentLocation = await Location.create({
+      name: 'Parent Country',
+      type: 'country',
+      slug: 'country-parent-country'
+    });
+
+    testLocation = await Location.create({
+      name: 'Test Municipality',
+      type: 'municipality',
+      slug: 'municipality-test-municipality',
+      parent_id: parentLocation.id
+    });
+
+    outOfScopeLocation = parentLocation;
+
+    await User.create({
+      username: 'moderator',
+      email: 'mod@test.com',
+      password: 'password123',
+      role: 'moderator',
+      homeLocationId: testLocation.id
+    });
 
     const adminLogin = await request(app).post('/api/auth/login').send({ email: 'admin@test.com', password: 'password123' });
     adminToken = adminLogin.headers['set-cookie'].find(c => c.startsWith('auth_token=')).split(';')[0].replace('auth_token=', '');
@@ -26,12 +55,6 @@ describe('Location Sections', () => {
     const editorLogin = await request(app).post('/api/auth/login').send({ email: 'editor@test.com', password: 'password123' });
     editorToken = editorLogin.headers['set-cookie'].find(c => c.startsWith('auth_token=')).split(';')[0].replace('auth_token=', '');
 
-    // Create a test location
-    testLocation = await Location.create({
-      name: 'Test Country',
-      type: 'country',
-      slug: 'country-test-country'
-    });
   });
 
   afterAll(async () => {
@@ -219,11 +242,19 @@ describe('Location Sections', () => {
     it('POST sections - allowed for moderator', async () => {
       const res = await request(app)
         .post(`/api/locations/${testLocation.id}/sections`)
-        .set('Cookie', `auth_token=${moderatorToken}`)
+        .set(moderatorAuthHeader())
         .send({ type: 'contacts', content: { phones: [{ label: 'City hall', value: '+30210000' }], emails: [] }, isPublished: false })
         .expect(201);
       expect(res.body.success).toBe(true);
       expect(res.body.section.type).toBe('contacts');
+    });
+
+    it('POST sections - forbidden for moderator outside scope', async () => {
+      await request(app)
+        .post(`/api/locations/${outOfScopeLocation.id}/sections`)
+        .set(moderatorAuthHeader())
+        .send({ type: 'official_links', content: { links: [{ label: 'Gov', url: 'https://gov.example.com' }] }, isPublished: true })
+        .expect(403);
     });
   });
 
@@ -332,7 +363,7 @@ describe('Location Sections', () => {
       // The contacts section was created as draft
       const res = await request(app)
         .get(`/api/locations/${testLocation.id}/sections`)
-        .set('Cookie', `auth_token=${moderatorToken}`)
+        .set(moderatorAuthHeader())
         .expect(200);
       expect(res.body.success).toBe(true);
       // Should include draft sections
@@ -365,6 +396,41 @@ describe('Location Sections', () => {
         .set('Cookie', `auth_token=${adminToken}`)
         .expect(200);
       expect(res.body.success).toBe(true);
+    });
+
+    it('forbids moderator update for out-of-scope location', async () => {
+      const section = await LocationSection.create({
+        locationId: outOfScopeLocation.id,
+        type: 'official_links',
+        content: { links: [{ label: 'Out Scope', url: 'https://example.com' }] },
+        isPublished: true,
+        sortOrder: 1,
+        createdByUserId: 1,
+        updatedByUserId: 1
+      });
+
+      await request(app)
+        .put(`/api/locations/${outOfScopeLocation.id}/sections/${section.id}`)
+        .set(moderatorAuthHeader())
+        .send({ title: 'Blocked update' })
+        .expect(403);
+    });
+
+    it('forbids moderator delete for out-of-scope location', async () => {
+      const section = await LocationSection.create({
+        locationId: outOfScopeLocation.id,
+        type: 'contacts',
+        content: { phones: [{ label: 'Desk', value: '+30210001' }], emails: [] },
+        isPublished: true,
+        sortOrder: 2,
+        createdByUserId: 1,
+        updatedByUserId: 1
+      });
+
+      await request(app)
+        .delete(`/api/locations/${outOfScopeLocation.id}/sections/${section.id}`)
+        .set(moderatorAuthHeader())
+        .expect(403);
     });
 
     it('returns 404 for non-existent location', async () => {
