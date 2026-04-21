@@ -3,7 +3,7 @@
 const { sequelize, Location, LocationLink, Article, User, Poll, LocationRequest } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
-const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -409,7 +409,10 @@ const getLocation = async (id) => {
     });
 
     const moderator = await User.findOne({
-      where: { role: 'moderator', homeLocationId: locationId },
+      where: {
+        role: 'moderator',
+        homeLocationId: { [Op.in]: await getAncestorLocationIds(locationId, true) }
+      },
       attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
       order: [['createdAt', 'ASC'], ['id', 'ASC']]
     });
@@ -444,13 +447,24 @@ const getLocation = async (id) => {
  * @param {object} updateData - fields from req.body
  * @returns {Promise<{success: boolean, status?: number, message?: string, location?: object}>}
  */
-const updateLocation = async (id, updateData) => {
+const updateLocation = async (id, updateData, actorRole = null, actorHomeLocationId = null) => {
   try {
     const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = updateData;
 
     const location = await Location.findByPk(id);
     if (!location) {
       return { success: false, status: 404, message: 'Location not found' };
+    }
+
+    if (actorRole === 'moderator') {
+      if (!actorHomeLocationId) {
+        return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
+      }
+      const allowedIds = await getDescendantLocationIds(actorHomeLocationId, true);
+      const allowedIdSet = new Set(allowedIds.map(Number));
+      if (!allowedIdSet.has(Number(location.id))) {
+        return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
+      }
     }
 
     if (wikipedia_url !== undefined && wikipedia_url !== null && wikipedia_url !== '' && !isValidWikipediaUrl(wikipedia_url)) {
@@ -540,11 +554,22 @@ const updateLocation = async (id, updateData) => {
  * @param {string|number} id - location primary key
  * @returns {Promise<{success: boolean, status?: number, message?: string}>}
  */
-const deleteLocation = async (id) => {
+const deleteLocation = async (id, actorRole = null, actorHomeLocationId = null) => {
   try {
     const location = await Location.findByPk(id);
     if (!location) {
       return { success: false, status: 404, message: 'Location not found' };
+    }
+
+    if (actorRole === 'moderator') {
+      if (!actorHomeLocationId) {
+        return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
+      }
+      const allowedIds = await getDescendantLocationIds(actorHomeLocationId, true);
+      const allowedIdSet = new Set(allowedIds.map(Number));
+      if (!allowedIdSet.has(Number(location.id))) {
+        return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
+      }
     }
 
     const childrenCount = await Location.count({ where: { parent_id: id } });

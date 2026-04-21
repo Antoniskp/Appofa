@@ -27,6 +27,7 @@ describe('Enhanced User Profiles and Verification', () => {
   let outsiderToken;
   let outsiderUserId;
   let scopeLocationId;
+  let sameLocationViewerId;
 
   const csrfHeaderFor = (token) => ({
     Cookie: [`csrf_token=${token}`],
@@ -81,6 +82,16 @@ describe('Enhanced User Profiles and Verification', () => {
     const viewerLogin = await request(app).post('/api/auth/login').send({ email: 'viewer@verify.test', password: 'pass123' });
     const viewerCookie = viewerLogin.headers['set-cookie'].find((c) => c.startsWith('auth_token='));
     viewerToken = viewerCookie.split(';')[0].replace('auth_token=', '');
+
+    await User.create({
+      username: 'viewersame',
+      email: 'viewersame@verify.test',
+      password: 'pass123',
+      role: 'viewer',
+      homeLocationId: scopeLocationId
+    });
+    const sameLocationViewer = await User.findOne({ where: { email: 'viewersame@verify.test' } });
+    sameLocationViewerId = sameLocationViewer.id;
 
     // Outsider user (no homeLocation - outside moderator scope)
     await User.create({ username: 'outsider', email: 'outsider@verify.test', password: 'pass123', role: 'viewer', homeLocationId: null });
@@ -242,6 +253,19 @@ describe('Enhanced User Profiles and Verification', () => {
       expect(res.body.data.user.isVerified).toBe(true);
     });
 
+    test('moderator can verify user at own assigned location', async () => {
+      const csrf = 'csrf-verify-mod-own-location';
+      setCsrfToken(csrf, moderatorUserId);
+      const res = await request(app)
+        .put(`/api/auth/users/${sameLocationViewerId}/verify`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set(csrfHeaderFor(csrf))
+        .send({ isVerified: true });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.user.isVerified).toBe(true);
+    });
+
     test('moderator cannot verify out-of-scope user', async () => {
       const csrf = 'csrf-verify-mod-outscope';
       setCsrfToken(csrf, moderatorUserId);
@@ -339,6 +363,7 @@ describe('Enhanced User Profiles and Verification', () => {
       users.forEach((u) => {
         expect(u).toHaveProperty('isVerified');
       });
+      expect(users.some((u) => u.id === sameLocationViewerId)).toBe(true);
     });
   });
 });

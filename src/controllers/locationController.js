@@ -1,9 +1,16 @@
 'use strict';
 
 const locationService = require('../services/locationService');
+const { User } = require('../models');
 
 const toUserObj = (reqUser) =>
-  reqUser ? { id: reqUser.id, role: reqUser.role } : null;
+  reqUser ? { id: reqUser.id, role: reqUser.role, homeLocationId: reqUser.homeLocationId } : null;
+
+const getActorHomeLocationId = async (reqUser) => {
+  if (!reqUser || !reqUser.id) return null;
+  const actor = await User.findByPk(reqUser.id, { attributes: ['id', 'homeLocationId'] });
+  return actor?.homeLocationId || null;
+};
 
 // Create a new location (admin/moderator only)
 exports.createLocation = async (req, res) => {
@@ -58,7 +65,13 @@ exports.getLocation = async (req, res) => {
 
 // Update a location (admin/moderator only)
 exports.updateLocation = async (req, res) => {
-  const result = await locationService.updateLocation(req.params.id, req.body);
+  const actorHomeLocationId = await getActorHomeLocationId(req.user);
+  const result = await locationService.updateLocation(
+    req.params.id,
+    req.body,
+    req.user?.role,
+    actorHomeLocationId
+  );
   if (!result.success) {
     return res.status(result.status).json({
       success: false,
@@ -75,7 +88,12 @@ exports.updateLocation = async (req, res) => {
 
 // Delete a location (admin/moderator only)
 exports.deleteLocation = async (req, res) => {
-  const result = await locationService.deleteLocation(req.params.id);
+  const actorHomeLocationId = await getActorHomeLocationId(req.user);
+  const result = await locationService.deleteLocation(
+    req.params.id,
+    req.user?.role,
+    actorHomeLocationId
+  );
   if (!result.success) {
     return res.status(result.status).json({
       success: false,

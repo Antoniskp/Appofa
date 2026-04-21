@@ -78,7 +78,7 @@ async function getUserStatsForModeratorScope(moderatorUserId) {
     return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
   }
 
-  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
   if (manageableLocationIds.length === 0) {
     return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
   }
@@ -562,7 +562,7 @@ async function getUsers(actorId, actorRole) {
       throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
     }
 
-    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
 
     users = manageableLocationIds.length > 0
       ? await User.findAll({
@@ -645,7 +645,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
       throw new ServiceError(403, 'Moderator must have an assigned location.');
     }
 
-    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
     if (manageableLocationIds.length > 0) {
       whereClause.homeLocationId = { [Op.in]: manageableLocationIds };
     } else {
@@ -701,7 +701,7 @@ async function getUserStats(actorId, actorRole) {
     throw new ServiceError(403, 'Moderator must have an assigned location to view scoped stats.');
   }
 
-  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, false);
+  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
   const users = manageableLocationIds.length > 0
     ? await User.findAll({
         where: { homeLocationId: { [Op.in]: manageableLocationIds } },
@@ -746,11 +746,7 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
     }
 
-    moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.homeLocationId, false);
-
-    if (moderatorManageableLocationIds.length === 0) {
-      throw new ServiceError(403, 'No child locations available for moderator management.');
-    }
+    moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.homeLocationId, true);
 
     if (role === 'admin') {
       throw new ServiceError(403, 'Moderators cannot assign admin role.');
@@ -851,7 +847,7 @@ async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isV
     if (!target.homeLocationId) {
       throw new ServiceError(403, 'Target user is not within your manageable scope.');
     }
-    const manageableIds = await getDescendantLocationIds(actor.homeLocationId, false);
+    const manageableIds = await getDescendantLocationIds(actor.homeLocationId, true);
     if (!manageableIds.includes(target.homeLocationId)) {
       throw new ServiceError(403, 'Target user is not within your manageable scope.');
     }

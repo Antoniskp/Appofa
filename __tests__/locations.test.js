@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('../src/index');
 const { sequelize, User, Location, LocationLink, Article } = require('../src/models');
+const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Location API Tests', () => {
   let adminToken;
@@ -401,6 +402,26 @@ describe('Location API Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.stats.userCount).toBe(3);
     });
+
+    it('should show ancestor-assigned moderator on descendant location', async () => {
+      const country = await Location.create({ name: 'Ancestor Mod Country', slug: 'ancestor-mod-country', type: 'country' });
+      const child = await Location.create({ name: 'Ancestor Mod Child', slug: 'ancestor-mod-child', type: 'prefecture', parent_id: country.id });
+      const moderator = await User.create({
+        username: 'ancestor_mod',
+        email: 'ancestor_mod@test.com',
+        password: 'password123',
+        role: 'moderator',
+        homeLocationId: country.id
+      });
+
+      const response = await request(app)
+        .get(`/api/locations/${child.id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.hasModerator).toBe(true);
+      expect(response.body.location.moderatorPreview.id).toBe(moderator.id);
+    });
   });
 
   describe('PUT /api/locations/:id', () => {
@@ -613,6 +634,95 @@ describe('Location API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
+    });
+  });
+
+  describe('Moderator hierarchy scope protections', () => {
+    let moderatorToken;
+    let moderatorUserId;
+    let inScopeCountry;
+    let inScopeChild;
+    let outOfScopeSibling;
+
+    const moderatorCsrfHeaders = () => {
+      const csrf = `csrf-location-scope-${Date.now()}-${Math.random()}`;
+      storeCsrfToken(csrf, moderatorUserId);
+      return {
+        Cookie: [`auth_token=${moderatorToken}`, `csrf_token=${csrf}`],
+        'x-csrf-token': csrf
+      };
+    };
+
+    beforeAll(async () => {
+      inScopeCountry = await Location.create({ name: 'Scope Country', slug: 'scope-country', type: 'country' });
+      inScopeChild = await Location.create({ name: 'Scope Child', slug: 'scope-child', type: 'prefecture', parent_id: inScopeCountry.id });
+      outOfScopeSibling = await Location.create({ name: 'Outside Scope Sibling', slug: 'outside-scope-sibling', type: 'prefecture', parent_id: inScopeCountry.id });
+
+      const moderator = await User.create({
+        username: 'scoped_moderator',
+        email: 'scoped_moderator@test.com',
+        password: 'password123',
+        role: 'moderator',
+        homeLocationId: inScopeChild.id
+      });
+      moderatorUserId = moderator.id;
+
+      const login = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'scoped_moderator@test.com', password: 'password123' });
+      moderatorToken = login.headers['set-cookie']
+        .find((c) => c.startsWith('auth_token='))
+        .split(';')[0]
+        .replace('auth_token=', '');
+    });
+
+    it('allows moderator to update in-scope location', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${inScopeChild.id}`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .send({ name: 'Scope Child Updated' })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.name).toBe('Scope Child Updated');
+    });
+
+    it('forbids moderator from updating out-of-scope location', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${outOfScopeSibling.id}`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .send({ name: 'Blocked Update' })
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Forbidden: location outside your scope.');
+    });
+
+    it('forbids moderator from deleting out-of-scope location', async () => {
+      const response = await request(app)
+        .delete(`/api/locations/${outOfScopeSibling.id}`)
+        .set('Cookie', `auth_token=${moderatorToken}`)
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Forbidden: location outside your scope.');
+    });
+
+    it('allows moderator to upsert roles in-scope and forbids out-of-scope', async () => {
+      await request(app)
+        .put(`/api/locations/${inScopeChild.id}/roles`)
+        .set(moderatorCsrfHeaders())
+        .send({ roles: [{ roleKey: 'regional_governor', userId: null }] })
+        .expect(200);
+
+      const response = await request(app)
+        .put(`/api/locations/${outOfScopeSibling.id}/roles`)
+        .set(moderatorCsrfHeaders())
+        .send({ roles: [{ roleKey: 'regional_governor', userId: null }] })
+        .expect(403);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Forbidden: location outside your scope.');
     });
   });
 
