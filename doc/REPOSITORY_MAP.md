@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-20
+> **Last updated**: 2026-04-21
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -60,7 +60,7 @@ Appofa/
 │
 ├── app/                    # Frontend (Next.js App Router, 99 pages)
 │   ├── (statics)/          # Static content pages (46 pages)
-│   ├── admin/              # Admin dashboard (18 pages)
+│   ├── admin/              # Admin dashboard (19 pages)
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
 │   ├── suggestions/        # Suggestion pages
@@ -395,6 +395,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
+| `/admin/articles` | Article management (stats, filters, pagination, view/delete/approve news) |
 | `/admin/users` | User management (search, filter, role change, verify, delete) |
 | `/admin/status` | System status |
 | `/admin/persons/*` | Person management (list, detail, edit, create) |
