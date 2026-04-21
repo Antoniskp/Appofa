@@ -16,6 +16,7 @@ const {
 
 const authRoutes = require('../src/routes/authRoutes');
 const geoStatsRoutes = require('../src/routes/geoStatsRoutes');
+const geoDetectRoutes = require('../src/routes/geoDetectRoutes');
 
 process.env.JWT_SECRET = 'geo-stats-test-secret';
 process.env.NODE_ENV = 'test';
@@ -27,7 +28,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/geo-stats', geoStatsRoutes);
-app.use('/api/geo', geoStatsRoutes);
+app.use('/api/geo', geoDetectRoutes);
 
 function csrfHeadersFor(token, userId) {
   storeCsrfToken(token, userId);

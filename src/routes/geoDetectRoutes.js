@@ -1,5 +1,6 @@
 const express = require('express');
 const { apiLimiter } = require('../middleware/rateLimiter');
+const { trackGeoVisit } = require('../controllers/geoTrackController');
 
 const router = express.Router();
 
@@ -44,5 +45,7 @@ router.get('/detect', apiLimiter, (req, res) => {
     return res.json({ success: true, data: { countryCode: null, countryName: null } });
   }
 });
+
+router.post('/track', apiLimiter, trackGeoVisit);
 
 module.exports = router;

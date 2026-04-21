@@ -291,12 +291,12 @@ Appofa/
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
-| geoStatsRoutes.js | /api/admin/geo-stats (+ `/api/geo` alias for tracking) | POST /track, GET /country-funding/:locationId/public, GET /visits, DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
-| geoDetectRoutes.js | /api/geo | GET /detect |
+| geoStatsRoutes.js | /api/admin/geo-stats | POST /track, GET /country-funding/:locationId/public, GET /visits, DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
+| geoDetectRoutes.js | /api/geo | GET /detect, POST /track |
 
 ---
 
-## Controllers (21)
+## Controllers (22)
 
 | Controller | Domain |
 |-----------|--------|
@@ -307,6 +307,7 @@ Appofa/
 | dreamTeamController.js | Dream team formations, votes |
 | endorsementController.js | Endorsements |
 | followController.js | Follow/unfollow |
+| geoTrackController.js | Geo page-view ingestion (`POST /api/geo/track`) |
 | heroSettingsController.js | Hero section config |
 | linkPreviewController.js | Link preview caching |
 | locationController.js | Location CRUD, sections, roles |
