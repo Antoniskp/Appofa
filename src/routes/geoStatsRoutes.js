@@ -14,7 +14,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 
 const router = express.Router();
 
-const getCountryNameLocal = (code) => {
+const resolveCountryName = (code) => {
   if (!code) return null;
   try {
     return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) || null;
@@ -48,7 +48,7 @@ router.post('/track', apiLimiter, async (req, res, next) => {
 
     await GeoVisit.create({
       countryCode: validCode,
-      countryName: getCountryNameLocal(validCode),
+      countryName: resolveCountryName(validCode),
       isAuthenticated: false,
       isDiaspora: null,
       sessionHash,
