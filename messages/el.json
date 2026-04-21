@@ -142,6 +142,8 @@
     "pending_news": "Εκκρεμής Είδηση",
     "approved_news_badge": "✓ Εγκεκριμένη Είδηση",
     "pending_news_badge": "⏳ Εκκρεμής Είδηση",
+    "watch_on": "Δείτε στο {provider}",
+    "video": "Βίντεο",
     "table_title": "Τίτλος",
     "table_author": "Συντάκτης",
     "table_status": "Κατάσταση",

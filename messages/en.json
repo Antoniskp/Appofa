@@ -142,6 +142,8 @@
     "pending_news": "Pending News",
     "approved_news_badge": "✓ Approved News",
     "pending_news_badge": "⏳ Pending News",
+    "watch_on": "Watch on {provider}",
+    "video": "Video",
     "table_title": "Title",
     "table_author": "Author",
     "table_status": "Status",
