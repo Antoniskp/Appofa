@@ -24,7 +24,7 @@ const resolveCountryName = (code) => {
 };
 
 // Internal: called by Next.js proxy middleware to track page views
-router.post('/track', apiLimiter, async (req, res, next) => {
+async function trackGeoVisit(req, res, next) {
   try {
     const {
       path: visitPath,
@@ -61,7 +61,9 @@ router.post('/track', apiLimiter, async (req, res, next) => {
   } catch (err) {
     return next(err);
   }
-});
+}
+
+router.post('/track', apiLimiter, trackGeoVisit);
 
 const VALID_PERIODS = new Set(['7d', '30d', 'all']);
 const VALID_STATUSES = new Set(['locked', 'funding', 'unlocked']);
@@ -409,3 +411,4 @@ router.delete('/country-funding/:id', apiLimiter, authMiddleware, checkRole('adm
 });
 
 module.exports = router;
+module.exports.trackGeoVisit = trackGeoVisit;

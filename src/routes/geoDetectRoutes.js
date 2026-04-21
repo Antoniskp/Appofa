@@ -1,7 +1,10 @@
 const express = require('express');
 const { apiLimiter } = require('../middleware/rateLimiter');
+const { trackGeoVisit } = require('./geoStatsRoutes');
 
 const router = express.Router();
+
+router.post('/track', apiLimiter, trackGeoVisit);
 
 const COUNTRY_NAMES = {
   GR: 'Greece', CY: 'Cyprus', DE: 'Germany', GB: 'United Kingdom',

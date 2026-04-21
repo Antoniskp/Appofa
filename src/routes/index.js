@@ -53,7 +53,6 @@ const routes = [
   { prefix: '/api/manifests', router: manifestRoutes },
   { prefix: '/api/notifications', router: notificationRoutes },
   { prefix: '/api/admin/geo-stats', router: geoStatsRoutes },
-  { prefix: '/api/geo', router: geoStatsRoutes },
   { prefix: '/api/geo', router: geoDetectRoutes },
 ];
 
