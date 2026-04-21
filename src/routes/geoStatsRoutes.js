@@ -58,7 +58,7 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
       where.countryCode = String(req.query.countryCode).trim().toUpperCase();
     }
 
-    const [totalVisits, byCountryRows, topPathRows] = await Promise.all([
+    const [totalVisits, byCountryRows, topPathRows, recentVisitRows] = await Promise.all([
       GeoVisit.count({ where }),
       GeoVisit.findAll({
         attributes: [
@@ -88,6 +88,12 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
         order: [[literal('"visits"'), 'DESC']],
         limit: 10,
       }),
+      GeoVisit.findAll({
+        attributes: ['ipAddress', 'path', 'countryCode', 'countryName', 'createdAt'],
+        where,
+        order: [['createdAt', 'DESC']],
+        limit: 100,
+      }),
     ]);
 
     return res.json({
@@ -106,7 +112,39 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
           path: row.path,
           visits: toInt(row.get('visits')),
         })),
+        recentVisits: recentVisitRows.map((row) => ({
+          ipAddress: row.ipAddress || null,
+          path: row.path || null,
+          countryCode: row.countryCode || null,
+          countryName: row.countryName || null,
+          createdAt: row.createdAt,
+        })),
       },
+    });
+  } catch (err) {
+    return next(err);
+  }
+});
+
+router.delete('/visits', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res, next) => {
+  try {
+    const days = Number(req.query.olderThanDays);
+    if (!Number.isInteger(days) || days < 1) {
+      return res.status(400).json({ success: false, message: 'olderThanDays must be a positive integer.' });
+    }
+
+    const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
+    const deletedCount = await GeoVisit.destroy({
+      where: {
+        createdAt: {
+          [Op.lt]: cutoff,
+        },
+      },
+    });
+
+    return res.json({
+      success: true,
+      message: `Deleted ${deletedCount} visit records older than ${days} days.`,
     });
   } catch (err) {
     return next(err);

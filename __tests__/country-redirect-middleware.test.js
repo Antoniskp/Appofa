@@ -22,10 +22,15 @@ const makeRequest = ({ pathname = '/', countryHeader = null, cookies = {} } = {}
 });
 
 describe('country redirect middleware', () => {
+  const createNextResponse = () => ({
+    type: 'next',
+    headers: { set: jest.fn() },
+  });
+
   beforeEach(() => {
     mockNext.mockReset();
     mockRedirect.mockReset();
-    mockNext.mockReturnValue({ type: 'next' });
+    mockNext.mockImplementation(() => createNextResponse());
     mockRedirect.mockImplementation((url) => ({
       type: 'redirect',
       url: url.toString(),
@@ -35,7 +40,8 @@ describe('country redirect middleware', () => {
 
   test('skips configured paths', () => {
     const response = middleware(makeRequest({ pathname: '/api/geo/detect', countryHeader: 'GR' }));
-    expect(response).toEqual({ type: 'next' });
+    expect(response.type).toBe('next');
+    expect(response.headers.set).toHaveBeenCalledWith('x-detected-country', 'GR');
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
@@ -45,7 +51,8 @@ describe('country redirect middleware', () => {
       countryHeader: 'GR',
       cookies: { appofa_country_visited: '1' }
     }));
-    expect(response).toEqual({ type: 'next' });
+    expect(response.type).toBe('next');
+    expect(response.headers.set).toHaveBeenCalledWith('x-detected-country', 'GR');
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 
@@ -72,7 +79,8 @@ describe('country redirect middleware', () => {
 
   test('does not redirect when no valid country is found', () => {
     const response = middleware(makeRequest({ pathname: '/', countryHeader: null }));
-    expect(response).toEqual({ type: 'next' });
+    expect(response.type).toBe('next');
+    expect(response.headers.set).not.toHaveBeenCalled();
     expect(mockRedirect).not.toHaveBeenCalled();
   });
 });
