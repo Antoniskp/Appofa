@@ -1,5 +1,6 @@
 const mockNext = jest.fn();
 const mockRedirect = jest.fn();
+const mockFetch = jest.fn(() => Promise.resolve({ ok: true }));
 
 jest.mock('next/server', () => ({
   NextResponse: {
@@ -10,10 +11,22 @@ jest.mock('next/server', () => ({
 
 const { proxy: middleware } = require('../proxy');
 
-const makeRequest = ({ pathname = '/', countryHeader = null, cookies = {} } = {}) => {
+const makeRequest = ({
+  pathname = '/',
+  countryHeader = null,
+  cookies = {},
+  forwardedFor = null,
+  realIp = null,
+} = {}) => {
   const headers = new Headers();
   if (countryHeader !== null) {
     headers.set('CF-IPCountry', countryHeader);
+  }
+  if (forwardedFor !== null) {
+    headers.set('x-forwarded-for', forwardedFor);
+  }
+  if (realIp !== null) {
+    headers.set('x-real-ip', realIp);
   }
 
   return {
@@ -32,6 +45,8 @@ describe('country redirect middleware', () => {
   beforeEach(() => {
     mockNext.mockReset();
     mockRedirect.mockReset();
+    mockFetch.mockClear();
+    global.fetch = mockFetch;
     mockNext.mockImplementation(() => createNextResponse());
     mockRedirect.mockImplementation((url) => ({
       type: 'redirect',
@@ -52,6 +67,7 @@ describe('country redirect middleware', () => {
     );
     expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
     expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test('skips when visited cookie exists', () => {
@@ -70,12 +86,41 @@ describe('country redirect middleware', () => {
     );
     expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
     expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3000/api/geo/track',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          path: '/',
+          countryCode: 'GR',
+          ipAddress: null,
+          locale: null,
+        }),
+      })
+    );
   });
 
   test('redirects using Cloudflare country header and sets visited cookie', () => {
-    const response = middleware(makeRequest({ pathname: '/', countryHeader: 'gr' }));
+    const response = middleware(makeRequest({
+      pathname: '/',
+      countryHeader: 'gr',
+      forwardedFor: '::ffff:185.230.31.201, 10.0.0.1',
+      cookies: { NEXT_LOCALE: 'el' }
+    }));
     expect(response.type).toBe('redirect');
     expect(response.url).toBe('https://appofasi.gr/country/GR');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3000/api/geo/track',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          path: '/',
+          countryCode: 'GR',
+          ipAddress: '185.230.31.201',
+          locale: 'el',
+        }),
+      })
+    );
     expect(response.cookies.set).toHaveBeenCalledWith('appofa_country_visited', '1', {
       path: '/',
       maxAge: 86400,
@@ -91,12 +136,36 @@ describe('country redirect middleware', () => {
     }));
     expect(response.type).toBe('redirect');
     expect(response.url).toBe('https://appofasi.gr/country/CY');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3000/api/geo/track',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          path: '/',
+          countryCode: 'CY',
+          ipAddress: null,
+          locale: null,
+        }),
+      })
+    );
   });
 
   test('does not redirect when no valid country is found', () => {
-    const response = middleware(makeRequest({ pathname: '/', countryHeader: null }));
+    const response = middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
     expect(response.type).toBe('next');
     expect(mockNext).toHaveBeenCalledWith();
     expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3000/api/geo/track',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          path: '/',
+          countryCode: null,
+          ipAddress: '8.8.8.8',
+          locale: null,
+        }),
+      })
+    );
   });
 });

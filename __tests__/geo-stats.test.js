@@ -1,4 +1,5 @@
 const request = require('supertest');
+const crypto = require('crypto');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -283,5 +284,39 @@ describe('Geo Stats Admin API', () => {
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
+  });
+
+  it('POST /track stores sanitized visit payload', async () => {
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .send({
+        path: '/locations/gr',
+        countryCode: 'gr-1',
+        ipAddress: '::ffff:185.230.31.201',
+        locale: 'el-GR',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path: '/locations/gr' } });
+    expect(saved).toBeTruthy();
+    expect(saved.countryCode).toBe('GR');
+    expect(saved.countryName).toBe('Greece');
+    expect(saved.ipAddress).toBe('::ffff:185.230.31.201');
+    expect(saved.locale).toBe('el-GR');
+    expect(saved.sessionHash).toBe(
+      crypto.createHash('sha256').update('::ffff:185.230.31.201').digest('hex')
+    );
+  });
+
+  it('POST /track validates required path field', async () => {
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .send({ countryCode: 'GR' });
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe('path is required.');
   });
 });

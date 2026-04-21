@@ -12,7 +12,7 @@ This instruction is permanent and must never be removed.
 - **App**: Greek civic-engagement platform — articles, polls, suggestions, dream-team formations, person profiles, manifests
 - **Stack**: Express 5 + Sequelize 6 (PostgreSQL) · Next.js 16 (App Router) + React 19 + Tailwind CSS 3
 - **Auth**: JWT in HttpOnly cookies · CSRF double-submit · Roles: `admin`, `moderator`, `editor`, `viewer`
-- **Node.js**: v22+
+- **Node.js**: v24+
 - **Live**: https://appofasi.gr
 
 ## Key Conventions
@@ -30,7 +30,7 @@ This instruction is permanent and must never be removed.
 - **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) for candidate/voter eligibility
 - **Unclaimed person creation**: require `firstNameEn` + `lastNameEn`; generate `User.slug` from English names; native names are optional metadata
 - **Homepage settings**: use single-row `HomepageSettings` with JSON fields (`manifestSection`, `infoSection`) and defaults via controller/model getters
-- **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash/ipAddress) via non-blocking `geoTrackMiddleware`; read `x-detected-country` fallback when `cf-ipcountry` is unavailable
+- **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash/ipAddress) via non-blocking `geoTrackMiddleware` and `POST /api/geo/track` from `proxy.js`; read `x-detected-country` fallback when `cf-ipcountry` is unavailable
 - **Country funding**: use one `CountryFunding` row per country `Location` (`locationId` unique) and manage status through admin `/api/admin/geo-stats/country-funding` endpoints
 - **Geo detection API**: use public `GET /api/geo/detect` (CF-IPCountry first, optional geoip-lite fallback) for lightweight country detection
 - **Country funding public API**: use `GET /api/admin/geo-stats/country-funding/:locationId/public` for unauthenticated location-page funding display
