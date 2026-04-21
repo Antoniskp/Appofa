@@ -222,6 +222,45 @@ describe('OAuth Integration Tests', () => {
       expect(response.body.message).toContain('not linked');
     });
 
+    test('should switch active avatar to selected source', async () => {
+      await testUser.update({
+        githubId: '12345678',
+        githubAvatar: 'https://avatars.githubusercontent.com/u/12345678',
+        googleId: '87654321',
+        googleAvatar: 'https://lh3.googleusercontent.com/avatar.png',
+        avatar: 'https://lh3.googleusercontent.com/avatar.png',
+      });
+
+      const csrfToken = 'csrf-avatar-source-switch';
+      setCsrfToken(csrfToken, testUser.id);
+      const response = await request(app)
+        .put('/api/auth/avatar-source')
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ source: 'github' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.avatar).toBe('https://avatars.githubusercontent.com/u/12345678');
+
+      await testUser.reload();
+      expect(testUser.avatar).toBe('https://avatars.githubusercontent.com/u/12345678');
+    });
+
+    test('should reject invalid avatar source', async () => {
+      const csrfToken = 'csrf-avatar-source-invalid';
+      setCsrfToken(csrfToken, testUser.id);
+      const response = await request(app)
+        .put('/api/auth/avatar-source')
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ source: 'invalid' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toBe('Invalid avatar source.');
+    });
+
     test('should require authentication for unlinking', async () => {
       const response = await request(app)
         .delete('/api/auth/github/unlink');

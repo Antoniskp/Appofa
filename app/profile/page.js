@@ -44,6 +44,8 @@ function ProfileContent() {
     lastNameEn: '',
     nickname: '',
     avatar: '',
+    githubAvatar: '',
+    googleAvatar: '',
     avatarColor: '',
     homeLocationId: null,
     mobileTel: '',
@@ -81,6 +83,7 @@ function ProfileContent() {
   const { config: oauthConfig } = useOAuthConfig();
   const [githubLinked, setGithubLinked] = useState(false);
   const [googleLinked, setGoogleLinked] = useState(false);
+  const [avatarSourceUpdating, setAvatarSourceUpdating] = useState(false);
   const [hasPassword, setHasPassword] = useState(false);
   const [profPicker, setProfPicker] = useState({ categoryId: '', professionId: '', subProfessionId: '' });
   const [intPicker, setIntPicker] = useState({ categoryId: '', interestId: '', subInterestId: '' });
@@ -121,7 +124,7 @@ function ProfileContent() {
     [],
     {
       onSuccess: async (userData) => {
-        const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, githubId, googleId, avatar, avatarColor, homeLocationId,
+        const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, githubId, googleId, avatar, githubAvatar, googleAvatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
           dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier, nationality, twitchChannel } = userData;
         const loaded = {
@@ -132,6 +135,8 @@ function ProfileContent() {
           lastNameEn: lastNameEn || '',
           nickname: nickname || '',
           avatar: avatar || '',
+          githubAvatar: githubAvatar || '',
+          googleAvatar: googleAvatar || '',
           avatarColor: avatarColor || '',
           homeLocationId: homeLocationId || null,
           mobileTel: mobileTel || '',
@@ -428,6 +433,35 @@ function ProfileContent() {
     }
   };
 
+  const handleAvatarSourceChange = async (source) => {
+    setAvatarSourceUpdating(true);
+    try {
+      const response = await authAPI.updateAvatarSource(source);
+      if (response.success && response.data?.user) {
+        const updatedUser = response.data.user;
+        setProfileData((prev) => ({
+          ...prev,
+          avatar: updatedUser.avatar || '',
+          githubAvatar: updatedUser.githubAvatar || '',
+          googleAvatar: updatedUser.googleAvatar || '',
+        }));
+        setSavedProfileData((prev) => (prev ? {
+          ...prev,
+          avatar: updatedUser.avatar || '',
+          githubAvatar: updatedUser.githubAvatar || '',
+          googleAvatar: updatedUser.googleAvatar || '',
+        } : prev));
+        setGithubLinked(!!updatedUser.githubId);
+        setGoogleLinked(!!updatedUser.googleId);
+        success(tProfile('avatar_updated'));
+      }
+    } catch (err) {
+      error(err.message || tProfile('avatar_update_failed'));
+    } finally {
+      setAvatarSourceUpdating(false);
+    }
+  };
+
   const handleInteractionSettingsChange = (field, value) => {
     setInteractionSettings((prev) => ({ ...prev, [field]: value }));
   };
@@ -653,6 +687,17 @@ function ProfileContent() {
             onUnlinkGithub={handleUnlinkGithub}
             onLinkGoogle={handleLinkGoogle}
             onUnlinkGoogle={handleUnlinkGoogle}
+            githubAvatar={profileData.githubAvatar}
+            googleAvatar={profileData.googleAvatar}
+            activeAvatar={profileData.avatar}
+            onAvatarSourceChange={handleAvatarSourceChange}
+            avatarSourceUpdating={avatarSourceUpdating}
+            avatarSourceLabels={{
+              avatarSource: tProfile('avatar_source'),
+              chooseAvatarSource: tProfile('choose_avatar_source'),
+              activeAvatar: tProfile('active_avatar'),
+              useAvatar: tProfile('use_avatar'),
+            }}
           />
         </Card>
 

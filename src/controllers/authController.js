@@ -341,6 +341,25 @@ const authController = {
     }
   },
 
+  updateAvatarSource: async (req, res) => {
+    try {
+      const { source } = req.body;
+      await oauthService.updateAvatarSource(req.user.id, source);
+      const user = await userService.getUserProfile(req.user.id);
+      res.status(200).json({
+        success: true,
+        message: 'Avatar source updated successfully.',
+        data: { user }
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Update avatar source error:', error);
+      res.status(500).json({ success: false, message: 'Error updating avatar source.' });
+    }
+  },
+
   // Get OAuth configuration status
   getOAuthConfig: async (req, res) => {
     try {

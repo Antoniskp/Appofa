@@ -24,6 +24,7 @@ router.get('/google/callback', apiLimiter, authController.googleCallback);
 // Protected routes with rate limiting
 router.get('/profile', apiLimiter, authMiddleware, authController.getProfile);
 router.put('/profile', apiLimiter, authMiddleware, csrfProtection, authController.updateProfile);
+router.put('/avatar-source', apiLimiter, authMiddleware, csrfProtection, authController.updateAvatarSource);
 router.put('/password', apiLimiter, authMiddleware, csrfProtection, authController.updatePassword);
 router.delete('/github/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGithub);
 router.delete('/google/unlink', apiLimiter, authMiddleware, csrfProtection, authController.unlinkGoogle);

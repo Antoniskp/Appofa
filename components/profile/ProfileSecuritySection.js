@@ -43,6 +43,12 @@ function GoogleIcon({ className }) {
  * @param {Function} props.onUnlinkGithub - () => void
  * @param {Function} props.onLinkGoogle - () => void
  * @param {Function} props.onUnlinkGoogle - () => void
+ * @param {string} props.githubAvatar - Stored GitHub avatar URL
+ * @param {string} props.googleAvatar - Stored Google avatar URL
+ * @param {string} props.activeAvatar - Currently active avatar URL
+ * @param {Function} props.onAvatarSourceChange - (source) => void
+ * @param {boolean} props.avatarSourceUpdating - Whether avatar source update is in progress
+ * @param {Object} props.avatarSourceLabels - Labels for avatar source selector
  */
 export default function ProfileSecuritySection({
   passwordData,
@@ -57,7 +63,23 @@ export default function ProfileSecuritySection({
   onUnlinkGithub,
   onLinkGoogle,
   onUnlinkGoogle,
+  githubAvatar,
+  googleAvatar,
+  activeAvatar,
+  onAvatarSourceChange,
+  avatarSourceUpdating,
+  avatarSourceLabels = {
+    avatarSource: 'Avatar Source',
+    chooseAvatarSource: 'Choose which connected account photo to use as your profile avatar.',
+    activeAvatar: 'Currently active avatar',
+    useAvatar: 'Use this avatar',
+  },
 }) {
+  const avatarOptions = [
+    githubLinked && githubAvatar ? { source: 'github', label: 'GitHub', avatar: githubAvatar, icon: <GithubIcon className="w-5 h-5 text-gray-800" /> } : null,
+    googleLinked && googleAvatar ? { source: 'google', label: 'Google', avatar: googleAvatar, icon: <GoogleIcon className="w-5 h-5" /> } : null,
+  ].filter(Boolean);
+
   return (
     <div className="space-y-6">
       {/* Password change */}
@@ -205,6 +227,46 @@ export default function ProfileSecuritySection({
             Connect
           </button>
         </div>
+
+        {avatarOptions.length > 0 && (
+          <div className="mt-4 p-4 border border-gray-200 rounded-md">
+            <h4 className="text-sm font-semibold text-gray-900 mb-1">{avatarSourceLabels.avatarSource}</h4>
+            <p className="text-sm text-gray-600 mb-3">{avatarSourceLabels.chooseAvatarSource}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {avatarOptions.map((option) => {
+                const isActive = !!activeAvatar && option.avatar === activeAvatar;
+                return (
+                  <button
+                    key={option.source}
+                    type="button"
+                    onClick={() => onAvatarSourceChange(option.source)}
+                    disabled={avatarSourceUpdating || isActive}
+                    className={`w-full flex items-center gap-3 p-3 rounded-md border text-left transition ${
+                      isActive
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-400 hover:bg-gray-50'
+                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                  >
+                    <img
+                      src={option.avatar}
+                      alt={`${option.label} avatar`}
+                      className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-900">
+                        {option.icon}
+                        <span>{option.label}</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1">
+                        {isActive ? avatarSourceLabels.activeAvatar : avatarSourceLabels.useAvatar}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

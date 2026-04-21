@@ -452,6 +452,30 @@ describe('Database Migrations', () => {
     });
   });
 
+  describe('20260421110000-add-oauth-avatar-fields', () => {
+    test('adds Users.githubAvatar and Users.googleAvatar', async () => {
+      await runMigration('20260421110000-add-oauth-avatar-fields.js');
+
+      const usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).toHaveProperty('githubAvatar');
+      expect(usersTable).toHaveProperty('googleAvatar');
+    });
+
+    test('is idempotent (can run multiple times)', async () => {
+      await runMigration('20260421110000-add-oauth-avatar-fields.js');
+      await expect(runMigration('20260421110000-add-oauth-avatar-fields.js')).resolves.not.toThrow();
+    });
+
+    test('rolls back cleanly', async () => {
+      await runMigration('20260421110000-add-oauth-avatar-fields.js');
+      await rollbackMigration('20260421110000-add-oauth-avatar-fields.js');
+
+      const usersTable = await queryInterface.describeTable('Users');
+      expect(usersTable).not.toHaveProperty('githubAvatar');
+      expect(usersTable).not.toHaveProperty('googleAvatar');
+    });
+  });
+
   describe('Full Migration Suite', () => {
     test('should run all migrations in order', async () => {
       const files = getMigrationFiles();
