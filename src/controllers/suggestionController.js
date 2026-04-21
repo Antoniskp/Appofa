@@ -2,7 +2,7 @@ const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location, Tag, TaggableItem, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
-const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
+const { getAncestorLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
@@ -66,8 +66,7 @@ const suggestionController = {
       if (locationId) {
         const parsedLocationId = parseInt(locationId, 10);
         if (!isNaN(parsedLocationId)) {
-          const locationIds = await getDescendantLocationIds(parsedLocationId, true);
-          where.locationId = { [Op.in]: locationIds.length > 0 ? locationIds : [-1] };
+          where.locationId = parsedLocationId;
         }
       }
       if (authorId) {
