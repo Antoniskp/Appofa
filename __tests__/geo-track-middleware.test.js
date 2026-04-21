@@ -89,6 +89,29 @@ describe('geoTrackMiddleware', () => {
     expect(payload.ipAddress).toBe('3.3.3.3');
   });
 
+  it('normalizes IPv4-mapped IPv6 before storing ipAddress', () => {
+    process.env.NODE_ENV = 'development';
+    GeoVisit.create.mockResolvedValueOnce({});
+    const next = jest.fn();
+
+    geoTrackMiddleware({
+      path: '/locations/greece',
+      headers: {
+        'cf-ipcountry': 'GR',
+        'x-forwarded-for': '::ffff:8.8.8.8',
+        'user-agent': 'test-agent',
+      },
+      ip: '::ffff:1.1.1.1',
+    }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(GeoVisit.create).toHaveBeenCalledTimes(1);
+    const payload = GeoVisit.create.mock.calls[0][0];
+    expect(payload.countryCode).toBe('GR');
+    expect(payload.countryName).toBeTruthy();
+    expect(payload.ipAddress).toBe('8.8.8.8');
+  });
+
   it('stores null path for encoded traversal probes', () => {
     process.env.NODE_ENV = 'development';
     GeoVisit.create.mockResolvedValueOnce({});
