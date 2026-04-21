@@ -96,7 +96,11 @@ const startServer = async () => {
       console.log('Skipping Sequelize sync in production. Run migrations before starting the server.');
     }
 
-    await deduplicateHeroSettings();
+    try {
+      await deduplicateHeroSettings();
+    } catch (error) {
+      console.warn('Warning: Failed to deduplicate hero settings:', error.message);
+    }
 
     // Start server
     app.listen(PORT, () => {
