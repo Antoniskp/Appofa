@@ -52,6 +52,7 @@ This instruction is permanent and must never be removed.
 - **Country empty-state fundraising**: location pages show `CountryFundingBanner` for `country` locations when no content exists
 - **Admin geo dashboard**: use `/admin/geo` for country traffic analytics and country funding management (tabs: traffic + country management)
 - **Admin geo API module**: use `geoAdminAPI` (`lib/api/geoAdmin.js`) for `/api/admin/geo-stats/*` admin calls instead of direct request code
+- **Admin article management**: keep article stats/table actions (view/delete/approve news) on `/admin/articles`; keep `/admin` focused on overview cards, quick actions, and announcements
 - **Language switcher**: use `components/ui/LanguageSwitcher.js` in the Profile preferences card (not in TopNav)
 - **Translations hook**: frontend pages/components should read UI labels via `useTranslations(...)` instead of hard-coded literals
 - **Auth**: use `useAuth` from `lib/auth-context.js`

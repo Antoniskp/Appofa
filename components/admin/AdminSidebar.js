@@ -3,22 +3,22 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  HomeIcon, PencilSquareIcon, MapPinIcon, EnvelopeIcon,
-  UserGroupIcon, UsersIcon, XCircleIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon,
-  Bars3Icon, XMarkIcon, DocumentTextIcon, ShieldExclamationIcon, GlobeEuropeAfricaIcon
+  HomeIcon, MapPinIcon, EnvelopeIcon,
+  UserGroupIcon, UsersIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon,
+  Bars3Icon, XMarkIcon, DocumentTextIcon, ShieldExclamationIcon, GlobeEuropeAfricaIcon,
+  AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
 import { useState } from 'react';
 
 const navItems = [
   { href: '/admin', label: 'Dashboard', icon: HomeIcon },
-  { href: '/admin/homepage', label: 'Homepage', icon: HomeIcon },
+  { href: '/admin/homepage', label: 'Homepage', icon: AdjustmentsHorizontalIcon },
   { href: '/admin/users', label: 'Users', icon: UsersIcon },
-  { href: '/editor', label: 'Create Article', icon: PencilSquareIcon },
+  { href: '/admin/articles', label: 'Articles', icon: DocumentTextIcon },
   { href: '/admin/locations', label: 'Locations', icon: MapPinIcon },
   { href: '/admin/messages', label: 'Messages', icon: EnvelopeIcon },
   { href: '/admin/persons', label: 'Persons', icon: UserGroupIcon },
   { href: '/admin/manifests', label: 'Manifests', icon: DocumentTextIcon },
-  { href: '/admin/removal-requests', label: 'Removals', icon: XCircleIcon },
   { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
   { href: '/admin/dream-team', label: 'Dream Team', icon: StarIcon },
   { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
