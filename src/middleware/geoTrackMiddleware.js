@@ -30,6 +30,13 @@ const getCountryName = (countryCode) => {
   }
 };
 
+const normalizeIpForLookup = (ip) => {
+  if (!ip) return ip;
+  const mapped = ip.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i);
+  if (mapped) return mapped[1];
+  return ip;
+};
+
 const detectCountry = (req) => {
   const cfCountryHeader = req.headers['cf-ipcountry'];
   if (typeof cfCountryHeader === 'string') {
@@ -57,7 +64,9 @@ const detectCountry = (req) => {
     return { countryCode: null, countryName: null };
   }
 
-  const geoResult = geoip.lookup(getClientIp(req));
+  const rawIp = getClientIp(req);
+  const lookupIp = normalizeIpForLookup(rawIp);
+  const geoResult = geoip.lookup(lookupIp);
   if (!geoResult?.country) {
     return { countryCode: null, countryName: null };
   }
@@ -105,6 +114,7 @@ const geoTrackMiddleware = (req, res, next) => {
   }
 
   const ip = getClientIp(req);
+  const normalizedIp = normalizeIpForLookup(ip);
   const userAgent = req.headers['user-agent'] || '';
   const sessionHash = crypto
     .createHash('sha256')
@@ -122,7 +132,7 @@ const geoTrackMiddleware = (req, res, next) => {
     isAuthenticated: Boolean(token && token.trim()),
     isDiaspora: null,
     sessionHash,
-    ipAddress: ip || null,
+    ipAddress: normalizedIp || null,
     path: sanitizePath(requestPath),
     locale,
   }).catch((err) => {
