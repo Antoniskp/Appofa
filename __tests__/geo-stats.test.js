@@ -27,6 +27,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/geo-stats', geoStatsRoutes);
+app.use('/api/geo', geoStatsRoutes);
 
 function csrfHeadersFor(token, userId) {
   storeCsrfToken(token, userId);
@@ -280,6 +281,44 @@ describe('Geo Stats Admin API', () => {
   it('GET /country-funding/:locationId/public validates locationId', async () => {
     const res = await request(app)
       .get('/api/admin/geo-stats/country-funding/not-a-number/public');
+
+    expect(res.status).toBe(400);
+    expect(res.body.success).toBe(false);
+  });
+
+  it('POST /api/geo/track creates a visit record', async () => {
+    const beforeCount = await GeoVisit.count();
+
+    const res = await request(app)
+      .post('/api/geo/track')
+      .send({
+        path: '/articles',
+        countryCode: 'gr',
+        ipAddress: '::ffff:9.9.9.9',
+        locale: 'en',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const afterCount = await GeoVisit.count();
+    expect(afterCount).toBe(beforeCount + 1);
+
+    const createdVisit = await GeoVisit.findOne({ order: [['id', 'DESC']] });
+    expect(createdVisit.path).toBe('/articles');
+    expect(createdVisit.countryCode).toBe('GR');
+    expect(createdVisit.countryName).toBe('Greece');
+    expect(createdVisit.ipAddress).toBe('::ffff:9.9.9.9');
+    expect(createdVisit.locale).toBe('en');
+    expect(createdVisit.sessionHash).toHaveLength(64);
+    expect(createdVisit.isAuthenticated).toBe(false);
+    expect(createdVisit.isDiaspora).toBeNull();
+  });
+
+  it('POST /api/geo/track validates required path', async () => {
+    const res = await request(app)
+      .post('/api/geo/track')
+      .send({ countryCode: 'gr' });
 
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);

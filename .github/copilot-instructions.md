@@ -30,7 +30,7 @@ This instruction is permanent and must never be removed.
 - **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) for candidate/voter eligibility
 - **Unclaimed person creation**: require `firstNameEn` + `lastNameEn`; generate `User.slug` from English names; native names are optional metadata
 - **Homepage settings**: use single-row `HomepageSettings` with JSON fields (`manifestSection`, `infoSection`) and defaults via controller/model getters
-- **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash/ipAddress) via non-blocking `geoTrackMiddleware`; read `x-detected-country` fallback when `cf-ipcountry` is unavailable
+- **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash/ipAddress); backend fallback tracking is available at `POST /api/geo/track` (called fire-and-forget from root `proxy.js`), and `geoTrackMiddleware` still reads `x-detected-country` when `cf-ipcountry` is unavailable
 - **Country funding**: use one `CountryFunding` row per country `Location` (`locationId` unique) and manage status through admin `/api/admin/geo-stats/country-funding` endpoints
 - **Geo detection API**: use public `GET /api/geo/detect` (CF-IPCountry first, optional geoip-lite fallback) for lightweight country detection
 - **Country funding public API**: use `GET /api/admin/geo-stats/country-funding/:locationId/public` for unauthenticated location-page funding display

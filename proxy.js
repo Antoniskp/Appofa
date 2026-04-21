@@ -24,9 +24,24 @@ const normalizeCountryCode = (value) => {
   return code;
 };
 
+const normalizeIpForTracking = (ip) => {
+  if (!ip) return null;
+  const mapped = ip.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i);
+  return mapped ? mapped[1] : ip;
+};
+
+const getClientIp = (request) => {
+  const forwarded = request.headers.get('x-forwarded-for');
+  if (forwarded) return forwarded.split(',')[0].trim();
+  return request.headers.get('x-real-ip') || null;
+};
+
 export function proxy(request) {
   const { pathname } = request.nextUrl;
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
+  const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
+  const countryCode = headerCountry || cookieCountry;
+
   const nextResponse = () => {
     if (headerCountry) {
       const requestHeaders = new Headers(request.headers);
@@ -40,12 +55,27 @@ export function proxy(request) {
     return nextResponse();
   }
 
+  // Fire-and-forget geo tracking for page views
+  const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  const ipAddress = normalizeIpForTracking(getClientIp(request));
+  const locale = request.cookies.get('NEXT_LOCALE')?.value || null;
+
+  fetch(`${apiBase}/api/geo/track`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      path: pathname,
+      countryCode: countryCode || null,
+      ipAddress,
+      locale,
+    }),
+  }).catch(() => {
+    // Silently ignore — tracking is non-critical
+  });
+
   if (request.cookies.get('appofa_country_visited')?.value) {
     return nextResponse();
   }
-
-  const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
-  const countryCode = headerCountry || cookieCountry;
 
   if (!countryCode) {
     return nextResponse();
