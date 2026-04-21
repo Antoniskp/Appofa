@@ -42,6 +42,7 @@ function GeoAdminContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBlockingIp, setIsBlockingIp] = useState(null);
+  const [blockedIps, setBlockedIps] = useState(new Set());
   const [clearOlderThanDays, setClearOlderThanDays] = useState(String(LOG_RETENTION_OPTIONS[0]));
   const [isClearingLogs, setIsClearingLogs] = useState(false);
   const [fundingForm, setFundingForm] = useState({
@@ -223,7 +224,11 @@ function GeoAdminContent() {
 
     setIsBlockingIp(ipAddress);
     try {
-      await addIpRule(ipAddress, 'blacklist', 'Blocked from geo admin');
+      const res = await addIpRule(ipAddress, 'blacklist', 'Blocked from geo admin');
+      if (res?.success === false) {
+        throw new Error(res.message || 'Αποτυχία αποκλεισμού IP.');
+      }
+      setBlockedIps((prev) => new Set([...prev, ipAddress]));
       addToast(`Η IP ${ipAddress} μπήκε στη blacklist.`, { type: 'success' });
     } catch (error) {
       addToast(error.message || 'Αποτυχία αποκλεισμού IP.', { type: 'error' });
@@ -437,10 +442,18 @@ function GeoAdminContent() {
                             <td className="px-4 py-3 text-right">
                               <button
                                 onClick={() => handleBlockIp(row.ipAddress)}
-                                disabled={!row.ipAddress || isBlockingIp === row.ipAddress}
-                                className="px-3 py-1.5 text-xs font-medium rounded-lg border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
+                                disabled={!row.ipAddress || isBlockingIp === row.ipAddress || blockedIps.has(row.ipAddress)}
+                                className={`px-3 py-1.5 text-xs font-medium rounded-lg border disabled:opacity-50 ${
+                                  blockedIps.has(row.ipAddress)
+                                    ? 'border-gray-300 text-gray-500 bg-gray-50'
+                                    : 'border-red-300 text-red-700 hover:bg-red-50'
+                                }`}
                               >
-                                {isBlockingIp === row.ipAddress ? 'Αποκλεισμός...' : 'Αποκλεισμός IP'}
+                                {isBlockingIp === row.ipAddress
+                                  ? 'Αποκλεισμός...'
+                                  : blockedIps.has(row.ipAddress)
+                                    ? '✓ Αποκλεισμένο'
+                                    : 'Αποκλεισμός IP'}
                               </button>
                             </td>
                           </tr>

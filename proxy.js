@@ -28,11 +28,12 @@ export function proxy(request) {
   const { pathname } = request.nextUrl;
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const nextResponse = () => {
-    const response = NextResponse.next();
     if (headerCountry) {
-      response.headers.set('x-detected-country', headerCountry);
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-detected-country', headerCountry);
+      return NextResponse.next({ request: { headers: requestHeaders } });
     }
-    return response;
+    return NextResponse.next();
   };
 
   if (isSkippablePath(pathname)) {
