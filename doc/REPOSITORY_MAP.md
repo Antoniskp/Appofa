@@ -139,7 +139,7 @@ Appofa/
 | Tag | Tags | id, name (unique lowercase) | hasMany: TaggableItem; belongsToMany: Article, Poll, Suggestion (via TaggableItems) |
 | TaggableItem | TaggableItems | id, tagId, entityType (article\|poll\|suggestion), entityId | belongsTo: Tag |
 | IpAccessRule | IpAccessRules | id, ip (STRING 45, unique), type (whitelist\|blacklist), reason, createdByUserId | belongsTo: User (createdBy) |
-| GeoVisit | GeoVisits | id, countryCode, countryName, isAuthenticated, isDiaspora, sessionHash, path, locale | Standalone analytics table |
+| GeoVisit | GeoVisits | id, countryCode, countryName, isAuthenticated, isDiaspora, sessionHash, ipAddress, path, locale | Standalone analytics table |
 | CountryFunding | CountryFundings | id, locationId (unique), goalAmount, currentAmount, donorCount, status, donationUrl, unlockedAt, unlockedByUserId | belongsTo: Location (`location`), User (`unlockedBy`) |
 
 ---
@@ -290,7 +290,7 @@ Appofa/
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
-| geoStatsRoutes.js | /api/admin/geo-stats | GET /country-funding/:locationId/public, GET /visits, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
+| geoStatsRoutes.js | /api/admin/geo-stats | GET /country-funding/:locationId/public, GET /visits, DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
 
 ---
@@ -350,7 +350,7 @@ Appofa/
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
 | rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
-| geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier |
+| geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier and stored visitor IP for admin workflows |
 
 ---
 
@@ -402,7 +402,7 @@ Appofa/
 | `/admin/candidates/*` | Candidate management (backward-compat) |
 | `/admin/dream-team` | Dream team admin |
 | `/admin/hero` | Hero settings |
-| `/admin/geo` | Geo traffic dashboard + country funding management |
+| `/admin/geo` | Geo traffic dashboard (country/top paths/recent visits with IP block + log cleanup) + country funding management |
 | `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/locations` | Location admin |
@@ -607,6 +607,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260420000000-create-geo-visits.js | Create GeoVisits analytics table + countryCode/createdAt indexes |
 | — | 20260420000001-create-country-fundings.js | Create CountryFundings table with location unique index + status lifecycle fields |
 | — | 20260420000002-add-diaspora-fields-to-users.js | Add Users.isDiaspora and Users.residenceCountryCode |
+| — | 20260421000000-add-ip-to-geo-visits.js | Add nullable GeoVisits.ipAddress (STRING 45) for admin IP visibility/blocking |
 
 </details>
 

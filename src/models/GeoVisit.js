@@ -28,6 +28,10 @@ const GeoVisit = sequelize.define('GeoVisit', {
     type: DataTypes.STRING(64),
     allowNull: true,
   },
+  ipAddress: {
+    type: DataTypes.STRING(45),
+    allowNull: true,
+  },
   path: {
     type: DataTypes.STRING(500),
     allowNull: true,

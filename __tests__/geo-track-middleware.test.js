@@ -62,8 +62,31 @@ describe('geoTrackMiddleware', () => {
     expect(payload.isAuthenticated).toBe(true);
     expect(payload.path).toBe('/locations/greece');
     expect(payload.locale).toBe('en');
+    expect(payload.ipAddress).toBe('2.2.2.2');
     expect(payload.sessionHash).toHaveLength(64);
     expect(payload.sessionHash).not.toContain('2.2.2.2');
+  });
+
+  it('uses x-detected-country when cf-ipcountry is unavailable', () => {
+    process.env.NODE_ENV = 'development';
+    GeoVisit.create.mockResolvedValueOnce({});
+    const next = jest.fn();
+
+    geoTrackMiddleware({
+      path: '/locations/france',
+      headers: {
+        'x-detected-country': 'fr',
+        'user-agent': 'test-agent',
+      },
+      ip: '3.3.3.3',
+    }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(GeoVisit.create).toHaveBeenCalledTimes(1);
+    const payload = GeoVisit.create.mock.calls[0][0];
+    expect(payload.countryCode).toBe('FR');
+    expect(payload.countryName).toBeTruthy();
+    expect(payload.ipAddress).toBe('3.3.3.3');
   });
 
   it('stores null path for encoded traversal probes', () => {
