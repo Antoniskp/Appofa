@@ -7,6 +7,7 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import { articleAPI, locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import categoriesConfig from '@/config/articleCategories.json';
+import { useTranslations } from 'next-intl';
 
 const videoCategories = categoriesConfig.articleTypes?.video?.categories || [];
 
@@ -18,6 +19,8 @@ const videoCategories = categoriesConfig.articleTypes?.video?.categories || [];
  * publish with minimal interaction.
  */
 export default function VideoPostForm() {
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const router = useRouter();
   const { addToast } = useToast();
 
@@ -78,11 +81,11 @@ export default function VideoPostForm() {
     setError('');
 
     if (!previewData) {
-      setError('Παρακαλώ επικολλήστε ένα έγκυρο URL βίντεο.');
+      setError(tArticles('video_url_required'));
       return;
     }
     if (!title.trim()) {
-      setError('Ο τίτλος είναι υποχρεωτικός.');
+      setError(tArticles('title_required'));
       return;
     }
 
@@ -110,7 +113,7 @@ export default function VideoPostForm() {
       const response = await articleAPI.create(payload);
 
       if (!response.success) {
-        setError(response.message || 'Αποτυχία δημοσίευσης βίντεο.');
+        setError(response.message || tArticles('video_publish_failed'));
         return;
       }
 
@@ -126,7 +129,7 @@ export default function VideoPostForm() {
         }
       }
 
-      addToast('Το βίντεο δημοσιεύτηκε!', { type: 'success' });
+      addToast(tArticles('video_published'), { type: 'success' });
 
       if (articleId) {
         router.push(`/articles/${articleId}`);
@@ -134,7 +137,7 @@ export default function VideoPostForm() {
         router.push('/');
       }
     } catch (err) {
-      setError(`Αποτυχία δημοσίευσης: ${err.message}`);
+      setError(`${tArticles('video_publish_failed_prefix')}: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -166,9 +169,9 @@ export default function VideoPostForm() {
       {/* 2 ── Title ──────────────────────────────────────────────── */}
       <div>
         <label htmlFor="video-title" className="block text-sm font-medium text-gray-700 mb-1">
-          Τίτλος
+          {tArticles('form_title_label')}
           {!isTitleDirty && title && (
-            <span className="ml-2 text-xs text-gray-400">(αυτόματο)</span>
+            <span className="ml-2 text-xs text-gray-400">({tArticles('auto')})</span>
           )}
         </label>
         <input
@@ -179,7 +182,7 @@ export default function VideoPostForm() {
             setTitle(e.target.value);
             setIsTitleDirty(true);
           }}
-          placeholder="Τίτλος βίντεο"
+          placeholder={tArticles('video_title_placeholder')}
           maxLength={200}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           required
@@ -189,10 +192,10 @@ export default function VideoPostForm() {
       {/* 3 ── Summary ────────────────────────────────────────────── */}
       <div>
         <label htmlFor="video-summary" className="block text-sm font-medium text-gray-700 mb-1">
-          Περιγραφή{' '}
-          <span className="text-gray-400 font-normal">(προαιρετικό)</span>
+          {tArticles('video_description')}{' '}
+          <span className="text-gray-400 font-normal">({tCommon('optional')})</span>
           {!isSummaryDirty && summary && (
-            <span className="ml-2 text-xs text-gray-400">(αυτόματο)</span>
+            <span className="ml-2 text-xs text-gray-400">({tArticles('auto')})</span>
           )}
         </label>
         <input
@@ -203,7 +206,7 @@ export default function VideoPostForm() {
             setSummary(e.target.value);
             setIsSummaryDirty(true);
           }}
-          placeholder="Σύντομη περιγραφή ή όνομα δημιουργού"
+          placeholder={tArticles('video_description_placeholder')}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
         />
       </div>
@@ -212,8 +215,8 @@ export default function VideoPostForm() {
       {videoCategories.length > 0 && (
         <div>
           <label htmlFor="video-category" className="block text-sm font-medium text-gray-700 mb-1">
-            Κατηγορία{' '}
-            <span className="text-gray-400 font-normal">(προαιρετικό)</span>
+            {tArticles('category')}{' '}
+            <span className="text-gray-400 font-normal">({tCommon('optional')})</span>
           </label>
           <select
             id="video-category"
@@ -221,7 +224,7 @@ export default function VideoPostForm() {
             onChange={(e) => setCategory(e.target.value)}
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
           >
-            <option value="">— Επιλογή κατηγορίας —</option>
+            <option value="">{tArticles('select_category')}</option>
             {videoCategories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
@@ -234,13 +237,13 @@ export default function VideoPostForm() {
       {/* 5 ── Location ───────────────────────────────────────────── */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Τοποθεσία{' '}
-          <span className="text-gray-400 font-normal">(προαιρετικό)</span>
+          {tArticles('location')}{' '}
+          <span className="text-gray-400 font-normal">({tCommon('optional')})</span>
         </label>
         <CascadingLocationSelector
           value={linkedLocationId}
           onChange={setLinkedLocationId}
-          placeholder="Επιλογή τοποθεσίας"
+          placeholder={tArticles('select_location')}
           allowClear={true}
         />
       </div>
@@ -256,7 +259,7 @@ export default function VideoPostForm() {
               : 'bg-gray-300 cursor-not-allowed'
           }`}
         >
-          {submitting ? 'Δημοσίευση…' : 'Δημοσίευση Βίντεο'}
+          {submitting ? tArticles('publishing') : tArticles('publish_video')}
         </button>
       </div>
     </form>

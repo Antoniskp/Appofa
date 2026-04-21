@@ -4,166 +4,156 @@ import { getTranslations } from 'next-intl/server';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 
-export const metadata = {
-  title: 'Αποστολή - Απόφαση',
-  description: 'Η αποστολή και οι αρχές του Apofasi',
-  openGraph: {
-    title: 'Αποστολή - Απόφαση',
-    description: 'Η αποστολή και οι αρχές του Apofasi',
-    url: `${SITE_URL}/mission`,
-    type: 'website',
-  },
-  twitter: {
-    card: 'summary',
-    title: 'Αποστολή - Απόφαση',
-    description: 'Η αποστολή και οι αρχές του Apofasi',
-  },
-  alternates: {
-    canonical: `${SITE_URL}/mission`,
-  },
-};
+export async function generateMetadata() {
+  const tStatic = await getTranslations('static_pages');
+  const title = tStatic('mission_meta_title');
+  const description = tStatic('mission_meta_description');
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      url: `${SITE_URL}/mission`,
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary',
+      title,
+      description,
+    },
+    alternates: {
+      canonical: `${SITE_URL}/mission`,
+    },
+  };
+}
 
 export default async function MissionPage() {
   const tStatic = await getTranslations('static_pages');
   return (
     <StaticPageLayout title={tStatic('mission_title')} breadcrumb={<Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">← {tStatic('pages')}</Link>}>
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Τι προσπαθούμε να πετύχουμε</h2>
+        <h2 className="text-2xl font-semibold mb-3">{tStatic('mission_goal_title')}</h2>
         <p className="text-gray-700 mb-4">
-          Ένας καθαρός, διαφανής τρόπος να βλέπουμε την ενημέρωση και τη διάθεση της κοινωνίας.
+          {tStatic('mission_goal_intro')}
         </p>
         <p className="text-gray-700">
-          Το Apofasi θέλει να συνδυάσει την πληρότητα της ενημέρωσης με την ειλικρινή καταγραφή του πώς αισθάνεται
-          ο κόσμος. Δεν αντικαθιστούμε τις δημοσκοπήσεις· δίνουμε ένα ανοιχτό, απλό σήμα για το πού κινείται το
-          κοινό. Στόχος είναι μια κοινωνία καλά ενημερωμένων Ελλήνων που θα καθοδηγούν τους εκπροσώπους τους στη
-          Βουλή ανεξάρτητα από κομματικά στρατόπεδα, με την εφαρμογή να λειτουργεί ως το μέσο μέσα από το οποίο
-          θα υπηρετούν τον λαό και θα μπορούν να αλλάζονται όποτε το θέλει η πλειοψηφία.
+          {tStatic('mission_goal_body')}
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Γιατί αποφεύγουμε τα κόμματα</h2>
+        <h2 className="text-2xl font-semibold mb-3">{tStatic('mission_no_parties_title')}</h2>
         <p className="text-gray-700">
-          Ένα πολιτικό κόμμα είναι δομή που τείνει να ιεραρχεί την κομματική πειθαρχία πάνω από τη λαϊκή βούληση.
-          Επιβάλλει γραμμή, περιορίζει τη διαφορετική άποψη και συχνά εμποδίζει την πραγματική συμμετοχή των πολιτών στη λήψη αποφάσεων.
-          Δεν είναι κατ' ανάγκη κακή πρόθεση — είναι δομικό πρόβλημα. Θέλουμε η πλατφόρμα να δίνει στους πολίτες το πάνω χέρι και στους εκπροσώπους ρόλο υπηρεσίας,
-          όχι κομματικής διαχείρισης.
+          {tStatic('mission_no_parties_body')}
         </p>
       </section>
 
       <section>
-        <h2 className="text-2xl font-semibold mb-3">Νομικό σύστημα που χρειάζεται επανεκκίνηση</h2>
+        <h2 className="text-2xl font-semibold mb-3">{tStatic('mission_legal_reset_title')}</h2>
         <p className="text-gray-700">
-          Το σημερινό νομικό πλαίσιο είναι αχρείαστα τεράστιο και περίπλοκο. Οι εκπρόσωποι οφείλουν να
-          απλοποιήσουν, να διαγράψουν νόμους που δεν εξυπηρετούν πια τους πολίτες ή ακόμη και να ξεκινήσουν από
-          την αρχή όπου χρειάζεται. Μόνο έτσι η κοινωνία μπορεί να καταλάβει και να ελέγχει τι ψηφίζεται.
+          {tStatic('mission_legal_reset_body')}
         </p>
       </section>
 
       <section className="space-y-8">
         <div>
-          <h2 className="text-2xl font-semibold mb-3">Οι αρχές μας</h2>
+          <h2 className="text-2xl font-semibold mb-3">{tStatic('mission_principles_title')}</h2>
           <p className="text-gray-700">
-            Η αποστολή μας μεταφράζεται σε συγκεκριμένες πρακτικές, ώστε η ενημέρωση να παραμένει διαφανής,
-            κατανοητή και χρήσιμη για όλους.
+            {tStatic('mission_principles_intro')}
           </p>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Περισσότερη διαφάνεια</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_transparency_title')}</h3>
           <p className="text-gray-700 mb-3">
-            Να δείχνουμε ποια μέσα καλύπτουν κάθε ιστορία και πώς διαφέρει η γλώσσα τους, ώστε να μπορείτε να
-            συγκρίνετε εύκολα.
+            {tStatic('mission_transparency_intro')}
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2">
-            <li>Συγκέντρωση τίτλων από πολλές ελληνικές και διεθνείς πηγές</li>
-            <li>Ομαδοποίηση παρόμοιων άρθρων σε μία κοινή ιστορία</li>
-            <li>Διαφάνεια για το πότε ενημερώθηκε κάθε ομάδα</li>
+            <li>{tStatic('mission_transparency_point_1')}</li>
+            <li>{tStatic('mission_transparency_point_2')}</li>
+            <li>{tStatic('mission_transparency_point_3')}</li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Ειλικρινής καταγραφή διάθεσης</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_sentiment_title')}</h3>
           <p className="text-gray-700 mb-3">
-            Να αποτυπώνουμε πώς νιώθει ο κόσμος σε πραγματικό χρόνο χωρίς να παρουσιάζουμε τις ψηφοφορίες ως
-            στατιστικά αντιπροσωπευτικές.
+            {tStatic('mission_sentiment_intro')}
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2">
-            <li>Απλές ψηφοφορίες κάτω από κάθε ιστορία</li>
-            <li>Σαφείς διευκρινίσεις για τα όρια των αποτελεσμάτων</li>
-            <li>Μηχανισμοί ακεραιότητας (ρυθμοί, αξιολόγηση κινδύνου) στο roadmap</li>
+            <li>{tStatic('mission_sentiment_point_1')}</li>
+            <li>{tStatic('mission_sentiment_point_2')}</li>
+            <li>{tStatic('mission_sentiment_point_3')}</li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Περιεχόμενο φτιαγμένο για την Ελλάδα</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_greece_title')}</h3>
           <p className="text-gray-700 mb-3">
-            Να δίνουμε έμφαση σε ελληνικά θέματα και να προσαρμόζουμε την πλατφόρμα στις ανάγκες του τοπικού κοινού.
+            {tStatic('mission_greece_intro')}
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2">
-            <li>Θεματικές κατηγορίες που αντανακλούν την ελληνική επικαιρότητα</li>
-            <li>Επικέντρωση σε πηγές που εμπιστεύονται οι Έλληνες αναγνώστες</li>
-            <li>Σχεδιασμός γραμμένος στα ελληνικά, χωρίς περιττή πολυπλοκότητα</li>
+            <li>{tStatic('mission_greece_point_1')}</li>
+            <li>{tStatic('mission_greece_point_2')}</li>
+            <li>{tStatic('mission_greece_point_3')}</li>
           </ul>
         </div>
 
         <div className="space-y-6">
           <div>
-          <h3 className="text-xl font-semibold mb-2">Δημοκρατικά μοντέλα που μας εμπνέουν</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_models_title')}</h3>
           <p className="text-gray-700">
-              Η Apofasi στηρίζεται σε αξίες συμμετοχής και διαφάνειας. Γι' αυτό εξετάζουμε πώς ιδέες από την
-              άμεση και την ηλεκτρονική δημοκρατία μπορούν να ενισχύσουν την πλατφόρμα χωρίς να θυσιάζουν την
-              αξιοπιστία ή την ασφάλεια.
+              {tStatic('mission_models_intro')}
             </p>
           </div>
 
           <div className="space-y-4">
-          <h4 className="text-lg font-semibold">Άμεση δημοκρατία</h4>
+          <h4 className="text-lg font-semibold">{tStatic('mission_direct_democracy_title')}</h4>
           <p className="text-gray-700">
-              Οι πολίτες αποφασίζουν απευθείας για τα κρίσιμα ζητήματα, χωρίς μεσολάβηση. Είναι μια ιδέα που
-              συνδέεται με τη συμμετοχή και την προσωπική ευθύνη.
+              {tStatic('mission_direct_democracy_intro')}
             </p>
           <div className="space-y-3">
               <div>
-                <p className="font-semibold text-gray-800 mb-2">Τι προσφέρει</p>
+                <p className="font-semibold text-gray-800 mb-2">{tStatic('mission_direct_democracy_offers_title')}</p>
                 <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                  <li>Ενισχύει την αίσθηση συμμετοχής και λογοδοσίας</li>
-                  <li>Περιορίζει τις στρεβλώσεις που μπορεί να εισάγει η αντιπροσώπευση</li>
-                  <li>Ευνοεί τη διαφάνεια, καθώς οι αποφάσεις παίρνονται δημόσια</li>
+                  <li>{tStatic('mission_direct_democracy_offer_1')}</li>
+                  <li>{tStatic('mission_direct_democracy_offer_2')}</li>
+                  <li>{tStatic('mission_direct_democracy_offer_3')}</li>
                 </ul>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 mb-2">Τι χρειάζεται προσοχή</p>
+                <p className="font-semibold text-gray-800 mb-2">{tStatic('mission_direct_democracy_attention_title')}</p>
                 <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                  <li>Απαιτεί ενημερωμένους πολίτες με χρόνο να συμμετέχουν</li>
-                  <li>Κινδυνεύει από πολώσεις όταν τα θέματα είναι περίπλοκα</li>
-                  <li>Χρειάζεται μηχανισμούς για να αποφεύγεται η χειραγώγηση</li>
+                  <li>{tStatic('mission_direct_democracy_attention_1')}</li>
+                  <li>{tStatic('mission_direct_democracy_attention_2')}</li>
+                  <li>{tStatic('mission_direct_democracy_attention_3')}</li>
                 </ul>
               </div>
           </div>
           </div>
 
           <div className="space-y-4">
-          <h4 className="text-lg font-semibold">Ηλεκτρονική δημοκρατία</h4>
+          <h4 className="text-lg font-semibold">{tStatic('mission_digital_democracy_title')}</h4>
           <p className="text-gray-700">
-              Χρήση ψηφιακών εργαλείων για διαβούλευση, ψηφοφορίες και ανοιχτή λογοδοσία. Μπορεί να μειώσει
-              εμπόδια συμμετοχής, ειδικά για νέους ή απομακρυσμένους πολίτες.
+              {tStatic('mission_digital_democracy_intro')}
             </p>
           <div className="space-y-3">
               <div>
-                <p className="font-semibold text-gray-800 mb-2">Τι προσφέρει</p>
+                <p className="font-semibold text-gray-800 mb-2">{tStatic('mission_digital_democracy_offers_title')}</p>
                 <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                  <li>Διευκολύνει τη συμμετοχή από οπουδήποτε και οποτεδήποτε</li>
-                  <li>Μειώνει τα κόστη οργάνωσης και καταγραφής</li>
-                  <li>Παρέχει πλούσια δεδομένα για δημόσια ανατροφοδότηση</li>
+                  <li>{tStatic('mission_digital_democracy_offer_1')}</li>
+                  <li>{tStatic('mission_digital_democracy_offer_2')}</li>
+                  <li>{tStatic('mission_digital_democracy_offer_3')}</li>
                 </ul>
               </div>
               <div>
-                <p className="font-semibold text-gray-800 mb-2">Τι χρειάζεται προσοχή</p>
+                <p className="font-semibold text-gray-800 mb-2">{tStatic('mission_digital_democracy_attention_title')}</p>
                 <ul className="list-disc pl-6 text-gray-700 space-y-2">
-                  <li>Απαιτεί εμπιστοσύνη στην ασφάλεια και την προστασία προσωπικών δεδομένων</li>
-                  <li>Κινδυνεύει να ενισχύσει ψηφιακά χάσματα σε όσους δεν έχουν πρόσβαση</li>
-                  <li>Χρειάζεται σαφείς κανόνες για την εγκυρότητα των αποτελεσμάτων</li>
+                  <li>{tStatic('mission_digital_democracy_attention_1')}</li>
+                  <li>{tStatic('mission_digital_democracy_attention_2')}</li>
+                  <li>{tStatic('mission_digital_democracy_attention_3')}</li>
                 </ul>
               </div>
           </div>
@@ -171,55 +161,49 @@ export default async function MissionPage() {
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Χτίζοντας την dream team των αξιωματούχων</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_dream_team_title')}</h3>
           <p className="text-gray-700">
-            Θέλουμε η κοινότητα να ψηφίζει ποιοι αξιωματούχοι θα συγκροτήσουν την ιδανική ομάδα διακυβέρνησης. Με
-            διαφανείς ψηφοφορίες και καθαρές εξηγήσεις για τα αποτελέσματα, δίνουμε χώρο στους πολίτες να
-            ξεχωρίζουν όσους εμπνέουν εμπιστοσύνη και συνεργασία.
+            {tStatic('mission_dream_team_body')}
           </p>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Κρυπτονόμισμα που ενισχύει τη συμμετοχή</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_token_title')}</h3>
           <p className="text-gray-700">
-            Θέλουμε να εκδώσουμε ένα κρυπτονόμισμα ειδικά για το εγχείρημα, ώστε να επιβραβεύουμε τις θετικές
-            συνεισφορές και να επενδύουμε πίσω στην κοινότητα. Το token λειτουργεί ως κίνητρο για συνεργασία, όχι
-            ως μηχανισμός κερδοσκοπίας.
+            {tStatic('mission_token_body')}
           </p>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Αρχές για το token</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_token_principles_title')}</h3>
           <ul className="list-disc pl-6 text-gray-700 space-y-2">
-            <li>Το token ανταμείβει εποικοδομητική συμμετοχή και όχι spam</li>
-            <li>Τα οικονομικά του token είναι διαφανή και συνδεδεμένα με τις ανάγκες της κοινότητας</li>
-            <li>Η κατοχή του token δεν δίνει προνομιακή προβολή σε περιεχόμενο</li>
+            <li>{tStatic('mission_token_principles_1')}</li>
+            <li>{tStatic('mission_token_principles_2')}</li>
+            <li>{tStatic('mission_token_principles_3')}</li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Πώς θα το κάνουμε παιχνίδι</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_gamification_title')}</h3>
           <p className="text-gray-700 mb-3">
-            Η πλατφόρμα θα αποκτήσει gamified εμπειρίες, ώστε η συμμετοχή να είναι ελκυστική αλλά και υπεύθυνη.
-            Στόχος είναι να δημιουργούνται υγιή κίνητρα χωρίς να παραμορφώνεται η ενημέρωση ή οι ψηφοφορίες.
+            {tStatic('mission_gamification_intro')}
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2">
-            <li>Σειρές αποστολών για να γνωρίσεις την πλατφόρμα (π.χ. αξιολόγηση 3 άρθρων, κοινή χρήση μιας ιστορίας)</li>
-            <li>Εμβλήματα για αξιοπιστία, συνέπεια και θετικό διάλογο στις συζητήσεις</li>
-            <li>Εποχικές προκλήσεις που ξεκλειδώνουν προνόμια, χωρίς να αλλοιώνουν την ουδετερότητα των ψηφοφοριών</li>
+            <li>{tStatic('mission_gamification_1')}</li>
+            <li>{tStatic('mission_gamification_2')}</li>
+            <li>{tStatic('mission_gamification_3')}</li>
           </ul>
         </div>
 
         <div>
-          <h3 className="text-xl font-semibold mb-2">Πώς κρίνουμε την επιτυχία</h3>
+          <h3 className="text-xl font-semibold mb-2">{tStatic('mission_success_title')}</h3>
           <p className="text-gray-700 mb-3">
-            Κάθε δυνατότητα και κάθε επιλογή σχεδιασμού αξιολογείται με βάση το αν βοηθά να ενημερώνουμε με
-            σεβασμό και σαφήνεια. Επιτυχία σημαίνει:
+            {tStatic('mission_success_intro')}
           </p>
           <ul className="list-disc pl-6 text-gray-700 space-y-2">
-            <li>Οι αναγνώστες βρίσκουν όλες τις πηγές που χρειάζονται σε μία οθόνη</li>
-            <li>Οι ψηφοφορίες χρησιμοποιούνται για να ξεκινήσουν συζητήσεις, όχι για clickbait</li>
-            <li>Η κοινότητα καταλαβαίνει τι μετράμε και τι όχι</li>
+            <li>{tStatic('mission_success_1')}</li>
+            <li>{tStatic('mission_success_2')}</li>
+            <li>{tStatic('mission_success_3')}</li>
           </ul>
         </div>
       </section>

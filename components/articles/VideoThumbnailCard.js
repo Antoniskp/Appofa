@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { idSlug } from '@/lib/utils/slugify';
+import { useTranslations } from 'next-intl';
 
 function ProviderBadge({ provider }) {
   if (provider === 'youtube') {
@@ -38,6 +39,7 @@ function ProviderBadge({ provider }) {
  *   article  {object}  video article object from the API
  */
 export default function VideoThumbnailCard({ article }) {
+  const tArticles = useTranslations('articles');
   if (!article) return null;
 
   const {
@@ -52,7 +54,7 @@ export default function VideoThumbnailCard({ article }) {
 
   const isTikTok = sourceProvider === 'tiktok';
 
-  const videoTitle = sourceMeta?.title || title || 'Video';
+  const videoTitle = sourceMeta?.title || title || tArticles('video');
   const thumbnail = sourceMeta?.thumbnailUrl || null;
   const authorName = sourceMeta?.authorName || author?.username || null;
   const articleHref = `/videos/${idSlug(id, title)}`;

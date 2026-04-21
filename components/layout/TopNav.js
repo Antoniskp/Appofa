@@ -226,10 +226,10 @@ export default function TopNav() {
       <div className="app-container">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center" aria-label="Appofasi home">
+            <Link href="/" className="flex items-center" aria-label={tNav('home_aria')}>
               <Image
                 src="/images/branding/appofasi-high-resolution-logo-transparent.png"
-                alt="Appofasi"
+                alt={tNav('brand_alt')}
                 width={312}
                 height={72}
                 className="h-9 w-auto"
