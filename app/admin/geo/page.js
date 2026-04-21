@@ -228,7 +228,11 @@ function GeoAdminContent() {
       if (res?.success === false) {
         throw new Error(res.message || 'Αποτυχία αποκλεισμού IP.');
       }
-      setBlockedIps((prev) => new Set([...prev, ipAddress]));
+      setBlockedIps((prev) => {
+        const next = new Set(prev);
+        next.add(ipAddress);
+        return next;
+      });
       addToast(`Η IP ${ipAddress} μπήκε στη blacklist.`, { type: 'success' });
     } catch (error) {
       addToast(error.message || 'Αποτυχία αποκλεισμού IP.', { type: 'error' });
