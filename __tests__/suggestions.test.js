@@ -602,6 +602,7 @@ describe('Suggestions & Solutions API Tests', () => {
     let parentLocationId;
     let childLocationId;
     let outsiderLocationId;
+    let parentSuggestionId;
     let localsOnlySuggestionId;
     let privateSuggestionId;
 
@@ -617,6 +618,20 @@ describe('Suggestions & Solutions API Tests', () => {
 
       await User.update({ homeLocationId: childLocationId }, { where: { id: user1Id } });
       await User.update({ homeLocationId: outsiderLocationId }, { where: { id: user2Id } });
+
+      const parentCreate = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Country-level planning issue',
+          body: 'This suggestion is directly linked to the parent location only.',
+          type: 'problem',
+          locationId: parentLocationId,
+          visibility: 'public'
+        });
+
+      parentSuggestionId = parentCreate.body.data.id;
 
       const localsCreate = await request(app)
         .post('/api/suggestions')
@@ -671,11 +686,12 @@ describe('Suggestions & Solutions API Tests', () => {
       expect(ids).toContain(privateSuggestionId);
     });
 
-    it('should filter by parent location and include descendant-tagged suggestions', async () => {
+    it('should filter by parent location without including descendant-tagged suggestions', async () => {
       const res = await request(app).get(`/api/suggestions?locationId=${parentLocationId}`);
       expect(res.status).toBe(200);
       const ids = res.body.data.map((s) => s.id);
-      expect(ids).toContain(localsOnlySuggestionId);
+      expect(ids).toContain(parentSuggestionId);
+      expect(ids).not.toContain(localsOnlySuggestionId);
     });
 
     it('should deny vote on locals_only suggestion for non-local user', async () => {
