@@ -7,7 +7,7 @@ const { useAsyncData } = require('../hooks/useAsyncData');
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
+const flushPromises = () => Promise.resolve();
 
 const createDeferred = () => {
   let resolve;
@@ -20,14 +20,20 @@ const createDeferred = () => {
 };
 
 function HookHarness({ fetchFunction, onState }) {
-  const state = useAsyncData(fetchFunction, [], {
+  const {
+    data,
+    setData,
+    loading,
+    error,
+    refetch,
+  } = useAsyncData(fetchFunction, [], {
     initialData: [],
     transform: (response) => response?.data || [],
   });
 
   React.useEffect(() => {
-    onState(state);
-  }, [onState, state]);
+    onState({ data, setData, loading, error, refetch });
+  }, [onState, data, setData, loading, error, refetch]);
 
   return null;
 }
@@ -66,6 +72,7 @@ describe('useAsyncData', () => {
     });
 
     expect(latestState.data).toEqual([{ id: 'new-slide' }]);
+    expect(latestState.loading).toBe(true);
     expect(fetchFunction).toHaveBeenCalledTimes(1);
 
     await act(async () => {
@@ -112,6 +119,7 @@ describe('useAsyncData', () => {
     });
 
     expect(latestState.data).toEqual([{ id: 'latest' }]);
+    expect(latestState.loading).toBe(false);
     expect(fetchFunction).toHaveBeenCalledTimes(2);
 
     await act(async () => {

@@ -97,10 +97,10 @@ export function useAsyncData(
     };
   }, []);
 
-  const setDataExternal = useCallback((value) => {
+  const setDataAndInvalidateFetch = useCallback((value) => {
     fetchGenRef.current++;
     setData(value);
-  }, []);
+  }, [setData]);
 
-  return { data, setData: setDataExternal, loading, error, refetch: fetchData };
+  return { data, setData: setDataAndInvalidateFetch, loading, error, refetch: fetchData };
 }

@@ -244,15 +244,17 @@ function HeroSettingsContent() {
 
   const handleSaveEdit = async () => {
     if (mutationInFlightRef.current) return;
+    mutationInFlightRef.current = true;
     if (!editForm.title.trim()) {
+      mutationInFlightRef.current = false;
       setSlidesErrorMsg('Ο τίτλος είναι υποχρεωτικός.');
       return;
     }
     if (!editForm.subtitle.trim()) {
+      mutationInFlightRef.current = false;
       setSlidesErrorMsg('Ο υπότιτλος είναι υποχρεωτικός.');
       return;
     }
-    mutationInFlightRef.current = true;
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
@@ -275,15 +277,17 @@ function HeroSettingsContent() {
 
   const handleCreateSlide = async () => {
     if (mutationInFlightRef.current) return;
+    mutationInFlightRef.current = true;
     if (!newSlideForm.title.trim()) {
+      mutationInFlightRef.current = false;
       setSlidesErrorMsg('Ο τίτλος είναι υποχρεωτικός.');
       return;
     }
     if (!newSlideForm.subtitle.trim()) {
+      mutationInFlightRef.current = false;
       setSlidesErrorMsg('Ο υπότιτλος είναι υποχρεωτικός.');
       return;
     }
-    mutationInFlightRef.current = true;
     clearSlidesMessages();
     setSlidesSaving(true);
     try {
