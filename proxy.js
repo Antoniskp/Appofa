@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const SKIP_PREFIXES = ['/_next/', '/api/', '/favicon', '/country', '/login', '/register', '/static', '/blocked', '/unknown-country', '/admin'];
+const SKIP_REDIRECT_PREFIXES = ['/_next/', '/api/', '/favicon', '/country', '/login', '/register', '/static', '/blocked', '/unknown-country', '/admin'];
+const SKIP_TRACKING_PREFIXES = ['/_next/', '/api/', '/favicon', '/static/'];
 const ASSET_EXTENSION_REGEX = /\.(ico|png|jpg|svg|js|css|woff2?)$/i;
 const RULES_CACHE_TTL = 60 * 1000;
 
@@ -16,8 +17,12 @@ const DEFAULT_ACCESS_RULES = {
 let _rulesCache = null;
 let _rulesCacheExpiry = 0;
 
-const isSkippablePath = (pathname) => (
-  SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ASSET_EXTENSION_REGEX.test(pathname)
+const isSkippableForRedirect = (pathname) => (
+  SKIP_REDIRECT_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ASSET_EXTENSION_REGEX.test(pathname)
+);
+
+const isSkippableForTracking = (pathname) => (
+  SKIP_TRACKING_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ASSET_EXTENSION_REGEX.test(pathname)
 );
 
 const normalizeCountryCode = (value) => {
@@ -64,7 +69,6 @@ const normalizeAccessRules = (payload) => {
           if (!countryCode) return null;
           return { countryCode, redirectPath: null };
         }
-
         const countryCode = normalizeCountryCode(entry?.countryCode);
         if (!countryCode) return null;
         return {
@@ -96,22 +100,14 @@ const getAccessRules = async (apiBase) => {
   if (_rulesCache && Date.now() < _rulesCacheExpiry) {
     return _rulesCache;
   }
-
   try {
     const response = await fetch(`${apiBase}/api/geo/access-rules`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch access rules');
-    }
+    if (!response.ok) throw new Error('Failed to fetch access rules');
     const body = await response.json();
     _rulesCache = normalizeAccessRules(body?.data || {});
   } catch {
-    _rulesCache = {
-      ...DEFAULT_ACCESS_RULES,
-      blockedCountries: [],
-      blockedCountriesRedirects: new Map(),
-    };
+    _rulesCache = { ...DEFAULT_ACCESS_RULES, blockedCountries: [], blockedCountriesRedirects: new Map() };
   }
-
   _rulesCacheExpiry = Date.now() + RULES_CACHE_TTL;
   return _rulesCache;
 };
@@ -126,47 +122,56 @@ export async function proxy(request) {
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
   const countryCode = headerCountry || cookieCountry;
+  const shouldSkipRedirect = isSkippableForRedirect(pathname);
 
-  const nextResponse = () => {
+  const withDetectedCountryCookie = (response) => {
     if (headerCountry) {
-      const requestHeaders = new Headers(request.headers);
-      requestHeaders.set('x-detected-country', headerCountry);
-      return NextResponse.next({ request: { headers: requestHeaders } });
+      response.cookies.set('appofa_detected_country', headerCountry, { path: '/', maxAge: 86400, sameSite: 'Lax' });
     }
-    return NextResponse.next();
+    return response;
   };
 
-  if (isSkippablePath(pathname)) {
-    return nextResponse();
-  }
+  const nextResponse = () => {
+    if (countryCode) {
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set('x-detected-country', countryCode);
+      return withDetectedCountryCookie(NextResponse.next({ request: { headers: requestHeaders } }));
+    }
+    return withDetectedCountryCookie(NextResponse.next());
+  };
 
   const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const ipAddress = normalizeIpForTracking(getClientIp(request));
   const locale = request.cookies.get('NEXT_LOCALE')?.value || null;
 
-  fetch(`${apiBase}/api/geo/track`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ path: pathname, countryCode: countryCode || null, ipAddress, locale }),
-  }).catch(() => {});
+  if (!isSkippableForTracking(pathname)) {
+    fetch(`${apiBase}/api/geo/track`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: pathname, countryCode: countryCode || null, ipAddress, locale }),
+    }).catch(() => {});
+  }
+
+  if (shouldSkipRedirect) {
+    return nextResponse();
+  }
 
   const rules = await getAccessRules(apiBase);
   const blockedCountries = new Set(rules.blockedCountries || []);
 
   if (countryCode && blockedCountries.has(countryCode)) {
     const redirectPath = rules.blockedCountriesRedirects?.get(countryCode) || '/blocked';
-    return NextResponse.redirect(new URL(redirectPath, request.url));
+    return withDetectedCountryCookie(NextResponse.redirect(new URL(redirectPath, request.url)));
   }
 
   if (!countryCode) {
     const action = ipAddress ? rules.unknownCountryAction : rules.noIpAction;
     const redirectPath = ipAddress ? rules.unknownCountryRedirectPath : rules.noIpRedirectPath;
-
     if (action === 'block') {
-      return NextResponse.redirect(new URL('/blocked', request.url));
+      return withDetectedCountryCookie(NextResponse.redirect(new URL('/blocked', request.url)));
     }
     if (action === 'redirect') {
-      return NextResponse.redirect(new URL(normalizeRedirectPath(redirectPath), request.url));
+      return withDetectedCountryCookie(NextResponse.redirect(new URL(normalizeRedirectPath(redirectPath), request.url)));
     }
   }
 
@@ -181,7 +186,7 @@ export async function proxy(request) {
   const url = new URL(`/country/${countryCode}`, request.url);
   const response = NextResponse.redirect(url);
   response.cookies.set('appofa_country_visited', '1', { path: '/', maxAge: 86400, sameSite: 'Lax' });
-  return response;
+  return withDetectedCountryCookie(response);
 }
 
 export const config = {
