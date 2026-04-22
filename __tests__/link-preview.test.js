@@ -393,6 +393,47 @@ describe('POST /api/link-preview', () => {
     }
   });
 
+  test('uses browser-like User-Agent for oEmbed requests', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+    let capturedUserAgent = null;
+
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      capturedUserAgent = _opts?.headers?.['User-Agent'] || null;
+      const mockRes = {
+        statusCode: 200,
+        headers: {},
+        on: (event, handler) => {
+          if (event === 'data') handler(JSON.stringify({
+            title: 'UA Test TikTok',
+            author_name: 'UA Tester',
+            thumbnail_url: 'https://p16.tiktokcdn.com/ua.jpg',
+            provider_name: 'TikTok',
+            provider_url: 'https://www.tiktok.com',
+            html: '<blockquote class="tiktok-embed" data-video-id="1234567890123456799"></blockquote>'
+          }));
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    try {
+      await request(app)
+        .post('/api/link-preview')
+        .send({ url: 'https://www.tiktok.com/@user/video/1234567890123456799' })
+        .expect(200);
+
+      expect(capturedUserAgent).toBe('Mozilla/5.0 (compatible; Appofa/1.0; +https://appofasi.gr)');
+    } finally {
+      https.get = originalGet;
+    }
+  });
+
   test('returns partial data with embedUrl when oEmbed fetch fails for YouTube', async () => {
     const https = require('https');
     const originalGet = https.get;
@@ -484,6 +525,137 @@ describe('POST /api/link-preview', () => {
       expect(secondRes.body.data.cached).toBe(true);
     } finally {
       https.get = originalGet;
+    }
+  });
+
+  test('deletes stale cached TikTok shortlink with null embedUrl and re-fetches live data', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+    let requestCount = 0;
+
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      requestCount += 1;
+      const mockRes = {
+        statusCode: 200,
+        headers: {},
+        on: (event, handler) => {
+          if (event === 'data') {
+            const payload = requestCount === 1
+              ? {
+                  title: 'Shortlink stale fetch',
+                  author_name: 'Creator',
+                  thumbnail_url: 'https://p16.tiktokcdn.com/stale-short.jpg',
+                  provider_name: 'TikTok',
+                  provider_url: 'https://www.tiktok.com',
+                  html: null
+                }
+              : {
+                  title: 'Shortlink fresh fetch',
+                  author_name: 'Creator',
+                  thumbnail_url: 'https://p16.tiktokcdn.com/fresh-short.jpg',
+                  provider_name: 'TikTok',
+                  provider_url: 'https://www.tiktok.com',
+                  html: '<blockquote class="tiktok-embed" data-video-id="2222222222222222222"></blockquote>'
+                };
+            handler(JSON.stringify(payload));
+          }
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    const shortlinkUrl = 'https://vm.tiktok.com/ZMstaleShortlink/';
+
+    try {
+      const firstRes = await request(app)
+        .post('/api/link-preview')
+        .send({ url: shortlinkUrl })
+        .expect(200);
+
+      expect(firstRes.body.success).toBe(true);
+      expect(firstRes.body.data.provider).toBe('tiktok');
+      expect(firstRes.body.data.embedUrl).toBeNull();
+      expect(firstRes.body.data.cached).toBe(false);
+
+      const secondRes = await request(app)
+        .post('/api/link-preview')
+        .send({ url: shortlinkUrl })
+        .expect(200);
+
+      expect(secondRes.body.success).toBe(true);
+      expect(secondRes.body.data.provider).toBe('tiktok');
+      expect(secondRes.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/2222222222222222222');
+      expect(secondRes.body.data.cached).toBe(false);
+      expect(requestCount).toBe(2);
+
+      const refreshedCache = await LinkPreviewCache.findOne({
+        where: { normalizedUrl: 'https://www.tiktok.com/ZMstaleShortlink/' }
+      });
+      expect(refreshedCache).not.toBeNull();
+      expect(refreshedCache.embedUrl).toBe('https://www.tiktok.com/embed/v2/2222222222222222222');
+    } finally {
+      https.get = originalGet;
+    }
+  });
+
+  test('retries TikTok oEmbed up to 3 times with exponential backoff delays', async () => {
+    const https = require('https');
+    const originalGet = https.get;
+    const originalSetTimeout = global.setTimeout;
+    let requestCount = 0;
+    const observedDelays = [];
+
+    jest.spyOn(global, 'setTimeout').mockImplementation((handler, delay, ...args) => {
+      observedDelays.push(delay);
+      return originalSetTimeout(handler, 0, ...args);
+    });
+
+    https.get = (_url, _opts, callback) => {
+      const isCallback = typeof _opts === 'function' ? _opts : callback;
+      requestCount += 1;
+      const shouldFail = requestCount <= 3;
+      const mockRes = {
+        statusCode: shouldFail ? 500 : 200,
+        headers: {},
+        on: (event, handler) => {
+          if (!shouldFail && event === 'data') {
+            handler(JSON.stringify({
+              title: 'Recovered TikTok',
+              author_name: 'Retry Creator',
+              thumbnail_url: 'https://p16.tiktokcdn.com/retry.jpg',
+              provider_name: 'TikTok',
+              provider_url: 'https://www.tiktok.com',
+              html: '<blockquote class="tiktok-embed" data-video-id="3333333333333333333"></blockquote>'
+            }));
+          }
+          if (event === 'end') handler();
+          if (event === 'error') { /* noop */ }
+          return mockRes;
+        }
+      };
+      isCallback(mockRes);
+      return { on: () => {}, setTimeout: () => {} };
+    };
+
+    try {
+      const res = await request(app)
+        .post('/api/link-preview')
+        .send({ url: 'https://vm.tiktok.com/ZMretryMe/' })
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.provider).toBe('tiktok');
+      expect(res.body.data.embedUrl).toBe('https://www.tiktok.com/embed/v2/3333333333333333333');
+      expect(requestCount).toBe(4);
+      expect(observedDelays.slice(0, 3)).toEqual([500, 1500, 3000]);
+    } finally {
+      https.get = originalGet;
+      global.setTimeout.mockRestore();
     }
   });
 
