@@ -31,7 +31,8 @@ This instruction is permanent and must never be removed.
 - **Unclaimed person creation**: require `firstNameEn` + `lastNameEn`; generate `User.slug` from English names; native names are optional metadata
 - **Homepage settings**: use single-row `HomepageSettings` with JSON fields (`manifestSection`, `infoSection`) and defaults via controller/model getters
 - **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash/ipAddress) via non-blocking `geoTrackMiddleware` and `POST /api/geo/track` from `proxy.js`; read `x-detected-country` fallback when `cf-ipcountry` is unavailable
-- **Country access control**: enforce backend country blocks with `countryBlockMiddleware` after `ipBlockMiddleware`; manage blocked countries via `CountryAccessRule` and unknown/no-IP behavior via `GeoAccessSetting` + `countryAccessService` cache
+- **Scanner probe auto-blocking**: keep `suspiciousPathMiddleware` immediately after `ipBlockMiddleware` to auto-blacklist first-hit probes for `.env`/`wp-config`/`/.git`-style paths with `ipAccessService.addRule(...)`
+- **Country access control**: enforce backend country blocks with `countryBlockMiddleware` after `ipBlockMiddleware` + `suspiciousPathMiddleware`; manage blocked countries via `CountryAccessRule` and unknown/no-IP behavior via `GeoAccessSetting` + `countryAccessService` cache
 - **Country funding**: use one `CountryFunding` row per country `Location` (`locationId` unique) and manage status through admin `/api/admin/geo-stats/country-funding` endpoints
 - **Geo detection API**: use public `GET /api/geo/detect` (CF-IPCountry first, optional geoip-lite fallback) for lightweight country detection
 - **Geo access rules public API**: use `GET /api/geo/access-rules` (cached in `proxy.js`) for edge-side blocked-country and unknown/no-IP redirect decisions

@@ -89,6 +89,14 @@ describe('country redirect middleware', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  test('skips admin paths', async () => {
+    const response = await middleware(makeRequest({ pathname: '/admin/geo', countryHeader: 'GR' }));
+
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   test('skips when visited cookie exists', async () => {
     const response = await middleware(makeRequest({
       pathname: '/',
