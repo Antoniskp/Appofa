@@ -61,6 +61,22 @@ describe('suspiciousPathMiddleware', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
+  test('uses originalUrl fallback when req.path is unavailable', async () => {
+    process.env.NODE_ENV = 'development';
+    const next = jest.fn();
+    const res = createRes();
+
+    await suspiciousPathMiddleware({ originalUrl: '/tmp/.env.save?scan=1', ip: '187.191.2.214' }, res, next);
+
+    expect(ipAccessService.addRule).toHaveBeenCalledWith(
+      '187.191.2.214',
+      'blacklist',
+      'Auto-blocked: scanner probe'
+    );
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(next).not.toHaveBeenCalled();
+  });
+
   test('denies suspicious request even if DB write fails', async () => {
     process.env.NODE_ENV = 'development';
     ipAccessService.addRule.mockRejectedValueOnce(new Error('db failed'));

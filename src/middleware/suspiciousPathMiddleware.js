@@ -43,7 +43,7 @@ const isSuspiciousPath = (requestPath) => {
 const suspiciousPathMiddleware = async (req, res, next) => {
   if (process.env.NODE_ENV === 'test') return next();
 
-  const requestPath = req.path || req.originalUrl || '';
+  const requestPath = req.path || String(req.originalUrl || '').split('?')[0] || '';
   if (!isSuspiciousPath(requestPath)) return next();
 
   try {
