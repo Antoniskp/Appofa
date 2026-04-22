@@ -141,6 +141,9 @@ export default function RegisterPage() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
             {t('register_title')}
           </h2>
+          <p className="mt-2 text-center text-sm text-gray-500">
+            {t('register_subtitle')}
+          </p>
           <p className="mt-2 text-center text-sm text-gray-600">
             {t('already_have_account')}{' '}
             <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
@@ -157,7 +160,7 @@ export default function RegisterPage() {
           disabled={loading}
         />
 
-        <AuthDivider text={t('or_register_with')} />
+        <AuthDivider text={t('or_register_with_email')} />
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
