@@ -3,7 +3,6 @@
     error_page 502 /502.html;
     location = /502.html { root /path/to/public; internal; }
   AUTO-REFRESH: Page reloads every 60 seconds automatically via <meta http-equiv="refresh"> and JS.
-  DONATIONS: Replace paypal.me/YOURPAYPAL and buymeacoffee.com/YOURCOFFEE with real links.
 -->
 <!DOCTYPE html>
 <html lang="el">
@@ -137,32 +136,8 @@
       display: flex;
       gap: 0.65rem;
       flex-wrap: wrap;
+      align-items: center;
       margin-bottom: 0.6rem;
-    }
-
-    .button {
-      flex: 1 1 220px;
-      text-align: center;
-      text-decoration: none;
-      padding: 0.7rem 0.95rem;
-      border-radius: 8px;
-      font-weight: 700;
-      color: #1f2432;
-      transition: transform 0.15s ease, opacity 0.2s ease;
-    }
-
-    .button:hover,
-    .button:focus-visible {
-      transform: translateY(-1px);
-      opacity: 0.95;
-    }
-
-    .button-paypal {
-      background: #f0a500;
-    }
-
-    .button-coffee {
-      background: #ffdd00;
     }
 
     .donation-note {
@@ -246,11 +221,10 @@
     <section class="card" aria-label="Donation links">
       <h2>💙 Support Appofa</h2>
       <div class="donation-buttons">
-        <a class="button button-paypal" href="https://paypal.me/YOURPAYPAL" target="_blank" rel="noopener noreferrer">Donate via PayPal</a>
-        <div style="margin-bottom:0.5rem;">
+        <div>
           <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="Antoniskp" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
         </div>
-        <div style="margin-bottom:0.5rem;">
+        <div>
           <iframe src="https://github.com/sponsors/Antoniskp/button" title="Sponsor Antoniskp" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
         </div>
       </div>
