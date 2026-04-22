@@ -107,8 +107,8 @@ describe('ArticleForm Component', () => {
     expect(container.querySelector('select[name="type"]')).toBeTruthy();
     expect(container.querySelector('select[name="status"]')).toBeTruthy();
 
-    // Check that "Create Article" button is shown
-    expect(container.textContent).toContain('Δημιουργία Άρθρου');
+    // Check that create button is shown
+    expect(container.textContent).toContain('Νέο Άρθρο');
 
     // Check that location info message is shown (create mode)
     expect(container.textContent).toContain('Οι τοποθεσίες μπορούν να προστεθούν μετά τη δημιουργία του άρθρου');
@@ -148,8 +148,8 @@ describe('ArticleForm Component', () => {
     expect(container.querySelector('input[name="summary"]').value).toBe('Test summary');
     expect(container.querySelector('select[name="type"]').value).toBe('articles');
 
-    // Check that "Save Changes" button is shown
-    expect(container.textContent).toContain('Αποθήκευση Αλλαγών');
+    // Check that save button is shown
+    expect(container.textContent).toContain('Αποθήκευση');
 
     // Check that location selector section is shown (edit mode)
     // Note: The actual selector might not render due to mocked API, but the section should be present
