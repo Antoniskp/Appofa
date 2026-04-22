@@ -109,9 +109,9 @@ export default function WorthyCitizensPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-3xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Άξιοι Πολίτες</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Αναγνωρισμένοι από την Κοινότητα</h1>
           <p className="text-gray-600">
-            Πολίτες αναγνωρισμένοι από την κοινότητα για τη γνώση και την εμπειρία τους.
+            Κατάταξη βάσει εγκρίσεων από άλλους πολίτες ανά θεματική περιοχή.
           </p>
         </div>
 

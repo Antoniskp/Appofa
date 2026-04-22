@@ -121,8 +121,8 @@ export default function UsersPage() {
             <div className="flex items-center gap-2">
               <span className="text-xl">🏆</span>
               <div>
-                <p className="text-sm font-semibold text-gray-800">Κορυφαίοι Πολίτες</p>
-                <p className="text-xs text-gray-500">Αναγνωρισμένοι από την κοινότητα.</p>
+                <p className="text-sm font-semibold text-gray-800">Αναγνωρισμένοι από την Κοινότητα</p>
+                <p className="text-xs text-gray-500">Πολίτες αναγνωρισμένοι ανά θεματική περιοχή.</p>
               </div>
             </div>
             <Link
