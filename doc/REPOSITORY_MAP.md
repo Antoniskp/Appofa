@@ -93,6 +93,7 @@ Appofa/
 ├── doc/                    # Documentation (30+ files)
 ├── scripts/                # Deployment & setup scripts
 ├── public/                 # Static assets
+│   └── 502.html            # Self-contained Nginx 502 fallback page (inline CSS/JS + editable countdown target)
 └── .github/                # CI workflows, agents, copilot instructions
 ```
 
