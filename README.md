@@ -1,8 +1,21 @@
 # Appofa
 
-**Application for news, education and polls**
+**Greek civic-engagement platform** — connecting citizens with their communities through articles, polls, suggestions, dream-team formations, person profiles, and manifests.
 
-![Node.js](https://img.shields.io/badge/node-%3E%3D22.0.0-brightgreen) ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
+> Live at [appofasi.gr](https://appofasi.gr)
+
+![Node.js](https://img.shields.io/badge/node-%3E%3D24.0.0-brightgreen) ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)
+
+Appofa empowers Greek communities by giving residents a single place to:
+
+- 📰 **Read & publish** local news and articles
+- 🗳️ **Vote on polls** scoped to their municipality, prefecture, or country
+- 💡 **Submit suggestions** and upvote solutions for real local problems
+- 👥 **Build dream teams** — nominate and vote for ideal leadership roles per location
+- 🏛️ **Explore person profiles** — public figures, candidates, and community leaders
+- 📋 **Publish manifests** — structured civic commitments tied to locations
+
+Content and voting rights are tied to a hierarchical location system (International → Country → Prefecture → Municipality), so every interaction stays relevant to the right community.
 
 ---
 
@@ -59,7 +72,7 @@ graph LR
 ## Quick Start
 
 ### Prerequisites
-- Node.js 22+
+- Node.js 24+
 - PostgreSQL 12+
 - npm 10+
 
@@ -172,7 +185,7 @@ See [doc/INDEX.md](doc/INDEX.md) for the full documentation index.
 
 ## Categories
 
-The `/categories` page lists all platform content categories (Articles, News, Polls), rendered statically from [`config/articleCategories.json`](config/articleCategories.json). See [doc/CATEGORIES.md](doc/CATEGORIES.md) for the full schema and contribution guide.
+The `/categories` page lists all platform content categories (Articles, News, Polls), rendered statically from [`config/articleCategories.json`](config/articleCategories.json). See [doc/CATEGORIES.md](doc/CATEGORIES.md) for the JSON schema and contribution guide.
 
 **Suggest a new category** — open a pre-filled GitHub Issue:  
 [https://github.com/Antoniskp/Appofa/issues/new?labels=category-suggestion](https://github.com/Antoniskp/Appofa/issues/new?labels=category-suggestion)
