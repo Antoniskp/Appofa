@@ -140,6 +140,28 @@
       margin-bottom: 0.6rem;
     }
 
+    .button-github-sponsor {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      background: #24292f;
+      color: #ffffff;
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      height: 32px;
+      transition: opacity 0.2s ease, transform 0.15s ease;
+    }
+
+    .button-github-sponsor:hover,
+    .button-github-sponsor:focus-visible {
+      opacity: 0.85;
+      transform: translateY(-1px);
+    }
+
     .donation-note {
       font-style: italic;
       color: rgba(214, 210, 196, 0.95);
@@ -225,7 +247,9 @@
           <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="Antoniskp" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
         </div>
         <div>
-          <iframe src="https://github.com/sponsors/Antoniskp/button" title="Sponsor Antoniskp" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+          <a class="button-github-sponsor" href="https://github.com/sponsors/Antoniskp" target="_blank" rel="noopener noreferrer">
+            ❤️ Sponsor on GitHub
+          </a>
         </div>
       </div>
       <p class="donation-note">Every contribution helps keep Appofa running.</p>
