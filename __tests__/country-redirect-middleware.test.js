@@ -99,6 +99,11 @@ describe('country redirect middleware', () => {
 
     expect(response.type).toBe('next');
     expect(mockRedirect).not.toHaveBeenCalled();
+    expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
+      path: '/',
+      maxAge: 86400,
+      sameSite: 'Lax',
+    });
     expect(mockFetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/geo/track',
       expect.objectContaining({
