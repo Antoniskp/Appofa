@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, Article, Poll, PollVote, Location, Comment } = require('../src/models');
+const { sequelize, User, Article, Poll, PollVote, Location, Comment, Suggestion } = require('../src/models');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -40,6 +40,14 @@ describe('GET /api/stats/community', () => {
     });
     user2Id = user2.id;
 
+    await User.create({
+      username: 'unclaimedperson1',
+      email: 'unclaimedperson1@test.com',
+      password: 'password123',
+      role: 'viewer',
+      claimStatus: 'pending'
+    });
+
     await Article.create({
       title: 'Test Article One',
       content: 'This is the content of test article one.',
@@ -59,6 +67,12 @@ describe('GET /api/stats/community', () => {
       creatorId: user2Id,
       status: 'active'
     });
+
+    await Suggestion.create({
+      title: 'Test Suggestion One',
+      body: 'This is a sufficiently long suggestion body for testing.',
+      authorId: user1Id
+    });
   });
 
   afterAll(async () => {
@@ -75,6 +89,7 @@ describe('GET /api/stats/community', () => {
 
     const { data } = response.body;
     expect(typeof data.totalUsers).toBe('number');
+    expect(typeof data.totalSuggestions).toBe('number');
     expect(typeof data.totalArticles).toBe('number');
     expect(typeof data.totalPolls).toBe('number');
     expect(typeof data.totalVotes).toBe('number');
@@ -85,7 +100,7 @@ describe('GET /api/stats/community', () => {
     expect(data.updatedAt).toBeDefined();
   });
 
-  test('should correctly count totalArticles and totalPolls', async () => {
+  test('should correctly count totalArticles, totalPolls, totalUsers and totalSuggestions', async () => {
     const response = await request(app)
       .get('/api/stats/community')
       .expect(200);
@@ -94,6 +109,7 @@ describe('GET /api/stats/community', () => {
     expect(data.totalArticles).toBe(2);
     expect(data.totalPolls).toBe(1);
     expect(data.totalUsers).toBe(2);
+    expect(data.totalSuggestions).toBe(1);
   });
 
   test('should count activeUsers as distinct article authors and poll creators', async () => {

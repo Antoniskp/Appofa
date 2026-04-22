@@ -11,7 +11,7 @@ import {
   ArrowRightIcon,
   ArrowLeftIcon,
   UsersIcon,
-  ChatBubbleLeftRightIcon,
+  LightBulbIcon,
   CheckBadgeIcon,
   ShieldCheckIcon,
   UserPlusIcon,
@@ -157,10 +157,10 @@ export default function HomeHero() {
   }, [activeSlides.length, isHovered, goToNext]);
 
   const metrics = stats ? [
-    { label: 'Χρήστες',       value: stats.totalUsers,    icon: UsersIcon },
-    { label: 'Ψηφοφορίες',    value: stats.totalPolls,    icon: ChartBarIcon },
-    { label: 'Ψήφοι',         value: stats.totalVotes,    icon: CheckBadgeIcon },
-    { label: 'Σχόλια',        value: stats.totalComments, icon: ChatBubbleLeftRightIcon },
+    { label: 'Χρήστες',       value: stats.totalUsers,       icon: UsersIcon },
+    { label: 'Προτάσεις',     value: stats.totalSuggestions, icon: LightBulbIcon },
+    { label: 'Ψηφοφορίες',    value: stats.totalPolls,       icon: ChartBarIcon },
+    { label: 'Ενεργοί',       value: stats.activeUsers,      icon: CheckBadgeIcon },
   ] : null;
 
   const heroStyle =
