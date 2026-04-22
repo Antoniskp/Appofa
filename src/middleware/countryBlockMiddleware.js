@@ -36,9 +36,13 @@ const countryBlockMiddleware = async (req, res, next) => {
 
     const countryCode = detectCountryCode(req);
     const hasIp = Boolean(getClientIp(req));
-    const { blockedCountries, settings } = await countryAccessService.getCountryRulesCache();
+    const { blockedCountries, blockedCountriesRedirects, settings } = await countryAccessService.getCountryRulesCache();
 
     if (countryCode && blockedCountries.has(countryCode)) {
+      const redirectPath = blockedCountriesRedirects?.get(countryCode);
+      if (redirectPath) {
+        return res.redirect(302, redirectPath);
+      }
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }
 

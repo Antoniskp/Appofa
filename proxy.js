@@ -6,6 +6,7 @@ const RULES_CACHE_TTL = 60 * 1000;
 
 const DEFAULT_ACCESS_RULES = {
   blockedCountries: [],
+  blockedCountriesRedirects: new Map(),
   unknownCountryAction: 'allow',
   unknownCountryRedirectPath: '/unknown-country',
   noIpAction: 'allow',
@@ -41,6 +42,13 @@ const normalizeRedirectPath = (value, fallback = '/unknown-country') => {
   return normalized || fallback;
 };
 
+const normalizeBlockedCountryRedirectPath = (value) => {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  if (!normalized.startsWith('/')) return null;
+  return normalized || null;
+};
+
 const getClientIp = (request) => {
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) return forwarded.split(',')[0].trim();
@@ -48,14 +56,35 @@ const getClientIp = (request) => {
 };
 
 const normalizeAccessRules = (payload) => {
-  const blockedCountries = Array.isArray(payload?.blockedCountries)
+  const blockedEntries = Array.isArray(payload?.blockedCountries)
     ? payload.blockedCountries
-      .map((code) => normalizeCountryCode(code))
+      .map((entry) => {
+        if (typeof entry === 'string') {
+          const countryCode = normalizeCountryCode(entry);
+          if (!countryCode) return null;
+          return { countryCode, redirectPath: null };
+        }
+
+        const countryCode = normalizeCountryCode(entry?.countryCode);
+        if (!countryCode) return null;
+        return {
+          countryCode,
+          redirectPath: normalizeBlockedCountryRedirectPath(entry?.redirectPath),
+        };
+      })
       .filter(Boolean)
     : [];
 
+  const blockedCountries = blockedEntries.map((entry) => entry.countryCode);
+  const blockedCountriesRedirects = new Map(
+    blockedEntries
+      .filter((entry) => entry.redirectPath)
+      .map((entry) => [entry.countryCode, entry.redirectPath])
+  );
+
   return {
     blockedCountries,
+    blockedCountriesRedirects,
     unknownCountryAction: normalizeAction(payload?.unknownCountryAction),
     unknownCountryRedirectPath: normalizeRedirectPath(payload?.unknownCountryRedirectPath),
     noIpAction: normalizeAction(payload?.noIpAction),
@@ -76,7 +105,11 @@ const getAccessRules = async (apiBase) => {
     const body = await response.json();
     _rulesCache = normalizeAccessRules(body?.data || {});
   } catch {
-    _rulesCache = { ...DEFAULT_ACCESS_RULES };
+    _rulesCache = {
+      ...DEFAULT_ACCESS_RULES,
+      blockedCountries: [],
+      blockedCountriesRedirects: new Map(),
+    };
   }
 
   _rulesCacheExpiry = Date.now() + RULES_CACHE_TTL;
@@ -121,7 +154,8 @@ export async function proxy(request) {
   const blockedCountries = new Set(rules.blockedCountries || []);
 
   if (countryCode && blockedCountries.has(countryCode)) {
-    return NextResponse.redirect(new URL('/blocked', request.url));
+    const redirectPath = rules.blockedCountriesRedirects?.get(countryCode) || '/blocked';
+    return NextResponse.redirect(new URL(redirectPath, request.url));
   }
 
   if (!countryCode) {

@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { GeoVisit } = require('../models');
 const { getCookie } = require('../utils/cookies');
 
@@ -103,6 +104,25 @@ const sanitizePath = (rawPath) => {
   return rawPath.slice(0, 500) || null;
 };
 
+const parsePossibleUserId = (value) => {
+  if (value == null) return null;
+  const parsed = Number.parseInt(String(value), 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const getUserIdFromToken = (token) => {
+  if (!token || typeof token !== 'string') return null;
+  try {
+    // Analytics-only hinting: this decode is intentionally unverified and never used
+    // for auth/authorization decisions or any privileged behavior.
+    const payload = jwt.decode(token);
+    if (!payload || typeof payload !== 'object') return null;
+    return parsePossibleUserId(payload.id) || parsePossibleUserId(payload.sub);
+  } catch {
+    return null;
+  }
+};
+
 const geoTrackMiddleware = (req, res, next) => {
   if (process.env.NODE_ENV === 'test') {
     return next();
@@ -123,6 +143,7 @@ const geoTrackMiddleware = (req, res, next) => {
 
   const { countryCode, countryName } = detectCountry(req);
   const token = getCookie(req, 'token');
+  const userId = getUserIdFromToken(token);
   const locale = getCookie(req, 'NEXT_LOCALE') || null;
 
   GeoVisit.create({
@@ -130,6 +151,7 @@ const geoTrackMiddleware = (req, res, next) => {
     countryName,
     // Intentionally non-blocking analytics: only token presence is checked here.
     isAuthenticated: Boolean(token && token.trim()),
+    userId,
     isDiaspora: null,
     sessionHash,
     ipAddress: normalizedIp || null,

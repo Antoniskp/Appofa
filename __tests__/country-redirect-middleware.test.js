@@ -217,6 +217,27 @@ describe('country redirect middleware', () => {
     expect(response.url).toBe('https://appofasi.gr/blocked');
   });
 
+  test('redirects blocked countries to custom redirect path when configured', async () => {
+    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            blockedCountries: [{ countryCode: 'RU', redirectPath: '/donate/russia' }],
+            unknownCountryAction: 'allow',
+            unknownCountryRedirectPath: '/unknown-country',
+            noIpAction: 'allow',
+            noIpRedirectPath: '/unknown-country',
+          },
+        }),
+      }));
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: 'RU' }));
+    expect(response.type).toBe('redirect');
+    expect(response.url).toBe('https://appofasi.gr/donate/russia');
+  });
+
   test('redirects unknown country to /blocked when noIpAction is block', async () => {
     mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
       .mockImplementationOnce(() => Promise.resolve({

@@ -28,7 +28,7 @@ async function getCountryRulesCache() {
   if (cache && Date.now() < cacheExpiry) return cache;
 
   const [rules, settingsRows] = await Promise.all([
-    CountryAccessRule.findAll({ attributes: ['countryCode'] }),
+    CountryAccessRule.findAll({ attributes: ['countryCode', 'redirectPath'] }),
     GeoAccessSetting.findAll({ attributes: ['key', 'value'] }),
   ]);
 
@@ -37,6 +37,18 @@ async function getCountryRulesCache() {
       .map((rule) => String(rule.countryCode || '').trim().toUpperCase())
       .filter((code) => /^[A-Z]{2}$/.test(code))
   );
+  const blockedCountriesRedirects = new Map();
+  for (const rule of rules) {
+    const countryCode = String(rule.countryCode || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(countryCode)) {
+      continue;
+    }
+
+    const redirectPath = typeof rule.redirectPath === 'string' ? rule.redirectPath.trim() : '';
+    if (redirectPath && redirectPath.startsWith('/')) {
+      blockedCountriesRedirects.set(countryCode, redirectPath);
+    }
+  }
 
   const rawSettings = {};
   for (const row of settingsRows) {
@@ -45,6 +57,7 @@ async function getCountryRulesCache() {
 
   cache = {
     blockedCountries,
+    blockedCountriesRedirects,
     settings: {
       unknownCountryAction: normalizeAction(rawSettings.unknown_country_action),
       unknownCountryRedirectPath: normalizeRedirectPath(
@@ -74,11 +87,16 @@ async function listRules() {
   });
 }
 
-async function addRule(countryCode, reason, userId) {
+async function addRule(countryCode, reason, userId, redirectPath) {
   const normalizedCode = String(countryCode || '').trim().toUpperCase();
+  const trimmedRedirectPath = typeof redirectPath === 'string' ? redirectPath.trim() : '';
+  const normalizedRedirectPath = trimmedRedirectPath && trimmedRedirectPath.startsWith('/')
+    ? trimmedRedirectPath
+    : null;
   const rule = await CountryAccessRule.create({
     countryCode: normalizedCode,
     reason: reason || null,
+    redirectPath: normalizedRedirectPath,
     createdByUserId: userId || null,
   });
   invalidateCache();

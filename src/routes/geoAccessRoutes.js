@@ -21,11 +21,15 @@ const normalizeCountryCode = (value) => String(value || '').trim().toUpperCase()
 
 geoAccessPublicRoutes.get('/access-rules', apiLimiter, async (req, res, next) => {
   try {
-    const { blockedCountries, settings } = await countryAccessService.getCountryRulesCache();
+    const { blockedCountries, blockedCountriesRedirects, settings } = await countryAccessService.getCountryRulesCache();
     return res.json({
       success: true,
       data: {
-        blockedCountries: Array.from(blockedCountries),
+        blockedCountries: Array.from(blockedCountries).map((countryCode) => ({
+          countryCode,
+          redirectPath: blockedCountriesRedirects?.get(countryCode) || null,
+        })),
+        blockedCountryCodes: Array.from(blockedCountries),
         unknownCountryAction: settings.unknownCountryAction,
         unknownCountryRedirectPath: settings.unknownCountryRedirectPath,
         noIpAction: settings.noIpAction,
@@ -50,12 +54,16 @@ geoAccessAdminRoutes.post('/rules', apiLimiter, authMiddleware, checkRole('admin
   try {
     const countryCode = normalizeCountryCode(req.body?.countryCode);
     const reason = req.body?.reason ? String(req.body.reason).trim() : null;
+    const redirectPath = req.body?.redirectPath == null ? null : String(req.body.redirectPath).trim();
 
     if (!/^[A-Z]{2}$/.test(countryCode)) {
       return res.status(400).json({ success: false, message: 'countryCode must be 2 uppercase letters.' });
     }
+    if (redirectPath && !redirectPath.startsWith('/')) {
+      return res.status(400).json({ success: false, message: 'Redirect path must start with /.' });
+    }
 
-    const rule = await countryAccessService.addRule(countryCode, reason, req.user.id);
+    const rule = await countryAccessService.addRule(countryCode, reason, req.user.id, redirectPath || null);
     return res.status(201).json({ success: true, data: rule });
   } catch (error) {
     if (error.name === 'SequelizeUniqueConstraintError') {

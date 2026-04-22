@@ -59,6 +59,7 @@ describe('Geo Stats Admin API', () => {
   let adminToken;
   let adminId;
   let viewerToken;
+  let visitorUser;
   let grLocation;
   let frLocation;
 
@@ -67,6 +68,14 @@ describe('Geo Stats Admin API', () => {
     await sequelize.sync({ force: true });
     ({ token: adminToken, id: adminId } = await registerAndLogin('geo_admin', 'admin'));
     ({ token: viewerToken } = await registerAndLogin('geo_viewer', 'viewer'));
+    visitorUser = await User.create({
+      username: 'geo_visitor',
+      email: 'geo_visitor@test.com',
+      password: 'Test1234!',
+      role: 'viewer',
+      firstNameNative: 'Visitor',
+      lastNameNative: 'User',
+    });
 
     [grLocation, frLocation] = await Promise.all([
       Location.create({ name: 'Greece', type: 'country', slug: 'greece', code: 'GR' }),
@@ -96,6 +105,7 @@ describe('Geo Stats Admin API', () => {
         countryCode: 'GR',
         countryName: 'Greece',
         isAuthenticated: true,
+        userId: visitorUser.id,
         isDiaspora: true,
         sessionHash: 'a'.repeat(64),
         ipAddress: '1.1.1.1',
@@ -171,6 +181,9 @@ describe('Geo Stats Admin API', () => {
       countryCode: expect.any(String),
       createdAt: expect.any(String),
     }));
+    const visitWithUser = res.body.data.recentVisits.find((row) => row.userId === visitorUser.id);
+    expect(visitWithUser).toBeTruthy();
+    expect(visitWithUser.username).toBe('geo_visitor');
   });
 
   it('DELETE /visits validates olderThanDays query', async () => {

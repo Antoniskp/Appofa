@@ -16,6 +16,11 @@ const CountryAccessRule = sequelize.define('CountryAccessRule', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  redirectPath: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+    defaultValue: null,
+  },
   createdByUserId: {
     type: DataTypes.INTEGER,
     allowNull: true,
