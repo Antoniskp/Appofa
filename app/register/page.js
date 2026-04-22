@@ -144,12 +144,6 @@ export default function RegisterPage() {
           <p className="mt-2 text-center text-sm text-gray-500">
             {t('register_subtitle')}
           </p>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            {t('already_have_account')}{' '}
-            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-              {t('submit_login')}
-            </Link>
-          </p>
         </div>
 
         {/* OAuth Buttons */}
@@ -250,7 +244,21 @@ export default function RegisterPage() {
               {t('submit_register')}
             </Button>
           </div>
+
+          <p className="text-center text-sm text-gray-600">
+            {t('already_have_account')}{' '}
+            <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              {t('submit_login')}
+            </Link>
+          </p>
         </form>
+
+        <p className="text-center text-sm text-gray-600">
+          {t('already_have_account')}{' '}
+          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+            {t('submit_login')}
+          </Link>
+        </p>
       </div>
       <DiasporaModal
         isOpen={showDiasporaModal}
