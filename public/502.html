@@ -2,7 +2,7 @@
   NGINX CONFIG: To serve this page on 502 errors, add to your server block:
     error_page 502 /502.html;
     location = /502.html { root /path/to/public; internal; }
-  COUNTDOWN: Edit the ISO date inside <span id="countdown-target"> to change the return estimate.
+  AUTO-REFRESH: Page reloads every 60 seconds automatically via <meta http-equiv="refresh"> and JS.
   DONATIONS: Replace paypal.me/YOURPAYPAL and buymeacoffee.com/YOURCOFFEE with real links.
 -->
 <!DOCTYPE html>
@@ -10,6 +10,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="refresh" content="60">
   <title>502 — Appofa</title>
   <style>
     :root {
@@ -224,11 +225,10 @@
       <p class="subtitle">Appofa is an open civic platform for news, education and polls. We're working hard to get back online.</p>
     </section>
 
-    <section class="card" aria-label="Maintenance countdown">
-      <h2>⏳ Estimated return</h2>
-      <p id="countdown-display" style="font-size:2rem; font-weight:bold; color:#b7c2b2;">...</p>
-      <span id="countdown-target" hidden>2026-05-01T12:00:00</span>
-      <!-- Edit the date in <span id="countdown-target"> to update the countdown -->
+    <section class="card" aria-label="Maintenance info">
+      <h2>🔄 We're on it!</h2>
+      <p>Updates and deployments typically take <strong style="color:#b7c2b2;">1–2 minutes</strong>. The page will automatically refresh every minute, or you can <a href="" style="color:#b7c2b2;" onclick="location.reload();return false;">refresh now</a>.</p>
+      <p style="margin-top:0.6rem; font-size:0.9rem; color:rgba(214,210,196,0.7);">⏱ Page auto-refreshes in <span id="refresh-counter">60</span>s</p>
     </section>
 
     <section class="card" aria-label="Wikipedia reading links">
@@ -247,7 +247,12 @@
       <h2>💙 Support Appofa</h2>
       <div class="donation-buttons">
         <a class="button button-paypal" href="https://paypal.me/YOURPAYPAL" target="_blank" rel="noopener noreferrer">Donate via PayPal</a>
-        <a class="button button-coffee" href="https://buymeacoffee.com/YOURCOFFEE" target="_blank" rel="noopener noreferrer">☕ Buy Me a Coffee</a>
+        <div style="margin-bottom:0.5rem;">
+          <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="Antoniskp" data-color="#FFDD00" data-emoji="" data-font="Cookie" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff"></script>
+        </div>
+        <div style="margin-bottom:0.5rem;">
+          <iframe src="https://github.com/sponsors/Antoniskp/button" title="Sponsor Antoniskp" height="32" width="114" style="border: 0; border-radius: 6px;"></iframe>
+        </div>
       </div>
       <p class="donation-note">Every contribution helps keep Appofa running.</p>
     </section>
@@ -259,40 +264,13 @@
 
   <script>
     (function () {
-      var countdownDisplay = document.getElementById('countdown-display');
-      var countdownTarget = document.getElementById('countdown-target');
-
-      if (!countdownDisplay || !countdownTarget) {
-        return;
-      }
-
-      function updateCountdown() {
-        var targetDate = new Date(countdownTarget.textContent.trim());
-
-        if (Number.isNaN(targetDate.getTime())) {
-          countdownDisplay.textContent = 'Invalid date';
-          return;
-        }
-
-        var now = new Date();
-        var distance = targetDate.getTime() - now.getTime();
-
-        if (distance <= 0) {
-          countdownDisplay.textContent = '🟢 Back soon!';
-          return;
-        }
-
-        var totalSeconds = Math.floor(distance / 1000);
-        var days = Math.floor(totalSeconds / 86400);
-        var hours = Math.floor((totalSeconds % 86400) / 3600);
-        var minutes = Math.floor((totalSeconds % 3600) / 60);
-        var seconds = totalSeconds % 60;
-
-        countdownDisplay.textContent = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
-      }
-
-      updateCountdown();
-      setInterval(updateCountdown, 1000);
+      var counter = document.getElementById('refresh-counter');
+      var seconds = 60;
+      setInterval(function () {
+        seconds -= 1;
+        if (counter) counter.textContent = seconds;
+        if (seconds <= 0) location.reload();
+      }, 1000);
     })();
   </script>
 </body>
