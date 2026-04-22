@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-21
+> **Last updated**: 2026-04-22
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -21,17 +21,17 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (40)](#models-40)
-- [API Routes (26 files, 157+ endpoints)](#api-routes-26-files-157-endpoints)
+- [Models (42)](#models-42)
+- [API Routes (27 files, 163+ endpoints)](#api-routes-27-files-163-endpoints)
 - [Controllers (21)](#controllers-21)
-- [Services (8)](#services-8)
-- [Middleware (8)](#middleware-8)
-- [Frontend Pages (100)](#frontend-pages-100)
+- [Services (10)](#services-10)
+- [Middleware (9)](#middleware-9)
+- [Frontend Pages (102)](#frontend-pages-102)
 - [Components (120+)](#components-120)
-- [API Client Modules (26)](#api-client-modules-26)
+- [API Client Modules (27)](#api-client-modules-27)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (77)](#migrations-77)
+- [Migrations (79)](#migrations-79)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -47,18 +47,18 @@ Appofa/
 ├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/static_pages)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (21 files)
-│   ├── services/           # Business logic (8 files)
-│   ├── models/             # Sequelize models (40 models)
-│   ├── routes/             # Express route definitions (26 files)
-│   ├── middleware/         # Auth, CSRF, rate-limit, error handling (7 files)
-│   ├── migrations/         # DB migrations (77 files)
+│   ├── services/           # Business logic (10 files)
+│   ├── models/             # Sequelize models (42 models)
+│   ├── routes/             # Express route definitions (27 files)
+│   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
+│   ├── migrations/         # DB migrations (79 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
 │   ├── utils/              # Utility helpers
 │   └── index.js            # Express app entry point
 │
-├── app/                    # Frontend (Next.js App Router, 99 pages)
+├── app/                    # Frontend (Next.js App Router, 101+ pages)
 │   ├── (statics)/          # Static content pages (46 pages)
 │   ├── admin/              # Admin dashboard (19 pages)
 │   ├── articles/           # Article CRUD pages
@@ -82,7 +82,7 @@ Appofa/
 │   └── ui/                 # Shared UI primitives (20+ files)
 │
 ├── lib/                    # Shared frontend utilities
-│   ├── api/                # API client modules (26 files)
+│   ├── api/                # API client modules (27 files)
 │   ├── constants/          # Frontend constants (3 files)
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
@@ -98,7 +98,7 @@ Appofa/
 
 ---
 
-## Models (40)
+## Models (42)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -141,10 +141,12 @@ Appofa/
 | IpAccessRule | IpAccessRules | id, ip (STRING 45, unique), type (whitelist\|blacklist), reason, createdByUserId | belongsTo: User (createdBy) |
 | GeoVisit | GeoVisits | id, countryCode, countryName, isAuthenticated, isDiaspora, sessionHash, ipAddress, path, locale | Standalone analytics table |
 | CountryFunding | CountryFundings | id, locationId (unique), goalAmount, currentAmount, donorCount, status, donationUrl, unlockedAt, unlockedByUserId | belongsTo: Location (`location`), User (`unlockedBy`) |
+| CountryAccessRule | CountryAccessRules | id, countryCode (STRING 2, unique), reason, createdByUserId | belongsTo: User (`createdBy`) |
+| GeoAccessSetting | GeoAccessSettings | id, key (STRING 100, unique), value, updatedAt | Key-value geo access behavior settings |
 
 ---
 
-## API Routes (26 files, 157+ endpoints)
+## API Routes (27 files, 163+ endpoints)
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
@@ -293,6 +295,7 @@ Appofa/
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
 | geoStatsRoutes.js | /api/admin/geo-stats | POST /track, GET /country-funding/:locationId/public, GET /visits, DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
+| geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules. Admin: GET/POST/DELETE /rules, GET/PUT /settings |
 
 ---
 
@@ -324,13 +327,14 @@ Appofa/
 
 ---
 
-## Services (9)
+## Services (10)
 
 | Service | Purpose |
 |---------|---------|
 | articleService.js | Article business logic |
 | authService.js | Authentication & authorization |
 | badgeService.js | Badge evaluation & assignment |
+| countryAccessService.js | Country block rules + geo access settings with 60s in-memory TTL cache |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
 | oauthService.js | OAuth integration (GitHub, Google) |
@@ -340,22 +344,23 @@ Appofa/
 
 ---
 
-## Middleware (8)
+## Middleware (9)
 
 | Middleware | Purpose |
 |-----------|---------|
-| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/geo/track` + first-visit redirect to `/country/[code]` |
+| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/geo/track` + cached country access-rules checks + first-visit redirect to `/country/[code]` |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
 | rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + unknown/no-IP blocking behavior |
 | geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier and stored visitor IP for admin workflows |
 
 ---
 
-## Frontend Pages (100)
+## Frontend Pages (102)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -391,6 +396,7 @@ Appofa/
 | `/worthy-citizens` | Worthy citizens page |
 | `/manifest-supporters` | Manifest supporters |
 | `/request-removal` | Profile removal request |
+| `/blocked`, `/unknown-country` | Public geo access status pages for blocked/unknown-country traffic |
 
 ### Admin (19 pages)
 | Route | Description |
@@ -403,7 +409,7 @@ Appofa/
 | `/admin/candidates/*` | Candidate management (backward-compat) |
 | `/admin/dream-team` | Dream team admin |
 | `/admin/hero` | Hero settings |
-| `/admin/geo` | Geo traffic dashboard (country/top paths/recent visits with IP block + log cleanup) + country funding management |
+| `/admin/geo` | Geo traffic dashboard + country funding management + access rules tab (blocked countries + unknown/no-IP actions) |
 | `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/locations` | Location admin |
@@ -439,7 +445,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (26)
+## API Client Modules (27)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -456,6 +462,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | endorsements.js | Endorsements |
 | geo.js | Geo detect + public country funding |
 | geoAdmin.js | Admin geo-traffic analytics + country funding CRUD |
+| geoAccess.js | Admin geo access rules/settings CRUD |
 | heroSettings.js | Hero settings |
 | homepageSettings.js | Homepage settings |
 | ipRules.js | IP whitelist/blacklist management |
@@ -510,7 +517,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (77)
+## Migrations (79)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -609,6 +616,8 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260420000001-create-country-fundings.js | Create CountryFundings table with location unique index + status lifecycle fields |
 | — | 20260420000002-add-diaspora-fields-to-users.js | Add Users.isDiaspora and Users.residenceCountryCode |
 | — | 20260421000000-add-ip-to-geo-visits.js | Add nullable GeoVisits.ipAddress (STRING 45) for admin IP visibility/blocking |
+| — | 20260422000000-create-country-access-rules.js | Create CountryAccessRules table for blocked country codes |
+| — | 20260422000001-create-geo-access-settings.js | Create GeoAccessSettings table and upsert default unknown/no-IP access behavior |
 
 </details>
 

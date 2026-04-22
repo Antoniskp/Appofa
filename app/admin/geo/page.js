@@ -11,6 +11,7 @@ import { useToast } from '@/components/ToastProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { addIpRule, geoAdminAPI } from '@/lib/api';
+import { addCountryRule, getSettings, listCountryRules, removeCountryRule, updateSetting } from '@/lib/api/geoAccess';
 
 const PERIODS = [
   { key: '7d', label: '7 ημέρες' },
@@ -30,6 +31,16 @@ const countryCodeToFlag = (code) =>
   code ? [...code.toUpperCase()].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('') : '🌍';
 
 const euro = (value) => Number(value || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const ACCESS_ACTION_OPTIONS = ['allow', 'block', 'redirect'];
+
+const getCountryName = (code) => {
+  if (!code) return null;
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase()) || null;
+  } catch {
+    return null;
+  }
+};
 
 function GeoAdminContent() {
   const router = useRouter();
@@ -43,6 +54,16 @@ function GeoAdminContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBlockingIp, setIsBlockingIp] = useState(null);
   const [blockedIps, setBlockedIps] = useState(new Set());
+  const [isAddingCountryRule, setIsAddingCountryRule] = useState(false);
+  const [isRemovingCountryRule, setIsRemovingCountryRule] = useState(null);
+  const [countryRuleForm, setCountryRuleForm] = useState({ countryCode: '', reason: '' });
+  const [isSavingAccessSettings, setIsSavingAccessSettings] = useState(false);
+  const [accessSettingsForm, setAccessSettingsForm] = useState({
+    unknownCountryAction: 'allow',
+    unknownCountryRedirectPath: '/unknown-country',
+    noIpAction: 'allow',
+    noIpRedirectPath: '/unknown-country',
+  });
   const [clearOlderThanDays, setClearOlderThanDays] = useState(String(LOG_RETENTION_OPTIONS[0]));
   const [isClearingLogs, setIsClearingLogs] = useState(false);
   const [fundingForm, setFundingForm] = useState({
@@ -103,6 +124,32 @@ function GeoAdminContent() {
     }
   );
 
+  const { data: countryRules, loading: countryRulesLoading, refetch: refetchCountryRules } = useAsyncData(
+    async () => {
+      const res = await listCountryRules();
+      if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης κανόνων χωρών.');
+      return res.data || [];
+    },
+    [],
+    {
+      initialData: [],
+      onError: (message) => addToast(message || 'Αποτυχία φόρτωσης κανόνων χωρών.', { type: 'error' }),
+    }
+  );
+
+  const { data: accessSettings, loading: accessSettingsLoading, refetch: refetchAccessSettings } = useAsyncData(
+    async () => {
+      const res = await getSettings();
+      if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης ρυθμίσεων πρόσβασης.');
+      return res.data || [];
+    },
+    [],
+    {
+      initialData: [],
+      onError: (message) => addToast(message || 'Αποτυχία φόρτωσης ρυθμίσεων πρόσβασης.', { type: 'error' }),
+    }
+  );
+
   const summary = useMemo(() => {
     const byCountry = visits?.byCountry || [];
     return {
@@ -113,10 +160,32 @@ function GeoAdminContent() {
     };
   }, [visits]);
 
+  const accessRuleRows = useMemo(
+    () => (countryRules || []).map((rule) => {
+      const code = String(rule.countryCode || '').toUpperCase();
+      return {
+        ...rule,
+        countryCode: code,
+        countryName: getCountryName(code),
+      };
+    }),
+    [countryRules]
+  );
+
   const availableCreateCountries = useMemo(
     () => (countries || []).filter((row) => row.locationId && !row.funding),
     [countries]
   );
+
+  useEffect(() => {
+    const map = new Map((accessSettings || []).map((item) => [item.key, item.value]));
+    setAccessSettingsForm({
+      unknownCountryAction: map.get('unknown_country_action') || 'allow',
+      unknownCountryRedirectPath: map.get('unknown_country_redirect_path') || '/unknown-country',
+      noIpAction: map.get('no_ip_action') || 'allow',
+      noIpRedirectPath: map.get('no_ip_redirect_path') || '/unknown-country',
+    });
+  }, [accessSettings]);
 
   const closeFundingModal = () => {
     setIsFundingModalOpen(false);
@@ -260,6 +329,68 @@ function GeoAdminContent() {
     }
   };
 
+  const handleAddCountryAccessRule = async () => {
+    const countryCode = String(countryRuleForm.countryCode || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(countryCode)) {
+      addToast('Ο κωδικός χώρας πρέπει να έχει 2 κεφαλαία γράμματα.', { type: 'error' });
+      return;
+    }
+
+    setIsAddingCountryRule(true);
+    try {
+      await addCountryRule(countryCode, countryRuleForm.reason || null);
+      setCountryRuleForm({ countryCode: '', reason: '' });
+      await refetchCountryRules();
+      addToast(`Η χώρα ${countryCode} αποκλείστηκε.`, { type: 'success' });
+    } catch (error) {
+      addToast(error.message || 'Αποτυχία προσθήκης κανόνα.', { type: 'error' });
+    } finally {
+      setIsAddingCountryRule(false);
+    }
+  };
+
+  const handleRemoveCountryAccessRule = async (code) => {
+    if (!code) return;
+    setIsRemovingCountryRule(code);
+    try {
+      await removeCountryRule(code);
+      await refetchCountryRules();
+      addToast(`Ο αποκλεισμός για ${code} αφαιρέθηκε.`, { type: 'success' });
+    } catch (error) {
+      addToast(error.message || 'Αποτυχία άρσης αποκλεισμού.', { type: 'error' });
+    } finally {
+      setIsRemovingCountryRule(null);
+    }
+  };
+
+  const handleSaveAccessSettings = async () => {
+    const updates = [
+      { key: 'unknown_country_action', value: accessSettingsForm.unknownCountryAction },
+      { key: 'unknown_country_redirect_path', value: accessSettingsForm.unknownCountryRedirectPath.trim() || '/unknown-country' },
+      { key: 'no_ip_action', value: accessSettingsForm.noIpAction },
+      { key: 'no_ip_redirect_path', value: accessSettingsForm.noIpRedirectPath.trim() || '/unknown-country' },
+    ];
+
+    const invalidPath = updates
+      .filter((item) => item.key.endsWith('_redirect_path'))
+      .find((item) => !item.value.startsWith('/'));
+    if (invalidPath) {
+      addToast('Τα redirect paths πρέπει να ξεκινούν με "/".', { type: 'error' });
+      return;
+    }
+
+    setIsSavingAccessSettings(true);
+    try {
+      await Promise.all(updates.map((item) => updateSetting(item.key, item.value)));
+      await refetchAccessSettings();
+      addToast('Οι ρυθμίσεις πρόσβασης αποθηκεύτηκαν.', { type: 'success' });
+    } catch (error) {
+      addToast(error.message || 'Αποτυχία αποθήκευσης ρυθμίσεων.', { type: 'error' });
+    } finally {
+      setIsSavingAccessSettings(false);
+    }
+  };
+
   if (!isAdmin) return null;
 
   return (
@@ -287,6 +418,16 @@ function GeoAdminContent() {
             }`}
           >
             Διαχείριση Χωρών
+          </button>
+          <button
+            onClick={() => setActiveTab('access-rules')}
+            className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === 'access-rules'
+                ? 'border-blue-600 text-blue-600'
+                : 'border-transparent text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Κανόνες Πρόσβασης
           </button>
         </div>
 
@@ -473,6 +614,150 @@ function GeoAdminContent() {
                 </div>
               </>
             )}
+          </div>
+        ) : activeTab === 'access-rules' ? (
+          <div className="space-y-6">
+            <section className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-semibold">Αποκλεισμένες Χώρες</h2>
+                <button
+                  onClick={handleAddCountryAccessRule}
+                  disabled={isAddingCountryRule}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                >
+                  {isAddingCountryRule ? 'Προσθήκη...' : '➕ Προσθήκη'}
+                </button>
+              </div>
+              <div className="p-4 border-b border-gray-100 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  maxLength={2}
+                  value={countryRuleForm.countryCode}
+                  onChange={(e) => setCountryRuleForm((prev) => ({ ...prev, countryCode: e.target.value.toUpperCase() }))}
+                  placeholder="Κωδικός χώρας (π.χ. RU)"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm uppercase"
+                />
+                <input
+                  type="text"
+                  value={countryRuleForm.reason}
+                  onChange={(e) => setCountryRuleForm((prev) => ({ ...prev, reason: e.target.value }))}
+                  placeholder="Λόγος αποκλεισμού (προαιρετικό)"
+                  className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              {countryRulesLoading ? (
+                <div className="p-6">
+                  <SkeletonLoader count={2} />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Λόγος</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Προστέθηκε από</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημερομηνία</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ενέργεια</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {(accessRuleRows || []).map((row) => (
+                        <tr key={row.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 text-sm text-gray-900">
+                            {countryCodeToFlag(row.countryCode)} {row.countryName || row.countryCode}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-gray-700">{row.reason || '—'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700">{row.createdBy?.username || '—'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700">
+                            {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handleRemoveCountryAccessRule(row.countryCode)}
+                              disabled={isRemovingCountryRule === row.countryCode}
+                              className="px-2.5 py-1.5 rounded-lg border border-red-300 text-red-700 hover:bg-red-50 text-xs disabled:opacity-50"
+                              title="Άρση αποκλεισμού"
+                            >
+                              {isRemovingCountryRule === row.countryCode ? '...' : '🗑️'}
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {(accessRuleRows || []).length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν αποκλεισμένες χώρες.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+
+            <section className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+              <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                <h2 className="font-semibold">Ρυθμίσεις Άγνωστης Χώρας</h2>
+                <button
+                  onClick={handleSaveAccessSettings}
+                  disabled={isSavingAccessSettings || accessSettingsLoading}
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg border border-blue-300 text-blue-700 hover:bg-blue-50 disabled:opacity-50"
+                >
+                  {isSavingAccessSettings ? 'Αποθήκευση...' : 'Αποθήκευση'}
+                </button>
+              </div>
+              {accessSettingsLoading ? (
+                <div className="p-6">
+                  <SkeletonLoader count={2} />
+                </div>
+              ) : (
+                <div className="p-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                    <label className="text-sm font-medium text-gray-700">Unknown Country Action</label>
+                    <select
+                      value={accessSettingsForm.unknownCountryAction}
+                      onChange={(e) => setAccessSettingsForm((prev) => ({ ...prev, unknownCountryAction: e.target.value }))}
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    >
+                      {ACCESS_ACTION_OPTIONS.map((action) => (
+                        <option key={action} value={action}>{action}</option>
+                      ))}
+                    </select>
+                    {accessSettingsForm.unknownCountryAction === 'redirect' ? (
+                      <input
+                        type="text"
+                        value={accessSettingsForm.unknownCountryRedirectPath}
+                        onChange={(e) => setAccessSettingsForm((prev) => ({ ...prev, unknownCountryRedirectPath: e.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="/unknown-country"
+                      />
+                    ) : <div />}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
+                    <label className="text-sm font-medium text-gray-700">No IP Action</label>
+                    <select
+                      value={accessSettingsForm.noIpAction}
+                      onChange={(e) => setAccessSettingsForm((prev) => ({ ...prev, noIpAction: e.target.value }))}
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    >
+                      {ACCESS_ACTION_OPTIONS.map((action) => (
+                        <option key={action} value={action}>{action}</option>
+                      ))}
+                    </select>
+                    {accessSettingsForm.noIpAction === 'redirect' ? (
+                      <input
+                        type="text"
+                        value={accessSettingsForm.noIpRedirectPath}
+                        onChange={(e) => setAccessSettingsForm((prev) => ({ ...prev, noIpRedirectPath: e.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        placeholder="/unknown-country"
+                      />
+                    ) : <div />}
+                  </div>
+                </div>
+              )}
+            </section>
           </div>
         ) : (
           <div className="space-y-6">

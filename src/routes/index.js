@@ -24,6 +24,7 @@ const manifestRoutes = require('./manifestRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const geoStatsRoutes = require('./geoStatsRoutes');
 const geoDetectRoutes = require('./geoDetectRoutes');
+const { geoAccessPublicRoutes, geoAccessAdminRoutes } = require('./geoAccessRoutes');
 
 const routes = [
   { prefix: '/api/auth', router: authRoutes },
@@ -53,6 +54,8 @@ const routes = [
   { prefix: '/api/manifests', router: manifestRoutes },
   { prefix: '/api/notifications', router: notificationRoutes },
   { prefix: '/api/admin/geo-stats', router: geoStatsRoutes },
+  { prefix: '/api/admin/geo-access', router: geoAccessAdminRoutes },
+  { prefix: '/api/geo', router: geoAccessPublicRoutes },
   { prefix: '/api/geo', router: geoDetectRoutes },
 ];
 

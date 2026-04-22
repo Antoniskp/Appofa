@@ -1,6 +1,6 @@
 const mockNext = jest.fn();
 const mockRedirect = jest.fn();
-const mockFetch = jest.fn(() => Promise.resolve({ ok: true }));
+const mockFetch = jest.fn();
 
 jest.mock('next/server', () => ({
   NextResponse: {
@@ -9,7 +9,7 @@ jest.mock('next/server', () => ({
   }
 }));
 
-const { proxy: middleware } = require('../proxy');
+const { proxy: middleware, __resetAccessRulesCacheForTests } = require('../proxy');
 
 const makeRequest = ({
   pathname = '/',
@@ -47,16 +47,35 @@ describe('country redirect middleware', () => {
     mockRedirect.mockReset();
     mockFetch.mockClear();
     global.fetch = mockFetch;
+    mockFetch.mockImplementation((url) => {
+      if (String(url).endsWith('/api/geo/access-rules')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              blockedCountries: [],
+              unknownCountryAction: 'allow',
+              unknownCountryRedirectPath: '/unknown-country',
+              noIpAction: 'allow',
+              noIpRedirectPath: '/unknown-country',
+            },
+          }),
+        });
+      }
+      return Promise.resolve({ ok: true });
+    });
     mockNext.mockImplementation(() => createNextResponse());
     mockRedirect.mockImplementation((url) => ({
       type: 'redirect',
       url: url.toString(),
       cookies: { set: jest.fn() },
     }));
+    __resetAccessRulesCacheForTests();
   });
 
-  test('skips configured paths', () => {
-    const response = middleware(makeRequest({ pathname: '/api/geo/detect', countryHeader: 'GR' }));
+  test('skips configured paths', async () => {
+    const response = await middleware(makeRequest({ pathname: '/api/geo/detect', countryHeader: 'GR' }));
     expect(response.type).toBe('next');
     expect(mockNext).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -70,8 +89,8 @@ describe('country redirect middleware', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test('skips when visited cookie exists', () => {
-    const response = middleware(makeRequest({
+  test('skips when visited cookie exists', async () => {
+    const response = await middleware(makeRequest({
       pathname: '/',
       countryHeader: 'GR',
       cookies: { appofa_country_visited: '1' }
@@ -100,8 +119,8 @@ describe('country redirect middleware', () => {
     );
   });
 
-  test('redirects using Cloudflare country header and sets visited cookie', () => {
-    const response = middleware(makeRequest({
+  test('redirects using Cloudflare country header and sets visited cookie', async () => {
+    const response = await middleware(makeRequest({
       pathname: '/',
       countryHeader: 'gr',
       forwardedFor: '::ffff:185.230.31.201, 10.0.0.1',
@@ -128,8 +147,8 @@ describe('country redirect middleware', () => {
     });
   });
 
-  test('falls back to detected country cookie when header is unavailable', () => {
-    const response = middleware(makeRequest({
+  test('falls back to detected country cookie when header is unavailable', async () => {
+    const response = await middleware(makeRequest({
       pathname: '/',
       countryHeader: 'XX',
       cookies: { appofa_detected_country: 'cy' }
@@ -150,8 +169,8 @@ describe('country redirect middleware', () => {
     );
   });
 
-  test('does not redirect when no valid country is found', () => {
-    const response = middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
+  test('does not redirect when no valid country is found', async () => {
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
     expect(response.type).toBe('next');
     expect(mockNext).toHaveBeenCalledWith();
     expect(mockRedirect).not.toHaveBeenCalled();
@@ -167,5 +186,99 @@ describe('country redirect middleware', () => {
         }),
       })
     );
+  });
+
+  test('redirects blocked countries to /blocked', async () => {
+    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            blockedCountries: ['GR'],
+            unknownCountryAction: 'allow',
+            unknownCountryRedirectPath: '/unknown-country',
+            noIpAction: 'allow',
+            noIpRedirectPath: '/unknown-country',
+          },
+        }),
+      }));
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: 'GR' }));
+    expect(response.type).toBe('redirect');
+    expect(response.url).toBe('https://appofasi.gr/blocked');
+  });
+
+  test('redirects unknown country to /blocked when noIpAction is block', async () => {
+    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            blockedCountries: [],
+            unknownCountryAction: 'allow',
+            unknownCountryRedirectPath: '/unknown-country',
+            noIpAction: 'block',
+            noIpRedirectPath: '/unknown-country',
+          },
+        }),
+      }));
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
+    expect(response.type).toBe('redirect');
+    expect(response.url).toBe('https://appofasi.gr/blocked');
+  });
+
+  test('redirects unknown country when noIpAction is redirect', async () => {
+    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            blockedCountries: [],
+            unknownCountryAction: 'allow',
+            unknownCountryRedirectPath: '/unknown-country',
+            noIpAction: 'redirect',
+            noIpRedirectPath: '/unknown-country',
+          },
+        }),
+      }));
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
+    expect(response.type).toBe('redirect');
+    expect(response.url).toBe('https://appofasi.gr/unknown-country');
+  });
+
+  test('falls through when unknown country and noIpAction is allow', async () => {
+    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
+      .mockImplementationOnce(() => Promise.resolve({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: {
+            blockedCountries: [],
+            unknownCountryAction: 'allow',
+            unknownCountryRedirectPath: '/unknown-country',
+            noIpAction: 'allow',
+            noIpRedirectPath: '/unknown-country',
+          },
+        }),
+      }));
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
+    expect(response.type).toBe('next');
+  });
+
+  test('falls back to allow-all defaults when access-rules fetch fails', async () => {
+    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
+      .mockImplementationOnce(() => Promise.reject(new Error('network error')));
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalledWith(expect.objectContaining({
+      pathname: '/blocked',
+    }));
   });
 });
