@@ -40,7 +40,10 @@ const makeRequest = ({
 };
 
 describe('country redirect middleware', () => {
-  const createNextResponse = () => ({ type: 'next' });
+  const createNextResponse = () => ({
+    type: 'next',
+    cookies: { set: jest.fn() },
+  });
 
   beforeEach(() => {
     mockNext.mockReset();
@@ -87,14 +90,49 @@ describe('country redirect middleware', () => {
     expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).not.toHaveBeenCalled();
+    expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
+      path: '/',
+      maxAge: 86400,
+      sameSite: 'Lax',
+    });
   });
 
-  test('skips admin paths', async () => {
+  test('tracks admin paths while still skipping redirect', async () => {
     const response = await middleware(makeRequest({ pathname: '/admin/geo', countryHeader: 'GR' }));
 
     expect(response.type).toBe('next');
     expect(mockRedirect).not.toHaveBeenCalled();
-    expect(mockFetch).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3000/api/geo/track',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          path: '/admin/geo',
+          countryCode: 'GR',
+          ipAddress: null,
+          locale: null,
+        }),
+      })
+    );
+  });
+
+  test.each(['/login', '/country/GR'])('tracks %s while skipping redirect', async (pathname) => {
+    const response = await middleware(makeRequest({ pathname, countryHeader: 'GR' }));
+
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:3000/api/geo/track',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          path: pathname,
+          countryCode: 'GR',
+          ipAddress: null,
+          locale: null,
+        }),
+      })
+    );
   });
 
   test('skips when visited cookie exists', async () => {
@@ -125,6 +163,11 @@ describe('country redirect middleware', () => {
         }),
       })
     );
+    expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
+      path: '/',
+      maxAge: 86400,
+      sameSite: 'Lax',
+    });
   });
 
   test('redirects using Cloudflare country header and sets visited cookie', async () => {
@@ -153,6 +196,11 @@ describe('country redirect middleware', () => {
       maxAge: 86400,
       sameSite: 'Lax',
     });
+    expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
+      path: '/',
+      maxAge: 86400,
+      sameSite: 'Lax',
+    });
   });
 
   test('falls back to detected country cookie when header is unavailable', async () => {
@@ -174,6 +222,29 @@ describe('country redirect middleware', () => {
           locale: null,
         }),
       })
+    );
+  });
+
+  test('forwards cookie-based country via x-detected-country when header is unavailable', async () => {
+    const response = await middleware(makeRequest({
+      pathname: '/api/geo/detect',
+      countryHeader: null,
+      cookies: { appofa_detected_country: 'cy' },
+    }));
+
+    expect(response.type).toBe('next');
+    expect(mockNext).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          headers: expect.any(Headers),
+        }),
+      })
+    );
+    expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('CY');
+    expect(response.cookies.set).not.toHaveBeenCalledWith(
+      'appofa_detected_country',
+      expect.anything(),
+      expect.anything()
     );
   });
 
