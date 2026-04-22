@@ -29,6 +29,7 @@ geoAccessPublicRoutes.get('/access-rules', apiLimiter, async (req, res, next) =>
           countryCode,
           redirectPath: blockedCountriesRedirects?.get(countryCode) || null,
         })),
+        blockedCountryCodes: Array.from(blockedCountries),
         unknownCountryAction: settings.unknownCountryAction,
         unknownCountryRedirectPath: settings.unknownCountryRedirectPath,
         noIpAction: settings.noIpAction,

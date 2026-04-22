@@ -10,6 +10,7 @@ const { geoTrackMiddleware } = require('../src/middleware/geoTrackMiddleware');
 
 describe('geoTrackMiddleware', () => {
   const originalEnv = process.env.NODE_ENV;
+  const jwtSecret = process.env.JWT_SECRET || 'geo-track-test-secret';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -43,7 +44,7 @@ describe('geoTrackMiddleware', () => {
     process.env.NODE_ENV = 'development';
     GeoVisit.create.mockResolvedValueOnce({});
     const next = jest.fn();
-    const token = jwt.sign({ id: 42 }, 'test-secret');
+    const token = jwt.sign({ id: 42 }, jwtSecret);
 
     geoTrackMiddleware({
       path: '/locations/greece',

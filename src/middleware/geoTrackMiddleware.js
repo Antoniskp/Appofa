@@ -113,6 +113,8 @@ const parsePossibleUserId = (value) => {
 const getUserIdFromToken = (token) => {
   if (!token || typeof token !== 'string') return null;
   try {
+    // Analytics-only hinting: this decode is intentionally unverified and never used
+    // for auth/authorization decisions or any privileged behavior.
     const payload = jwt.decode(token);
     if (!payload || typeof payload !== 'object') return null;
     return parsePossibleUserId(payload.id) || parsePossibleUserId(payload.sub);

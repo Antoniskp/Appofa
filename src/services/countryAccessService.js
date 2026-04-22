@@ -37,18 +37,18 @@ async function getCountryRulesCache() {
       .map((rule) => String(rule.countryCode || '').trim().toUpperCase())
       .filter((code) => /^[A-Z]{2}$/.test(code))
   );
-  const blockedCountriesRedirects = new Map(
-    rules
-      .map((rule) => {
-        const countryCode = String(rule.countryCode || '').trim().toUpperCase();
-        const redirectPath = typeof rule.redirectPath === 'string' ? rule.redirectPath.trim() : '';
-        if (!/^[A-Z]{2}$/.test(countryCode) || !redirectPath || !redirectPath.startsWith('/')) {
-          return null;
-        }
-        return [countryCode, redirectPath];
-      })
-      .filter(Boolean)
-  );
+  const blockedCountriesRedirects = new Map();
+  for (const rule of rules) {
+    const countryCode = String(rule.countryCode || '').trim().toUpperCase();
+    if (!/^[A-Z]{2}$/.test(countryCode)) {
+      continue;
+    }
+
+    const redirectPath = typeof rule.redirectPath === 'string' ? rule.redirectPath.trim() : '';
+    if (redirectPath && redirectPath.startsWith('/')) {
+      blockedCountriesRedirects.set(countryCode, redirectPath);
+    }
+  }
 
   const rawSettings = {};
   for (const row of settingsRows) {
@@ -89,8 +89,9 @@ async function listRules() {
 
 async function addRule(countryCode, reason, userId, redirectPath) {
   const normalizedCode = String(countryCode || '').trim().toUpperCase();
-  const normalizedRedirectPath = typeof redirectPath === 'string' && redirectPath.trim().startsWith('/')
-    ? redirectPath.trim()
+  const trimmedRedirectPath = typeof redirectPath === 'string' ? redirectPath.trim() : '';
+  const normalizedRedirectPath = trimmedRedirectPath && trimmedRedirectPath.startsWith('/')
+    ? trimmedRedirectPath
     : null;
   const rule = await CountryAccessRule.create({
     countryCode: normalizedCode,

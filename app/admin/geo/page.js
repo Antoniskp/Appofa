@@ -348,10 +348,6 @@ function GeoAdminContent() {
     setIsAddingCountryRule(true);
     try {
       const redirectPath = String(countryRuleForm.redirectPath || '').trim();
-      if (redirectPath && !redirectPath.startsWith('/')) {
-        throw new Error('Το redirect path πρέπει να ξεκινά με "/".');
-      }
-
       await addCountryRule(countryCode, countryRuleForm.reason || null, redirectPath || null);
       setCountryRuleForm({ countryCode: '', reason: '', redirectPath: '' });
       await refetchCountryRules();
@@ -666,7 +662,7 @@ function GeoAdminContent() {
                   type="text"
                   value={countryRuleForm.redirectPath}
                   onChange={(e) => setCountryRuleForm((prev) => ({ ...prev, redirectPath: e.target.value }))}
-                  placeholder="Redirect Path (optional, e.g. /donate/russia)"
+                  placeholder="Διαδρομή ανακατεύθυνσης (προαιρετική, π.χ. /donate/russia)"
                   className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
