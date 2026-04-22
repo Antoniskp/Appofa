@@ -1,3 +1,4 @@
+const express = require('express');
 const authRoutes = require('./authRoutes');
 const articleRoutes = require('./articleRoutes');
 const adminRoutes = require('./adminRoutes');
@@ -24,6 +25,11 @@ const manifestRoutes = require('./manifestRoutes');
 const notificationRoutes = require('./notificationRoutes');
 const geoStatsRoutes = require('./geoStatsRoutes');
 const geoDetectRoutes = require('./geoDetectRoutes');
+const { geoAccessPublicRoutes, geoAccessAdminRoutes } = require('./geoAccessRoutes');
+
+const geoRoutes = express.Router();
+geoRoutes.use(geoAccessPublicRoutes);
+geoRoutes.use(geoDetectRoutes);
 
 const routes = [
   { prefix: '/api/auth', router: authRoutes },
@@ -53,7 +59,8 @@ const routes = [
   { prefix: '/api/manifests', router: manifestRoutes },
   { prefix: '/api/notifications', router: notificationRoutes },
   { prefix: '/api/admin/geo-stats', router: geoStatsRoutes },
-  { prefix: '/api/geo', router: geoDetectRoutes },
+  { prefix: '/api/admin/geo-access', router: geoAccessAdminRoutes },
+  { prefix: '/api/geo', router: geoRoutes },
 ];
 
 function registerRoutes(app) {

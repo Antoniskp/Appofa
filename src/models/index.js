@@ -39,6 +39,8 @@ const Notification = require('./Notification');
 const IpAccessRule = require('./IpAccessRule');
 const GeoVisit = require('./GeoVisit');
 const CountryFunding = require('./CountryFunding');
+const CountryAccessRule = require('./CountryAccessRule');
+const GeoAccessSetting = require('./GeoAccessSetting');
 
 // Define associations
 User.hasMany(Article, {
@@ -363,6 +365,7 @@ User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 
 // IpAccessRule associations
 IpAccessRule.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+CountryAccessRule.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 
 // CountryFunding associations
 CountryFunding.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
@@ -411,4 +414,6 @@ module.exports = {
   IpAccessRule,
   GeoVisit,
   CountryFunding,
+  CountryAccessRule,
+  GeoAccessSetting,
 };

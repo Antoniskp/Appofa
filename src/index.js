@@ -8,6 +8,7 @@ require('dotenv').config();
 
 const registerRoutes = require('./routes');
 const { ipBlockMiddleware } = require('./middleware/rateLimiter');
+const countryBlockMiddleware = require('./middleware/countryBlockMiddleware');
 const { geoTrackMiddleware } = require('./middleware/geoTrackMiddleware');
 const { deduplicateHeroSettings } = require('./controllers/heroSettingsController');
 
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Block blacklisted IPs before any route runs
 app.use(ipBlockMiddleware);
+app.use(countryBlockMiddleware);
 app.use(geoTrackMiddleware);
 
 // Health check endpoint

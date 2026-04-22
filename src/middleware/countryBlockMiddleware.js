@@ -1,0 +1,58 @@
+const countryAccessService = require('../services/countryAccessService');
+
+const SKIP_PATH_PREFIXES = ['/api/health', '/_next', '/favicon'];
+
+const normalizeCountryCode = (value) => {
+  if (!value) return null;
+  const code = String(value).trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code) || code === 'XX' || code === 'T1') {
+    return null;
+  }
+  return code;
+};
+
+const getClientIp = (req) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
+    return forwardedFor.split(',')[0].trim();
+  }
+  return req.ip || '';
+};
+
+const detectCountryCode = (req) => {
+  const cfCountry = normalizeCountryCode(req.headers['cf-ipcountry']);
+  if (cfCountry) return cfCountry;
+  return normalizeCountryCode(req.headers['x-detected-country']);
+};
+
+const countryBlockMiddleware = async (req, res, next) => {
+  try {
+    if (process.env.NODE_ENV === 'test') return next();
+
+    const requestPath = req.path || req.originalUrl || '';
+    if (SKIP_PATH_PREFIXES.some((prefix) => requestPath.startsWith(prefix))) {
+      return next();
+    }
+
+    const countryCode = detectCountryCode(req);
+    const hasIp = Boolean(getClientIp(req));
+    const { blockedCountries, settings } = await countryAccessService.getCountryRulesCache();
+
+    if (countryCode && blockedCountries.has(countryCode)) {
+      return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    if (!countryCode) {
+      const action = hasIp ? settings.unknownCountryAction : settings.noIpAction;
+      if (action === 'block') {
+        return res.status(403).json({ success: false, message: 'Access denied.' });
+      }
+    }
+
+    return next();
+  } catch (error) {
+    return next(error);
+  }
+};
+
+module.exports = countryBlockMiddleware;
