@@ -53,6 +53,7 @@ const customJestConfig = {
   setupFiles: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '^uuid$': '<rootDir>/__mocks__/uuid.js',
   },
   transformIgnorePatterns: [
     `/node_modules/(?!(${esmPackages.join('|')})/)`,
