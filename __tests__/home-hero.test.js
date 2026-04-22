@@ -37,9 +37,9 @@ const HomeHero = require('../components/layout/HomeHero').default;
 
 const baseStats = {
   totalUsers: 1,
+  totalSuggestions: 5,
   totalPolls: 2,
-  totalVotes: 3,
-  totalComments: 4,
+  activeUsers: 3,
 };
 
 const buildSlide = (linkUrl, linkText = 'Δες τώρα') => ({
@@ -157,6 +157,21 @@ describe('HomeHero CTA link behavior', () => {
 
     expect(prevButton).toBeTruthy();
     expect(prevButton.parentElement.className).not.toContain('invisible');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('renders updated community metric labels and values', async () => {
+    const { container, root } = await renderHero(buildSlide('/polls'));
+
+    expect(container.textContent).toContain('Χρήστες');
+    expect(container.textContent).toContain('Προτάσεις');
+    expect(container.textContent).toContain('Ψηφοφορίες');
+    expect(container.textContent).toContain('Ενεργοί');
+    expect(container.textContent).toContain('5');
+    expect(container.textContent).toContain('3');
 
     await act(async () => {
       root.unmount();

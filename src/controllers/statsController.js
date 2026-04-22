@@ -1,5 +1,5 @@
-const { fn, col } = require('sequelize');
-const { User, Location, Article, Poll, PollVote, Comment } = require('../models');
+const { fn, col, Op } = require('sequelize');
+const { User, Location, Article, Poll, PollVote, Comment, Suggestion } = require('../models');
 
 // In-memory cache for community stats (per Node instance)
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -34,7 +34,9 @@ async function computeCommunityStats() {
 
   const totalArticles = await Article.count();
   const totalPolls = await Poll.count();
-  const totalUsers = await User.count();
+  // Only count real registered users (claimStatus IS NULL = never in claim flow)
+  const totalUsers = await User.count({ where: { claimStatus: { [Op.is]: null } } });
+  const totalSuggestions = await Suggestion.count();
   const totalVotes = await PollVote.count();
   const totalComments = await Comment.count({ where: { status: 'visible' } });
 
@@ -45,6 +47,7 @@ async function computeCommunityStats() {
     totalArticles,
     totalPolls,
     totalUsers,
+    totalSuggestions,
     totalVotes,
     totalComments,
     updatedAt: new Date().toISOString()
