@@ -713,7 +713,7 @@ function GeoAdminContent() {
               ) : (
                 <div className="p-4 space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                    <label className="text-sm font-medium text-gray-700">Unknown Country Action</label>
+                    <label className="text-sm font-medium text-gray-700">Ενέργεια για Άγνωστη Χώρα</label>
                     <select
                       value={accessSettingsForm.unknownCountryAction}
                       onChange={(e) => setAccessSettingsForm((prev) => ({ ...prev, unknownCountryAction: e.target.value }))}
@@ -731,11 +731,11 @@ function GeoAdminContent() {
                         className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                         placeholder="/unknown-country"
                       />
-                    ) : <div />}
+                    ) : null}
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                    <label className="text-sm font-medium text-gray-700">No IP Action</label>
+                    <label className="text-sm font-medium text-gray-700">Ενέργεια όταν δεν υπάρχει IP</label>
                     <select
                       value={accessSettingsForm.noIpAction}
                       onChange={(e) => setAccessSettingsForm((prev) => ({ ...prev, noIpAction: e.target.value }))}
@@ -753,7 +753,7 @@ function GeoAdminContent() {
                         className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                         placeholder="/unknown-country"
                       />
-                    ) : <div />}
+                    ) : null}
                   </div>
                 </div>
               )}

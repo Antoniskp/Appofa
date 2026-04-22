@@ -69,7 +69,7 @@ const getAccessRules = async (apiBase) => {
   }
 
   try {
-    const response = await fetch(`${apiBase}/api/geo/access-rules`, { method: 'GET' });
+    const response = await fetch(`${apiBase}/api/geo/access-rules`);
     if (!response.ok) {
       throw new Error('Failed to fetch access rules');
     }
@@ -83,7 +83,7 @@ const getAccessRules = async (apiBase) => {
   return _rulesCache;
 };
 
-export const __resetAccessRulesCacheForTests = () => {
+export const resetAccessRulesCacheForTests = () => {
   _rulesCache = null;
   _rulesCacheExpiry = 0;
 };

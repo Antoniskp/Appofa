@@ -22,6 +22,8 @@ const CountryAccessRule = sequelize.define('CountryAccessRule', {
   },
 }, {
   timestamps: true,
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
 });
 
 module.exports = CountryAccessRule;

@@ -96,7 +96,7 @@ geoAccessAdminRoutes.put('/settings', apiLimiter, authMiddleware, checkRole('adm
 
     const stringValue = value == null ? null : String(value).trim();
 
-    if ((key === 'unknown_country_action' || key === 'no_ip_action') && !VALID_ACTIONS.has(stringValue)) {
+    if ((key === 'unknown_country_action' || key === 'no_ip_action') && (stringValue == null || !VALID_ACTIONS.has(stringValue))) {
       return res.status(400).json({ success: false, message: 'Invalid action value.' });
     }
 

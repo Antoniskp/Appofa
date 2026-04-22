@@ -9,7 +9,7 @@ jest.mock('next/server', () => ({
   }
 }));
 
-const { proxy: middleware, __resetAccessRulesCacheForTests } = require('../proxy');
+const { proxy: middleware, resetAccessRulesCacheForTests } = require('../proxy');
 
 const makeRequest = ({
   pathname = '/',
@@ -71,7 +71,7 @@ describe('country redirect middleware', () => {
       url: url.toString(),
       cookies: { set: jest.fn() },
     }));
-    __resetAccessRulesCacheForTests();
+    resetAccessRulesCacheForTests();
   });
 
   test('skips configured paths', async () => {

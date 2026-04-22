@@ -101,12 +101,12 @@ async function getSettings() {
 }
 
 async function updateSetting(key, value) {
-  const [setting] = await GeoAccessSetting.findOrCreate({
+  const [setting, created] = await GeoAccessSetting.findOrCreate({
     where: { key },
     defaults: { value: value ?? null },
   });
 
-  if (!setting.isNewRecord) {
+  if (!created) {
     setting.value = value ?? null;
     await setting.save();
   }
