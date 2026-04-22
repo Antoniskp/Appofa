@@ -366,6 +366,8 @@ User.hasMany(Notification, { foreignKey: 'userId', as: 'notifications' });
 // IpAccessRule associations
 IpAccessRule.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 CountryAccessRule.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+GeoVisit.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(GeoVisit, { foreignKey: 'userId', as: 'geoVisits' });
 
 // CountryFunding associations
 CountryFunding.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });

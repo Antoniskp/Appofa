@@ -4,6 +4,7 @@ const { fn, col, literal, Op, QueryTypes } = require('sequelize');
 const {
   sequelize,
   GeoVisit,
+  User,
   CountryFunding,
   Location,
 } = require('../models');
@@ -128,7 +129,8 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
         limit: 10,
       }),
       GeoVisit.findAll({
-        attributes: ['ipAddress', 'path', 'countryCode', 'countryName', 'createdAt'],
+        attributes: ['ipAddress', 'path', 'countryCode', 'countryName', 'createdAt', 'isAuthenticated', 'userId'],
+        include: [{ model: User, as: 'user', attributes: ['id', 'username'], required: false }],
         where,
         order: [['createdAt', 'DESC']],
         limit: 100,
@@ -156,6 +158,9 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
           path: row.path || null,
           countryCode: row.countryCode || null,
           countryName: row.countryName || null,
+          isAuthenticated: Boolean(row.isAuthenticated),
+          userId: row.userId || null,
+          username: row.user?.username || null,
           createdAt: row.createdAt,
         })),
       },

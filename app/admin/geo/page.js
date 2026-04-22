@@ -10,7 +10,7 @@ import Modal, { ConfirmDialog } from '@/components/ui/Modal';
 import { useToast } from '@/components/ToastProvider';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import { addIpRule, geoAdminAPI } from '@/lib/api';
+import { addIpRule, geoAdminAPI, listIpRules } from '@/lib/api';
 import { addCountryRule, getSettings, listCountryRules, removeCountryRule, updateSetting } from '@/lib/api/geoAccess';
 
 const PERIODS = [
@@ -53,10 +53,9 @@ function GeoAdminContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isBlockingIp, setIsBlockingIp] = useState(null);
-  const [blockedIps, setBlockedIps] = useState(new Set());
   const [isAddingCountryRule, setIsAddingCountryRule] = useState(false);
   const [isRemovingCountryRule, setIsRemovingCountryRule] = useState(null);
-  const [countryRuleForm, setCountryRuleForm] = useState({ countryCode: '', reason: '' });
+  const [countryRuleForm, setCountryRuleForm] = useState({ countryCode: '', reason: '', redirectPath: '' });
   const [isSavingAccessSettings, setIsSavingAccessSettings] = useState(false);
   const [accessSettingsForm, setAccessSettingsForm] = useState({
     unknownCountryAction: 'allow',
@@ -137,6 +136,15 @@ function GeoAdminContent() {
     }
   );
 
+  const { data: ipRules, refetch: refetchIpRules } = useAsyncData(
+    () => listIpRules(),
+    [],
+    {
+      initialData: [],
+      transform: (res) => res?.data || [],
+    }
+  );
+
   const { data: accessSettings, loading: accessSettingsLoading, refetch: refetchAccessSettings } = useAsyncData(
     async () => {
       const res = await getSettings();
@@ -175,6 +183,11 @@ function GeoAdminContent() {
   const availableCreateCountries = useMemo(
     () => (countries || []).filter((row) => row.locationId && !row.funding),
     [countries]
+  );
+
+  const blockedIps = useMemo(
+    () => new Set((ipRules || []).filter((rule) => rule.type === 'blacklist').map((rule) => rule.ip)),
+    [ipRules]
   );
 
   useEffect(() => {
@@ -297,11 +310,7 @@ function GeoAdminContent() {
       if (res?.success === false) {
         throw new Error(res.message || 'Αποτυχία αποκλεισμού IP.');
       }
-      setBlockedIps((prev) => {
-        const next = new Set(prev);
-        next.add(ipAddress);
-        return next;
-      });
+      await refetchIpRules();
       addToast(`Η IP ${ipAddress} μπήκε στη blacklist.`, { type: 'success' });
     } catch (error) {
       addToast(error.message || 'Αποτυχία αποκλεισμού IP.', { type: 'error' });
@@ -338,8 +347,13 @@ function GeoAdminContent() {
 
     setIsAddingCountryRule(true);
     try {
-      await addCountryRule(countryCode, countryRuleForm.reason || null);
-      setCountryRuleForm({ countryCode: '', reason: '' });
+      const redirectPath = String(countryRuleForm.redirectPath || '').trim();
+      if (redirectPath && !redirectPath.startsWith('/')) {
+        throw new Error('Το redirect path πρέπει να ξεκινά με "/".');
+      }
+
+      await addCountryRule(countryCode, countryRuleForm.reason || null, redirectPath || null);
+      setCountryRuleForm({ countryCode: '', reason: '', redirectPath: '' });
       await refetchCountryRules();
       addToast(`Η χώρα ${countryCode} αποκλείστηκε.`, { type: 'success' });
     } catch (error) {
@@ -567,6 +581,7 @@ function GeoAdminContent() {
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χρήστης</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Διαδρομή</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημερομηνία</th>
@@ -578,6 +593,9 @@ function GeoAdminContent() {
                           <tr key={`${row.createdAt || 'no-date'}-${row.ipAddress || 'no-ip'}-${index}`} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm text-gray-900">
                               {countryCodeToFlag(row.countryCode)} {row.countryName || row.countryCode || 'Άγνωστη χώρα'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-700">
+                              {row.username || (row.isAuthenticated ? '(συνδεδεμένος)' : '—')}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700 break-all">{row.path || '—'}</td>
                             <td className="px-4 py-3 text-sm text-gray-700 font-mono">{row.ipAddress || '—'}</td>
@@ -605,7 +623,7 @@ function GeoAdminContent() {
                         ))}
                         {(visits?.recentVisits || []).length === 0 && (
                           <tr>
-                            <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν δεδομένα.</td>
+                            <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν δεδομένα.</td>
                           </tr>
                         )}
                       </tbody>
@@ -642,7 +660,14 @@ function GeoAdminContent() {
                   value={countryRuleForm.reason}
                   onChange={(e) => setCountryRuleForm((prev) => ({ ...prev, reason: e.target.value }))}
                   placeholder="Λόγος αποκλεισμού (προαιρετικό)"
-                  className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+                <input
+                  type="text"
+                  value={countryRuleForm.redirectPath}
+                  onChange={(e) => setCountryRuleForm((prev) => ({ ...prev, redirectPath: e.target.value }))}
+                  placeholder="Redirect Path (optional, e.g. /donate/russia)"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
               {countryRulesLoading ? (
@@ -656,6 +681,7 @@ function GeoAdminContent() {
                       <tr>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Λόγος</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Redirect</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Προστέθηκε από</th>
                         <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημερομηνία</th>
                         <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ενέργεια</th>
@@ -668,6 +694,7 @@ function GeoAdminContent() {
                             {countryCodeToFlag(row.countryCode)} {row.countryName || row.countryCode}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-700">{row.reason || '—'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700 font-mono">{row.redirectPath || '—'}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{row.createdBy?.username || '—'}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">
                             {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
@@ -686,7 +713,7 @@ function GeoAdminContent() {
                       ))}
                       {(accessRuleRows || []).length === 0 && (
                         <tr>
-                          <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν αποκλεισμένες χώρες.</td>
+                          <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν αποκλεισμένες χώρες.</td>
                         </tr>
                       )}
                     </tbody>

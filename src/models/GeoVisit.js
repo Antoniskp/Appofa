@@ -20,6 +20,10 @@ const GeoVisit = sequelize.define('GeoVisit', {
     allowNull: false,
     defaultValue: false,
   },
+  userId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   isDiaspora: {
     type: DataTypes.BOOLEAN,
     allowNull: true,

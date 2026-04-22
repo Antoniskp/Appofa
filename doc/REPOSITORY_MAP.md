@@ -31,7 +31,7 @@ This instruction is permanent and must never be removed.
 - [API Client Modules (27)](#api-client-modules-27)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (79)](#migrations-79)
+- [Migrations (81)](#migrations-81)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -141,9 +141,9 @@ Appofa/
 | Tag | Tags | id, name (unique lowercase) | hasMany: TaggableItem; belongsToMany: Article, Poll, Suggestion (via TaggableItems) |
 | TaggableItem | TaggableItems | id, tagId, entityType (article\|poll\|suggestion), entityId | belongsTo: Tag |
 | IpAccessRule | IpAccessRules | id, ip (STRING 45, unique), type (whitelist\|blacklist), reason, createdByUserId | belongsTo: User (createdBy) |
-| GeoVisit | GeoVisits | id, countryCode, countryName, isAuthenticated, isDiaspora, sessionHash, ipAddress, path, locale | Standalone analytics table |
+| GeoVisit | GeoVisits | id, countryCode, countryName, isAuthenticated, userId, isDiaspora, sessionHash, ipAddress, path, locale | belongsTo: User (`user`, nullable) |
 | CountryFunding | CountryFundings | id, locationId (unique), goalAmount, currentAmount, donorCount, status, donationUrl, unlockedAt, unlockedByUserId | belongsTo: Location (`location`), User (`unlockedBy`) |
-| CountryAccessRule | CountryAccessRules | id, countryCode (STRING 2, unique), reason, createdByUserId | belongsTo: User (`createdBy`) |
+| CountryAccessRule | CountryAccessRules | id, countryCode (STRING 2, unique), reason, redirectPath (nullable), createdByUserId | belongsTo: User (`createdBy`) |
 | GeoAccessSetting | GeoAccessSettings | id, key (STRING 100, unique), value, updatedAt | Key-value geo access behavior settings |
 
 ---
@@ -295,9 +295,9 @@ Appofa/
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
-| geoStatsRoutes.js | /api/admin/geo-stats | POST /track, GET /country-funding/:locationId/public, GET /visits, DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
+| geoStatsRoutes.js | /api/admin/geo-stats | POST /track, GET /country-funding/:locationId/public, GET /visits (includes `userId`/`username` when available), DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
-| geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules. Admin: GET/POST/DELETE /rules, GET/PUT /settings |
+| geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules (blocked countries with optional redirectPath). Admin: GET/POST/DELETE /rules (POST accepts optional redirectPath), GET/PUT /settings |
 
 ---
 
@@ -350,7 +350,7 @@ Appofa/
 
 | Middleware | Purpose |
 |-----------|---------|
-| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/geo/track` + cached country access-rules checks + first-visit redirect to `/country/[code]` |
+| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/geo/track` + cached country access-rules checks (including per-country redirect paths) + first-visit redirect to `/country/[code]` |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |
@@ -358,8 +358,8 @@ Appofa/
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
 | rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
-| countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + unknown/no-IP blocking behavior |
-| geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier and stored visitor IP for admin workflows |
+| countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior |
+| geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier, stored visitor IP, and lightweight JWT decode for nullable `userId` |
 
 ---
 
@@ -520,7 +520,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (79)
+## Migrations (81)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -621,6 +621,8 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260421000000-add-ip-to-geo-visits.js | Add nullable GeoVisits.ipAddress (STRING 45) for admin IP visibility/blocking |
 | — | 20260422000000-create-country-access-rules.js | Create CountryAccessRules table for blocked country codes |
 | — | 20260422000001-create-geo-access-settings.js | Create GeoAccessSettings table and upsert default unknown/no-IP access behavior |
+| — | 20260422000002-add-redirect-path-to-country-access-rules.js | Add nullable CountryAccessRules.redirectPath (STRING 255) for per-country custom block redirect |
+| — | 20260422000003-add-user-id-to-geo-visits.js | Add nullable GeoVisits.userId FK → Users.id (ON DELETE SET NULL) |
 
 </details>
 

@@ -28,7 +28,7 @@ async function getCountryRulesCache() {
   if (cache && Date.now() < cacheExpiry) return cache;
 
   const [rules, settingsRows] = await Promise.all([
-    CountryAccessRule.findAll({ attributes: ['countryCode'] }),
+    CountryAccessRule.findAll({ attributes: ['countryCode', 'redirectPath'] }),
     GeoAccessSetting.findAll({ attributes: ['key', 'value'] }),
   ]);
 
@@ -36,6 +36,18 @@ async function getCountryRulesCache() {
     rules
       .map((rule) => String(rule.countryCode || '').trim().toUpperCase())
       .filter((code) => /^[A-Z]{2}$/.test(code))
+  );
+  const blockedCountriesRedirects = new Map(
+    rules
+      .map((rule) => {
+        const countryCode = String(rule.countryCode || '').trim().toUpperCase();
+        const redirectPath = typeof rule.redirectPath === 'string' ? rule.redirectPath.trim() : '';
+        if (!/^[A-Z]{2}$/.test(countryCode) || !redirectPath || !redirectPath.startsWith('/')) {
+          return null;
+        }
+        return [countryCode, redirectPath];
+      })
+      .filter(Boolean)
   );
 
   const rawSettings = {};
@@ -45,6 +57,7 @@ async function getCountryRulesCache() {
 
   cache = {
     blockedCountries,
+    blockedCountriesRedirects,
     settings: {
       unknownCountryAction: normalizeAction(rawSettings.unknown_country_action),
       unknownCountryRedirectPath: normalizeRedirectPath(
@@ -74,11 +87,15 @@ async function listRules() {
   });
 }
 
-async function addRule(countryCode, reason, userId) {
+async function addRule(countryCode, reason, userId, redirectPath) {
   const normalizedCode = String(countryCode || '').trim().toUpperCase();
+  const normalizedRedirectPath = typeof redirectPath === 'string' && redirectPath.trim().startsWith('/')
+    ? redirectPath.trim()
+    : null;
   const rule = await CountryAccessRule.create({
     countryCode: normalizedCode,
     reason: reason || null,
+    redirectPath: normalizedRedirectPath,
     createdByUserId: userId || null,
   });
   invalidateCache();

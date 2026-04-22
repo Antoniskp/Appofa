@@ -4,6 +4,7 @@ jest.mock('../src/models', () => ({
   },
 }));
 
+const jwt = require('jsonwebtoken');
 const { GeoVisit } = require('../src/models');
 const { geoTrackMiddleware } = require('../src/middleware/geoTrackMiddleware');
 
@@ -42,13 +43,14 @@ describe('geoTrackMiddleware', () => {
     process.env.NODE_ENV = 'development';
     GeoVisit.create.mockResolvedValueOnce({});
     const next = jest.fn();
+    const token = jwt.sign({ id: 42 }, 'test-secret');
 
     geoTrackMiddleware({
       path: '/locations/greece',
       headers: {
         'cf-ipcountry': 'GR',
         'user-agent': 'test-agent',
-        cookie: 'token=my-token; NEXT_LOCALE=en',
+        cookie: `token=${token}; NEXT_LOCALE=en`,
       },
       ip: '2.2.2.2',
     }, {}, next);
@@ -60,6 +62,7 @@ describe('geoTrackMiddleware', () => {
     expect(payload.countryCode).toBe('GR');
     expect(payload.countryName).toBeTruthy();
     expect(payload.isAuthenticated).toBe(true);
+    expect(payload.userId).toBe(42);
     expect(payload.path).toBe('/locations/greece');
     expect(payload.locale).toBe('en');
     expect(payload.ipAddress).toBe('2.2.2.2');
