@@ -89,6 +89,7 @@ Appofa/
 │
 ├── hooks/                  # Custom React hooks (6 files)
 ├── config/                 # articleCategories.json, badges.json
+├── __mocks__/              # Jest manual mocks for node_modules (e.g. next-intl)
 ├── __tests__/              # Jest test suites (46 files)
 ├── doc/                    # Documentation (30+ files)
 ├── scripts/                # Deployment & setup scripts

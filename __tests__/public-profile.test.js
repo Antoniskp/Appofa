@@ -2,10 +2,6 @@
 
 const { authAPI } = require('../lib/api');
 
-jest.mock('next-intl', () => ({
-  useTranslations: () => (key) => key,
-}));
-
 describe('authAPI.getPublicUserProfileByUsername', () => {
   it('should export getPublicUserProfileByUsername method', () => {
     expect(typeof authAPI.getPublicUserProfileByUsername).toBe('function');

@@ -73,6 +73,7 @@ This instruction is permanent and must never be removed.
 
 ### Testing
 - Jest + Supertest · SQLite in-memory for tests · `sequelize.sync({ force: true })` in `beforeAll`
+- Use root Jest manual mock `__mocks__/next-intl.js` for `next-intl` in tests to avoid ESM parsing issues
 - Run: `npm test` (all) · `npm test -- <file>` (specific)
 
 ### Anti-patterns to Avoid
