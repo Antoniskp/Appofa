@@ -1,0 +1,299 @@
+<!-- 
+  NGINX CONFIG: To serve this page on 502 errors, add to your server block:
+    error_page 502 /502.html;
+    location = /502.html { root /path/to/public; internal; }
+  COUNTDOWN: Edit the ISO date inside <span id="countdown-target"> to change the return estimate.
+  DONATIONS: Replace paypal.me/YOURPAYPAL and buymeacoffee.com/YOURCOFFEE with real links.
+-->
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>502 — Appofa</title>
+  <style>
+    :root {
+      --bg: #262a3d;
+      --surface: #4f5470;
+      --surface-dark: #3b4058;
+      --accent: #b7c2b2;
+      --text: #d6d2c4;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+    }
+
+    main {
+      width: min(680px, 92vw);
+      margin: 0 auto;
+      padding: 3rem 0 2.5rem;
+    }
+
+    .logo-wrap {
+      text-align: center;
+      margin-bottom: 1.5rem;
+      animation: fadeInLogo 1.1s ease-out;
+    }
+
+    .logo-wrap img {
+      display: block;
+      width: 100%;
+      max-width: 220px;
+      margin: 0 auto;
+      height: auto;
+    }
+
+    .badge {
+      display: inline-block;
+      margin: 0 auto 1.25rem;
+      padding: 0.5rem 0.9rem;
+      border-radius: 999px;
+      background: var(--surface-dark);
+      color: var(--white);
+      font-size: 0.95rem;
+      border: 1px solid rgba(183, 194, 178, 0.35);
+    }
+
+    .badge-wrap {
+      text-align: center;
+    }
+
+    .card {
+      background: #4f5470;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+
+    h1, h2, h3 {
+      color: var(--white);
+      margin-top: 0;
+      line-height: 1.25;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      margin-bottom: 0.8rem;
+    }
+
+    h2 {
+      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .subtitle {
+      margin-top: 0.6rem;
+      color: var(--accent);
+    }
+
+    .wiki-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    .wiki-list a {
+      display: block;
+      text-decoration: none;
+      color: var(--accent);
+      background: var(--surface-dark);
+      padding: 0.65rem 0.85rem;
+      border-radius: 8px;
+      border: 1px solid rgba(183, 194, 178, 0.25);
+      transition: background 0.2s ease, text-decoration-color 0.2s ease;
+    }
+
+    .wiki-list a:hover,
+    .wiki-list a:focus-visible {
+      background: #34394f;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .wiki-list a::before {
+      content: "→ ";
+      font-weight: 700;
+    }
+
+    .donation-buttons {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.6rem;
+    }
+
+    .button {
+      flex: 1 1 220px;
+      text-align: center;
+      text-decoration: none;
+      padding: 0.7rem 0.95rem;
+      border-radius: 8px;
+      font-weight: 700;
+      color: #1f2432;
+      transition: transform 0.15s ease, opacity 0.2s ease;
+    }
+
+    .button:hover,
+    .button:focus-visible {
+      transform: translateY(-1px);
+      opacity: 0.95;
+    }
+
+    .button-paypal {
+      background: #f0a500;
+    }
+
+    .button-coffee {
+      background: #ffdd00;
+    }
+
+    .donation-note {
+      font-style: italic;
+      color: rgba(214, 210, 196, 0.95);
+      font-size: 0.95rem;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.88rem;
+      color: rgba(214, 210, 196, 0.8);
+      margin-top: 0.4rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover,
+    footer a:focus-visible {
+      text-decoration: underline;
+    }
+
+    @keyframes fadeInLogo {
+      from {
+        opacity: 0;
+        transform: translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 480px) {
+      main {
+        padding-top: 2rem;
+      }
+
+      .card {
+        padding: 1.1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="logo-wrap">
+      <img src="/images/branding/appofasi-high-resolution-logo-transparent.png" alt="Appofa logo">
+    </div>
+
+    <div class="badge-wrap">
+      <span class="badge">⚙️ 502 — Service Temporarily Unavailable</span>
+    </div>
+
+    <section class="card" aria-label="App description">
+      <h1>Η Appofa είναι μια ανοιχτή πλατφόρμα για νέα, εκπαίδευση και δημοψηφίσματα. Δουλεύουμε για να επιστρέψουμε σύντομα.</h1>
+      <p class="subtitle">Appofa is an open civic platform for news, education and polls. We're working hard to get back online.</p>
+    </section>
+
+    <section class="card" aria-label="Maintenance countdown">
+      <h2>⏳ Estimated return</h2>
+      <p id="countdown-display" style="font-size:2rem; font-weight:bold; color:#b7c2b2;">...</p>
+      <span id="countdown-target" hidden>2026-05-01T12:00:00</span>
+      <!-- Edit the date in <span id="countdown-target"> to update the countdown -->
+    </section>
+
+    <section class="card" aria-label="Wikipedia reading links">
+      <h2>📚 While you wait, read about:</h2>
+      <ul class="wiki-list">
+        <li><a href="https://en.wikipedia.org/wiki/Direct_democracy" target="_blank" rel="noopener noreferrer">Direct Democracy</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Civic_engagement" target="_blank" rel="noopener noreferrer">Civic Engagement</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Liquid_democracy" target="_blank" rel="noopener noreferrer">Liquid Democracy</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Open_government" target="_blank" rel="noopener noreferrer">Open Government</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Deliberative_democracy" target="_blank" rel="noopener noreferrer">Deliberative Democracy</a></li>
+        <li><a href="https://en.wikipedia.org/wiki/Hellenic_Parliament" target="_blank" rel="noopener noreferrer">Hellenic Parliament</a></li>
+      </ul>
+    </section>
+
+    <section class="card" aria-label="Donation links">
+      <h2>💙 Support Appofa</h2>
+      <div class="donation-buttons">
+        <a class="button button-paypal" href="https://paypal.me/YOURPAYPAL" target="_blank" rel="noopener noreferrer">Donate via PayPal</a>
+        <a class="button button-coffee" href="https://buymeacoffee.com/YOURCOFFEE" target="_blank" rel="noopener noreferrer">☕ Buy Me a Coffee</a>
+      </div>
+      <p class="donation-note">Every contribution helps keep Appofa running.</p>
+    </section>
+
+    <footer>
+      © 2026 Appofa · Open Source · <a href="https://github.com/Antoniskp/Appofa" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </footer>
+  </main>
+
+  <script>
+    (function () {
+      var countdownDisplay = document.getElementById('countdown-display');
+      var countdownTarget = document.getElementById('countdown-target');
+
+      if (!countdownDisplay || !countdownTarget) {
+        return;
+      }
+
+      function updateCountdown() {
+        var targetDate = new Date(countdownTarget.textContent.trim());
+
+        if (Number.isNaN(targetDate.getTime())) {
+          countdownDisplay.textContent = 'Invalid date';
+          return;
+        }
+
+        var now = new Date();
+        var distance = targetDate.getTime() - now.getTime();
+
+        if (distance <= 0) {
+          countdownDisplay.textContent = '🟢 Back soon!';
+          return;
+        }
+
+        var totalSeconds = Math.floor(distance / 1000);
+        var days = Math.floor(totalSeconds / 86400);
+        var hours = Math.floor((totalSeconds % 86400) / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var seconds = totalSeconds % 60;
+
+        countdownDisplay.textContent = days + 'd ' + hours + 'h ' + minutes + 'm ' + seconds + 's';
+      }
+
+      updateCountdown();
+      setInterval(updateCountdown, 1000);
+    })();
+  </script>
+</body>
+</html>
