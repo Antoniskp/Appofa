@@ -346,7 +346,7 @@ Appofa/
 
 ---
 
-## Middleware (9)
+## Middleware (10)
 
 | Middleware | Purpose |
 |-----------|---------|
@@ -357,6 +357,7 @@ Appofa/
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
 | rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + unknown/no-IP blocking behavior |
 | geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier and stored visitor IP for admin workflows |
 
