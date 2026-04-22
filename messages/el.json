@@ -84,6 +84,8 @@
     "submit_register": "Δημιουργία λογαριασμού",
     "or_login_with": "Ή σύνδεση με",
     "or_register_with": "Ή εγγραφή με",
+    "register_subtitle": "Εγγραφείτε άμεσα με Google ή GitHub — χωρίς φόρμα",
+    "or_register_with_email": "Ή εγγραφή με email",
     "passwords_no_match": "Οι κωδικοί δεν ταιριάζουν",
     "register_success": "Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!",
     "register_fail": "Αποτυχία εγγραφής. Παρακαλώ δοκιμάστε ξανά.",

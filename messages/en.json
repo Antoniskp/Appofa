@@ -84,6 +84,8 @@
     "submit_register": "Create account",
     "or_login_with": "Or sign in with",
     "or_register_with": "Or sign up with",
+    "register_subtitle": "Sign up instantly with Google or GitHub — no form needed",
+    "or_register_with_email": "Or sign up with email",
     "passwords_no_match": "Passwords do not match",
     "register_success": "Account created! Welcome!",
     "register_fail": "Registration failed. Please try again.",

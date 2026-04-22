@@ -273,6 +273,8 @@ describe('Frontend smoke tests', () => {
     const { container, root } = await renderPage(RegisterPage);
 
     expect(container.textContent).toContain('Δημιουργία λογαριασμού');
+    expect(container.textContent).toContain('Εγγραφείτε άμεσα με Google ή GitHub — χωρίς φόρμα');
+    expect(container.textContent).toContain('Ή εγγραφή με email');
     expect(container.textContent).toContain('Επιβεβαίωση κωδικού');
 
     await act(async () => {
