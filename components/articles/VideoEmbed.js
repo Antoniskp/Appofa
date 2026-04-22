@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 /**
  * VideoEmbed
@@ -28,8 +29,6 @@ import { useEffect, useRef, useState } from 'react';
  *                      embedHtml, sourceMeta fields
  */
 
-const WATCH_ON_TIKTOK = 'Watch on TikTok ↗';
-
 /**
  * Extract TikTok video ID from embedUrl or sourceUrl.
  * embedUrl format:  https://www.tiktok.com/embed/v2/<videoId>
@@ -48,6 +47,7 @@ function extractTikTokVideoId(embedUrl, sourceUrl) {
 }
 
 export default function VideoEmbed({ article, compact = false, autoplay = false }) {
+  const tArticles = useTranslations('articles');
   const [tiktokPlaying, setTiktokPlaying] = useState(false);
   const [youtubeMuted, setYoutubeMuted] = useState(true);
   const youtubeIframeRef = useRef(null);
@@ -61,7 +61,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
   if (!article?.sourceUrl || !article?.sourceProvider) return null;
 
   const { sourceProvider, sourceUrl, embedUrl, sourceMeta } = article;
-  const title = sourceMeta?.title || article.title || 'Video';
+  const title = sourceMeta?.title || article.title || tArticles('video');
   const author = sourceMeta?.authorName || null;
   const thumbnail = sourceMeta?.thumbnailUrl || null;
 
@@ -81,7 +81,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
             rel="noopener noreferrer"
             className="text-blue-600 hover:text-blue-800 text-sm font-medium"
           >
-            Watch on YouTube ↗
+            {tArticles('watch_on_youtube')}
           </a>
         </div>
       );
@@ -126,9 +126,9 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
             <button
               onClick={handleUnmute}
               className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/70 text-white text-sm font-medium hover:bg-black/90 transition-colors"
-              aria-label="Unmute video"
+              aria-label={tArticles('unmute_video')}
             >
-              🔇 Unmute
+              🔇 {tArticles('unmute')}
             </button>
           )}
         </div>
@@ -142,7 +142,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
               rel="noopener noreferrer"
               className="text-xs text-red-600 hover:text-red-800 mt-1 inline-block"
             >
-              Watch on YouTube ↗
+              {tArticles('watch_on_youtube')}
             </a>
           </div>
         )}
@@ -164,15 +164,15 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
               style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}
               className="relative bg-black rounded-lg overflow-hidden cursor-pointer"
               role="button"
-              tabIndex={0}
-              aria-label="Play TikTok video"
+               tabIndex={0}
+               aria-label={tArticles('play_tiktok_video')}
               onClick={() => setTiktokPlaying(true)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTiktokPlaying(true); } }}
             >
               {thumbnail ? (
                 <img
                   src={thumbnail}
-                  alt={title || 'TikTok video thumbnail'}
+                  alt={title || tArticles('tiktok_video_thumbnail')}
                   className="w-full object-cover"
                   style={{ aspectRatio: '9/16', maxHeight: '740px' }}
                   loading="lazy"
@@ -228,15 +228,15 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
             <div
               className="aspect-video bg-black flex items-center justify-center relative cursor-pointer"
               role="button"
-              tabIndex={0}
-              aria-label="Play TikTok video"
+               tabIndex={0}
+               aria-label={tArticles('play_tiktok_video')}
               onClick={() => setTiktokPlaying(true)}
               onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTiktokPlaying(true); } }}
             >
               {thumbnail ? (
                 <img
                   src={thumbnail}
-                  alt={title || 'TikTok video thumbnail'}
+                  alt={title || tArticles('tiktok_video_thumbnail')}
                   className="w-full h-full object-cover"
                   loading="lazy"
                 />
@@ -259,10 +259,10 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
                   href={sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={author ? `View ${author} on TikTok` : 'Watch on TikTok'}
+                  aria-label={author ? tArticles('view_author_on_tiktok', { author }) : tArticles('watch_on_tiktok')}
                   className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
                 >
-                  {author || WATCH_ON_TIKTOK}
+                  {author || tArticles('watch_on_tiktok')}
                 </a>
               </div>
             )}
@@ -289,10 +289,10 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
                 href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={author ? `View ${author} on TikTok` : 'Watch on TikTok'}
+                aria-label={author ? tArticles('view_author_on_tiktok', { author }) : tArticles('watch_on_tiktok')}
                 className="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block"
               >
-                {author || WATCH_ON_TIKTOK}
+                {author || tArticles('watch_on_tiktok')}
               </a>
             </div>
           )}
@@ -306,7 +306,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
         {thumbnail && (
           <img
             src={thumbnail}
-            alt="TikTok thumbnail"
+            alt={tArticles('tiktok_thumbnail')}
             className="w-24 h-24 object-cover rounded flex-shrink-0"
             loading="lazy"
           />
@@ -319,7 +319,7 @@ export default function VideoEmbed({ article, compact = false, autoplay = false 
             rel="noopener noreferrer"
             className="inline-block mt-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
           >
-            {author || WATCH_ON_TIKTOK}
+            {author || tArticles('watch_on_tiktok')}
           </a>
         </div>
       </div>

@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { linkPreviewAPI } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 // Debounce delay in milliseconds
 const DEBOUNCE_MS = 700;
-
-const WATCH_ON_TIKTOK = 'Watch on TikTok ↗';
 
 /**
  * Extract TikTok video ID from embedUrl or sourceUrl.
@@ -52,6 +51,7 @@ export default function VideoEmbedField({
   onTitleSuggest,
   isTitleDirty = false
 }) {
+  const tArticles = useTranslations('articles');
   const [inputValue, setInputValue] = useState(value || '');
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const [errorMessage, setErrorMessage] = useState('');
@@ -105,13 +105,13 @@ export default function VideoEmbedField({
         }
       } else {
         setStatus('error');
-        setErrorMessage((result && result.message) ? result.message : 'Could not load preview.');
+        setErrorMessage((result && result.message) ? result.message : tArticles('preview_load_error'));
         setPreview(null);
         if (onChangeRef.current) onChangeRef.current(null);
       }
     } catch (err) {
       setStatus('error');
-      setErrorMessage(err?.message || 'Network error while fetching preview.');
+      setErrorMessage(err?.message || tArticles('preview_network_error'));
       setPreview(null);
       if (onChangeRef.current) onChangeRef.current(null);
     }
@@ -160,7 +160,7 @@ export default function VideoEmbedField({
         <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 bg-black aspect-video">
           <iframe
             src={preview.embedUrl}
-            title={preview.title || 'YouTube video'}
+            title={preview.title || tArticles('youtube_video')}
             className="w-full h-full"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
@@ -185,14 +185,14 @@ export default function VideoEmbedField({
                 className="relative bg-black rounded-lg overflow-hidden cursor-pointer"
                 role="button"
                 tabIndex={0}
-                aria-label="Play TikTok video"
+                aria-label={tArticles('play_tiktok_video')}
                 onClick={() => setTiktokPlaying(true)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTiktokPlaying(true); } }}
               >
                 {preview.thumbnailUrl ? (
                   <img
                     src={preview.thumbnailUrl}
-                    alt={preview.title || 'TikTok video thumbnail'}
+                    alt={preview.title || tArticles('tiktok_video_thumbnail')}
                     className="w-full object-cover"
                     style={{ aspectRatio: '9/16', maxHeight: '740px' }}
                     loading="lazy"
@@ -227,7 +227,7 @@ export default function VideoEmbedField({
             <div style={{ maxWidth: '605px', minWidth: '325px', width: '100%' }}>
               <iframe
                 src={`https://www.tiktok.com/embed/v2/${videoId}`}
-                title={preview.title || 'TikTok video'}
+                title={preview.title || tArticles('tiktok_video')}
                 style={{ width: '100%', height: '740px', border: 'none' }}
                 allow="autoplay; encrypted-media"
                 allowFullScreen
@@ -244,7 +244,7 @@ export default function VideoEmbedField({
           <div className="mt-3 rounded-lg overflow-hidden border border-gray-200 bg-black aspect-video">
             <iframe
               src={preview.embedUrl}
-              title={preview.title || 'TikTok video'}
+              title={preview.title || tArticles('tiktok_video')}
               className="w-full h-full"
               allow="autoplay; encrypted-media"
               allowFullScreen
@@ -260,7 +260,7 @@ export default function VideoEmbedField({
           {preview.thumbnailUrl && (
             <img
               src={preview.thumbnailUrl}
-              alt="TikTok thumbnail"
+              alt={tArticles('tiktok_thumbnail')}
               className="w-20 h-20 object-cover rounded"
               loading="lazy"
             />
@@ -273,7 +273,7 @@ export default function VideoEmbedField({
               rel="noopener noreferrer"
               className="inline-block mt-1 text-xs text-blue-600 hover:text-blue-800"
             >
-              {preview.authorName || WATCH_ON_TIKTOK}
+              {preview.authorName || tArticles('watch_on_tiktok')}
             </a>
           </div>
         </div>
@@ -286,8 +286,8 @@ export default function VideoEmbedField({
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
-        Video URL
-        <span className="ml-1 text-xs font-normal text-gray-500">(YouTube or TikTok)</span>
+        {tArticles('video_url')}
+        <span className="ml-1 text-xs font-normal text-gray-500">({tArticles('video_url_hint')})</span>
       </label>
 
       <div className="relative">
@@ -295,7 +295,7 @@ export default function VideoEmbedField({
           type="url"
           value={inputValue}
           onChange={handleInputChange}
-          placeholder="Paste a YouTube or TikTok link…"
+          placeholder={tArticles('video_url_placeholder')}
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 pr-20"
           autoComplete="off"
           spellCheck={false}
@@ -305,21 +305,21 @@ export default function VideoEmbedField({
             type="button"
             onClick={handleClear}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded"
-            aria-label="Clear video URL"
+            aria-label={tArticles('clear_video_url')}
           >
-            Clear
+            {tArticles('clear')}
           </button>
         )}
       </div>
 
       {/* Status indicators */}
       {status === 'loading' && (
-        <p className="text-xs text-gray-500 animate-pulse">Fetching video info…</p>
+        <p className="text-xs text-gray-500 animate-pulse">{tArticles('fetching_video_info')}</p>
       )}
 
       {status === 'error' && (
         <p className="text-xs text-red-600" role="alert">
-          {errorMessage || 'Could not load preview. Please check the URL.'}
+          {errorMessage || tArticles('preview_load_error_help')}
         </p>
       )}
 
@@ -330,7 +330,7 @@ export default function VideoEmbedField({
             {preview.thumbnailUrl && preview.provider === 'youtube' && (
               <img
                 src={preview.thumbnailUrl}
-                alt="Video thumbnail"
+                alt={tArticles('video_thumbnail')}
                 className="w-24 h-16 object-cover rounded flex-shrink-0"
                 loading="lazy"
               />
@@ -354,7 +354,7 @@ export default function VideoEmbedField({
       )}
 
       <p className="text-xs text-gray-400">
-        Supported: YouTube and TikTok links. The video will be embedded in your post.
+        {tArticles('video_embed_supported')}
       </p>
     </div>
   );

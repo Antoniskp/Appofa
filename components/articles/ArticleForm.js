@@ -15,6 +15,7 @@ import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
 import Tooltip from '@/components/ui/Tooltip';
 import { useAuth } from '@/lib/auth-context';
+import { useTranslations } from 'next-intl';
 
 export default function ArticleForm({
   article = null,
@@ -24,6 +25,8 @@ export default function ArticleForm({
   isSubmitting = false,
   submitError = ''
 }) {
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const isAdminOrModerator = user?.role === 'admin' || user?.role === 'moderator';
@@ -234,7 +237,7 @@ export default function ArticleForm({
         setLocationError('');
       }
     } catch (err) {
-      setLocationError(`Αποτυχία σύνδεσης τοποθεσίας: ${err.message}`);
+      setLocationError(`${tArticles('location_link_failed')}: ${err.message}`);
     }
   };
 
@@ -248,7 +251,7 @@ export default function ArticleForm({
         setLocationError('');
       }
     } catch (err) {
-      setLocationError(`Αποτυχία αποσύνδεσης τοποθεσίας: ${err.message}`);
+      setLocationError(`${tArticles('location_unlink_failed')}: ${err.message}`);
     }
   };
 
@@ -435,25 +438,25 @@ export default function ArticleForm({
     const start = textarea?.selectionStart ?? 0;
     const end = textarea?.selectionEnd ?? 0;
     const selectedText = formData.content.slice(start, end).trim();
-    const linkText = selectedText || window.prompt('Κείμενο συνδέσμου:', 'Διαβάστε περισσότερα');
+    const linkText = selectedText || window.prompt(tArticles('link_text_prompt'), tArticles('link_text_default'));
     if (!linkText) return;
 
-    const url = window.prompt('URL Συνδέσμου (https://...):', 'https://');
+    const url = window.prompt(tArticles('link_url_prompt'), 'https://');
     if (!url) return;
 
     insertAtCursor(`[${linkText}](${url.trim()})`);
   };
 
   const handleInsertImage = () => {
-    const url = window.prompt('URL Εικόνας (https://...):', 'https://');
+    const url = window.prompt(tArticles('image_url_prompt'), 'https://');
     if (!url) return;
 
-    const alt = window.prompt('Λεζάντα/εναλλακτικό κείμενο εικόνας:', 'Εικόνα') || 'Εικόνα';
+    const alt = window.prompt(tArticles('image_alt_prompt'), tArticles('image_alt_default')) || tArticles('image_alt_default');
     insertAtCursor(`\n![${alt}](${url.trim()})\n`);
   };
 
   const handleInsertVideo = () => {
-    const url = window.prompt('URL Βίντεο (YouTube, Vimeo ή απευθείας .mp4):', 'https://');
+    const url = window.prompt(tArticles('video_url_prompt'), 'https://');
     if (!url) return;
 
     insertAtCursor(`\n[video](${url.trim()})\n`);
@@ -473,47 +476,47 @@ export default function ArticleForm({
 
       <FormInput
         name="title"
-        label="Τίτλος"
+        label={tArticles('form_title_label')}
         value={formData.title}
         onChange={handleInputChange}
         required
         maxLength={200}
         showCharCount
-        placeholder="Εισαγάγετε τον τίτλο του άρθρου"
-        helpText="Ένας σαφής, περιγραφικός τίτλος για το άρθρο σας"
+        placeholder={tArticles('form_title_placeholder')}
+        helpText={tArticles('form_title_help')}
       />
 
       <FormInput
         name="summary"
-        label="Περίληψη"
+        label={tArticles('form_summary_label')}
         value={formData.summary}
         onChange={handleInputChange}
-        placeholder={formData.sourceUrl ? 'Δημιουργός βίντεο / σύντομη περιγραφή (προαιρετικό)' : 'Σύντομη περίληψη (προαιρετικό)'}
+        placeholder={formData.sourceUrl ? tArticles('form_summary_video_placeholder') : tArticles('form_summary_placeholder')}
       />
  
       {!formData.sourceUrl && (
         <FormInput
           name="bannerImageUrl"
-          label="URL Εικόνας Banner"
+            label={tArticles('form_banner_url_label')}
           value={formData.bannerImageUrl}
           onChange={handleInputChange}
-          placeholder="https://example.com/banner.jpg ή /images/yourimage.png"
+            placeholder={tArticles('form_banner_url_placeholder')}
         />
       )}
 
       <TagInput
-        label="Ετικέτες"
+        label={tArticles('table_tags')}
         value={formData.tags}
         onChange={(tags) => setFormData((prev) => ({ ...prev, tags }))}
         suggestions={tagSuggestions}
         onSearch={handleTagSearch}
-        placeholder="π.χ. Τεχνολογία, Έρευνα"
+        placeholder={tArticles('form_tags_placeholder')}
       />
 
       <FormInput
         name="content"
         type="textarea"
-        label="Περιεχόμενο"
+        label={tArticles('form_content_label')}
         rows={formData.sourceUrl ? 3 : 10}
         value={formData.content}
         onChange={handleInputChange}
@@ -524,13 +527,13 @@ export default function ArticleForm({
         required={!formData.sourceUrl}
         maxLength={50000}
         showCharCount
-        placeholder={formData.sourceUrl ? 'Προσθέστε προαιρετικό σχόλιο για αυτό το βίντεο...' : 'Γράψτε το περιεχόμενο του άρθρου εδώ...'}
-        helpText={formData.sourceUrl ? 'Το περιεχόμενο είναι προαιρετικό για αναρτήσεις βίντεο.' : 'Χρησιμοποιήστε τα κουμπιά μορφοποίησης για επικεφαλίδες, έντονο/πλάγιο κείμενο, συνδέσμους, εικόνες και βίντεο.'}
+        placeholder={formData.sourceUrl ? tArticles('form_content_video_placeholder') : tArticles('form_content_placeholder')}
+        helpText={formData.sourceUrl ? tArticles('form_content_video_help') : tArticles('form_content_help')}
       />
 
       {!formData.sourceUrl && (
         <div className="-mt-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Γρήγορη μορφοποίηση</p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">{tArticles('quick_formatting')}</p>
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -548,66 +551,66 @@ export default function ArticleForm({
           </button>
           <button
             type="button"
-            onClick={() => wrapSelection('**', '**', 'bold text')}
+            onClick={() => wrapSelection('**', '**', tArticles('format_bold_fallback'))}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 hover:bg-gray-100"
           >
-            Έντονα
+            {tArticles('format_bold')}
           </button>
           <button
             type="button"
-            onClick={() => wrapSelection('*', '*', 'italic text')}
+            onClick={() => wrapSelection('*', '*', tArticles('format_italic_fallback'))}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm italic text-gray-700 hover:bg-gray-100"
           >
-            Πλάγια
+            {tArticles('format_italic')}
           </button>
           <button
             type="button"
             onClick={handleInsertLink}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
           >
-            Σύνδεσμος
+            {tArticles('format_link')}
           </button>
           <button
             type="button"
             onClick={handleInsertImage}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
           >
-            Εικόνα
+            {tArticles('format_image')}
           </button>
           <button
             type="button"
             onClick={handleInsertVideo}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
           >
-            Βίντεο
+            {tArticles('format_video')}
           </button>
           <button
             type="button"
             onClick={handleInsertBulletList}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
           >
-            Λίστα
+            {tArticles('format_list')}
           </button>
           <button
             type="button"
             onClick={handleInsertNumberedList}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
           >
-            Αριθμημένη Λίστα
+            {tArticles('format_numbered_list')}
           </button>
           <button
             type="button"
             onClick={handleInsertQuote}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
           >
-            Παράθεση
+            {tArticles('format_quote')}
           </button>
           <button
             type="button"
             onClick={handleInsertCodeBlock}
             className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
           >
-            Κώδικας
+            {tArticles('format_code')}
           </button>
         </div>
       </div>
@@ -615,7 +618,7 @@ export default function ArticleForm({
 
       {!formData.sourceUrl && mediaPreviews.length > 0 && (
         <div className="rounded-md border border-gray-200 bg-white p-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">Προεπισκόπηση πολυμέσων</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500">{tArticles('media_preview')}</p>
           <div className="space-y-3">
             {mediaPreviews.map((media, index) => {
               if (media.type === 'image' && isImageUrl(media.src)) {
@@ -639,7 +642,7 @@ export default function ArticleForm({
                     <div key={`${media.src}-${index}`} className="relative w-full overflow-hidden rounded-lg" style={{ paddingTop: '56.25%' }}>
                       <iframe
                         src={embed}
-                        title="Προεπισκόπηση βίντεο"
+                        title={tArticles('video_preview')}
                         className="absolute left-0 top-0 h-full w-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -657,7 +660,7 @@ export default function ArticleForm({
 
               return (
                 <p key={`${media.src}-${index}`} className="text-sm text-gray-600 break-all">
-                  URL Πολυμέσου: {media.src}
+                  {tArticles('media_url')}: {media.src}
                 </p>
               );
             })}
@@ -669,9 +672,9 @@ export default function ArticleForm({
         <div>
           <div className="flex items-center gap-2 mb-1">
             <label className="block text-sm font-medium text-gray-700">
-              Τύπος Άρθρου
+              {tArticles('form_article_type')}
             </label>
-            <Tooltip content="Επιλέξτε τον τύπο του άρθρου. 'Νέα' για ειδήσεις, 'Άρθρα' για εκπαιδευτικό περιεχόμενο.">
+            <Tooltip content={tArticles('form_article_type_help')}>
               <InformationCircleIcon className="h-4 w-4 text-gray-400 cursor-help" />
             </Tooltip>
           </div>
@@ -691,22 +694,22 @@ export default function ArticleForm({
         {articleCategories.articleTypes[formData.type]?.categories.length > 0 ? (
           <FormSelect
             name="category"
-            label="Κατηγορία"
+            label={tArticles('category')}
             value={formData.category}
             onChange={handleInputChange}
             required={isCategoryRequired(formData.type, articleCategories)}
             options={articleCategories.articleTypes[formData.type].categories}
-            placeholder="Επιλέξτε κατηγορία..."
+            placeholder={tArticles('form_select_category_placeholder')}
           />
         ) : (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Κατηγορία
+              {tArticles('category')}
             </label>
             <input
               type="text"
               disabled
-              value="Δεν απαιτείται"
+              value={tArticles('form_not_required')}
               className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-500"
             />
           </div>
@@ -716,14 +719,14 @@ export default function ArticleForm({
       <div className="grid grid-cols-2 gap-4">
         <FormSelect
           name="status"
-          label="Κατάσταση"
+          label={tArticles('table_status')}
           value={formData.status}
           onChange={handleInputChange}
           showPlaceholder={false}
           options={[
-            { value: 'draft', label: 'Πρόχειρο' },
-            { value: 'published', label: 'Δημοσιευμένο' },
-            { value: 'archived', label: 'Αρχειοθετημένο' }
+            { value: 'draft', label: tArticles('status_draft') },
+            { value: 'published', label: tArticles('status_published') },
+            { value: 'archived', label: tArticles('status_archived') }
           ]}
         />
       </div>
@@ -736,11 +739,11 @@ export default function ArticleForm({
           onChange={handleInputChange}
           className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
         />
-        <span className="text-sm text-gray-700">Απόκρυψη ονόματος συντάκτη σε αυτό το άρθρο</span>
+        <span className="text-sm text-gray-700">{tArticles('hide_author')}</span>
       </div>
 
       <div className="border-t pt-4 space-y-3">
-        <p className="text-sm font-medium text-gray-700">Ρυθμίσεις Σχολίων</p>
+        <p className="text-sm font-medium text-gray-700">{tArticles('comments_settings')}</p>
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -749,7 +752,7 @@ export default function ArticleForm({
             onChange={handleInputChange}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
-          <span className="text-sm text-gray-700">Ενεργοποίηση σχολίων σε αυτό το άρθρο</span>
+          <span className="text-sm text-gray-700">{tArticles('enable_comments')}</span>
         </div>
         <div className="flex items-center gap-2">
           <input
@@ -759,13 +762,13 @@ export default function ArticleForm({
             onChange={handleInputChange}
             className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
           />
-          <span className="text-sm text-gray-700">Κλείδωμα σχολίων (δεν επιτρέπονται νέα σχόλια)</span>
+          <span className="text-sm text-gray-700">{tArticles('lock_comments')}</span>
         </div>
       </div>
 
       {isAdminOrModerator && (
         <div className="border-t pt-4 space-y-3">
-          <p className="text-sm font-medium text-red-700">Ρυθμίσεις Έγκρισης</p>
+          <p className="text-sm font-medium text-red-700">{tArticles('approval_settings')}</p>
           <div className="flex items-center gap-2">
             <input
               type="checkbox"
@@ -774,7 +777,7 @@ export default function ArticleForm({
               onChange={handleInputChange}
               className="h-4 w-4 accent-red-600 border-red-300 rounded focus:ring-red-500"
             />
-            <span className="text-sm font-medium text-red-700">Εγκεκριμένο</span>
+            <span className="text-sm font-medium text-red-700">{tArticles('approved')}</span>
           </div>
         </div>
       )}
@@ -783,7 +786,7 @@ export default function ArticleForm({
       {article?.id ? (
         <div className="border-t pt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Τοποθεσίες
+            {tArticles('locations')}
           </label>
           
           {locationError && (
@@ -809,7 +812,7 @@ export default function ArticleForm({
                     onClick={() => handleRemoveLocation(location.id)}
                     className="text-red-600 hover:text-red-800 text-sm font-medium"
                   >
-                    Αφαίρεση
+                    {tCommon('remove')}
                   </button>
                 </div>
               ))}
@@ -822,7 +825,7 @@ export default function ArticleForm({
               <CascadingLocationSelector
                 value={newLocationId}
                 onChange={setNewLocationId}
-                placeholder="Επιλέξτε τοποθεσία"
+                placeholder={tArticles('select_location')}
                 allowClear={true}
               />
             </div>
@@ -832,7 +835,7 @@ export default function ArticleForm({
               disabled={!newLocationId || newLocation?.type === 'international'}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              Προσθήκη
+              {tArticles('add_location')}
             </button>
           </div>
         </div>
@@ -840,12 +843,11 @@ export default function ArticleForm({
         /* Create mode - show informational message about locations */
         <div className="border-t pt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Τοποθεσίες
+            {tArticles('locations')}
           </label>
           <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
             <p className="text-sm text-blue-800">
-              <span className="font-semibold" aria-label="Information">ℹ️ Σημείωση:</span> Οι τοποθεσίες μπορούν να προστεθούν μετά τη δημιουργία του άρθρου. 
-              Θα ανακατευθυνθείτε στη σελίδα επεξεργασίας όπου μπορείτε να συνδέσετε τοποθεσίες με το άρθρο σας.
+              <span className="font-semibold" aria-label={tCommon('information')}>ℹ️ {tArticles('note_label')}</span> {tArticles('locations_note')}
             </p>
           </div>
         </div>
@@ -857,14 +859,14 @@ export default function ArticleForm({
           disabled={isSubmitting}
           className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
         >
-          {isSubmitting ? (article ? 'Αποθήκευση...' : 'Δημιουργία...') : (article ? 'Αποθήκευση Αλλαγών' : 'Δημιουργία Άρθρου')}
+          {isSubmitting ? (article ? tArticles('saving') : tArticles('creating')) : (article ? tCommon('save') : tArticles('create_new'))}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 transition"
         >
-          Ακύρωση
+          {tCommon('cancel')}
         </button>
         {onDelete && (
           <button
@@ -873,7 +875,7 @@ export default function ArticleForm({
             className="ml-auto flex items-center gap-2 bg-red-600 text-white px-6 py-2 rounded hover:bg-red-700 transition"
           >
             <TrashIcon className="h-4 w-4" />
-            Διαγραφή Άρθρου
+            {tArticles('delete_confirm_title')}
           </button>
         )}
       </div>
@@ -883,10 +885,10 @@ export default function ArticleForm({
           isOpen={deleteConfirmOpen}
           onClose={() => setDeleteConfirmOpen(false)}
           onConfirm={onDelete}
-          title="Διαγραφή Άρθρου"
-          message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτό το άρθρο; Αυτή η ενέργεια δεν μπορεί να αναιρεθεί."
-          confirmText="Διαγραφή Άρθρου"
-          cancelText="Ακύρωση"
+          title={tArticles('delete_confirm_title')}
+          message={tArticles('delete_confirm_message')}
+          confirmText={tArticles('delete_confirm_title')}
+          cancelText={tCommon('cancel')}
           variant="danger"
         />
       )}

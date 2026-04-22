@@ -19,8 +19,11 @@ import { idSlug } from '@/lib/utils/slugify';
 import VideoEmbed from '@/components/articles/VideoEmbed';
 import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
+import { useTranslations } from 'next-intl';
 
 export default function ArticleDetailPage() {
+  const tArticles = useTranslations('articles');
+  const tCommon = useTranslations('common');
   const params = useParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -40,7 +43,7 @@ export default function ArticleDetailPage() {
 
   const isNews = article?.type === 'news';
   const isVideo = article?.type === 'video';
-  const breadcrumbLabel = isVideo ? 'Βίντεο' : (isNews ? 'News' : 'Articles');
+  const breadcrumbLabel = isVideo ? tArticles('videos') : (isNews ? tArticles('news') : tArticles('title'));
   const breadcrumbHref = isVideo ? '/videos' : (isNews ? '/news' : '/articles');
 
   const handleShare = () => {
@@ -49,7 +52,7 @@ export default function ArticleDetailPage() {
 
   const handleBookmark = () => {
     if (!user) {
-      addToast('Συνδεθείτε για να αποθηκεύσετε άρθρα.', { type: 'info' });
+      addToast(tArticles('login_to_bookmark'), { type: 'info' });
       return;
     }
 
@@ -63,12 +66,12 @@ export default function ArticleDetailPage() {
           response.data?.bookmarked ? prev + 1 : Math.max(prev - 1, 0)
         ));
         addToast(
-          response.data?.bookmarked ? 'Το άρθρο αποθηκεύτηκε.' : 'Ο σελιδοδείκτης αφαιρέθηκε.',
+          response.data?.bookmarked ? tArticles('bookmarked') : tArticles('bookmark_removed'),
           { type: 'success' }
         );
       })
       .catch((err) => {
-        addToast(err.message || 'Σφάλμα κατά την ενημέρωση σελιδοδείκτη.', { type: 'error' });
+        addToast(err.message || tArticles('bookmark_update_failed'), { type: 'error' });
       })
       .finally(() => {
         setBookmarkLoading(false);
@@ -156,12 +159,12 @@ export default function ArticleDetailPage() {
 
   if (error || !article) {
     if (error) {
-      toastError(error || 'Article not found');
+      toastError(error || tArticles('not_found'));
     }
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <p className="text-red-600 mb-4">Error loading article: {error || 'Article not found'}</p>
-        <nav aria-label="Breadcrumb" className="mt-4">
+        <p className="text-red-600 mb-4">{tArticles('error_loading_single')}: {error || tArticles('not_found')}</p>
+        <nav aria-label={tArticles('breadcrumb')} className="mt-4">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>
               <Link href={breadcrumbHref} className="text-blue-600 hover:text-blue-800">
@@ -169,7 +172,7 @@ export default function ArticleDetailPage() {
               </Link>
             </li>
             <li className="text-gray-400">/</li>
-            <li className="text-gray-700">Article</li>
+            <li className="text-gray-700">{tArticles('single_title')}</li>
           </ol>
         </nav>
       </div>
@@ -182,13 +185,13 @@ export default function ArticleDetailPage() {
     event.currentTarget.onerror = null;
     event.currentTarget.src = defaultBannerImageUrl;
   };
-  const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
+  const authorLabel = article.hideAuthor ? tCommon('anonymous') : (article.author?.username || tCommon('unknown'));
 
   return (
     <>
     <div className="bg-gray-50 min-h-screen py-8">
       <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="mb-6">
+        <nav aria-label={tArticles('breadcrumb')} className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
             <li>
               <Link href={breadcrumbHref} className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
@@ -209,7 +212,7 @@ export default function ArticleDetailPage() {
           ) : (
             <img
               src={bannerImageUrl}
-              alt={`${article.title} banner`}
+                alt={tArticles('article_banner_alt', { title: article.title })}
               className="w-full h-64 object-cover"
               onError={handleBannerError}
             />
@@ -237,30 +240,30 @@ export default function ArticleDetailPage() {
 
               <div className="flex flex-wrap items-center gap-4 text-gray-600 text-sm border-b border-gray-200 pb-4">
                 <div className="flex items-center">
-                  <span className="font-medium">By {authorLabel}</span>
+                  <span className="font-medium">{tArticles('by')} {authorLabel}</span>
                 </div>
                 <span>•</span>
                 <div>
-                  <span>Published: {new Date(article.createdAt).toLocaleDateString()}</span>
+                  <span>{tArticles('published_on')}: {new Date(article.createdAt).toLocaleDateString()}</span>
                 </div>
                 {article.updatedAt !== article.createdAt && (
                   <>
                     <span>•</span>
                     <div>
-                      <span>Updated: {new Date(article.updatedAt).toLocaleDateString()}</span>
+                      <span>{tArticles('updated_on')}: {new Date(article.updatedAt).toLocaleDateString()}</span>
                     </div>
                   </>
                 )}
                 <div className="ml-auto flex gap-2">
                   <TooltipIconButton
                     icon={ShareIcon}
-                    tooltip="Κοινοποίηση άρθρου"
+                    tooltip={tArticles('share_article')}
                     onClick={handleShare}
                   />
                   <div className="flex items-center gap-1">
                     <TooltipIconButton
                       icon={isBookmarked ? BookmarkIconSolid : BookmarkIcon}
-                      tooltip={isBookmarked ? 'Αφαίρεση από τα σελιδοδείκτες' : 'Αποθήκευση'}
+                      tooltip={isBookmarked ? tArticles('remove_bookmark') : tArticles('save_bookmark')}
                       onClick={handleBookmark}
                       disabled={bookmarkLoading}
                       variant={isBookmarked ? 'primary' : 'default'}
@@ -273,14 +276,14 @@ export default function ArticleDetailPage() {
                   </div>
                   <TooltipIconButton
                     icon={PrinterIcon}
-                    tooltip="Εκτύπωση"
+                    tooltip={tArticles('print')}
                     onClick={() => window.print()}
                   />
                   <ReportButton contentType="article" contentId={article.id} />
                   {canEditArticle(article) && (
                     <TooltipIconButton
                       icon={PencilSquareIcon}
-                      tooltip="Επεξεργασία"
+                      tooltip={tArticles('edit')}
                       onClick={() => router.push(`/articles/${article.id}/edit`)}
                     />
                   )}
@@ -320,7 +323,7 @@ export default function ArticleDetailPage() {
         <ShareModal
           url={typeof window !== 'undefined' ? window.location.href : ''}
           title={article.title}
-          shareText="Δείτε αυτό το άρθρο στο Appofa! 📰"
+          shareText={tArticles('share_text')}
           onClose={() => setShowShareModal(false)}
         />
       )}

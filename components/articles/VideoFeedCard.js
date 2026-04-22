@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { idSlug } from '@/lib/utils/slugify';
+import { useTranslations } from 'next-intl';
 
 /**
  * VideoFeedCard
@@ -172,7 +173,7 @@ function YouTubePlayer({ embedUrl, title, sourceUrl, onPlay, onPauseRef }) {
 // ---------------------------------------------------------------------------
 // TikTok player (click-to-play thumbnail)
 // ---------------------------------------------------------------------------
-function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
+function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title, tArticles }) {
   const videoId = extractTikTokVideoId(embedUrl, sourceUrl);
   const [playing, setPlaying] = useState(false);
   const thumbnail = sourceMeta?.thumbnailUrl;
@@ -187,7 +188,7 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
           rel="noopener noreferrer"
           className="text-white underline text-sm"
         >
-          Watch on TikTok ↗
+          {tArticles('watch_on_tiktok')}
         </a>
       </div>
     );
@@ -200,7 +201,7 @@ function TikTokPlayer({ embedUrl, sourceUrl, sourceMeta, title }) {
         style={{ minHeight: '360px' }}
         role="button"
         tabIndex={0}
-        aria-label="Play TikTok video"
+        aria-label={tArticles('play_tiktok_video')}
         onClick={() => setPlaying(true)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -292,6 +293,7 @@ function ProviderBadge({ provider }) {
 // Main VideoFeedCard component
 // ---------------------------------------------------------------------------
 export default function VideoFeedCard({ article, onPlay }) {
+  const tArticles = useTranslations('articles');
   const pauseRef = useRef(null);
   const isYouTube = article?.sourceProvider === 'youtube';
   const isTikTok = article?.sourceProvider === 'tiktok';
@@ -319,7 +321,7 @@ export default function VideoFeedCard({ article, onPlay }) {
     tags,
   } = article;
 
-  const videoTitle = sourceMeta?.title || title || 'Video';
+  const videoTitle = sourceMeta?.title || title || tArticles('video');
   const authorName = sourceMeta?.authorName;
   const postingUser = author?.username;
   const articleHref = `/articles/${idSlug(id, title)}`;
@@ -328,7 +330,7 @@ export default function VideoFeedCard({ article, onPlay }) {
     ? formatDistanceToNow(new Date(createdAt), { addSuffix: true })
     : null;
 
-  const watchLabel = isYouTube ? 'Watch on YouTube ↗' : 'Watch on TikTok ↗';
+  const watchLabel = isYouTube ? tArticles('watch_on_youtube') : tArticles('watch_on_tiktok');
 
   return (
     <article className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden transition-shadow duration-200 hover:shadow-md">
@@ -349,6 +351,7 @@ export default function VideoFeedCard({ article, onPlay }) {
             sourceUrl={sourceUrl}
             sourceMeta={sourceMeta}
             title={videoTitle}
+            tArticles={tArticles}
           />
         )}
         {!isYouTube && !isTikTok && (
@@ -359,7 +362,7 @@ export default function VideoFeedCard({ article, onPlay }) {
               rel="noopener noreferrer"
               className="text-white underline text-sm"
             >
-              Watch Video ↗
+              {tArticles('watch_video')} ↗
             </a>
           </div>
         )}
@@ -396,7 +399,7 @@ export default function VideoFeedCard({ article, onPlay }) {
             )}
             {postingUser && (
               <span>
-                posted by{' '}
+                {tArticles('posted_by')}{' '}
                 <Link
                   href={`/users/${postingUser}`}
                   className="hover:text-blue-600 transition-colors"

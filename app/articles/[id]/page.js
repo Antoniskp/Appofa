@@ -23,9 +23,10 @@ async function fetchArticle(id) {
 
 export async function generateMetadata({ params }) {
   const tArticles = await getTranslations('articles');
+  const tCommon = await getTranslations('common');
   const article = await fetchArticle(params.id);
   if (!article) {
-    return { title: `${tArticles('single_title')} | Απόφαση` };
+    return { title: `${tArticles('single_title')} | ${tCommon('app_name')}` };
   }
 
   const slug = idSlug(article.id, article.title);
