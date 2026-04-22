@@ -18,7 +18,7 @@ function extractTikTokVideoId(embedUrl, sourceUrl) {
     if (m) return m[1];
   }
   if (sourceUrl) {
-    const m = sourceUrl.match(/\/video\/([a-zA-Z0-9_-]+)/);
+    const m = sourceUrl.match(/\/(?:video|photo)\/([a-zA-Z0-9_-]+)/);
     if (m) return m[1];
   }
   return null;

@@ -24,8 +24,8 @@ const FETCH_TIMEOUT_MS = 8000;
 // Max response body size: 512 KB
 const MAX_BODY_BYTES = 512 * 1024;
 
-// Retry delay for TikTok oEmbed intermittent failures (milliseconds)
-const TIKTOK_RETRY_DELAY_MS = 500;
+// Retry delays for TikTok oEmbed intermittent failures (milliseconds)
+const TIKTOK_RETRY_DELAYS_MS = [500, 1500, 3000];
 
 /**
  * Truncate a string to fit within a database column limit.
@@ -247,7 +247,7 @@ const safeFetch = (url, redirectCount = 0) => {
     const req = lib.get(url, {
       timeout: FETCH_TIMEOUT_MS,
       headers: {
-        'User-Agent': 'Appofa/1.0 (+https://github.com/Antoniskp/Appofa; link-preview-bot)',
+        'User-Agent': 'Mozilla/5.0 (compatible; Appofa/1.0; +https://appofasi.gr)',
         'Accept': 'application/json, text/html'
       }
     }, (res) => {
@@ -368,19 +368,24 @@ const buildPreview = async (urlObj, provider, originalUrl) => {
     return {};
   };
 
-  try {
-    meta = await fetchOEmbed();
-  } catch (err) {
-    // TikTok oEmbed is known to return intermittent 500 errors; retry once
+  let lastErr = null;
+  for (let attempt = 0; attempt <= TIKTOK_RETRY_DELAYS_MS.length; attempt++) {
+    try {
+      meta = await fetchOEmbed();
+      lastErr = null;
+      break;
+    } catch (err) {
+      lastErr = err;
+      if (provider !== 'tiktok' || attempt >= TIKTOK_RETRY_DELAYS_MS.length) break;
+      await new Promise((r) => setTimeout(r, TIKTOK_RETRY_DELAYS_MS[attempt]));
+    }
+  }
+
+  if (lastErr) {
     if (provider === 'tiktok') {
-      try {
-        await new Promise((r) => setTimeout(r, TIKTOK_RETRY_DELAY_MS));
-        meta = await fetchOEmbed();
-      } catch (retryErr) {
-        console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl} after retry: ${retryErr.message}`);
-      }
+      console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl} after all retries: ${lastErr.message}`);
     } else {
-      console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl}: ${err.message}`);
+      console.warn(`[link-preview] oEmbed fetch failed for ${originalUrl}: ${lastErr.message}`);
     }
   }
 
@@ -468,21 +473,27 @@ const getLinkPreview = async (req, res) => {
         }
       }
 
-      return res.status(200).json({
-        success: true,
-        data: {
-          provider: cached.provider,
-          url: rawUrl.trim(),
-          title: cached.title,
-          authorName: cached.authorName,
-          thumbnailUrl: cached.thumbnailUrl,
-          providerName: cached.providerName,
-          providerUrl: cached.providerUrl,
-          embedUrl: resolvedEmbedUrl,
-          embedHtml: cached.embedHtml,
-          cached: true
-        }
-      });
+      if (cached.provider === 'tiktok' && !resolvedEmbedUrl) {
+        await LinkPreviewCache.destroy({
+          where: { normalizedUrl: cacheKey }
+        });
+      } else {
+        return res.status(200).json({
+          success: true,
+          data: {
+            provider: cached.provider,
+            url: rawUrl.trim(),
+            title: cached.title,
+            authorName: cached.authorName,
+            thumbnailUrl: cached.thumbnailUrl,
+            providerName: cached.providerName,
+            providerUrl: cached.providerUrl,
+            embedUrl: resolvedEmbedUrl,
+            embedHtml: cached.embedHtml,
+            cached: true
+          }
+        });
+      }
     }
 
     // Fetch fresh preview
