@@ -370,7 +370,7 @@ Appofa/
 | `/` | Home page |
 | `/login`, `/register` | Authentication |
 | `/profile` | User profile |
-| `/users`, `/users/[username]` | User list & public profiles |
+| `/users`, `/users/[username]` | User list & public profiles (`/users` guest view shows login CTA + unclaimed public-profile preview with claim/profile actions) |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
 | `/my-votes`, `/my-polls`, `/my-news` | User content |
@@ -436,7 +436,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
-| `ui/` | 21+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, Pagination, SkeletonLoader, TagInput, Tooltip |
+| `ui/` | 21+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)

@@ -60,6 +60,8 @@ This instruction is permanent and must never be removed.
 - **Language switcher**: use `components/ui/LanguageSwitcher.js` in the Profile preferences card (not in TopNav)
 - **Translations hook**: frontend pages/components should read UI labels via `useTranslations(...)` instead of hard-coded literals
 - **Auth**: use `useAuth` from `lib/auth-context.js`
+- **Login redirect links**: use `components/ui/LoginLink` and pass `redirectTo` when post-login return should target a specific action page (e.g. person claim flows)
+- **Users page (guest view)**: keep the `/users` unauthenticated section with login/register prompt plus an unclaimed public-profile preview fetched via `personAPI.getAll({ claimStatus: 'unclaimed', limit: 6 })`
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)
 

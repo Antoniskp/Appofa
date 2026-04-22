@@ -9,11 +9,18 @@ import { saveReturnTo } from '@/lib/auth-redirect';
  * page path to localStorage before navigating, so the user is returned to
  * their original page after a successful login.
  */
-export default function LoginLink({ children, className, ...props }) {
+export default function LoginLink({ children, className, redirectTo, onClick, ...props }) {
   const pathname = usePathname();
 
+  const handleClick = (event) => {
+    saveReturnTo(redirectTo || pathname);
+    if (typeof onClick === 'function') {
+      onClick(event);
+    }
+  };
+
   return (
-    <Link href="/login" onClick={() => saveReturnTo(pathname)} className={className} {...props}>
+    <Link href="/login" onClick={handleClick} className={className} {...props}>
       {children}
     </Link>
   );

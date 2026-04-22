@@ -1,6 +1,6 @@
 'use client';
 
-import { authAPI } from '@/lib/api';
+import { authAPI, personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import UserCard from '@/components/UserCard';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import LoginLink from '@/components/ui/LoginLink';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
+import { InformationCircleIcon } from '@heroicons/react/24/outline';
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -90,6 +91,25 @@ export default function UsersPage() {
       initialData: null
     }
   );
+
+  const { data: unclaimedProfilesData, loading: unclaimedProfilesLoading, error: unclaimedProfilesError } = useAsyncData(
+    async () => {
+      if (authLoading || isAuthenticated) return null;
+
+      const response = await personAPI.getAll({ claimStatus: 'unclaimed', limit: 6 });
+      return response?.data?.profiles || [];
+    },
+    [authLoading, isAuthenticated],
+    {
+      initialData: [],
+    }
+  );
+
+  const unclaimedProfiles = Array.isArray(unclaimedProfilesData) ? unclaimedProfilesData : [];
+  const showUnclaimedProfilesSection = !authLoading
+    && !isAuthenticated
+    && !unclaimedProfilesError
+    && (unclaimedProfilesLoading || unclaimedProfiles.length > 0);
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -180,6 +200,103 @@ export default function UsersPage() {
               </Link>
             </div>
           </div>
+        )}
+
+        {showUnclaimedProfilesSection && (
+          <section className="mb-8 space-y-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <InformationCircleIcon className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div>
+                  <h2 className="text-base font-semibold text-blue-900">🏛️ Δημόσια Προφίλ — Μήπως είστε εσείς;</h2>
+                  <p className="mt-1 text-sm text-blue-900/90">
+                    Αυτά τα προφίλ δημιουργούνται από χρήστες για να τοποθετήσουν πρόσωπα σε κυβερνητικές θέσεις, ή για να τα ψηφίσουν για ίδιες θέσεις — από φίλους και θαυμαστές. Δεν είναι λογαριασμοί χρηστών. Περιέχουν ελάχιστα δημόσια στοιχεία. Αν το προφίλ είναι δικό σας, μπορείτε να το διεκδικήσετε και να το συμπληρώσετε.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {unclaimedProfilesLoading ? (
+              <SkeletonLoader type="card" count={6} />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {unclaimedProfiles.map((profile) => {
+                    const fullName = [profile.firstNameNative, profile.lastNameNative].filter(Boolean).join(' ')
+                      || profile.username
+                      || 'Άγνωστο';
+                    const initials = fullName
+                      .split(' ')
+                      .filter(Boolean)
+                      .slice(0, 2)
+                      .map((part) => part[0]?.toUpperCase() || '')
+                      .join('');
+                    const claimPageUrl = `/persons/${profile.slug}/claim`;
+
+                    return (
+                      <div key={profile.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                        <div className="flex items-start gap-3">
+                          {profile.photo ? (
+                            <img
+                              src={profile.photo}
+                              alt={fullName}
+                              className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                              {initials || '?'}
+                            </div>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="text-sm font-semibold text-gray-900 truncate">{fullName}</h3>
+                              {profile.claimStatus === 'unclaimed' && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  Αδιεκδίτητο
+                                </span>
+                              )}
+                            </div>
+
+                            {profile.location?.name && (
+                              <p className="mt-1 text-xs text-gray-500">{profile.location.name}</p>
+                            )}
+
+                            {Array.isArray(profile.expertiseArea) && profile.expertiseArea.length > 0 && (
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {profile.expertiseArea.map((area) => (
+                                  <span key={area} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                                    {area}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
+                            <div className="mt-3 flex items-center gap-3 flex-wrap">
+                              <LoginLink
+                                redirectTo={claimPageUrl}
+                                className="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+                              >
+                                Είμαι εγώ →
+                              </LoginLink>
+                              <Link href={`/persons/${profile.slug}`} className="text-blue-600 underline text-sm">
+                                Δείτε προφίλ
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <div className="text-right">
+                  <Link href="/persons?claimStatus=unclaimed" className="text-blue-600 hover:underline text-sm font-medium">
+                    → Δείτε όλα τα δημόσια πρόσωπα
+                  </Link>
+                </div>
+              </>
+            )}
+          </section>
         )}
 
         {/* Show user cards only for authenticated users */}
