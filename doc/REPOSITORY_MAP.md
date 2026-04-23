@@ -486,7 +486,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `comments/` | 2 | CommentForm, CommentsThread |
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
-| `layout/` | 8 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout |
+| `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
@@ -496,6 +496,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 ### Layout resilience notes (mobile)
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading.
 - `components/SuggestionCard.js`, `components/InlineSuggestionVote.js`, `app/suggestions/[id]/page.js`: vote rows use `flex-wrap` on the parent footer row so vote controls wrap below metadata on narrow viewports.
+- `app/layout.js` mounts `GoogleAnalytics` and `GeoTracker`; `GeoTracker` posts pathname-based telemetry to `/api/admin/geo-stats/track` via `geoAdminAPI.trackVisit(...)`.
 
 ---
 

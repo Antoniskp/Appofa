@@ -64,6 +64,7 @@ This instruction is permanent and must never be removed.
 - **Admin geo dashboard**: use `/admin/geo` for country traffic analytics (including recent visits IP actions + log cleanup) and country funding management (tabs: traffic + country management)
 - **Admin geo access management**: keep country block rules and unknown/no-IP actions in the `/admin/geo` "Κανόνες Πρόσβασης" tab using `lib/api/geoAccess.js`
 - **Admin geo API module**: use `geoAdminAPI` (`lib/api/geoAdmin.js`) for `/api/admin/geo-stats/*` admin calls instead of direct request code
+- **Geo visit tracking (frontend)**: mount `components/layout/GeoTracker.js` in `app/layout.js` so pathname changes call `geoAdminAPI.trackVisit(...)`
 - **Admin article management**: keep article stats/table actions (view/delete/approve news) on `/admin/articles`; keep `/admin` focused on overview cards, quick actions, and announcements
 - **Organizations API module**: use `lib/api/organizations.js` and import `organizationAPI` from `lib/api`
 - **Organization member management**: use `/api/organizations/:id/join|leave|members/*` endpoints for join/leave/invite/approve/remove/role updates and pending requests
@@ -91,7 +92,7 @@ This instruction is permanent and must never be removed.
 
 ### Anti-patterns to Avoid
 - ❌ Direct `fetch()` in components → ✅ Use `lib/api/` methods
-- ❌ Bare `useEffect` + fetch → ✅ Use `useAsyncData` / `useInfiniteData`
+- ❌ Bare `useEffect` + fetch → ✅ Use `useAsyncData` / `useInfiniteData` (except fire-and-forget telemetry like `GeoTracker`)
 - ❌ Missing loading/error states → ✅ Always render `<SkeletonLoader>` + `<AlertMessage>`
 - ❌ Skip CSRF/auth middleware → ✅ Full route chain always
 - ❌ Leaking stack traces → ✅ Generic error messages in production
