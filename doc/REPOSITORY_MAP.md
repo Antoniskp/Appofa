@@ -59,7 +59,7 @@ Appofa/
 │   └── index.js            # Express app entry point
 │
 ├── app/                    # Frontend (Next.js App Router, 101+ pages)
-│   ├── (statics)/          # Static content pages (46 pages)
+│   ├── (statics)/          # Static content pages (47 pages)
 │   ├── admin/              # Admin dashboard (19 pages)
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
@@ -421,8 +421,8 @@ Appofa/
 | `/admin/removal-requests` | Removal request admin |
 | `/admin/reports` | Report admin |
 
-### Static Pages (46 pages in `(statics)` layout)
-Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, etc.
+### Static Pages (47 pages in `(statics)` layout)
+Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, github-files, etc.
 
 ---
 
