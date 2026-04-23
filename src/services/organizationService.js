@@ -1,10 +1,11 @@
 'use strict';
 
+const path = require('path');
 const { Op } = require('sequelize');
 const dbConfig = require('../config/database');
 const { Organization } = require('../models');
 
-const { types: ORGANIZATION_TYPES } = require('../../config/organizationTypes.json');
+const { types: ORGANIZATION_TYPES } = require(path.resolve(__dirname, '../../config/organizationTypes.json'));
 
 function slugifyName(name) {
   const base = String(name || '')

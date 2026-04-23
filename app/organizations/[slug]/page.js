@@ -11,6 +11,7 @@ import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
 
+// Phase 1 ships Info/Members data; the remaining tabs are placeholders for later phases.
 const TABS = ['info', 'members', 'polls_voting', 'suggestions', 'official_posts'];
 
 export default function OrganizationProfilePage({ params }) {

@@ -1,6 +1,7 @@
 'use strict';
 
-const { types: ORGANIZATION_TYPES } = require('../../config/organizationTypes.json');
+const path = require('path');
+const { types: ORGANIZATION_TYPES } = require(path.resolve(__dirname, '../../config/organizationTypes.json'));
 const MEMBER_ROLES = ['owner', 'admin', 'moderator', 'member'];
 const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 

@@ -22,6 +22,7 @@ const INITIAL_FORM = {
   contactEmail: '',
   locationId: '',
   isPublic: true,
+  isVerified: false,
 };
 
 export default function AdminOrganizationsPage() {
@@ -67,6 +68,7 @@ export default function AdminOrganizationsPage() {
         contactEmail: target.contactEmail || '',
         locationId: target.locationId ? String(target.locationId) : '',
         isPublic: target.isPublic !== false,
+        isVerified: target.isVerified === true,
       });
     }
   }, [organizations, searchParams]);
@@ -90,6 +92,7 @@ export default function AdminOrganizationsPage() {
       ...form,
       locationId: form.locationId ? Number(form.locationId) : null,
       isPublic: Boolean(form.isPublic),
+      isVerified: Boolean(form.isVerified),
     };
 
     try {
@@ -124,6 +127,7 @@ export default function AdminOrganizationsPage() {
       contactEmail: organization.contactEmail || '',
       locationId: organization.locationId ? String(organization.locationId) : '',
       isPublic: organization.isPublic !== false,
+      isVerified: organization.isVerified === true,
     });
   };
 
@@ -243,14 +247,24 @@ export default function AdminOrganizationsPage() {
               />
             </label>
 
-            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                checked={form.isPublic}
-                onChange={(e) => setForm((prev) => ({ ...prev, isPublic: e.target.checked }))}
-              />
-              {t('is_public')}
-            </label>
+            <div className="flex flex-wrap gap-4 md:col-span-2">
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={form.isPublic}
+                  onChange={(e) => setForm((prev) => ({ ...prev, isPublic: e.target.checked }))}
+                />
+                {t('is_public')}
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={form.isVerified}
+                  onChange={(e) => setForm((prev) => ({ ...prev, isVerified: e.target.checked }))}
+                />
+                {t('is_verified')}
+              </label>
+            </div>
 
             <div className="md:col-span-2 flex gap-3">
               <button

@@ -251,7 +251,7 @@ const organizationController = {
 
   getMembers: async (req, res) => {
     try {
-      const organization = await Organization.findByPk(req.params.id, {
+      const organization = await Organization.findByPk(req.params.organizationId, {
         attributes: ['id', 'isPublic'],
       });
 
