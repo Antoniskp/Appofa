@@ -439,7 +439,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 21+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, SkeletonLoader, TagInput, Tooltip |
-| Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, GeoTracker, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
+| Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading.
