@@ -389,6 +389,11 @@ export default function PollCard({ poll, variant = 'grid' }) {
           👥 Τοπική ορατότητα
         </span>
       )}
+      {poll.voteRestriction === 'anyone' && (
+        <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
+          🗳️ Ανοικτό σε όλους
+        </span>
+      )}
     </div>
   );
 

@@ -438,7 +438,8 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
       page = 1,
       limit = 10,
       creatorId,
-      locationId
+      locationId,
+      voteRestriction
     } = filters;
 
     const normalizedTag = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
@@ -470,6 +471,15 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
         return { success: false, status: 400, message: typeResult.error };
       }
       where.type = typeResult.value;
+    }
+
+    // Filter by voteRestriction
+    if (voteRestriction) {
+      const voteRestrictionResult = normalizeEnum(voteRestriction, VOTE_RESTRICTIONS, 'Vote restriction');
+      if (voteRestrictionResult.error) {
+        return { success: false, status: 400, message: voteRestrictionResult.error };
+      }
+      where.voteRestriction = voteRestrictionResult.value;
     }
 
     // Filter by category

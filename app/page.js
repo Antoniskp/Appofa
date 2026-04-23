@@ -32,6 +32,8 @@ export default function HomePage() {
   const [polls, setPolls] = useState([]);
   const [pollsLoading, setPollsLoading] = useState(true);
   const [pollsError, setPollsError] = useState(null);
+  const [openPolls, setOpenPolls] = useState([]);
+  const [openPollsLoading, setOpenPollsLoading] = useState(true);
 
   const [latestNews, setLatestNews] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -101,6 +103,29 @@ export default function HomePage() {
         setPollsError(err.message);
       } finally {
         setPollsLoading(false);
+      }
+    };
+
+    const fetchOpenPolls = async () => {
+      if (user) {
+        setOpenPollsLoading(false);
+        return;
+      }
+      try {
+        const response = await pollAPI.getAll({
+          limit: 3,
+          voteRestriction: 'anyone',
+          status: 'active',
+        });
+        if (response.success && Array.isArray(response.data?.polls)) {
+          setOpenPolls(response.data.polls);
+        } else if (response.success && Array.isArray(response.data)) {
+          setOpenPolls(response.data);
+        }
+      } catch (err) {
+        // non-critical — fail silently
+      } finally {
+        setOpenPollsLoading(false);
       }
     };
 
@@ -187,6 +212,7 @@ export default function HomePage() {
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
+    fetchOpenPolls();
     fetchLatestNews();
     fetchVideos();
     fetchLocationDiscovery();
@@ -261,6 +287,22 @@ export default function HomePage() {
         renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
         topTags={suggestionTags}
       />
+
+      {!user && (
+        <HomepageSection
+          title="Ψηφίστε χωρίς εγγραφή"
+          subtitle="Αυτές οι ψηφοφορίες είναι ανοικτές για όλους — ψηφίστε τώρα!"
+          linkHref="/polls?voteRestriction=anyone"
+          loading={openPollsLoading}
+          error={null}
+          items={openPolls}
+          emptyTitle=""
+          emptyDescription=""
+          skeletonCount={3}
+          bgColor="bg-indigo-50"
+          renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
+        />
+      )}
 
       <HomepageSection
         title={tHome('top_polls_title')}

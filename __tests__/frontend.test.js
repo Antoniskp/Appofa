@@ -9,6 +9,11 @@ const immediateTimers = [];
 
 beforeAll(() => {
   jest.useFakeTimers();
+  global.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
   global.setTimeout = (callback, delay) => {
     if (typeof callback === 'function') {
       immediateTimers.push(() => callback(delay));
@@ -21,6 +26,7 @@ beforeAll(() => {
 afterAll(() => {
   immediateTimers.splice(0, immediateTimers.length);
   jest.useRealTimers();
+  delete global.ResizeObserver;
 });
 const { createRoot } = require('react-dom/client');
 const { ToastProvider } = require('../components/ToastProvider');
@@ -171,6 +177,7 @@ jest.mock('next/headers', () => ({
 }));
 
 const { useAuth } = require('@/lib/auth-context');
+const { pollAPI } = require('@/lib/api');
 
 const buildAuthState = (overrides = {}) => ({
   user: null,
@@ -208,6 +215,8 @@ const renderPage = async (Component) => {
 describe('Frontend smoke tests', () => {
   afterEach(() => {
     useAuth.mockReset();
+    pollAPI.getAll.mockReset();
+    pollAPI.getAll.mockResolvedValue({ success: true, data: [] });
     mockSearchParams.get.mockReset();
     mockRouter.push.mockReset();
     document.body.innerHTML = '';
@@ -220,6 +229,33 @@ describe('Frontend smoke tests', () => {
 
     expect(container.textContent).toContain('Αποφάσεις που ξεκινούν από εσένα.');
     expect(container.textContent).toContain('Τελευταίες Ειδήσεις');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('renders guest open-polls section and requests voteRestriction=anyone polls', async () => {
+    useAuth.mockReturnValue(buildAuthState({ user: null }));
+    pollAPI.getAll.mockImplementation(async (params = {}) => {
+      if (params.voteRestriction === 'anyone') {
+        return {
+          success: true,
+          data: [{ id: 999, title: 'Ανοικτή Ψηφοφορία', voteRestriction: 'anyone', type: 'simple', status: 'active', visibility: 'public', options: [{ id: 1, text: 'Ναι', voteCount: 1 }, { id: 2, text: 'Όχι', voteCount: 0 }] }]
+        };
+      }
+      return { success: true, data: [] };
+    });
+
+    const HomePage = require('../app/page').default;
+    const { container, root } = await renderPage(HomePage);
+
+    expect(container.textContent).toContain('Ψηφίστε χωρίς εγγραφή');
+    expect(pollAPI.getAll).toHaveBeenCalledWith(expect.objectContaining({
+      limit: 3,
+      voteRestriction: 'anyone',
+      status: 'active'
+    }));
 
     await act(async () => {
       root.unmount();
