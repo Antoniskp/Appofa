@@ -129,6 +129,44 @@ async function notifyEndorsement(endorsedUserId, endorserUserId) {
   });
 }
 
+async function notifyOrgInvite(targetUserId, actorUserId, organization) {
+  return createNotification({
+    userId: targetUserId,
+    actorId: actorUserId,
+    type: 'org_invite_received',
+    entityType: 'user',
+    entityId: organization.id,
+    title: `You were invited to join ${organization.name}`,
+    actionUrl: `/organizations/${organization.slug}`,
+    metadata: { organizationId: organization.id, organizationName: organization.name },
+  });
+}
+
+async function notifyOrgJoinApproved(targetUserId, organization) {
+  return createNotification({
+    userId: targetUserId,
+    type: 'org_join_approved',
+    entityType: 'user',
+    entityId: organization.id,
+    title: `Your request to join ${organization.name} was approved`,
+    actionUrl: `/organizations/${organization.slug}`,
+    metadata: { organizationId: organization.id, organizationName: organization.name },
+  });
+}
+
+async function notifyOrgMemberRemoved(targetUserId, actorUserId, organization) {
+  return createNotification({
+    userId: targetUserId,
+    actorId: actorUserId,
+    type: 'org_member_removed',
+    entityType: 'user',
+    entityId: organization.id,
+    title: `You were removed from ${organization.name}`,
+    actionUrl: `/organizations/${organization.slug}`,
+    metadata: { organizationId: organization.id, organizationName: organization.name },
+  });
+}
+
 // ── Read / Feed queries ────────────────────────────────────────────────────
 
 /**
@@ -215,7 +253,8 @@ async function purgeOldNotifications() {
 const VALID_NOTIFICATION_TYPES = [
   'article_approved', 'article_commented', 'article_liked',
   'new_follower', 'endorsement_received', 'poll_result',
-  'badge_earned', 'mention', 'report_resolved', 'system_announcement'
+  'badge_earned', 'mention', 'report_resolved', 'system_announcement',
+  'org_invite_received', 'org_join_approved', 'org_member_removed'
 ];
 
 /**
@@ -287,6 +326,9 @@ module.exports = {
   notifyNewFollower,
   notifyBadgeEarned,
   notifyEndorsement,
+  notifyOrgInvite,
+  notifyOrgJoinApproved,
+  notifyOrgMemberRemoved,
   getNotifications,
   getUnreadCount,
   markAsRead,

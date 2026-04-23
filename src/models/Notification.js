@@ -35,7 +35,10 @@ const Notification = sequelize.define('Notification', {
       'badge_earned',
       'mention',
       'report_resolved',
-      'system_announcement'
+      'system_announcement',
+      'org_invite_received',
+      'org_join_approved',
+      'org_member_removed'
       // Future: 'new_message', 'message_reply' — add to ENUM when messaging lands
     ),
     allowNull: false

@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import {
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
+  BuildingOffice2Icon,
   ChevronDownIcon,
   ClipboardDocumentListIcon,
   LightBulbIcon,
@@ -115,6 +116,13 @@ export default function TopNav() {
       icon: <LightBulbIcon className="h-4 w-4" />,
       className: isActive('/suggestions')
     },
+    {
+      id: 'my-organizations',
+      label: tNav('my_organizations'),
+      href: '/organizations?mine=true',
+      icon: <BuildingOffice2Icon className="h-4 w-4" />,
+      className: isActive('/organizations')
+    },
     ...(canAccessAdmin() ? [
       { divider: true },
       {
@@ -192,6 +200,13 @@ export default function TopNav() {
       href: '/suggestions?mine=true',
       icon: <LightBulbIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isActive('/suggestions')}`
+    },
+    {
+      id: 'my-organizations',
+      label: tNav('my_organizations'),
+      href: '/organizations?mine=true',
+      icon: <BuildingOffice2Icon className="h-5 w-5" />,
+      className: `text-base font-medium ${isActive('/organizations')}`
     },
     ...(canAccessAdmin() ? [
       { divider: true },
