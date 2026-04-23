@@ -37,7 +37,7 @@ router.get('/', apiLimiter, optionalAuthMiddleware, async (req, res) => {
       isOfficialPost: true,
       visibility: 'public',
       officialPostScope: {
-        [Op.or]: ['platform', null],
+        [Op.in]: ['platform', null],
       },
     };
 

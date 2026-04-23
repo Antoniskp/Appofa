@@ -23,7 +23,7 @@ export default function OfficialPostsPage() {
   const officialPosts = data || [];
 
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="app-container max-w-4xl mx-auto space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t('official_posts_discovery_title')}</h1>

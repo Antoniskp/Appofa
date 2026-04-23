@@ -1142,8 +1142,12 @@ const organizationController = {
         return res.status(400).json({ success: false, message: 'Invalid organization id.' });
       }
 
+      if (req.body?.isVerified === undefined) {
+        return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
+      }
+
       const parsedIsVerified = parseOptionalBoolean(req.body?.isVerified);
-      if (parsedIsVerified === null || parsedIsVerified === undefined) {
+      if (parsedIsVerified === null) {
         return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
       }
 

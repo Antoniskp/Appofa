@@ -125,7 +125,10 @@ export default function OrganizationProfilePage({ params }) {
   const polls = pollsData?.polls || [];
   const suggestions = suggestionsData?.suggestions || [];
   const supportsOfficialPosts = OFFICIAL_POST_ORG_TYPES.includes(organization?.type);
-  const tabs = supportsOfficialPosts ? [...BASE_TABS, ...OFFICIAL_POST_TABS] : BASE_TABS;
+  const tabs = useMemo(
+    () => (supportsOfficialPosts ? [...BASE_TABS, ...OFFICIAL_POST_TABS] : BASE_TABS),
+    [supportsOfficialPosts]
+  );
   const canCreateOfficialPosts = canManageMembers;
 
   const {
