@@ -1,17 +1,20 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { Organization, OrganizationMember, User, Location, sequelize } = require('../models');
+const { Organization, OrganizationMember, User, Location, Poll, Suggestion, sequelize } = require('../models');
 const organizationService = require('../services/organizationService');
+const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
+const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
 const { randomUUID } = require('crypto');
+const organizationContentConfig = require('../../config/organizationContent.json');
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 100;
-const PLATFORM_PRIVILEGED_ROLES = ['admin', 'moderator'];
-const ORG_MANAGE_ROLES = ['owner', 'admin'];
 const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
+const ORG_CONTENT_VISIBILITIES = organizationContentConfig.visibilities;
+const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
 
 const ORGANIZATION_BASE_INCLUDE = [
   {
@@ -48,31 +51,46 @@ function parsePositiveInt(value) {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
-function isPlatformPrivileged(user) {
-  return !!user && PLATFORM_PRIVILEGED_ROLES.includes(user.role);
-}
-
 async function requireOrganizationById(organizationId, attributes = ['id', 'isPublic']) {
   return Organization.findByPk(organizationId, { attributes });
 }
 
 async function hasOrganizationManageAccess(organizationId, user) {
   if (!user) return false;
-  if (isPlatformPrivileged(user)) return true;
+  return isOrgAdmin(organizationId, user.id, user.role);
+}
 
-  const membership = await OrganizationMember.findOne({
-    where: {
-      organizationId,
-      userId: user.id,
-      status: 'active',
-      role: {
-        [Op.in]: ORG_MANAGE_ROLES,
-      },
-    },
-    attributes: ['id'],
-  });
+function mapOrgVisibilityToDb(value) {
+  if (value !== 'public' && value !== 'members_only') {
+    console.warn(`organizationController: unexpected org visibility value received: ${String(value)}`);
+  }
+  return value === 'public' ? 'public' : 'private';
+}
 
-  return !!membership;
+function mapDbVisibilityToOrg(value) {
+  if (value !== 'public' && value !== 'private') {
+    console.warn(`organizationController: unexpected db visibility value received: ${String(value)}`);
+  }
+  if (value === 'public') {
+    return 'public';
+  }
+  return 'members_only';
+}
+
+function serializeOrgPoll(poll) {
+  const data = poll.toJSON ? poll.toJSON() : poll;
+  return {
+    ...data,
+    visibility: mapDbVisibilityToOrg(data.visibility),
+  };
+}
+
+function serializeOrgSuggestion(suggestion) {
+  const data = suggestion.toJSON ? suggestion.toJSON() : suggestion;
+  return {
+    ...data,
+    visibility: mapDbVisibilityToOrg(data.visibility),
+  };
 }
 
 const organizationController = {
@@ -635,6 +653,217 @@ const organizationController = {
     } catch (error) {
       console.error('organizationController.getPendingMembers error:', error);
       return res.status(500).json({ success: false, message: 'Failed to fetch pending members.' });
+    }
+  },
+
+  getOrgPolls: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'isPublic']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const memberAccess = req.user ? await isActiveMember(organizationId, req.user.id) : false;
+      if (!organization.isPublic && !memberAccess) {
+        return res.status(403).json({ success: false, message: 'Organization polls are members-only.' });
+      }
+
+      const where = { organizationId };
+      if (!memberAccess) {
+        where.visibility = 'public';
+      }
+
+      const polls = await Poll.findAll({
+        where,
+        include: [
+          {
+            model: User,
+            as: 'creator',
+            attributes: ['id', 'username', 'avatar', 'avatarColor'],
+          },
+        ],
+        order: [['createdAt', 'DESC']],
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          polls: polls.map(serializeOrgPoll),
+        },
+      });
+    } catch (error) {
+      console.error('organizationController.getOrgPolls error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch organization polls.' });
+    }
+  },
+
+  createOrgPoll: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const memberAccess = await isActiveMember(organizationId, req.user.id);
+      if (!memberAccess) {
+        return res.status(403).json({ success: false, message: 'Only active members can create organization polls.' });
+      }
+
+      const titleResult = normalizeRequiredText(req.body?.title, 'Title', 5, 200);
+      if (titleResult.error) {
+        return res.status(400).json({ success: false, message: titleResult.error });
+      }
+
+      const visibilityResult = normalizeEnum(
+        req.body?.visibility || 'members_only',
+        ORG_CONTENT_VISIBILITIES,
+        'Visibility'
+      );
+      if (visibilityResult.error) {
+        return res.status(400).json({ success: false, message: visibilityResult.error });
+      }
+
+      let deadline = null;
+      if (req.body?.deadline) {
+        deadline = new Date(req.body.deadline);
+        if (Number.isNaN(deadline.getTime())) {
+          return res.status(400).json({ success: false, message: 'Deadline must be a valid date.' });
+        }
+      }
+
+      const poll = await Poll.create({
+        title: titleResult.value,
+        description: req.body?.description || null,
+        creatorId: req.user.id,
+        organizationId,
+        visibility: mapOrgVisibilityToDb(visibilityResult.value),
+        deadline,
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: { poll: serializeOrgPoll(poll) },
+      });
+    } catch (error) {
+      console.error('organizationController.createOrgPoll error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to create organization poll.' });
+    }
+  },
+
+  getOrgSuggestions: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'isPublic']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const memberAccess = req.user ? await isActiveMember(organizationId, req.user.id) : false;
+      if (!organization.isPublic && !memberAccess) {
+        return res.status(403).json({ success: false, message: 'Organization suggestions are members-only.' });
+      }
+
+      const where = { organizationId };
+      if (!memberAccess) {
+        where.visibility = 'public';
+      }
+
+      const suggestions = await Suggestion.findAll({
+        where,
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username', 'avatar', 'avatarColor'],
+          },
+        ],
+        order: [['createdAt', 'DESC']],
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          suggestions: suggestions.map(serializeOrgSuggestion),
+        },
+      });
+    } catch (error) {
+      console.error('organizationController.getOrgSuggestions error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch organization suggestions.' });
+    }
+  },
+
+  createOrgSuggestion: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const memberAccess = await isActiveMember(organizationId, req.user.id);
+      if (!memberAccess) {
+        return res.status(403).json({ success: false, message: 'Only active members can create organization suggestions.' });
+      }
+
+      const titleResult = normalizeRequiredText(req.body?.title, 'Title', 5, 200);
+      if (titleResult.error) {
+        return res.status(400).json({ success: false, message: titleResult.error });
+      }
+
+      const bodyResult = normalizeRequiredText(req.body?.body, 'Body', 10, 10000);
+      if (bodyResult.error) {
+        return res.status(400).json({ success: false, message: bodyResult.error });
+      }
+
+      const typeResult = normalizeEnum(req.body?.type || 'idea', ORG_SUGGESTION_TYPES, 'Type');
+      if (typeResult.error) {
+        return res.status(400).json({ success: false, message: typeResult.error });
+      }
+
+      const visibilityResult = normalizeEnum(
+        req.body?.visibility || 'members_only',
+        ORG_CONTENT_VISIBILITIES,
+        'Visibility'
+      );
+      if (visibilityResult.error) {
+        return res.status(400).json({ success: false, message: visibilityResult.error });
+      }
+
+      const suggestion = await Suggestion.create({
+        title: titleResult.value,
+        body: bodyResult.value,
+        type: typeResult.value,
+        authorId: req.user.id,
+        organizationId,
+        visibility: mapOrgVisibilityToDb(visibilityResult.value),
+        voteRestriction: 'authenticated',
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: { suggestion: serializeOrgSuggestion(suggestion) },
+      });
+    } catch (error) {
+      console.error('organizationController.createOrgSuggestion error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to create organization suggestion.' });
     }
   },
 };

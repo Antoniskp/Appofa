@@ -41,6 +41,8 @@ This instruction is permanent and must never be removed.
 - **OAuth avatars**: persist provider photos in `User.githubAvatar` / `User.googleAvatar`; keep `User.avatar` as active source and switch it via `PUT /api/auth/avatar-source`
 - **Organization slug**: generate from English `Organization.name` via `organizationService.generateSlug` (unique with `-2`, `-3`, ...)
 - **Organization membership**: use `OrganizationMember` with roles `owner|admin|moderator|member`, statuses `active|invited|pending`, and invite metadata (`inviteToken`, `invitedByUserId`)
+- **Organization poll/suggestion scope**: use nullable `organizationId` on `Poll`/`Suggestion`; for org-scoped content map API `members_only` visibility to stored `private`
+- **Organization phase-3 enums**: keep shared org content enums in `config/organizationContent.json` for both backend and frontend (`visibilities`, `suggestionTypes`)
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`

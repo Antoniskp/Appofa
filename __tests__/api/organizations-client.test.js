@@ -104,6 +104,28 @@ describe('organizationAPI', () => {
     expect(apiRequest).toHaveBeenCalledWith('/api/organizations/7/members/pending');
   });
 
+  it('calls organization polls and suggestions endpoints', async () => {
+    await organizationAPI.getPolls(5, { page: 2 });
+    expect(buildQueryEndpoint).toHaveBeenCalledWith('/api/organizations/5/polls', { page: 2 });
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/polls?page=2');
+
+    await organizationAPI.createPoll(5, { title: 'Internal poll' });
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/polls', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Internal poll' }),
+    });
+
+    await organizationAPI.getSuggestions(5, { sort: 'newest' });
+    expect(buildQueryEndpoint).toHaveBeenCalledWith('/api/organizations/5/suggestions', { sort: 'newest' });
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/suggestions?sort=newest');
+
+    await organizationAPI.createSuggestion(5, { title: 'Proposal', body: 'Long enough proposal body' });
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/suggestions', {
+      method: 'POST',
+      body: JSON.stringify({ title: 'Proposal', body: 'Long enough proposal body' }),
+    });
+  });
+
   it('is exported through lib/api index', () => {
     const { organizationAPI: exportedOrganizationAPI } = require('../../lib/api');
     expect(exportedOrganizationAPI).toBeDefined();

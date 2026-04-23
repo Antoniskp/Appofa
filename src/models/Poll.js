@@ -60,6 +60,15 @@ const Poll = sequelize.define('Poll', {
     },
     onDelete: 'SET NULL'
   },
+  organizationId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Organizations',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
+  },
   creatorId: {
     type: DataTypes.INTEGER,
     allowNull: false,

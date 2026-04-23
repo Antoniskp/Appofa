@@ -6,14 +6,17 @@ import { useTranslations } from 'next-intl';
 import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { organizationAPI } from '@/lib/api';
+import organizationContentConfig from '@/config/organizationContent.json';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
 
 // Phase 2 ships full member management; remaining tabs are placeholders for later phases.
-const TABS = ['info', 'members', 'polls_voting', 'suggestions', 'official_posts'];
+const TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_official_posts'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
+const ORG_VISIBILITY_OPTIONS = organizationContentConfig.visibilities;
+const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
 
 function parsePositiveInt(value) {
   const parsed = parseInt(value, 10);
@@ -24,12 +27,17 @@ export default function OrganizationProfilePage({ params }) {
   const t = useTranslations('organizations');
   const { slug } = use(params);
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState('tab_info');
   const [actionLoading, setActionLoading] = useState(false);
   const [memberActionError, setMemberActionError] = useState('');
   const [memberActionSuccess, setMemberActionSuccess] = useState('');
   const [inviteUserId, setInviteUserId] = useState('');
   const [roleDrafts, setRoleDrafts] = useState({});
+  const [pollForm, setPollForm] = useState({ title: '', description: '', deadline: '', visibility: 'members_only' });
+  const [suggestionForm, setSuggestionForm] = useState({ type: 'idea', title: '', body: '', visibility: 'members_only' });
+  const [contentActionLoading, setContentActionLoading] = useState(false);
+  const [contentActionError, setContentActionError] = useState('');
+  const [contentActionSuccess, setContentActionSuccess] = useState('');
 
   const { data: organization, loading, error } = useAsyncData(
     async () => {
@@ -64,6 +72,7 @@ export default function OrganizationProfilePage({ params }) {
       (member) => member.userId === user.id && member.status === 'active' && ['owner', 'admin'].includes(member.role)
     );
   }, [members, user]);
+  const isActiveMember = myMembership?.status === 'active';
 
   const { data: pendingData, loading: pendingLoading, refetch: refetchPending } = useAsyncData(
     async () => {
@@ -76,6 +85,38 @@ export default function OrganizationProfilePage({ params }) {
   );
 
   const pendingMembers = pendingData?.members || [];
+
+  const {
+    data: pollsData,
+    loading: pollsLoading,
+    error: pollsError,
+    refetch: refetchPolls,
+  } = useAsyncData(
+    async () => {
+      if (!organization?.id) return { polls: [] };
+      const res = await organizationAPI.getPolls(organization.id);
+      return { polls: res?.data?.polls || [] };
+    },
+    [organization?.id],
+    { initialData: { polls: [] } }
+  );
+
+  const {
+    data: suggestionsData,
+    loading: suggestionsLoading,
+    error: suggestionsError,
+    refetch: refetchSuggestions,
+  } = useAsyncData(
+    async () => {
+      if (!organization?.id) return { suggestions: [] };
+      const res = await organizationAPI.getSuggestions(organization.id);
+      return { suggestions: res?.data?.suggestions || [] };
+    },
+    [organization?.id],
+    { initialData: { suggestions: [] } }
+  );
+  const polls = pollsData?.polls || [];
+  const suggestions = suggestionsData?.suggestions || [];
 
   useEffect(() => {
     setRoleDrafts((prev) => {
@@ -154,6 +195,47 @@ export default function OrganizationProfilePage({ params }) {
 
     await runMemberAction(() => organizationAPI.inviteMember(organization.id, userId), t('invite_success'));
     setInviteUserId('');
+  };
+
+  const runContentAction = async (action, successMessage, failureMessage, onSuccessRefetch) => {
+    setContentActionLoading(true);
+    setContentActionError('');
+    setContentActionSuccess('');
+    try {
+      await action();
+      setContentActionSuccess(successMessage);
+      if (typeof onSuccessRefetch === 'function') {
+        await onSuccessRefetch();
+      }
+    } catch (actionError) {
+      setContentActionError(actionError?.message || failureMessage);
+    } finally {
+      setContentActionLoading(false);
+    }
+  };
+
+  const handleCreatePoll = async (event) => {
+    event.preventDefault();
+    if (!organization?.id) return;
+    await runContentAction(
+      () => organizationAPI.createPoll(organization.id, pollForm),
+      t('org_poll_create_success'),
+      t('org_poll_create_failed'),
+      refetchPolls
+    );
+    setPollForm({ title: '', description: '', deadline: '', visibility: 'members_only' });
+  };
+
+  const handleCreateSuggestion = async (event) => {
+    event.preventDefault();
+    if (!organization?.id) return;
+    await runContentAction(
+      () => organizationAPI.createSuggestion(organization.id, suggestionForm),
+      t('org_suggestion_create_success'),
+      t('org_suggestion_create_failed'),
+      refetchSuggestions
+    );
+    setSuggestionForm({ type: 'idea', title: '', body: '', visibility: 'members_only' });
   };
 
   if (loading) {
@@ -252,7 +334,10 @@ export default function OrganizationProfilePage({ params }) {
           </div>
 
           <div className="p-6 border-t border-gray-200">
-            {activeTab === 'info' && (
+            {contentActionError && <AlertMessage message={contentActionError} />}
+            {contentActionSuccess && <AlertMessage tone="success" message={contentActionSuccess} />}
+
+            {activeTab === 'tab_info' && (
               <div className="space-y-3 text-sm text-gray-700">
                 {organization.description && <p><span className="font-semibold">{t('description')}:</span> {organization.description}</p>}
                 {organization.website && <p><span className="font-semibold">{t('website')}:</span> <a className="text-blue-600 hover:underline" href={organization.website} target="_blank" rel="noopener noreferrer">{organization.website}</a></p>}
@@ -262,7 +347,7 @@ export default function OrganizationProfilePage({ params }) {
               </div>
             )}
 
-            {activeTab === 'members' && (
+            {activeTab === 'tab_members' && (
               <div className="space-y-4">
                 {memberActionError && <AlertMessage message={memberActionError} />}
                 {memberActionSuccess && <AlertMessage tone="success" message={memberActionSuccess} />}
@@ -422,7 +507,162 @@ export default function OrganizationProfilePage({ params }) {
               </div>
             )}
 
-            {activeTab !== 'info' && activeTab !== 'members' && (
+            {activeTab === 'tab_polls' && (
+              <div className="space-y-4">
+                {!isActiveMember && organization.isPublic && <AlertMessage message={t('members_only_gate')} />}
+
+                {isActiveMember && (
+                  <form onSubmit={handleCreatePoll} className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-medium text-gray-800">{t('create_poll')}</p>
+                    <input
+                      type="text"
+                      value={pollForm.title}
+                      onChange={(e) => setPollForm((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder={t('poll_title')}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                    <textarea
+                      value={pollForm.description}
+                      onChange={(e) => setPollForm((prev) => ({ ...prev, description: e.target.value }))}
+                      placeholder={t('description')}
+                      rows={3}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('poll_deadline')}</label>
+                        <input
+                          type="datetime-local"
+                          value={pollForm.deadline}
+                          onChange={(e) => setPollForm((prev) => ({ ...prev, deadline: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('poll_visibility')}</label>
+                        <select
+                          value={pollForm.visibility}
+                          onChange={(e) => setPollForm((prev) => ({ ...prev, visibility: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          {ORG_VISIBILITY_OPTIONS.map((visibility) => (
+                            <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={contentActionLoading}
+                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {t('create_poll')}
+                    </button>
+                  </form>
+                )}
+
+                {pollsLoading && <SkeletonLoader count={3} type="list" />}
+                {!pollsLoading && pollsError && <AlertMessage message={pollsError} />}
+                {!pollsLoading && !pollsError && polls.length === 0 && <p className="text-sm text-gray-500">{t('polls_empty')}</p>}
+                {!pollsLoading && !pollsError && polls.length > 0 && (
+                  <div className="space-y-3">
+                    {polls.map((poll) => (
+                      <div key={poll.id} className="rounded-lg border border-gray-200 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-medium text-gray-900">{poll.title}</p>
+                          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                            {t(`visibility_${poll.visibility}`)}
+                          </span>
+                        </div>
+                        {poll.description && <p className="mt-2 text-sm text-gray-700">{poll.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'tab_suggestions' && (
+              <div className="space-y-4">
+                {!isActiveMember && organization.isPublic && <AlertMessage message={t('members_only_gate')} />}
+
+                {isActiveMember && (
+                  <form onSubmit={handleCreateSuggestion} className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-medium text-gray-800">{t('create_suggestion')}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('suggestion_type')}</label>
+                        <select
+                          value={suggestionForm.type}
+                          onChange={(e) => setSuggestionForm((prev) => ({ ...prev, type: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          {ORG_SUGGESTION_TYPES.map((type) => (
+                            <option key={type} value={type}>{t(`suggestion_type_${type}`)}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('suggestion_visibility')}</label>
+                        <select
+                          value={suggestionForm.visibility}
+                          onChange={(e) => setSuggestionForm((prev) => ({ ...prev, visibility: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          {ORG_VISIBILITY_OPTIONS.map((visibility) => (
+                            <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={suggestionForm.title}
+                      onChange={(e) => setSuggestionForm((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder={t('suggestion_title')}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                    <textarea
+                      value={suggestionForm.body}
+                      onChange={(e) => setSuggestionForm((prev) => ({ ...prev, body: e.target.value }))}
+                      placeholder={t('suggestion_body')}
+                      rows={4}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={contentActionLoading}
+                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {t('create_suggestion')}
+                    </button>
+                  </form>
+                )}
+
+                {suggestionsLoading && <SkeletonLoader count={3} type="list" />}
+                {!suggestionsLoading && suggestionsError && <AlertMessage message={suggestionsError} />}
+                {!suggestionsLoading && !suggestionsError && suggestions.length === 0 && (
+                  <p className="text-sm text-gray-500">{t('suggestions_empty')}</p>
+                )}
+                {!suggestionsLoading && !suggestionsError && suggestions.length > 0 && (
+                  <div className="space-y-3">
+                    {suggestions.map((suggestion) => (
+                      <div key={suggestion.id} className="rounded-lg border border-gray-200 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-medium text-gray-900">{suggestion.title}</p>
+                          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                            {t(`visibility_${suggestion.visibility}`)}
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-gray-700">{suggestion.body}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'tab_official_posts' && (
               <p className="text-sm text-gray-500">{t('coming_soon')}</p>
             )}
           </div>

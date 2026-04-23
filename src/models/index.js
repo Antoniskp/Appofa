@@ -93,6 +93,10 @@ Poll.belongsTo(Location, {
   foreignKey: 'locationId',
   as: 'location'
 });
+Poll.belongsTo(Organization, {
+  foreignKey: 'organizationId',
+  as: 'organization'
+});
 
 Poll.hasMany(PollOption, {
   foreignKey: 'pollId',
@@ -241,6 +245,7 @@ User.hasMany(Endorsement, { foreignKey: 'endorsedId', as: 'receivedEndorsements'
 // Suggestion associations
 Suggestion.belongsTo(User, { foreignKey: 'authorId', as: 'author' });
 Suggestion.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+Suggestion.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 Suggestion.hasMany(Solution, { foreignKey: 'suggestionId', as: 'solutions' });
 User.hasMany(Suggestion, { foreignKey: 'authorId', as: 'suggestions' });
 
@@ -383,6 +388,8 @@ Organization.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
 Location.hasMany(Organization, { foreignKey: 'locationId', as: 'organizations' });
 
 Organization.hasMany(OrganizationMember, { foreignKey: 'organizationId', as: 'members' });
+Organization.hasMany(Poll, { foreignKey: 'organizationId', as: 'polls' });
+Organization.hasMany(Suggestion, { foreignKey: 'organizationId', as: 'suggestions' });
 OrganizationMember.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 OrganizationMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(OrganizationMember, { foreignKey: 'userId', as: 'organizationMemberships' });

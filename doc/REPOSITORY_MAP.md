@@ -22,16 +22,17 @@ This instruction is permanent and must never be removed.
 
 - [Directory Structure](#directory-structure)
 - [Models (44)](#models-44)
-- [API Routes (28 files, 169+ endpoints)](#api-routes-28-files-169-endpoints)
+- [API Routes (28 files, 173+ endpoints)](#api-routes-28-files-173-endpoints)
 - [Controllers (22)](#controllers-22)
 - [Services (11)](#services-11)
+- [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
 - [Frontend Pages (105)](#frontend-pages-105)
 - [Components (120+)](#components-120)
 - [API Client Modules (28)](#api-client-modules-28)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (82)](#migrations-82)
+- [Migrations (84)](#migrations-84)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -51,7 +52,7 @@ Appofa/
 │   ├── models/             # Sequelize models (44 models)
 │   ├── routes/             # Express route definitions (28 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
-│   ├── migrations/         # DB migrations (82 files)
+│   ├── migrations/         # DB migrations (84 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
@@ -106,7 +107,7 @@ Appofa/
 |-------|-------|-----------|------------------|
 | User | Users | id, username (nullable), email (nullable), password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, githubAvatar, googleAvatar, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
-| Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility | belongsTo: User, Location; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
+| Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility, organizationId | belongsTo: User, Location, Organization; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
 | PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
 | Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote; belongsTo: parent |
@@ -115,7 +116,7 @@ Appofa/
 | LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User |
 | LocationElectionVote | LocationElectionVotes | id, locationId, roleKey, voterId, candidateUserId | belongsTo: Location, User(voter), User(candidate) |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
-| Suggestion | Suggestions | id, title, body, type, locationId, authorId, status, visibility, voteRestriction, category | belongsTo: Location, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
+| Suggestion | Suggestions | id, title, body, type, locationId, organizationId, authorId, status, visibility, voteRestriction, category | belongsTo: Location, Organization, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
 | Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
 | SuggestionVote | SuggestionVotes | id, suggestionId, userId, voteType | belongsTo: Suggestion, User |
 | Comment | Comments | id, entityType, entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
@@ -150,7 +151,7 @@ Appofa/
 
 ---
 
-## API Routes (28 files, 169+ endpoints)
+## API Routes (28 files, 173+ endpoints)
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
@@ -259,6 +260,10 @@ Appofa/
 | DELETE | /:id/members/:userId | ✅ | Remove member (owner protected) |
 | PATCH | /:id/members/:userId/role | ✅ | Update member role (`admin|moderator|member`) |
 | GET | /:id/members/pending | ✅ | List pending membership requests |
+| GET | /:id/polls | opt | List organization polls (public orgs expose only `visibility=public` to non-members) |
+| POST | /:id/polls | ✅ | Create organization poll (active members only) |
+| GET | /:id/suggestions | opt | List organization suggestions (public orgs expose only `visibility=public` to non-members) |
+| POST | /:id/suggestions | ✅ | Create organization suggestion (active members only) |
 
 ### Dream Team (`/api/dream-team`)
 | Method | Path | Auth | Description |
@@ -305,7 +310,7 @@ Appofa/
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
-| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending |
+| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions |
 | manifestRoutes.js | /api/manifests | GET /, POST /, PUT /:slug, DELETE /:slug, PUT /:slug/accept, DELETE /:slug/accept, GET /:slug/supporters |
 | badges.js | /api/badges | GET /my, GET /user/:userId, POST /evaluate, PUT /display |
 | heroSettingsRoutes.js | /api/hero-settings | GET /, PUT /, GET /slides, POST /slides, PUT /slides/:id, DELETE /slides/:id |
@@ -342,7 +347,7 @@ Appofa/
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
-| organizationController.js | Organization CRUD + full member workflow management |
+| organizationController.js | Organization CRUD + member workflow + org-scoped polls/suggestions management |
 | reportController.js | Content reporting |
 | statsController.js | Statistics |
 | suggestionController.js | Suggestions & solutions |
@@ -365,6 +370,14 @@ Appofa/
 | pollService.js | Poll operations & calculations |
 | organizationService.js | Organization slug generation + organization search helpers |
 | userService.js | User management & utilities |
+
+---
+
+## Backend Utilities (selected)
+
+| Utility | Purpose |
+|---------|---------|
+| organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
 
 ---
 
@@ -541,11 +554,12 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 |------|----------|
 | articleCategories.json | Article types with bilingual category lists |
 | badges.json | 8 badge definitions, 3 tiers each |
+| organizationContent.json | Shared organization phase-3 content enums (`visibilities`, `suggestionTypes`) for backend/frontend |
 | organizationTypes.json | Shared Organization type list (`company`, `organization`, `institution`, `school`, `university`, `party`) |
 
 ---
 
-## Migrations (82)
+## Migrations (84)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -650,6 +664,8 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260422000003-add-user-id-to-geo-visits.js | Add nullable GeoVisits.userId FK → Users.id (ON DELETE SET NULL) |
 | — | 20260423000000-create-organizations.js | Create Organizations and OrganizationMembers tables (dialect-aware enum handling) |
 | — | 20260423000001-add-organization-member-fields.js | Add OrganizationMembers.inviteToken and invitedByUserId (idempotent) |
+| — | 20260423000002-add-organization-id-to-polls.js | Add nullable Polls.organizationId FK → Organizations.id + index (idempotent) |
+| — | 20260423000003-add-organization-id-to-suggestions.js | Add nullable Suggestions.organizationId FK → Organizations.id + index (idempotent) |
 
 </details>
 

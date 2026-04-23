@@ -11,6 +11,10 @@ router.get('/', apiLimiter, optionalAuthMiddleware, organizationController.getOr
 // Specific routes must be defined before parameterized routes to prevent path matching conflicts.
 router.get('/:id/members/pending', apiLimiter, authMiddleware, organizationController.getPendingMembers);
 router.get('/:id/members', apiLimiter, optionalAuthMiddleware, organizationController.getMembers);
+router.get('/:id/polls', apiLimiter, optionalAuthMiddleware, organizationController.getOrgPolls);
+router.post('/:id/polls', apiLimiter, authMiddleware, csrfProtection, organizationController.createOrgPoll);
+router.get('/:id/suggestions', apiLimiter, optionalAuthMiddleware, organizationController.getOrgSuggestions);
+router.post('/:id/suggestions', apiLimiter, authMiddleware, csrfProtection, organizationController.createOrgSuggestion);
 router.get('/:slug', apiLimiter, optionalAuthMiddleware, organizationController.getOrganizationBySlug);
 
 router.post('/', apiLimiter, createLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.createOrganization);
