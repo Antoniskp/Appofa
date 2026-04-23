@@ -92,7 +92,7 @@ This instruction is permanent and must never be removed.
 
 ### Anti-patterns to Avoid
 - ❌ Direct `fetch()` in components → ✅ Use `lib/api/` methods
-- ❌ Bare `useEffect` + fetch → ✅ Use `useAsyncData` / `useInfiniteData`
+- ❌ Bare `useEffect` + fetch → ✅ Use `useAsyncData` / `useInfiniteData` (except fire-and-forget telemetry like `GeoTracker`)
 - ❌ Missing loading/error states → ✅ Always render `<SkeletonLoader>` + `<AlertMessage>`
 - ❌ Skip CSRF/auth middleware → ✅ Full route chain always
 - ❌ Leaking stack traces → ✅ Generic error messages in production
