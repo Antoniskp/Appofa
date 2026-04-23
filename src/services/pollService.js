@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { Poll, PollOption, PollVote, Comment, User, Location, LocationLink, Tag, TaggableItem, sequelize } = require('../models');
+const { Poll, PollOption, PollVote, Comment, User, Location, LocationLink, Tag, TaggableItem, OrganizationMember, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
@@ -80,6 +80,16 @@ const sanitizePoll = (poll, user) => {
     return { ...data, creator: null };
   }
   return data;
+};
+
+const isOrgScopedPrivatePoll = (poll) => Boolean(poll?.organizationId) && poll.visibility === 'private';
+
+const hasActiveOrgMembership = async (organizationId, userId) => {
+  const orgMembership = await OrganizationMember.findOne({
+    where: { organizationId, userId, status: 'active' },
+    attributes: ['id'],
+  });
+  return Boolean(orgMembership);
 };
 
 /**
@@ -783,7 +793,7 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
 
     // Check visibility permissions
     // 'private' = any authenticated user can view (Μόνο Συνδεδεμένοι)
-    if (poll.visibility === 'private' && !user) {
+    if (poll.visibility === 'private' && !isOrgScopedPrivatePoll(poll) && !user) {
       return { success: false, status: 403, message: 'Access denied. This poll is private.' };
     }
 
@@ -806,6 +816,21 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
             status: 403,
             message: 'Access denied. This poll is restricted to local members.'
           };
+        }
+      }
+    }
+
+    // Org-scoped membership visibility check
+    if (isOrgScopedPrivatePoll(poll)) {
+      // 'private' for org polls means members_only — already handled by org controller for org-fetched polls,
+      // but direct /api/polls/:id access also needs guarding
+      if (!user) {
+        return { success: false, status: 401, message: 'Authentication required to view this poll.' };
+      }
+      if (user.role !== 'admin') {
+        const isMember = await hasActiveOrgMembership(poll.organizationId, user.id);
+        if (!isMember) {
+          return { success: false, status: 403, message: 'Access denied. This poll is restricted to organization members.' };
         }
       }
     }
@@ -1318,6 +1343,19 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
       }
     }
 
+    // Org-scoped polls: enforce active membership
+    if (poll.organizationId) {
+      if (!userId) {
+        return { success: false, status: 401, message: 'Authentication required to vote on organization polls.' };
+      }
+      if (userRole !== 'admin') {
+        const isMember = await hasActiveOrgMembership(poll.organizationId, userId);
+        if (!isMember) {
+          return { success: false, status: 403, message: 'Access denied. This poll is restricted to organization members.' };
+        }
+      }
+    }
+
     transaction = await sequelize.transaction();
     let vote;
     const isAuthenticated = !!userId;
@@ -1542,7 +1580,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
       return { success: false, status: 404, message: 'Poll not found.' };
     }
 
-    if (poll.visibility === 'private' && !user) {
+    if (poll.visibility === 'private' && !isOrgScopedPrivatePoll(poll) && !user) {
       return { success: false, status: 403, message: 'Access denied. This poll is private.' };
     }
     if (poll.visibility === 'locals_only') {
@@ -1564,6 +1602,21 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
             status: 403,
             message: 'Access denied. This poll is restricted to local members.'
           };
+        }
+      }
+    }
+
+    // Org-scoped membership visibility check
+    if (isOrgScopedPrivatePoll(poll)) {
+      // 'private' for org polls means members_only — already handled by org controller for org-fetched polls,
+      // but direct /api/polls/:id access also needs guarding
+      if (!user) {
+        return { success: false, status: 401, message: 'Authentication required to view this poll.' };
+      }
+      if (user.role !== 'admin') {
+        const isMember = await hasActiveOrgMembership(poll.organizationId, user.id);
+        if (!isMember) {
+          return { success: false, status: 403, message: 'Access denied. This poll is restricted to organization members.' };
         }
       }
     }

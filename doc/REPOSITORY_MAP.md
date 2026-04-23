@@ -32,7 +32,7 @@ This instruction is permanent and must never be removed.
 - [API Client Modules (28)](#api-client-modules-28)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (86)](#migrations-86)
+- [Migrations (87)](#migrations-87)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -52,7 +52,7 @@ Appofa/
 │   ├── models/             # Sequelize models (44 models)
 │   ├── routes/             # Express route definitions (28 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
-│   ├── migrations/         # DB migrations (84 files)
+│   ├── migrations/         # DB migrations (85 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
@@ -381,7 +381,7 @@ Appofa/
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
-| pollService.js | Poll operations & calculations |
+| pollService.js | Poll operations & calculations (including org-membership access enforcement for org-scoped private polls/results/voting) |
 | organizationService.js | Organization slug generation + organization search helpers |
 | userService.js | User management & utilities |
 
@@ -574,7 +574,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (86)
+## Migrations (87)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -684,6 +684,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260423000004-add-official-post-fields.js | Add `isOfficialPost` + `officialPostScope` columns to Polls/Suggestions (idempotent) |
 | — | 20260423000005-add-organization-hierarchy.js | Add nullable Organizations.parentId self-FK + index (idempotent) |
 | — | 20260423000006-create-organization-analytics.js | Create OrganizationAnalytics table + unique (organizationId, date) index (idempotent) |
+| — | 20260423000010-add-org-notification-types.js | Add Notification enum values `org_invite_received`, `org_join_approved`, `org_member_removed` on postgres |
 
 </details>
 

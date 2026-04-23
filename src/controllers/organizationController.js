@@ -12,6 +12,7 @@ const {
   sequelize,
 } = require('../models');
 const organizationService = require('../services/organizationService');
+const { notifyOrgInvite, notifyOrgJoinApproved, notifyOrgMemberRemoved } = require('../services/notificationService');
 const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
 const { randomUUID } = require('crypto');
@@ -226,7 +227,7 @@ const organizationController = {
         return res.status(400).json({ success: false, message: 'Invalid organization id.' });
       }
 
-      const organization = await requireOrganizationById(organizationId, ['id']);
+      const organization = await requireOrganizationById(organizationId, ['id', 'name', 'slug']);
       if (!organization) {
         return res.status(404).json({ success: false, message: 'Organization not found.' });
       }
@@ -630,6 +631,7 @@ const organizationController = {
         inviteToken: randomUUID(),
         invitedByUserId: req.user.id,
       });
+      notifyOrgInvite(targetUserId, req.user.id, organization).catch(err => console.error('Notification error:', err));
 
       return res.status(201).json({ success: true, data: { membership } });
     } catch (error) {
@@ -647,7 +649,7 @@ const organizationController = {
         return res.status(400).json({ success: false, message: 'Invalid organization or user id.' });
       }
 
-      const organization = await requireOrganizationById(organizationId, ['id']);
+      const organization = await requireOrganizationById(organizationId, ['id', 'name', 'slug']);
       if (!organization) {
         return res.status(404).json({ success: false, message: 'Organization not found.' });
       }
@@ -670,6 +672,7 @@ const organizationController = {
       }
 
       await membership.update({ status: 'active' });
+      notifyOrgJoinApproved(targetUserId, organization).catch(err => console.error('Notification error:', err));
       return res.status(200).json({ success: true, data: { membership } });
     } catch (error) {
       console.error('organizationController.approvePendingMember error:', error);
@@ -686,7 +689,7 @@ const organizationController = {
         return res.status(400).json({ success: false, message: 'Invalid organization or user id.' });
       }
 
-      const organization = await requireOrganizationById(organizationId, ['id']);
+      const organization = await requireOrganizationById(organizationId, ['id', 'name', 'slug']);
       if (!organization) {
         return res.status(404).json({ success: false, message: 'Organization not found.' });
       }
@@ -712,6 +715,7 @@ const organizationController = {
       }
 
       await membership.destroy();
+      notifyOrgMemberRemoved(targetUserId, req.user.id, organization).catch(err => console.error('Notification error:', err));
       return res.status(200).json({ success: true, data: { removed: true } });
     } catch (error) {
       console.error('organizationController.removeMember error:', error);

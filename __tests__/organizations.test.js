@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, OrganizationMember, OrganizationAnalytics } = require('../src/models');
+const { sequelize, User, Location, OrganizationMember, OrganizationAnalytics, PollOption, Notification } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Organizations API', () => {
@@ -18,6 +18,17 @@ describe('Organizations API', () => {
       Cookie: [`auth_token=${authToken}`, `csrf_token=${csrfToken}`],
       'x-csrf-token': csrfToken,
     };
+  };
+
+  const waitForNotification = async (where, attempts = 40, delayMs = 50) => {
+    for (let i = 0; i < attempts; i += 1) {
+      const notification = await Notification.findOne({ where });
+      if (notification) {
+        return notification;
+      }
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+    return null;
   };
 
   const registerAndLogin = async (username, role = 'viewer') => {
@@ -262,6 +273,12 @@ describe('Organizations API', () => {
       .set(withCsrf(adminUser.id, adminToken, 'csrf-org-approve-pending'));
     expect(approvePending.status).toBe(200);
     expect(approvePending.body.data.membership.status).toBe('active');
+    const approvedNotification = await waitForNotification({
+      userId: viewerUser.id,
+      type: 'org_join_approved',
+      entityId: organizationId,
+    });
+    expect(approvedNotification).toBeTruthy();
 
     const inviteRes = await request(app)
       .post(`/api/organizations/${organizationId}/members/invite`)
@@ -271,6 +288,12 @@ describe('Organizations API', () => {
     expect(inviteRes.body.data.membership.status).toBe('invited');
     expect(inviteRes.body.data.membership.invitedByUserId).toBe(adminUser.id);
     expect(inviteRes.body.data.membership.inviteToken).toBeTruthy();
+    const inviteNotification = await waitForNotification({
+      userId: secondViewerUser.id,
+      type: 'org_invite_received',
+      entityId: organizationId,
+    });
+    expect(inviteNotification).toBeTruthy();
 
     const roleUpdate = await request(app)
       .patch(`/api/organizations/${organizationId}/members/${viewerUser.id}/role`)
@@ -284,6 +307,12 @@ describe('Organizations API', () => {
       .set(withCsrf(adminUser.id, adminToken, 'csrf-org-remove-member'));
     expect(removeInvited.status).toBe(200);
     expect(removeInvited.body.data.removed).toBe(true);
+    const removedNotification = await waitForNotification({
+      userId: secondViewerUser.id,
+      type: 'org_member_removed',
+      entityId: organizationId,
+    });
+    expect(removedNotification).toBeTruthy();
 
     const removeOwnerDenied = await request(app)
       .delete(`/api/organizations/${organizationId}/members/${adminUser.id}`)
@@ -327,6 +356,21 @@ describe('Organizations API', () => {
       });
     expect(ownerCreatePoll.status).toBe(201);
     expect(ownerCreatePoll.body.data.poll.visibility).toBe('members_only');
+    const membersOnlyPollId = ownerCreatePoll.body.data.poll.id;
+
+    const option = await PollOption.create({
+      pollId: membersOnlyPollId,
+      text: 'Option A',
+      order: 0,
+    });
+
+    const directGuestPollDenied = await request(app).get(`/api/polls/${membersOnlyPollId}`);
+    expect(directGuestPollDenied.status).toBe(401);
+
+    const directNonMemberPollDenied = await request(app)
+      .get(`/api/polls/${membersOnlyPollId}`)
+      .set('Cookie', `auth_token=${viewerToken}`);
+    expect(directNonMemberPollDenied.status).toBe(403);
 
     const ownerCreatePublicPoll = await request(app)
       .post(`/api/organizations/${organizationId}/polls`)
@@ -349,6 +393,31 @@ describe('Organizations API', () => {
       .set('Cookie', `auth_token=${adminToken}`);
     expect(memberPolls.status).toBe(200);
     expect(memberPolls.body.data.polls.length).toBeGreaterThanOrEqual(2);
+
+    const voteDeniedForGuest = await request(app)
+      .post(`/api/polls/${membersOnlyPollId}/vote`)
+      .send({ optionId: option.id });
+    expect(voteDeniedForGuest.status).toBe(401);
+
+    const voteDeniedForNonMember = await request(app)
+      .post(`/api/polls/${membersOnlyPollId}/vote`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-vote-non-member-denied'))
+      .send({ optionId: option.id });
+    expect(voteDeniedForNonMember.status).toBe(403);
+
+    const voteAllowedForMember = await request(app)
+      .post(`/api/polls/${membersOnlyPollId}/vote`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-vote-member-ok'))
+      .send({ optionId: option.id });
+    expect(voteAllowedForMember.status).toBe(200);
+
+    const resultsDeniedForGuest = await request(app).get(`/api/polls/${membersOnlyPollId}/results`);
+    expect(resultsDeniedForGuest.status).toBe(401);
+
+    const resultsDeniedForNonMember = await request(app)
+      .get(`/api/polls/${membersOnlyPollId}/results`)
+      .set('Cookie', `auth_token=${viewerToken}`);
+    expect(resultsDeniedForNonMember.status).toBe(403);
 
     const nonMemberCreateSuggestion = await request(app)
       .post(`/api/organizations/${organizationId}/suggestions`)
