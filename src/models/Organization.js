@@ -42,6 +42,12 @@ const Organization = sequelize.define('Organization', {
     references: { model: 'Locations', key: 'id' },
     onDelete: 'SET NULL',
   },
+  parentId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Organizations', key: 'id' },
+    onDelete: 'SET NULL',
+  },
   isPublic: {
     type: DataTypes.BOOLEAN,
     allowNull: false,
@@ -65,6 +71,7 @@ const Organization = sequelize.define('Organization', {
     { unique: true, fields: ['slug'], name: 'organization_slug_unique' },
     { fields: ['type'], name: 'organization_type_index' },
     { fields: ['locationId'], name: 'organization_location_id_index' },
+    { fields: ['parentId'], name: 'organization_parent_id_index' },
     { fields: ['createdByUserId'], name: 'organization_created_by_user_id_index' },
   ],
 });

@@ -4,7 +4,7 @@
 
 Organizations are first-class entities on Appofa, parallel to Locations.
 They represent non-geographic entities like companies, institutions, universities, schools, parties, and civic organizations.
-Phase 4 extends Organizations with official posts (`isOfficialPost`, `officialPostScope`), verification-status endpoints, and a public official-post discovery feed.
+Phase 5 extends Organizations with hierarchy (`parentId`), parent/child governance workflows, and per-organization analytics snapshots.
 
 ## Database Schema
 
@@ -19,6 +19,7 @@ Phase 4 extends Organizations with official posts (`isOfficialPost`, `officialPo
 - `website` (optional URL)
 - `contactEmail` (optional)
 - `locationId` (optional FK → `Locations.id`, `SET NULL`)
+- `parentId` (optional self FK → `Organizations.id`, `SET NULL`)
 - `isPublic` (default `true`)
 - `isVerified` (default `false`)
 - `createdByUserId` (required FK → `Users.id`, `CASCADE`)
@@ -35,6 +36,19 @@ Phase 4 extends Organizations with official posts (`isOfficialPost`, `officialPo
 - `invitedByUserId` (optional FK → `Users.id`, `SET NULL`)
 - `createdAt`, `updatedAt`
 - Unique constraint: `(organizationId, userId)`
+
+### OrganizationAnalytics
+
+- `id` (PK)
+- `organizationId` (required FK → `Organizations.id`, `CASCADE`)
+- `date` (`DATEONLY`, required)
+- `memberCount` (default `0`)
+- `activeMemberCount` (default `0`)
+- `pollCount` (default `0`)
+- `suggestionCount` (default `0`)
+- `officialPostCount` (default `0`)
+- `createdAt`, `updatedAt`
+- Unique constraint: `(organizationId, date)`
 
 ## API Endpoints
 
@@ -61,6 +75,9 @@ Base prefix: `/api/organizations`
 - `POST /:id/official-posts` — create official post (`contentType: poll|suggestion`) for party/institution orgs (org owner/admin or platform admin/moderator)
 - `GET /:id/verification` — get organization verification status
 - `PATCH /:id/verify` — set verification status (`isVerified` boolean, admin only)
+- `GET /:id/children` — list direct child organizations
+- `PATCH /:id/parent` — set/clear parent organization (admin/moderator)
+- `GET /:id/analytics` — get last 30 days of analytics snapshots (org owner/admin or platform admin/moderator)
 
 Public discoverability:
 
@@ -104,6 +121,6 @@ Response shape:
 
 ### Phase 5
 
-- Parent/child organizations (federations, chapters, sub-units)
-- Cross-organization governance and federation-level roles
-- Advanced analytics for organization growth and participation
+- ✅ Parent/child organizations (federations, chapters, sub-units) with cycle-safe parent assignment
+- ✅ Cross-organization governance foundation via hierarchy-aware admin controls
+- ✅ Daily analytics snapshots for organization growth and participation (`OrganizationAnalytics`)

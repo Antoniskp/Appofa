@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, OrganizationMember } = require('../src/models');
+const { sequelize, User, Location, OrganizationMember, OrganizationAnalytics } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Organizations API', () => {
@@ -497,5 +497,111 @@ describe('Organizations API', () => {
         body: 'This should fail because organization type is unsupported.',
       });
     expect(regularOrgOfficialPostDenied.status).toBe(400);
+  });
+
+  it('supports hierarchy endpoints and analytics access rules', async () => {
+    const parentCreate = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-phase5-parent'))
+      .send({
+        name: 'Phase Five Parent',
+        type: 'organization',
+        isPublic: true,
+      });
+    expect(parentCreate.status).toBe(201);
+    const parentId = parentCreate.body.data.organization.id;
+
+    const childCreate = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-phase5-child'))
+      .send({
+        name: 'Phase Five Child',
+        type: 'organization',
+        isPublic: true,
+      });
+    expect(childCreate.status).toBe(201);
+    const childId = childCreate.body.data.organization.id;
+
+    const setParentRes = await request(app)
+      .patch(`/api/organizations/${childId}/parent`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-set-parent'))
+      .send({ parentId });
+    expect(setParentRes.status).toBe(200);
+    expect(setParentRes.body.data.organization.parentId).toBe(parentId);
+
+    const getChildrenRes = await request(app).get(`/api/organizations/${parentId}/children`);
+    expect(getChildrenRes.status).toBe(200);
+    expect(getChildrenRes.body.success).toBe(true);
+    expect(getChildrenRes.body.data.organizations.some((org) => org.id === childId)).toBe(true);
+
+    const cycleDenied = await request(app)
+      .patch(`/api/organizations/${parentId}/parent`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-set-parent-cycle'))
+      .send({ parentId: childId });
+    expect(cycleDenied.status).toBe(400);
+
+    const clearParentRes = await request(app)
+      .patch(`/api/organizations/${childId}/parent`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-clear-parent'))
+      .send({ parentId: null });
+    expect(clearParentRes.status).toBe(200);
+    expect(clearParentRes.body.data.organization.parentId).toBeNull();
+
+    await OrganizationMember.create({
+      organizationId: parentId,
+      userId: viewerUser.id,
+      role: 'admin',
+      status: 'active',
+    });
+
+    const createPollRes = await request(app)
+      .post(`/api/organizations/${parentId}/polls`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-phase5-poll'))
+      .send({
+        title: 'Phase Five Poll',
+        visibility: 'public',
+      });
+    expect(createPollRes.status).toBe(201);
+
+    const createOfficialRes = await request(app)
+      .post(`/api/organizations/${parentId}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-phase5-official'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Phase Five Official',
+        body: 'This official proposal body is long enough for analytics.',
+      });
+    expect(createOfficialRes.status).toBe(400);
+
+    const createSuggestionRes = await request(app)
+      .post(`/api/organizations/${parentId}/suggestions`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-phase5-suggestion'))
+      .send({
+        title: 'Phase Five Suggestion',
+        body: 'This suggestion body is long enough for analytics counters.',
+        visibility: 'public',
+      });
+    expect(createSuggestionRes.status).toBe(201);
+
+    const analyticsDeniedForViewer = await request(app)
+      .get(`/api/organizations/${parentId}/analytics`)
+      .set('Cookie', `auth_token=${secondViewerToken}`);
+    expect(analyticsDeniedForViewer.status).toBe(403);
+
+    const analyticsAllowedForOrgAdmin = await request(app)
+      .get(`/api/organizations/${parentId}/analytics`)
+      .set('Cookie', `auth_token=${viewerToken}`);
+    expect(analyticsAllowedForOrgAdmin.status).toBe(200);
+    expect(Array.isArray(analyticsAllowedForOrgAdmin.body.data.analytics)).toBe(true);
+    expect(analyticsAllowedForOrgAdmin.body.data.analytics.length).toBeGreaterThan(0);
+    expect(analyticsAllowedForOrgAdmin.body.data.analytics[0].organizationId).toBe(parentId);
+
+    const analyticsRow = await OrganizationAnalytics.findOne({
+      where: { organizationId: parentId },
+      order: [['date', 'DESC']],
+    });
+    expect(analyticsRow).toBeTruthy();
+    expect(analyticsRow.pollCount).toBeGreaterThanOrEqual(1);
+    expect(analyticsRow.suggestionCount).toBeGreaterThanOrEqual(1);
   });
 });

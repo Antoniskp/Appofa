@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
 
-const BASE_TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions'];
+const BASE_TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
 const OFFICIAL_POST_TABS = ['tab_official_posts'];
 const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
@@ -94,6 +94,21 @@ export default function OrganizationProfilePage({ params }) {
   const pendingMembers = pendingData?.members || [];
 
   const {
+    data: childrenData,
+    loading: childrenLoading,
+    error: childrenError,
+  } = useAsyncData(
+    async () => {
+      if (!organization?.id) return { organizations: [] };
+      const res = await organizationAPI.getChildren(organization.id);
+      return { organizations: res?.data?.organizations || [] };
+    },
+    [organization?.id],
+    { initialData: { organizations: [] } }
+  );
+  const children = childrenData?.organizations || [];
+
+  const {
     data: pollsData,
     loading: pollsLoading,
     error: pollsError,
@@ -125,9 +140,13 @@ export default function OrganizationProfilePage({ params }) {
   const polls = pollsData?.polls || [];
   const suggestions = suggestionsData?.suggestions || [];
   const supportsOfficialPosts = OFFICIAL_POST_ORG_TYPES.includes(organization?.type);
+  const canSeeAnalytics = canManageMembers;
   const tabs = useMemo(
-    () => (supportsOfficialPosts ? [...BASE_TABS, ...OFFICIAL_POST_TABS] : BASE_TABS),
-    [supportsOfficialPosts]
+    () => {
+      const tabKeys = supportsOfficialPosts ? [...BASE_TABS, ...OFFICIAL_POST_TABS] : BASE_TABS;
+      return tabKeys.filter((tab) => tab !== 'tab_analytics' || canSeeAnalytics);
+    },
+    [canSeeAnalytics, supportsOfficialPosts]
   );
   const canCreateOfficialPosts = canManageMembers;
 
@@ -146,6 +165,21 @@ export default function OrganizationProfilePage({ params }) {
     { initialData: { officialPosts: [] } }
   );
   const officialPosts = officialPostsData?.officialPosts || [];
+
+  const {
+    data: analyticsData,
+    loading: analyticsLoading,
+    error: analyticsError,
+  } = useAsyncData(
+    async () => {
+      if (!organization?.id || !canSeeAnalytics) return { analytics: [] };
+      const res = await organizationAPI.getAnalytics(organization.id);
+      return { analytics: res?.data?.analytics || [] };
+    },
+    [organization?.id, canSeeAnalytics],
+    { initialData: { analytics: [] } }
+  );
+  const analytics = analyticsData?.analytics || [];
 
   useEffect(() => {
     setRoleDrafts((prev) => {
@@ -170,6 +204,12 @@ export default function OrganizationProfilePage({ params }) {
       setActiveTab('tab_info');
     }
   }, [activeTab, supportsOfficialPosts]);
+
+  useEffect(() => {
+    if (!canSeeAnalytics && activeTab === 'tab_analytics') {
+      setActiveTab('tab_info');
+    }
+  }, [activeTab, canSeeAnalytics]);
 
   const roleLabel = (role) => t(`role_${role}`);
   const statusLabel = (status) => t(`status_${status}`);
@@ -396,6 +436,33 @@ export default function OrganizationProfilePage({ params }) {
                 {organization.contactEmail && <p><span className="font-semibold">{t('contact_email')}:</span> <a className="text-blue-600 hover:underline" href={`mailto:${organization.contactEmail}`}>{organization.contactEmail}</a></p>}
                 {organization.location && <p><span className="font-semibold">{t('location')}:</span> <Link className="text-blue-600 hover:underline" href={`/locations/${organization.location.slug}`}>{organization.location.name}</Link></p>}
                 {organization.createdBy && <p><span className="font-semibold">{t('created_by')}:</span> <Link className="text-blue-600 hover:underline" href={`/users/${organization.createdBy.username}`}>@{organization.createdBy.username}</Link></p>}
+                {organization.parent && (
+                  <p>
+                    <span className="font-semibold">{t('part_of')}:</span>{' '}
+                    <Link className="text-blue-600 hover:underline" href={`/organizations/${organization.parent.slug}`}>
+                      {organization.parent.name}
+                    </Link>
+                  </p>
+                )}
+                <div>
+                  <p className="font-semibold">{t('sub_organizations')}:</p>
+                  {childrenLoading && <SkeletonLoader count={2} type="list" />}
+                  {!childrenLoading && childrenError && <AlertMessage message={childrenError} />}
+                  {!childrenLoading && !childrenError && children.length === 0 && (
+                    <p className="text-sm text-gray-500">{t('no_sub_organizations')}</p>
+                  )}
+                  {!childrenLoading && !childrenError && children.length > 0 && (
+                    <ul className="mt-1 list-disc pl-5 space-y-1">
+                      {children.map((child) => (
+                        <li key={child.id}>
+                          <Link className="text-blue-600 hover:underline" href={`/organizations/${child.slug}`}>
+                            {child.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
               </div>
             )}
 
@@ -709,6 +776,44 @@ export default function OrganizationProfilePage({ params }) {
                         <p className="mt-2 text-sm text-gray-700">{suggestion.body}</p>
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'tab_analytics' && (
+              <div className="space-y-4">
+                {analyticsLoading && <SkeletonLoader count={3} type="table" />}
+                {!analyticsLoading && analyticsError && <AlertMessage message={analyticsError} />}
+                {!analyticsLoading && !analyticsError && analytics.length === 0 && (
+                  <p className="text-sm text-gray-500">{t('analytics_empty')}</p>
+                )}
+                {!analyticsLoading && !analyticsError && analytics.length > 0 && (
+                  <div className="overflow-x-auto rounded-lg border border-gray-200">
+                    <table className="min-w-full text-sm">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-3 py-2 text-left">{t('analytics_date')}</th>
+                          <th className="px-3 py-2 text-left">{t('analytics_members')}</th>
+                          <th className="px-3 py-2 text-left">{t('analytics_active_members')}</th>
+                          <th className="px-3 py-2 text-left">{t('analytics_polls')}</th>
+                          <th className="px-3 py-2 text-left">{t('analytics_suggestions')}</th>
+                          <th className="px-3 py-2 text-left">{t('analytics_official_posts')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analytics.map((row) => (
+                          <tr key={row.id} className="border-b border-gray-100">
+                            <td className="px-3 py-2">{row.date}</td>
+                            <td className="px-3 py-2">{row.memberCount}</td>
+                            <td className="px-3 py-2">{row.activeMemberCount}</td>
+                            <td className="px-3 py-2">{row.pollCount}</td>
+                            <td className="px-3 py-2">{row.suggestionCount}</td>
+                            <td className="px-3 py-2">{row.officialPostCount}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>

@@ -146,6 +146,18 @@ describe('organizationAPI', () => {
       method: 'PATCH',
       body: JSON.stringify({ isVerified: true }),
     });
+
+    await organizationAPI.getChildren(5);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/children');
+
+    await organizationAPI.setParent(5, 2);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/parent', {
+      method: 'PATCH',
+      body: JSON.stringify({ parentId: 2 }),
+    });
+
+    await organizationAPI.getAnalytics(5);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/analytics');
   });
 
   it('builds official posts discovery endpoint with query params', async () => {

@@ -1,9 +1,9 @@
 'use strict';
 
 const path = require('path');
-const { Op } = require('sequelize');
 const dbConfig = require('../config/database');
-const { Organization } = require('../models');
+const { Op } = require('sequelize');
+const { Organization, OrganizationMember, OrganizationAnalytics, Poll, Suggestion } = require('../models');
 
 const { types: ORGANIZATION_TYPES } = require(path.resolve(__dirname, '../../config/organizationTypes.json'));
 
@@ -60,4 +60,37 @@ module.exports = {
   ORGANIZATION_TYPES,
   generateSlug,
   buildSearchWhere,
+  recordAnalyticsSnapshot: async (organizationId) => {
+    const [
+      memberCount,
+      activeMemberCount,
+      pollCount,
+      suggestionCount,
+      officialPollCount,
+      officialSuggestionCount,
+    ] = await Promise.all([
+      OrganizationMember.count({ where: { organizationId } }),
+      OrganizationMember.count({ where: { organizationId, status: 'active' } }),
+      Poll.count({ where: { organizationId } }),
+      Suggestion.count({ where: { organizationId } }),
+      Poll.count({ where: { organizationId, isOfficialPost: true } }),
+      Suggestion.count({ where: { organizationId, isOfficialPost: true } }),
+    ]);
+
+    const date = new Date().toISOString().slice(0, 10);
+    const [snapshot] = await OrganizationAnalytics.findOrCreate({
+      where: { organizationId, date },
+      defaults: { organizationId, date },
+    });
+
+    await snapshot.update({
+      memberCount,
+      activeMemberCount,
+      pollCount,
+      suggestionCount,
+      officialPostCount: officialPollCount + officialSuggestionCount,
+    });
+
+    return snapshot;
+  },
 };
