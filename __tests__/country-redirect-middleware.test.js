@@ -98,12 +98,16 @@ describe('country redirect middleware', () => {
   });
 
   test('tracks admin paths while still skipping redirect', async () => {
-    const response = await middleware(makeRequest({ pathname: '/admin/geo', countryHeader: 'GR' }));
+    const response = await middleware(makeRequest({
+      pathname: '/admin/geo',
+      countryHeader: 'GR',
+      cookies: { token: 'sample-token' },
+    }));
 
     expect(response.type).toBe('next');
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/geo/track',
+      'http://localhost:3000/api/admin/geo-stats/track',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -111,6 +115,7 @@ describe('country redirect middleware', () => {
           countryCode: 'GR',
           ipAddress: null,
           locale: null,
+          token: 'sample-token',
         }),
       })
     );
@@ -122,7 +127,7 @@ describe('country redirect middleware', () => {
     expect(response.type).toBe('next');
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/geo/track',
+      'http://localhost:3000/api/admin/geo-stats/track',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -130,6 +135,7 @@ describe('country redirect middleware', () => {
           countryCode: 'GR',
           ipAddress: null,
           locale: null,
+          token: null,
         }),
       })
     );
@@ -152,7 +158,7 @@ describe('country redirect middleware', () => {
     expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/geo/track',
+      'http://localhost:3000/api/admin/geo-stats/track',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -160,6 +166,7 @@ describe('country redirect middleware', () => {
           countryCode: 'GR',
           ipAddress: null,
           locale: null,
+          token: null,
         }),
       })
     );
@@ -180,7 +187,7 @@ describe('country redirect middleware', () => {
     expect(response.type).toBe('redirect');
     expect(response.url).toBe('https://appofasi.gr/country/GR');
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/geo/track',
+      'http://localhost:3000/api/admin/geo-stats/track',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -188,6 +195,7 @@ describe('country redirect middleware', () => {
           countryCode: 'GR',
           ipAddress: '185.230.31.201',
           locale: 'el',
+          token: null,
         }),
       })
     );
@@ -212,7 +220,7 @@ describe('country redirect middleware', () => {
     expect(response.type).toBe('redirect');
     expect(response.url).toBe('https://appofasi.gr/country/CY');
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/geo/track',
+      'http://localhost:3000/api/admin/geo-stats/track',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -220,6 +228,7 @@ describe('country redirect middleware', () => {
           countryCode: 'CY',
           ipAddress: null,
           locale: null,
+          token: null,
         }),
       })
     );
@@ -254,7 +263,7 @@ describe('country redirect middleware', () => {
     expect(mockNext).toHaveBeenCalledWith();
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/geo/track',
+      'http://localhost:3000/api/admin/geo-stats/track',
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({
@@ -262,6 +271,7 @@ describe('country redirect middleware', () => {
           countryCode: null,
           ipAddress: '8.8.8.8',
           locale: null,
+          token: null,
         }),
       })
     );
