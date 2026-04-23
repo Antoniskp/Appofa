@@ -12,8 +12,9 @@ import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
 
-// Phase 2 ships full member management; remaining tabs are placeholders for later phases.
-const TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_official_posts'];
+const BASE_TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions'];
+const OFFICIAL_POST_TABS = ['tab_official_posts'];
+const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
 const ORG_VISIBILITY_OPTIONS = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
@@ -35,6 +36,12 @@ export default function OrganizationProfilePage({ params }) {
   const [roleDrafts, setRoleDrafts] = useState({});
   const [pollForm, setPollForm] = useState({ title: '', description: '', deadline: '', visibility: 'members_only' });
   const [suggestionForm, setSuggestionForm] = useState({ type: 'idea', title: '', body: '', visibility: 'members_only' });
+  const [officialPostForm, setOfficialPostForm] = useState({
+    contentType: 'suggestion',
+    title: '',
+    body: '',
+    officialPostScope: 'platform',
+  });
   const [contentActionLoading, setContentActionLoading] = useState(false);
   const [contentActionError, setContentActionError] = useState('');
   const [contentActionSuccess, setContentActionSuccess] = useState('');
@@ -117,6 +124,28 @@ export default function OrganizationProfilePage({ params }) {
   );
   const polls = pollsData?.polls || [];
   const suggestions = suggestionsData?.suggestions || [];
+  const supportsOfficialPosts = OFFICIAL_POST_ORG_TYPES.includes(organization?.type);
+  const tabs = useMemo(
+    () => (supportsOfficialPosts ? [...BASE_TABS, ...OFFICIAL_POST_TABS] : BASE_TABS),
+    [supportsOfficialPosts]
+  );
+  const canCreateOfficialPosts = canManageMembers;
+
+  const {
+    data: officialPostsData,
+    loading: officialPostsLoading,
+    error: officialPostsError,
+    refetch: refetchOfficialPosts,
+  } = useAsyncData(
+    async () => {
+      if (!organization?.id || !supportsOfficialPosts) return { officialPosts: [] };
+      const res = await organizationAPI.getOfficialPosts(organization.id);
+      return { officialPosts: res?.data?.officialPosts || [] };
+    },
+    [organization?.id, supportsOfficialPosts],
+    { initialData: { officialPosts: [] } }
+  );
+  const officialPosts = officialPostsData?.officialPosts || [];
 
   useEffect(() => {
     setRoleDrafts((prev) => {
@@ -135,6 +164,12 @@ export default function OrganizationProfilePage({ params }) {
       return changed ? next : prev;
     });
   }, [members]);
+
+  useEffect(() => {
+    if (!supportsOfficialPosts && activeTab === 'tab_official_posts') {
+      setActiveTab('tab_info');
+    }
+  }, [activeTab, supportsOfficialPosts]);
 
   const roleLabel = (role) => t(`role_${role}`);
   const statusLabel = (status) => t(`status_${status}`);
@@ -238,6 +273,23 @@ export default function OrganizationProfilePage({ params }) {
     setSuggestionForm({ type: 'idea', title: '', body: '', visibility: 'members_only' });
   };
 
+  const handleCreateOfficialPost = async (event) => {
+    event.preventDefault();
+    if (!organization?.id) return;
+    await runContentAction(
+      () => organizationAPI.createOfficialPost(organization.id, officialPostForm),
+      t('official_post_create_success'),
+      t('official_post_create_failed'),
+      refetchOfficialPosts
+    );
+    setOfficialPostForm({
+      contentType: 'suggestion',
+      title: '',
+      body: '',
+      officialPostScope: 'platform',
+    });
+  };
+
   if (loading) {
     return <div className="app-container py-10"><SkeletonLoader count={1} type="card" /></div>;
   }
@@ -316,7 +368,7 @@ export default function OrganizationProfilePage({ params }) {
 
           <div className="border-t border-gray-200 px-4 sm:px-6">
             <div className="flex gap-2 overflow-x-auto py-3">
-              {TABS.map((tab) => (
+              {tabs.map((tab) => (
                 <button
                   key={tab}
                   type="button"
@@ -663,7 +715,90 @@ export default function OrganizationProfilePage({ params }) {
             )}
 
             {activeTab === 'tab_official_posts' && (
-              <p className="text-sm text-gray-500">{t('coming_soon')}</p>
+              <div className="space-y-4">
+                {!supportsOfficialPosts && <AlertMessage message={t('official_posts_not_supported')} />}
+
+                {supportsOfficialPosts && canCreateOfficialPosts && (
+                  <form onSubmit={handleCreateOfficialPost} className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-medium text-gray-800">{t('create_official_post')}</p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('official_post_type')}</label>
+                        <select
+                          value={officialPostForm.contentType}
+                          onChange={(e) => setOfficialPostForm((prev) => ({ ...prev, contentType: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          <option value="suggestion">{t('official_post_type_suggestion')}</option>
+                          <option value="poll">{t('official_post_type_poll')}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('official_post_scope')}</label>
+                        <select
+                          value={officialPostForm.officialPostScope}
+                          onChange={(e) => setOfficialPostForm((prev) => ({ ...prev, officialPostScope: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          <option value="platform">{t('official_post_scope_platform')}</option>
+                          <option value="organization">{t('official_post_scope_organization')}</option>
+                        </select>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={officialPostForm.title}
+                      onChange={(e) => setOfficialPostForm((prev) => ({ ...prev, title: e.target.value }))}
+                      placeholder={t('official_post_title')}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                    <textarea
+                      value={officialPostForm.body}
+                      onChange={(e) => setOfficialPostForm((prev) => ({ ...prev, body: e.target.value }))}
+                      placeholder={t('official_post_body')}
+                      rows={4}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="submit"
+                      disabled={contentActionLoading}
+                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {t('create_official_post')}
+                    </button>
+                  </form>
+                )}
+
+                {supportsOfficialPosts && !canCreateOfficialPosts && (
+                  <AlertMessage message={t('official_posts_manage_gate')} />
+                )}
+
+                {supportsOfficialPosts && officialPostsLoading && <SkeletonLoader count={3} type="list" />}
+                {supportsOfficialPosts && !officialPostsLoading && officialPostsError && <AlertMessage message={officialPostsError} />}
+                {supportsOfficialPosts && !officialPostsLoading && !officialPostsError && officialPosts.length === 0 && (
+                  <p className="text-sm text-gray-500">{t('official_posts_empty')}</p>
+                )}
+                {supportsOfficialPosts && !officialPostsLoading && !officialPostsError && officialPosts.length > 0 && (
+                  <div className="space-y-3">
+                    {officialPosts.map((post) => (
+                      <div key={`${post.contentType}-${post.id}`} className="rounded-lg border border-gray-200 p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="font-medium text-gray-900">{post.title}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="rounded bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">
+                              {t(`official_post_type_${post.contentType}`)}
+                            </span>
+                            <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                              {t(`official_post_scope_${post.officialPostScope || 'platform'}`)}
+                            </span>
+                          </div>
+                        </div>
+                        {post.body && <p className="mt-2 text-sm text-gray-700">{post.body}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

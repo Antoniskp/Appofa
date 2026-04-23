@@ -69,6 +69,15 @@ const Poll = sequelize.define('Poll', {
     },
     onDelete: 'SET NULL'
   },
+  isOfficialPost: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  officialPostScope: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
   creatorId: {
     type: DataTypes.INTEGER,
     allowNull: false,

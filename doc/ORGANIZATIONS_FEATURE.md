@@ -4,7 +4,7 @@
 
 Organizations are first-class entities on Appofa, parallel to Locations.
 They represent non-geographic entities like companies, institutions, universities, schools, parties, and civic organizations.
-Phase 3 extends Organizations with internal polls and suggestions tied by `organizationId`, with member-aware visibility controls.
+Phase 4 extends Organizations with official posts (`isOfficialPost`, `officialPostScope`), verification-status endpoints, and a public official-post discovery feed.
 
 ## Database Schema
 
@@ -57,6 +57,14 @@ Base prefix: `/api/organizations`
 - `POST /:id/polls` — create organization poll (active members only)
 - `GET /:id/suggestions` — list organization suggestions (public orgs expose only public suggestions to non-members)
 - `POST /:id/suggestions` — create organization suggestion (active members only)
+- `GET /:id/official-posts` — list organization official posts
+- `POST /:id/official-posts` — create official post (`contentType: poll|suggestion`) for party/institution orgs (org owner/admin or platform admin/moderator)
+- `GET /:id/verification` — get organization verification status
+- `PATCH /:id/verify` — set verification status (`isVerified` boolean, admin only)
+
+Public discoverability:
+
+- `GET /api/official-posts` — platform-wide public official posts feed (public posts from party/institution orgs)
 
 Response shape:
 
@@ -90,9 +98,9 @@ Response shape:
 
 ### Phase 4
 
-- Official organization posts and manifest/program support
-- Verification and trust indicators expansion
-- Public discoverability enhancements
+- ✅ Official organization posts and manifest/program support
+- ✅ Verification and trust indicators expansion
+- ✅ Public discoverability enhancements (`/official-posts`, `/api/official-posts`)
 
 ### Phase 5
 

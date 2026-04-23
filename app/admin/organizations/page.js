@@ -36,6 +36,7 @@ export default function AdminOrganizationsPage() {
   const [editingOrganization, setEditingOrganization] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
     if (!authLoading && (!user || !['admin', 'moderator'].includes(user.role))) {
@@ -92,8 +93,10 @@ export default function AdminOrganizationsPage() {
       ...form,
       locationId: form.locationId ? Number(form.locationId) : null,
       isPublic: Boolean(form.isPublic),
-      isVerified: Boolean(form.isVerified),
     };
+    if (isAdmin) {
+      payload.isVerified = Boolean(form.isVerified);
+    }
 
     try {
       if (editingOrganization) {
@@ -144,6 +147,18 @@ export default function AdminOrganizationsPage() {
     } catch (deleteError) {
       setFeedback({ tone: 'error', message: t('delete_failed') });
       console.error('AdminOrganizationsPage delete error:', deleteError);
+    }
+  };
+
+  const handleVerificationToggle = async (organization) => {
+    if (!isAdmin) return;
+    try {
+      await organizationAPI.setVerified(organization.id, !organization.isVerified);
+      setFeedback({ tone: 'success', message: t('verification_updated') });
+      await refetch();
+    } catch (toggleError) {
+      setFeedback({ tone: 'error', message: t('verification_update_failed') });
+      console.error('AdminOrganizationsPage verification toggle error:', toggleError);
     }
   };
 
@@ -256,14 +271,16 @@ export default function AdminOrganizationsPage() {
                 />
                 {t('is_public')}
               </label>
-              <label className="inline-flex items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={form.isVerified}
-                  onChange={(e) => setForm((prev) => ({ ...prev, isVerified: e.target.checked }))}
-                />
-                {t('is_verified')}
-              </label>
+              {isAdmin && (
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={form.isVerified}
+                    onChange={(e) => setForm((prev) => ({ ...prev, isVerified: e.target.checked }))}
+                  />
+                  {t('is_verified')}
+                </label>
+              )}
             </div>
 
             <div className="md:col-span-2 flex gap-3">
@@ -310,6 +327,15 @@ export default function AdminOrganizationsPage() {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
                       <button type="button" onClick={() => handleEdit(organization)} className="px-3 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">{t('edit')}</button>
+                      {isAdmin && (
+                        <button
+                          type="button"
+                          onClick={() => handleVerificationToggle(organization)}
+                          className="px-3 py-1 rounded border border-green-200 text-green-700 hover:bg-green-50"
+                        >
+                          {organization.isVerified ? t('unverify') : t('verify')}
+                        </button>
+                      )}
                       {user.role === 'admin' && (
                         <button type="button" onClick={() => handleDelete(organization)} className="px-3 py-1 rounded border border-red-200 text-red-700 hover:bg-red-50">{t('delete')}</button>
                       )}
