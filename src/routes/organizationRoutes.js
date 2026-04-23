@@ -8,6 +8,7 @@ const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', apiLimiter, optionalAuthMiddleware, organizationController.getOrganizations);
+// Specific routes must be defined before parameterized routes to prevent path matching conflicts.
 router.get('/:id/members/pending', apiLimiter, authMiddleware, organizationController.getPendingMembers);
 router.get('/:id/members', apiLimiter, optionalAuthMiddleware, organizationController.getMembers);
 router.get('/:slug', apiLimiter, optionalAuthMiddleware, organizationController.getOrganizationBySlug);

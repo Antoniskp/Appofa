@@ -11,7 +11,6 @@ const MAX_LIMIT = 100;
 const PLATFORM_PRIVILEGED_ROLES = ['admin', 'moderator'];
 const ORG_MANAGE_ROLES = ['owner', 'admin'];
 const MEMBER_STATUSES = ['active', 'invited', 'pending'];
-const MEMBER_ROLES = ['owner', 'admin', 'moderator', 'member'];
 const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
 
 const ORGANIZATION_BASE_INCLUDE = [
@@ -289,7 +288,7 @@ const organizationController = {
 
   getMembers: async (req, res) => {
     try {
-      const organizationId = parsePositiveInt(req.params.id || req.params.organizationId);
+      const organizationId = parsePositiveInt(req.params.id);
       if (!organizationId) {
         return res.status(400).json({ success: false, message: 'Invalid organization id.' });
       }
@@ -563,12 +562,8 @@ const organizationController = {
         return res.status(400).json({ success: false, message: 'Invalid organization or user id.' });
       }
 
-      if (!MEMBER_ROLES.includes(nextRole)) {
-        return res.status(400).json({ success: false, message: 'Invalid role.' });
-      }
-
       if (!ASSIGNABLE_MEMBER_ROLES.includes(nextRole)) {
-        return res.status(400).json({ success: false, message: 'Owner role cannot be assigned via this endpoint.' });
+        return res.status(400).json({ success: false, message: 'Invalid role.' });
       }
 
       const organization = await requireOrganizationById(organizationId, ['id']);

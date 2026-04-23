@@ -15,6 +15,11 @@ import AlertMessage from '@/components/ui/AlertMessage';
 const TABS = ['info', 'members', 'polls_voting', 'suggestions', 'official_posts'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
 
+function parsePositiveInt(value) {
+  const parsed = parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
 export default function OrganizationProfilePage({ params }) {
   const t = useTranslations('organizations');
   const { slug } = use(params);
@@ -74,13 +79,19 @@ export default function OrganizationProfilePage({ params }) {
 
   useEffect(() => {
     setRoleDrafts((prev) => {
-      const next = { ...prev };
+      const next = {};
+      const nextSize = members.length;
+      let changed = Object.keys(prev).length !== nextSize;
+
       members.forEach((member) => {
-        if (!next[member.userId]) {
-          next[member.userId] = member.role;
+        const value = prev[member.userId] ?? member.role;
+        next[member.userId] = value;
+        if (!changed && prev[member.userId] !== value) {
+          changed = true;
         }
       });
-      return next;
+
+      return changed ? next : prev;
     });
   }, [members]);
 
@@ -135,8 +146,8 @@ export default function OrganizationProfilePage({ params }) {
 
   const handleInvite = async () => {
     if (!organization?.id) return;
-    const userId = Number(inviteUserId);
-    if (!Number.isInteger(userId) || userId <= 0) {
+    const userId = parsePositiveInt(inviteUserId);
+    if (!userId) {
       setMemberActionError(t('invite_invalid_user_id'));
       return;
     }
@@ -374,7 +385,7 @@ export default function OrganizationProfilePage({ params }) {
                             {member.status === 'active' && (
                               <>
                                 <select
-                                  value={roleDrafts[member.userId] || member.role}
+                                  value={roleDrafts[member.userId] ?? member.role}
                                   onChange={(e) => setRoleDrafts((prev) => ({ ...prev, [member.userId]: e.target.value }))}
                                   className="px-2 py-1 text-xs border border-gray-300 rounded"
                                 >
@@ -385,7 +396,7 @@ export default function OrganizationProfilePage({ params }) {
                                 <button
                                   type="button"
                                   onClick={() => handleRoleUpdate(member.userId)}
-                                  disabled={actionLoading || (roleDrafts[member.userId] || member.role) === member.role}
+                                  disabled={actionLoading || (roleDrafts[member.userId] ?? member.role) === member.role}
                                   className="px-2 py-1 text-xs rounded border border-blue-200 text-blue-700 hover:bg-blue-50 disabled:opacity-50"
                                 >
                                   {t('update_role')}
