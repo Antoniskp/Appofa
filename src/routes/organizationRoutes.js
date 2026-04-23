@@ -15,6 +15,10 @@ router.get('/:id/polls', apiLimiter, optionalAuthMiddleware, organizationControl
 router.post('/:id/polls', apiLimiter, authMiddleware, csrfProtection, organizationController.createOrgPoll);
 router.get('/:id/suggestions', apiLimiter, optionalAuthMiddleware, organizationController.getOrgSuggestions);
 router.post('/:id/suggestions', apiLimiter, authMiddleware, csrfProtection, organizationController.createOrgSuggestion);
+router.get('/:id/official-posts', apiLimiter, optionalAuthMiddleware, organizationController.getOfficialPosts);
+router.post('/:id/official-posts', apiLimiter, authMiddleware, csrfProtection, organizationController.createOfficialPost);
+router.get('/:id/verification', apiLimiter, optionalAuthMiddleware, organizationController.getOrgVerificationStatus);
+router.patch('/:id/verify', apiLimiter, authMiddleware, csrfProtection, organizationController.setVerified);
 router.get('/:slug', apiLimiter, optionalAuthMiddleware, organizationController.getOrganizationBySlug);
 
 router.post('/', apiLimiter, createLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.createOrganization);

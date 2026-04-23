@@ -1,6 +1,7 @@
 const { apiRequest } = require('../../lib/api/client.js');
 const { buildQueryEndpoint } = require('../../lib/utils/queryString.js');
 const { organizationAPI } = require('../../lib/api/organizations.js');
+const { officialPostsAPI } = require('../../lib/api/officialPosts.js');
 
 jest.mock('../../lib/api/client.js', () => ({
   apiRequest: jest.fn(),
@@ -126,9 +127,42 @@ describe('organizationAPI', () => {
     });
   });
 
+  it('calls organization official posts and verification endpoints', async () => {
+    await organizationAPI.getOfficialPosts(5, { page: 1 });
+    expect(buildQueryEndpoint).toHaveBeenCalledWith('/api/organizations/5/official-posts', { page: 1 });
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/official-posts?page=1');
+
+    await organizationAPI.createOfficialPost(5, { contentType: 'suggestion', title: 'Official title', body: 'Official body' });
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/official-posts', {
+      method: 'POST',
+      body: JSON.stringify({ contentType: 'suggestion', title: 'Official title', body: 'Official body' }),
+    });
+
+    await organizationAPI.getVerificationStatus(5);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/verification');
+
+    await organizationAPI.setVerified(5, true);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/verify', {
+      method: 'PATCH',
+      body: JSON.stringify({ isVerified: true }),
+    });
+  });
+
+  it('builds official posts discovery endpoint with query params', async () => {
+    await officialPostsAPI.getAll({ page: 3 });
+
+    expect(buildQueryEndpoint).toHaveBeenCalledWith('/api/official-posts', { page: 3 });
+    expect(apiRequest).toHaveBeenCalledWith('/api/official-posts?page=3');
+  });
+
   it('is exported through lib/api index', () => {
-    const { organizationAPI: exportedOrganizationAPI } = require('../../lib/api');
+    const {
+      organizationAPI: exportedOrganizationAPI,
+      officialPostsAPI: exportedOfficialPostsAPI,
+    } = require('../../lib/api');
     expect(exportedOrganizationAPI).toBeDefined();
     expect(typeof exportedOrganizationAPI.getAll).toBe('function');
+    expect(exportedOfficialPostsAPI).toBeDefined();
+    expect(typeof exportedOfficialPostsAPI.getAll).toBe('function');
   });
 });

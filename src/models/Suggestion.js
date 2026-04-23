@@ -41,6 +41,15 @@ const Suggestion = sequelize.define('Suggestion', {
     },
     onDelete: 'SET NULL'
   },
+  isOfficialPost: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  officialPostScope: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
   authorId: {
     type: DataTypes.INTEGER,
     allowNull: false,

@@ -43,6 +43,8 @@ This instruction is permanent and must never be removed.
 - **Organization membership**: use `OrganizationMember` with roles `owner|admin|moderator|member`, statuses `active|invited|pending`, and invite metadata (`inviteToken`, `invitedByUserId`)
 - **Organization poll/suggestion scope**: use nullable `organizationId` on `Poll`/`Suggestion`; for org-scoped content map API `members_only` visibility to stored `private`
 - **Organization phase-3 enums**: keep shared org content enums in `config/organizationContent.json` for both backend and frontend (`visibilities`, `suggestionTypes`)
+- **Organization official posts**: use `Poll`/`Suggestion` fields `isOfficialPost` + `officialPostScope`; platform feed pulls only `isOfficialPost=true` and `visibility='public'`
+- **Organization verification**: use admin-only `PATCH /api/organizations/:id/verify` for `isVerified` changes; do not rely on generic update routes for moderation workflows
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
@@ -64,6 +66,8 @@ This instruction is permanent and must never be removed.
 - **Admin article management**: keep article stats/table actions (view/delete/approve news) on `/admin/articles`; keep `/admin` focused on overview cards, quick actions, and announcements
 - **Organizations API module**: use `lib/api/organizations.js` and import `organizationAPI` from `lib/api`
 - **Organization member management**: use `/api/organizations/:id/join|leave|members/*` endpoints for join/leave/invite/approve/remove/role updates and pending requests
+- **Official posts API modules**: use `organizationAPI.getOfficialPosts/createOfficialPost/getVerificationStatus/setVerified` and `officialPostsAPI.getAll`; avoid direct request code
+- **Official posts UI scope**: render organization Official Posts tab only for `party` and `institution` organization types
 - **Language switcher**: use `components/ui/LanguageSwitcher.js` in the Profile preferences card (not in TopNav)
 - **Translations hook**: frontend pages/components should read UI labels via `useTranslations(...)` instead of hard-coded literals
 - **Auth**: use `useAuth` from `lib/auth-context.js`

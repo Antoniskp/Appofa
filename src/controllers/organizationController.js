@@ -13,6 +13,8 @@ const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 100;
 const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
+const OFFICIAL_POST_SCOPES = ['platform', 'organization'];
+const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const ORG_CONTENT_VISIBILITIES = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
 
@@ -90,6 +92,31 @@ function serializeOrgSuggestion(suggestion) {
   return {
     ...data,
     visibility: mapDbVisibilityToOrg(data.visibility),
+  };
+}
+
+function mapOfficialPostItem(item, contentType) {
+  const data = item.toJSON ? item.toJSON() : item;
+  const author = contentType === 'poll' ? data.creator : data.author;
+  return {
+    id: data.id,
+    contentType,
+    organizationId: data.organizationId,
+    title: data.title,
+    body: contentType === 'poll' ? data.description : data.body,
+    visibility: data.visibility,
+    isOfficialPost: Boolean(data.isOfficialPost),
+    officialPostScope: data.officialPostScope || null,
+    createdAt: data.createdAt,
+    organization: data.organization || null,
+    author: author
+      ? {
+        id: author.id,
+        username: author.username,
+        avatar: author.avatar || null,
+        avatarColor: author.avatarColor || null,
+      }
+      : null,
   };
 }
 
@@ -194,6 +221,10 @@ const organizationController = {
         await transaction.rollback();
         return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
       }
+      if (parsedIsVerified === true && req.user.role !== 'admin') {
+        await transaction.rollback();
+        return res.status(403).json({ success: false, message: 'Only admins can mark organizations as verified.' });
+      }
 
       const organization = await Organization.create({
         name: baseName,
@@ -269,6 +300,9 @@ const organizationController = {
       }
 
       if (req.body.isVerified !== undefined) {
+        if (req.user.role !== 'admin') {
+          return res.status(403).json({ success: false, message: 'Only admins can update verification status.' });
+        }
         const parsed = parseOptionalBoolean(req.body.isVerified);
         if (parsed === null) {
           return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
@@ -864,6 +898,274 @@ const organizationController = {
     } catch (error) {
       console.error('organizationController.createOrgSuggestion error:', error);
       return res.status(500).json({ success: false, message: 'Failed to create organization suggestion.' });
+    }
+  },
+
+  getOfficialPosts: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'isPublic', 'type']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const memberAccess = req.user ? await isActiveMember(organizationId, req.user.id) : false;
+      if (!organization.isPublic && !memberAccess) {
+        return res.status(403).json({ success: false, message: 'Organization official posts are members-only.' });
+      }
+
+      const where = {
+        organizationId,
+        isOfficialPost: true,
+      };
+
+      if (!memberAccess) {
+        where.visibility = 'public';
+      }
+
+      const [polls, suggestions] = await Promise.all([
+        Poll.findAll({
+          where,
+          include: [
+            {
+              model: User,
+              as: 'creator',
+              attributes: ['id', 'username', 'avatar', 'avatarColor'],
+            },
+            {
+              model: Organization,
+              as: 'organization',
+              attributes: ['id', 'name', 'slug', 'type', 'isVerified'],
+            },
+          ],
+          order: [['createdAt', 'DESC']],
+        }),
+        Suggestion.findAll({
+          where,
+          include: [
+            {
+              model: User,
+              as: 'author',
+              attributes: ['id', 'username', 'avatar', 'avatarColor'],
+            },
+            {
+              model: Organization,
+              as: 'organization',
+              attributes: ['id', 'name', 'slug', 'type', 'isVerified'],
+            },
+          ],
+          order: [['createdAt', 'DESC']],
+        }),
+      ]);
+
+      const officialPosts = [
+        ...polls.map((poll) => mapOfficialPostItem(poll, 'poll')),
+        ...suggestions.map((suggestion) => mapOfficialPostItem(suggestion, 'suggestion')),
+      ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      return res.status(200).json({
+        success: true,
+        data: { officialPosts },
+      });
+    } catch (error) {
+      console.error('organizationController.getOfficialPosts error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch organization official posts.' });
+    }
+  },
+
+  createOfficialPost: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'type']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      if (!OFFICIAL_POST_ORG_TYPES.includes(organization.type)) {
+        return res.status(400).json({ success: false, message: 'Official posts are available only for parties and institutions.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to create official posts.' });
+      }
+
+      const contentTypeResult = normalizeEnum(req.body?.contentType, ['poll', 'suggestion'], 'Content type');
+      if (contentTypeResult.error) {
+        return res.status(400).json({ success: false, message: contentTypeResult.error });
+      }
+
+      const scopeResult = normalizeEnum(
+        req.body?.officialPostScope || 'platform',
+        OFFICIAL_POST_SCOPES,
+        'Official post scope'
+      );
+      if (scopeResult.error) {
+        return res.status(400).json({ success: false, message: scopeResult.error });
+      }
+
+      const titleResult = normalizeRequiredText(req.body?.title, 'Title', 5, 200);
+      if (titleResult.error) {
+        return res.status(400).json({ success: false, message: titleResult.error });
+      }
+
+      if (contentTypeResult.value === 'poll') {
+        let deadline = null;
+        if (req.body?.deadline) {
+          deadline = new Date(req.body.deadline);
+          if (Number.isNaN(deadline.getTime())) {
+            return res.status(400).json({ success: false, message: 'Deadline must be a valid date.' });
+          }
+        }
+
+        const poll = await Poll.create({
+          title: titleResult.value,
+          description: req.body?.body || null,
+          creatorId: req.user.id,
+          organizationId,
+          visibility: 'public',
+          deadline,
+          isOfficialPost: true,
+          officialPostScope: scopeResult.value,
+        });
+
+        const createdPoll = await Poll.findByPk(poll.id, {
+          include: [
+            {
+              model: User,
+              as: 'creator',
+              attributes: ['id', 'username', 'avatar', 'avatarColor'],
+            },
+            {
+              model: Organization,
+              as: 'organization',
+              attributes: ['id', 'name', 'slug', 'type', 'isVerified'],
+            },
+          ],
+        });
+
+        return res.status(201).json({
+          success: true,
+          data: { officialPost: mapOfficialPostItem(createdPoll, 'poll') },
+        });
+      }
+
+      const bodyResult = normalizeRequiredText(req.body?.body, 'Body', 10, 10000);
+      if (bodyResult.error) {
+        return res.status(400).json({ success: false, message: bodyResult.error });
+      }
+
+      const typeResult = normalizeEnum(req.body?.type || 'idea', ORG_SUGGESTION_TYPES, 'Type');
+      if (typeResult.error) {
+        return res.status(400).json({ success: false, message: typeResult.error });
+      }
+
+      const suggestion = await Suggestion.create({
+        title: titleResult.value,
+        body: bodyResult.value,
+        type: typeResult.value,
+        authorId: req.user.id,
+        organizationId,
+        visibility: 'public',
+        voteRestriction: 'authenticated',
+        isOfficialPost: true,
+        officialPostScope: scopeResult.value,
+      });
+
+      const createdSuggestion = await Suggestion.findByPk(suggestion.id, {
+        include: [
+          {
+            model: User,
+            as: 'author',
+            attributes: ['id', 'username', 'avatar', 'avatarColor'],
+          },
+          {
+            model: Organization,
+            as: 'organization',
+            attributes: ['id', 'name', 'slug', 'type', 'isVerified'],
+          },
+        ],
+      });
+
+      return res.status(201).json({
+        success: true,
+        data: { officialPost: mapOfficialPostItem(createdSuggestion, 'suggestion') },
+      });
+    } catch (error) {
+      console.error('organizationController.createOfficialPost error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to create official post.' });
+    }
+  },
+
+  getOrgVerificationStatus: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'isVerified', 'updatedAt']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          organizationId: organization.id,
+          isVerified: organization.isVerified,
+          updatedAt: organization.updatedAt,
+        },
+      });
+    } catch (error) {
+      console.error('organizationController.getOrgVerificationStatus error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch verification status.' });
+    }
+  },
+
+  setVerified: async (req, res) => {
+    try {
+      if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ success: false, message: 'Only admins can update verification status.' });
+      }
+
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const parsedIsVerified = parseOptionalBoolean(req.body?.isVerified);
+      if (parsedIsVerified === null || parsedIsVerified === undefined) {
+        return res.status(400).json({ success: false, message: 'isVerified must be a boolean.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'isVerified']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      await organization.update({ isVerified: parsedIsVerified });
+
+      return res.status(200).json({
+        success: true,
+        data: {
+          organization: {
+            id: organization.id,
+            isVerified: organization.isVerified,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('organizationController.setVerified error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to update verification status.' });
     }
   },
 };

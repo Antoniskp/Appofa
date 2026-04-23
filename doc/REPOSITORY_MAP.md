@@ -264,6 +264,15 @@ Appofa/
 | POST | /:id/polls | ✅ | Create organization poll (active members only) |
 | GET | /:id/suggestions | opt | List organization suggestions (public orgs expose only `visibility=public` to non-members) |
 | POST | /:id/suggestions | ✅ | Create organization suggestion (active members only) |
+| GET | /:id/official-posts | opt | List organization official posts |
+| POST | /:id/official-posts | ✅ | Create official organization post (`poll` or `suggestion`) for party/institution orgs |
+| GET | /:id/verification | opt | Get organization verification status |
+| PATCH | /:id/verify | ✅ | Set organization verification (`admin` only) |
+
+### Official Posts (`/api/official-posts`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | opt | Platform-wide public official posts feed (party/institution organizations) |
 
 ### Dream Team (`/api/dream-team`)
 | Method | Path | Auth | Description |
@@ -310,7 +319,8 @@ Appofa/
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
-| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions |
+| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions, GET /:id/official-posts, POST /:id/official-posts, GET /:id/verification, PATCH /:id/verify |
+| officialPostsRoutes.js | /api/official-posts | GET / |
 | manifestRoutes.js | /api/manifests | GET /, POST /, PUT /:slug, DELETE /:slug, PUT /:slug/accept, DELETE /:slug/accept, GET /:slug/supporters |
 | badges.js | /api/badges | GET /my, GET /user/:userId, POST /evaluate, PUT /display |
 | heroSettingsRoutes.js | /api/hero-settings | GET /, PUT /, GET /slides, POST /slides, PUT /slides/:id, DELETE /slides/:id |
@@ -347,7 +357,7 @@ Appofa/
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
-| organizationController.js | Organization CRUD + member workflow + org-scoped polls/suggestions management |
+| organizationController.js | Organization CRUD + member workflow + org-scoped polls/suggestions + official posts + verification status |
 | reportController.js | Content reporting |
 | statsController.js | Statistics |
 | suggestionController.js | Suggestions & solutions |
@@ -427,6 +437,7 @@ Appofa/
 |-------|-------------|
 | `/locations`, `/locations/[slug]` | Locations |
 | `/organizations`, `/organizations/[slug]` | Organizations list + profile |
+| `/official-posts` | Public discovery feed for platform-wide official organization posts |
 | `/country/[code]` | Country landing page after first-visit geo redirect |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations |
 | `/persons`, `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles |

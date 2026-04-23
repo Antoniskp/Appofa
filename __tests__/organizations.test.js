@@ -403,4 +403,99 @@ describe('Organizations API', () => {
     const privateSuggestionsDenied = await request(app).get(`/api/organizations/${privateOrgId}/suggestions`);
     expect(privateSuggestionsDenied.status).toBe(403);
   });
+
+  it('supports official posts, verification endpoints, and public official feed', async () => {
+    const createParty = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-phase4-party'))
+      .send({
+        name: 'Phase Four Party',
+        type: 'party',
+        isPublic: true,
+      });
+    expect(createParty.status).toBe(201);
+    const partyOrganizationId = createParty.body.data.organization.id;
+
+    const nonManagerOfficialCreateDenied = await request(app)
+      .post(`/api/organizations/${partyOrganizationId}/official-posts`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-create-official-denied'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Official proposal',
+        body: 'This official proposal body is long enough.',
+      });
+    expect(nonManagerOfficialCreateDenied.status).toBe(403);
+
+    const ownerCreatesOfficialSuggestion = await request(app)
+      .post(`/api/organizations/${partyOrganizationId}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-official-suggestion'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Official party proposal',
+        body: 'This official proposal body is definitely long enough.',
+      });
+    expect(ownerCreatesOfficialSuggestion.status).toBe(201);
+    expect(ownerCreatesOfficialSuggestion.body.success).toBe(true);
+    expect(ownerCreatesOfficialSuggestion.body.data.officialPost.isOfficialPost).toBe(true);
+    expect(ownerCreatesOfficialSuggestion.body.data.officialPost.contentType).toBe('suggestion');
+
+    const ownerCreatesOfficialPoll = await request(app)
+      .post(`/api/organizations/${partyOrganizationId}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-official-poll'))
+      .send({
+        contentType: 'poll',
+        title: 'Official party poll',
+        body: 'Official poll description.',
+      });
+    expect(ownerCreatesOfficialPoll.status).toBe(201);
+    expect(ownerCreatesOfficialPoll.body.data.officialPost.contentType).toBe('poll');
+
+    const partyOfficialPosts = await request(app).get(`/api/organizations/${partyOrganizationId}/official-posts`);
+    expect(partyOfficialPosts.status).toBe(200);
+    expect(Array.isArray(partyOfficialPosts.body.data.officialPosts)).toBe(true);
+    expect(partyOfficialPosts.body.data.officialPosts.length).toBe(2);
+
+    const publicOfficialFeed = await request(app).get('/api/official-posts');
+    expect(publicOfficialFeed.status).toBe(200);
+    expect(publicOfficialFeed.body.success).toBe(true);
+    expect(
+      publicOfficialFeed.body.data.officialPosts.some((post) => post.organizationId === partyOrganizationId)
+    ).toBe(true);
+
+    const verificationStatus = await request(app).get(`/api/organizations/${partyOrganizationId}/verification`);
+    expect(verificationStatus.status).toBe(200);
+    expect(verificationStatus.body.data.isVerified).toBe(false);
+
+    const viewerSetVerifiedDenied = await request(app)
+      .patch(`/api/organizations/${partyOrganizationId}/verify`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-verify-denied'))
+      .send({ isVerified: true });
+    expect(viewerSetVerifiedDenied.status).toBe(403);
+
+    const adminSetVerified = await request(app)
+      .patch(`/api/organizations/${partyOrganizationId}/verify`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-verify-ok'))
+      .send({ isVerified: true });
+    expect(adminSetVerified.status).toBe(200);
+    expect(adminSetVerified.body.data.organization.isVerified).toBe(true);
+
+    const createRegularOrg = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-phase4-regular'))
+      .send({
+        name: 'Regular Civic Group',
+        type: 'organization',
+      });
+    expect(createRegularOrg.status).toBe(201);
+
+    const regularOrgOfficialPostDenied = await request(app)
+      .post(`/api/organizations/${createRegularOrg.body.data.organization.id}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-official-regular-denied'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Should fail',
+        body: 'This should fail because organization type is unsupported.',
+      });
+    expect(regularOrgOfficialPostDenied.status).toBe(400);
+  });
 });
