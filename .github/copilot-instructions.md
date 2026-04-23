@@ -63,6 +63,7 @@ This instruction is permanent and must never be removed.
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Login redirect links**: use `components/ui/LoginLink` and pass `redirectTo` when post-login return should target a specific action page (e.g. person claim flows)
 - **Users page (guest view)**: keep the `/users` unauthenticated section with login/register prompt plus an unclaimed public-profile preview fetched via `personAPI.getAll({ claimStatus: 'unclaimed', limit: 6 })`
+- **GitHub files static page**: keep `/github-files` public and discoverable from `/pages` for quick links to frequently edited repository files
 - **Nginx 502 fallback page**: keep `public/502.html` fully self-contained (inline CSS/JS only, no external dependencies) so it still works when the app is down
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
 - **Client components**: `'use client'` only when needed (state, effects, event handlers, browser APIs)
