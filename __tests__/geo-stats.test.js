@@ -326,6 +326,28 @@ describe('Geo Stats Admin API', () => {
     );
   });
 
+  it('POST /track uses request IP when ipAddress is omitted from payload', async () => {
+    const path = '/locations/request-ip';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .set('x-forwarded-for', '9.9.9.9, 10.0.0.1')
+      .send({
+        path,
+        countryCode: 'GR',
+        locale: 'en',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.ipAddress).toBe('9.9.9.9');
+    expect(saved.sessionHash).toBe(
+      crypto.createHash('sha256').update('9.9.9.9').digest('hex')
+    );
+  });
+
   it('POST /track decodes token for analytics authentication hints', async () => {
     const token = jwt.sign({ id: adminId }, process.env.JWT_SECRET, { expiresIn: '1h' });
     const path = '/locations/with-token';

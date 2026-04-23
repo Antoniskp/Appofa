@@ -27,10 +27,17 @@ const getCountryNameLocal = (code) => {
 
 router.post('/track', apiLimiter, async (req, res, next) => {
   try {
-    const { path: visitPath, countryCode, ipAddress, locale, token } = req.body;
+    const { path: visitPath, countryCode, locale, token } = req.body;
     if (!visitPath || typeof visitPath !== 'string') {
       return res.status(400).json({ success: false, message: 'path is required.' });
     }
+
+    const rawIp = req.body.ipAddress
+      || (req.headers['x-forwarded-for']
+        ? req.headers['x-forwarded-for'].split(',')[0].trim()
+        : req.ip)
+      || null;
+    const ipAddress = rawIp ? String(rawIp).slice(0, 45) : null;
 
     let isAuthenticated = false;
     let userId = null;
@@ -62,7 +69,7 @@ router.post('/track', apiLimiter, async (req, res, next) => {
       isDiaspora: null,
       userId,
       sessionHash,
-      ipAddress: ipAddress ? String(ipAddress).slice(0, 45) : null,
+      ipAddress,
       path: String(visitPath).slice(0, 500),
       locale: locale ? String(locale).slice(0, 10) : null,
     });
