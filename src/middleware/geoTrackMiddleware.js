@@ -12,6 +12,9 @@ try {
 }
 
 const SKIP_PATH_PREFIXES = ['/api/', '/_next/', '/favicon', '/health'];
+const isPrefetchRequest = (req) =>
+  req.headers['purpose'] === 'prefetch' ||
+  req.headers['next-router-prefetch'] === '1';
 
 const getClientIp = (req) => {
   const forwardedFor = req.headers['x-forwarded-for'];
@@ -125,6 +128,10 @@ const getUserIdFromToken = (token) => {
 
 const geoTrackMiddleware = (req, res, next) => {
   if (process.env.NODE_ENV === 'test') {
+    return next();
+  }
+
+  if (isPrefetchRequest(req)) {
     return next();
   }
 

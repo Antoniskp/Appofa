@@ -40,6 +40,49 @@ describe('geoTrackMiddleware', () => {
     expect(GeoVisit.create).not.toHaveBeenCalled();
   });
 
+  it('skips tracking for requests with Purpose: prefetch', () => {
+    process.env.NODE_ENV = 'development';
+    const next = jest.fn();
+
+    geoTrackMiddleware({
+      path: '/admin/articles',
+      headers: { purpose: 'prefetch' },
+      ip: '1.1.1.1',
+    }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(GeoVisit.create).not.toHaveBeenCalled();
+  });
+
+  it('skips tracking for requests with Next-Router-Prefetch: 1', () => {
+    process.env.NODE_ENV = 'development';
+    const next = jest.fn();
+
+    geoTrackMiddleware({
+      path: '/admin/users',
+      headers: { 'next-router-prefetch': '1' },
+      ip: '1.1.1.1',
+    }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(GeoVisit.create).not.toHaveBeenCalled();
+  });
+
+  it('still tracks normal requests without prefetch headers', () => {
+    process.env.NODE_ENV = 'development';
+    GeoVisit.create.mockResolvedValueOnce({});
+    const next = jest.fn();
+
+    geoTrackMiddleware({
+      path: '/admin',
+      headers: {},
+      ip: '1.1.1.1',
+    }, {}, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(GeoVisit.create).toHaveBeenCalledTimes(1);
+  });
+
   it('tracks visit with hashed session and locale', () => {
     process.env.NODE_ENV = 'development';
     GeoVisit.create.mockResolvedValueOnce({});
