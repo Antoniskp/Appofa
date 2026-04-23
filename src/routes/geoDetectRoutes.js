@@ -19,19 +19,48 @@ const COUNTRY_NAMES = {
   AE: 'United Arab Emirates', SA: 'Saudi Arabia',
 };
 
+const INVALID_COUNTRY_CODES = new Set(['XX', 'T1']);
+
+const normalizeCountryCode = (value) => {
+  if (!value) return null;
+  const normalized = String(value).trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(normalized)) return null;
+  if (INVALID_COUNTRY_CODES.has(normalized)) return null;
+  return normalized;
+};
+
+const parseClientIp = (req) => {
+  const forwardedFor = req.headers['x-forwarded-for'];
+  const fromForwarded = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
+  const candidate = (fromForwarded ? String(fromForwarded).split(',')[0] : null)
+    || req.headers['x-real-ip']
+    || req.headers['cf-connecting-ip']
+    || req.ip
+    || req.connection?.remoteAddress
+    || null;
+
+  if (!candidate) return null;
+  const cleaned = String(candidate).trim().replace(/^::ffff:/i, '');
+  if (!cleaned || cleaned === '::1' || cleaned === '127.0.0.1') return null;
+  return cleaned;
+};
+
 router.get('/detect', apiLimiter, (req, res) => {
   try {
-    let countryCode = req.headers['cf-ipcountry'] || null;
-    if (countryCode === 'XX' || countryCode === 'T1') countryCode = null;
+    let countryCode = normalizeCountryCode(
+      req.headers['cf-ipcountry']
+      || req.headers['x-vercel-ip-country']
+      || req.headers['x-country-code']
+    );
 
     if (!countryCode) {
       try {
         // Optional dependency (fallback only)
         const geoip = require('geoip-lite');
-        const ip = req.ip || req.connection?.remoteAddress;
+        const ip = parseClientIp(req);
         if (ip) {
           const geo = geoip.lookup(ip);
-          if (geo?.country) countryCode = geo.country;
+          countryCode = normalizeCountryCode(geo?.country);
         }
       } catch {
         // geoip-lite not installed
@@ -46,3 +75,5 @@ router.get('/detect', apiLimiter, (req, res) => {
 });
 
 module.exports = router;
+module.exports.normalizeCountryCode = normalizeCountryCode;
+module.exports.parseClientIp = parseClientIp;
