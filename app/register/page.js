@@ -79,7 +79,6 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       error(t('passwords_no_match'));
       return;
@@ -252,13 +251,6 @@ export default function RegisterPage() {
             </Link>
           </p>
         </form>
-
-        <p className="text-center text-sm text-gray-600">
-          {t('already_have_account')}{' '}
-          <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-            {t('submit_login')}
-          </Link>
-        </p>
       </div>
       <DiasporaModal
         isOpen={showDiasporaModal}
