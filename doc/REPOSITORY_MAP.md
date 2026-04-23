@@ -146,7 +146,7 @@ Appofa/
 | CountryAccessRule | CountryAccessRules | id, countryCode (STRING 2, unique), reason, redirectPath (nullable), createdByUserId | belongsTo: User (`createdBy`) |
 | GeoAccessSetting | GeoAccessSettings | id, key (STRING 100, unique), value, updatedAt | Key-value geo access behavior settings |
 | Organization | Organizations | id, name, slug, type, description, logo, website, contactEmail, locationId, isPublic, isVerified, createdByUserId | belongsTo: User (`createdBy`), Location (`location`); hasMany: OrganizationMember (`members`) |
-| OrganizationMember | OrganizationMembers | id, organizationId, userId, role, status | belongsTo: Organization, User (`user`) |
+| OrganizationMember | OrganizationMembers | id, organizationId, userId, role, status, inviteToken, invitedByUserId | belongsTo: Organization, User (`user`), User (`invitedBy`) |
 
 ---
 
@@ -252,6 +252,13 @@ Appofa/
 | PUT | /:id | mod | Update organization |
 | DELETE | /:id | admin | Delete organization |
 | GET | /:id/members | opt | List organization members (private orgs are members-only) |
+| POST | /:id/join | ✅ | Join organization (active if public, pending if private) |
+| DELETE | /:id/leave | ✅ | Leave own organization membership (owners blocked) |
+| POST | /:id/members/invite | ✅ | Invite user by `userId` (org owner/admin or platform admin/moderator) |
+| PATCH | /:id/members/:userId/approve | ✅ | Approve pending membership |
+| DELETE | /:id/members/:userId | ✅ | Remove member (owner protected) |
+| PATCH | /:id/members/:userId/role | ✅ | Update member role (`admin|moderator|member`) |
+| GET | /:id/members/pending | ✅ | List pending membership requests |
 
 ### Dream Team (`/api/dream-team`)
 | Method | Path | Auth | Description |
@@ -298,7 +305,7 @@ Appofa/
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
-| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members |
+| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending |
 | manifestRoutes.js | /api/manifests | GET /, POST /, PUT /:slug, DELETE /:slug, PUT /:slug/accept, DELETE /:slug/accept, GET /:slug/supporters |
 | badges.js | /api/badges | GET /my, GET /user/:userId, POST /evaluate, PUT /display |
 | heroSettingsRoutes.js | /api/hero-settings | GET /, PUT /, GET /slides, POST /slides, PUT /slides/:id, DELETE /slides/:id |
@@ -335,7 +342,7 @@ Appofa/
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
-| organizationController.js | Organization CRUD + member listing access controls |
+| organizationController.js | Organization CRUD + full member workflow management |
 | reportController.js | Content reporting |
 | statsController.js | Statistics |
 | suggestionController.js | Suggestions & solutions |
@@ -642,6 +649,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260422000002-add-redirect-path-to-country-access-rules.js | Add nullable CountryAccessRules.redirectPath (STRING 255) for per-country custom block redirect |
 | — | 20260422000003-add-user-id-to-geo-visits.js | Add nullable GeoVisits.userId FK → Users.id (ON DELETE SET NULL) |
 | — | 20260423000000-create-organizations.js | Create Organizations and OrganizationMembers tables (dialect-aware enum handling) |
+| — | 20260423000001-add-organization-member-fields.js | Add OrganizationMembers.inviteToken and invitedByUserId (idempotent) |
 
 </details>
 

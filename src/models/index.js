@@ -386,6 +386,8 @@ Organization.hasMany(OrganizationMember, { foreignKey: 'organizationId', as: 'me
 OrganizationMember.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 OrganizationMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(OrganizationMember, { foreignKey: 'userId', as: 'organizationMemberships' });
+OrganizationMember.belongsTo(User, { foreignKey: 'invitedByUserId', as: 'invitedBy' });
+User.hasMany(OrganizationMember, { foreignKey: 'invitedByUserId', as: 'organizationInvitationsSent' });
 
 module.exports = {
   sequelize,

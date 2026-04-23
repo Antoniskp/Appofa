@@ -29,6 +29,16 @@ const OrganizationMember = sequelize.define('OrganizationMember', {
     allowNull: false,
     defaultValue: 'active',
   },
+  inviteToken: {
+    type: DataTypes.STRING(255),
+    allowNull: true,
+  },
+  invitedByUserId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL',
+  },
 }, {
   tableName: 'OrganizationMembers',
   timestamps: true,
@@ -36,6 +46,7 @@ const OrganizationMember = sequelize.define('OrganizationMember', {
     { unique: true, fields: ['organizationId', 'userId'], name: 'organization_member_unique' },
     { fields: ['organizationId'], name: 'organization_member_organization_id_index' },
     { fields: ['userId'], name: 'organization_member_user_id_index' },
+    { fields: ['invitedByUserId'], name: 'organization_member_invited_by_user_id_index' },
   ],
 });
 

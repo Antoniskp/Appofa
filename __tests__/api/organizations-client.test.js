@@ -65,6 +65,45 @@ describe('organizationAPI', () => {
     expect(apiRequest).toHaveBeenCalledWith('/api/organizations/99/members');
   });
 
+  it('joins and leaves organization', async () => {
+    await organizationAPI.join(3);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/3/join', {
+      method: 'POST',
+    });
+
+    await organizationAPI.leave(3);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/3/leave', {
+      method: 'DELETE',
+    });
+  });
+
+  it('calls member management endpoints', async () => {
+    await organizationAPI.inviteMember(7, 42);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/7/members/invite', {
+      method: 'POST',
+      body: JSON.stringify({ userId: 42 }),
+    });
+
+    await organizationAPI.approveMember(7, 42);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/7/members/42/approve', {
+      method: 'PATCH',
+    });
+
+    await organizationAPI.removeMember(7, 42);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/7/members/42', {
+      method: 'DELETE',
+    });
+
+    await organizationAPI.updateMemberRole(7, 42, 'admin');
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/7/members/42/role', {
+      method: 'PATCH',
+      body: JSON.stringify({ role: 'admin' }),
+    });
+
+    await organizationAPI.getPendingMembers(7);
+    expect(apiRequest).toHaveBeenCalledWith('/api/organizations/7/members/pending');
+  });
+
   it('is exported through lib/api index', () => {
     const { organizationAPI: exportedOrganizationAPI } = require('../../lib/api');
     expect(exportedOrganizationAPI).toBeDefined();
