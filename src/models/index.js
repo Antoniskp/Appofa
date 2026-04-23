@@ -41,6 +41,8 @@ const GeoVisit = require('./GeoVisit');
 const CountryFunding = require('./CountryFunding');
 const CountryAccessRule = require('./CountryAccessRule');
 const GeoAccessSetting = require('./GeoAccessSetting');
+const Organization = require('./Organization');
+const OrganizationMember = require('./OrganizationMember');
 
 // Define associations
 User.hasMany(Article, {
@@ -374,6 +376,17 @@ CountryFunding.belongsTo(Location, { foreignKey: 'locationId', as: 'location' })
 Location.hasOne(CountryFunding, { foreignKey: 'locationId', as: 'funding' });
 CountryFunding.belongsTo(User, { foreignKey: 'unlockedByUserId', as: 'unlockedBy' });
 
+// Organization associations
+Organization.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+User.hasMany(Organization, { foreignKey: 'createdByUserId', as: 'createdOrganizations' });
+Organization.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
+Location.hasMany(Organization, { foreignKey: 'locationId', as: 'organizations' });
+
+Organization.hasMany(OrganizationMember, { foreignKey: 'organizationId', as: 'members' });
+OrganizationMember.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+OrganizationMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(OrganizationMember, { foreignKey: 'userId', as: 'organizationMemberships' });
+
 module.exports = {
   sequelize,
   User,
@@ -418,4 +431,6 @@ module.exports = {
   CountryFunding,
   CountryAccessRule,
   GeoAccessSetting,
+  Organization,
+  OrganizationMember,
 };

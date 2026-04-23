@@ -21,17 +21,17 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (42)](#models-42)
-- [API Routes (27 files, 163+ endpoints)](#api-routes-27-files-163-endpoints)
-- [Controllers (21)](#controllers-21)
-- [Services (10)](#services-10)
+- [Models (44)](#models-44)
+- [API Routes (28 files, 169+ endpoints)](#api-routes-28-files-169-endpoints)
+- [Controllers (22)](#controllers-22)
+- [Services (11)](#services-11)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (102)](#frontend-pages-102)
+- [Frontend Pages (105)](#frontend-pages-105)
 - [Components (120+)](#components-120)
-- [API Client Modules (27)](#api-client-modules-27)
+- [API Client Modules (28)](#api-client-modules-28)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (81)](#migrations-81)
+- [Migrations (82)](#migrations-82)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -44,23 +44,23 @@ This instruction is permanent and must never be removed.
 Appofa/
 ├── proxy.js                 # Next.js edge proxy (country redirect)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
-├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/static_pages)
+├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages)
 ├── src/                    # Backend (Express + Sequelize)
-│   ├── controllers/        # Request handlers (21 files)
-│   ├── services/           # Business logic (10 files)
-│   ├── models/             # Sequelize models (42 models)
-│   ├── routes/             # Express route definitions (27 files)
+│   ├── controllers/        # Request handlers (22 files)
+│   ├── services/           # Business logic (11 files)
+│   ├── models/             # Sequelize models (44 models)
+│   ├── routes/             # Express route definitions (28 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
-│   ├── migrations/         # DB migrations (79 files)
+│   ├── migrations/         # DB migrations (82 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
 │   ├── utils/              # Utility helpers
 │   └── index.js            # Express app entry point
 │
-├── app/                    # Frontend (Next.js App Router, 101+ pages)
+├── app/                    # Frontend (Next.js App Router, 105+ pages)
 │   ├── (statics)/          # Static content pages (47 pages)
-│   ├── admin/              # Admin dashboard (19 pages)
+│   ├── admin/              # Admin dashboard (20 pages)
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
 │   ├── suggestions/        # Suggestion pages
@@ -82,7 +82,7 @@ Appofa/
 │   └── ui/                 # Shared UI primitives (20+ files)
 │
 ├── lib/                    # Shared frontend utilities
-│   ├── api/                # API client modules (27 files)
+│   ├── api/                # API client modules (28 files)
 │   ├── constants/          # Frontend constants (3 files)
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
@@ -100,7 +100,7 @@ Appofa/
 
 ---
 
-## Models (42)
+## Models (44)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -145,10 +145,12 @@ Appofa/
 | CountryFunding | CountryFundings | id, locationId (unique), goalAmount, currentAmount, donorCount, status, donationUrl, unlockedAt, unlockedByUserId | belongsTo: Location (`location`), User (`unlockedBy`) |
 | CountryAccessRule | CountryAccessRules | id, countryCode (STRING 2, unique), reason, redirectPath (nullable), createdByUserId | belongsTo: User (`createdBy`) |
 | GeoAccessSetting | GeoAccessSettings | id, key (STRING 100, unique), value, updatedAt | Key-value geo access behavior settings |
+| Organization | Organizations | id, name, slug, type, description, logo, website, contactEmail, locationId, isPublic, isVerified, createdByUserId | belongsTo: User (`createdBy`), Location (`location`); hasMany: OrganizationMember (`members`) |
+| OrganizationMember | OrganizationMembers | id, organizationId, userId, role, status | belongsTo: Organization, User (`user`) |
 
 ---
 
-## API Routes (27 files, 163+ endpoints)
+## API Routes (28 files, 169+ endpoints)
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
@@ -241,6 +243,16 @@ Appofa/
 | POST | /:locationId/elections/:roleKey/vote | ✅ | Cast or change vote |
 | DELETE | /:locationId/elections/:roleKey/vote | ✅ | Remove vote |
 
+### Organizations (`/api/organizations`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | opt | List organizations (`type`, `search`, `page`, `limit`) |
+| GET | /:slug | opt | Get organization by slug |
+| POST | / | mod | Create organization (admin/moderator) |
+| PUT | /:id | mod | Update organization |
+| DELETE | /:id | admin | Delete organization |
+| GET | /:id/members | opt | List organization members (private orgs are members-only) |
+
 ### Dream Team (`/api/dream-team`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -286,6 +298,7 @@ Appofa/
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
+| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members |
 | manifestRoutes.js | /api/manifests | GET /, POST /, PUT /:slug, DELETE /:slug, PUT /:slug/accept, DELETE /:slug/accept, GET /:slug/supporters |
 | badges.js | /api/badges | GET /my, GET /user/:userId, POST /evaluate, PUT /display |
 | heroSettingsRoutes.js | /api/hero-settings | GET /, PUT /, GET /slides, POST /slides, PUT /slides/:id, DELETE /slides/:id |
@@ -301,7 +314,7 @@ Appofa/
 
 ---
 
-## Controllers (21)
+## Controllers (22)
 
 | Controller | Domain |
 |-----------|--------|
@@ -322,6 +335,7 @@ Appofa/
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
+| organizationController.js | Organization CRUD + member listing access controls |
 | reportController.js | Content reporting |
 | statsController.js | Statistics |
 | suggestionController.js | Suggestions & solutions |
@@ -329,7 +343,7 @@ Appofa/
 
 ---
 
-## Services (10)
+## Services (11)
 
 | Service | Purpose |
 |---------|---------|
@@ -342,6 +356,7 @@ Appofa/
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
 | pollService.js | Poll operations & calculations |
+| organizationService.js | Organization slug generation + organization search helpers |
 | userService.js | User management & utilities |
 
 ---
@@ -362,7 +377,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (102)
+## Frontend Pages (105)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -391,6 +406,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/locations`, `/locations/[slug]` | Locations |
+| `/organizations`, `/organizations/[slug]` | Organizations list + profile |
 | `/country/[code]` | Country landing page after first-visit geo redirect |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations |
 | `/persons`, `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles |
@@ -400,7 +416,7 @@ Appofa/
 | `/request-removal` | Profile removal request |
 | `/blocked`, `/unknown-country` | Public geo access status pages for blocked/unknown-country traffic |
 
-### Admin (19 pages)
+### Admin (20 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
@@ -415,6 +431,7 @@ Appofa/
 | `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/locations` | Location admin |
+| `/admin/organizations` | Organization admin |
 | `/admin/manifests` | Manifest admin |
 | `/admin/messages/*` | Message admin |
 | `/admin/removal-requests` | Removal request admin |
@@ -447,7 +464,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (27)
+## API Client Modules (28)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -472,6 +489,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | locations.js | Locations |
 | manifest.js | Manifests |
 | messages.js | Messages |
+| organizations.js | Organizations CRUD + members |
 | personRemovalRequests.js | Removal requests |
 | persons.js | Person profiles |
 | polls.js | Polls |
@@ -519,7 +537,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (81)
+## Migrations (82)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -622,6 +640,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260422000001-create-geo-access-settings.js | Create GeoAccessSettings table and upsert default unknown/no-IP access behavior |
 | — | 20260422000002-add-redirect-path-to-country-access-rules.js | Add nullable CountryAccessRules.redirectPath (STRING 255) for per-country custom block redirect |
 | — | 20260422000003-add-user-id-to-geo-visits.js | Add nullable GeoVisits.userId FK → Users.id (ON DELETE SET NULL) |
+| — | 20260423000000-create-organizations.js | Create Organizations and OrganizationMembers tables (dialect-aware enum handling) |
 
 </details>
 

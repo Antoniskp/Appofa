@@ -39,12 +39,14 @@ This instruction is permanent and must never be removed.
 - **Country funding public API**: use `GET /api/admin/geo-stats/country-funding/:locationId/public` for unauthenticated location-page funding display
 - **Next.js edge entrypoint**: use root `proxy.js` (not `middleware.js`) for country redirect and request proxy logic
 - **OAuth avatars**: persist provider photos in `User.githubAvatar` / `User.googleAvatar`; keep `User.avatar` as active source and switch it via `PUT /api/auth/avatar-source`
+- **Organization slug**: generate from English `Organization.name` via `organizationService.generateSlug` (unique with `-2`, `-3`, ...)
+- **Organization membership**: use `OrganizationMember` with roles `owner|admin|moderator|member` and statuses `active|invited|pending`
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
 - **i18n**: use `next-intl` with root `i18n.js`; locale comes from `NEXT_LOCALE` cookie (default `el`, supported `el`/`en`) and messages live in `/messages`
-- **i18n namespaces**: keep page/component strings in `messages/{el,en}.json` under `common`, `nav`, `footer`, `home`, `auth`, `articles`, `news`, `profile`, `admin`, `editor`, `polls`, `static_pages`
+- **i18n namespaces**: keep page/component strings in `messages/{el,en}.json` under `common`, `nav`, `footer`, `home`, `auth`, `articles`, `news`, `profile`, `admin`, `editor`, `polls`, `organizations`, `static_pages`
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
 - **Homepage locations highlight**: use `LocationCard` inside `HomepageSection` with `sort=mostUsers`; do NOT use `LocationDiscoveryStrip` (removed)
 - **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
@@ -58,6 +60,7 @@ This instruction is permanent and must never be removed.
 - **Admin geo access management**: keep country block rules and unknown/no-IP actions in the `/admin/geo` "Κανόνες Πρόσβασης" tab using `lib/api/geoAccess.js`
 - **Admin geo API module**: use `geoAdminAPI` (`lib/api/geoAdmin.js`) for `/api/admin/geo-stats/*` admin calls instead of direct request code
 - **Admin article management**: keep article stats/table actions (view/delete/approve news) on `/admin/articles`; keep `/admin` focused on overview cards, quick actions, and announcements
+- **Organizations API module**: use `lib/api/organizations.js` and import `organizationAPI` from `lib/api`
 - **Language switcher**: use `components/ui/LanguageSwitcher.js` in the Profile preferences card (not in TopNav)
 - **Translations hook**: frontend pages/components should read UI labels via `useTranslations(...)` instead of hard-coded literals
 - **Auth**: use `useAuth` from `lib/auth-context.js`
