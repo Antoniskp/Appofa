@@ -4,7 +4,7 @@
 
 Organizations are first-class entities on Appofa, parallel to Locations.
 They represent non-geographic entities like companies, institutions, universities, schools, parties, and civic organizations.
-Phase 1 introduces the core schema, CRUD APIs, membership baseline, and initial frontend pages.
+Phase 2 extends the baseline with complete member management (join/leave, invite, approve, role updates, and pending queues).
 
 ## Database Schema
 
@@ -31,6 +31,8 @@ Phase 1 introduces the core schema, CRUD APIs, membership baseline, and initial 
 - `userId` (required FK → `Users.id`, `CASCADE`)
 - `role` (`owner|admin|moderator|member`, default `member`)
 - `status` (`active|invited|pending`, default `active`)
+- `inviteToken` (optional, for invite tracking)
+- `invitedByUserId` (optional FK → `Users.id`, `SET NULL`)
 - `createdAt`, `updatedAt`
 - Unique constraint: `(organizationId, userId)`
 
@@ -44,6 +46,13 @@ Base prefix: `/api/organizations`
 - `PUT /:id` — update organization (admin/moderator)
 - `DELETE /:id` — delete organization (admin only)
 - `GET /:id/members` — list members (private orgs are members-only)
+- `POST /:id/join` — request to join (active for public orgs, pending for private orgs)
+- `DELETE /:id/leave` — leave own membership (owners cannot leave)
+- `POST /:id/members/invite` — invite user by `userId` (org owner/admin or platform admin/moderator)
+- `PATCH /:id/members/:userId/approve` — approve pending join request
+- `DELETE /:id/members/:userId` — remove member (owner cannot be removed)
+- `PATCH /:id/members/:userId/role` — update member role (`admin|moderator|member`)
+- `GET /:id/members/pending` — list pending membership requests
 
 Response shape:
 
@@ -52,7 +61,7 @@ Response shape:
 
 ## Phase Roadmap
 
-### Phase 1 (current)
+### Phase 1
 
 - Core `Organization` model
 - `OrganizationMember` placeholder model
@@ -65,10 +74,9 @@ Response shape:
   - `/admin/organizations`
 
 ### Phase 2
-
 - Membership workflows (invite/request/join/leave)
 - Member management permissions and moderation tools
-- Organization notifications and audit events
+- Frontend members tab controls for join/leave and admin actions
 
 ### Phase 3
 

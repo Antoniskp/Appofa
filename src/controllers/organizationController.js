@@ -3,10 +3,16 @@
 const { Op } = require('sequelize');
 const { Organization, OrganizationMember, User, Location, sequelize } = require('../models');
 const organizationService = require('../services/organizationService');
+const { randomUUID } = require('crypto');
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 100;
+const PLATFORM_PRIVILEGED_ROLES = ['admin', 'moderator'];
+const ORG_MANAGE_ROLES = ['owner', 'admin'];
+const MEMBER_STATUSES = ['active', 'invited', 'pending'];
+const MEMBER_ROLES = ['owner', 'admin', 'moderator', 'member'];
+const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
 
 const ORGANIZATION_BASE_INCLUDE = [
   {
@@ -36,6 +42,38 @@ function parseOptionalBoolean(value) {
     if (value.toLowerCase() === 'false') return false;
   }
   return null;
+}
+
+function parsePositiveInt(value) {
+  const parsed = parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function isPlatformPrivileged(user) {
+  return !!user && PLATFORM_PRIVILEGED_ROLES.includes(user.role);
+}
+
+async function requireOrganizationById(organizationId, attributes = ['id', 'isPublic']) {
+  return Organization.findByPk(organizationId, { attributes });
+}
+
+async function hasOrganizationManageAccess(organizationId, user) {
+  if (!user) return false;
+  if (isPlatformPrivileged(user)) return true;
+
+  const membership = await OrganizationMember.findOne({
+    where: {
+      organizationId,
+      userId: user.id,
+      status: 'active',
+      role: {
+        [Op.in]: ORG_MANAGE_ROLES,
+      },
+    },
+    attributes: ['id'],
+  });
+
+  return !!membership;
 }
 
 const organizationController = {
@@ -251,7 +289,12 @@ const organizationController = {
 
   getMembers: async (req, res) => {
     try {
-      const organization = await Organization.findByPk(req.params.organizationId, {
+      const organizationId = parsePositiveInt(req.params.id || req.params.organizationId);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await Organization.findByPk(organizationId, {
         attributes: ['id', 'isPublic'],
       });
 
@@ -272,7 +315,9 @@ const organizationController = {
             where: {
               organizationId: organization.id,
               userId,
-              status: 'active',
+              status: {
+                [Op.in]: MEMBER_STATUSES,
+              },
             },
             attributes: ['id'],
           });
@@ -287,7 +332,7 @@ const organizationController = {
         where: {
           organizationId: organization.id,
           status: {
-            [Op.in]: ['active', 'invited', 'pending'],
+            [Op.in]: MEMBER_STATUSES,
           },
         },
         include: [
@@ -304,6 +349,297 @@ const organizationController = {
     } catch (error) {
       console.error('organizationController.getMembers error:', error);
       return res.status(500).json({ success: false, message: 'Failed to fetch members.' });
+    }
+  },
+
+  joinOrganization: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const existingMembership = await OrganizationMember.findOne({
+        where: { organizationId, userId: req.user.id },
+      });
+
+      if (existingMembership) {
+        return res.status(409).json({ success: false, message: 'You already have a membership for this organization.' });
+      }
+
+      const membership = await OrganizationMember.create({
+        organizationId,
+        userId: req.user.id,
+        role: 'member',
+        status: organization.isPublic ? 'active' : 'pending',
+      });
+
+      return res.status(201).json({ success: true, data: { membership } });
+    } catch (error) {
+      console.error('organizationController.joinOrganization error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to join organization.' });
+    }
+  },
+
+  leaveOrganization: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const membership = await OrganizationMember.findOne({
+        where: {
+          organizationId,
+          userId: req.user.id,
+        },
+      });
+
+      if (!membership) {
+        return res.status(404).json({ success: false, message: 'Membership not found.' });
+      }
+
+      if (membership.role === 'owner' && membership.status === 'active') {
+        return res.status(403).json({ success: false, message: 'Owners cannot leave their organization.' });
+      }
+
+      await membership.destroy();
+      return res.status(200).json({ success: true, data: { left: true } });
+    } catch (error) {
+      console.error('organizationController.leaveOrganization error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to leave organization.' });
+    }
+  },
+
+  inviteMember: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      const targetUserId = parsePositiveInt(req.body?.userId);
+
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      if (!targetUserId) {
+        return res.status(400).json({ success: false, message: 'Valid userId is required.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage members.' });
+      }
+
+      const targetUser = await User.findByPk(targetUserId, { attributes: ['id'] });
+      if (!targetUser) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      const existingMembership = await OrganizationMember.findOne({
+        where: { organizationId, userId: targetUserId },
+      });
+      if (existingMembership) {
+        return res.status(409).json({ success: false, message: 'User already has a membership for this organization.' });
+      }
+
+      const membership = await OrganizationMember.create({
+        organizationId,
+        userId: targetUserId,
+        role: 'member',
+        status: 'invited',
+        inviteToken: randomUUID(),
+        invitedByUserId: req.user.id,
+      });
+
+      return res.status(201).json({ success: true, data: { membership } });
+    } catch (error) {
+      console.error('organizationController.inviteMember error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to invite member.' });
+    }
+  },
+
+  approvePendingMember: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      const targetUserId = parsePositiveInt(req.params.userId);
+
+      if (!organizationId || !targetUserId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization or user id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage members.' });
+      }
+
+      const membership = await OrganizationMember.findOne({
+        where: {
+          organizationId,
+          userId: targetUserId,
+          status: 'pending',
+        },
+      });
+
+      if (!membership) {
+        return res.status(404).json({ success: false, message: 'Pending membership not found.' });
+      }
+
+      await membership.update({ status: 'active' });
+      return res.status(200).json({ success: true, data: { membership } });
+    } catch (error) {
+      console.error('organizationController.approvePendingMember error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to approve member.' });
+    }
+  },
+
+  removeMember: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      const targetUserId = parsePositiveInt(req.params.userId);
+
+      if (!organizationId || !targetUserId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization or user id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage members.' });
+      }
+
+      const membership = await OrganizationMember.findOne({
+        where: {
+          organizationId,
+          userId: targetUserId,
+        },
+      });
+
+      if (!membership) {
+        return res.status(404).json({ success: false, message: 'Membership not found.' });
+      }
+
+      if (membership.role === 'owner' && membership.status === 'active') {
+        return res.status(403).json({ success: false, message: 'Owners cannot be removed.' });
+      }
+
+      await membership.destroy();
+      return res.status(200).json({ success: true, data: { removed: true } });
+    } catch (error) {
+      console.error('organizationController.removeMember error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to remove member.' });
+    }
+  },
+
+  updateMemberRole: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      const targetUserId = parsePositiveInt(req.params.userId);
+      const nextRole = req.body?.role;
+
+      if (!organizationId || !targetUserId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization or user id.' });
+      }
+
+      if (!MEMBER_ROLES.includes(nextRole)) {
+        return res.status(400).json({ success: false, message: 'Invalid role.' });
+      }
+
+      if (!ASSIGNABLE_MEMBER_ROLES.includes(nextRole)) {
+        return res.status(400).json({ success: false, message: 'Owner role cannot be assigned via this endpoint.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage members.' });
+      }
+
+      const membership = await OrganizationMember.findOne({
+        where: {
+          organizationId,
+          userId: targetUserId,
+        },
+      });
+
+      if (!membership) {
+        return res.status(404).json({ success: false, message: 'Membership not found.' });
+      }
+
+      if (membership.role === 'owner' && membership.status === 'active') {
+        return res.status(403).json({ success: false, message: 'Owner role cannot be modified.' });
+      }
+
+      await membership.update({ role: nextRole });
+      return res.status(200).json({ success: true, data: { membership } });
+    } catch (error) {
+      console.error('organizationController.updateMemberRole error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to update member role.' });
+    }
+  },
+
+  getPendingMembers: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage members.' });
+      }
+
+      const members = await OrganizationMember.findAll({
+        where: {
+          organizationId,
+          status: 'pending',
+        },
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'avatar', 'avatarColor'],
+          },
+        ],
+        order: [['createdAt', 'ASC']],
+      });
+
+      return res.status(200).json({ success: true, data: { members } });
+    } catch (error) {
+      console.error('organizationController.getPendingMembers error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch pending members.' });
     }
   },
 };
