@@ -1,0 +1,10 @@
+{
+  "types": [
+    "company",
+    "organization",
+    "institution",
+    "school",
+    "university",
+    "party"
+  ]
+}
