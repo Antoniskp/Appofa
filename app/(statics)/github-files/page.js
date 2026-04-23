@@ -187,8 +187,8 @@ export default function GithubFilesPage() {
       maxWidth="max-w-5xl"
       showHelpfulLinks={false}
       breadcrumb={
-        <Link href="/pages" className="text-gray-500 hover:text-blue-600 transition-colors">
-          ← Σελίδες
+        <Link href="/platform" className="text-gray-500 hover:text-blue-600 transition-colors">
+          ← Πλατφόρμα
         </Link>
       }
     >

@@ -2,7 +2,6 @@ import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import {
   AcademicCapIcon,
-  CodeBracketIcon,
   FlagIcon,
   LifebuoyIcon,
   WrenchScrewdriverIcon,
@@ -65,15 +64,6 @@ const sections = [
     Icon: AcademicCapIcon,
     color: 'text-indigo-700',
     bg: 'bg-indigo-50',
-  },
-  {
-    href: '/github-files',
-    title: 'Αρχεία GitHub',
-    description:
-      'Άμεσοι σύνδεσμοι προς τα αρχεία του αποθετηρίου που αλλάζουν συχνά — κατηγορίες, χρώματα, μεταφράσεις και ρυθμίσεις.',
-    Icon: CodeBracketIcon,
-    color: 'text-gray-700',
-    bg: 'bg-gray-100',
   },
 ];
 
