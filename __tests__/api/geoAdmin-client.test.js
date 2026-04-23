@@ -27,6 +27,17 @@ describe('geoAdminAPI', () => {
     expect(apiRequest).toHaveBeenCalledWith('/api/admin/geo-stats/visits?period=30d');
   });
 
+  it('posts track visit payload', async () => {
+    apiRequest.mockResolvedValue({ success: true });
+
+    await geoAdminAPI.trackVisit({ path: '/admin/geo', countryCode: 'GR' });
+
+    expect(apiRequest).toHaveBeenCalledWith('/api/admin/geo-stats/track', {
+      method: 'POST',
+      body: JSON.stringify({ path: '/admin/geo', countryCode: 'GR' }),
+    });
+  });
+
   it('calls countries endpoint', async () => {
     apiRequest.mockResolvedValue({ success: true, data: [] });
 
