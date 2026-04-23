@@ -11,7 +11,9 @@ import AlertMessage from '@/components/ui/AlertMessage';
 import EmptyState from '@/components/ui/EmptyState';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
-const ORGANIZATION_TYPES = ['company', 'organization', 'institution', 'school', 'university', 'party'];
+import organizationTypesConfig from '@/config/organizationTypes.json';
+
+const ORGANIZATION_TYPES = organizationTypesConfig.types;
 
 function OrganizationTypeBadge({ type, t }) {
   return (

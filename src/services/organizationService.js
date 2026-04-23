@@ -4,7 +4,7 @@ const { Op } = require('sequelize');
 const dbConfig = require('../config/database');
 const { Organization } = require('../models');
 
-const ORGANIZATION_TYPES = ['company', 'organization', 'institution', 'school', 'university', 'party'];
+const { types: ORGANIZATION_TYPES } = require('../../config/organizationTypes.json');
 
 function slugifyName(name) {
   const base = String(name || '')
@@ -21,7 +21,7 @@ async function generateSlug(name, excludeId = null) {
   const base = slugifyName(name);
   let counter = 1;
 
-  while (true) {
+  while (counter <= 1000) {
     const candidate = counter === 1 ? base : `${base}-${counter}`;
     const where = { slug: candidate };
     if (excludeId) {
@@ -35,6 +35,8 @@ async function generateSlug(name, excludeId = null) {
 
     counter += 1;
   }
+
+  throw new Error('Failed to generate unique organization slug.');
 }
 
 function buildSearchWhere(search) {

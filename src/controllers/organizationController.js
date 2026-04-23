@@ -260,12 +260,12 @@ const organizationController = {
       }
 
       if (!organization.isPublic) {
-        const userId = req.user?.id;
-        const privileged = req.user && ['admin', 'moderator'].includes(req.user.role);
-
-        if (!userId && !privileged) {
+        if (!req.user) {
           return res.status(403).json({ success: false, message: 'This organization\'s members are private.' });
         }
+
+        const userId = req.user.id;
+        const privileged = ['admin', 'moderator'].includes(req.user.role);
 
         if (!privileged) {
           const membership = await OrganizationMember.findOne({

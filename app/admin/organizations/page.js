@@ -9,7 +9,9 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
 
-const ORGANIZATION_TYPES = ['company', 'organization', 'institution', 'school', 'university', 'party'];
+import organizationTypesConfig from '@/config/organizationTypes.json';
+
+const ORGANIZATION_TYPES = organizationTypesConfig.types;
 
 const INITIAL_FORM = {
   name: '',
