@@ -43,6 +43,7 @@ const CountryAccessRule = require('./CountryAccessRule');
 const GeoAccessSetting = require('./GeoAccessSetting');
 const Organization = require('./Organization');
 const OrganizationMember = require('./OrganizationMember');
+const OrganizationAnalytics = require('./OrganizationAnalytics');
 
 // Define associations
 User.hasMany(Article, {
@@ -390,11 +391,15 @@ Location.hasMany(Organization, { foreignKey: 'locationId', as: 'organizations' }
 Organization.hasMany(OrganizationMember, { foreignKey: 'organizationId', as: 'members' });
 Organization.hasMany(Poll, { foreignKey: 'organizationId', as: 'polls' });
 Organization.hasMany(Suggestion, { foreignKey: 'organizationId', as: 'suggestions' });
+Organization.belongsTo(Organization, { foreignKey: 'parentId', as: 'parent' });
+Organization.hasMany(Organization, { foreignKey: 'parentId', as: 'children' });
+Organization.hasMany(OrganizationAnalytics, { foreignKey: 'organizationId', as: 'analytics' });
 OrganizationMember.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 OrganizationMember.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(OrganizationMember, { foreignKey: 'userId', as: 'organizationMemberships' });
 OrganizationMember.belongsTo(User, { foreignKey: 'invitedByUserId', as: 'invitedBy' });
 User.hasMany(OrganizationMember, { foreignKey: 'invitedByUserId', as: 'organizationInvitationsSent' });
+OrganizationAnalytics.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 
 module.exports = {
   sequelize,
@@ -442,4 +447,5 @@ module.exports = {
   GeoAccessSetting,
   Organization,
   OrganizationMember,
+  OrganizationAnalytics,
 };

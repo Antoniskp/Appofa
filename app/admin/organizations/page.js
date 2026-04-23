@@ -36,6 +36,8 @@ export default function AdminOrganizationsPage() {
   const [editingOrganization, setEditingOrganization] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [parentDrafts, setParentDrafts] = useState({});
+  const [parentSavingId, setParentSavingId] = useState(null);
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
@@ -78,6 +80,21 @@ export default function AdminOrganizationsPage() {
     () => [...organizations].sort((a, b) => a.name.localeCompare(b.name, locale || 'el')),
     [organizations, locale]
   );
+
+  useEffect(() => {
+    setParentDrafts((prev) => {
+      const next = {};
+      let changed = Object.keys(prev).length !== organizations.length;
+      organizations.forEach((organization) => {
+        const value = prev[organization.id] ?? (organization.parentId ? String(organization.parentId) : '');
+        next[organization.id] = value;
+        if (!changed && prev[organization.id] !== value) {
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [organizations]);
 
   const resetForm = () => {
     setForm(INITIAL_FORM);
@@ -159,6 +176,35 @@ export default function AdminOrganizationsPage() {
     } catch (toggleError) {
       setFeedback({ tone: 'error', message: t('verification_update_failed') });
       console.error('AdminOrganizationsPage verification toggle error:', toggleError);
+    }
+  };
+
+  const handleSetParent = async (organization) => {
+    const rawValue = (parentDrafts[organization.id] || '').trim();
+    let parentId = null;
+    if (rawValue && rawValue !== '0') {
+      parentId = Number(rawValue);
+      if (!Number.isInteger(parentId) || parentId <= 0) {
+        setFeedback({ tone: 'error', message: t('update_failed') });
+        return;
+      }
+    }
+
+    setParentSavingId(organization.id);
+    try {
+      await organizationAPI.setParent(organization.id, parentId);
+      setFeedback({ tone: 'success', message: parentId ? t('parent_set_success') : t('parent_cleared') });
+      await refetch();
+    } catch (setParentError) {
+      const message = setParentError?.message || '';
+      if (message.toLowerCase().includes('cycle')) {
+        setFeedback({ tone: 'error', message: t('parent_cycle_error') });
+      } else {
+        setFeedback({ tone: 'error', message: message || t('update_failed') });
+      }
+      console.error('AdminOrganizationsPage set parent error:', setParentError);
+    } finally {
+      setParentSavingId(null);
     }
   };
 
@@ -325,7 +371,7 @@ export default function AdminOrganizationsPage() {
                   <td className="px-4 py-3">{organization.isPublic ? t('yes') : t('no')}</td>
                   <td className="px-4 py-3">{organization.createdBy?.username || '-'}</td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <button type="button" onClick={() => handleEdit(organization)} className="px-3 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">{t('edit')}</button>
                       {isAdmin && (
                         <button
@@ -339,6 +385,24 @@ export default function AdminOrganizationsPage() {
                       {user.role === 'admin' && (
                         <button type="button" onClick={() => handleDelete(organization)} className="px-3 py-1 rounded border border-red-200 text-red-700 hover:bg-red-50">{t('delete')}</button>
                       )}
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min="0"
+                          value={parentDrafts[organization.id] ?? ''}
+                          onChange={(e) => setParentDrafts((prev) => ({ ...prev, [organization.id]: e.target.value }))}
+                          placeholder={t('set_parent')}
+                          className="w-28 px-2 py-1 rounded border border-gray-300"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleSetParent(organization)}
+                          disabled={parentSavingId === organization.id}
+                          className="px-3 py-1 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+                        >
+                          {t('set_parent')}
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>

@@ -19,6 +19,9 @@ router.get('/:id/official-posts', apiLimiter, optionalAuthMiddleware, organizati
 router.post('/:id/official-posts', apiLimiter, authMiddleware, csrfProtection, organizationController.createOfficialPost);
 router.get('/:id/verification', apiLimiter, optionalAuthMiddleware, organizationController.getOrgVerificationStatus);
 router.patch('/:id/verify', apiLimiter, authMiddleware, csrfProtection, organizationController.setVerified);
+router.get('/:id/children', apiLimiter, optionalAuthMiddleware, organizationController.getChildren);
+router.patch('/:id/parent', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.setParent);
+router.get('/:id/analytics', apiLimiter, authMiddleware, organizationController.getAnalytics);
 router.get('/:slug', apiLimiter, optionalAuthMiddleware, organizationController.getOrganizationBySlug);
 
 router.post('/', apiLimiter, createLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.createOrganization);

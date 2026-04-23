@@ -1,7 +1,16 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { Organization, OrganizationMember, User, Location, Poll, Suggestion, sequelize } = require('../models');
+const {
+  Organization,
+  OrganizationMember,
+  OrganizationAnalytics,
+  User,
+  Location,
+  Poll,
+  Suggestion,
+  sequelize,
+} = require('../models');
 const organizationService = require('../services/organizationService');
 const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
@@ -27,6 +36,12 @@ const ORGANIZATION_BASE_INCLUDE = [
   {
     model: Location,
     as: 'location',
+    attributes: ['id', 'name', 'slug'],
+    required: false,
+  },
+  {
+    model: Organization,
+    as: 'parent',
     attributes: ['id', 'name', 'slug'],
     required: false,
   },
@@ -60,6 +75,29 @@ async function requireOrganizationById(organizationId, attributes = ['id', 'isPu
 async function hasOrganizationManageAccess(organizationId, user) {
   if (!user) return false;
   return isOrgAdmin(organizationId, user.id, user.role);
+}
+
+async function createsHierarchyCycle(organizationId, parentId, maxDepth = 5) {
+  let currentParentId = parentId;
+  let depth = 0;
+
+  while (currentParentId && depth < maxDepth) {
+    if (currentParentId === organizationId) {
+      return true;
+    }
+
+    const parent = await Organization.findByPk(currentParentId, {
+      attributes: ['id', 'parentId'],
+    });
+    if (!parent) {
+      break;
+    }
+
+    currentParentId = parent.parentId;
+    depth += 1;
+  }
+
+  return false;
 }
 
 function mapOrgVisibilityToDb(value) {
@@ -178,6 +216,83 @@ const organizationController = {
     } catch (error) {
       console.error('organizationController.getOrganizationBySlug error:', error);
       return res.status(500).json({ success: false, message: 'Failed to fetch organization.' });
+    }
+  },
+
+  getChildren: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const children = await Organization.findAll({
+        where: { parentId: organizationId },
+        include: ORGANIZATION_BASE_INCLUDE,
+        order: [['name', 'ASC']],
+      });
+
+      return res.status(200).json({ success: true, data: { organizations: children } });
+    } catch (error) {
+      console.error('organizationController.getChildren error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch organization children.' });
+    }
+  },
+
+  setParent: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'parentId']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const hasParentId = req.body && Object.prototype.hasOwnProperty.call(req.body, 'parentId');
+      if (!hasParentId) {
+        return res.status(400).json({ success: false, message: 'parentId must be an integer or null.' });
+      }
+
+      const rawParentId = req.body.parentId;
+      let nextParentId = null;
+      if (rawParentId !== null) {
+        nextParentId = parsePositiveInt(rawParentId);
+        if (!nextParentId) {
+          return res.status(400).json({ success: false, message: 'parentId must be an integer or null.' });
+        }
+
+        if (nextParentId === organization.id) {
+          return res.status(400).json({ success: false, message: 'Parent hierarchy cycle detected.' });
+        }
+
+        const parentOrganization = await requireOrganizationById(nextParentId, ['id', 'parentId']);
+        if (!parentOrganization) {
+          return res.status(404).json({ success: false, message: 'Parent organization not found.' });
+        }
+
+        const cycleDetected = await createsHierarchyCycle(organization.id, nextParentId, 5);
+        if (cycleDetected) {
+          return res.status(400).json({ success: false, message: 'Parent hierarchy cycle detected.' });
+        }
+      }
+
+      await organization.update({ parentId: nextParentId });
+      const updatedOrganization = await Organization.findByPk(organization.id, {
+        include: ORGANIZATION_BASE_INCLUDE,
+      });
+
+      return res.status(200).json({ success: true, data: { organization: updatedOrganization } });
+    } catch (error) {
+      console.error('organizationController.setParent error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to update organization parent.' });
     }
   },
 
@@ -1170,6 +1285,44 @@ const organizationController = {
     } catch (error) {
       console.error('organizationController.setVerified error:', error);
       return res.status(500).json({ success: false, message: 'Failed to update verification status.' });
+    }
+  },
+
+  getAnalytics: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to view analytics.' });
+      }
+
+      await organizationService.recordAnalyticsSnapshot(organizationId);
+
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);
+      const analytics = await OrganizationAnalytics.findAll({
+        where: {
+          organizationId,
+          date: {
+            [Op.gte]: thirtyDaysAgo.toISOString().slice(0, 10),
+          },
+        },
+        order: [['date', 'DESC']],
+      });
+
+      return res.status(200).json({ success: true, data: { analytics } });
+    } catch (error) {
+      console.error('organizationController.getAnalytics error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch organization analytics.' });
     }
   },
 };

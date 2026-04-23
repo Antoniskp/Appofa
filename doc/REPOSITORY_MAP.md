@@ -21,7 +21,7 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (44)](#models-44)
+- [Models (45)](#models-45)
 - [API Routes (28 files, 173+ endpoints)](#api-routes-28-files-173-endpoints)
 - [Controllers (22)](#controllers-22)
 - [Services (11)](#services-11)
@@ -32,7 +32,7 @@ This instruction is permanent and must never be removed.
 - [API Client Modules (28)](#api-client-modules-28)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (84)](#migrations-84)
+- [Migrations (86)](#migrations-86)
 - [Tests (49 files)](#tests-49-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -101,7 +101,7 @@ Appofa/
 
 ---
 
-## Models (44)
+## Models (45)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -146,8 +146,9 @@ Appofa/
 | CountryFunding | CountryFundings | id, locationId (unique), goalAmount, currentAmount, donorCount, status, donationUrl, unlockedAt, unlockedByUserId | belongsTo: Location (`location`), User (`unlockedBy`) |
 | CountryAccessRule | CountryAccessRules | id, countryCode (STRING 2, unique), reason, redirectPath (nullable), createdByUserId | belongsTo: User (`createdBy`) |
 | GeoAccessSetting | GeoAccessSettings | id, key (STRING 100, unique), value, updatedAt | Key-value geo access behavior settings |
-| Organization | Organizations | id, name, slug, type, description, logo, website, contactEmail, locationId, isPublic, isVerified, createdByUserId | belongsTo: User (`createdBy`), Location (`location`); hasMany: OrganizationMember (`members`) |
+| Organization | Organizations | id, name, slug, type, description, logo, website, contactEmail, locationId, parentId, isPublic, isVerified, createdByUserId | belongsTo: User (`createdBy`), Location (`location`), Organization (`parent`); hasMany: Organization (`children`), OrganizationMember (`members`), OrganizationAnalytics (`analytics`) |
 | OrganizationMember | OrganizationMembers | id, organizationId, userId, role, status, inviteToken, invitedByUserId | belongsTo: Organization, User (`user`), User (`invitedBy`) |
+| OrganizationAnalytics | OrganizationAnalytics | id, organizationId, date, memberCount, activeMemberCount, pollCount, suggestionCount, officialPostCount | belongsTo: Organization (`organization`) |
 
 ---
 
@@ -268,6 +269,9 @@ Appofa/
 | POST | /:id/official-posts | ✅ | Create official organization post (`poll` or `suggestion`) for party/institution orgs |
 | GET | /:id/verification | opt | Get organization verification status |
 | PATCH | /:id/verify | ✅ | Set organization verification (`admin` only) |
+| GET | /:id/children | opt | List direct child organizations for hierarchy UI |
+| PATCH | /:id/parent | mod | Set/clear parent organization (`admin`/`moderator`, cycle-safe) |
+| GET | /:id/analytics | ✅ | Last 30 days of organization analytics (org owner/admin or platform admin/moderator) |
 
 ### Official Posts (`/api/official-posts`)
 | Method | Path | Auth | Description |
@@ -319,7 +323,7 @@ Appofa/
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
-| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions, GET /:id/official-posts, POST /:id/official-posts, GET /:id/verification, PATCH /:id/verify |
+| organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions, GET /:id/official-posts, POST /:id/official-posts, GET /:id/verification, PATCH /:id/verify, GET /:id/children, PATCH /:id/parent, GET /:id/analytics |
 | officialPostsRoutes.js | /api/official-posts | GET / |
 | manifestRoutes.js | /api/manifests | GET /, POST /, PUT /:slug, DELETE /:slug, PUT /:slug/accept, DELETE /:slug/accept, GET /:slug/supporters |
 | badges.js | /api/badges | GET /my, GET /user/:userId, POST /evaluate, PUT /display |
@@ -357,7 +361,7 @@ Appofa/
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
-| organizationController.js | Organization CRUD + member workflow + org-scoped polls/suggestions + official posts + verification status |
+| organizationController.js | Organization CRUD + member workflow + org-scoped polls/suggestions + official posts + verification status + hierarchy + analytics |
 | reportController.js | Content reporting |
 | statsController.js | Statistics |
 | suggestionController.js | Suggestions & solutions |
@@ -570,7 +574,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (84)
+## Migrations (86)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -677,6 +681,9 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260423000001-add-organization-member-fields.js | Add OrganizationMembers.inviteToken and invitedByUserId (idempotent) |
 | — | 20260423000002-add-organization-id-to-polls.js | Add nullable Polls.organizationId FK → Organizations.id + index (idempotent) |
 | — | 20260423000003-add-organization-id-to-suggestions.js | Add nullable Suggestions.organizationId FK → Organizations.id + index (idempotent) |
+| — | 20260423000004-add-official-post-fields.js | Add `isOfficialPost` + `officialPostScope` columns to Polls/Suggestions (idempotent) |
+| — | 20260423000005-add-organization-hierarchy.js | Add nullable Organizations.parentId self-FK + index (idempotent) |
+| — | 20260423000006-create-organization-analytics.js | Create OrganizationAnalytics table + unique (organizationId, date) index (idempotent) |
 
 </details>
 
