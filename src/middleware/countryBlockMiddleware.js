@@ -22,6 +22,10 @@ const getClientIp = (req) => {
 const detectCountryCode = (req) => {
   const cfCountry = normalizeCountryCode(req.headers['cf-ipcountry']);
   if (cfCountry) return cfCountry;
+  const vercelCountry = normalizeCountryCode(req.headers['x-vercel-ip-country']);
+  if (vercelCountry) return vercelCountry;
+  const genericCountry = normalizeCountryCode(req.headers['x-country-code']);
+  if (genericCountry) return genericCountry;
   return normalizeCountryCode(req.headers['x-detected-country']);
 };
 
