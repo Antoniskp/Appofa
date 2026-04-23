@@ -6,14 +6,15 @@ const organizationService = require('../services/organizationService');
 const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
 const { randomUUID } = require('crypto');
+const organizationContentConfig = require('../../config/organizationContent.json');
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 12;
 const MAX_LIMIT = 100;
 const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 const ASSIGNABLE_MEMBER_ROLES = ['admin', 'moderator', 'member'];
-const ORG_CONTENT_VISIBILITIES = ['members_only', 'public'];
-const ORG_SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
+const ORG_CONTENT_VISIBILITIES = organizationContentConfig.visibilities;
+const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
 
 const ORGANIZATION_BASE_INCLUDE = [
   {
@@ -59,19 +60,28 @@ async function hasOrganizationManageAccess(organizationId, user) {
   return isOrgAdmin(organizationId, user.id, user.role);
 }
 
-function toOrgVisibility(value) {
-  return value === 'members_only' ? 'private' : value;
+function mapOrgVisibilityToDb(value) {
+  if (value !== 'public' && value !== 'members_only') {
+    console.warn(`organizationController: unexpected org visibility value received: ${String(value)}`);
+  }
+  return value === 'public' ? 'public' : 'private';
 }
 
-function fromOrgVisibility(value) {
-  return value === 'private' ? 'members_only' : value;
+function mapDbVisibilityToOrg(value) {
+  if (value !== 'public' && value !== 'private') {
+    console.warn(`organizationController: unexpected db visibility value received: ${String(value)}`);
+  }
+  if (value === 'public') {
+    return 'public';
+  }
+  return 'members_only';
 }
 
 function serializeOrgPoll(poll) {
   const data = poll.toJSON ? poll.toJSON() : poll;
   return {
     ...data,
-    visibility: fromOrgVisibility(data.visibility),
+    visibility: mapDbVisibilityToOrg(data.visibility),
   };
 }
 
@@ -79,7 +89,7 @@ function serializeOrgSuggestion(suggestion) {
   const data = suggestion.toJSON ? suggestion.toJSON() : suggestion;
   return {
     ...data,
-    visibility: fromOrgVisibility(data.visibility),
+    visibility: mapDbVisibilityToOrg(data.visibility),
   };
 }
 
@@ -736,7 +746,7 @@ const organizationController = {
         description: req.body?.description || null,
         creatorId: req.user.id,
         organizationId,
-        visibility: toOrgVisibility(visibilityResult.value),
+        visibility: mapOrgVisibilityToDb(visibilityResult.value),
         deadline,
       });
 
@@ -843,7 +853,7 @@ const organizationController = {
         type: typeResult.value,
         authorId: req.user.id,
         organizationId,
-        visibility: toOrgVisibility(visibilityResult.value),
+        visibility: mapOrgVisibilityToDb(visibilityResult.value),
         voteRestriction: 'authenticated',
       });
 

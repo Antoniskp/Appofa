@@ -554,6 +554,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 |------|----------|
 | articleCategories.json | Article types with bilingual category lists |
 | badges.json | 8 badge definitions, 3 tiers each |
+| organizationContent.json | Shared organization phase-3 content enums (`visibilities`, `suggestionTypes`) for backend/frontend |
 | organizationTypes.json | Shared Organization type list (`company`, `organization`, `institution`, `school`, `university`, `party`) |
 
 ---

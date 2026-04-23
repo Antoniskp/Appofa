@@ -1,0 +1,4 @@
+{
+  "visibilities": ["members_only", "public"],
+  "suggestionTypes": ["idea", "problem", "problem_request", "location_suggestion"]
+}

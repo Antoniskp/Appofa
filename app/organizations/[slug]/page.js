@@ -6,16 +6,17 @@ import { useTranslations } from 'next-intl';
 import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { organizationAPI } from '@/lib/api';
+import organizationContentConfig from '@/config/organizationContent.json';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
 
 // Phase 2 ships full member management; remaining tabs are placeholders for later phases.
-const TABS = ['info', 'members', 'tab_polls', 'tab_suggestions', 'official_posts'];
+const TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_official_posts'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
-const ORG_VISIBILITY_OPTIONS = ['members_only', 'public'];
-const ORG_SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
+const ORG_VISIBILITY_OPTIONS = organizationContentConfig.visibilities;
+const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
 
 function parsePositiveInt(value) {
   const parsed = parseInt(value, 10);
@@ -26,7 +27,7 @@ export default function OrganizationProfilePage({ params }) {
   const t = useTranslations('organizations');
   const { slug } = use(params);
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState('tab_info');
   const [actionLoading, setActionLoading] = useState(false);
   const [memberActionError, setMemberActionError] = useState('');
   const [memberActionSuccess, setMemberActionSuccess] = useState('');
@@ -196,14 +197,16 @@ export default function OrganizationProfilePage({ params }) {
     setInviteUserId('');
   };
 
-  const runContentAction = async (action, successMessage, failureMessage) => {
+  const runContentAction = async (action, successMessage, failureMessage, onSuccessRefetch) => {
     setContentActionLoading(true);
     setContentActionError('');
     setContentActionSuccess('');
     try {
       await action();
       setContentActionSuccess(successMessage);
-      await Promise.all([refetchPolls(), refetchSuggestions()]);
+      if (typeof onSuccessRefetch === 'function') {
+        await onSuccessRefetch();
+      }
     } catch (actionError) {
       setContentActionError(actionError?.message || failureMessage);
     } finally {
@@ -217,7 +220,8 @@ export default function OrganizationProfilePage({ params }) {
     await runContentAction(
       () => organizationAPI.createPoll(organization.id, pollForm),
       t('org_poll_create_success'),
-      t('org_poll_create_failed')
+      t('org_poll_create_failed'),
+      refetchPolls
     );
     setPollForm({ title: '', description: '', deadline: '', visibility: 'members_only' });
   };
@@ -228,7 +232,8 @@ export default function OrganizationProfilePage({ params }) {
     await runContentAction(
       () => organizationAPI.createSuggestion(organization.id, suggestionForm),
       t('org_suggestion_create_success'),
-      t('org_suggestion_create_failed')
+      t('org_suggestion_create_failed'),
+      refetchSuggestions
     );
     setSuggestionForm({ type: 'idea', title: '', body: '', visibility: 'members_only' });
   };
@@ -332,7 +337,7 @@ export default function OrganizationProfilePage({ params }) {
             {contentActionError && <AlertMessage message={contentActionError} />}
             {contentActionSuccess && <AlertMessage tone="success" message={contentActionSuccess} />}
 
-            {activeTab === 'info' && (
+            {activeTab === 'tab_info' && (
               <div className="space-y-3 text-sm text-gray-700">
                 {organization.description && <p><span className="font-semibold">{t('description')}:</span> {organization.description}</p>}
                 {organization.website && <p><span className="font-semibold">{t('website')}:</span> <a className="text-blue-600 hover:underline" href={organization.website} target="_blank" rel="noopener noreferrer">{organization.website}</a></p>}
@@ -342,7 +347,7 @@ export default function OrganizationProfilePage({ params }) {
               </div>
             )}
 
-            {activeTab === 'members' && (
+            {activeTab === 'tab_members' && (
               <div className="space-y-4">
                 {memberActionError && <AlertMessage message={memberActionError} />}
                 {memberActionSuccess && <AlertMessage tone="success" message={memberActionSuccess} />}
@@ -513,7 +518,7 @@ export default function OrganizationProfilePage({ params }) {
                       type="text"
                       value={pollForm.title}
                       onChange={(e) => setPollForm((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder={t('suggestion_title')}
+                      placeholder={t('poll_title')}
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                     />
                     <textarea
@@ -593,12 +598,12 @@ export default function OrganizationProfilePage({ params }) {
                           className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                         >
                           {ORG_SUGGESTION_TYPES.map((type) => (
-                            <option key={type} value={type}>{type}</option>
+                            <option key={type} value={type}>{t(`suggestion_type_${type}`)}</option>
                           ))}
                         </select>
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('poll_visibility')}</label>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('suggestion_visibility')}</label>
                         <select
                           value={suggestionForm.visibility}
                           onChange={(e) => setSuggestionForm((prev) => ({ ...prev, visibility: e.target.value }))}
@@ -657,7 +662,7 @@ export default function OrganizationProfilePage({ params }) {
               </div>
             )}
 
-            {activeTab === 'official_posts' && (
+            {activeTab === 'tab_official_posts' && (
               <p className="text-sm text-gray-500">{t('coming_soon')}</p>
             )}
           </div>
