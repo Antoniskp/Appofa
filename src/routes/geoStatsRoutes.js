@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { fn, col, literal, Op, QueryTypes } = require('sequelize');
 const {
   sequelize,
@@ -35,7 +36,6 @@ router.post('/track', apiLimiter, async (req, res, next) => {
     let userId = null;
     if (token && typeof token === 'string') {
       try {
-        const jwt = require('jsonwebtoken');
         const payload = jwt.decode(token);
         if (payload && typeof payload === 'object') {
           const parsed = Number.parseInt(payload.id || payload.sub, 10);
