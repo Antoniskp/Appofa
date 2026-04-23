@@ -20,6 +20,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const [success, setSuccess] = useState('');
   const [hasVoted, setHasVoted] = useState(false);
   const [userVote, setUserVote] = useState(null);
+  const [showRegisterCta, setShowRegisterCta] = useState(false);
   
   // State for adding new options
   const [showAddOption, setShowAddOption] = useState(false);
@@ -105,6 +106,9 @@ export default function PollVoting({ poll, onVoteSuccess }) {
         setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
         setHasVoted(true);
         setUserVote({ optionId: selectedOptionId });
+        if (!user) {
+          setShowRegisterCta(true);
+        }
         
         // Call success callback to refresh poll data
         if (onVoteSuccess) {
@@ -136,6 +140,31 @@ export default function PollVoting({ poll, onVoteSuccess }) {
     <div className="space-y-4">
       {error && <AlertMessage message={error} />}
       {success && <AlertMessage message={success} tone="success" />}
+      {showRegisterCta && !user && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start gap-3">
+          <span className="text-2xl">🎉</span>
+          <div>
+            <p className="text-sm font-semibold text-indigo-900">Η ψήφος σας καταχωρήθηκε!</p>
+            <p className="text-sm text-indigo-700 mt-0.5">
+              Εγγραφείτε για να παρακολουθείτε τα αποτελέσματα και να συμμετέχετε σε περισσότερες ψηφοφορίες.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <a
+                href="/register"
+                className="inline-block bg-indigo-600 text-white text-xs font-semibold px-3 py-1.5 rounded-md hover:bg-indigo-700 transition"
+              >
+                Εγγραφή
+              </a>
+              <button
+                onClick={() => setShowRegisterCta(false)}
+                className="text-xs text-indigo-500 hover:text-indigo-700 px-2"
+              >
+                Κλείσιμο
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Show message if poll allows user contributions but has no options */}
       {poll.allowUserContributions && poll.options.length === 0 && (
@@ -168,6 +197,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                     setSuccess(hasVoted ? 'Η ψήφος σας ενημερώθηκε επιτυχώς!' : 'Η ψήφος σας καταχωρήθηκε επιτυχώς!');
                     setHasVoted(true);
                     setUserVote({ optionId });
+                    if (!user) setShowRegisterCta(true);
                     if (onVoteSuccess) {
                       setTimeout(() => onVoteSuccess(), 1000);
                     }

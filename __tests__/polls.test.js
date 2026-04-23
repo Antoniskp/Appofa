@@ -485,6 +485,28 @@ describe('Poll API Tests', () => {
       });
     });
 
+    test('should filter by voteRestriction', async () => {
+      const response = await request(app)
+        .get('/api/polls')
+        .query({ voteRestriction: 'anyone' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      response.body.data.forEach((poll) => {
+        expect(poll.voteRestriction).toBe('anyone');
+      });
+    });
+
+    test('should return 400 for invalid voteRestriction filter', async () => {
+      const response = await request(app)
+        .get('/api/polls')
+        .query({ voteRestriction: 'invalid' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Vote restriction');
+    });
+
     test('should include vote counts', async () => {
       const response = await request(app)
         .get('/api/polls');
