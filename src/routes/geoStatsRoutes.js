@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const { fn, col, literal, Op, QueryTypes } = require('sequelize');
 const {
   sequelize,
@@ -26,10 +27,27 @@ const getCountryNameLocal = (code) => {
 
 router.post('/track', apiLimiter, async (req, res, next) => {
   try {
-    const { path: visitPath, countryCode, ipAddress, locale } = req.body;
+    const { path: visitPath, countryCode, ipAddress, locale, token } = req.body;
     if (!visitPath || typeof visitPath !== 'string') {
       return res.status(400).json({ success: false, message: 'path is required.' });
     }
+
+    let isAuthenticated = false;
+    let userId = null;
+    if (token && typeof token === 'string') {
+      try {
+        const payload = jwt.decode(token);
+        if (payload && typeof payload === 'object') {
+          const parsed = Number.parseInt(payload.id || payload.sub, 10);
+          userId = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+          isAuthenticated = true;
+        }
+      } catch {
+        isAuthenticated = false;
+        userId = null;
+      }
+    }
+
     const sanitizedCode = countryCode
       ? String(countryCode).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || null
       : null;
@@ -40,8 +58,9 @@ router.post('/track', apiLimiter, async (req, res, next) => {
     await GeoVisit.create({
       countryCode: validCode,
       countryName: getCountryNameLocal(validCode),
-      isAuthenticated: false,
+      isAuthenticated,
       isDiaspora: null,
+      userId,
       sessionHash,
       ipAddress: ipAddress ? String(ipAddress).slice(0, 45) : null,
       path: String(visitPath).slice(0, 500),

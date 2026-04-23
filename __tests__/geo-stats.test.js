@@ -1,5 +1,6 @@
 const request = require('supertest');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -318,9 +319,34 @@ describe('Geo Stats Admin API', () => {
     expect(saved.countryName).toBe('Greece');
     expect(saved.ipAddress).toBe('::ffff:185.230.31.201');
     expect(saved.locale).toBe('el-GR');
+    expect(saved.isAuthenticated).toBe(false);
+    expect(saved.userId).toBeNull();
     expect(saved.sessionHash).toBe(
       crypto.createHash('sha256').update('::ffff:185.230.31.201').digest('hex')
     );
+  });
+
+  it('POST /track decodes token for analytics authentication hints', async () => {
+    const token = jwt.sign({ id: adminId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const path = '/locations/with-token';
+
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .send({
+        path,
+        countryCode: 'GR',
+        ipAddress: '5.5.5.5',
+        locale: 'el',
+        token,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.isAuthenticated).toBe(true);
+    expect(saved.userId).toBe(adminId);
   });
 
   it('POST /track validates required path field', async () => {

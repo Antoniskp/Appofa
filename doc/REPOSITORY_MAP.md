@@ -350,7 +350,7 @@ Appofa/
 
 | Middleware | Purpose |
 |-----------|---------|
-| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/geo/track` + cached country access-rules checks (including per-country redirect paths) + first-visit redirect to `/country/[code]` |
+| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/admin/geo-stats/track` (includes cookie `token` for analytics-only auth hints) + cached country access-rules checks (including per-country redirect paths) + first-visit redirect to `/country/[code]` |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |

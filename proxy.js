@@ -143,12 +143,19 @@ export async function proxy(request) {
   const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const ipAddress = normalizeIpForTracking(getClientIp(request));
   const locale = request.cookies.get('NEXT_LOCALE')?.value || null;
+  const authToken = request.cookies.get('token')?.value || null;
 
   if (!isSkippableForTracking(pathname)) {
-    fetch(`${apiBase}/api/geo/track`, {
+    fetch(`${apiBase}/api/admin/geo-stats/track`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ path: pathname, countryCode: countryCode || null, ipAddress, locale }),
+      body: JSON.stringify({
+        path: pathname,
+        countryCode: countryCode || null,
+        ipAddress,
+        locale,
+        token: authToken,
+      }),
     }).catch(() => {});
   }
 
