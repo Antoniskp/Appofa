@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { organizationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -26,6 +26,7 @@ const INITIAL_FORM = {
 
 export default function AdminOrganizationsPage() {
   const t = useTranslations('organizations');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
@@ -71,8 +72,8 @@ export default function AdminOrganizationsPage() {
   }, [organizations, searchParams]);
 
   const sortedOrganizations = useMemo(
-    () => [...organizations].sort((a, b) => a.name.localeCompare(b.name, 'el')),
-    [organizations]
+    () => [...organizations].sort((a, b) => a.name.localeCompare(b.name, locale || 'el')),
+    [organizations, locale]
   );
 
   const resetForm = () => {

@@ -1,6 +1,6 @@
 'use strict';
 
-const ORGANIZATION_TYPES = ['company', 'organization', 'institution', 'school', 'university', 'party'];
+const { types: ORGANIZATION_TYPES } = require('../../config/organizationTypes.json');
 const MEMBER_ROLES = ['owner', 'admin', 'moderator', 'member'];
 const MEMBER_STATUSES = ['active', 'invited', 'pending'];
 
