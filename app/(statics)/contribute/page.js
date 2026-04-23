@@ -93,6 +93,24 @@ export default async function ContributePage() {
             <p className="text-gray-700">
               {tStatic('contribute_donation_body')}
             </p>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <a
+                href="https://www.buymeacoffee.com/Antoniskp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 h-10 px-4 text-sm font-bold rounded-md whitespace-nowrap bg-[#FFDD00] text-black transition-opacity hover:opacity-85"
+              >
+                ☕ Buy me a coffee
+              </a>
+              <a
+                href="https://github.com/sponsors/Antoniskp"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 h-10 px-4 text-sm font-bold rounded-md whitespace-nowrap bg-[#24292f] text-white border border-white/15 transition-opacity hover:opacity-85"
+              >
+                ❤️ Sponsor on GitHub
+              </a>
+            </div>
           </div>
           <div>
             <h3 className="text-xl font-semibold mb-2">{tStatic('contribute_funding_title')}</h3>
