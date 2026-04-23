@@ -10,7 +10,6 @@ const registerRoutes = require('./routes');
 const { ipBlockMiddleware } = require('./middleware/rateLimiter');
 const { suspiciousPathMiddleware } = require('./middleware/suspiciousPathMiddleware');
 const countryBlockMiddleware = require('./middleware/countryBlockMiddleware');
-const { geoTrackMiddleware } = require('./middleware/geoTrackMiddleware');
 const { deduplicateHeroSettings } = require('./controllers/heroSettingsController');
 
 const app = express();
@@ -33,7 +32,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(ipBlockMiddleware);
 app.use(suspiciousPathMiddleware);
 app.use(countryBlockMiddleware);
-app.use(geoTrackMiddleware);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

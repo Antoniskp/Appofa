@@ -3,6 +3,7 @@ import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
 import { ToastProvider } from '@/components/ToastProvider';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import GeoTracker from '@/components/GeoTracker';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
@@ -48,6 +49,7 @@ export default async function RootLayout({ children }) {
     <html lang={locale}>
       <body className="flex flex-col min-h-screen">
         <GoogleAnalytics />
+        <GeoTracker />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <ToastProvider>

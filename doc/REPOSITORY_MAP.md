@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-22
+> **Last updated**: 2026-04-23
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -346,11 +346,11 @@ Appofa/
 
 ---
 
-## Middleware (10)
+## Middleware (9)
 
 | Middleware | Purpose |
 |-----------|---------|
-| proxy.js (root) | Next.js edge proxy for country detection + fire-and-forget `POST /api/admin/geo-stats/track` (includes cookie `token` for analytics-only auth hints) + cached country access-rules checks (including per-country redirect paths) + first-visit redirect to `/country/[code]` |
+| proxy.js (root) | Next.js edge proxy for country detection + cached country access-rules checks (including per-country redirect paths) + first-visit redirect to `/country/[code]` |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |
@@ -359,7 +359,6 @@ Appofa/
 | rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior |
-| geoTrackMiddleware.js | Fire-and-forget geo visit analytics logging (`GeoVisit`) with hashed session identifier, stored visitor IP, and lightweight JWT decode for nullable `userId` |
 
 ---
 
@@ -440,7 +439,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 21+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, SkeletonLoader, TagInput, Tooltip |
-| Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
+| Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, GeoTracker, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading.

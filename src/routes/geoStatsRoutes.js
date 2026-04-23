@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
+const { isIP } = require('node:net');
 const { fn, col, literal, Op, QueryTypes } = require('sequelize');
 const {
   sequelize,
@@ -25,12 +26,35 @@ const getCountryNameLocal = (code) => {
   }
 };
 
+const getFirstForwardedIp = (value) => {
+  if (!value) return null;
+  if (Array.isArray(value)) return value[0] || null;
+  return String(value).split(',')[0].trim() || null;
+};
+
+const getValidTrackingIp = (...candidates) => {
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    const normalized = String(candidate).trim();
+    if (normalized && isIP(normalized)) {
+      return normalized.slice(0, 45);
+    }
+  }
+  return null;
+};
+
 router.post('/track', apiLimiter, async (req, res, next) => {
   try {
-    const { path: visitPath, countryCode, ipAddress, locale, token } = req.body;
+    const { path: visitPath, countryCode, locale, token } = req.body;
     if (!visitPath || typeof visitPath !== 'string') {
       return res.status(400).json({ success: false, message: 'path is required.' });
     }
+
+    const ipAddress = getValidTrackingIp(
+      req.body.ipAddress,
+      getFirstForwardedIp(req.headers['x-forwarded-for']),
+      req.ip
+    );
 
     let isAuthenticated = false;
     let userId = null;
@@ -62,7 +86,7 @@ router.post('/track', apiLimiter, async (req, res, next) => {
       isDiaspora: null,
       userId,
       sessionHash,
-      ipAddress: ipAddress ? String(ipAddress).slice(0, 45) : null,
+      ipAddress,
       path: String(visitPath).slice(0, 500),
       locale: locale ? String(locale).slice(0, 10) : null,
     });

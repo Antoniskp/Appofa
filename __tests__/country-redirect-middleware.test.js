@@ -97,7 +97,7 @@ describe('country redirect middleware', () => {
     });
   });
 
-  test('tracks admin paths while still skipping redirect', async () => {
+  test('skips redirect checks for admin paths', async () => {
     const response = await middleware(makeRequest({
       pathname: '/admin/geo',
       countryHeader: 'GR',
@@ -106,39 +106,15 @@ describe('country redirect middleware', () => {
 
     expect(response.type).toBe('next');
     expect(mockRedirect).not.toHaveBeenCalled();
-    expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/admin/geo-stats/track',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          path: '/admin/geo',
-          countryCode: 'GR',
-          ipAddress: null,
-          locale: null,
-          token: 'sample-token',
-        }),
-      })
-    );
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test.each(['/login', '/country/GR'])('tracks %s while skipping redirect', async (pathname) => {
+  test.each(['/login', '/country/GR'])('skips redirect checks for %s', async (pathname) => {
     const response = await middleware(makeRequest({ pathname, countryHeader: 'GR' }));
 
     expect(response.type).toBe('next');
     expect(mockRedirect).not.toHaveBeenCalled();
-    expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/admin/geo-stats/track',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          path: pathname,
-          countryCode: 'GR',
-          ipAddress: null,
-          locale: null,
-          token: null,
-        }),
-      })
-    );
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   test('skips when visited cookie exists', async () => {
@@ -158,17 +134,7 @@ describe('country redirect middleware', () => {
     expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/admin/geo-stats/track',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          path: '/',
-          countryCode: 'GR',
-          ipAddress: null,
-          locale: null,
-          token: null,
-        }),
-      })
+      'http://localhost:3000/api/geo/access-rules'
     );
     expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
       path: '/',
@@ -187,17 +153,7 @@ describe('country redirect middleware', () => {
     expect(response.type).toBe('redirect');
     expect(response.url).toBe('https://appofasi.gr/country/GR');
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/admin/geo-stats/track',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          path: '/',
-          countryCode: 'GR',
-          ipAddress: '185.230.31.201',
-          locale: 'el',
-          token: null,
-        }),
-      })
+      'http://localhost:3000/api/geo/access-rules'
     );
     expect(response.cookies.set).toHaveBeenCalledWith('appofa_country_visited', '1', {
       path: '/',
@@ -220,17 +176,7 @@ describe('country redirect middleware', () => {
     expect(response.type).toBe('redirect');
     expect(response.url).toBe('https://appofasi.gr/country/CY');
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/admin/geo-stats/track',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          path: '/',
-          countryCode: 'CY',
-          ipAddress: null,
-          locale: null,
-          token: null,
-        }),
-      })
+      'http://localhost:3000/api/geo/access-rules'
     );
   });
 
@@ -263,35 +209,24 @@ describe('country redirect middleware', () => {
     expect(mockNext).toHaveBeenCalledWith();
     expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/admin/geo-stats/track',
-      expect.objectContaining({
-        method: 'POST',
-        body: JSON.stringify({
-          path: '/',
-          countryCode: null,
-          ipAddress: '8.8.8.8',
-          locale: null,
-          token: null,
-        }),
-      })
+      'http://localhost:3000/api/geo/access-rules'
     );
   });
 
   test('redirects blocked countries to /blocked', async () => {
-    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
-      .mockImplementationOnce(() => Promise.resolve({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            blockedCountries: ['GR'],
-            unknownCountryAction: 'allow',
-            unknownCountryRedirectPath: '/unknown-country',
-            noIpAction: 'allow',
-            noIpRedirectPath: '/unknown-country',
-          },
-        }),
-      }));
+    mockFetch.mockImplementationOnce(() => Promise.resolve({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          blockedCountries: ['GR'],
+          unknownCountryAction: 'allow',
+          unknownCountryRedirectPath: '/unknown-country',
+          noIpAction: 'allow',
+          noIpRedirectPath: '/unknown-country',
+        },
+      }),
+    }));
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: 'GR' }));
     expect(response.type).toBe('redirect');
@@ -299,20 +234,19 @@ describe('country redirect middleware', () => {
   });
 
   test('redirects blocked countries to custom redirect path when configured', async () => {
-    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
-      .mockImplementationOnce(() => Promise.resolve({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            blockedCountries: [{ countryCode: 'RU', redirectPath: '/donate/russia' }],
-            unknownCountryAction: 'allow',
-            unknownCountryRedirectPath: '/unknown-country',
-            noIpAction: 'allow',
-            noIpRedirectPath: '/unknown-country',
-          },
-        }),
-      }));
+    mockFetch.mockImplementationOnce(() => Promise.resolve({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          blockedCountries: [{ countryCode: 'RU', redirectPath: '/donate/russia' }],
+          unknownCountryAction: 'allow',
+          unknownCountryRedirectPath: '/unknown-country',
+          noIpAction: 'allow',
+          noIpRedirectPath: '/unknown-country',
+        },
+      }),
+    }));
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: 'RU' }));
     expect(response.type).toBe('redirect');
@@ -320,20 +254,19 @@ describe('country redirect middleware', () => {
   });
 
   test('redirects unknown country to /blocked when noIpAction is block', async () => {
-    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
-      .mockImplementationOnce(() => Promise.resolve({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            blockedCountries: [],
-            unknownCountryAction: 'allow',
-            unknownCountryRedirectPath: '/unknown-country',
-            noIpAction: 'block',
-            noIpRedirectPath: '/unknown-country',
-          },
-        }),
-      }));
+    mockFetch.mockImplementationOnce(() => Promise.resolve({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          blockedCountries: [],
+          unknownCountryAction: 'allow',
+          unknownCountryRedirectPath: '/unknown-country',
+          noIpAction: 'block',
+          noIpRedirectPath: '/unknown-country',
+        },
+      }),
+    }));
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
     expect(response.type).toBe('redirect');
@@ -341,20 +274,19 @@ describe('country redirect middleware', () => {
   });
 
   test('redirects unknown country when noIpAction is redirect', async () => {
-    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
-      .mockImplementationOnce(() => Promise.resolve({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            blockedCountries: [],
-            unknownCountryAction: 'allow',
-            unknownCountryRedirectPath: '/unknown-country',
-            noIpAction: 'redirect',
-            noIpRedirectPath: '/unknown-country',
-          },
-        }),
-      }));
+    mockFetch.mockImplementationOnce(() => Promise.resolve({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          blockedCountries: [],
+          unknownCountryAction: 'allow',
+          unknownCountryRedirectPath: '/unknown-country',
+          noIpAction: 'redirect',
+          noIpRedirectPath: '/unknown-country',
+        },
+      }),
+    }));
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
     expect(response.type).toBe('redirect');
@@ -362,28 +294,26 @@ describe('country redirect middleware', () => {
   });
 
   test('falls through when unknown country and noIpAction is allow', async () => {
-    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
-      .mockImplementationOnce(() => Promise.resolve({
-        ok: true,
-        json: async () => ({
-          success: true,
-          data: {
-            blockedCountries: [],
-            unknownCountryAction: 'allow',
-            unknownCountryRedirectPath: '/unknown-country',
-            noIpAction: 'allow',
-            noIpRedirectPath: '/unknown-country',
-          },
-        }),
-      }));
+    mockFetch.mockImplementationOnce(() => Promise.resolve({
+      ok: true,
+      json: async () => ({
+        success: true,
+        data: {
+          blockedCountries: [],
+          unknownCountryAction: 'allow',
+          unknownCountryRedirectPath: '/unknown-country',
+          noIpAction: 'allow',
+          noIpRedirectPath: '/unknown-country',
+        },
+      }),
+    }));
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
     expect(response.type).toBe('next');
   });
 
   test('falls back to allow-all defaults when access-rules fetch fails', async () => {
-    mockFetch.mockImplementationOnce(() => Promise.resolve({ ok: true }))
-      .mockImplementationOnce(() => Promise.reject(new Error('network error')));
+    mockFetch.mockImplementationOnce(() => Promise.reject(new Error('network error')));
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: null }));
     expect(response.type).toBe('next');

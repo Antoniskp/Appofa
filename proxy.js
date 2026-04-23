@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 
 const SKIP_REDIRECT_PREFIXES = ['/_next/', '/api/', '/favicon', '/country', '/login', '/register', '/static', '/blocked', '/unknown-country', '/admin'];
-const SKIP_TRACKING_PREFIXES = ['/_next/', '/api/', '/favicon', '/static/'];
 const ASSET_EXTENSION_REGEX = /\.(ico|png|jpg|svg|js|css|woff2?)$/i;
 const RULES_CACHE_TTL = 60 * 1000;
 
@@ -21,21 +20,11 @@ const isSkippableForRedirect = (pathname) => (
   SKIP_REDIRECT_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ASSET_EXTENSION_REGEX.test(pathname)
 );
 
-const isSkippableForTracking = (pathname) => (
-  SKIP_TRACKING_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || ASSET_EXTENSION_REGEX.test(pathname)
-);
-
 const normalizeCountryCode = (value) => {
   if (!value) return null;
   const code = String(value).toUpperCase().trim();
   if (!/^[A-Z]{2}$/.test(code) || code === 'XX' || code === 'T1') return null;
   return code;
-};
-
-const normalizeIpForTracking = (ip) => {
-  if (!ip) return null;
-  const mapped = ip.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/i);
-  return mapped ? mapped[1] : ip;
 };
 
 const normalizeAction = (value) => (value === 'block' || value === 'redirect' || value === 'allow' ? value : 'allow');
@@ -141,23 +130,7 @@ export async function proxy(request) {
   };
 
   const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const ipAddress = normalizeIpForTracking(getClientIp(request));
-  const locale = request.cookies.get('NEXT_LOCALE')?.value || null;
-  const authToken = request.cookies.get('token')?.value || null;
-
-  if (!isSkippableForTracking(pathname)) {
-    fetch(`${apiBase}/api/admin/geo-stats/track`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        path: pathname,
-        countryCode: countryCode || null,
-        ipAddress,
-        locale,
-        token: authToken,
-      }),
-    }).catch(() => {});
-  }
+  const ipAddress = getClientIp(request);
 
   if (shouldSkipRedirect) {
     return nextResponse();
