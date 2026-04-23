@@ -296,4 +296,111 @@ describe('Organizations API', () => {
       .send({ userId: secondViewerUser.id });
     expect(inviteDeniedForNonManager.status).toBe(403);
   });
+
+  it('supports organization polls and suggestions with membership visibility rules', async () => {
+    const createOrg = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-phase3'))
+      .send({
+        name: 'Phase Three Organization',
+        type: 'organization',
+        isPublic: true,
+      });
+
+    expect(createOrg.status).toBe(201);
+    const organizationId = createOrg.body.data.organization.id;
+
+    const nonMemberCreatePoll = await request(app)
+      .post(`/api/organizations/${organizationId}/polls`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-create-poll-denied'))
+      .send({
+        title: 'Internal Poll',
+      });
+    expect(nonMemberCreatePoll.status).toBe(403);
+
+    const ownerCreatePoll = await request(app)
+      .post(`/api/organizations/${organizationId}/polls`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-poll-ok'))
+      .send({
+        title: 'Internal Poll',
+        description: 'Members-only poll body',
+      });
+    expect(ownerCreatePoll.status).toBe(201);
+    expect(ownerCreatePoll.body.data.poll.visibility).toBe('members_only');
+
+    const ownerCreatePublicPoll = await request(app)
+      .post(`/api/organizations/${organizationId}/polls`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-public-poll-ok'))
+      .send({
+        title: 'Public Poll',
+        visibility: 'public',
+      });
+    expect(ownerCreatePublicPoll.status).toBe(201);
+    expect(ownerCreatePublicPoll.body.data.poll.visibility).toBe('public');
+
+    const guestPolls = await request(app).get(`/api/organizations/${organizationId}/polls`);
+    expect(guestPolls.status).toBe(200);
+    expect(guestPolls.body.success).toBe(true);
+    expect(guestPolls.body.data.polls).toHaveLength(1);
+    expect(guestPolls.body.data.polls[0].visibility).toBe('public');
+
+    const memberPolls = await request(app)
+      .get(`/api/organizations/${organizationId}/polls`)
+      .set('Cookie', `auth_token=${adminToken}`);
+    expect(memberPolls.status).toBe(200);
+    expect(memberPolls.body.data.polls.length).toBeGreaterThanOrEqual(2);
+
+    const nonMemberCreateSuggestion = await request(app)
+      .post(`/api/organizations/${organizationId}/suggestions`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-org-create-suggestion-denied'))
+      .send({
+        title: 'Proposal',
+        body: 'This proposal body is long enough.',
+      });
+    expect(nonMemberCreateSuggestion.status).toBe(403);
+
+    const ownerCreateSuggestion = await request(app)
+      .post(`/api/organizations/${organizationId}/suggestions`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-suggestion-ok'))
+      .send({
+        title: 'Members proposal',
+        body: 'This proposal body is definitely long enough.',
+      });
+    expect(ownerCreateSuggestion.status).toBe(201);
+    expect(ownerCreateSuggestion.body.data.suggestion.visibility).toBe('members_only');
+
+    const ownerCreatePublicSuggestion = await request(app)
+      .post(`/api/organizations/${organizationId}/suggestions`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-public-suggestion-ok'))
+      .send({
+        title: 'Public proposal',
+        body: 'This public proposal body is long enough.',
+        visibility: 'public',
+      });
+    expect(ownerCreatePublicSuggestion.status).toBe(201);
+    expect(ownerCreatePublicSuggestion.body.data.suggestion.visibility).toBe('public');
+
+    const guestSuggestions = await request(app).get(`/api/organizations/${organizationId}/suggestions`);
+    expect(guestSuggestions.status).toBe(200);
+    expect(guestSuggestions.body.success).toBe(true);
+    expect(guestSuggestions.body.data.suggestions).toHaveLength(1);
+    expect(guestSuggestions.body.data.suggestions[0].visibility).toBe('public');
+
+    const privateOrg = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-create-phase3-private'))
+      .send({
+        name: 'Phase Three Private Organization',
+        type: 'organization',
+        isPublic: false,
+      });
+    expect(privateOrg.status).toBe(201);
+
+    const privateOrgId = privateOrg.body.data.organization.id;
+    const privatePollsDenied = await request(app).get(`/api/organizations/${privateOrgId}/polls`);
+    expect(privatePollsDenied.status).toBe(403);
+
+    const privateSuggestionsDenied = await request(app).get(`/api/organizations/${privateOrgId}/suggestions`);
+    expect(privateSuggestionsDenied.status).toBe(403);
+  });
 });

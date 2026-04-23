@@ -4,7 +4,7 @@
 
 Organizations are first-class entities on Appofa, parallel to Locations.
 They represent non-geographic entities like companies, institutions, universities, schools, parties, and civic organizations.
-Phase 2 extends the baseline with complete member management (join/leave, invite, approve, role updates, and pending queues).
+Phase 3 extends Organizations with internal polls and suggestions tied by `organizationId`, with member-aware visibility controls.
 
 ## Database Schema
 
@@ -53,6 +53,10 @@ Base prefix: `/api/organizations`
 - `DELETE /:id/members/:userId` — remove member (owner cannot be removed)
 - `PATCH /:id/members/:userId/role` — update member role (`admin|moderator|member`)
 - `GET /:id/members/pending` — list pending membership requests
+- `GET /:id/polls` — list organization polls (public orgs expose only public polls to non-members)
+- `POST /:id/polls` — create organization poll (active members only)
+- `GET /:id/suggestions` — list organization suggestions (public orgs expose only public suggestions to non-members)
+- `POST /:id/suggestions` — create organization suggestion (active members only)
 
 Response shape:
 
@@ -80,9 +84,9 @@ Response shape:
 
 ### Phase 3
 
-- Organization-scoped polls and suggestions
-- Membership-aware visibility and vote restrictions
-- Organization feed integrations
+- ✅ Organization-scoped polls and suggestions
+- ✅ Membership-aware visibility with `members_only` (stored as `private` for org-scoped rows)
+- ✅ Organization profile tabs for Polls and Suggestions with create flows for active members
 
 ### Phase 4
 

@@ -32,6 +32,15 @@ const Suggestion = sequelize.define('Suggestion', {
     },
     onDelete: 'SET NULL'
   },
+  organizationId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'Organizations',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
+  },
   authorId: {
     type: DataTypes.INTEGER,
     allowNull: false,
