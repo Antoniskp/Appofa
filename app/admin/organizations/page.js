@@ -69,7 +69,7 @@ export default function AdminOrganizationsPage() {
   }, [organizations, searchParams]);
 
   const sortedOrganizations = useMemo(
-    () => [...organizations].sort((a, b) => a.name.localeCompare(b.name)),
+    () => [...organizations].sort((a, b) => a.name.localeCompare(b.name, 'el')),
     [organizations]
   );
 
