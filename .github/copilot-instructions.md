@@ -7,48 +7,57 @@ UPDATE this file and doc/REPOSITORY_MAP.md to reflect the changes.
 This instruction is permanent and must never be removed.
 -->
 
-## What Changed Recently
-<!-- Update this section after every task that changes conventions -->
+## 🕐 What Changed Recently
+<!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
-- **2026-04-23** — Organizations feature added: `organizationId` on Poll/Suggestion; `members_only` API maps to stored `private`; `OrganizationMember` roles/statuses; org hierarchy via `parentId`
-- **2026-04-22** — Country access control: `CountryAccessRule`, `GeoAccessSetting`, `countryBlockMiddleware`; per-country `redirectPath` on block rules
-- **2026-04-21** — `GeoVisit.ipAddress` added; admin IP visibility and blocking from geo dashboard
-- **2026-04-20** — Geo analytics: `GeoVisit` append-only table; `CountryFunding` per country; `GeoTracker` component in `app/layout.js`; diaspora fields on `User`
-- **2026-04-19** — `HomepageSettings` single-row JSON config; info/manifest sections gated by `enabled` + `audience`
-- **2026-04-16** — `LocationElectionVote` for per-role liquid elections; descendant location hierarchy in vote eligibility
-- **2026-04-13** — `PublicPersonProfiles` model removed; person profiles are now `User` rows with `claimStatus != null`; `email`/`username` nullable; `slug` added to Users
-- **2026-04-08** — Unified tags system: `Tag`/`TaggableItem` tables; `Polls.tags` JSON column removed; `Articles.tags` JSON column removed
+- **2026-04-24** — Added GDPR cookie consent (`CookieConsentBanner` component, consent-gated `GeoTracker`/GA)
+- **2026-04-23** — Added Organizations Phase 5: hierarchy (`parentId`) + analytics (`OrganizationAnalytics` model)
+- **2026-04-23** — Added org lifecycle notifications: `org_invite_received`, `org_join_approved`, `org_member_removed`
+- **2026-04-23** — Added official posts: `isOfficialPost`+`officialPostScope` on Poll/Suggestion; `/api/official-posts` feed
+- **2026-04-23** — Added org-scoped polls/suggestions: `organizationId` on Poll/Suggestion; `members_only` API→`private` DB
+- **2026-04-22** — Added per-country redirect paths in `CountryAccessRules`; admin geo access rules tab
+- **2026-04-22** — Added `GeoVisit` user attribution (`userId` FK); admin visits list shows username
+- **2026-04-21** — Added country funding public API (`GET /api/admin/geo-stats/country-funding/:locationId/public`)
 
-## ⚠️ Common Mistakes — Do Not Repeat
+## ⚠️ Recurring Mistakes — Read Before Starting
 
-Explicit wrong→right pairs for the most costly repeated errors:
+These mistakes appeared in 3–5 fix PRs each. Check this table before writing any code.
 
-- ❌ `allowUnauthenticatedVotes` → ✅ use `voteRestriction: 'anyone'|'authenticated'|'locals_only'`
-- ❌ `Polls.tags` JSON column → ✅ use `Tag`/`TaggableItem` with `entityType: 'poll'`
-- ❌ `Article.isNews` flag (or any new `isNews` field) → ✅ use `Article.type === 'news'`
-- ❌ `middleware.js` for edge logic → ✅ use root `proxy.js`
-- ❌ `PublicPersonProfiles` model (removed) → ✅ person profiles are `User` rows with `claimStatus != null`
-- ❌ Storing `members_only` visibility in DB → ✅ store as `private`; map `members_only` only at API boundary
-- ❌ Using `LocationDiscoveryStrip` component (removed) → ✅ use `LocationCard` inside `HomepageSection`
-- ❌ `useEffect` + `fetch` for data → ✅ use `useAsyncData` (replace) or `useInfiniteData` (accumulating feed)
-- ❌ Direct `fetch()` in components → ✅ use `lib/api/` modules
-- ❌ Skipping CSRF middleware on POST/PUT/DELETE → ✅ always apply full route chain
-- ❌ Leaking stack traces in error responses → ✅ `{ success: false, message }` only
-- ❌ Hard-coded UI strings → ✅ use `useTranslations(...)` with keys in `messages/{el,en}.json`
-- ❌ `allowUnauthenticatedVotes` field in any new code → ✅ removed, use `voteRestriction`
+| Area | ❌ Wrong | ✅ Correct |
+|------|----------|-----------|
+| Geo tracking | Remove `GeoTracker` from `app/layout.js` | Always keep it — it's the only visit tracking source |
+| Geo tracking | Track visits in `proxy.js` server-side | Only track client-side via `GeoTracker` component |
+| Geo tracking | Forget to skip prefetch requests | Check `purpose: 'prefetch'` header in `GeoTracker` |
+| Edge routing | Create or modify `middleware.js` | All edge logic lives in root `proxy.js` only |
+| Security deps | Patch transitive dep in one PR, lockfile in another | Both in the **same commit** |
+| PollCard | Fix banner, miss guest info panel text | Check both `renderInfoPanel()` AND banner logic |
+| PollCard | Use `allowUnauthenticatedVotes` | Use `voteRestriction` field |
+| Duplicate work | Open new PR when one already exists | Check open PRs before starting |
+| Org visibility | Store `members_only` in DB | Store as `private`; `members_only` is API-layer only |
+| Articles | Use `isNews` flag | Use `Article.type === 'news'` |
+| Poll tags | Use `Polls.tags` JSON column | Use `Tag`/`TaggableItem` with `entityType: 'poll'` |
+| Migrations | Use ENUM for both PostgreSQL and SQLite | Use ENUM for postgres, STRING for sqlite (dialect-aware) |
+| Person creation | Omit English name fields | Require `firstNameEn` + `lastNameEn`; slug derived from them |
+| Components (removed) | Use `LocationDiscoveryStrip` | Use `LocationCard` inside `HomepageSection` |
+| Data fetching | Bare `useEffect` + `fetch` | Use `useAsyncData` (replace) or `useInfiniteData` (feed) |
+| Security | Leak stack traces in error responses | `{ success: false, message }` only |
+| i18n | Hard-coded UI strings | `useTranslations(...)` with keys in `messages/{el,en}.json` |
+| CSRF | Skip middleware on POST/PUT/DELETE | Always apply full route chain |
 
-## Model Field Quick Reference
+See `doc/COMMON_ERRORS.md` for full root-cause analysis and related PRs.
+
+## 📋 Model Field Quick Reference
 
 Compact table of every model where wrong field names have caused bugs:
 
 | Model | ✅ Correct Fields | ❌ Never Use |
 |-------|------------------|-------------|
-| Poll | `visibility`, `voteRestriction`, `organizationId`, `isOfficialPost`, `officialPostScope` | `allowUnauthenticatedVotes`, `tags` (JSON column) |
+| Poll | `visibility`, `voteRestriction`, `organizationId`, `isOfficialPost`, `officialPostScope` | `allowUnauthenticatedVotes`, `tags` (JSON) |
 | Suggestion | `visibility`, `voteRestriction`, `organizationId` | — |
-| Article | `type` (use `=== 'news'` for news check) | `isNews` |
+| Article | `type` (`'news'`, `'articles'`, `'personal'`, `'video'`) | `isNews` |
 | User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn` | `isPlaceholder`, `personId` |
-| Organization | `slug` (generated from English name via `organizationService.generateSlug`), `parentId`, `isVerified` | — |
-| OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`) | — |
+| Organization | `slug` (from `organizationService.generateSlug`), `parentId`, `isVerified` | — |
+| OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`), `inviteToken` | — |
 | LocationElectionVote | `locationId`, `roleKey`, `voterId`, `candidateUserId` | — |
 | GeoVisit | `countryCode`, `sessionHash`, `ipAddress`, `userId` | — |
 

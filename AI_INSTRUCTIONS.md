@@ -1,10 +1,14 @@
 # AI Instructions — DEPRECATED
 
-> ⚠️ This file is no longer maintained and may contain outdated information.
+> ⚠️ This file is **outdated** and has been superseded. Do **not** use it as a reference.
 >
-> **Read the canonical AI instructions instead:**
-> - **`.github/copilot-instructions.md`** — conventions, patterns, anti-patterns, commands
-> - **`doc/REPOSITORY_MAP.md`** — complete codebase map (models, routes, pages, components)
-> - **`doc/INDEX.md`** — feature-specific documentation index
+> Reading this file will give you incorrect conventions (wrong Node version, missing features, stale patterns) and cause you to write code that conflicts with the current codebase.
 
-Do not use this file for coding decisions.
+## Read these instead
+
+| Document | What it contains |
+|---|---|
+| **[`.github/copilot-instructions.md`](.github/copilot-instructions.md)** | ✅ Current conventions, anti-patterns, recurring mistakes, model field reference |
+| **[`doc/REPOSITORY_MAP.md`](doc/REPOSITORY_MAP.md)** | ✅ All models, routes, pages, components, migrations — kept up to date |
+| **[`doc/COMMON_ERRORS.md`](doc/COMMON_ERRORS.md)** | ✅ Recurring mistakes from PR history with correct patterns |
+| **[`doc/INDEX.md`](doc/INDEX.md)** | ✅ Index of all feature-specific docs |

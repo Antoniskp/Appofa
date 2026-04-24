@@ -3,46 +3,43 @@ name: database-data-specialist
 description: Agent specializing in Sequelize models, migrations, and data scripts
 ---
 
-**First:** Read `.github/copilot-instructions.md` in full before starting any task. It is the single source of truth for all conventions.
+You are a data specialist for the Appofa project (Sequelize 6, PostgreSQL in production, SQLite in tests).
 
-You are a data specialist focused on database models and scripts in `src/`.
+## FIRST: Read these before writing any code
+1. `.github/copilot-instructions.md` — conventions, field rules, anti-patterns
+2. `doc/REPOSITORY_MAP.md` — all models and migrations
+3. `doc/COMMON_ERRORS.md` — recurring migration mistakes with correct patterns
 
-## Checklist — Adding a New Migration
+## Migration rules (non-negotiable)
+- Name: `YYYYMMDDHHMMSS-description.js` (timestamp prefix)
+- Dialect-aware ENUMs: `queryInterface.sequelize.getDialect() === 'postgres'` ? ENUM : STRING
+  ```js
+  const isPostgres = queryInterface.sequelize.getDialect() === 'postgres';
+  type: isPostgres ? DataTypes.ENUM('active', 'invited', 'pending') : DataTypes.STRING
+  ```
+- Always idempotent — wrap `addColumn` in try/catch or check column existence first
+- Always provide a working `down()` that reverses `up()`
+- Clean up ENUM types in `down()` for PostgreSQL: `DROP TYPE IF EXISTS "enum_Table_column";`
+- Never drop and re-add a column in the same migration
+- Never touch `package-lock.json` in a migration PR
 
-1. **Name**: use `YYYYMMDDHHMMSS-name.js` timestamp prefix (e.g. `20260424120000-add-foo-to-bar.js`)
-2. **Dialect-aware ENUMs**: use `ENUM(...)` for postgres, fall back to `STRING` for sqlite:
-   ```js
-   const isPostgres = queryInterface.sequelize.getDialect() === 'postgres';
-   type: isPostgres ? DataTypes.ENUM('a', 'b') : DataTypes.STRING
-   ```
-3. **Idempotent `addColumn`**: wrap in a `try/catch` or check column existence to avoid "column already exists" errors on re-run
-4. **Always provide `down`**: every migration must have a working `down()` that reverses the `up()`
-5. **Model sync**: after adding a column in a migration, add the matching field to the Sequelize model in `src/models/`
-6. **Update docs**: add the new migration and any model changes to `doc/REPOSITORY_MAP.md`
+## Checklist: New model
+1. Create `src/models/ModelName.js` with proper associations
+2. Create migration `YYYYMMDDHHMMSS-create-model-name.js`
+3. Export from `src/models/index.js`
+4. Update `doc/REPOSITORY_MAP.md` Models table
 
-## Critical Model Field Reference
+## Critical field rules
+| Model | ✅ Correct | ❌ Never Add |
+|---|---|---|
+| Poll | `voteRestriction` enum | `allowUnauthenticatedVotes` |
+| Article | `type` field | `isNews` flag |
+| User | `firstNameEn`, `lastNameEn` (required for persons), `slug` | `personId`, `isPlaceholder` |
+| OrganizationMember | `status`: `active\|invited\|pending` | any other status values |
+| Poll/Article tags | `Tag`/`TaggableItem` (`entityType:'poll'\|'article'`) | JSON `tags` column |
 
-| Model | ✅ Correct Fields | ❌ Never Add |
-|-------|------------------|-------------|
-| Poll | `visibility`, `voteRestriction`, `organizationId`, `isOfficialPost`, `officialPostScope` | `allowUnauthenticatedVotes`, `tags` (JSON) |
-| Suggestion | `visibility`, `voteRestriction`, `organizationId` | — |
-| Article | `type` | `isNews` |
-| User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn` | `isPlaceholder`, `personId` |
-| Organization | `slug`, `parentId`, `isVerified` | — |
-| OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`) | — |
-
-## Anti-patterns — Do Not Repeat
-
-- ❌ Never add an `isNews` column — use `Article.type === 'news'`
-- ❌ Never add `allowUnauthenticatedVotes` — use `voteRestriction`
-- ❌ Never add a `tags` JSON column to polls or articles — use the `Tag`/`TaggableItem` unified system
-- ❌ Never use `PublicPersonProfiles` — person profiles are `User` rows with `claimStatus != null`
-- ❌ Never skip the `down()` migration — always reversible
-- ❌ Never hardcode `ENUM` without dialect check — SQLite does not support ENUM natively
-
-## Focus
-
-- Update Sequelize models, migrations, and seed scripts with minimal changes
-- Preserve schema compatibility and existing data access patterns
-- Add or update tests to validate data-layer changes when applicable
-- Avoid frontend changes unless required for data consistency
+## Recurring mistakes (do not repeat)
+- ❌ Hardcoded ENUM without dialect check → ✅ always use `isPostgres ? ENUM : STRING`
+- ❌ Missing `down()` migration → ✅ always reversible
+- ❌ `PublicPersonProfiles` model (removed) → ✅ person profiles are `User` rows with `claimStatus != null`
+- ❌ Skip idempotency → ✅ wrap `addColumn` in try/catch
