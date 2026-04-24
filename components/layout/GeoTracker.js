@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { usePathname } from 'next/navigation';
 import { geoAdminAPI } from '@/lib/api/geoAdmin';
 import { geoAPI } from '@/lib/api/geo';
+import { getGdprConsent } from '@/components/layout/CookieBanner';
 
 const readCookie = (name) => {
   const row = document.cookie
@@ -18,9 +19,19 @@ const readCookie = (name) => {
 
 function GeoTrackerInner() {
   const pathname = usePathname();
+  const [functionalConsent, setFunctionalConsent] = useState(() => getGdprConsent()?.functional ?? false);
+
+  // Listen for consent changes without requiring a page reload.
+  useEffect(() => {
+    const handleConsentUpdate = (e) => {
+      setFunctionalConsent(e.detail?.functional ?? false);
+    };
+    window.addEventListener('gdpr-consent-updated', handleConsentUpdate);
+    return () => window.removeEventListener('gdpr-consent-updated', handleConsentUpdate);
+  }, []);
 
   useEffect(() => {
-    if (!pathname) return;
+    if (!pathname || !functionalConsent) return;
 
     const run = async () => {
       try {
@@ -42,7 +53,7 @@ function GeoTrackerInner() {
     };
 
     run();
-  }, [pathname]);
+  }, [pathname, functionalConsent]);
 
   return null;
 }

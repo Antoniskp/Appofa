@@ -1,3 +1,4 @@
+export { default as CookieBanner } from './CookieBanner';
 export { default as Footer } from './Footer';
 export { default as GeoTracker } from './GeoTracker';
 export { default as GoogleAnalytics } from './GoogleAnalytics';

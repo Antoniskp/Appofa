@@ -29,6 +29,8 @@ export default function RegisterPage() {
     searchable: true,
   });
   const [loading, setLoading] = useState(false);
+  const [gdprConsent, setGdprConsent] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [detectedCountry, setDetectedCountry] = useState({ countryCode: null, countryName: null });
   const [showDiasporaModal, setShowDiasporaModal] = useState(false);
   const [pendingRegisterData, setPendingRegisterData] = useState(null);
@@ -81,6 +83,11 @@ export default function RegisterPage() {
 
     if (formData.password !== formData.confirmPassword) {
       error(t('passwords_no_match'));
+      return;
+    }
+
+    if (!gdprConsent) {
+      error(t('gdpr_consent_error'));
       return;
     }
 
@@ -233,6 +240,37 @@ export default function RegisterPage() {
               />
               <label htmlFor="searchable" className="ml-2 block text-sm text-gray-900">
                 {t('searchable')}
+              </label>
+            </div>
+
+            {/* GDPR required consent */}
+            <div className="flex items-start">
+              <input
+                id="gdpr_consent"
+                name="gdpr_consent"
+                type="checkbox"
+                required
+                checked={gdprConsent}
+                onChange={(e) => setGdprConsent(e.target.checked)}
+                className="h-4 w-4 mt-0.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="gdpr_consent" className="ml-2 block text-sm text-gray-700">
+                {t('gdpr_consent_required')}
+              </label>
+            </div>
+
+            {/* Optional marketing consent */}
+            <div className="flex items-start">
+              <input
+                id="marketing_consent"
+                name="marketing_consent"
+                type="checkbox"
+                checked={marketingConsent}
+                onChange={(e) => setMarketingConsent(e.target.checked)}
+                className="h-4 w-4 mt-0.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="marketing_consent" className="ml-2 block text-sm text-gray-700">
+                {t('gdpr_consent_marketing')}
               </label>
             </div>
 

@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 
@@ -32,6 +34,7 @@ export default function Footer() {
         { href: '/transparency', label: t('transparency'), type: 'internal' },
         { href: '/privacy', label: t('privacy'), type: 'internal' },
         { href: '/terms', label: t('terms'), type: 'internal' },
+        { label: t('cookie_settings'), type: 'cookie-settings' },
       ],
     },
     {
@@ -82,6 +85,13 @@ export default function Footer() {
                       <span className="text-gray-400 text-sm">
                         {link.label}
                       </span>
+                    ) : link.type === 'cookie-settings' ? (
+                      <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-cookie-settings'))}
+                        className="text-gray-400 hover:text-white transition-colors text-sm"
+                      >
+                        {link.label}
+                      </button>
                     ) : (
                       <Link href={link.href} className="text-gray-400 hover:text-white transition-colors text-sm">
                         {link.label}

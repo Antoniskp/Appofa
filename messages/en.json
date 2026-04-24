@@ -102,7 +102,10 @@
     "github_login_fail": "Failed to start GitHub login",
     "google_login_fail": "Failed to start Google login",
     "or": "Or",
-    "create_new_account": "create a new account"
+    "create_new_account": "create a new account",
+    "gdpr_consent_required": "I have read and agree to the Terms of Service and Privacy Policy. I understand that my data will be processed as described therein.",
+    "gdpr_consent_marketing": "I consent to receive occasional updates and news from Απόφαση.",
+    "gdpr_consent_error": "Please accept the Terms of Service and Privacy Policy to continue."
   },
   "articles": {
     "title": "Articles",
@@ -352,7 +355,8 @@
     "brand_description": "Your trusted source for the latest news and articles. Participate and make results more valid.",
     "discord_label": "Join our Discord",
     "copyright": "Appofasi. All rights reserved. The code is available for review and improvements on",
-    "menu_aria": "Footer menu"
+    "menu_aria": "Footer menu",
+    "cookie_settings": "Cookie Settings"
   },
   "profile": {
     "title": "Profile",
@@ -1195,5 +1199,21 @@
     "instructions_page_409": "Μάθετε πώς μπορείτε να ",
     "instructions_page_410": "Συνεισφέρετε",
     "instructions_page_411": " στην κοινότητα"
+  },
+  "gdpr": {
+    "banner_title": "We use cookies",
+    "banner_description": "We use cookies to improve your experience, measure site traffic, and personalise content. You can choose which categories of cookies to allow.",
+    "accept_all": "Accept All",
+    "reject_non_essential": "Reject Non-Essential",
+    "manage_preferences": "Manage Preferences",
+    "save_preferences": "Save Preferences",
+    "necessary_title": "Necessary",
+    "necessary_description": "Essential cookies required for the site to function. Cannot be disabled.",
+    "analytics_title": "Analytics",
+    "analytics_description": "Help us understand how visitors interact with the site (Google Analytics).",
+    "functional_title": "Functional",
+    "functional_description": "Enable enhanced functionality such as visit tracking and personalisation.",
+    "privacy_policy_link": "Privacy Policy",
+    "always_on": "Always on"
   }
 }
