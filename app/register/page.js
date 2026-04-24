@@ -27,6 +27,8 @@ export default function RegisterPage() {
     firstNameNative: '',
     lastNameNative: '',
     searchable: true,
+    gdprConsent: false,
+    gdprMarketing: false,
   });
   const [loading, setLoading] = useState(false);
   const [detectedCountry, setDetectedCountry] = useState({ countryCode: null, countryName: null });
@@ -78,6 +80,11 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!formData.gdprConsent) {
+      error(t('gdpr_consent_error'));
+      return;
+    }
 
     if (formData.password !== formData.confirmPassword) {
       error(t('passwords_no_match'));
@@ -233,6 +240,35 @@ export default function RegisterPage() {
               />
               <label htmlFor="searchable" className="ml-2 block text-sm text-gray-900">
                 {t('searchable')}
+              </label>
+            </div>
+
+            <div className="flex items-start">
+              <input
+                id="gdpr_consent"
+                name="gdpr_consent"
+                type="checkbox"
+                checked={formData.gdprConsent}
+                onChange={(e) => setFormData({ ...formData, gdprConsent: e.target.checked })}
+                required
+                className="h-4 w-4 mt-0.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="gdpr_consent" className="ml-2 block text-sm text-gray-900">
+                {t('gdpr_consent_required')}
+              </label>
+            </div>
+
+            <div className="flex items-start">
+              <input
+                id="gdpr_marketing"
+                name="gdpr_marketing"
+                type="checkbox"
+                checked={formData.gdprMarketing}
+                onChange={(e) => setFormData({ ...formData, gdprMarketing: e.target.checked })}
+                className="h-4 w-4 mt-0.5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="gdpr_marketing" className="ml-2 block text-sm text-gray-900">
+                {t('gdpr_consent_marketing')}
               </label>
             </div>
 
