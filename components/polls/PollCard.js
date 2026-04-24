@@ -23,7 +23,6 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const { isAdmin } = usePermissions();
   
   const defaultPollImage = '/images/branding/news default.png';
-  const pollImageUrl = poll.bannerImageUrl || defaultPollImage;
   const createdAt = new Date(poll.createdAt);
   const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
@@ -578,7 +577,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
         <Link href={pollHref} className="block">
           {poll.bannerImageUrl ? (
             <img
-              src={pollImageUrl}
+              src={poll.bannerImageUrl}
               alt={`${poll.title} banner`}
               className="w-full h-32 object-cover"
               onError={(e) => { e.currentTarget.src = defaultPollImage; }}
@@ -598,9 +597,25 @@ export default function PollCard({ poll, variant = 'grid' }) {
   }
 
   // Render with image (non-inline-votable)
+  // Only use ImageTopCard when there is an actual banner image.
+  // Without one, show renderInfoPanel() so polls don't inherit the news default image.
+  if (!poll.bannerImageUrl) {
+    return (
+      <Link href={pollHref} className="block h-full">
+        <Card hoverable padding="none" className="overflow-hidden h-full flex flex-col">
+          {renderInfoPanel()}
+          <div className="p-6 flex flex-col flex-1">
+            {badgesContent}
+            {pollInfoContent}
+          </div>
+        </Card>
+      </Link>
+    );
+  }
+
   return (
     <ImageTopCard
-      image={pollImageUrl}
+      image={poll.bannerImageUrl}
       imageAlt={`${poll.title} banner`}
       imageFallback={defaultPollImage}
       imageClassName="h-32"
