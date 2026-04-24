@@ -18,7 +18,7 @@ const PERIODS = [
   { key: '30d', label: '30 ημέρες' },
   { key: 'all', label: 'Όλο το ιστορικό' },
 ];
-const LOG_RETENTION_OPTIONS = [30, 90, 180];
+const LOG_RETENTION_OPTIONS = [1, 30, 90, 180];
 
 const STATUS_META = {
   unlocked: { label: 'Ξεκλείδωτη', className: 'bg-emerald-100 text-emerald-700' },
@@ -65,6 +65,7 @@ function GeoAdminContent() {
   });
   const [clearOlderThanDays, setClearOlderThanDays] = useState(String(LOG_RETENTION_OPTIONS[0]));
   const [isClearingLogs, setIsClearingLogs] = useState(false);
+  const [isClearingAllLogs, setIsClearingAllLogs] = useState(false);
   const [fundingForm, setFundingForm] = useState({
     id: null,
     locationId: '',
@@ -338,6 +339,23 @@ function GeoAdminContent() {
     }
   };
 
+  const handleClearAllLogs = async () => {
+    if (!window.confirm('Να διαγραφούν ΟΛΕΣ οι εγγραφές επισκεψιμότητας;')) {
+      return;
+    }
+
+    setIsClearingAllLogs(true);
+    try {
+      const res = await geoAdminAPI.clearVisitsOlderThan(0);
+      await refetchVisits();
+      addToast(res?.message || 'Διαγράφηκαν όλες οι εγγραφές επισκεψιμότητας.', { type: 'success' });
+    } catch (error) {
+      addToast(error.message || 'Αποτυχία διαγραφής logs.', { type: 'error' });
+    } finally {
+      setIsClearingAllLogs(false);
+    }
+  };
+
   const handleAddCountryAccessRule = async () => {
     const countryCode = String(countryRuleForm.countryCode || '').trim().toUpperCase();
     if (!/^[A-Z]{2}$/.test(countryCode)) {
@@ -479,6 +497,13 @@ function GeoAdminContent() {
                   className="px-3 py-2 rounded-lg text-sm font-medium border border-red-300 text-red-700 hover:bg-red-50 disabled:opacity-50"
                 >
                   {isClearingLogs ? 'Διαγραφή...' : 'Καθαρισμός παλιών logs'}
+                </button>
+                <button
+                  onClick={handleClearAllLogs}
+                  disabled={isClearingAllLogs}
+                  className="px-3 py-2 rounded-lg text-sm font-medium border border-red-500 text-red-700 bg-red-50 hover:bg-red-100 disabled:opacity-50"
+                >
+                  {isClearingAllLogs ? 'Διαγραφή...' : 'Διαγραφή Όλων'}
                 </button>
               </div>
             </div>

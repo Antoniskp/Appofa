@@ -216,23 +216,29 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
 router.delete('/visits', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res, next) => {
   try {
     const days = Number(req.query.olderThanDays);
-    if (!Number.isInteger(days) || days < 1) {
-      return res.status(400).json({ success: false, message: 'olderThanDays must be a positive integer.' });
+    if (!Number.isInteger(days) || days < 0) {
+      return res.status(400).json({ success: false, message: 'olderThanDays must be a non-negative integer.' });
     }
 
-    const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
-    const deletedCount = await GeoVisit.destroy({
-      where: {
-        createdAt: {
-          [Op.lt]: cutoff,
+    let deletedCount;
+    if (days === 0) {
+      deletedCount = await GeoVisit.destroy({ where: {}, truncate: false });
+    } else {
+      const cutoff = new Date(Date.now() - (days * 24 * 60 * 60 * 1000));
+      deletedCount = await GeoVisit.destroy({
+        where: {
+          createdAt: {
+            [Op.lt]: cutoff,
+          },
         },
-      },
-    });
+      });
+    }
 
-    return res.json({
-      success: true,
-      message: `Deleted ${deletedCount} visit records older than ${days} days.`,
-    });
+    const message = days === 0
+      ? `Deleted all ${deletedCount} visit records.`
+      : `Deleted ${deletedCount} visit records older than ${days} days.`;
+
+    return res.json({ success: true, message });
   } catch (err) {
     return next(err);
   }
