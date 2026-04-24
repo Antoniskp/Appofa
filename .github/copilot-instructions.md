@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-04-24** — Enforced PR-only workflow; added npm/native module rules to recurring mistakes
 - **2026-04-24** — Added GDPR cookie consent (`CookieConsentBanner` component, consent-gated `GeoTracker`/GA)
 - **2026-04-23** — Added Organizations Phase 5: hierarchy (`parentId`) + analytics (`OrganizationAnalytics` model)
 - **2026-04-23** — Added org lifecycle notifications: `org_invite_received`, `org_join_approved`, `org_member_removed`
@@ -17,7 +18,22 @@ This instruction is permanent and must never be removed.
 - **2026-04-23** — Added org-scoped polls/suggestions: `organizationId` on Poll/Suggestion; `members_only` API→`private` DB
 - **2026-04-22** — Added per-country redirect paths in `CountryAccessRules`; admin geo access rules tab
 - **2026-04-22** — Added `GeoVisit` user attribution (`userId` FK); admin visits list shows username
-- **2026-04-21** — Added country funding public API (`GET /api/admin/geo-stats/country-funding/:locationId/public`)
+
+## 🚨 MANDATORY: PR-Only Workflow
+
+**Copilot MUST NEVER commit or push directly to `main` or any branch.**
+**ALL changes — no matter how small — must be made via a Pull Request.**
+
+This rule exists because:
+- Direct commits bypass CI checks and break the server when dependencies are invalid
+- PRs allow CI to catch build/install/test failures before they hit production
+- Past direct commits caused broken `npm install` on the live server
+
+| Rule | Detail |
+|------|--------|
+| ❌ Never | `create_or_update_file`, `push_files` directly to `main` |
+| ✅ Always | Create a branch → open a PR → wait for CI to pass |
+| No exceptions | Even 1-line changes, typo fixes, or dependency bumps |
 
 ## ⚠️ Recurring Mistakes — Read Before Starting
 
@@ -25,6 +41,10 @@ These mistakes appeared in 3–5 fix PRs each. Check this table before writing a
 
 | Area | ❌ Wrong | ✅ Correct |
 |------|----------|-----------|
+| **Workflow** | Commit directly to `main` | **Always open a PR** — CI must pass first |
+| **npm overrides** | Add override for a package that is already a direct dependency | Overrides are for transitive deps only; direct deps satisfy themselves |
+| **Native modules** | Assume `better-sqlite3` or `sqlite3` are pure JS | Both require `node-gyp` + C compiler (`build-essential`); use a pure-JS SQLite alternative if native build tools are unavailable |
+| **Dependency changes** | Change `package.json` without verifying `npm install` passes in CI | All dep changes go through a PR so CI runs `npm install` before merging |
 | Geo tracking | Remove `GeoTracker` from `app/layout.js` | Always keep it — it's the only visit tracking source |
 | Geo tracking | Track visits in `proxy.js` server-side | Only track client-side via `GeoTracker` component |
 | Geo tracking | Forget to skip prefetch requests | Check `purpose: 'prefetch'` header in `GeoTracker` |
@@ -81,12 +101,12 @@ Compact table of every model where wrong field names have caused bugs:
 - **Poll tags**: use unified `Tag`/`TaggableItem` (`entityType: 'poll'`), not a JSON `Polls.tags` column
 - **Poll visibility vs voting**: `visibility` controls who sees polls; `voteRestriction` controls who can vote (`anyone`/`authenticated`/`locals_only`). Do not use `allowUnauthenticatedVotes`.
 - **Suggestions access fields**: use `Suggestion.visibility` (`public`/`private`/`locals_only`) for read access and `voteRestriction` (`authenticated`/`locals_only`) for voting eligibility
-- **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) for candidate/voter eligibility
+- **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) fo[...]
 - **Unclaimed person creation**: require `firstNameEn` + `lastNameEn`; generate `User.slug` from English names; native names are optional metadata
 - **Homepage settings**: use single-row `HomepageSettings` with JSON fields (`manifestSection`, `infoSection`) and defaults via controller/model getters
 - **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash/ipAddress/userId) with backend IP fallback from request headers (`x-forwarded-for`/`req.ip`)
-- **Scanner probe auto-blocking**: keep `suspiciousPathMiddleware` immediately after `ipBlockMiddleware` to auto-blacklist first-hit probes for `.env`/`wp-config`/`/.git`-style paths with `ipAccessService.addRule(...)`
-- **Country access control**: enforce backend country blocks with `countryBlockMiddleware` after `ipBlockMiddleware` + `suspiciousPathMiddleware`; manage blocked countries via `CountryAccessRule` (including optional per-country `redirectPath`) and unknown/no-IP behavior via `GeoAccessSetting` + `countryAccessService` cache
+- **Scanner probe auto-blocking**: keep `suspiciousPathMiddleware` immediately after `ipBlockMiddleware` to auto-blacklist first-hit probes for `.env`/`wp-config`/`/.git`-style paths with `ipAcces[...]
+- **Country access control**: enforce backend country blocks with `countryBlockMiddleware` after `ipBlockMiddleware` + `suspiciousPathMiddleware`; manage blocked countries via `CountryAccessRule` [...]
 - **Country funding**: use one `CountryFunding` row per country `Location` (`locationId` unique) and manage status through admin `/api/admin/geo-stats/country-funding` endpoints
 - **Geo detection API**: use public `GET /api/geo/detect` (CF-IPCountry first, optional geoip-lite fallback) for lightweight country detection
 - **Geo access rules public API**: use `GET /api/geo/access-rules` (cached in `proxy.js`) for edge-side blocked-country and unknown/no-IP redirect decisions
@@ -99,7 +119,7 @@ Compact table of every model where wrong field names have caused bugs:
 - **Org poll access via poll API**: enforce active `OrganizationMember` checks in `pollService` for org-scoped private poll reads/results and voting (`/api/polls/:id*`) unless user role is `admin`
 - **Organization phase-3 enums**: keep shared org content enums in `config/organizationContent.json` for both backend and frontend (`visibilities`, `suggestionTypes`)
 - **Organization official posts**: use `Poll`/`Suggestion` fields `isOfficialPost` + `officialPostScope`; platform feed pulls only `isOfficialPost=true` and `visibility='public'`
-- **Organization member lifecycle notifications**: use notification types `org_invite_received`, `org_join_approved`, `org_member_removed` with helpers in `notificationService` and fire-and-forget calls in `organizationController`
+- **Organization member lifecycle notifications**: use notification types `org_invite_received`, `org_join_approved`, `org_member_removed` with helpers in `notificationService` and fire-and-forge[...]
 - **Organization verification**: use admin-only `PATCH /api/organizations/:id/verify` for `isVerified` changes; do not rely on generic update routes for moderation workflows
 - **Organization hierarchy**: store parent-child links in `Organization.parentId` (self FK) and prevent cycles when setting parent via `PATCH /api/organizations/:id/parent`
 
@@ -107,7 +127,7 @@ Compact table of every model where wrong field names have caused bugs:
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
 - **i18n**: use `next-intl` with root `i18n.js`; locale comes from `NEXT_LOCALE` cookie (default `el`, supported `el`/`en`) and messages live in `/messages`
-- **i18n namespaces**: keep page/component strings in `messages/{el,en}.json` under `common`, `nav`, `footer`, `home`, `auth`, `articles`, `news`, `profile`, `admin`, `editor`, `polls`, `organizations`, `static_pages`
+- **i18n namespaces**: keep page/component strings in `messages/{el,en}.json` under `common`, `nav`, `footer`, `home`, `auth`, `articles`, `news`, `profile`, `admin`, `editor`, `polls`, `organiza[...]
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
 - **Homepage locations highlight**: use `LocationCard` inside `HomepageSection` with `sort=mostUsers`; do NOT use `LocationDiscoveryStrip` (removed)
 - **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
@@ -130,7 +150,7 @@ Compact table of every model where wrong field names have caused bugs:
 - **Translations hook**: frontend pages/components should read UI labels via `useTranslations(...)` instead of hard-coded literals
 - **Auth**: use `useAuth` from `lib/auth-context.js`
 - **Login redirect links**: use `components/ui/LoginLink` and pass `redirectTo` when post-login return should target a specific action page (e.g. person claim flows)
-- **Users page (guest view)**: keep the `/users` unauthenticated section with login/register prompt plus an unclaimed public-profile preview fetched via `personAPI.getAll({ claimStatus: 'unclaimed', limit: 6 })`
+- **Users page (guest view)**: keep the `/users` unauthenticated section with login/register prompt plus an unclaimed public-profile preview fetched via `personAPI.getAll({ claimStatus: 'unclaime[...]
 - **GitHub files static page**: keep `/github-files` public and discoverable from `/pages` for quick links to frequently edited repository files
 - **Nginx 502 fallback page**: keep `public/502.html` fully self-contained (inline CSS/JS only, no external dependencies) so it still works when the app is down
 - **Components**: PascalCase · Hooks: `useHookName` · Utils: camelCase · Constants: UPPER_SNAKE_CASE
