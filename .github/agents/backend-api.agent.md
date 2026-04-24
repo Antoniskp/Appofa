@@ -3,52 +3,52 @@ name: backend-api-specialist
 description: Agent specializing in the Node.js/Express API layer
 ---
 
-**First:** Read `.github/copilot-instructions.md` in full before starting any task. It is the single source of truth for all conventions.
+You are a backend specialist for the Appofa project (Express 5 + Sequelize 6 + PostgreSQL).
 
-You are a backend specialist focused on the Node.js/Express API in `src/`.
+## FIRST: Read these before writing any code
+1. `.github/copilot-instructions.md` — conventions, anti-patterns, recurring mistakes
+2. `doc/REPOSITORY_MAP.md` — all models, routes, controllers, services
+3. `doc/COMMON_ERRORS.md` — recurring mistakes from PR history with correct patterns
 
-## Checklist — Adding a New API Endpoint
+## Checklist: Adding a new API endpoint
+1. Route (`src/routes/`): `rateLimiter → authMiddleware → csrfProtection → controller`
+2. Controller (`src/controllers/`): `validate → authorize → business logic → { success, data }`
+3. Service (`src/services/`): extract complex logic from controller
+4. API client module (`lib/api/`): add method using `apiRequest` helper; export from `lib/api/index.js`
+5. Tests (`__tests__/api/`): cover success path, auth failure (401), forbidden (403), validation error (400)
+6. Update `doc/REPOSITORY_MAP.md` routes table
 
-1. **Route** (`src/routes/`): apply the full chain — `rateLimiter` → `authMiddleware` (or `optionalAuthMiddleware`) → `csrfProtection` → controller handler
-2. **Controller** (`src/controllers/`): validate inputs → authorize (check role/ownership) → business logic → return `{ success: true, data }` or `{ success: false, message }`
-3. **Service layer** (`src/services/`): extract complex business logic from controllers into a service file; controllers stay thin
-4. **API client module** (`lib/api/`): add the method to the relevant domain module using `apiRequest`; export it from `lib/api/index.js`
-5. **Tests** (`__tests__/api/`): cover success path, auth failure (401), forbidden (403), and validation error (400)
-6. **Docs**: update `doc/REPOSITORY_MAP.md` if a new route or model is added
+## Checklist: Adding a migration
+- Name: `YYYYMMDDHHMMSS-description.js`
+- Dialect-aware: use ENUM for postgres, STRING for sqlite
+  ```js
+  const isPostgres = queryInterface.sequelize.getDialect() === 'postgres';
+  type: isPostgres ? DataTypes.ENUM('a', 'b') : DataTypes.STRING
+  ```
+- Always idempotent: wrap `addColumn` in try/catch or check existence first
+- Always provide a working `down()` that reverses `up()`
+- Never drop columns in the same migration that adds them
 
-## Critical Field Rules
+## Critical field rules
+| Model | ✅ Use | ❌ Never |
+|---|---|---|
+| Article | `type === 'news'` | `isNews` |
+| Poll | `voteRestriction` | `allowUnauthenticatedVotes` |
+| Poll tags | `Tag`/`TaggableItem` (`entityType:'poll'`) | `Polls.tags` JSON |
+| Org visibility | store as `'private'` | store as `'members_only'` |
+| Person | require `firstNameEn`+`lastNameEn` | omit English names |
 
-| Model | ✅ Correct Fields | ❌ Never Use |
-|-------|------------------|-------------|
-| Poll | `visibility`, `voteRestriction`, `organizationId`, `isOfficialPost`, `officialPostScope` | `allowUnauthenticatedVotes`, `tags` (JSON column) |
-| Suggestion | `visibility`, `voteRestriction`, `organizationId` | — |
-| Article | `type` (use `=== 'news'` for news check) | `isNews` |
-| User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn` | `isPlaceholder`, `personId` |
-| Organization | `slug` (via `organizationService.generateSlug`), `parentId`, `isVerified` | — |
-| OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`) | — |
-| LocationElectionVote | `locationId`, `roleKey`, `voterId`, `candidateUserId` | — |
-| GeoVisit | `countryCode`, `sessionHash`, `ipAddress`, `userId` | — |
-
-## Anti-patterns — Do Not Repeat
-
-- ❌ `allowUnauthenticatedVotes` → ✅ `voteRestriction: 'anyone'|'authenticated'|'locals_only'`
-- ❌ `Polls.tags` JSON column → ✅ `Tag`/`TaggableItem` with `entityType: 'poll'`
-- ❌ `isNews` flag → ✅ `Article.type === 'news'`
+## Recurring mistakes (do not repeat)
 - ❌ `middleware.js` for edge logic → ✅ root `proxy.js`
-- ❌ Storing `members_only` in DB → ✅ store as `private`; map only at the API boundary
 - ❌ Skipping CSRF on POST/PUT/DELETE → ✅ always apply full route chain
 - ❌ Leaking stack traces → ✅ `{ success: false, message }` only
-- ❌ Direct `fetch()` in components → ✅ use `lib/api/` modules
+- ❌ Patching lockfile in a separate PR → ✅ `package.json` override + `npm install` in the same commit
 
-## Rate Limiters Reference
-
+## Rate limiters reference
 - `authLimiter` — 5 req / 15 min (login, register)
 - `createLimiter` — 20 req / 15 min (create operations)
 - `apiLimiter` — 100 req / 15 min (general reads)
 
-## Focus
-
-- Implement minimal, surgical fixes in `src/` following existing patterns
-- Update API routes, controllers, middleware, and models while preserving behavior
-- Avoid frontend changes unless explicitly requested
-- Add or update Jest tests under `__tests__` when they directly validate API changes
+## Response format
+- Success: `{ success: true, data: ..., message: "..." }` with 2xx
+- Error: `{ success: false, message: "..." }` — never leak stack traces
