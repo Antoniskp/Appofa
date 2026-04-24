@@ -13,6 +13,14 @@ const FORMATION_CATEGORIES = [
   { id: 'custom', label: 'Προσαρμοσμένη', emoji: '🎨', color: 'bg-purple-100 text-purple-700' },
 ];
 
+const MINISTER_CATEGORIES = [
+  { key: 'core',        label: 'Οικονομία / Κεντρικός Κρατικός Τομέας',    emoji: '🏛️' },
+  { key: 'social',      label: 'Κοινωνική Πολιτική / Δημόσιες Υπηρεσίες', emoji: '🤝' },
+  { key: 'development', label: 'Οικονομική Ανάπτυξη / Υποδομές',           emoji: '📈' },
+  { key: 'governance',  label: 'Διακυβέρνηση / Ασφάλεια / Δικαιοσύνη',    emoji: '⚖️' },
+  { key: 'sectoral',    label: 'Τομεακά / Ειδικά Υπουργεία',               emoji: '🌟' },
+];
+
 const ALL_POSITIONS = positionsData.positions;
 const TOTAL = ALL_POSITIONS.length;
 
@@ -105,7 +113,7 @@ export default function FormationBuilder({ formation, communityResults = [], onS
     if (conflictEntry) {
       const conflictPosition = ALL_POSITIONS.find((p) => p.slug === conflictEntry[0]);
       showToast(
-        `Αυτό το πρόσωπο έχει ήδη επιλεγεί${conflictPosition ? ` ως ${conflictPosition.title}` : ' σε άλλη θέση'}. Αφαιρέστε το πρώτα από εκείνη τη θέση.`,
+        `Αυτό το πρόσωπο έχει ήδη επιλεγεί${conflictPosition ? ` ως ${conflictPosition.title}` : ' σε άλλη θέση'}. Αφαιρέστε το πρώτα από εκεί.`,
         'error',
       );
       return;
@@ -441,15 +449,21 @@ export default function FormationBuilder({ formation, communityResults = [], onS
           </div>
         </div>
 
-        {/* Ministers */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span>⚖️</span> Υπουργικό Συμβούλιο
-          </h3>
-          <div className="divide-y divide-gray-50">
-            {MINISTER_POSITIONS.map(renderPositionRow)}
-          </div>
-        </div>
+        {/* Ministers — grouped by category */}
+        {MINISTER_CATEGORIES.map((cat) => {
+          const catPositions = MINISTER_POSITIONS.filter((p) => p.ministerCategory === cat.key);
+          if (!catPositions.length) return null;
+          return (
+            <div key={cat.key} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span>{cat.emoji}</span> {cat.label}
+              </h3>
+              <div className="divide-y divide-gray-50">
+                {catPositions.map(renderPositionRow)}
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Save button (bottom) */}
@@ -474,4 +488,3 @@ export default function FormationBuilder({ formation, communityResults = [], onS
     </div>
   );
 }
-

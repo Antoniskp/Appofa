@@ -9,12 +9,26 @@ const positionIconMap = positionsData.positions.reduce((acc, p) => {
   return acc;
 }, {});
 
+// Build a lookup: slug → ministerCategory
+const positionCategoryMap = positionsData.positions.reduce((acc, p) => {
+  if (p.ministerCategory) acc[p.slug] = p.ministerCategory;
+  return acc;
+}, {});
+
 const CATEGORY_META = {
-  head_of_state: { label: 'Πρόεδρος', color: 'border-purple-300 bg-purple-50', badge: 'bg-purple-100 text-purple-700', icon: '👑' },
-  parliament_speaker: { label: 'Πρόεδρος Βουλής', color: 'border-green-300 bg-green-50', badge: 'bg-green-100 text-green-700', icon: '🏛️' },
-  prime_minister: { label: 'Πρωθυπουργός', color: 'border-blue-300 bg-blue-50', badge: 'bg-blue-100 text-blue-700', icon: '🏛️' },
-  minister: { label: 'Υπουργός', color: 'border-indigo-200 bg-indigo-50', badge: 'bg-indigo-100 text-indigo-700', icon: '⚖️' },
+  head_of_state:      { label: 'Πρόεδρος',        color: 'border-purple-300 bg-purple-50', badge: 'bg-purple-100 text-purple-700', icon: '👑' },
+  parliament_speaker: { label: 'Πρόεδρος Βουλής', color: 'border-green-300 bg-green-50',   badge: 'bg-green-100 text-green-700',   icon: '🏛️' },
+  prime_minister:     { label: 'Πρωθυπουργός',    color: 'border-blue-300 bg-blue-50',     badge: 'bg-blue-100 text-blue-700',     icon: '🏛️' },
+  minister:           { label: 'Υπουργός',         color: 'border-indigo-200 bg-indigo-50', badge: 'bg-indigo-100 text-indigo-700', icon: '⚖️' },
 };
+
+const MINISTER_CATEGORIES = [
+  { key: 'core',        label: 'Οικονομία / Κεντρικός Κρατικός Τομέας',    emoji: '🏛️' },
+  { key: 'social',      label: 'Κοινωνική Πολιτική / Δημόσιες Υπηρεσίες', emoji: '🤝' },
+  { key: 'development', label: 'Οικονομική Ανάπτυξη / Υποδομές',           emoji: '📈' },
+  { key: 'governance',  label: 'Διακυβέρνηση / Ασφάλεια / Δικαιοσύνη',    emoji: '⚖️' },
+  { key: 'sectoral',    label: 'Τομεακά / Ειδικά Υπουργεία',               emoji: '🌟' },
+];
 
 function WinnerCard({ item }) {
   const meta = CATEGORY_META[item.position?.positionTypeKey] || CATEGORY_META.minister;
@@ -102,10 +116,10 @@ export default function DreamTeamResults({ results = [] }) {
     );
   }
 
-  const presidents = results.filter((r) => r.position?.positionTypeKey === 'head_of_state');
-  const speakers = results.filter((r) => r.position?.positionTypeKey === 'parliament_speaker');
+  const presidents     = results.filter((r) => r.position?.positionTypeKey === 'head_of_state');
+  const speakers       = results.filter((r) => r.position?.positionTypeKey === 'parliament_speaker');
   const primeMinisters = results.filter((r) => r.position?.positionTypeKey === 'prime_minister');
-  const ministers = results.filter((r) => r.position?.positionTypeKey === 'minister');
+  const ministers      = results.filter((r) => r.position?.positionTypeKey === 'minister');
 
   const topPositions = [...presidents, ...speakers, ...primeMinisters];
 
@@ -125,19 +139,25 @@ export default function DreamTeamResults({ results = [] }) {
         </section>
       )}
 
-      {/* Ministers */}
-      {ministers.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span>⚖️</span> Υπουργικό Συμβούλιο
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {ministers.map((item) => (
-              <WinnerCard key={item.position?.id} item={item} />
-            ))}
-          </div>
-        </section>
-      )}
+      {/* Ministers — grouped by category */}
+      {ministers.length > 0 && MINISTER_CATEGORIES.map((cat) => {
+        const catItems = ministers.filter(
+          (r) => positionCategoryMap[r.position?.slug] === cat.key,
+        );
+        if (!catItems.length) return null;
+        return (
+          <section key={cat.key}>
+            <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span>{cat.emoji}</span> {cat.label}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {catItems.map((item) => (
+                <WinnerCard key={item.position?.id} item={item} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
