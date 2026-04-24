@@ -7,6 +7,51 @@ UPDATE this file and doc/REPOSITORY_MAP.md to reflect the changes.
 This instruction is permanent and must never be removed.
 -->
 
+## What Changed Recently
+<!-- Update this section after every task that changes conventions -->
+
+- **2026-04-23** — Organizations feature added: `organizationId` on Poll/Suggestion; `members_only` API maps to stored `private`; `OrganizationMember` roles/statuses; org hierarchy via `parentId`
+- **2026-04-22** — Country access control: `CountryAccessRule`, `GeoAccessSetting`, `countryBlockMiddleware`; per-country `redirectPath` on block rules
+- **2026-04-21** — `GeoVisit.ipAddress` added; admin IP visibility and blocking from geo dashboard
+- **2026-04-20** — Geo analytics: `GeoVisit` append-only table; `CountryFunding` per country; `GeoTracker` component in `app/layout.js`; diaspora fields on `User`
+- **2026-04-19** — `HomepageSettings` single-row JSON config; info/manifest sections gated by `enabled` + `audience`
+- **2026-04-16** — `LocationElectionVote` for per-role liquid elections; descendant location hierarchy in vote eligibility
+- **2026-04-13** — `PublicPersonProfiles` model removed; person profiles are now `User` rows with `claimStatus != null`; `email`/`username` nullable; `slug` added to Users
+- **2026-04-08** — Unified tags system: `Tag`/`TaggableItem` tables; `Polls.tags` JSON column removed; `Articles.tags` JSON column removed
+
+## ⚠️ Common Mistakes — Do Not Repeat
+
+Explicit wrong→right pairs for the most costly repeated errors:
+
+- ❌ `allowUnauthenticatedVotes` → ✅ use `voteRestriction: 'anyone'|'authenticated'|'locals_only'`
+- ❌ `Polls.tags` JSON column → ✅ use `Tag`/`TaggableItem` with `entityType: 'poll'`
+- ❌ `Article.isNews` flag (or any new `isNews` field) → ✅ use `Article.type === 'news'`
+- ❌ `middleware.js` for edge logic → ✅ use root `proxy.js`
+- ❌ `PublicPersonProfiles` model (removed) → ✅ person profiles are `User` rows with `claimStatus != null`
+- ❌ Storing `members_only` visibility in DB → ✅ store as `private`; map `members_only` only at API boundary
+- ❌ Using `LocationDiscoveryStrip` component (removed) → ✅ use `LocationCard` inside `HomepageSection`
+- ❌ `useEffect` + `fetch` for data → ✅ use `useAsyncData` (replace) or `useInfiniteData` (accumulating feed)
+- ❌ Direct `fetch()` in components → ✅ use `lib/api/` modules
+- ❌ Skipping CSRF middleware on POST/PUT/DELETE → ✅ always apply full route chain
+- ❌ Leaking stack traces in error responses → ✅ `{ success: false, message }` only
+- ❌ Hard-coded UI strings → ✅ use `useTranslations(...)` with keys in `messages/{el,en}.json`
+- ❌ `allowUnauthenticatedVotes` field in any new code → ✅ removed, use `voteRestriction`
+
+## Model Field Quick Reference
+
+Compact table of every model where wrong field names have caused bugs:
+
+| Model | ✅ Correct Fields | ❌ Never Use |
+|-------|------------------|-------------|
+| Poll | `visibility`, `voteRestriction`, `organizationId`, `isOfficialPost`, `officialPostScope` | `allowUnauthenticatedVotes`, `tags` (JSON column) |
+| Suggestion | `visibility`, `voteRestriction`, `organizationId` | — |
+| Article | `type` (use `=== 'news'` for news check) | `isNews` |
+| User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn` | `isPlaceholder`, `personId` |
+| Organization | `slug` (generated from English name via `organizationService.generateSlug`), `parentId`, `isVerified` | — |
+| OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`) | — |
+| LocationElectionVote | `locationId`, `roleKey`, `voterId`, `candidateUserId` | — |
+| GeoVisit | `countryCode`, `sessionHash`, `ipAddress`, `userId` | — |
+
 ## Project at a Glance
 
 - **App**: Greek civic-engagement platform — articles, polls, suggestions, dream-team formations, person profiles, manifests
@@ -104,9 +149,6 @@ This instruction is permanent and must never be removed.
 For the **complete codebase map** (all models, routes, pages, components, migrations):
 → Read **[doc/REPOSITORY_MAP.md](../doc/REPOSITORY_MAP.md)**
 
-For the **full AI instructions** (coding standards, workflows, checklists):
-→ Read **[AI_INSTRUCTIONS.md](../AI_INSTRUCTIONS.md)**
-
 For **feature-specific docs**:
 → See **[doc/INDEX.md](../doc/INDEX.md)**
 
@@ -126,7 +168,6 @@ npm run seed              # Seed initial data
 ## Post-Task Checklist
 
 After completing any task, review and update if needed:
-- [ ] This file (`.github/copilot-instructions.md`) — if conventions or patterns changed
+- [ ] This file (`.github/copilot-instructions.md`) — if conventions or patterns changed (also update `## What Changed Recently`)
 - [ ] `doc/REPOSITORY_MAP.md` — if models, routes, pages, components, or migrations changed
-- [ ] `AI_INSTRUCTIONS.md` — if coding standards, API modules, or workflows changed
 - [ ] Feature-specific `doc/*.md` — if a feature was added or modified
