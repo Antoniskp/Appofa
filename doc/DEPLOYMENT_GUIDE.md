@@ -301,7 +301,7 @@ sudo apt install -y nodejs git
 # Clone and configure
 git clone https://github.com/Antoniskp/Appofa.git
 cd Appofa
-npm install --production
+npm install --omit=dev
 
 # Configure .env with RDS credentials
 cp .env.example .env
@@ -492,9 +492,9 @@ npm run frontend:start
 ```
 
 **Production Deployment Notes:**
-- **Always use `npm ci`** instead of `npm install` for reproducible builds
-- **Do NOT use `--omit=dev`** for this project - all frontend dependencies are in `dependencies`
-- The `next` package is required at runtime for both building and serving
+- **Use `npm ci --omit=dev`** on production servers for reproducible builds that skip dev/test tools
+- All runtime and frontend dependencies (including `next`) are in `dependencies`, so `--omit=dev` is safe for production
+- Use plain `npm ci` (without `--omit=dev`) on CI or developer workstations where you need to run tests or the linter
 
 ---
 

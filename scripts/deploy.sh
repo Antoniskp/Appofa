@@ -57,8 +57,8 @@ if [ "$FAST_STARTUP" = "1" ] && [ -d node_modules ] && [ -f package-lock.json ];
 fi
 
 if [ "$NEEDS_NPM_CI" = "1" ]; then
-	echo "📦 Installing dependencies..."
-	npm ci
+	echo "📦 Installing production dependencies..."
+	npm ci --omit=dev
 fi
 
 if [ -f package-lock.json ]; then

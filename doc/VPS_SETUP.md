@@ -191,9 +191,18 @@ cd /var/www
 git clone https://github.com/Antoniskp/Appofa.git
 cd Appofa
 
-# Install all dependencies
-npm ci
+# Install production dependencies only (faster, no dev/test packages)
+npm ci --omit=dev
 ```
+
+> **Why `npm ci --omit=dev`?**
+> Running `npm ci` (without `--omit=dev`) installs devDependencies such as Jest, ESLint, and
+> other test/build tools that are not needed at runtime. Using `--omit=dev` skips them,
+> which reduces install time, avoids deprecated-package warnings from dev-only native addons,
+> and keeps the production environment lean.
+>
+> Use plain `npm ci` (or `npm install`) only on developer workstations or CI environments
+> where you need to run tests or lint the code.
 
 **Note:** The project uses npm overrides to force newer versions:
 - `glob@11.0.0` (requires Node 22+)
@@ -565,8 +574,8 @@ git fetch --all
 git checkout main
 git pull origin main
 
-# Install/update dependencies
-npm ci
+# Install/update production dependencies only
+npm ci --omit=dev
 
 # Run database migrations (always run — safe to run multiple times)
 npm run migrate
@@ -657,8 +666,8 @@ rm -rf .next
 
 **Step 5: Clean dependency reinstallation**
 ```bash
-# Clean install all dependencies
-npm ci
+# Clean install production dependencies only
+npm ci --omit=dev
 ```
 
 **Step 6: Build the frontend**
@@ -703,8 +712,8 @@ npm run migrate
 # Remove build artifacts
 rm -rf .next
 
-# Clean install dependencies
-npm ci
+# Clean install production dependencies only
+npm ci --omit=dev
 
 # Build frontend
 npm run frontend:build
@@ -747,8 +756,8 @@ git pull origin main
 # Remove build artifacts
 rm -rf .next
 
-# Clean install dependencies
-npm ci
+# Clean install production dependencies only
+npm ci --omit=dev
 
 # Build frontend
 npm run frontend:build
@@ -894,7 +903,7 @@ git fetch --all
 git checkout main
 git pull origin main
 
-npm ci
+npm ci --omit=dev
 npm run migrate
 rm -rf .next
 NODE_ENV=production npm run frontend:build
