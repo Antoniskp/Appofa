@@ -70,7 +70,13 @@
     "lodash": ">=4.18.1",
     "uuid": ">=14.0.0",
     "esbuild": "0.25.3",
-    "micromatch": "4.0.8"
+    "micromatch": "4.0.8",
+    "next": {
+      "postcss": ">=8.5.10"
+    },
+    "next-intl": {
+      "postcss": ">=8.5.10"
+    }
   },
   "devDependencies": {
     "better-sqlite3": "^11.10.0",
