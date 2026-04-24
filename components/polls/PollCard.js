@@ -6,7 +6,7 @@ import Card from '@/components/ui/Card';
 import { ImageTopCard } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
-import { ChartBarIcon, CheckCircleIcon, XCircleIcon, ClockIcon } from '@heroicons/react/24/outline';
+import { ChartBarIcon, CheckCircleIcon, XCircleIcon, ClockIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import { idSlug } from '@/lib/utils/slugify';
@@ -320,6 +320,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const renderInfoPanel = () => {
     const isAfterDeadline = poll.resultsVisibility === 'after_deadline';
     const hasDeadline = deadlineDate !== null;
+    const mustLoginToVote = !user && poll.voteRestriction !== 'anyone';
 
     // Case 3: after_deadline — always show countdown (or "ended" if race condition)
     if (isAfterDeadline && hasDeadline) {
@@ -341,7 +342,12 @@ export default function PollCard({ poll, variant = 'grid' }) {
     // Cases 1 & 2: after_vote + not voted (with or without deadline)
     return (
       <div className="h-32 bg-gradient-to-br from-gray-50 to-white flex flex-col items-center justify-center gap-1 px-4">
-        {hasDeadline && timeLeft > 0 ? (
+        {mustLoginToVote ? (
+          <>
+            <LockClosedIcon className="h-6 w-6 text-gray-400" />
+            <p className="text-xs text-gray-500 text-center">Συνδεθείτε για να ψηφίσετε</p>
+          </>
+        ) : hasDeadline && timeLeft > 0 ? (
           <>
             <ClockIcon className="h-6 w-6 text-gray-400" />
             <p className="text-xs text-gray-500 text-center">Ψηφίστε για να δείτε τα αποτελέσματα</p>
