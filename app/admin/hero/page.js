@@ -394,7 +394,7 @@ function HeroSettingsContent() {
           {/* Counter Toggle */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1">
-              Counter Κοινότητας
+              Μετρητής Κοινότητας
             </label>
             <p className="text-xs text-gray-400 mb-3">
               Ενεργοποιήστε ή απενεργοποιήστε το πλαίσιο με τους αριθμούς (χρήστες, ψηφοφορίες κ.λπ.) στο hero section.
