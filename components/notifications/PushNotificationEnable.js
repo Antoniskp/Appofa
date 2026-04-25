@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { pushAPI } from '@/lib/api/push.js';
 
 /**
  * PushNotificationEnable — "Enable notifications" button for iOS PWA users.
@@ -140,18 +141,12 @@ export default function PushNotificationEnable() {
       // ── Step 4: Send subscription to backend ──────────────────────────────
       // TODO: Implement POST /api/push/subscribe on the backend to persist
       //       the PushSubscription and associate it with the logged-in user.
-      const res = await fetch('/api/push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(subscription),
-      });
-      if (!res.ok) throw new Error(`Backend responded with ${res.status}`);
+      await pushAPI.subscribe(subscription);
 
       setStatusText('Οι ειδοποιήσεις ενεργοποιήθηκαν επιτυχώς!');
     } catch (err) {
       console.error('[PushNotificationEnable]', err);
-      setStatusText(`Σφάλμα: ${err.message}`);
+      setStatusText('Σφάλμα κατά την ενεργοποίηση ειδοποιήσεων. Παρακαλώ δοκιμάστε ξανά.');
     } finally {
       setLoading(false);
     }

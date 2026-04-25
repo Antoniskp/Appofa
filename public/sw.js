@@ -34,7 +34,7 @@ self.addEventListener('activate', (event) => {
  * Shows a system notification and updates the Home Screen badge count.
  */
 self.addEventListener('push', (event) => {
-  const data = event.data?.json?.() ?? {};
+  const data = event.data?.json() ?? {};
   const title = data.title || 'Νέα ειδοποίηση';
   const body = data.body || '';
   const unreadCount = Number(data.unreadCount ?? 0);
