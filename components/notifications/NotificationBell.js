@@ -57,7 +57,12 @@ export default function NotificationBell() {
 
   // Poll unread count every 30s and on window focus
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      if ('clearAppBadge' in navigator) {
+        navigator.clearAppBadge().catch(() => {});
+      }
+      return;
+    }
     fetchUnreadCount();
     const interval = setInterval(fetchUnreadCount, 30000);
     window.addEventListener('focus', fetchUnreadCount);
@@ -66,6 +71,16 @@ export default function NotificationBell() {
       window.removeEventListener('focus', fetchUnreadCount);
     };
   }, [fetchUnreadCount, user]);
+
+  // Update PWA app icon badge whenever unread count changes
+  useEffect(() => {
+    if (!('setAppBadge' in navigator)) return;
+    if (unreadCount > 0) {
+      navigator.setAppBadge(unreadCount).catch(() => {});
+    } else {
+      navigator.clearAppBadge().catch(() => {});
+    }
+  }, [unreadCount]);
 
   // Load notifications when dropdown opens
   useEffect(() => {
