@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { pushAPI } from '@/lib/api/push.js';
+import { pushAPI } from '@/lib/api';
 
 /**
  * PushNotificationEnable — "Enable notifications" button for iOS PWA users.
@@ -125,7 +125,7 @@ export default function PushNotificationEnable() {
         // without a VAPID key. Notify the user and log for maintainers.
         // TODO: Add NEXT_PUBLIC_VAPID_PUBLIC_KEY to .env and implement the backend endpoint.
         setStatusText(
-          'Ειδοποιήσεις ενεργοποιήθηκαν (push εκκρεμεί ρύθμιση — επικοινωνήστε με τον διαχειριστή).'
+          'Η άδεια δόθηκε, αλλά οι push ειδοποιήσεις δεν είναι ακόμα ρυθμισμένες. Επικοινωνήστε με τον διαχειριστή για να ολοκληρωθεί η ρύθμιση.'
         );
         return;
       }

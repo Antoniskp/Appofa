@@ -17,8 +17,6 @@
  *   4. Use the `web-push` npm package on the backend to send messages
  */
 
-const SW_VERSION = 'appofa-sw-v1';
-
 self.addEventListener('install', () => {
   // Activate immediately without waiting for existing clients to close
   self.skipWaiting();
