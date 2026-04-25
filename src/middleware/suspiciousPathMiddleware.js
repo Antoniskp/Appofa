@@ -1,4 +1,5 @@
 const ipAccessService = require('../services/ipAccessService');
+const { normalizeIp } = require('../utils/normalizeIp');
 
 const EXACT_SUSPICIOUS_PATHS = new Set([
   '/wp-config.php',
@@ -47,7 +48,8 @@ const suspiciousPathMiddleware = async (req, res, next) => {
   if (!isSuspiciousPath(requestPath)) return next();
 
   try {
-    await ipAccessService.addRule(req.ip, 'blacklist', 'Auto-blocked: scanner probe');
+    const clientIp = normalizeIp(req.ip) || req.ip;
+    await ipAccessService.addRule(clientIp, 'blacklist', 'Auto-blocked: scanner probe');
   } catch {
     // Intentionally swallow DB errors and still deny suspicious requests.
   }
