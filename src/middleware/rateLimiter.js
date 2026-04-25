@@ -1,10 +1,12 @@
 const rateLimit = require('express-rate-limit');
 const ipAccessService = require('../services/ipAccessService');
+const { normalizeIp } = require('../utils/normalizeIp');
 
 const skipForWhitelist = async (req) => {
   if (process.env.NODE_ENV === 'test') return true;
   const rules = await ipAccessService.getIpRulesCache();
-  return rules.whitelist.has(req.ip);
+  const clientIp = normalizeIp(req.ip) || req.ip;
+  return rules.whitelist.has(clientIp);
 };
 
 // General API rate limiter - 100 requests per 15 minutes
@@ -51,7 +53,8 @@ const ipBlockMiddleware = async (req, res, next) => {
   try {
     if (process.env.NODE_ENV === 'test') return next();
     const rules = await ipAccessService.getIpRulesCache();
-    if (rules.blacklist.has(req.ip)) {
+    const clientIp = normalizeIp(req.ip) || req.ip;
+    if (rules.blacklist.has(clientIp)) {
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }
     next();

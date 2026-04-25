@@ -1,4 +1,5 @@
 const { IpAccessRule, User } = require('../models');
+const { normalizeIp } = require('../utils/normalizeIp');
 
 let cache = null;
 let cacheExpiry = 0;
@@ -10,8 +11,9 @@ async function getIpRulesCache() {
   const whitelist = new Set();
   const blacklist = new Set();
   for (const rule of rules) {
-    if (rule.type === 'whitelist') whitelist.add(rule.ip);
-    else if (rule.type === 'blacklist') blacklist.add(rule.ip);
+    const ip = normalizeIp(rule.ip) || rule.ip;
+    if (rule.type === 'whitelist') whitelist.add(ip);
+    else if (rule.type === 'blacklist') blacklist.add(ip);
   }
   cache = { whitelist, blacklist };
   cacheExpiry = Date.now() + CACHE_TTL;
@@ -31,13 +33,22 @@ async function listRules() {
 }
 
 async function addRule(ip, type, reason, userId) {
-  const rule = await IpAccessRule.create({ ip, type, reason, createdByUserId: userId });
+  const canonicalIp = normalizeIp(ip);
+  if (!canonicalIp) {
+    const err = new Error('Invalid IP address.');
+    err.status = 400;
+    throw err;
+  }
+  const rule = await IpAccessRule.create({ ip: canonicalIp, type, reason, createdByUserId: userId });
   invalidateCache();
   return rule;
 }
 
 async function removeRule(ip) {
-  const deleted = await IpAccessRule.destroy({ where: { ip } });
+  // Normalize so ::ffff: prefixes are stripped; fall back to raw value only for
+  // legacy rows that may have been stored in non-canonical form before this fix.
+  const canonicalIp = normalizeIp(ip) || String(ip || '').trim();
+  const deleted = await IpAccessRule.destroy({ where: { ip: canonicalIp } });
   invalidateCache();
   return deleted;
 }

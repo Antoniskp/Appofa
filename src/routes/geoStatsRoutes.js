@@ -1,8 +1,8 @@
 const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const { isIP } = require('node:net');
 const { fn, col, literal, Op, QueryTypes } = require('sequelize');
+const { normalizeIp } = require('../utils/normalizeIp');
 const {
   sequelize,
   GeoVisit,
@@ -34,11 +34,8 @@ const getFirstForwardedIp = (value) => {
 
 const getValidTrackingIp = (...candidates) => {
   for (const candidate of candidates) {
-    if (!candidate) continue;
-    const normalized = String(candidate).trim();
-    if (normalized && isIP(normalized)) {
-      return normalized.slice(0, 45);
-    }
+    const ip = normalizeIp(candidate);
+    if (ip) return ip;
   }
   return null;
 };
