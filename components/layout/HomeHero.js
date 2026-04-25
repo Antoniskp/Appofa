@@ -84,6 +84,7 @@ function StatSkeleton() {
 export default function HomeHero() {
   const { user, loading: authLoading } = useAuth();
   const [heroBg, setHeroBg] = useState({ type: 'color', value: DEFAULT_BG_COLOR });
+  const [counterEnabled, setCounterEnabled] = useState(true);
   const [currentSlideIdx, setCurrentSlideIdx] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const intervalRef = useRef(null);
@@ -102,7 +103,8 @@ export default function HomeHero() {
     {
       onSuccess: (res) => {
         if (!res?.success) return;
-        const { backgroundImageUrl, backgroundColor } = res.data;
+        const { backgroundImageUrl, backgroundColor, counterEnabled: enabled } = res.data;
+        if (typeof enabled === 'boolean') setCounterEnabled(enabled);
         const color = backgroundColor || DEFAULT_BG_COLOR;
         if (backgroundImageUrl && /^https?:\/\//.test(backgroundImageUrl)) {
           const img = new Image();
@@ -358,7 +360,7 @@ export default function HomeHero() {
             </div>
 
             {/* Right – community stats */}
-            {(statsLoading || metrics) && (
+            {counterEnabled && (statsLoading || metrics) && (
               <div className="md:w-64 lg:w-72 shrink-0">
                 <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl px-4 py-4 grid grid-cols-2 gap-4 animate-fade-in">
                   {statsLoading ? (

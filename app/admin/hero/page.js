@@ -15,6 +15,7 @@ function HeroSettingsContent() {
   // --- Background settings state ---
   const [backgroundImageUrl, setBackgroundImageUrl] = useState('');
   const [backgroundColor, setBackgroundColor] = useState('#1a2a3a');
+  const [counterEnabled, setCounterEnabled] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -26,6 +27,9 @@ function HeroSettingsContent() {
       onSuccess: (res) => {
         setBackgroundImageUrl(res?.data?.backgroundImageUrl || '');
         setBackgroundColor(res?.data?.backgroundColor || '#1a2a3a');
+        if (typeof res?.data?.counterEnabled === 'boolean') {
+          setCounterEnabled(res.data.counterEnabled);
+        }
       },
     }
   );
@@ -71,7 +75,7 @@ function HeroSettingsContent() {
     clearMessages();
     setSaving(true);
     try {
-      const res = await heroSettingsAPI.update({ backgroundImageUrl, backgroundColor });
+      const res = await heroSettingsAPI.update({ backgroundImageUrl, backgroundColor, counterEnabled });
       if (res?.success) {
         setSuccessMsg(res.message || 'Οι ρυθμίσεις αποθηκεύτηκαν.');
       } else {
@@ -385,6 +389,34 @@ function HeroSettingsContent() {
               />
               <span className="text-sm text-gray-600 font-mono">{backgroundColor}</span>
             </div>
+          </div>
+
+          {/* Counter Toggle */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">
+              Μετρητής Κοινότητας
+            </label>
+            <p className="text-xs text-gray-400 mb-3">
+              Ενεργοποιήστε ή απενεργοποιήστε το πλαίσιο με τους αριθμούς (χρήστες, ψηφοφορίες κ.λπ.) στο hero section.
+            </p>
+            <button
+              type="button"
+              onClick={() => setCounterEnabled((v) => !v)}
+              aria-pressed={counterEnabled}
+              className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 ${
+                counterEnabled ? 'bg-indigo-600' : 'bg-gray-300'
+              }`}
+            >
+              <span className="sr-only">{counterEnabled ? 'Απενεργοποίηση counter' : 'Ενεργοποίηση counter'}</span>
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
+                  counterEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className="ml-3 text-sm text-gray-600 align-middle">
+              {counterEnabled ? 'Ενεργό' : 'Ανενεργό'}
+            </span>
           </div>
 
           {/* Actions */}

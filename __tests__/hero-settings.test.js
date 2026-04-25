@@ -453,4 +453,68 @@ describe('Hero Settings API Tests', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  // ─── Counter enabled setting ──────────────────────────────────────────────────
+
+  describe('GET /api/hero-settings — counterEnabled field', () => {
+    it('should return counterEnabled in the response (default true)', async () => {
+      const res = await request(app).get('/api/hero-settings');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(typeof res.body.data.counterEnabled).toBe('boolean');
+    });
+  });
+
+  describe('PUT /api/hero-settings — counterEnabled', () => {
+    it('should reject unauthenticated requests', async () => {
+      const res = await request(app)
+        .put('/api/hero-settings')
+        .send({ counterEnabled: false });
+      expect(res.status).toBe(401);
+    });
+
+    it('should reject non-admin users', async () => {
+      const res = await request(app)
+        .put('/api/hero-settings')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeadersFor(csrfViewer, viewerId))
+        .send({ counterEnabled: false });
+      expect(res.status).toBe(403);
+    });
+
+    it('should reject non-boolean counterEnabled', async () => {
+      const res = await request(app)
+        .put('/api/hero-settings')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ counterEnabled: 'yes' });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('counterEnabled must be a boolean.');
+    });
+
+    it('should disable the counter and persist the change', async () => {
+      const res = await request(app)
+        .put('/api/hero-settings')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ counterEnabled: false });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.counterEnabled).toBe(false);
+
+      // Verify persistence
+      const getRes = await request(app).get('/api/hero-settings');
+      expect(getRes.body.data.counterEnabled).toBe(false);
+    });
+
+    it('should re-enable the counter', async () => {
+      const res = await request(app)
+        .put('/api/hero-settings')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeadersFor(csrfAdmin, adminId))
+        .send({ counterEnabled: true });
+      expect(res.status).toBe(200);
+      expect(res.body.data.counterEnabled).toBe(true);
+    });
+  });
 });

@@ -4,6 +4,7 @@ const HeroSettings = require('../models/HeroSettings');
 const DEFAULT_SETTINGS = {
   backgroundImageUrl: '',
   backgroundColor: '#1a2a3a',
+  counterEnabled: true,
   slides: [
     {
       id: 'default-slide-1',
@@ -34,6 +35,7 @@ async function getOrCreateSettings() {
     settings = await HeroSettings.create({
       backgroundImageUrl: DEFAULT_SETTINGS.backgroundImageUrl,
       backgroundColor: DEFAULT_SETTINGS.backgroundColor,
+      counterEnabled: DEFAULT_SETTINGS.counterEnabled,
       slides: DEFAULT_SETTINGS.slides,
     });
   }
@@ -78,6 +80,7 @@ const getHeroSettings = async (req, res) => {
       data: {
         backgroundImageUrl: settings.backgroundImageUrl,
         backgroundColor: settings.backgroundColor,
+        counterEnabled: settings.counterEnabled,
         slides: cleanSlides(settings.slides),
       },
     });
@@ -88,7 +91,7 @@ const getHeroSettings = async (req, res) => {
 
 const updateHeroSettings = async (req, res) => {
   try {
-    const { backgroundImageUrl, backgroundColor } = req.body;
+    const { backgroundImageUrl, backgroundColor, counterEnabled } = req.body;
 
     if (backgroundImageUrl !== undefined && typeof backgroundImageUrl !== 'string') {
       return res.status(400).json({ success: false, message: 'backgroundImageUrl must be a string.' });
@@ -101,6 +104,9 @@ const updateHeroSettings = async (req, res) => {
         return res.status(400).json({ success: false, message: 'backgroundColor must be a valid hex color (e.g. #1a2a3a).' });
       }
     }
+    if (counterEnabled !== undefined && typeof counterEnabled !== 'boolean') {
+      return res.status(400).json({ success: false, message: 'counterEnabled must be a boolean.' });
+    }
 
     const settings = await getOrCreateSettings();
 
@@ -110,14 +116,18 @@ const updateHeroSettings = async (req, res) => {
     if (backgroundColor !== undefined) {
       settings.backgroundColor = backgroundColor;
     }
+    if (counterEnabled !== undefined) {
+      settings.counterEnabled = counterEnabled;
+    }
 
-    await settings.save({ fields: ['backgroundImageUrl', 'backgroundColor', 'updatedAt'] });
+    await settings.save({ fields: ['backgroundImageUrl', 'backgroundColor', 'counterEnabled', 'updatedAt'] });
 
     return res.json({
       success: true,
       data: {
         backgroundImageUrl: settings.backgroundImageUrl,
         backgroundColor: settings.backgroundColor,
+        counterEnabled: settings.counterEnabled,
         slides: cleanSlides(settings.slides),
       },
       message: 'Hero settings updated.',

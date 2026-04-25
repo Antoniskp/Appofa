@@ -33,6 +33,11 @@ const HeroSettings = sequelize.define('HeroSettings', {
       this.setDataValue('slides', JSON.stringify(Array.isArray(val) ? val : []));
     },
   },
+  counterEnabled: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: true,
+  },
 }, {
   timestamps: true,
   tableName: 'HeroSettings',
