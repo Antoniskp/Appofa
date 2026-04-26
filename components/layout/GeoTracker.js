@@ -23,9 +23,15 @@ function GeoTrackerInner() {
     if (!pathname) return;
 
     const run = async () => {
+      let countryCode = null;
       try {
         const geo = await geoAPI.detect();
-        const countryCode = geo?.data?.countryCode || null;
+        countryCode = geo?.data?.countryCode || null;
+      } catch {
+        // Country detection failed; proceed without country code.
+      }
+
+      try {
         const token = readCookie('auth_token');
         const fallbackLocale = navigator.language?.split('-')[0] || null;
         const locale = readCookie('NEXT_LOCALE') || (['el', 'en'].includes(fallbackLocale) ? fallbackLocale : null);
