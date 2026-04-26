@@ -17,8 +17,19 @@ const csrfProtection = require('../middleware/csrfProtection');
 
 const router = express.Router();
 
+// Pseudo-codes that indicate unknown or non-country origin (Cloudflare, Tor, etc.)
+const INVALID_COUNTRY_CODES = new Set(['XX', 'T1']);
+const ISO2_RE = /^[A-Z]{2}$/;
+
+const normalizeCountryCode = (value) => {
+  if (!value) return null;
+  const code = String(value).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2);
+  if (!code || !ISO2_RE.test(code) || INVALID_COUNTRY_CODES.has(code)) return null;
+  return code;
+};
+
 const getCountryNameLocal = (code) => {
-  if (!code) return null;
+  if (!code || !ISO2_RE.test(code) || INVALID_COUNTRY_CODES.has(code)) return null;
   try {
     return new Intl.DisplayNames(['en'], { type: 'region' }).of(code) || null;
   } catch {
@@ -69,10 +80,7 @@ router.post('/track', apiLimiter, async (req, res, next) => {
       }
     }
 
-    const sanitizedCode = countryCode
-      ? String(countryCode).toUpperCase().replace(/[^A-Z]/g, '').slice(0, 2) || null
-      : null;
-    const validCode = sanitizedCode && /^[A-Z]{2}$/.test(sanitizedCode) ? sanitizedCode : null;
+    const validCode = normalizeCountryCode(countryCode);
     const sessionHash = ipAddress
       ? crypto.createHash('sha256').update(String(ipAddress)).digest('hex')
       : null;

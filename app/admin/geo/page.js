@@ -27,8 +27,15 @@ const STATUS_META = {
   none: { label: 'Χωρίς εγγραφή', className: 'bg-blue-100 text-blue-700' },
 };
 
-const countryCodeToFlag = (code) =>
-  code ? [...code.toUpperCase()].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('') : '🌍';
+const ISO2_RE = /^[A-Z]{2}$/;
+const INVALID_FLAG_CODES = new Set(['XX', 'T1']);
+
+const countryCodeToFlag = (code) => {
+  if (!code) return '🌍';
+  const upper = String(code).toUpperCase();
+  if (!ISO2_RE.test(upper) || INVALID_FLAG_CODES.has(upper)) return '🌍';
+  return [...upper].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+};
 
 const euro = (value) => Number(value || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const ACCESS_ACTION_OPTIONS = ['allow', 'block', 'redirect'];

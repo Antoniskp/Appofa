@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-23
+> **Last updated**: 2026-04-26
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -334,7 +334,7 @@ Appofa/
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
 | adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
-| geoStatsRoutes.js | /api/admin/geo-stats | POST /track, GET /country-funding/:locationId/public, GET /visits (includes `userId`/`username` when available), DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
+| geoStatsRoutes.js | /api/admin/geo-stats | POST /track (normalizes countryCode to ISO-2; rejects `XX`/`T1`), GET /country-funding/:locationId/public, GET /visits (includes `userId`/`username` when available), DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
 | geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules (blocked countries with optional redirectPath). Admin: GET/POST/DELETE /rules (POST accepts optional redirectPath), GET/PUT /settings |
 
