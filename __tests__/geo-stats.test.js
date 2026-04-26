@@ -190,7 +190,7 @@ describe('Geo Stats Admin API', () => {
   it('DELETE /visits validates olderThanDays query', async () => {
     const invalidRes = await request(app)
       .delete('/api/admin/geo-stats/visits')
-      .query({ olderThanDays: 0 })
+      .query({ olderThanDays: -1 })
       .set('Authorization', `Bearer ${adminToken}`)
       .set(csrfHeadersFor('csrf-geo-visits-invalid', adminId));
 
@@ -317,12 +317,12 @@ describe('Geo Stats Admin API', () => {
     expect(saved).toBeTruthy();
     expect(saved.countryCode).toBe('GR');
     expect(saved.countryName).toBe('Greece');
-    expect(saved.ipAddress).toBe('::ffff:185.230.31.201');
+    expect(saved.ipAddress).toBe('185.230.31.201');
     expect(saved.locale).toBe('el-GR');
     expect(saved.isAuthenticated).toBe(false);
     expect(saved.userId).toBeNull();
     expect(saved.sessionHash).toBe(
-      crypto.createHash('sha256').update('::ffff:185.230.31.201').digest('hex')
+      crypto.createHash('sha256').update('185.230.31.201').digest('hex')
     );
   });
 
@@ -375,6 +375,7 @@ describe('Geo Stats Admin API', () => {
     const testCases = [
       { path: '/norm-xx', code: 'XX' },
       { path: '/norm-empty', code: '' },
+      { path: '/norm-t1', code: 'T1' },
     ];
 
     for (const { path, code } of testCases) {
@@ -398,5 +399,82 @@ describe('Geo Stats Admin API', () => {
     expect(res.status).toBe(400);
     expect(res.body.success).toBe(false);
     expect(res.body.message).toBe('path is required.');
+  });
+
+  it('POST /track stores visit without countryCode (unresolved country)', async () => {
+    const path = '/track-no-country';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .send({ path, locale: 'el' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.countryCode).toBeNull();
+    expect(saved.countryName).toBeNull();
+  });
+
+  it('POST /track stores visit with loopback IP (tracking not dropped)', async () => {
+    const path = '/track-loopback';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .send({ path, ipAddress: '127.0.0.1' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.ipAddress).toBe('127.0.0.1');
+  });
+
+  it('POST /track stores visit with private IP (tracking not dropped)', async () => {
+    const path = '/track-private';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .send({ path, ipAddress: '10.0.0.1' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.ipAddress).toBe('10.0.0.1');
+    expect(saved.countryCode).toBeNull();
+  });
+
+  it('POST /track strips port from IPv4 in x-forwarded-for header', async () => {
+    const path = '/track-forwarded-port';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .set('x-forwarded-for', '203.0.113.10:443, 10.0.0.2')
+      .send({ path, countryCode: 'US' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.ipAddress).toBe('203.0.113.10');
+    expect(saved.sessionHash).toBe(
+      crypto.createHash('sha256').update('203.0.113.10').digest('hex')
+    );
+  });
+
+  it('POST /track unwraps bracketed IPv6 in x-forwarded-for header', async () => {
+    const path = '/track-bracketed-ipv6';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .set('x-forwarded-for', '[2001:db8::1]:8080')
+      .send({ path, countryCode: 'GR' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.ipAddress).toBe('2001:db8::1');
   });
 });
