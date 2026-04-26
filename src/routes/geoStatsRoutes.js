@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { fn, col, literal, Op, QueryTypes } = require('sequelize');
 const { normalizeIp } = require('../utils/normalizeIp');
+const { getCookie } = require('../utils/cookies');
 const {
   sequelize,
   GeoVisit,
@@ -53,30 +54,39 @@ const getValidTrackingIp = (...candidates) => {
 
 router.post('/track', apiLimiter, async (req, res, next) => {
   try {
-    const { path: visitPath, countryCode, locale, token } = req.body;
+    const { path: visitPath, countryCode, locale } = req.body;
     if (!visitPath || typeof visitPath !== 'string') {
       return res.status(400).json({ success: false, message: 'path is required.' });
     }
 
+    // Resolve IP from trusted server-side sources only — never from client-supplied body.
     const ipAddress = getValidTrackingIp(
-      req.body.ipAddress,
+      req.headers['cf-connecting-ip'],
+      req.headers['x-real-ip'],
       getFirstForwardedIp(req.headers['x-forwarded-for']),
       req.ip
     );
 
+    // Identify the authenticated user from the verified HttpOnly cookie sent by the browser.
+    // Fall back to body token (analytics hints from non-browser callers) but always verify it.
     let isAuthenticated = false;
     let userId = null;
-    if (token && typeof token === 'string') {
-      try {
-        const payload = jwt.decode(token);
-        if (payload && typeof payload === 'object') {
-          const parsed = Number.parseInt(payload.id || payload.sub, 10);
-          userId = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-          isAuthenticated = true;
+    const jwtSecret = process.env.JWT_SECRET;
+    if (jwtSecret) {
+      const cookieToken = getCookie(req, 'auth_token');
+      const bodyToken = typeof req.body.token === 'string' ? req.body.token : null;
+      const effectiveToken = cookieToken || bodyToken;
+      if (effectiveToken) {
+        try {
+          const payload = jwt.verify(effectiveToken, jwtSecret);
+          if (payload && typeof payload === 'object') {
+            const parsed = Number.parseInt(payload.id || payload.sub, 10);
+            userId = Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+            isAuthenticated = Boolean(userId);
+          }
+        } catch {
+          // Invalid or expired token — leave isAuthenticated false.
         }
-      } catch {
-        isAuthenticated = false;
-        userId = null;
       }
     }
 
