@@ -32,6 +32,14 @@ describe('geoDetectRoutes helpers', () => {
       expect(parseClientIp(req)).toBe('198.51.100.4');
     });
 
+    it('handles forwarded IPv4 addresses that include a port', () => {
+      const req = {
+        headers: { 'x-forwarded-for': '203.0.113.10:443, 10.0.0.2' },
+        ip: '10.0.0.2',
+      };
+      expect(parseClientIp(req)).toBe('203.0.113.10');
+    });
+
     it('returns null for loopback IPs', () => {
       expect(parseClientIp({ headers: {}, ip: '127.0.0.1' })).toBeNull();
       expect(parseClientIp({ headers: {}, ip: '::1' })).toBeNull();

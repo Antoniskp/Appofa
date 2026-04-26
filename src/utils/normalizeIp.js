@@ -15,7 +15,13 @@ function normalizeIp(value) {
   if (!value) return null;
   const trimmed = String(value).trim();
   if (!trimmed) return null;
-  const stripped = trimmed.replace(/^::ffff:/i, '');
+  const unwrapped = trimmed.startsWith('[') && trimmed.includes(']')
+    ? trimmed.slice(1, trimmed.indexOf(']'))
+    : trimmed;
+  const withoutPort = /^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(unwrapped)
+    ? unwrapped.replace(/:\d+$/, '')
+    : unwrapped;
+  const stripped = withoutPort.replace(/^::ffff:/i, '');
   if (!stripped || !isIP(stripped)) return null;
   return stripped.slice(0, 45);
 }

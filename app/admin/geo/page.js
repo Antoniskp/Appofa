@@ -92,8 +92,27 @@ function GeoAdminContent() {
     async () => {
       const res = await geoAdminAPI.getVisits({ period });
       if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης επισκεψιμότητας.');
-      return res.data || {
+      const data = res.data || {
         totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [],
+      };
+      return {
+        ...data,
+        byCountry: (data.byCountry || []).map((row) => {
+          const code = String(row.countryCode || '').toUpperCase();
+          return {
+            ...row,
+            countryCode: code || null,
+            countryName: row.countryName || getCountryName(code) || null,
+          };
+        }),
+        recentVisits: (data.recentVisits || []).map((row) => {
+          const code = String(row.countryCode || '').toUpperCase();
+          return {
+            ...row,
+            countryCode: code || null,
+            countryName: row.countryName || getCountryName(code) || null,
+          };
+        }),
       };
     },
     [period],
@@ -109,7 +128,14 @@ function GeoAdminContent() {
     async () => {
       const res = await geoAdminAPI.getCountries();
       if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης χωρών.');
-      return res.data || [];
+      return (res.data || []).map((row) => {
+        const code = String(row.countryCode || '').toUpperCase();
+        return {
+          ...row,
+          countryCode: code || null,
+          countryName: row.countryName || getCountryName(code) || null,
+        };
+      });
     },
     [],
     {

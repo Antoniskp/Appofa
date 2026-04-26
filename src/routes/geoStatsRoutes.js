@@ -51,6 +51,25 @@ const getValidTrackingIp = (...candidates) => {
   return null;
 };
 
+const resolveCountryCode = (req, providedCountryCode, ipAddress) => {
+  const directCode = normalizeCountryCode(providedCountryCode)
+    || normalizeCountryCode(req.headers['cf-ipcountry'])
+    || normalizeCountryCode(req.headers['x-vercel-ip-country'])
+    || normalizeCountryCode(req.headers['x-country-code']);
+
+  if (directCode) return directCode;
+  if (!ipAddress) return null;
+
+  try {
+    // Optional dependency (fallback only)
+    const geoip = require('geoip-lite');
+    const geo = geoip.lookup(ipAddress);
+    return normalizeCountryCode(geo?.country);
+  } catch {
+    return null;
+  }
+};
+
 router.post('/track', apiLimiter, async (req, res, next) => {
   try {
     const { path: visitPath, countryCode, locale, token } = req.body;
@@ -80,7 +99,7 @@ router.post('/track', apiLimiter, async (req, res, next) => {
       }
     }
 
-    const validCode = normalizeCountryCode(countryCode);
+    const validCode = resolveCountryCode(req, countryCode, ipAddress);
     const sessionHash = ipAddress
       ? crypto.createHash('sha256').update(String(ipAddress)).digest('hex')
       : null;

@@ -1,5 +1,6 @@
 const express = require('express');
 const { apiLimiter } = require('../middleware/rateLimiter');
+const { normalizeIp } = require('../utils/normalizeIp');
 
 const router = express.Router();
 
@@ -40,9 +41,9 @@ const parseClientIp = (req) => {
     || null;
 
   if (!candidate) return null;
-  const cleaned = String(candidate).trim().replace(/^::ffff:/i, '');
-  if (!cleaned || cleaned === '::1' || cleaned === '127.0.0.1') return null;
-  return cleaned;
+  const normalized = normalizeIp(candidate);
+  if (!normalized || normalized === '127.0.0.1' || normalized === '::1') return null;
+  return normalized;
 };
 
 router.get('/detect', apiLimiter, (req, res) => {
