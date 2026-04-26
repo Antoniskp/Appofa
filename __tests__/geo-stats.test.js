@@ -371,6 +371,25 @@ describe('Geo Stats Admin API', () => {
     expect(saved.userId).toBe(adminId);
   });
 
+  it('POST /track normalizes invalid and pseudo country codes to null', async () => {
+    const testCases = [
+      { path: '/norm-xx', code: 'XX' },
+      { path: '/norm-empty', code: '' },
+    ];
+
+    for (const { path, code } of testCases) {
+      const res = await request(app)
+        .post('/api/admin/geo-stats/track')
+        .send({ path, countryCode: code });
+
+      expect(res.status).toBe(200);
+      const saved = await GeoVisit.findOne({ where: { path } });
+      expect(saved).toBeTruthy();
+      expect(saved.countryCode).toBeNull();
+      expect(saved.countryName).toBeNull();
+    }
+  });
+
   it('POST /track validates required path field', async () => {
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
