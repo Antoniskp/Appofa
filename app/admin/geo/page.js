@@ -30,20 +30,41 @@ const STATUS_META = {
 const ISO2_RE = /^[A-Z]{2}$/;
 const INVALID_FLAG_CODES = new Set(['XX', 'T1']);
 
-const countryCodeToFlag = (code) => {
-  if (!code) return '🌍';
+const isValidCountryCode = (code) => {
+  if (!code) return false;
   const upper = String(code).toUpperCase();
-  if (!ISO2_RE.test(upper) || INVALID_FLAG_CODES.has(upper)) return '🌍';
-  return [...upper].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+  return ISO2_RE.test(upper) && !INVALID_FLAG_CODES.has(upper);
 };
+
+function CountryFlag({ code }) {
+  if (!isValidCountryCode(code)) {
+    return <span title="Άγνωστη χώρα" aria-label="Άγνωστη χώρα">🌍</span>;
+  }
+  const upper = String(code).toUpperCase();
+  return (
+    <img
+      src={`https://flagcdn.com/16x12/${upper.toLowerCase()}.png`}
+      srcSet={`https://flagcdn.com/32x24/${upper.toLowerCase()}.png 2x`}
+      width={16}
+      height={12}
+      alt={`Σημαία ${upper}`}
+      title={upper}
+      aria-label={`Σημαία ${upper}`}
+      style={{ display: 'inline', verticalAlign: 'middle' }}
+      onError={(e) => {
+        e.currentTarget.outerHTML = '<span title="Άγνωστη χώρα" aria-label="Άγνωστη χώρα">🌍</span>';
+      }}
+    />
+  );
+}
 
 const euro = (value) => Number(value || 0).toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const ACCESS_ACTION_OPTIONS = ['allow', 'block', 'redirect'];
 
 const getCountryName = (code) => {
-  if (!code) return null;
+  if (!isValidCountryCode(code)) return null;
   try {
-    return new Intl.DisplayNames(['en'], { type: 'region' }).of(code.toUpperCase()) || null;
+    return new Intl.DisplayNames(['en'], { type: 'region' }).of(String(code).toUpperCase()) || null;
   } catch {
     return null;
   }
@@ -372,10 +393,19 @@ function GeoAdminContent() {
       addToast('Ο κωδικός χώρας πρέπει να έχει 2 κεφαλαία γράμματα.', { type: 'error' });
       return;
     }
+    if (INVALID_FLAG_CODES.has(countryCode)) {
+      addToast('Μη έγκυρος κωδικός χώρας (XX/T1 δεν επιτρέπονται).', { type: 'error' });
+      return;
+    }
+
+    const redirectPath = String(countryRuleForm.redirectPath || '').trim();
+    if (redirectPath && !redirectPath.startsWith('/')) {
+      addToast('Το redirect path πρέπει να ξεκινά με "/".', { type: 'error' });
+      return;
+    }
 
     setIsAddingCountryRule(true);
     try {
-      const redirectPath = String(countryRuleForm.redirectPath || '').trim();
       await addCountryRule(countryCode, countryRuleForm.reason || null, redirectPath || null);
       setCountryRuleForm({ countryCode: '', reason: '', redirectPath: '' });
       await refetchCountryRules();
@@ -523,7 +553,6 @@ function GeoAdminContent() {
                 { label: 'Συνολικές Επισκέψεις', value: summary.totalVisits },
                 { label: 'Μοναδικές Χώρες', value: summary.uniqueCountries },
                 { label: 'Συνδεδεμένοι Χρήστες', value: summary.authenticated },
-                { label: 'Διασπορά', value: summary.diaspora },
               ].map((card) => (
                 <div key={card.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">{card.label}</p>
@@ -548,7 +577,6 @@ function GeoAdminContent() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χώρα</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Επισκέψεις</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Συνδεδεμένοι</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Διασπορά</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">% του Συνόλου</th>
                         </tr>
                       </thead>
@@ -558,18 +586,17 @@ function GeoAdminContent() {
                           return (
                             <tr key={row.countryCode || row.countryName} className="hover:bg-gray-50">
                               <td className="px-4 py-3 text-sm text-gray-900">
-                                {countryCodeToFlag(row.countryCode)} {resolveCountryLabel(row.countryCode, row.countryName)}
+                                <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
                               </td>
                               <td className="px-4 py-3 text-sm text-gray-700">{row.visits || 0}</td>
                               <td className="px-4 py-3 text-sm text-gray-700">{row.authenticated || 0}</td>
-                              <td className="px-4 py-3 text-sm text-gray-700">{row.diaspora || 0}</td>
                               <td className="px-4 py-3 text-sm text-gray-700">{pct.toFixed(1)}%</td>
                             </tr>
                           );
                         })}
                         {(visits?.byCountry || []).length === 0 && (
                           <tr>
-                            <td colSpan={5} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν δεδομένα.</td>
+                            <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν δεδομένα.</td>
                           </tr>
                         )}
                       </tbody>
@@ -623,10 +650,16 @@ function GeoAdminContent() {
                         {(visits?.recentVisits || []).map((row, index) => (
                           <tr key={`${row.createdAt || 'no-date'}-${row.ipAddress || 'no-ip'}-${index}`} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm text-gray-900">
-                              {countryCodeToFlag(row.countryCode)} {resolveCountryLabel(row.countryCode, row.countryName)}
+                              <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700">
-                              {row.username || (row.isAuthenticated ? '(συνδεδεμένος)' : '—')}
+                              {row.username ? (
+                                <span className="font-medium text-blue-700">{row.username}</span>
+                              ) : row.isAuthenticated ? (
+                                <span className="text-gray-500">(συνδεδεμένος)</span>
+                              ) : (
+                                <span className="text-gray-400 italic">Ανώνυμος</span>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700 break-all">{row.path || '—'}</td>
                             <td className="px-4 py-3 text-sm text-gray-700 font-mono">{row.ipAddress || '—'}</td>
@@ -722,9 +755,9 @@ function GeoAdminContent() {
                       {(accessRuleRows || []).map((row) => (
                         <tr key={row.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {countryCodeToFlag(row.countryCode)} {resolveCountryLabel(row.countryCode, row.countryName)}
+                            <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">{row.reason || '—'}</td>
+                           <td className="px-4 py-3 text-sm text-gray-700">{row.reason || '—'}</td>
                           <td className="px-4 py-3 text-sm text-gray-700 font-mono">{row.redirectPath || '—'}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">{row.createdBy?.username || '—'}</td>
                           <td className="px-4 py-3 text-sm text-gray-700">
@@ -846,7 +879,7 @@ function GeoAdminContent() {
                         return (
                           <tr key={`${row.countryCode}-${row.countryName}`} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm text-gray-900">
-                              {countryCodeToFlag(row.countryCode)} {resolveCountryLabel(row.countryCode, row.countryName)}
+                              <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700">{row.totalVisits || 0}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">{row.hasContent ? '✅' : '❌'}</td>
@@ -930,7 +963,7 @@ function GeoAdminContent() {
                         return (
                           <tr key={record.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm text-gray-900">
-                              {countryCodeToFlag(record.location?.code)} {record.location?.name || '—'}
+                              <CountryFlag code={record.location?.code} /> {record.location?.name || '—'}
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-700">{euro(goal)}</td>
                             <td className="px-4 py-3 text-sm text-gray-700 min-w-[220px]">

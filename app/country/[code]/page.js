@@ -7,11 +7,15 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import { useTranslations } from 'next-intl';
 
-const countryCodeToFlag = (code) => (
-  code
-    ? [...code.toUpperCase()].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('')
-    : '🌍'
-);
+const ISO2_RE = /^[A-Z]{2}$/;
+const INVALID_FLAG_CODES = new Set(['XX', 'T1']);
+
+const countryCodeToFlag = (code) => {
+  if (!code) return '🌍';
+  const upper = String(code).toUpperCase();
+  if (!ISO2_RE.test(upper) || INVALID_FLAG_CODES.has(upper)) return '🌍';
+  return [...upper].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+};
 
 const renderArticleLink = (article) => (
   <li key={article.id}>

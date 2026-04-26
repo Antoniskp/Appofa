@@ -300,13 +300,13 @@ describe('Geo Stats Admin API', () => {
     expect(res.body.success).toBe(false);
   });
 
-  it('POST /track stores sanitized visit payload', async () => {
+  it('POST /track stores sanitized visit payload (IP from x-forwarded-for)', async () => {
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
+      .set('x-forwarded-for', '::ffff:185.230.31.201')
       .send({
         path: '/locations/gr',
         countryCode: 'gr-1',
-        ipAddress: '::ffff:185.230.31.201',
         locale: 'el-GR',
       });
 
@@ -326,7 +326,27 @@ describe('Geo Stats Admin API', () => {
     );
   });
 
-  it('POST /track uses request IP when ipAddress is omitted from payload', async () => {
+  it('POST /track ignores client-supplied ipAddress body field (spoofing prevention)', async () => {
+    const path = '/track-body-ip-ignored';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .set('x-forwarded-for', '9.9.9.9')
+      .send({
+        path,
+        countryCode: 'GR',
+        ipAddress: '1.2.3.4', // should be ignored
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    // The x-forwarded-for header takes precedence over the body IP
+    expect(saved.ipAddress).toBe('9.9.9.9');
+  });
+
+  it('POST /track uses request IP when no IP headers are provided', async () => {
     const path = '/locations/request-ip';
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
@@ -348,16 +368,37 @@ describe('Geo Stats Admin API', () => {
     );
   });
 
-  it('POST /track decodes token for analytics authentication hints', async () => {
+  it('POST /track verifies cookie auth_token to identify authenticated user', async () => {
     const token = jwt.sign({ id: adminId }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    const path = '/locations/with-token';
+    const path = '/locations/with-cookie-token';
+
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .set('Cookie', [`auth_token=${token}`])
+      .send({
+        path,
+        countryCode: 'GR',
+        locale: 'el',
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.isAuthenticated).toBe(true);
+    expect(saved.userId).toBe(adminId);
+  });
+
+  it('POST /track falls back to verified body token when no cookie is present', async () => {
+    const token = jwt.sign({ id: adminId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const path = '/locations/with-body-token';
 
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
       .send({
         path,
         countryCode: 'GR',
-        ipAddress: '5.5.5.5',
         locale: 'el',
         token,
       });
@@ -369,6 +410,28 @@ describe('Geo Stats Admin API', () => {
     expect(saved).toBeTruthy();
     expect(saved.isAuthenticated).toBe(true);
     expect(saved.userId).toBe(adminId);
+  });
+
+  it('POST /track rejects an unverified/forged body token (stays anonymous)', async () => {
+    // A token signed with a different secret should not grant authentication
+    const forgedToken = jwt.sign({ id: adminId }, 'wrong-secret', { expiresIn: '1h' });
+    const path = '/locations/forged-token';
+
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .send({
+        path,
+        countryCode: 'GR',
+        token: forgedToken,
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.isAuthenticated).toBe(false);
+    expect(saved.userId).toBeNull();
   });
 
   it('POST /track normalizes invalid and pseudo country codes to null', async () => {
@@ -416,11 +479,12 @@ describe('Geo Stats Admin API', () => {
     expect(saved.countryName).toBeNull();
   });
 
-  it('POST /track stores visit with loopback IP (tracking not dropped)', async () => {
+  it('POST /track stores visit with loopback IP from header (tracking not dropped)', async () => {
     const path = '/track-loopback';
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
-      .send({ path, ipAddress: '127.0.0.1' });
+      .set('x-forwarded-for', '127.0.0.1')
+      .send({ path });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -430,11 +494,12 @@ describe('Geo Stats Admin API', () => {
     expect(saved.ipAddress).toBe('127.0.0.1');
   });
 
-  it('POST /track stores visit with private IP (tracking not dropped)', async () => {
+  it('POST /track stores visit with private IP from header (tracking not dropped)', async () => {
     const path = '/track-private';
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
-      .send({ path, ipAddress: '10.0.0.1' });
+      .set('x-forwarded-for', '10.0.0.1')
+      .send({ path });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
@@ -476,5 +541,19 @@ describe('Geo Stats Admin API', () => {
     const saved = await GeoVisit.findOne({ where: { path } });
     expect(saved).toBeTruthy();
     expect(saved.ipAddress).toBe('2001:db8::1');
+  });
+
+  it('POST /track prefers cf-connecting-ip over x-forwarded-for for trusted IP resolution', async () => {
+    const path = '/track-cf-ip';
+    const res = await request(app)
+      .post('/api/admin/geo-stats/track')
+      .set('cf-connecting-ip', '8.8.8.8')
+      .set('x-forwarded-for', '1.1.1.1')
+      .send({ path, countryCode: 'US' });
+
+    expect(res.status).toBe(200);
+    const saved = await GeoVisit.findOne({ where: { path } });
+    expect(saved).toBeTruthy();
+    expect(saved.ipAddress).toBe('8.8.8.8');
   });
 });

@@ -17,6 +17,8 @@ const VALID_SETTING_KEYS = new Set([
 
 const VALID_ACTIONS = new Set(['allow', 'block', 'redirect']);
 
+const INVALID_COUNTRY_CODES = new Set(['XX', 'T1']);
+
 const normalizeCountryCode = (value) => String(value || '').trim().toUpperCase();
 
 geoAccessPublicRoutes.get('/access-rules', apiLimiter, async (req, res, next) => {
@@ -58,6 +60,9 @@ geoAccessAdminRoutes.post('/rules', apiLimiter, authMiddleware, checkRole('admin
 
     if (!/^[A-Z]{2}$/.test(countryCode)) {
       return res.status(400).json({ success: false, message: 'countryCode must be 2 uppercase letters.' });
+    }
+    if (INVALID_COUNTRY_CODES.has(countryCode)) {
+      return res.status(400).json({ success: false, message: 'Invalid country code.' });
     }
     if (redirectPath && !redirectPath.startsWith('/')) {
       return res.status(400).json({ success: false, message: 'Redirect path must start with /.' });
