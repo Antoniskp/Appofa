@@ -11,6 +11,8 @@ import AlertMessage from '@/components/ui/AlertMessage';
 import EmptyState from '@/components/ui/EmptyState';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
+import { useAuth } from '@/lib/auth-context';
+
 import organizationTypesConfig from '@/config/organizationTypes.json';
 
 const ORGANIZATION_TYPES = organizationTypesConfig.types;
@@ -52,6 +54,8 @@ function OrganizationCard({ organization, t }) {
 
 export default function OrganizationsPage() {
   const t = useTranslations('organizations');
+  const { user } = useAuth();
+  const canCreateOrganization = ['admin', 'moderator'].includes(user?.role);
   const { filters, updateFilter } = useFilters({ search: '', type: '' });
 
   const { items: organizations, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
@@ -75,8 +79,16 @@ export default function OrganizationsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          {canCreateOrganization && (
+            <Link
+              href="/admin/organizations"
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+            >
+              {t('create_button')}
+            </Link>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">

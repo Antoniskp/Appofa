@@ -440,7 +440,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/locations`, `/locations/[slug]` | Locations |
-| `/organizations`, `/organizations/[slug]` | Organizations list + profile |
+| `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile |
 | `/official-posts` | Public discovery feed for platform-wide official organization posts |
 | `/country/[code]` | Country landing page after first-visit geo redirect |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations |
