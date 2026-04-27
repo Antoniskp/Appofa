@@ -260,7 +260,7 @@ export default function HomePage() {
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
 
-        <HomepageSection
+      <HomepageSection
         title={tHome('latest_articles_title')}
         subtitle={tHome('latest_articles_subtitle')}
         linkHref="/articles"
@@ -273,21 +273,6 @@ export default function HomePage() {
         bgColor="bg-white"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
         topTags={articleTags}
-      />
-
-      <HomepageSection
-        title={tHome('top_suggestions_title')}
-        subtitle={tHome('top_suggestions_subtitle')}
-        linkHref="/suggestions"
-        loading={suggestionsLoading}
-        error={suggestionsError}
-        items={suggestions}
-        emptyTitle={tHome('empty_suggestions_title')}
-        emptyDescription={tHome('empty_suggestions_description')}
-        skeletonCount={3}
-        bgColor="bg-gray-50"
-        renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
-        topTags={suggestionTags}
       />
 
       {!user && (
@@ -319,6 +304,21 @@ export default function HomePage() {
         bgColor="bg-white"
         renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
         topTags={pollTags}
+      />
+
+      <HomepageSection
+        title={tHome('top_suggestions_title')}
+        subtitle={tHome('top_suggestions_subtitle')}
+        linkHref="/suggestions"
+        loading={suggestionsLoading}
+        error={suggestionsError}
+        items={suggestions}
+        emptyTitle={tHome('empty_suggestions_title')}
+        emptyDescription={tHome('empty_suggestions_description')}
+        skeletonCount={3}
+        bgColor="bg-gray-50"
+        renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
+        topTags={suggestionTags}
       />
 
       {/* Featured Locations Section */}
@@ -461,14 +461,14 @@ export default function HomePage() {
         )}
 
       <HomepageSection
-         title={tHome('latest_news_title')}
-         subtitle={tHome('latest_news_subtitle')}
+        title={tHome('latest_news_title')}
+        subtitle={tHome('latest_news_subtitle')}
         linkHref="/news"
         loading={newsLoading}
         error={newsError}
         items={latestNews}
-         emptyTitle={tHome('empty_news_title')}
-         emptyDescription={tHome('empty_news_description')}
+        emptyTitle={tHome('empty_news_title')}
+        emptyDescription={tHome('empty_news_description')}
         skeletonCount={3}
         bgColor="bg-gray-50"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
@@ -477,14 +477,14 @@ export default function HomePage() {
       />
 
       <HomepageSection
-         title={tHome('latest_videos_title')}
-         subtitle={tHome('latest_videos_subtitle')}
+        title={tHome('latest_videos_title')}
+        subtitle={tHome('latest_videos_subtitle')}
         linkHref="/videos"
         loading={videosLoading}
         error={videosError}
         items={videos}
-         emptyTitle={tHome('empty_videos_title')}
-         emptyDescription={tHome('empty_videos_description')}
+        emptyTitle={tHome('empty_videos_title')}
+        emptyDescription={tHome('empty_videos_description')}
         skeletonCount={3}
         bgColor="bg-white"
         renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
