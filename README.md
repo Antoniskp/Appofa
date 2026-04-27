@@ -57,10 +57,31 @@ Content and voting rights are tied to a hierarchical location system (Internatio
 ## Architecture
 
 ```mermaid
-graph LR
-    Browser["Browser"] --> Frontend["Next.js\n(port 3001)"]
-    Frontend --> API["Express API\n(port 3000)"]
-    API --> DB["PostgreSQL"]
+flowchart TB
+    User["Citizen / Visitor"] --> Frontend["Next.js Frontend (App Router)\nPort 3001"]
+    Admin["Admin / Moderator"] --> Frontend
+
+    Frontend --> Auth["Auth Layer\nJWT + OAuth (GitHub/Google)"]
+    Frontend --> Features["Feature Modules"]
+    Frontend --> API["Express API\nPort 3000"]
+
+    subgraph FeatureArea["What users can do"]
+        Features --> Articles["Articles & News\nRead / Publish / Moderate"]
+        Features --> Polls["Polls\nVote + Results + Export"]
+        Features --> Suggestions["Suggestions\nProblems + Solutions + Voting"]
+        Features --> DreamTeam["Dream Team\nNominations + Formation Voting"]
+        Features --> Profiles["Profiles & Manifests\nPeople + Civic Commitments"]
+        Features --> Messages["Messaging & Notifications"]
+    end
+
+    API --> Controllers["Controllers + Services"]
+    Controllers --> ORM["Sequelize ORM"]
+    ORM --> DB["PostgreSQL Database"]
+    API --> Security["Security Middleware\nHelmet + Rate Limiting + Role Checks"]
+
+    API --> Integrations["Integrations"]
+    Integrations --> Analytics["Google Analytics (GA4)"]
+    Integrations --> Geo["Geo / Location Access Rules"]
 ```
 
 - **Auth layer** — JWT tokens + GitHub/Google OAuth (Passport.js)
