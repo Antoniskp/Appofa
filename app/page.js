@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI, homepageSettingsAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
+import GovernmentSnapshotSection from '@/components/GovernmentSnapshotSection';
 import HomepageInfoSection from '@/components/HomepageInfoSection';
 import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
@@ -254,6 +255,7 @@ export default function HomePage() {
   return (
     <div className="bg-gray-50">
       <HomeHero />
+      <GovernmentSnapshotSection />
       {homepageSettings?.infoSection?.enabled && isVisibleForAudience(homepageSettings?.infoSection?.audience) && (
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
