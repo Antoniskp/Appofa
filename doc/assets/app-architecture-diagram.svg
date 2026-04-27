@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="980" viewBox="0 0 1400 980" role="img" aria-labelledby="title desc">
+  <title id="title">Appofa Architecture Diagram</title>
+  <desc id="desc">User-facing architecture diagram showing app users, frontend, feature modules, API, services, database, security, and integrations.</desc>
+  <defs>
+    <style>
+      .title { font: 700 34px 'Inter', 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .subtitle { font: 500 18px 'Inter', 'Segoe UI', Arial, sans-serif; fill: #334155; }
+      .label { font: 600 18px 'Inter', 'Segoe UI', Arial, sans-serif; fill: #0f172a; }
+      .small { font: 500 15px 'Inter', 'Segoe UI', Arial, sans-serif; fill: #1e293b; }
+      .group { font: 700 20px 'Inter', 'Segoe UI', Arial, sans-serif; fill: #1e293b; }
+      .box { stroke: #334155; stroke-width: 2.2; rx: 16; ry: 16; }
+      .arrow { stroke: #475569; stroke-width: 2.8; fill: none; marker-end: url(#arrowhead); }
+      .dashed { stroke-dasharray: 8 7; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M 0 0 L 10 4 L 0 8 z" fill="#475569" />
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="980" fill="#f8fafc"/>
+  <text x="700" y="54" text-anchor="middle" class="title">Appofa — High-Level User &amp; System Diagram</text>
+  <text x="700" y="84" text-anchor="middle" class="subtitle">How users interact with civic features and how data flows through the platform</text>
+
+  <!-- Actors -->
+  <rect x="90" y="150" width="250" height="92" class="box" fill="#dbeafe"/>
+  <text x="215" y="203" text-anchor="middle" class="label">Citizen / Visitor</text>
+
+  <rect x="90" y="272" width="250" height="92" class="box" fill="#e9d5ff"/>
+  <text x="215" y="325" text-anchor="middle" class="label">Admin / Moderator</text>
+
+  <!-- Frontend -->
+  <rect x="440" y="190" width="380" height="140" class="box" fill="#dcfce7"/>
+  <text x="630" y="243" text-anchor="middle" class="label">Next.js Frontend (App Router)</text>
+  <text x="630" y="274" text-anchor="middle" class="small">Web UI, Pages, Components • Port 3001</text>
+
+  <!-- Feature group -->
+  <rect x="380" y="370" width="500" height="280" class="box" fill="#f1f5f9"/>
+  <text x="630" y="406" text-anchor="middle" class="group">What users can do</text>
+
+  <rect x="410" y="430" width="220" height="58" class="box" fill="#fff"/>
+  <text x="520" y="466" text-anchor="middle" class="small">Articles &amp; News</text>
+
+  <rect x="650" y="430" width="200" height="58" class="box" fill="#fff"/>
+  <text x="750" y="466" text-anchor="middle" class="small">Polls &amp; Results</text>
+
+  <rect x="410" y="510" width="220" height="58" class="box" fill="#fff"/>
+  <text x="520" y="546" text-anchor="middle" class="small">Suggestions &amp; Voting</text>
+
+  <rect x="650" y="510" width="200" height="58" class="box" fill="#fff"/>
+  <text x="750" y="546" text-anchor="middle" class="small">Dream Team</text>
+
+  <rect x="410" y="590" width="220" height="58" class="box" fill="#fff"/>
+  <text x="520" y="626" text-anchor="middle" class="small">Profiles &amp; Manifests</text>
+
+  <rect x="650" y="590" width="200" height="58" class="box" fill="#fff"/>
+  <text x="750" y="626" text-anchor="middle" class="small">Messages &amp; Notifications</text>
+
+  <!-- Auth -->
+  <rect x="930" y="160" width="340" height="90" class="box" fill="#ffedd5"/>
+  <text x="1100" y="198" text-anchor="middle" class="label">Auth Layer</text>
+  <text x="1100" y="223" text-anchor="middle" class="small">JWT + OAuth (GitHub / Google)</text>
+
+  <!-- API -->
+  <rect x="930" y="300" width="340" height="110" class="box" fill="#fee2e2"/>
+  <text x="1100" y="347" text-anchor="middle" class="label">Express API</text>
+  <text x="1100" y="376" text-anchor="middle" class="small">REST Endpoints • Port 3000</text>
+
+  <!-- Service + ORM + DB -->
+  <rect x="930" y="450" width="340" height="90" class="box" fill="#ede9fe"/>
+  <text x="1100" y="486" text-anchor="middle" class="label">Controllers + Services</text>
+  <text x="1100" y="511" text-anchor="middle" class="small">Business rules &amp; orchestration</text>
+
+  <rect x="930" y="570" width="340" height="85" class="box" fill="#ccfbf1"/>
+  <text x="1100" y="622" text-anchor="middle" class="label">Sequelize ORM</text>
+
+  <rect x="930" y="685" width="340" height="95" class="box" fill="#bfdbfe"/>
+  <text x="1100" y="724" text-anchor="middle" class="label">PostgreSQL Database</text>
+  <text x="1100" y="751" text-anchor="middle" class="small">Locations, users, polls, content, votes</text>
+
+  <!-- Security/Integrations -->
+  <rect x="380" y="700" width="500" height="88" class="box" fill="#fde68a"/>
+  <text x="630" y="736" text-anchor="middle" class="label">Security Middleware</text>
+  <text x="630" y="762" text-anchor="middle" class="small">Helmet • Rate limiting • Role checks</text>
+
+  <rect x="380" y="810" width="500" height="92" class="box" fill="#ddd6fe"/>
+  <text x="630" y="846" text-anchor="middle" class="label">Integrations</text>
+  <text x="630" y="872" text-anchor="middle" class="small">Google Analytics (GA4) • Geo/Location Access Rules</text>
+
+  <!-- Arrows -->
+  <path class="arrow" d="M 340 196 C 380 196, 390 220, 440 240"/>
+  <path class="arrow" d="M 340 318 C 390 318, 400 280, 440 260"/>
+
+  <path class="arrow" d="M 630 330 L 630 370"/>
+  <path class="arrow" d="M 820 240 L 930 205"/>
+  <path class="arrow" d="M 820 260 L 930 350"/>
+
+  <path class="arrow" d="M 1100 410 L 1100 450"/>
+  <path class="arrow" d="M 1100 540 L 1100 570"/>
+  <path class="arrow" d="M 1100 655 L 1100 685"/>
+
+  <path class="arrow dashed" d="M 930 350 C 870 350, 860 730, 880 740"/>
+  <path class="arrow dashed" d="M 930 365 C 860 365, 850 850, 880 856"/>
+
+  <text x="935" y="833" class="small" fill="#475569">Diagram file only (SVG) for reuse in docs or exports.</text>
+</svg>
