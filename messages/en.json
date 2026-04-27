@@ -518,6 +518,7 @@
   "organizations": {
     "title": "Organizations",
     "create": "Create Organization",
+    "create_button": "Create organization",
     "edit": "Edit Organization",
     "delete": "Delete Organization",
     "name": "Name",

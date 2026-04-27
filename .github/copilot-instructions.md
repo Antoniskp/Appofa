@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-04-27** — Added role-gated "Create organization" CTA on `/organizations` linking to `/admin/organizations`; visible only for `admin`/`moderator` roles; added `organizations.create_button` i18n key
 - **2026-04-26** — Fixed geo tracking: reject `XX`/`T1` pseudo-codes in `/track` endpoint; `countryCodeToFlag` now shows globe for invalid codes; `getCountryNameLocal` validates before `Intl.DisplayNames`
 - **2026-04-24** — Enforced PR-only workflow; added npm/native module rules to recurring mistakes
 - **2026-04-24** — Added GDPR cookie consent (`CookieConsentBanner` component, consent-gated `GeoTracker`/GA)
@@ -17,8 +18,6 @@ This instruction is permanent and must never be removed.
 - **2026-04-23** — Added org lifecycle notifications: `org_invite_received`, `org_join_approved`, `org_member_removed`
 - **2026-04-23** — Added official posts: `isOfficialPost`+`officialPostScope` on Poll/Suggestion; `/api/official-posts` feed
 - **2026-04-23** — Added org-scoped polls/suggestions: `organizationId` on Poll/Suggestion; `members_only` API→`private` DB
-- **2026-04-22** — Added per-country redirect paths in `CountryAccessRules`; admin geo access rules tab
-- **2026-04-22** — Added `GeoVisit` user attribution (`userId` FK); admin visits list shows username
 
 ## 🚨 MANDATORY: PR-Only Workflow
 
