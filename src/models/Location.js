@@ -76,6 +76,23 @@ const Location = sequelize.define('Location', {
     type: DataTypes.DATE,
     allowNull: true,
     comment: 'Timestamp of last Wikipedia data fetch'
+  },
+  imageUrl: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    comment: 'URL of the uploaded/optimized location image'
+  },
+  imageUpdatedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Timestamp of the last location image upload'
+  },
+  imageUpdatedBy: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: { model: 'Users', key: 'id' },
+    onDelete: 'SET NULL',
+    comment: 'User ID who last uploaded the location image'
   }
 }, {
   timestamps: true,

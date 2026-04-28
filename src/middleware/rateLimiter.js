@@ -49,6 +49,19 @@ const createLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Upload rate limiter - 10 uploads per 15 minutes
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skip: skipForWhitelist,
+  message: {
+    success: false,
+    message: 'Too many upload requests from this IP, please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const ipBlockMiddleware = async (req, res, next) => {
   try {
     if (process.env.NODE_ENV === 'test') return next();
@@ -67,6 +80,7 @@ module.exports = {
   apiLimiter,
   authLimiter,
   createLimiter,
+  uploadLimiter,
   ipBlockMiddleware,
 };
 

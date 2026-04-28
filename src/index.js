@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const { helmetConfig, corsOptions } = require('./config/securityHeaders');
@@ -27,6 +28,9 @@ app.use(helmet(helmetConfig));
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded files (avatars, location images) as static assets
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Block blacklisted IPs before any route runs
 app.use(ipBlockMiddleware);

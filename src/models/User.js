@@ -65,6 +65,16 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  avatarUrl: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+    comment: 'URL of the uploaded/optimized profile avatar'
+  },
+  avatarUpdatedAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Timestamp of the last avatar upload'
+  },
   avatarColor: {
     type: DataTypes.STRING,
     allowNull: true

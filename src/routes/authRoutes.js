@@ -5,7 +5,8 @@ const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
-const { authLimiter, apiLimiter } = require('../middleware/rateLimiter');
+const { authLimiter, apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const { avatarUpload } = require('../middleware/upload');
 
 // CSRF token refresh - allows authenticated users to get a fresh CSRF token
 router.get('/csrf', apiLimiter, authMiddleware, authController.refreshCsrf);
@@ -49,5 +50,15 @@ router.get('/users/username/:username/public', apiLimiter, authMiddleware, authC
 
 // Public stats route
 router.get('/users/public-stats', apiLimiter, authController.getPublicUserStats);
+
+// Avatar upload: authenticated user uploads their own avatar (overwrites previous)
+router.post('/me/avatar', uploadLimiter, authMiddleware, csrfProtection, (req, res, next) => {
+  avatarUpload.single('avatar')(req, res, (err) => {
+    if (!err) return next();
+    const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : (err.status || 400);
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large. Maximum size is 5 MB.' : err.message;
+    return res.status(status).json({ success: false, message });
+  });
+}, authController.uploadAvatar);
 
 module.exports = router;

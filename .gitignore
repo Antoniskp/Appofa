@@ -18,3 +18,6 @@ tmp/
 .vscode/
 # Hero settings (modified at runtime by admin panel; stored in DB)
 src/data/hero-settings.json
+
+# Uploaded user files (served statically, not committed)
+uploads/
