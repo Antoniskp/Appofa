@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-04-28** — Fixed `/uploads/*` 500 regressions: removed `NEXT_PUBLIC_API_URL` fallback from uploads proxy route (prevents infinite proxy loop); switched `imageStorageService` + Express static middleware to `__dirname`-based paths (reliable regardless of working directory); added timeout to uploads proxy route; added `__tests__/uploads-proxy.test.js`
 - **2026-04-27** — Added role-gated "Create organization" CTA on `/organizations` linking to `/admin/organizations`; visible only for `admin`/`moderator` roles; added `organizations.create_button` i18n key
 - **2026-04-26** — Fixed geo tracking: reject `XX`/`T1` pseudo-codes in `/track` endpoint; `countryCodeToFlag` now shows globe for invalid codes; `getCountryNameLocal` validates before `Intl.DisplayNames`
 - **2026-04-24** — Enforced PR-only workflow; added npm/native module rules to recurring mistakes
@@ -17,7 +18,6 @@ This instruction is permanent and must never be removed.
 - **2026-04-23** — Added Organizations Phase 5: hierarchy (`parentId`) + analytics (`OrganizationAnalytics` model)
 - **2026-04-23** — Added org lifecycle notifications: `org_invite_received`, `org_join_approved`, `org_member_removed`
 - **2026-04-23** — Added official posts: `isOfficialPost`+`officialPostScope` on Poll/Suggestion; `/api/official-posts` feed
-- **2026-04-23** — Added org-scoped polls/suggestions: `organizationId` on Poll/Suggestion; `members_only` API→`private` DB
 
 ## 🚨 MANDATORY: PR-Only Workflow
 
