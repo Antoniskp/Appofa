@@ -37,12 +37,12 @@ export default function LocationHeader({
         {/* ── Left / main column ── */}
         <div className="md:col-span-2">
           <div className="flex items-start gap-4">
-            {/* Wikipedia image — bigger, visible on all screen sizes */}
-            {location.wikipedia_image_url && !imageError && (
+            {/* Location image: uploaded image takes priority, falls back to Wikipedia */}
+            {(location.imageUrl || location.wikipedia_image_url) && !imageError && (
               <div className="flex-shrink-0">
                 <img
-                  src={location.wikipedia_image_url}
-                  alt={`${location.name} - Wikipedia`}
+                  src={location.imageUrl || location.wikipedia_image_url}
+                  alt={`${location.name}${!location.imageUrl ? ' - Wikipedia' : ''}`}
                   className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg object-cover bg-gray-50 shadow-sm"
                   onError={() => setImageError(true)}
                 />

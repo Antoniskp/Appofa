@@ -469,6 +469,12 @@ function ProfileContent() {
     }
   };
 
+  const handleAvatarUpload = (avatarUrl) => {
+    // Keep savedProfileData in sync so the dirty-state indicator
+    // doesn't flag the auto-updated avatar URL as an unsaved change.
+    setSavedProfileData((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
+  };
+
   const handleInteractionSettingsChange = (field, value) => {
     setInteractionSettings((prev) => ({ ...prev, [field]: value }));
   };
@@ -544,6 +550,7 @@ function ProfileContent() {
             profileData={profileData}
             onChange={handleProfileChange}
             currentUsername={savedProfileData?.username}
+            onAvatarUploaded={handleAvatarUpload}
           />
         </Card>
 

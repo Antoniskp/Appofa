@@ -4,8 +4,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import FormInput from '@/components/ui/FormInput';
 import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
 import { authAPI } from '@/lib/api';
+import { useToast } from '@/components/ToastProvider';
 
 const USERNAME_CHECK_DEBOUNCE_MS = 500;
+/** Accepted MIME types for avatar upload (must match backend allowlist). */
+const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+/** 5 MB client-side guard (backend enforces the same limit). */
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
  * Tries to detect if a string is a valid absolute URL (http/https).
@@ -28,10 +33,14 @@ function isValidHttpUrl(str) {
  * @param {Object} props.profileData - { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor }
  * @param {Function} props.onChange - (event) => void, handles name/value input changes
  * @param {string} [props.currentUsername] - The saved username (to skip self-check)
+ * @param {Function} [props.onAvatarUploaded] - (avatarUrl: string) => void, called after a successful avatar upload so the parent can sync savedProfileData
  */
-export default function ProfileBasicInfoForm({ profileData, onChange, currentUsername }) {
+export default function ProfileBasicInfoForm({ profileData, onChange, currentUsername, onAvatarUploaded }) {
+  const { success: toastSuccess, error: toastError } = useToast();
   const [avatarUrlError, setAvatarUrlError] = useState('');
   const [usernameStatus, setUsernameStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'error'
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarFileRef = useRef(null);
   const debounceRef = useRef(null);
 
   const handleAvatarChange = (e) => {
@@ -41,6 +50,39 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
       setAvatarUrlError('Please enter a valid URL (must start with http:// or https://).');
     } else {
       setAvatarUrlError('');
+    }
+  };
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    // Reset input so the same file can be re-selected after an error
+    if (avatarFileRef.current) avatarFileRef.current.value = '';
+    if (!file) return;
+
+    if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
+      toastError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      toastError('File too large. Maximum size is 5 MB.');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    try {
+      const response = await authAPI.uploadAvatar(file);
+      if (response.success && response.data?.avatarUrl) {
+        const newUrl = response.data.avatarUrl;
+        // Propagate the new URL into the controlled form field
+        onChange({ target: { name: 'avatar', value: newUrl } });
+        // Notify parent to sync savedProfileData so the form stays clean
+        onAvatarUploaded?.(newUrl);
+        toastSuccess('Avatar uploaded successfully!');
+      }
+    } catch (err) {
+      toastError(err.message || 'Failed to upload avatar.');
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
@@ -99,17 +141,58 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <FormInput
-            name="avatar"
-            type="text"
-            label="Avatar image URL"
-            value={profileData.avatar}
-            onChange={handleAvatarChange}
-            placeholder="https://example.com/avatar.png"
+          {/* Avatar preview + upload */}
+          <div className="flex items-center gap-3 mb-2">
+            {profileData.avatar && (
+              <img
+                src={profileData.avatar}
+                alt="Current avatar"
+                className="w-12 h-12 rounded-full object-cover border border-gray-200 flex-shrink-0"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <FormInput
+                name="avatar"
+                type="text"
+                label="Avatar image URL"
+                value={profileData.avatar}
+                onChange={handleAvatarChange}
+                placeholder="https://example.com/avatar.png"
+              />
+              {avatarUrlError && (
+                <p className="mt-1 text-xs text-red-600">{avatarUrlError}</p>
+              )}
+            </div>
+          </div>
+          {/* Hidden file input + visible upload button */}
+          <input
+            ref={avatarFileRef}
+            type="file"
+            accept={AVATAR_ACCEPTED_TYPES.join(',')}
+            className="hidden"
+            onChange={handleAvatarFileChange}
+            aria-label="Upload avatar image"
           />
-          {avatarUrlError && (
-            <p className="mt-1 text-xs text-red-600">{avatarUrlError}</p>
-          )}
+          <button
+            type="button"
+            onClick={() => avatarFileRef.current?.click()}
+            disabled={isUploadingAvatar}
+            className="mt-1 flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+          >
+            {isUploadingAvatar ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+                Uploading…
+              </>
+            ) : (
+              'Upload Photo'
+            )}
+          </button>
+          <p className="mt-1 text-xs text-gray-500">JPEG, PNG or WebP · max 5 MB</p>
         </div>
         <div>
           <label htmlFor="avatarColor" className="block text-sm font-medium text-gray-700 mb-1">
