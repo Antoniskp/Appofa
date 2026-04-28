@@ -20,15 +20,10 @@ const handler = async (request) => {
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    let response;
-    try {
-      response = await fetch(targetUrl, {
-        method: 'GET',
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const response = await fetch(targetUrl, {
+      method: 'GET',
+      signal: controller.signal,
+    });
 
     if (!response.ok) {
       return new Response(null, { status: response.status });
@@ -45,11 +40,12 @@ const handler = async (request) => {
       },
     });
   } catch (err) {
-    clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
       return new Response(null, { status: 504 });
     }
     return new Response(null, { status: 502 });
+  } finally {
+    clearTimeout(timeoutId);
   }
 };
 

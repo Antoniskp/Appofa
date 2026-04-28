@@ -170,30 +170,6 @@ describe('Uploads proxy route — app/uploads/[...path]/route.js', () => {
   test('returns 504 when request times out', async () => {
     process.env.API_URL = 'http://localhost:3000';
 
-    global.fetch = jest.fn((_url, options) => {
-      // Simulate the abort signal firing
-      return new Promise((_resolve, reject) => {
-        const signal = options?.signal;
-        if (signal) {
-          signal.addEventListener('abort', () => {
-            const err = new Error('The operation was aborted');
-            err.name = 'AbortError';
-            reject(err);
-          });
-        }
-        // Never resolves on its own — waits for abort
-      });
-    });
-
-    // Import the route with a very short timeout override
-    jest.doMock('../app/uploads/[...path]/route.js', () => {
-      // Re-require with a patched timeout isn't straightforward with ES modules; instead,
-      // trigger the AbortController immediately by aborting after a minimal delay.
-      const mod = jest.requireActual('../app/uploads/[...path]/route.js');
-      return mod;
-    });
-
-    // Use real abort by aborting within the test
     const abortError = new Error('The operation was aborted');
     abortError.name = 'AbortError';
     global.fetch = jest.fn(() => Promise.reject(abortError));
