@@ -23,10 +23,10 @@ const LOCATION_IMAGE_PRESETS = {
 async function processImage(inputBuffer, preset) {
   const { maxWidth, maxHeight, quality } = preset;
   return sharp(inputBuffer)
-    .rotate() // Auto-rotate based on EXIF orientation, strips EXIF
+    .rotate() // Auto-rotate based on EXIF orientation (corrects image orientation)
     .resize(maxWidth, maxHeight, { fit: 'inside', withoutEnlargement: true })
     .webp({ quality })
-    .withMetadata(false) // Strip all metadata
+    .withMetadata(false) // Strip all metadata including EXIF
     .toBuffer();
 }
 

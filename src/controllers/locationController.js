@@ -241,7 +241,8 @@ exports.uploadLocationImage = async (req, res) => {
     let optimizedBuffer;
     try {
       optimizedBuffer = await processLocationImage(req.file.buffer);
-    } catch {
+    } catch (err) {
+      console.error('Location image processing failed:', err);
       return res.status(422).json({ success: false, message: 'Invalid or corrupt image.' });
     }
     const imageUrl = saveLocationImage(optimizedBuffer, locationId);

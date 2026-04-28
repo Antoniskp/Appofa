@@ -543,7 +543,8 @@ const authController = {
       let optimizedBuffer;
       try {
         optimizedBuffer = await processAvatar(req.file.buffer);
-      } catch {
+      } catch (err) {
+        console.error('Avatar processing failed:', err);
         return res.status(422).json({ success: false, message: 'Invalid or corrupt image.' });
       }
       const avatarUrl = saveAvatar(optimizedBuffer, req.user.id);
