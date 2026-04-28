@@ -12,9 +12,6 @@ const handler = async (request) => {
   try {
     const response = await fetch(targetUrl, {
       method: 'GET',
-      headers: {
-        'Cache-Control': 'no-store',
-      },
     });
 
     if (!response.ok) {
