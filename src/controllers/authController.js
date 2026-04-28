@@ -531,6 +531,40 @@ const authController = {
       return res.status(500).json({ success: false, message: 'Error checking username.' });
     }
   },
+
+  // Upload and replace avatar for the authenticated user
+  uploadAvatar: async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+      }
+      const { processAvatar } = require('../services/imageProcessingService');
+      const { saveAvatar } = require('../services/imageStorageService');
+      let optimizedBuffer;
+      try {
+        optimizedBuffer = await processAvatar(req.file.buffer);
+      } catch (err) {
+        console.error('Avatar processing failed:', err);
+        return res.status(422).json({ success: false, message: 'Invalid or corrupt image.' });
+      }
+      const avatarUrl = saveAvatar(optimizedBuffer, req.user.id);
+      const user = await User.findByPk(req.user.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+      user.avatarUrl = avatarUrl;
+      user.avatarUpdatedAt = new Date();
+      await user.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Avatar uploaded successfully.',
+        data: { avatarUrl }
+      });
+    } catch (error) {
+      console.error('Upload avatar error:', error);
+      return res.status(500).json({ success: false, message: 'Error uploading avatar.' });
+    }
+  },
 };
 
 module.exports = authController;

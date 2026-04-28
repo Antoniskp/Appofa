@@ -7,7 +7,8 @@ const locationElectionController = require('../controllers/locationElectionContr
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
-const { apiLimiter } = require('../middleware/rateLimiter');
+const { apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const { locationImageUpload } = require('../middleware/upload');
 const csrfProtection = require('../middleware/csrfProtection');
 
 // Public routes
@@ -46,5 +47,15 @@ router.delete('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationController.createLocation);
 router.put('/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationController.updateLocation);
 router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationController.deleteLocation);
+
+// Location image upload (admin/moderator only) — overwrites previous image
+router.post('/:id/image', uploadLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, (req, res, next) => {
+  locationImageUpload.single('image')(req, res, (err) => {
+    if (!err) return next();
+    const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : (err.status || 400);
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large. Maximum size is 10 MB.' : err.message;
+    return res.status(status).json({ success: false, message });
+  });
+}, locationController.uploadLocationImage);
 
 module.exports = router;

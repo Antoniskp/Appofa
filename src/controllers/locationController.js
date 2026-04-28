@@ -1,7 +1,7 @@
 'use strict';
 
 const locationService = require('../services/locationService');
-const { User } = require('../models');
+const { User, Location } = require('../models');
 
 const toUserObj = (reqUser) =>
   reqUser ? { id: reqUser.id, role: reqUser.role, homeLocationId: reqUser.homeLocationId } : null;
@@ -220,4 +220,43 @@ exports.updateLocationRequest = async (req, res) => {
     message: 'Location request updated successfully',
     request: result.request
   });
+};
+
+// Upload and replace image for a location (admin/moderator only)
+exports.uploadLocationImage = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: 'No file uploaded.' });
+    }
+    const locationId = parseInt(req.params.id, 10);
+    if (!locationId) {
+      return res.status(400).json({ success: false, message: 'Invalid location ID.' });
+    }
+    const location = await Location.findByPk(locationId);
+    if (!location) {
+      return res.status(404).json({ success: false, message: 'Location not found.' });
+    }
+    const { processLocationImage } = require('../services/imageProcessingService');
+    const { saveLocationImage } = require('../services/imageStorageService');
+    let optimizedBuffer;
+    try {
+      optimizedBuffer = await processLocationImage(req.file.buffer);
+    } catch (err) {
+      console.error('Location image processing failed:', err);
+      return res.status(422).json({ success: false, message: 'Invalid or corrupt image.' });
+    }
+    const imageUrl = saveLocationImage(optimizedBuffer, locationId);
+    location.imageUrl = imageUrl;
+    location.imageUpdatedAt = new Date();
+    location.imageUpdatedBy = req.user.id;
+    await location.save();
+    return res.status(200).json({
+      success: true,
+      message: 'Location image uploaded successfully.',
+      data: { imageUrl }
+    });
+  } catch (error) {
+    console.error('Upload location image error:', error);
+    return res.status(500).json({ success: false, message: 'Error uploading location image.' });
+  }
 };
