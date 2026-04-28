@@ -1,8 +1,55 @@
+'use client';
+
+import { useRef, useState } from 'react';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import LocationSectionManager from '@/components/LocationSectionManager';
 import LocationRoleManager from '@/components/LocationRoleManager';
+import { locationAPI } from '@/lib/api';
+import { useToast } from '@/components/ToastProvider';
 
-export default function LocationEditForm({ location, editedData, isSaving, onSave, onCancel, onInputChange }) {
+/** Accepted MIME types for location image upload (must match backend allowlist). */
+const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+/** 10 MB client-side guard (backend enforces the same limit). */
+const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
+
+export default function LocationEditForm({ location, editedData, isSaving, onSave, onCancel, onInputChange, onImageUploaded }) {
+  const { success: toastSuccess, error: toastError } = useToast();
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const imageFileRef = useRef(null);
+
+  const handleImageFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so the same file can be re-selected after an error
+    if (imageFileRef.current) imageFileRef.current.value = '';
+
+    if (!IMAGE_ACCEPTED_TYPES.includes(file.type)) {
+      toastError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > IMAGE_MAX_BYTES) {
+      toastError('File too large. Maximum size is 10 MB.');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const response = await locationAPI.uploadImage(location.id, file);
+      if (response.success && response.data?.imageUrl) {
+        setPreviewUrl(response.data.imageUrl);
+        onImageUploaded?.(response.data.imageUrl);
+        toastSuccess('Location image uploaded successfully!');
+      }
+    } catch (err) {
+      toastError(err.message || 'Failed to upload location image.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const displayImage = previewUrl || location.imageUrl || location.wikipedia_image_url;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -24,6 +71,50 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
             <XMarkIcon className="h-5 w-5" />
             Cancel
           </button>
+        </div>
+      </div>
+
+      {/* Location image upload */}
+      <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="text-sm font-semibold text-gray-900 mb-3">Location Image</h3>
+        <div className="flex items-start gap-4">
+          {displayImage && (
+            <img
+              src={displayImage}
+              alt={`${location.name} image`}
+              className="w-24 h-16 rounded-md object-cover border border-gray-200 flex-shrink-0 bg-gray-100"
+              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+            />
+          )}
+          <div>
+            <input
+              ref={imageFileRef}
+              type="file"
+              accept={IMAGE_ACCEPTED_TYPES.join(',')}
+              className="hidden"
+              onChange={handleImageFileChange}
+              aria-label="Upload location image"
+            />
+            <button
+              type="button"
+              onClick={() => imageFileRef.current?.click()}
+              disabled={isUploadingImage}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+            >
+              {isUploadingImage ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                  </svg>
+                  Uploading…
+                </>
+              ) : (
+                displayImage ? 'Replace Image' : 'Upload Image'
+              )}
+            </button>
+            <p className="mt-1 text-xs text-gray-500">JPEG, PNG or WebP · max 10 MB · recommended 1600×900</p>
+          </div>
         </div>
       </div>
 
