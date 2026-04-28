@@ -321,7 +321,7 @@ async function unlinkGoogleAccount(userId) {
 
 async function updateAvatarSource(userId, source) {
   const normalizedSource = typeof source === 'string' ? source.trim().toLowerCase() : '';
-  if (!['github', 'google'].includes(normalizedSource)) {
+  if (!['github', 'google', 'upload'].includes(normalizedSource)) {
     const err = new Error('Invalid avatar source.');
     err.status = 400;
     throw err;
@@ -346,7 +346,17 @@ async function updateAvatarSource(userId, source) {
     throw err;
   }
 
-  const selectedAvatar = normalizedSource === 'github' ? user.githubAvatar : user.googleAvatar;
+  if (normalizedSource === 'upload' && !user.avatarUrl) {
+    const err = new Error('No uploaded avatar found.');
+    err.status = 400;
+    throw err;
+  }
+
+  let selectedAvatar;
+  if (normalizedSource === 'github') selectedAvatar = user.githubAvatar;
+  else if (normalizedSource === 'google') selectedAvatar = user.googleAvatar;
+  else selectedAvatar = user.avatarUrl;
+
   if (!selectedAvatar) {
     const err = new Error('Selected avatar source does not have an avatar.');
     err.status = 400;

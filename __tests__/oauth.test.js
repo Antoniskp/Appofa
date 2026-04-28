@@ -247,6 +247,43 @@ describe('OAuth Integration Tests', () => {
       expect(testUser.avatar).toBe('https://avatars.githubusercontent.com/u/12345678');
     });
 
+    test('should switch active avatar to uploaded source', async () => {
+      await testUser.update({
+        avatarUrl: '/uploads/profiles/1.webp',
+        avatar: 'https://avatars.githubusercontent.com/u/12345678',
+      });
+
+      const csrfToken = 'csrf-avatar-source-upload';
+      setCsrfToken(csrfToken, testUser.id);
+      const response = await request(app)
+        .put('/api/auth/avatar-source')
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ source: 'upload' });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.user.avatar).toBe('/uploads/profiles/1.webp');
+
+      await testUser.reload();
+      expect(testUser.avatar).toBe('/uploads/profiles/1.webp');
+    });
+
+    test('should reject upload source when no uploaded avatar exists', async () => {
+      await testUser.update({ avatarUrl: null });
+
+      const csrfToken = 'csrf-avatar-source-upload-missing';
+      setCsrfToken(csrfToken, testUser.id);
+      const response = await request(app)
+        .put('/api/auth/avatar-source')
+        .set('Authorization', `Bearer ${testToken}`)
+        .set(csrfHeaderFor(csrfToken))
+        .send({ source: 'upload' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
     test('should reject invalid avatar source', async () => {
       const csrfToken = 'csrf-avatar-source-invalid';
       setCsrfToken(csrfToken, testUser.id);

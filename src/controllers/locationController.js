@@ -253,7 +253,7 @@ exports.uploadLocationImage = async (req, res) => {
     return res.status(200).json({
       success: true,
       message: 'Location image uploaded successfully.',
-      data: { imageUrl }
+      data: { imageUrl, imageUpdatedAt: location.imageUpdatedAt }
     });
   } catch (error) {
     console.error('Upload location image error:', error);

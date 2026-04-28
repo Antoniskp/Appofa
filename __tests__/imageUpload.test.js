@@ -152,10 +152,14 @@ describe('Image Upload API', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.avatarUrl).toMatch(/\/uploads\/profiles\//);
-      // Check DB was updated
+      // Response includes avatarUpdatedAt for cache-busting
+      expect(res.body.data.avatarUpdatedAt).toBeTruthy();
+      // Check DB was updated: avatarUrl persisted
       const user = await User.findByPk(viewerId);
       expect(user.avatarUrl).toBeTruthy();
       expect(user.avatarUpdatedAt).toBeTruthy();
+      // Uploaded avatar is activated as the current avatar
+      expect(user.avatar).toBe(user.avatarUrl);
       // Check file exists on disk
       const filePath = path.join(uploadsProfiles, `${viewerId}.webp`);
       expect(fs.existsSync(filePath)).toBe(true);
@@ -245,6 +249,8 @@ describe('Image Upload API', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.imageUrl).toMatch(/\/uploads\/locations\//);
+      // Response includes imageUpdatedAt for cache-busting
+      expect(res.body.data.imageUpdatedAt).toBeTruthy();
       // Check DB was updated
       const loc = await Location.findByPk(testLocation.id);
       expect(loc.imageUrl).toBeTruthy();

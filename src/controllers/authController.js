@@ -554,11 +554,13 @@ const authController = {
       }
       user.avatarUrl = avatarUrl;
       user.avatarUpdatedAt = new Date();
+      // Activate the uploaded avatar as the current profile image
+      user.avatar = avatarUrl;
       await user.save();
       return res.status(200).json({
         success: true,
         message: 'Avatar uploaded successfully.',
-        data: { avatarUrl }
+        data: { avatarUrl, avatarUpdatedAt: user.avatarUpdatedAt }
       });
     } catch (error) {
       console.error('Upload avatar error:', error);

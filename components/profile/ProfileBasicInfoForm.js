@@ -13,10 +13,12 @@ const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
- * Tries to detect if a string is a valid absolute URL (http/https).
+ * Tries to detect if a string is a valid absolute URL (http/https) or a
+ * server-generated upload path (/uploads/...).
  */
 function isValidHttpUrl(str) {
   if (!str) return true; // empty is allowed
+  if (str.startsWith('/uploads/')) return true; // server-generated upload paths
   try {
     const url = new URL(str);
     return url.protocol === 'http:' || url.protocol === 'https:';
@@ -73,10 +75,15 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
       const response = await authAPI.uploadAvatar(file);
       if (response.success && response.data?.avatarUrl) {
         const newUrl = response.data.avatarUrl;
+        // Append cache-buster so the browser immediately fetches the new image
+        const ts = response.data.avatarUpdatedAt
+          ? new Date(response.data.avatarUpdatedAt).getTime()
+          : Date.now();
+        const bustedUrl = `${newUrl}?v=${ts}`;
         // Propagate the new URL into the controlled form field
-        onChange({ target: { name: 'avatar', value: newUrl } });
+        onChange({ target: { name: 'avatar', value: bustedUrl } });
         // Notify parent to sync savedProfileData so the form stays clean
-        onAvatarUploaded?.(newUrl);
+        onAvatarUploaded?.(bustedUrl);
         toastSuccess('Avatar uploaded successfully!');
       }
     } catch (err) {

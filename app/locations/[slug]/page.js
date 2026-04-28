@@ -386,7 +386,10 @@ export default function LocationDetailPage() {
               onSave={handleSave}
               onCancel={handleCancelEdit}
               onInputChange={handleInputChange}
-              onImageUploaded={() => refetch()}
+              onImageUploaded={() => {
+                setImageError(false);
+                refetch();
+              }}
             />
           ) : (
             <LocationHeader

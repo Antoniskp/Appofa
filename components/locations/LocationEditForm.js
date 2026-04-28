@@ -37,8 +37,13 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
     try {
       const response = await locationAPI.uploadImage(location.id, file);
       if (response.success && response.data?.imageUrl) {
-        setPreviewUrl(response.data.imageUrl);
-        onImageUploaded?.(response.data.imageUrl);
+        // Apply cache-buster so the browser immediately shows the new image
+        const ts = response.data.imageUpdatedAt
+          ? new Date(response.data.imageUpdatedAt).getTime()
+          : Date.now();
+        const bustedUrl = `${response.data.imageUrl}?v=${ts}`;
+        setPreviewUrl(bustedUrl);
+        onImageUploaded?.(bustedUrl);
         toastSuccess('Location image uploaded successfully!');
       }
     } catch (err) {
@@ -48,7 +53,13 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
     }
   };
 
-  const displayImage = previewUrl || location.imageUrl || location.wikipedia_image_url;
+  // Build the display image with cache-busting for the stored uploaded image
+  const storedUploadSrc = location.imageUrl
+    ? (location.imageUpdatedAt
+      ? `${location.imageUrl}?v=${new Date(location.imageUpdatedAt).getTime()}`
+      : location.imageUrl)
+    : null;
+  const displayImage = previewUrl || storedUploadSrc || location.wikipedia_image_url;
 
   return (
     <div>

@@ -46,6 +46,7 @@ function GoogleIcon({ className }) {
  * @param {Function} props.onUnlinkGoogle - () => void
  * @param {string} props.githubAvatar - Stored GitHub avatar URL
  * @param {string} props.googleAvatar - Stored Google avatar URL
+ * @param {string} [props.uploadedAvatar] - Stored uploaded avatar URL (from avatarUrl field)
  * @param {string} props.activeAvatar - Currently active avatar URL
  * @param {Function} props.onAvatarSourceChange - (source) => void
  * @param {boolean} props.avatarSourceUpdating - Whether avatar source update is in progress
@@ -67,6 +68,7 @@ export default function ProfileSecuritySection({
   onUnlinkGoogle,
   githubAvatar,
   googleAvatar,
+  uploadedAvatar,
   activeAvatar,
   onAvatarSourceChange,
   avatarSourceUpdating,
@@ -75,9 +77,15 @@ export default function ProfileSecuritySection({
     chooseAvatarSource: 'Choose which connected account photo to use as your profile avatar.',
     activeAvatar: 'Currently active avatar',
     useAvatar: 'Use this avatar',
+    uploadedLabel: 'Uploaded',
   },
 }) {
+  // Strip query params for comparison so cache-busted URLs still match
+  const stripQuery = (url) => (url ? url.split('?')[0] : url);
+  const activeBase = stripQuery(activeAvatar);
+
   const avatarOptions = [
+    uploadedAvatar ? { source: 'upload', label: avatarSourceLabels.uploadedLabel || 'Uploaded', avatar: uploadedAvatar, icon: null } : null,
     githubLinked && githubAvatar ? { source: 'github', label: 'GitHub', avatar: githubAvatar, icon: <GithubIcon className="w-5 h-5 text-gray-800" /> } : null,
     googleLinked && googleAvatar ? { source: 'google', label: 'Google', avatar: googleAvatar, icon: <GoogleIcon className="w-5 h-5" /> } : null,
   ].filter(Boolean);
@@ -238,7 +246,8 @@ export default function ProfileSecuritySection({
             <p className="text-sm text-gray-600 mb-3">{avatarSourceLabels.chooseAvatarSource}</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {avatarOptions.map((option) => {
-                const isActive = !!activeAvatar && option.avatar === activeAvatar;
+                // Compare base URLs (strip query params) so cache-busted URLs still match
+                const isActive = !!activeBase && stripQuery(option.avatar) === activeBase;
                 return (
                   <button
                     key={option.source}
