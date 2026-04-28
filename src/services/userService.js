@@ -179,6 +179,9 @@ async function updateUserProfile(userId, data) {
       const trimmedAvatar = avatar.trim();
       if (trimmedAvatar.length === 0) {
         user.avatar = null;
+      } else if (trimmedAvatar.startsWith('/uploads/')) {
+        // Allow server-generated upload paths (set by the avatar upload endpoint)
+        user.avatar = trimmedAvatar;
       } else {
         let avatarUrl;
         try {

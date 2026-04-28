@@ -84,6 +84,7 @@ function ProfileContent() {
   const [githubLinked, setGithubLinked] = useState(false);
   const [googleLinked, setGoogleLinked] = useState(false);
   const [avatarSourceUpdating, setAvatarSourceUpdating] = useState(false);
+  const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState(null);
   const [hasPassword, setHasPassword] = useState(false);
   const [profPicker, setProfPicker] = useState({ categoryId: '', professionId: '', subProfessionId: '' });
   const [intPicker, setIntPicker] = useState({ categoryId: '', interestId: '', subInterestId: '' });
@@ -127,6 +128,11 @@ function ProfileContent() {
         const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, githubId, googleId, avatar, githubAvatar, googleAvatar, avatarColor, homeLocationId,
           profileCommentsEnabled, profileCommentsLocked, searchable, mobileTel, bio, socialLinks,
           dateOfBirth, professions, interests, expertiseArea, displayBadgeSlug, displayBadgeTier, nationality, twitchChannel } = userData;
+        // Build the uploaded avatar URL with cache-buster if available
+        const rawAvatarUrl = userData.avatarUrl || null;
+        const uploadedAvatarUrl = rawAvatarUrl && userData.avatarUpdatedAt
+          ? `${rawAvatarUrl}?v=${new Date(userData.avatarUpdatedAt).getTime()}`
+          : rawAvatarUrl;
         const loaded = {
           username: username || '',
           firstNameNative: firstNameNative || '',
@@ -153,6 +159,7 @@ function ProfileContent() {
         setProfileData(loaded);
         setSavedProfileData(loaded);
         setIsDirty(false);
+        setUploadedAvatarUrl(uploadedAvatarUrl);
         setDisplayBadge({ slug: displayBadgeSlug || null, tier: displayBadgeTier || null });
         setInteractionSettings({
           profileCommentsEnabled: profileCommentsEnabled !== undefined ? profileCommentsEnabled : true,
@@ -473,6 +480,8 @@ function ProfileContent() {
     // Keep savedProfileData in sync so the dirty-state indicator
     // doesn't flag the auto-updated avatar URL as an unsaved change.
     setSavedProfileData((prev) => (prev ? { ...prev, avatar: avatarUrl } : prev));
+    // Track the uploaded avatar URL so the source selector shows it
+    setUploadedAvatarUrl(avatarUrl);
   };
 
   const handleInteractionSettingsChange = (field, value) => {
@@ -704,6 +713,7 @@ function ProfileContent() {
             onUnlinkGoogle={handleUnlinkGoogle}
             githubAvatar={profileData.githubAvatar}
             googleAvatar={profileData.googleAvatar}
+            uploadedAvatar={uploadedAvatarUrl}
             activeAvatar={profileData.avatar}
             onAvatarSourceChange={handleAvatarSourceChange}
             avatarSourceUpdating={avatarSourceUpdating}
@@ -712,6 +722,7 @@ function ProfileContent() {
               chooseAvatarSource: tProfile('choose_avatar_source'),
               activeAvatar: tProfile('active_avatar'),
               useAvatar: tProfile('use_avatar'),
+              uploadedLabel: tProfile('uploaded_avatar'),
             }}
           />
         </Card>
