@@ -55,9 +55,9 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
 
   const handleAvatarFileChange = async (e) => {
     const file = e.target.files?.[0];
+    if (!file) return;
     // Reset input so the same file can be re-selected after an error
     if (avatarFileRef.current) avatarFileRef.current.value = '';
-    if (!file) return;
 
     if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
       toastError('Unsupported file type. Please use JPEG, PNG, or WebP.');

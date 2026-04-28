@@ -20,8 +20,9 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
 
   const handleImageFileChange = async (e) => {
     const file = e.target.files?.[0];
-    if (imageFileRef.current) imageFileRef.current.value = '';
     if (!file) return;
+    // Reset input so the same file can be re-selected after an error
+    if (imageFileRef.current) imageFileRef.current.value = '';
 
     if (!IMAGE_ACCEPTED_TYPES.includes(file.type)) {
       toastError('Unsupported file type. Please use JPEG, PNG, or WebP.');
