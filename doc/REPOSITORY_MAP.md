@@ -369,7 +369,7 @@ Appofa/
 
 ---
 
-## Services (11)
+## Services (13)
 
 | Service | Purpose |
 |---------|---------|
@@ -377,6 +377,8 @@ Appofa/
 | authService.js | Authentication & authorization |
 | badgeService.js | Badge evaluation & assignment |
 | countryAccessService.js | Country block rules + geo access settings with 60s in-memory TTL cache |
+| imageProcessingService.js | Resizes and converts uploaded images to WebP (sharp) |
+| imageStorageService.js | Saves processed image buffers to `uploads/profiles/` and `uploads/locations/` using `__dirname`-relative paths |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
 | oauthService.js | OAuth integration (GitHub, Google) |
@@ -691,13 +693,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (49 files)
+## Tests (50 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, user-profiles-verification, user-stats, wikipediaFetcher
+api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

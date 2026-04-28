@@ -29,8 +29,9 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files (avatars, location images) as static assets
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+// Serve uploaded files (avatars, location images) as static assets.
+// Use __dirname so this resolves correctly regardless of working directory at start-up.
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Block blacklisted IPs before any route runs
 app.use(ipBlockMiddleware);

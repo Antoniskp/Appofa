@@ -3,7 +3,9 @@
 const path = require('path');
 const fs = require('fs');
 
-const UPLOADS_ROOT = path.join(process.cwd(), 'uploads');
+// Use __dirname so the path is always relative to this file's location on disk,
+// regardless of which directory the process was started from.
+const UPLOADS_ROOT = path.join(__dirname, '..', '..', 'uploads');
 
 /**
  * Ensure a directory exists, creating it recursively if needed.
