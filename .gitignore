@@ -20,4 +20,4 @@ tmp/
 src/data/hero-settings.json
 
 # Uploaded user files (served statically, not committed)
-uploads/
+/uploads/
