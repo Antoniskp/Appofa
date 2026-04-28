@@ -244,4 +244,85 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       expect(links[0].location_id).toBe(locationBId);
     });
   });
+
+  // ── POST /api/persons/:id/photo ──────────────────────────────────────────
+  describe('POST /api/persons/:id/photo', () => {
+    let profileIdForPhoto;
+
+    beforeAll(async () => {
+      const res = await request(app)
+        .post('/api/persons')
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ firstNameEn: 'Photo', lastNameEn: 'Test' });
+      profileIdForPhoto = res.body.data.profile.id;
+    });
+
+    it('rejects unauthenticated requests (401)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`);
+      expect(res.status).toBe(401);
+    });
+
+    it('rejects viewer role (403)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(viewerUserId, viewerToken));
+      expect(res.status).toBe(403);
+    });
+
+    it('returns 400 when no file is attached', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken));
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/no file/i);
+    });
+
+    it('returns 404 when person does not exist', async () => {
+      // Minimal 1×1 white PNG
+      const png1x1 = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      const res = await request(app)
+        .post('/api/persons/999999/photo')
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', png1x1, { filename: 'test.png', contentType: 'image/png' });
+      expect(res.status).toBe(404);
+    });
+
+    it('admin can upload a photo for a person profile (200)', async () => {
+      // Minimal 1×1 white PNG
+      const png1x1 = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', png1x1, { filename: 'test.png', contentType: 'image/png' });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.photoUrl).toMatch(/^\/uploads\/profiles\//);
+
+      // Verify the photo was persisted on the User record
+      const { User: UserModel } = require('../src/models');
+      const updated = await UserModel.findByPk(profileIdForPhoto);
+      expect(updated.photo).toMatch(/^\/uploads\/profiles\//);
+      expect(updated.avatar).toMatch(/^\/uploads\/profiles\//);
+    });
+
+    it('moderator can upload a photo for a person profile (200)', async () => {
+      const png1x1 = Buffer.from(
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI6QAAAABJRU5ErkJggg==',
+        'base64'
+      );
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(moderatorUserId, moderatorToken))
+        .attach('photo', png1x1, { filename: 'test.png', contentType: 'image/png' });
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+    });
+  });
 });

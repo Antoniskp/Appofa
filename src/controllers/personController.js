@@ -1,4 +1,5 @@
 const personService = require('../services/personService');
+const { User } = require('../models');
 
 const personController = {
   // GET /api/persons
@@ -148,6 +149,43 @@ const personController = {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
       console.error('rejectClaim error:', error);
       return res.status(500).json({ success: false, message: 'Error rejecting claim.' });
+    }
+  },
+
+  // POST /api/persons/:id/photo
+  uploadPersonPhoto: async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'No file uploaded.' });
+      }
+      const { processAvatar } = require('../services/imageProcessingService');
+      const { saveAvatar } = require('../services/imageStorageService');
+      let optimizedBuffer;
+      try {
+        optimizedBuffer = await processAvatar(req.file.buffer);
+      } catch (err) {
+        console.error('Person photo processing failed:', err);
+        return res.status(422).json({ success: false, message: 'Invalid or corrupt image.' });
+      }
+      const personId = parseInt(req.params.id, 10);
+      const person = await User.findByPk(personId);
+      if (!person || person.claimStatus === null) {
+        return res.status(404).json({ success: false, message: 'Person profile not found.' });
+      }
+      const photoUrl = saveAvatar(optimizedBuffer, personId);
+      person.photo = photoUrl;
+      person.avatar = photoUrl;
+      person.avatarUrl = photoUrl;
+      person.avatarUpdatedAt = new Date();
+      await person.save();
+      return res.status(200).json({
+        success: true,
+        message: 'Photo uploaded successfully.',
+        data: { photoUrl, avatarUpdatedAt: person.avatarUpdatedAt }
+      });
+    } catch (error) {
+      console.error('uploadPersonPhoto error:', error);
+      return res.status(500).json({ success: false, message: 'Error uploading person photo.' });
     }
   }
 };

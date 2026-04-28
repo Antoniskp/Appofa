@@ -5,7 +5,8 @@ const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
-const { apiLimiter } = require('../middleware/rateLimiter');
+const { apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const { avatarUpload } = require('../middleware/upload');
 
 // ─── Public ──────────────────────────────────────────────────────────────────
 router.get('/', apiLimiter, personController.getPersons);
@@ -25,6 +26,16 @@ router.post('/claims/:id/reject', apiLimiter, authMiddleware, checkRole('admin',
 
 // Moderator/Admin: create profile
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.createProfile);
+
+// Admin/Moderator: upload photo for a person profile
+router.post('/:id/photo', uploadLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, (req, res, next) => {
+  avatarUpload.single('photo')(req, res, (err) => {
+    if (!err) return next();
+    const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : (err.status || 400);
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large. Maximum size is 5 MB.' : err.message;
+    return res.status(status).json({ success: false, message });
+  });
+}, personController.uploadPersonPhoto);
 
 // Admin/Moderator: delete profile
 router.delete('/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, personController.deleteProfile);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
@@ -22,9 +22,13 @@ const SOCIAL_LINK_KEYS = [
   { key: 'tiktok', label: 'TikTok' },
 ];
 
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 function CreatePersonProfilePageContent() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const photoFileRef = useRef(null);
 
   // Section 1 — Basic person fields
   const [form, setForm] = useState({
@@ -38,6 +42,8 @@ function CreatePersonProfilePageContent() {
     bio: '',
     contactEmail: '',
   });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
   const [socialLinks, setSocialLinks] = useState(
     Object.fromEntries(SOCIAL_LINK_KEYS.map(({ key }) => [key, '']))
   );
@@ -123,6 +129,21 @@ function CreatePersonProfilePageContent() {
     });
   };
 
+  const handlePhotoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
+      setError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setError('File too large. Maximum size is 5 MB.');
+      return;
+    }
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
   const pairsToObject = (pairs) => {
     const obj = {};
     pairs.forEach(({ key, value }) => {
@@ -179,7 +200,20 @@ function CreatePersonProfilePageContent() {
         if (Object.keys(ppObj).length > 0) payload.politicalPositions = ppObj;
       }
 
-      await personAPI.createProfile(payload);
+      const createRes = await personAPI.createProfile(payload);
+      const newProfileId = createRes.data?.profile?.id;
+
+      // If a photo file was selected, upload it after creating the profile
+      if (photoFile && newProfileId) {
+        try {
+          await personAPI.uploadPersonPhoto(newProfileId, photoFile);
+        } catch {
+          // Profile was created — navigate to edit page so admin can retry the photo upload
+          router.push(`/admin/persons/${newProfileId}/edit?photoError=1`);
+          return;
+        }
+      }
+
       router.push('/admin/persons');
     } catch (err) {
       setError(err.message || 'Αποτυχία δημιουργίας προφίλ.');
@@ -256,14 +290,42 @@ function CreatePersonProfilePageContent() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Φωτογραφία (URL)</label>
-              <input
-                type="url"
-                value={form.photo}
-                onChange={(e) => handleChange('photo', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://..."
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Φωτογραφία</label>
+              <div className="space-y-3">
+                {photoPreview && (
+                  <img src={photoPreview} alt="Preview" className="w-20 h-20 rounded-full object-cover border border-gray-200" />
+                )}
+                <div className="flex items-center gap-3">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    {photoFile ? photoFile.name : 'Επιλογή αρχείου'}
+                    <input
+                      ref={photoFileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handlePhotoFileChange}
+                    />
+                  </label>
+                  {photoFile && (
+                    <button
+                      type="button"
+                      onClick={() => { setPhotoFile(null); setPhotoPreview(''); if (photoFileRef.current) photoFileRef.current.value = ''; }}
+                      className="text-sm text-red-500 hover:text-red-700"
+                    >
+                      Αφαίρεση
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400">JPEG, PNG ή WebP · έως 5 MB. Εάν δεν επιλεγεί αρχείο, μπορείτε να εισάγετε απευθείας URL παρακάτω.</p>
+                <input
+                  type="url"
+                  value={form.photo}
+                  onChange={(e) => handleChange('photo', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://... (εναλλακτικά)"
+                />
+              </div>
             </div>
 
             <div>

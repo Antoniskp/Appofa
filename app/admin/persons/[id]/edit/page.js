@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState, useEffect } from 'react';
+import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
@@ -11,6 +11,9 @@ import { getAllParties } from '@/lib/utils/politicalParties';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
+
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -27,6 +30,7 @@ function EditPersonProfilePageContent({ params }) {
   const { id } = use(params);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const photoFileRef = useRef(null);
 
   // Section 1 — Person fields
   const [form, setForm] = useState({
@@ -40,6 +44,12 @@ function EditPersonProfilePageContent({ params }) {
     bio: '',
     contactEmail: '',
   });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [photoTimestamp, setPhotoTimestamp] = useState(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState('');
+  const [photoUploadSuccess, setPhotoUploadSuccess] = useState(false);
   const [socialLinks, setSocialLinks] = useState(
     Object.fromEntries(SOCIAL_LINK_KEYS.map(({ key }) => [key, '']))
   );
@@ -193,6 +203,46 @@ function EditPersonProfilePageContent({ params }) {
 
   const handleChange = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const handlePoliticalChange = (field, value) => setPoliticalForm((prev) => ({ ...prev, [field]: value }));
+
+  const handlePhotoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
+      setPhotoUploadError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setPhotoUploadError('File too large. Maximum size is 5 MB.');
+      return;
+    }
+    setPhotoUploadError('');
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleUploadPhoto = async () => {
+    if (!photoFile) return;
+    setIsUploadingPhoto(true);
+    setPhotoUploadError('');
+    setPhotoUploadSuccess(false);
+    try {
+      const res = await personAPI.uploadPersonPhoto(id, photoFile);
+      if (res.success && res.data?.photoUrl) {
+        handleChange('photo', res.data.photoUrl);
+        const ts = res.data.avatarUpdatedAt ? new Date(res.data.avatarUpdatedAt).getTime() : Date.now();
+        setPhotoTimestamp(ts);
+        setPhotoPreview('');
+        setPhotoFile(null);
+        if (photoFileRef.current) photoFileRef.current.value = '';
+        setPhotoUploadSuccess(true);
+        setTimeout(() => setPhotoUploadSuccess(false), 3000);
+      }
+    } catch (err) {
+      setPhotoUploadError(err.message || 'Αποτυχία ανάρτησης φωτογραφίας.');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
 
   const handlePairChange = (index, field, value) => {
     setPoliticalPositions((prev) => {
@@ -349,14 +399,58 @@ function EditPersonProfilePageContent({ params }) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Φωτογραφία (URL)</label>
-              <input
-                type="url"
-                value={form.photo}
-                onChange={(e) => handleChange('photo', e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="https://..."
-              />
+              <label className="block text-sm font-medium text-gray-700 mb-1">Φωτογραφία</label>
+              <div className="space-y-3">
+                {(photoPreview || form.photo) && (
+                  <img
+                    src={photoPreview || (photoTimestamp ? `${form.photo}?v=${photoTimestamp}` : form.photo)}
+                    alt="Τρέχουσα φωτογραφία"
+                    className="w-20 h-20 rounded-full object-cover border border-gray-200"
+                  />
+                )}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <label className="cursor-pointer inline-flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                    {photoFile ? photoFile.name : 'Επιλογή νέας φωτογραφίας'}
+                    <input
+                      ref={photoFileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={handlePhotoFileChange}
+                    />
+                  </label>
+                  {photoFile && (
+                    <button
+                      type="button"
+                      onClick={handleUploadPhoto}
+                      disabled={isUploadingPhoto}
+                      className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                    >
+                      {isUploadingPhoto ? 'Ανάρτηση...' : 'Ανάρτηση'}
+                    </button>
+                  )}
+                  {photoFile && (
+                    <button
+                      type="button"
+                      onClick={() => { setPhotoFile(null); setPhotoPreview(''); setPhotoUploadError(''); if (photoFileRef.current) photoFileRef.current.value = ''; }}
+                      className="text-sm text-red-500 hover:text-red-700"
+                    >
+                      Ακύρωση
+                    </button>
+                  )}
+                </div>
+                {photoUploadError && <p className="text-xs text-red-600">{photoUploadError}</p>}
+                {photoUploadSuccess && <p className="text-xs text-green-600">Η φωτογραφία ανέβηκε επιτυχώς!</p>}
+                <p className="text-xs text-gray-400">JPEG, PNG ή WebP · έως 5 MB. Μπορείτε επίσης να εισάγετε απευθείας URL παρακάτω.</p>
+                <input
+                  type="url"
+                  value={form.photo}
+                  onChange={(e) => handleChange('photo', e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://... (εναλλακτικά)"
+                />
+              </div>
             </div>
 
             <div>
