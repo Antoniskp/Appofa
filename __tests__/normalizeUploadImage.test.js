@@ -76,9 +76,12 @@ describe('UPLOAD_PRESETS', () => {
     expect(UPLOAD_PRESETS.avatar).toEqual(
       expect.objectContaining({ maxBytes: expect.any(Number), maxDimension: expect.any(Number) })
     );
-    // Avatar target should be under the 5 MB backend limit
-    expect(UPLOAD_PRESETS.avatar.maxBytes).toBeLessThan(5 * 1024 * 1024);
+    // Avatar target should be under the 10 MB backend limit but aggressively small
+    expect(UPLOAD_PRESETS.avatar.maxBytes).toBeLessThan(10 * 1024 * 1024);
     expect(UPLOAD_PRESETS.avatar.maxBytes).toBeGreaterThan(0);
+    // Avatar maxDimension should be in the 512–768 px range for aggressive resize
+    expect(UPLOAD_PRESETS.avatar.maxDimension).toBeGreaterThanOrEqual(512);
+    expect(UPLOAD_PRESETS.avatar.maxDimension).toBeLessThanOrEqual(768);
   });
 
   test('location preset has expected structure', () => {
@@ -215,6 +218,49 @@ describe('normalizeUploadImage', () => {
   test('normalizeUploadImage with UPLOAD_PRESETS.location passes for normal JPEG', async () => {
     const file = makeFile('loc.jpg', 'image/jpeg', 100);
     const result = await normalizeUploadImage(file, UPLOAD_PRESETS.location);
+    expect(result).toBe(file);
+  });
+
+  // ── Always-resize-after-HEIC-conversion tests ─────────────────────────────
+
+  test('HEIC conversion always triggers resize when maxDimension is provided', async () => {
+    // Even a small HEIC file (well under maxBytes) should be returned as a
+    // processed JPEG File when maxDimension is specified.
+    const heic2any = require('heic2any');
+    // Mock returns a small 20-byte blob — under any reasonable maxBytes.
+    heic2any.mockResolvedValueOnce(new Blob(['a'.repeat(20)], { type: 'image/jpeg' }));
+
+    const file = makeFile('iphone.heic', 'image/heic');
+    // Pass maxDimension but a large maxBytes so the byte limit is not hit.
+    const result = await normalizeUploadImage(file, {
+      maxDimension: 768,
+      maxBytes: 10 * 1024 * 1024,
+    });
+    // Should be converted (wasModified=true → shouldResize=true → canvas attempted)
+    // In Node without canvas the shouldResize path is entered; since sizeExceedsLimit
+    // is false and canvas is unavailable, the file is returned as-is from the
+    // HEIC conversion step (still a JPEG File, not the original HEIC).
+    expect(result).not.toBe(file);
+    expect(result.type).toBe('image/jpeg');
+    expect(result.name).toBe('iphone.jpg');
+  });
+
+  test('HEIC file within maxBytes but with maxDimension set does not throw', async () => {
+    // Regression: a small HEIC → JPEG that is under maxBytes must not throw
+    // even when maxDimension triggers the shouldResize path.
+    const heic2any = require('heic2any');
+    heic2any.mockResolvedValueOnce(new Blob(['x'.repeat(50)], { type: 'image/jpeg' }));
+
+    const file = makeFile('small.heic', 'image/heic', 50);
+    await expect(
+      normalizeUploadImage(file, UPLOAD_PRESETS.avatar)
+    ).resolves.not.toThrow();
+  });
+
+  test('non-HEIC small JPEG is returned unchanged when within maxBytes', async () => {
+    const file = makeFile('tiny.jpg', 'image/jpeg', 50);
+    const result = await normalizeUploadImage(file, UPLOAD_PRESETS.avatar);
+    // Not modified — no HEIC conversion and not over maxBytes.
     expect(result).toBe(file);
   });
 });

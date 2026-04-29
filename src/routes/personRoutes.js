@@ -32,7 +32,7 @@ router.post('/:id/photo', uploadLimiter, authMiddleware, checkRole('admin', 'mod
   avatarUpload.single('photo')(req, res, (err) => {
     if (!err) return next();
     const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : (err.status || 400);
-    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large. Maximum size is 5 MB.' : err.message;
+    const message = err.code === 'LIMIT_FILE_SIZE' ? 'File too large. Maximum size is 10 MB.' : err.message;
     return res.status(status).json({ success: false, message });
   });
 }, personController.uploadPersonPhoto);

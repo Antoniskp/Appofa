@@ -448,7 +448,7 @@ function EditPersonProfilePageContent({ params }) {
                 </div>
                 {photoUploadError && <p className="text-xs text-red-600">{photoUploadError}</p>}
                 {photoUploadSuccess && <p className="text-xs text-green-600">Η φωτογραφία ανέβηκε επιτυχώς!</p>}
-                <p className="text-xs text-gray-400">JPEG, PNG, WebP ή HEIC/HEIF · έως 5 MB. Μπορείτε επίσης να εισάγετε απευθείας URL παρακάτω.</p>
+                <p className="text-xs text-gray-400">JPEG, PNG, WebP ή HEIC/HEIF · έως 10 MB. Μπορείτε επίσης να εισάγετε απευθείας URL παρακάτω.</p>
                 <input
                   type="url"
                   value={form.photo}

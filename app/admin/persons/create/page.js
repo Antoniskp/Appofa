@@ -314,7 +314,7 @@ function CreatePersonProfilePageContent() {
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-400">JPEG, PNG, WebP ή HEIC/HEIF · έως 5 MB. Εάν δεν επιλεγεί αρχείο, μπορείτε να εισάγετε απευθείας URL παρακάτω.</p>
+                <p className="text-xs text-gray-400">JPEG, PNG, WebP ή HEIC/HEIF · έως 10 MB. Εάν δεν επιλεγεί αρχείο, μπορείτε να εισάγετε απευθείας URL παρακάτω.</p>
                 <input
                   type="url"
                   value={form.photo}
