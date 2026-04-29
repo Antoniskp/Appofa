@@ -41,6 +41,7 @@
     "express": "^5.2.1",
     "express-rate-limit": "^8.3.1",
     "geoip-lite": "^2.0.1",
+    "heic2any": "^0.0.4",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.1.1",
