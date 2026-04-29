@@ -204,7 +204,8 @@ function CreatePersonProfilePageContent() {
           const uploadFile = await normalizeUploadImage(photoFile, UPLOAD_PRESETS.avatar);
           await personAPI.uploadPersonPhoto(newProfileId, uploadFile);
         } catch (uploadErr) {
-          // Profile was created — navigate to edit page so admin can retry the photo upload
+          // Profile was created but photo upload failed — navigate to edit so admin can retry.
+          console.error('Photo upload failed after profile creation:', uploadErr);
           router.push(`/admin/persons/${newProfileId}/edit?photoError=1`);
           return;
         }
