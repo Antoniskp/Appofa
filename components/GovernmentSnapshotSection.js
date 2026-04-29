@@ -1,11 +1,14 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import positionTypes from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
+
+const MAX_PREVIEW = 6;
 
 // Build lookup maps at module scope (computed once)
 const typeMap = Object.fromEntries(positionTypes.map((t) => [t.key, t]));
@@ -63,36 +66,35 @@ export default function GovernmentSnapshotSection() {
     { transform: (res) => (res?.success ? res.data : []) },
   );
 
-  const positions = positionsData || [];
+  const positions = useMemo(() => (positionsData || []).slice(0, MAX_PREVIEW), [positionsData]);
 
   return (
     <section className="bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
-      <div className="app-container py-12">
+      <div className="app-container py-8">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-4">
+        <div className="flex items-center justify-between gap-4 mb-3">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-900">{t('title')}</h2>
-            <p className="mt-1 text-sm text-gray-500">{t('subtitle')}</p>
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900">{t('title')}</h2>
+            <p className="mt-0.5 text-xs text-gray-500">{t('subtitle')}</p>
           </div>
           <Link
             href="/dream-team"
-            className="inline-flex items-center gap-2 shrink-0 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors"
+            className="shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
           >
-            <span>🗳️</span>
-            {t('cta_button')}
+            {t('cta_view_all')} →
           </Link>
         </div>
 
         {/* Educational disclaimer */}
-        <p className="text-xs text-gray-400 mb-6 flex items-center gap-1.5">
+        <p className="text-xs text-gray-400 mb-4 flex items-center gap-1.5">
           <span>ℹ️</span>
           {t('disclaimer')}
         </p>
 
         {/* Position cards grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {loading
-            ? Array.from({ length: 8 }).map((_, i) => <PositionCardSkeleton key={i} />)
+            ? Array.from({ length: MAX_PREVIEW }).map((_, i) => <PositionCardSkeleton key={i} />)
             : positions.map((pos) => {
                 const typeConfig = typeMap[pos.positionTypeKey] || {};
                 const badgeColor = typeConfig.color || 'bg-gray-100 text-gray-600';
@@ -136,20 +138,6 @@ export default function GovernmentSnapshotSection() {
                   </div>
                 );
               })}
-        </div>
-
-        {/* Bottom CTA row */}
-        <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-gray-100">
-          <p className="text-sm text-gray-500 text-center sm:text-left">
-            {t('dream_team_prompt')}
-          </p>
-          <Link
-            href="/dream-team"
-            className="inline-flex items-center gap-2 shrink-0 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-white font-semibold px-6 py-3 rounded-xl transition-colors"
-          >
-            <span>🗳️</span>
-            {t('cta_button')}
-          </Link>
         </div>
       </div>
     </section>
