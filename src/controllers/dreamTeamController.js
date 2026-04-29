@@ -390,9 +390,14 @@ const dreamTeamController = {
   // ─── Admin: positions overview ───────────────────────────────────────────────
 
   // GET /api/admin/dream-team/positions
+  // Optional query param: countryCode (e.g. "GR", "CY") to filter by country.
   adminGetPositions: async (req, res) => {
     try {
+      const where = req.query.countryCode
+        ? { countryCode: req.query.countryCode.toUpperCase() }
+        : {};
       const positions = await GovernmentPosition.findAll({
+        where,
         order: [['order', 'ASC']],
         include: [
           {
