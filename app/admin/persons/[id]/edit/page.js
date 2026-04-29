@@ -14,6 +14,15 @@ import AdminLayout from '@/components/admin/AdminLayout';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+const HEIC_HEIF_EXTENSION_RE = /\.(heic|heif)$/i;
+
+const isAcceptedAvatarFile = (file) => {
+  const mimeType = (file?.type || '').toLowerCase();
+  if (AVATAR_ACCEPTED_TYPES.includes(mimeType)) return true;
+  const hasHeicLikeExtension = HEIC_HEIF_EXTENSION_RE.test(file?.name || '');
+  const isGenericMime = mimeType === '' || mimeType === 'application/octet-stream' || mimeType === 'binary/octet-stream';
+  return hasHeicLikeExtension && isGenericMime;
+};
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -207,7 +216,7 @@ function EditPersonProfilePageContent({ params }) {
   const handlePhotoFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
+    if (!isAcceptedAvatarFile(file)) {
       setPhotoUploadError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }

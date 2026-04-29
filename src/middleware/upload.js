@@ -18,7 +18,12 @@ const AVATAR_MAX_SIZE = 5 * 1024 * 1024;
 const LOCATION_MAX_SIZE = 10 * 1024 * 1024;
 
 const mimeFilter = (req, file, cb) => {
-  if (ALLOWED_MIMES.has(file.mimetype)) {
+  const mimeType = (file.mimetype || '').toLowerCase();
+  const fileName = (file.originalname || '').toLowerCase();
+  const hasHeicLikeExtension = /\.(heic|heif)$/.test(fileName);
+  const isGenericMime = mimeType === '' || mimeType === 'application/octet-stream' || mimeType === 'binary/octet-stream';
+
+  if (ALLOWED_MIMES.has(mimeType) || (hasHeicLikeExtension && isGenericMime)) {
     cb(null, true);
   } else {
     cb(Object.assign(new Error('Unsupported file type. Allowed: JPEG, PNG, WebP, HEIC/HEIF.'), { status: 415 }));
