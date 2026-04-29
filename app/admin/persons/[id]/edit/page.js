@@ -225,7 +225,6 @@ function EditPersonProfilePageContent({ params }) {
   const handleUploadPhoto = async () => {
     if (!photoFile) return;
     setIsUploadingPhoto(true);
-    setUploadStep('uploading');
     setPhotoUploadError('');
     setPhotoUploadSuccess(false);
     try {
@@ -233,8 +232,8 @@ function EditPersonProfilePageContent({ params }) {
       if (isHeicFile(photoFile)) {
         setUploadStep('converting');
         uploadFile = await normalizeUploadImage(photoFile);
-        setUploadStep('uploading');
       }
+      setUploadStep('uploading');
       const res = await personAPI.uploadPersonPhoto(id, uploadFile);
       if (res.success && res.data?.photoUrl) {
         handleChange('photo', res.data.photoUrl);
