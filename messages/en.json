@@ -657,7 +657,14 @@
     "actions": "Actions",
     "cancel": "Cancel",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "poll_closed_label": "Closed",
+    "poll_ends_label": "Ends",
+    "view_profile": "View",
+    "parent_org": "Parent org",
+    "no_parent": "No parent",
+    "no_organizations_filtered": "No organizations match your search.",
+    "editing": "Editing"
   },
   "static_pages": {
     "instructions_title": "Instructions",

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, ClockIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { organizationAPI } from '@/lib/api';
 import organizationContentConfig from '@/config/organizationContent.json';
@@ -22,6 +22,17 @@ const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
 function parsePositiveInt(value) {
   const parsed = parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function isPollClosed(deadline) {
+  if (!deadline) return false;
+  return new Date(deadline) < new Date();
+}
+
+function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export default function OrganizationProfilePage({ params }) {
@@ -45,6 +56,8 @@ export default function OrganizationProfilePage({ params }) {
   const [contentActionLoading, setContentActionLoading] = useState(false);
   const [contentActionError, setContentActionError] = useState('');
   const [contentActionSuccess, setContentActionSuccess] = useState('');
+  const [showPollForm, setShowPollForm] = useState(false);
+  const [showSuggestionForm, setShowSuggestionForm] = useState(false);
 
   const { data: organization, loading, error } = useAsyncData(
     async () => {
@@ -299,6 +312,7 @@ export default function OrganizationProfilePage({ params }) {
       refetchPolls
     );
     setPollForm({ title: '', description: '', deadline: '', visibility: 'members_only' });
+    setShowPollForm(false);
   };
 
   const handleCreateSuggestion = async (event) => {
@@ -311,6 +325,7 @@ export default function OrganizationProfilePage({ params }) {
       refetchSuggestions
     );
     setSuggestionForm({ type: 'idea', title: '', body: '', visibility: 'members_only' });
+    setShowSuggestionForm(false);
   };
 
   const handleCreateOfficialPost = async (event) => {
@@ -631,71 +646,120 @@ export default function OrganizationProfilePage({ params }) {
                 {!isActiveMember && organization.isPublic && <AlertMessage message={t('members_only_gate')} />}
 
                 {isActiveMember && (
-                  <form onSubmit={handleCreatePoll} className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                    <p className="text-sm font-medium text-gray-800">{t('create_poll')}</p>
-                    <input
-                      type="text"
-                      value={pollForm.title}
-                      onChange={(e) => setPollForm((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder={t('poll_title')}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    />
-                    <textarea
-                      value={pollForm.description}
-                      onChange={(e) => setPollForm((prev) => ({ ...prev, description: e.target.value }))}
-                      placeholder={t('description')}
-                      rows={3}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    />
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('poll_deadline')}</label>
-                        <input
-                          type="datetime-local"
-                          value={pollForm.deadline}
-                          onChange={(e) => setPollForm((prev) => ({ ...prev, deadline: e.target.value }))}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('poll_visibility')}</label>
-                        <select
-                          value={pollForm.visibility}
-                          onChange={(e) => setPollForm((prev) => ({ ...prev, visibility: e.target.value }))}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                        >
-                          {ORG_VISIBILITY_OPTIONS.map((visibility) => (
-                            <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
+                  <div>
                     <button
-                      type="submit"
-                      disabled={contentActionLoading}
-                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                      type="button"
+                      onClick={() => setShowPollForm((v) => !v)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 transition-colors mb-3"
                     >
+                      {showPollForm ? <ChevronUpIcon className="h-4 w-4" /> : <PlusIcon className="h-4 w-4" />}
                       {t('create_poll')}
                     </button>
-                  </form>
+
+                    {showPollForm && (
+                      <form onSubmit={handleCreatePoll} className="space-y-3 rounded-lg border border-blue-200 bg-blue-50 p-4 mb-4">
+                        <p className="text-sm font-semibold text-blue-800">{t('create_poll')}</p>
+                        <input
+                          type="text"
+                          value={pollForm.title}
+                          onChange={(e) => setPollForm((prev) => ({ ...prev, title: e.target.value }))}
+                          placeholder={t('poll_title')}
+                          required
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                        <textarea
+                          value={pollForm.description}
+                          onChange={(e) => setPollForm((prev) => ({ ...prev, description: e.target.value }))}
+                          placeholder={t('description')}
+                          rows={3}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-700">{t('poll_deadline')}</label>
+                            <input
+                              type="datetime-local"
+                              value={pollForm.deadline}
+                              onChange={(e) => setPollForm((prev) => ({ ...prev, deadline: e.target.value }))}
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-700">{t('poll_visibility')}</label>
+                            <select
+                              value={pollForm.visibility}
+                              onChange={(e) => setPollForm((prev) => ({ ...prev, visibility: e.target.value }))}
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            >
+                              {ORG_VISIBILITY_OPTIONS.map((visibility) => (
+                                <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            disabled={contentActionLoading}
+                            className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {t('create_poll')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowPollForm(false)}
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                          >
+                            {t('cancel')}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
                 )}
 
                 {pollsLoading && <SkeletonLoader count={3} type="list" />}
                 {!pollsLoading && pollsError && <AlertMessage message={pollsError} />}
-                {!pollsLoading && !pollsError && polls.length === 0 && <p className="text-sm text-gray-500">{t('polls_empty')}</p>}
+                {!pollsLoading && !pollsError && polls.length === 0 && (
+                  <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                    <ClockIcon className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-500">{t('polls_empty')}</p>
+                  </div>
+                )}
                 {!pollsLoading && !pollsError && polls.length > 0 && (
                   <div className="space-y-3">
-                    {polls.map((poll) => (
-                      <div key={poll.id} className="rounded-lg border border-gray-200 p-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="font-medium text-gray-900">{poll.title}</p>
-                          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
-                            {t(`visibility_${poll.visibility}`)}
-                          </span>
+                    {polls.map((poll) => {
+                      const closed = isPollClosed(poll.deadline);
+                      const deadlineLabel = poll.deadline
+                        ? (closed ? t('poll_closed_label') : `${t('poll_ends_label')}: ${formatShortDate(poll.deadline)}`)
+                        : null;
+                      return (
+                        <div key={poll.id} className="rounded-lg border border-gray-200 bg-white p-4">
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <p className="font-semibold text-gray-900 flex-1 min-w-0">{poll.title}</p>
+                            <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                              {t(`visibility_${poll.visibility}`)}
+                            </span>
+                          </div>
+                          {poll.description && <p className="mt-1.5 text-sm text-gray-600 line-clamp-2">{poll.description}</p>}
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                            {poll.creator?.username && (
+                              <span className="flex items-center gap-1">
+                                <UserCircleIcon className="h-3.5 w-3.5" />
+                                @{poll.creator.username}
+                              </span>
+                            )}
+                            {deadlineLabel && (
+                              <span className={`flex items-center gap-1 font-medium ${closed ? 'text-red-500' : 'text-green-600'}`}>
+                                <ClockIcon className="h-3.5 w-3.5" />
+                                {deadlineLabel}
+                              </span>
+                            )}
+                            <span>{formatShortDate(poll.createdAt)}</span>
+                          </div>
                         </div>
-                        {poll.description && <p className="mt-2 text-sm text-gray-700">{poll.description}</p>}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -706,74 +770,112 @@ export default function OrganizationProfilePage({ params }) {
                 {!isActiveMember && organization.isPublic && <AlertMessage message={t('members_only_gate')} />}
 
                 {isActiveMember && (
-                  <form onSubmit={handleCreateSuggestion} className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
-                    <p className="text-sm font-medium text-gray-800">{t('create_suggestion')}</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('suggestion_type')}</label>
-                        <select
-                          value={suggestionForm.type}
-                          onChange={(e) => setSuggestionForm((prev) => ({ ...prev, type: e.target.value }))}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                        >
-                          {ORG_SUGGESTION_TYPES.map((type) => (
-                            <option key={type} value={type}>{t(`suggestion_type_${type}`)}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('suggestion_visibility')}</label>
-                        <select
-                          value={suggestionForm.visibility}
-                          onChange={(e) => setSuggestionForm((prev) => ({ ...prev, visibility: e.target.value }))}
-                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                        >
-                          {ORG_VISIBILITY_OPTIONS.map((visibility) => (
-                            <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    <input
-                      type="text"
-                      value={suggestionForm.title}
-                      onChange={(e) => setSuggestionForm((prev) => ({ ...prev, title: e.target.value }))}
-                      placeholder={t('suggestion_title')}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    />
-                    <textarea
-                      value={suggestionForm.body}
-                      onChange={(e) => setSuggestionForm((prev) => ({ ...prev, body: e.target.value }))}
-                      placeholder={t('suggestion_body')}
-                      rows={4}
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
-                    />
+                  <div>
                     <button
-                      type="submit"
-                      disabled={contentActionLoading}
-                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                      type="button"
+                      onClick={() => setShowSuggestionForm((v) => !v)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg border border-purple-200 text-purple-700 hover:bg-purple-50 transition-colors mb-3"
                     >
+                      {showSuggestionForm ? <ChevronUpIcon className="h-4 w-4" /> : <PlusIcon className="h-4 w-4" />}
                       {t('create_suggestion')}
                     </button>
-                  </form>
+
+                    {showSuggestionForm && (
+                      <form onSubmit={handleCreateSuggestion} className="space-y-3 rounded-lg border border-purple-200 bg-purple-50 p-4 mb-4">
+                        <p className="text-sm font-semibold text-purple-800">{t('create_suggestion')}</p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-700">{t('suggestion_type')}</label>
+                            <select
+                              value={suggestionForm.type}
+                              onChange={(e) => setSuggestionForm((prev) => ({ ...prev, type: e.target.value }))}
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            >
+                              {ORG_SUGGESTION_TYPES.map((type) => (
+                                <option key={type} value={type}>{t(`suggestion_type_${type}`)}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-700">{t('suggestion_visibility')}</label>
+                            <select
+                              value={suggestionForm.visibility}
+                              onChange={(e) => setSuggestionForm((prev) => ({ ...prev, visibility: e.target.value }))}
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            >
+                              {ORG_VISIBILITY_OPTIONS.map((visibility) => (
+                                <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                        <input
+                          type="text"
+                          value={suggestionForm.title}
+                          onChange={(e) => setSuggestionForm((prev) => ({ ...prev, title: e.target.value }))}
+                          placeholder={t('suggestion_title')}
+                          required
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                        <textarea
+                          value={suggestionForm.body}
+                          onChange={(e) => setSuggestionForm((prev) => ({ ...prev, body: e.target.value }))}
+                          placeholder={t('suggestion_body')}
+                          rows={4}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            disabled={contentActionLoading}
+                            className="rounded-lg bg-purple-600 px-3 py-2 text-sm text-white hover:bg-purple-700 disabled:opacity-50"
+                          >
+                            {t('create_suggestion')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setShowSuggestionForm(false)}
+                            className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                          >
+                            {t('cancel')}
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
                 )}
 
                 {suggestionsLoading && <SkeletonLoader count={3} type="list" />}
                 {!suggestionsLoading && suggestionsError && <AlertMessage message={suggestionsError} />}
                 {!suggestionsLoading && !suggestionsError && suggestions.length === 0 && (
-                  <p className="text-sm text-gray-500">{t('suggestions_empty')}</p>
+                  <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
+                    <BuildingOffice2Icon className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                    <p className="text-sm text-gray-500">{t('suggestions_empty')}</p>
+                  </div>
                 )}
                 {!suggestionsLoading && !suggestionsError && suggestions.length > 0 && (
                   <div className="space-y-3">
                     {suggestions.map((suggestion) => (
-                      <div key={suggestion.id} className="rounded-lg border border-gray-200 p-3">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <p className="font-medium text-gray-900">{suggestion.title}</p>
-                          <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
+                      <div key={suggestion.id} className="rounded-lg border border-gray-200 bg-white p-4">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
+                          <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                            {t(`suggestion_type_${suggestion.type}`)}
+                          </span>
+                          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                             {t(`visibility_${suggestion.visibility}`)}
                           </span>
                         </div>
-                        <p className="mt-2 text-sm text-gray-700">{suggestion.body}</p>
+                        <p className="font-semibold text-gray-900">{suggestion.title}</p>
+                        {suggestion.body && <p className="mt-1.5 text-sm text-gray-600 line-clamp-3">{suggestion.body}</p>}
+                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                          {suggestion.author?.username && (
+                            <span className="flex items-center gap-1">
+                              <UserCircleIcon className="h-3.5 w-3.5" />
+                              @{suggestion.author.username}
+                            </span>
+                          )}
+                          <span>{formatShortDate(suggestion.createdAt)}</span>
+                        </div>
                       </div>
                     ))}
                   </div>

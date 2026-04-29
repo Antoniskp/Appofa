@@ -657,7 +657,14 @@
     "actions": "Ενέργειες",
     "cancel": "Ακύρωση",
     "yes": "Ναι",
-    "no": "Όχι"
+    "no": "Όχι",
+    "poll_closed_label": "Έκληξε",
+    "poll_ends_label": "Λήγει",
+    "view_profile": "Προβολή",
+    "parent_org": "Μητρικός",
+    "no_parent": "Χωρίς γονικό",
+    "no_organizations_filtered": "Δεν βρέθηκαν οργανισμοί με αυτή την αναζήτηση.",
+    "editing": "Επεξεργασία"
   },
   "static_pages": {
     "instructions_title": "Οδηγίες",
