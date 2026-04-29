@@ -7,12 +7,10 @@ import LocationRoleManager from '@/components/LocationRoleManager';
 import { locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
-import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
+import { normalizeUploadImage, isHeicFile, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
 
 /** Accepted MIME types / extensions for location image upload (must match backend allowlist). */
 const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence', '.heic', '.heif'];
-/** 10 MB client-side guard (backend enforces the same limit). */
-const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 export default function LocationEditForm({ location, editedData, isSaving, onSave, onCancel, onInputChange, onImageUploaded }) {
   const { success: toastSuccess, error: toastError } = useToast();
@@ -31,18 +29,15 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
       toastError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
-    if (file.size > IMAGE_MAX_BYTES) {
-      toastError('File too large. Maximum size is 10 MB.');
-      return;
-    }
 
     setIsUploadingImage(true);
     try {
-      let uploadFile = file;
       if (isHeicFile(file)) {
         setUploadStep('converting');
-        uploadFile = await normalizeUploadImage(file);
+      } else if (file.size > UPLOAD_PRESETS.location.maxBytes) {
+        setUploadStep('compressing');
       }
+      const uploadFile = await normalizeUploadImage(file, UPLOAD_PRESETS.location);
       setUploadStep('uploading');
       const response = await locationAPI.uploadImage(location.id, uploadFile);
       if (response.success && response.data?.imageUrl) {
@@ -128,7 +123,7 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  {uploadStep === 'converting' ? 'Converting…' : 'Uploading…'}
+                  {uploadStep === 'converting' ? 'Converting…' : uploadStep === 'compressing' ? 'Compressing…' : 'Uploading…'}
                 </>
               ) : (
                 displayImage ? 'Replace Image' : 'Upload Image'
