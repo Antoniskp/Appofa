@@ -21,6 +21,9 @@ export default function PersonSearch({
   showTopSuggestions = false,
   value,
   onChange,
+  // When set, restricts search results to users/persons of this nationality (ISO-2).
+  // Expected to be stable for the lifetime of this component instance (it's derived
+  // from the country page's countryCode and does not change after mount).
   nationality,
 }) {
   const isControlled = value !== undefined;

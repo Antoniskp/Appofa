@@ -5,6 +5,8 @@ import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
+// Country-specific icon maps — add a new import here when adding a new country config.
+// (Dynamic fs.readdirSync is not available in Next.js client components.)
 import cyPositionsData from '@/config/countries/CY.json';
 import PersonSearch from './PersonSearch';
 
@@ -13,7 +15,9 @@ const positionTypesMap = positionTypesData.reduce((acc, pt) => {
   return acc;
 }, {});
 
-// Build icon map from GR positions (governmentPositions.json) and all country configs
+// Build icon map from GR positions and all supported country configs.
+// CY slugs (cy-ypoyrgos-*) are not in governmentPositions.json (GR-only) so they
+// would otherwise fall back to the generic ⚖️ minister icon.
 const positionIconMap = [
   ...positionsData.positions,
   ...cyPositionsData.positions,

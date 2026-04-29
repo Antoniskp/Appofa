@@ -434,6 +434,9 @@ function DreamTeamCountryPageInner() {
                     onVote={user ? handleVote : undefined}
                     onDeleteVote={user ? handleDeleteVote : undefined}
                     loading={votingPosition === position.id}
+                    // Non-GR countries restrict the person search to nationals of that
+                    // country. GR keeps the original open-search behaviour (no filter)
+                    // because the nationality filter requirement is scoped to CY only.
                     nationalityFilter={countryCode !== 'GR' ? countryCode : undefined}
                   />
                 ))}
