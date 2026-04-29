@@ -158,8 +158,8 @@ describe('Image Upload API', () => {
     test('rejects oversized file', async () => {
       const csrf = 'csrf-size-test';
       storeCsrfToken(csrf, viewerId);
-      // Create a buffer > 5MB
-      const bigBuffer = Buffer.alloc(6 * 1024 * 1024, 0);
+      // Create a buffer > 10 MB (new backend limit)
+      const bigBuffer = Buffer.alloc(11 * 1024 * 1024, 0);
       const res = await request(app)
         .post('/api/auth/me/avatar')
         .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${csrf}`])

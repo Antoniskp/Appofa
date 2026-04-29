@@ -205,7 +205,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
               'Upload Photo'
             )}
           </button>
-          <p className="mt-1 text-xs text-gray-500">JPEG, PNG, WebP or HEIC/HEIF · max 5 MB</p>
+          <p className="mt-1 text-xs text-gray-500">JPEG, PNG, WebP or HEIC/HEIF · max 10 MB</p>
         </div>
         <div>
           <label htmlFor="avatarColor" className="block text-sm font-medium text-gray-700 mb-1">

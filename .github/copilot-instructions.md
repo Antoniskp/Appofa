@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-04-29** — Complete iPhone HEIC/413 upload fix: `normalizeUploadImage` now ALWAYS resizes converted HEIC images to `maxDimension` (avatar preset: 768 px, was 1200 px); `HEIC_INITIAL_QUALITY` lowered to 0.85; added dimension-halving safety-net pass in `resizeAndCompress`; backend avatar/person-photo multer limit raised 5 MB → 10 MB; route error messages updated; frontend "5 MB" hints updated to "10 MB"; 3 new `normalizeUploadImage` tests added
 - **2026-04-29** — Fixed final HEIC/HEIF upload gap for unclaimed person flows: admin create/edit file validation now accepts `.heic/.heif` when browsers send empty/generic MIME (`application/octet-stream`); backend upload MIME filter also allows HEIC/HEIF by filename extension in that generic MIME case; added regression tests for `/api/persons/:id/photo` octet-stream + HEIC/HEIF extension handling
 - **2026-04-28** — Enabled image upload for unclaimed person profiles: added `POST /api/persons/:id/photo` endpoint (admin/moderator only; multer + sharp; saves to `/uploads/profiles/{id}.webp`; updates `User.photo`, `User.avatar`, `User.avatarUrl`); added `personAPI.uploadPersonPhoto` frontend method; added file-upload UI to `/admin/persons/create` and `/admin/persons/[id]/edit` (file input with preview + URL fallback); added 6 new tests in `__tests__/persons.test.js`
 - **2026-04-28** — Fixed `/uploads/*` 500 regressions: removed `NEXT_PUBLIC_API_URL` fallback from uploads proxy route (prevents infinite proxy loop); switched `imageStorageService` + Express static middleware to `__dirname`-based paths (reliable regardless of working directory); added timeout to uploads proxy route; added `__tests__/uploads-proxy.test.js`
@@ -17,7 +18,6 @@ This instruction is permanent and must never be removed.
 - **2026-04-26** — Fixed geo tracking: reject `XX`/`T1` pseudo-codes in `/track` endpoint; `countryCodeToFlag` now shows globe for invalid codes; `getCountryNameLocal` validates before `Intl.DisplayNames`
 - **2026-04-24** — Enforced PR-only workflow; added npm/native module rules to recurring mistakes
 - **2026-04-24** — Added GDPR cookie consent (`CookieConsentBanner` component, consent-gated `GeoTracker`/GA)
-- **2026-04-23** — Added Organizations Phase 5: hierarchy (`parentId`) + analytics (`OrganizationAnalytics` model)
 
 ## 🚨 MANDATORY: PR-Only Workflow
 
