@@ -21,6 +21,7 @@ export default function PersonSearch({
   showTopSuggestions = false,
   value,
   onChange,
+  nationality,
 }) {
   const isControlled = value !== undefined;
   const [internalQuery, setInternalQuery] = useState('');
@@ -58,7 +59,9 @@ export default function PersonSearch({
     const myId = ++requestIdRef.current;
     setSearching(true);
     try {
-      const res = await personAPI.unifiedSearch({ limit: 8 });
+      const params = { limit: 8 };
+      if (nationality) params.nationality = nationality;
+      const res = await personAPI.unifiedSearch(params);
       if (myId !== requestIdRef.current) return;
       const items = res?.data?.results || [];
       setResults(items);
@@ -71,7 +74,7 @@ export default function PersonSearch({
     } finally {
       if (myId === requestIdRef.current) setSearching(false);
     }
-  }, [showTopSuggestions]);
+  }, [showTopSuggestions, nationality]);
 
   const search = useCallback((q) => {
     clearTimeout(timer.current);
@@ -95,7 +98,9 @@ export default function PersonSearch({
       const myId = ++requestIdRef.current;
       setSearching(true);
       try {
-        const res = await personAPI.unifiedSearch({ search: q.trim(), limit: 8 });
+        const params = { search: q.trim(), limit: 8 };
+        if (nationality) params.nationality = nationality;
+        const res = await personAPI.unifiedSearch(params);
         if (myId !== requestIdRef.current) return;
         const items = res?.data?.results || [];
         setResults(items);
@@ -110,7 +115,7 @@ export default function PersonSearch({
         if (myId === requestIdRef.current) setSearching(false);
       }
     }, 300);
-  }, []);
+  }, [nationality]);
 
   const handleInputChange = (e) => {
     const q = e.target.value;

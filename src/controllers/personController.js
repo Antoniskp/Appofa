@@ -40,11 +40,11 @@ const personController = {
     }
   },
 
-  // GET /api/persons/unified-search?search=...&limit=...
+  // GET /api/persons/unified-search?search=...&limit=...&nationality=...
   unifiedSearch: async (req, res) => {
     try {
-      const { search, limit } = req.query;
-      const results = await personService.unifiedSearch(search, limit);
+      const { search, limit, nationality } = req.query;
+      const results = await personService.unifiedSearch(search, limit, nationality);
       return res.status(200).json({ success: true, data: { results } });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
