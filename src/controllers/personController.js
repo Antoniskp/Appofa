@@ -165,6 +165,13 @@ const personController = {
         optimizedBuffer = await processAvatar(req.file.buffer);
       } catch (err) {
         console.error('Person photo processing failed:', err);
+        const isHeic = /^image\/hei[cf](-sequence)?$/.test(req.file.mimetype || '');
+        if (isHeic) {
+          return res.status(422).json({
+            success: false,
+            message: 'HEIC/HEIF images could not be processed on this server. Please convert to JPEG, PNG, or WebP and try again.',
+          });
+        }
         return res.status(422).json({ success: false, message: 'Invalid or corrupt image.' });
       }
       const personId = parseInt(req.params.id, 10);
