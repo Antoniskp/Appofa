@@ -431,7 +431,9 @@ function EditPersonProfilePageContent({ params }) {
                       disabled={isUploadingPhoto}
                       className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
-                      {isUploadingPhoto ? (uploadStep === 'converting' ? 'Μετατροπή...' : uploadStep === 'compressing' ? 'Συμπίεση...' : 'Ανάρτηση...') : 'Ανάρτηση'}
+                      {isUploadingPhoto
+                        ? ({ converting: 'Μετατροπή...', compressing: 'Συμπίεση...', uploading: 'Ανάρτηση...' }[uploadStep] ?? 'Ανάρτηση...')
+                        : 'Ανάρτηση'}
                     </button>
                   )}
                   {photoFile && (
