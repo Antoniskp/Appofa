@@ -378,7 +378,7 @@ Appofa/
 | authService.js | Authentication & authorization |
 | badgeService.js | Badge evaluation & assignment |
 | countryAccessService.js | Country block rules + geo access settings with 60s in-memory TTL cache |
-| imageProcessingService.js | Resizes and converts uploaded images to WebP (sharp) |
+| imageProcessingService.js | Resizes and converts uploaded images to WebP (sharp); accepts JPEG, PNG, WebP, and HEIC/HEIF input |
 | imageStorageService.js | Saves processed image buffers to `uploads/profiles/` and `uploads/locations/` using `__dirname`-relative paths |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |

@@ -2,7 +2,15 @@
 
 const multer = require('multer');
 
-const ALLOWED_MIMES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const ALLOWED_MIMES = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'image/heic-sequence',
+  'image/heif-sequence',
+]);
 
 /** 5 MB in bytes */
 const AVATAR_MAX_SIZE = 5 * 1024 * 1024;
@@ -13,7 +21,7 @@ const mimeFilter = (req, file, cb) => {
   if (ALLOWED_MIMES.has(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(Object.assign(new Error('Unsupported file type. Allowed: JPEG, PNG, WebP.'), { status: 415 }));
+    cb(Object.assign(new Error('Unsupported file type. Allowed: JPEG, PNG, WebP, HEIC/HEIF.'), { status: 415 }));
   }
 };
 
