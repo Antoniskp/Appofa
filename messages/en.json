@@ -35,6 +35,7 @@
     "subtitle": "Educational overview of current government positions — source: government.gr",
     "disclaimer": "The information below is for educational purposes only and sourced from public records. It is not an official announcement.",
     "cta_button": "Vote Your Dream Team",
+    "cta_view_all": "View all",
     "dream_team_prompt": "Who would you pick for these roles? Build your ideal government:",
     "no_holder": "Vacant"
   },
