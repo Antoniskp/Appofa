@@ -8,21 +8,12 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
+import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
-const HEIC_HEIF_EXTENSION_RE = /\.(heic|heif)$/i;
-
-const isAcceptedAvatarFile = (file) => {
-  const mimeType = (file?.type || '').toLowerCase();
-  if (AVATAR_ACCEPTED_TYPES.includes(mimeType)) return true;
-  const hasHeicLikeExtension = HEIC_HEIF_EXTENSION_RE.test(file?.name || '');
-  const isGenericMime = mimeType === '' || mimeType === 'application/octet-stream' || mimeType === 'binary/octet-stream';
-  return hasHeicLikeExtension && isGenericMime;
-};
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -424,7 +415,7 @@ function EditPersonProfilePageContent({ params }) {
                     <input
                       ref={photoFileRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/heic-sequence,image/heif-sequence"
+                      accept={AVATAR_ACCEPTED_TYPES.join(',')}
                       className="hidden"
                       onChange={handlePhotoFileChange}
                     />
