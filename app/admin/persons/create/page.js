@@ -8,6 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
 import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
+import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -206,7 +207,10 @@ function CreatePersonProfilePageContent() {
       // If a photo file was selected, upload it after creating the profile
       if (photoFile && newProfileId) {
         try {
-          await personAPI.uploadPersonPhoto(newProfileId, photoFile);
+          const uploadFile = isHeicFile(photoFile)
+            ? await normalizeUploadImage(photoFile)
+            : photoFile;
+          await personAPI.uploadPersonPhoto(newProfileId, uploadFile);
         } catch {
           // Profile was created — navigate to edit page so admin can retry the photo upload
           router.push(`/admin/persons/${newProfileId}/edit?photoError=1`);

@@ -5,10 +5,12 @@ import FormInput from '@/components/ui/FormInput';
 import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
 import { authAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
+import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
 
 const USERNAME_CHECK_DEBOUNCE_MS = 500;
-/** Accepted MIME types for avatar upload (must match backend allowlist). */
-const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+/** Accepted MIME types / extensions for avatar upload (must match backend allowlist). */
+const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence', '.heic', '.heif'];
 /** 5 MB client-side guard (backend enforces the same limit). */
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -42,6 +44,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
   const [avatarUrlError, setAvatarUrlError] = useState('');
   const [usernameStatus, setUsernameStatus] = useState(null); // null | 'checking' | 'available' | 'taken' | 'error'
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [uploadStep, setUploadStep] = useState(''); // '' | 'converting' | 'uploading'
   const avatarFileRef = useRef(null);
   const debounceRef = useRef(null);
 
@@ -61,7 +64,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
     // Reset input so the same file can be re-selected after an error
     if (avatarFileRef.current) avatarFileRef.current.value = '';
 
-    if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
+    if (!isAcceptedAvatarFile(file)) {
       toastError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
@@ -72,7 +75,13 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
 
     setIsUploadingAvatar(true);
     try {
-      const response = await authAPI.uploadAvatar(file);
+      let uploadFile = file;
+      if (isHeicFile(file)) {
+        setUploadStep('converting');
+        uploadFile = await normalizeUploadImage(file);
+      }
+      setUploadStep('uploading');
+      const response = await authAPI.uploadAvatar(uploadFile);
       if (response.success && response.data?.avatarUrl) {
         const newUrl = response.data.avatarUrl;
         // Append cache-buster so the browser immediately fetches the new image
@@ -90,6 +99,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
       toastError(err.message || 'Failed to upload avatar.');
     } finally {
       setIsUploadingAvatar(false);
+      setUploadStep('');
     }
   };
 
@@ -193,7 +203,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
-                Uploading…
+                {uploadStep === 'converting' ? 'Converting…' : 'Uploading…'}
               </>
             ) : (
               'Upload Photo'

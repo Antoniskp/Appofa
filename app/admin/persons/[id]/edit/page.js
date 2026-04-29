@@ -9,6 +9,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
 import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
+import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -48,6 +49,7 @@ function EditPersonProfilePageContent({ params }) {
   const [photoPreview, setPhotoPreview] = useState('');
   const [photoTimestamp, setPhotoTimestamp] = useState(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadStep, setUploadStep] = useState(''); // '' | 'converting' | 'uploading'
   const [photoUploadError, setPhotoUploadError] = useState('');
   const [photoUploadSuccess, setPhotoUploadSuccess] = useState(false);
   const [socialLinks, setSocialLinks] = useState(
@@ -223,10 +225,17 @@ function EditPersonProfilePageContent({ params }) {
   const handleUploadPhoto = async () => {
     if (!photoFile) return;
     setIsUploadingPhoto(true);
+    setUploadStep('uploading');
     setPhotoUploadError('');
     setPhotoUploadSuccess(false);
     try {
-      const res = await personAPI.uploadPersonPhoto(id, photoFile);
+      let uploadFile = photoFile;
+      if (isHeicFile(photoFile)) {
+        setUploadStep('converting');
+        uploadFile = await normalizeUploadImage(photoFile);
+        setUploadStep('uploading');
+      }
+      const res = await personAPI.uploadPersonPhoto(id, uploadFile);
       if (res.success && res.data?.photoUrl) {
         handleChange('photo', res.data.photoUrl);
         const ts = res.data.avatarUpdatedAt ? new Date(res.data.avatarUpdatedAt).getTime() : Date.now();
@@ -241,6 +250,7 @@ function EditPersonProfilePageContent({ params }) {
       setPhotoUploadError(err.message || 'Αποτυχία ανάρτησης φωτογραφίας.');
     } finally {
       setIsUploadingPhoto(false);
+      setUploadStep('');
     }
   };
 
@@ -427,7 +437,7 @@ function EditPersonProfilePageContent({ params }) {
                       disabled={isUploadingPhoto}
                       className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
-                      {isUploadingPhoto ? 'Ανάρτηση...' : 'Ανάρτηση'}
+                      {isUploadingPhoto ? (uploadStep === 'converting' ? 'Μετατροπή...' : 'Ανάρτηση...') : 'Ανάρτηση'}
                     </button>
                   )}
                   {photoFile && (

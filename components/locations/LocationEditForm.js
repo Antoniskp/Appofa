@@ -6,15 +6,18 @@ import LocationSectionManager from '@/components/LocationSectionManager';
 import LocationRoleManager from '@/components/LocationRoleManager';
 import { locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
+import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
 
-/** Accepted MIME types for location image upload (must match backend allowlist). */
-const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
+/** Accepted MIME types / extensions for location image upload (must match backend allowlist). */
+const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence', '.heic', '.heif'];
 /** 10 MB client-side guard (backend enforces the same limit). */
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
 export default function LocationEditForm({ location, editedData, isSaving, onSave, onCancel, onInputChange, onImageUploaded }) {
   const { success: toastSuccess, error: toastError } = useToast();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [uploadStep, setUploadStep] = useState(''); // '' | 'converting' | 'uploading'
   const [previewUrl, setPreviewUrl] = useState(null);
   const imageFileRef = useRef(null);
 
@@ -24,7 +27,7 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
     // Reset input so the same file can be re-selected after an error
     if (imageFileRef.current) imageFileRef.current.value = '';
 
-    if (!IMAGE_ACCEPTED_TYPES.includes(file.type)) {
+    if (!isAcceptedAvatarFile(file)) {
       toastError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
@@ -35,7 +38,13 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
 
     setIsUploadingImage(true);
     try {
-      const response = await locationAPI.uploadImage(location.id, file);
+      let uploadFile = file;
+      if (isHeicFile(file)) {
+        setUploadStep('converting');
+        uploadFile = await normalizeUploadImage(file);
+      }
+      setUploadStep('uploading');
+      const response = await locationAPI.uploadImage(location.id, uploadFile);
       if (response.success && response.data?.imageUrl) {
         // Apply cache-buster so the browser immediately shows the new image
         const ts = response.data.imageUpdatedAt
@@ -50,6 +59,7 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
       toastError(err.message || 'Failed to upload location image.');
     } finally {
       setIsUploadingImage(false);
+      setUploadStep('');
     }
   };
 
@@ -118,7 +128,7 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                   </svg>
-                  Uploading…
+                  {uploadStep === 'converting' ? 'Converting…' : 'Uploading…'}
                 </>
               ) : (
                 displayImage ? 'Replace Image' : 'Upload Image'
