@@ -290,6 +290,47 @@ describe('Dream Team API Tests', () => {
     });
   });
 
+  // ── GET /api/dream-team/countries ───────────────────────────────────────
+
+  describe('GET /api/dream-team/countries', () => {
+    it('returns 200 with a countries array', async () => {
+      const res = await request(app).get('/api/dream-team/countries');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+
+    it('includes GR in the countries list', async () => {
+      const res = await request(app).get('/api/dream-team/countries');
+      const codes = res.body.data.map((c) => c.countryCode);
+      expect(codes).toContain('GR');
+    });
+
+    it('includes CY in the countries list', async () => {
+      const res = await request(app).get('/api/dream-team/countries');
+      const codes = res.body.data.map((c) => c.countryCode);
+      expect(codes).toContain('CY');
+    });
+
+    it('each country entry has countryCode and positionCount fields', async () => {
+      const res = await request(app).get('/api/dream-team/countries');
+      res.body.data.forEach((c) => {
+        expect(c).toHaveProperty('countryCode');
+        expect(c).toHaveProperty('positionCount');
+        expect(typeof c.positionCount).toBe('number');
+        expect(c.positionCount).toBeGreaterThan(0);
+      });
+    });
+
+    it('CY has the correct number of positions', async () => {
+      const cyJson = require('../../../config/countries/CY.json');
+      const res = await request(app).get('/api/dream-team/countries');
+      const cy = res.body.data.find((c) => c.countryCode === 'CY');
+      expect(cy).toBeDefined();
+      expect(cy.positionCount).toBe(cyJson.positions.length);
+    });
+  });
+
   // ── GET /api/auth/users/search (used by dream-team search bar) ───────────
 
   describe('GET /api/auth/users/search', () => {
