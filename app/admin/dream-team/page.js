@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   PlusIcon,
@@ -16,6 +16,9 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import PersonSearch from '@/components/dream-team/PersonSearch';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
+// Country-specific icon maps — add a new import here when adding a new country config.
+// (Dynamic fs.readdirSync is not available in Next.js client components.)
+import cyPositionsData from '@/config/countries/CY.json';
 import { useToast } from '@/components/ToastProvider';
 import { ConfirmDialog } from '@/components/ui/Modal';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -28,10 +31,27 @@ const positionTypesMap = positionTypesData.reduce((acc, pt) => {
 
 const LOCATION_MANAGED_SLUGS = new Set(['proedros-dimokratias', 'prothypoyrgos', 'proedros-voulis']);
 
-const positionIconMap = positionsData.positions.reduce((acc, p) => {
+// Build icon map from all supported country configs.
+// Add new country imports above and spread them here.
+const positionIconMap = [
+  ...positionsData.positions,
+  ...cyPositionsData.positions,
+].reduce((acc, p) => {
   if (p.icon) acc[p.slug] = p.icon;
   return acc;
 }, {});
+
+// Country display meta — extend this when adding new countries.
+const COUNTRY_META = {
+  GR: { label: 'Ελλάδα', flag: '🇬🇷' },
+  CY: { label: 'Κύπρος', flag: '🇨🇾' },
+};
+
+function countryLabel(code) {
+  const meta = COUNTRY_META[code];
+  if (meta) return `${meta.flag} ${meta.label}`;
+  return code;
+}
 
 // ─── Inline editable text ────────────────────────────────────────────────────
 function InlineEdit({ value, onSave, placeholder = '—', className = '' }) {
@@ -71,7 +91,7 @@ function InlineEdit({ value, onSave, placeholder = '—', className = '' }) {
 }
 
 // ─── Suggestions panel for one position ──────────────────────────────────────
-function SuggestionsPanel({ position, onRefresh }) {
+function SuggestionsPanel({ position, nationality, onRefresh }) {
   const { addToast } = useToast();
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [newReason, setNewReason] = useState('');
@@ -140,7 +160,11 @@ function SuggestionsPanel({ position, onRefresh }) {
 
       {adding ? (
         <div className="mt-2 space-y-1 border-t pt-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε πρόσωπο ή χρήστη *" />
+          <PersonSearch
+            onSelect={setSelectedPerson}
+            placeholder="Αναζητήστε πρόσωπο ή χρήστη *"
+            nationality={nationality}
+          />
           {selectedPerson && (
             <p className="text-xs text-green-600">✓ {(`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username}</p>
           )}
@@ -175,7 +199,7 @@ function SuggestionsPanel({ position, onRefresh }) {
 }
 
 // ─── Current holder panel for one position ───────────────────────────────────
-function HolderPanel({ position, onRefresh }) {
+function HolderPanel({ position, nationality, onRefresh }) {
   const { addToast } = useToast();
   const [adding, setAdding] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -245,7 +269,11 @@ function HolderPanel({ position, onRefresh }) {
 
       {!isLocationManaged && (adding ? (
         <div className="mt-2 border-t pt-2 space-y-2">
-          <PersonSearch onSelect={setSelectedPerson} placeholder="Αναζητήστε πρόσωπο ή χρήστη *" />
+          <PersonSearch
+            onSelect={setSelectedPerson}
+            placeholder="Αναζητήστε πρόσωπο ή χρήστη *"
+            nationality={nationality}
+          />
           {selectedPerson && (
             <p className="text-xs text-green-600">✓ {(`${selectedPerson.firstNameNative || ''} ${selectedPerson.lastNameNative || ''}`.trim()) || selectedPerson.username}</p>
           )}
@@ -286,8 +314,11 @@ export default function AdminDreamTeamPage() {
   const router = useRouter();
   const [expandedId, setExpandedId] = useState(null);
   const [activeTab, setActiveTab] = useState({});
+  // Country tab: defaults to GR; auto-corrects to first available country once data loads.
+  const [selectedCountry, setSelectedCountry] = useState('GR');
 
-  const { data: positions, loading, error, refetch } = useAsyncData(
+  // Load ALL positions (no filter) — client-side tabs switch instantly without extra requests.
+  const { data: allPositions, loading, error, refetch } = useAsyncData(
     async () => {
       const res = await dreamTeamAPI.adminGetPositions();
       return res?.data || [];
@@ -301,18 +332,35 @@ export default function AdminDreamTeamPage() {
     return null;
   }
 
+  // Derive sorted list of countries present in the DB (scalable — no hardcoding).
+  const availableCountries = useMemo(() => {
+    const codes = [...new Set(allPositions.map((p) => p.countryCode).filter(Boolean))].sort();
+    return codes.length > 0 ? codes : ['GR'];
+  }, [allPositions]);
+
+  // Filter positions for the selected country tab.
+  const positions = useMemo(
+    () => allPositions.filter((p) => p.countryCode === selectedCountry),
+    [allPositions, selectedCountry]
+  );
+
   const toggleExpand = (id) => setExpandedId((prev) => (prev === id ? null : id));
   const getTab = (id) => activeTab[id] || 'holders';
   const setTab = (id, tab) => setActiveTab((prev) => ({ ...prev, [id]: tab }));
 
-  // Group by scope, then by positionTypeKey within scope
+  const switchCountry = (code) => {
+    setSelectedCountry(code);
+    setExpandedId(null);
+  };
+
+  // Group by scope within the selected country.
   const scopeOrder = ['national', 'regional', 'municipal'];
   const scopeLabels = { national: '🏛️ Εθνικές Θέσεις', regional: '🗺️ Περιφερειακές Θέσεις', municipal: '🏙️ Δημοτικές Θέσεις' };
 
-  const grouped = scopeOrder.reduce((acc, scope) => {
+  const grouped = useMemo(() => scopeOrder.reduce((acc, scope) => {
     acc[scope] = positions.filter((p) => p.scope === scope);
     return acc;
-  }, {});
+  }, {}), [positions]);
 
   const renderGroup = (scope) => {
     const group = grouped[scope];
@@ -344,11 +392,6 @@ export default function AdminDreamTeamPage() {
                 >
                   {posIcon && <span className="text-base flex-shrink-0" aria-hidden="true">{posIcon}</span>}
                   <span className="flex-1 font-medium text-gray-800 text-sm">{pos.title}</span>
-                  {pos.countryCode && pos.countryCode !== 'GR' && (
-                    <span className="text-xs font-mono bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded hidden sm:block">
-                      {pos.countryCode}
-                    </span>
-                  )}
                   {pos.chamberKey && (
                     <span className="text-xs font-mono bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded hidden sm:block">
                       {pos.chamberKey}
@@ -389,10 +432,18 @@ export default function AdminDreamTeamPage() {
                     </div>
 
                     {tab === 'holders' && (
-                      <HolderPanel position={pos} onRefresh={refetch} />
+                      <HolderPanel
+                        position={pos}
+                        nationality={pos.countryCode}
+                        onRefresh={refetch}
+                      />
                     )}
                     {tab === 'suggestions' && (
-                      <SuggestionsPanel position={pos} onRefresh={refetch} />
+                      <SuggestionsPanel
+                        position={pos}
+                        nationality={pos.countryCode}
+                        onRefresh={refetch}
+                      />
                     )}
                   </div>
                 )}
@@ -410,14 +461,38 @@ export default function AdminDreamTeamPage() {
       <div className="app-container max-w-4xl">
         <AdminHeader
           title="Dream Team — Διαχείριση"
-          subtitle="Ορίστε τρέχοντες κατόχους θέσεων και προτάσεις AI ανά θέση."
+          subtitle="Ορίστε τρέχοντες κατόχους θέσεων και προτάσεις AI ανά χώρα."
         />
+
+        {/* Country tabs */}
+        {!loading && availableCountries.length > 1 && (
+          <div className="flex gap-2 mb-6 border-b border-gray-200">
+            {availableCountries.map((code) => (
+              <button
+                key={code}
+                onClick={() => switchCountry(code)}
+                className={`px-4 py-2.5 text-sm font-medium transition-colors -mb-px border-b-2 ${
+                  selectedCountry === code
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {countryLabel(code)}
+              </button>
+            ))}
+          </div>
+        )}
 
         {loading && <SkeletonLoader count={5} type="card" />}
         {error && <p className="text-red-500 text-sm">Αποτυχία φόρτωσης δεδομένων.</p>}
 
         {!loading && (
           <div className="space-y-8">
+            {positions.length === 0 && (
+              <p className="text-sm text-gray-400 italic text-center py-8">
+                Δεν βρέθηκαν θέσεις για {countryLabel(selectedCountry)}.
+              </p>
+            )}
             {scopeOrder.map((scope) => renderGroup(scope))}
           </div>
         )}
