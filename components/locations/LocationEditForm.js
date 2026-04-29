@@ -8,7 +8,7 @@ import { locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 
 /** Accepted MIME types for location image upload (must match backend allowlist). */
-const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
 /** 10 MB client-side guard (backend enforces the same limit). */
 const IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 
@@ -25,7 +25,7 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
     if (imageFileRef.current) imageFileRef.current.value = '';
 
     if (!IMAGE_ACCEPTED_TYPES.includes(file.type)) {
-      toastError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      toastError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
     if (file.size > IMAGE_MAX_BYTES) {
@@ -124,7 +124,7 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
                 displayImage ? 'Replace Image' : 'Upload Image'
               )}
             </button>
-            <p className="mt-1 text-xs text-gray-500">JPEG, PNG or WebP · max 10 MB · recommended 1600×900</p>
+            <p className="mt-1 text-xs text-gray-500">JPEG, PNG, WebP or HEIC/HEIF · max 10 MB · recommended 1600×900</p>
           </div>
         </div>
       </div>

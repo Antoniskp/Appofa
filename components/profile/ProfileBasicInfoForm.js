@@ -8,7 +8,7 @@ import { useToast } from '@/components/ToastProvider';
 
 const USERNAME_CHECK_DEBOUNCE_MS = 500;
 /** Accepted MIME types for avatar upload (must match backend allowlist). */
-const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
 /** 5 MB client-side guard (backend enforces the same limit). */
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -62,7 +62,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
     if (avatarFileRef.current) avatarFileRef.current.value = '';
 
     if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
-      toastError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      toastError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
@@ -199,7 +199,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
               'Upload Photo'
             )}
           </button>
-          <p className="mt-1 text-xs text-gray-500">JPEG, PNG or WebP · max 5 MB</p>
+          <p className="mt-1 text-xs text-gray-500">JPEG, PNG, WebP or HEIC/HEIF · max 5 MB</p>
         </div>
         <div>
           <label htmlFor="avatarColor" className="block text-sm font-medium text-gray-700 mb-1">

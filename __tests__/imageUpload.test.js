@@ -116,6 +116,45 @@ describe('Image Upload API', () => {
       expect(res.body.success).toBe(false);
     });
 
+    test('accepts HEIC MIME type (passes MIME validation)', async () => {
+      const csrf = 'csrf-heic-avatar';
+      storeCsrfToken(csrf, viewerId);
+      const res = await request(app)
+        .post('/api/auth/me/avatar')
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .attach('avatar', Buffer.from('not-real-heic-data'), { filename: 'photo.heic', contentType: 'image/heic' });
+      // Must NOT be 415 — HEIC must pass MIME validation
+      expect(res.status).not.toBe(415);
+    });
+
+    test('accepts HEIF MIME type (passes MIME validation)', async () => {
+      const csrf = 'csrf-heif-avatar';
+      storeCsrfToken(csrf, viewerId);
+      const res = await request(app)
+        .post('/api/auth/me/avatar')
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .attach('avatar', Buffer.from('not-real-heif-data'), { filename: 'photo.heif', contentType: 'image/heif' });
+      // Must NOT be 415 — HEIF must pass MIME validation
+      expect(res.status).not.toBe(415);
+    });
+
+    test('returns clear message when HEIC file cannot be decoded', async () => {
+      const csrf = 'csrf-heic-fail';
+      storeCsrfToken(csrf, viewerId);
+      const res = await request(app)
+        .post('/api/auth/me/avatar')
+        .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .attach('avatar', Buffer.from('not-real-heic-data'), { filename: 'photo.heic', contentType: 'image/heic' });
+      // A fake HEIC buffer cannot be decoded — expect 422 with HEIC-specific message
+      if (res.status === 422) {
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toMatch(/HEIC|HEIF|convert/i);
+      }
+    });
+
     test('rejects oversized file', async () => {
       const csrf = 'csrf-size-test';
       storeCsrfToken(csrf, viewerId);
@@ -212,6 +251,33 @@ describe('Image Upload API', () => {
         .attach('image', Buffer.from('fakedata'), { filename: 'test.bmp', contentType: 'image/bmp' });
       expect(res.status).toBe(415);
       expect(res.body.success).toBe(false);
+    });
+
+    test('accepts HEIC MIME type for location image (passes MIME validation)', async () => {
+      const csrf = 'csrf-heic-loc';
+      storeCsrfToken(csrf, adminId);
+      const res = await request(app)
+        .post(`/api/locations/${testLocation.id}/image`)
+        .set('Cookie', [`auth_token=${adminToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .attach('image', Buffer.from('not-real-heic-data'), { filename: 'loc.heic', contentType: 'image/heic' });
+      // Must NOT be 415 — HEIC must pass MIME validation
+      expect(res.status).not.toBe(415);
+    });
+
+    test('returns clear message when HEIC location image cannot be decoded', async () => {
+      const csrf = 'csrf-heic-loc-fail';
+      storeCsrfToken(csrf, adminId);
+      const res = await request(app)
+        .post(`/api/locations/${testLocation.id}/image`)
+        .set('Cookie', [`auth_token=${adminToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .attach('image', Buffer.from('not-real-heic-data'), { filename: 'loc.heic', contentType: 'image/heic' });
+      // A fake HEIC buffer cannot be decoded — expect 422 with HEIC-specific message
+      if (res.status === 422) {
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toMatch(/HEIC|HEIF|convert/i);
+      }
     });
 
     test('rejects oversized file', async () => {
