@@ -353,14 +353,17 @@ export default function AdminDreamTeamPage() {
     setExpandedId(null);
   };
 
-  // Group by scope within the selected country.
+  // Group by scope within the selected country — single-pass for efficiency.
   const scopeOrder = ['national', 'regional', 'municipal'];
   const scopeLabels = { national: '🏛️ Εθνικές Θέσεις', regional: '🗺️ Περιφερειακές Θέσεις', municipal: '🏙️ Δημοτικές Θέσεις' };
 
-  const grouped = useMemo(() => scopeOrder.reduce((acc, scope) => {
-    acc[scope] = positions.filter((p) => p.scope === scope);
+  const grouped = useMemo(() => {
+    const acc = { national: [], regional: [], municipal: [] };
+    for (const p of positions) {
+      if (acc[p.scope]) acc[p.scope].push(p);
+    }
     return acc;
-  }, {}), [positions]);
+  }, [positions]);
 
   const renderGroup = (scope) => {
     const group = grouped[scope];
