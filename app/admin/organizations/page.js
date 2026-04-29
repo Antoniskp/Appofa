@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
+import { ArrowTopRightOnSquareIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { organizationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -38,6 +40,7 @@ export default function AdminOrganizationsPage() {
   const [feedback, setFeedback] = useState(null);
   const [parentDrafts, setParentDrafts] = useState({});
   const [parentSavingId, setParentSavingId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const isAdmin = user?.role === 'admin';
 
   useEffect(() => {
@@ -80,6 +83,12 @@ export default function AdminOrganizationsPage() {
     () => [...organizations].sort((a, b) => a.name.localeCompare(b.name, locale || 'el')),
     [organizations, locale]
   );
+
+  const filteredOrganizations = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return sortedOrganizations;
+    return sortedOrganizations.filter((org) => org.name.toLowerCase().includes(q));
+  }, [sortedOrganizations, searchQuery]);
 
   useEffect(() => {
     setParentDrafts((prev) => {
@@ -232,6 +241,12 @@ export default function AdminOrganizationsPage() {
 
         <div className="bg-white rounded-xl border border-gray-200 p-5 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{editingOrganization ? t('edit') : t('create')}</h2>
+          {editingOrganization && (
+            <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800 flex items-center justify-between gap-2">
+              <span>{t('editing')}: <strong>{editingOrganization.name}</strong></span>
+              <button type="button" onClick={resetForm} className="text-blue-600 hover:underline text-xs">{t('cancel')}</button>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <label className="text-sm text-gray-700">
               {t('name')}
@@ -350,70 +365,138 @@ export default function AdminOrganizationsPage() {
           </form>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left px-4 py-3">{t('name')}</th>
-                <th className="text-left px-4 py-3">{t('type')}</th>
-                <th className="text-left px-4 py-3">{t('is_verified')}</th>
-                <th className="text-left px-4 py-3">{t('is_public')}</th>
-                <th className="text-left px-4 py-3">{t('created_by')}</th>
-                <th className="text-left px-4 py-3">{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedOrganizations.map((organization) => (
-                <tr key={organization.id} className="border-b border-gray-100">
-                  <td className="px-4 py-3">{organization.name}</td>
-                  <td className="px-4 py-3">{t(`type_${organization.type}`)}</td>
-                  <td className="px-4 py-3">{organization.isVerified ? t('yes') : t('no')}</td>
-                  <td className="px-4 py-3">{organization.isPublic ? t('yes') : t('no')}</td>
-                  <td className="px-4 py-3">{organization.createdBy?.username || '-'}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button type="button" onClick={() => handleEdit(organization)} className="px-3 py-1 rounded border border-blue-200 text-blue-700 hover:bg-blue-50">{t('edit')}</button>
-                      {isAdmin && (
-                        <button
-                          type="button"
-                          onClick={() => handleVerificationToggle(organization)}
-                          className="px-3 py-1 rounded border border-green-200 text-green-700 hover:bg-green-50"
-                        >
-                          {organization.isVerified ? t('unverify') : t('verify')}
-                        </button>
-                      )}
-                      {user.role === 'admin' && (
-                        <button type="button" onClick={() => handleDelete(organization)} className="px-3 py-1 rounded border border-red-200 text-red-700 hover:bg-red-50">{t('delete')}</button>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min="0"
-                          value={parentDrafts[organization.id] ?? ''}
-                          onChange={(e) => setParentDrafts((prev) => ({ ...prev, [organization.id]: e.target.value }))}
-                          placeholder={t('set_parent')}
-                          className="w-28 px-2 py-1 rounded border border-gray-300"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleSetParent(organization)}
-                          disabled={parentSavingId === organization.id}
-                          className="px-3 py-1 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
-                        >
-                          {t('set_parent')}
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {sortedOrganizations.length === 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('search_placeholder')}
+                className="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <span className="text-sm text-gray-500">{filteredOrganizations.length} / {sortedOrganizations.length}</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">{t('no_organizations')}</td>
+                  <th className="text-left px-4 py-3">{t('name')}</th>
+                  <th className="text-left px-4 py-3">{t('type')}</th>
+                  <th className="text-left px-4 py-3">{t('parent_org')}</th>
+                  <th className="text-left px-4 py-3">{t('location')}</th>
+                  <th className="text-left px-4 py-3">{t('is_verified')}</th>
+                  <th className="text-left px-4 py-3">{t('is_public')}</th>
+                  <th className="text-left px-4 py-3">{t('created_by')}</th>
+                  <th className="text-left px-4 py-3">{t('actions')}</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {filteredOrganizations.map((organization) => {
+                  const isEditing = editingOrganization?.id === organization.id;
+                  return (
+                    <tr key={organization.id} className={`border-b border-gray-100 ${isEditing ? 'bg-blue-50 border-l-4 border-l-blue-500' : 'hover:bg-gray-50'}`}>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`font-medium ${isEditing ? 'text-blue-700' : 'text-gray-900'}`}>{organization.name}</span>
+                          {organization.slug && (
+                            <Link
+                              href={`/organizations/${organization.slug}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-gray-400 hover:text-blue-600"
+                              title={t('view_profile')}
+                            >
+                              <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+                            </Link>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{t(`type_${organization.type}`)}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {organization.parent ? (
+                          <Link href={`/organizations/${organization.parent.slug}`} target="_blank" className="hover:text-blue-600 hover:underline">
+                            {organization.parent.name}
+                          </Link>
+                        ) : <span className="text-gray-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {organization.location ? (
+                          <Link href={`/locations/${organization.location.slug}`} target="_blank" className="hover:text-blue-600 hover:underline">
+                            {organization.location.name}
+                          </Link>
+                        ) : <span className="text-gray-400">—</span>}
+                      </td>
+                      <td className="px-4 py-3">
+                        {organization.isVerified ? (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">{t('yes')}</span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">{t('no')}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        {organization.isPublic ? (
+                          <span className="text-gray-600 text-xs">{t('yes')}</span>
+                        ) : (
+                          <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-600">{t('no')}</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">{organization.createdBy?.username || '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button type="button" onClick={() => handleEdit(organization)} className={`px-3 py-1 rounded border text-xs ${isEditing ? 'border-blue-400 bg-blue-100 text-blue-700' : 'border-blue-200 text-blue-700 hover:bg-blue-50'}`}>{t('edit')}</button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => handleVerificationToggle(organization)}
+                              className="px-3 py-1 rounded border border-green-200 text-green-700 hover:bg-green-50 text-xs"
+                            >
+                              {organization.isVerified ? t('unverify') : t('verify')}
+                            </button>
+                          )}
+                          {user.role === 'admin' && (
+                            <button type="button" onClick={() => handleDelete(organization)} className="px-3 py-1 rounded border border-red-200 text-red-700 hover:bg-red-50 text-xs">{t('delete')}</button>
+                          )}
+                          <div className="flex items-center gap-1.5">
+                            <select
+                              value={parentDrafts[organization.id] ?? ''}
+                              onChange={(e) => setParentDrafts((prev) => ({ ...prev, [organization.id]: e.target.value }))}
+                              className="px-2 py-1 rounded border border-gray-300 text-xs max-w-[140px]"
+                            >
+                              <option value="">— {t('no_parent')} —</option>
+                              {sortedOrganizations
+                                .filter((org) => org.id !== organization.id)
+                                .map((org) => (
+                                  <option key={org.id} value={String(org.id)}>{org.name}</option>
+                                ))}
+                            </select>
+                            <button
+                              type="button"
+                              onClick={() => handleSetParent(organization)}
+                              disabled={parentSavingId === organization.id}
+                              className="px-3 py-1 rounded border border-indigo-200 text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 text-xs"
+                            >
+                              {t('set_parent')}
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filteredOrganizations.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                      {searchQuery.trim() ? t('no_organizations_filtered') : t('no_organizations')}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

@@ -443,7 +443,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/locations`, `/locations/[slug]` | Locations |
-| `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile |
+| `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile with improved poll/suggestion tabs: collapsible create forms, richer cards with deadline/type/author metadata, styled empty states |
 | `/official-posts` | Public discovery feed for platform-wide official organization posts |
 | `/country/[code]` | Country landing page after first-visit geo redirect |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations |
@@ -469,7 +469,7 @@ Appofa/
 | `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/locations` | Location admin |
-| `/admin/organizations` | Organization admin |
+| `/admin/organizations` | Organization admin — table with search/filter, parent-org dropdown, location/parent columns, highlighted editing row, direct public-profile links |
 | `/admin/manifests` | Manifest admin |
 | `/admin/messages/*` | Message admin |
 | `/admin/removal-requests` | Removal request admin |
