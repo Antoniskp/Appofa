@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-04-29** — Added "Root-Cause First Principle" section to Copilot instructions: agents must identify root causes, fix at the highest shared layer when safe, generalize before patching locally, preserve downstream caller behavior, and add/update tests
 - **2026-04-29** — Improved organizations UX: `/admin/organizations` now has search/filter bar, parent-org dropdown (replaces raw number input), parent/location columns with links, editing-row highlight, and direct public profile links; `/organizations/[slug]` polls/suggestions tabs upgraded with collapsible create forms, richer cards (deadline chip, type badge, creator/author info), and styled dashed empty states; added i18n keys `poll_closed_label`, `poll_ends_label`, `view_profile`, `parent_org`, `no_parent`, `no_organizations_filtered`, `editing`
 - **2026-04-29** — Complete iPhone HEIC/413 upload fix: `normalizeUploadImage` now ALWAYS resizes converted HEIC images to `maxDimension` (avatar preset: 768 px, was 1200 px); `HEIC_INITIAL_QUALITY` lowered to 0.85; added dimension-halving safety-net pass in `resizeAndCompress`; backend avatar/person-photo multer limit raised 5 MB → 10 MB; route error messages updated; frontend "5 MB" hints updated to "10 MB"; 3 new `normalizeUploadImage` tests added
 - **2026-04-29** — Fixed final HEIC/HEIF upload gap for unclaimed person flows: admin create/edit file validation now accepts `.heic/.heif` when browsers send empty/generic MIME (`application/octet-stream`); backend upload MIME filter also allows HEIC/HEIF by filename extension in that generic MIME case; added regression tests for `/api/persons/:id/photo` octet-stream + HEIC/HEIF extension handling
@@ -17,7 +18,6 @@ This instruction is permanent and must never be removed.
 - **2026-04-28** — Fixed `/uploads/*` 500 regressions: removed `NEXT_PUBLIC_API_URL` fallback from uploads proxy route (prevents infinite proxy loop); switched `imageStorageService` + Express static middleware to `__dirname`-based paths (reliable regardless of working directory); added timeout to uploads proxy route; added `__tests__/uploads-proxy.test.js`
 - **2026-04-27** — Added role-gated "Create organization" CTA on `/organizations` linking to `/admin/organizations`; visible only for `admin`/`moderator` roles; added `organizations.create_button` i18n key
 - **2026-04-26** — Fixed geo tracking: reject `XX`/`T1` pseudo-codes in `/track` endpoint; `countryCodeToFlag` now shows globe for invalid codes; `getCountryNameLocal` validates before `Intl.DisplayNames`
-- **2026-04-24** — Enforced PR-only workflow; added npm/native module rules to recurring mistakes
 
 ## 🚨 MANDATORY: PR-Only Workflow
 
@@ -65,6 +65,27 @@ These mistakes appeared in 3–5 fix PRs each. Check this table before writing a
 | CSRF | Skip middleware on POST/PUT/DELETE | Always apply full route chain |
 
 See `doc/COMMON_ERRORS.md` for full root-cause analysis and related PRs.
+
+## 🧠 Root-Cause First Principle
+
+When fixing a bug or implementing a change, always prefer a **root-cause fix** over a local patch when it is logically safe to do so.
+
+### Preferred order of thinking
+1. **Identify the actual root cause** — understand *why* the bug happens, not just *where* it surfaces.
+2. **Check whether the issue originates in a shared layer** — a utility, middleware, service, model, or common component that multiple flows depend on.
+3. **Fix it at the highest sensible shared layer** — if the bug lives in a shared path, solve it once there rather than patching every call-site separately.
+4. **If the issue is truly local, keep the fix local** — do not over-generalize; a narrowly scoped fix is correct when only one flow is affected.
+5. **Verify downstream callers** — root-level fixes must preserve the existing behaviour of all current callers; add or update tests to confirm this.
+6. **Add or update tests** — protect both the specific bug and any shared behaviour affected by the change.
+
+### Quick rules
+| Rule | Detail |
+|------|--------|
+| Fix shared layers first | Shared utility / validation / middleware bugs should be fixed there, not re-patched in every consumer |
+| Generalize before specializing | If the same corrective logic would appear in ≥ 2 places, it belongs in one common location |
+| No duplicate fixes | Do not apply identical logic across many pages/routes/components when a single shared fix is available |
+| Keep scope disciplined | Only generalize when the abstraction is real, safe, and consistent with the existing architecture |
+| Preserve behaviour | A broader fix must not change the behaviour of any caller that was working correctly before |
 
 ## 📋 Model Field Quick Reference
 
