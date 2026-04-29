@@ -8,7 +8,7 @@ import { useAuth } from '@/lib/auth-context';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
 import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
-import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
+import { normalizeUploadImage, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -23,8 +23,6 @@ const SOCIAL_LINK_KEYS = [
   { key: 'youtube', label: 'YouTube' },
   { key: 'tiktok', label: 'TikTok' },
 ];
-
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 function CreatePersonProfilePageContent() {
   const { user, loading: authLoading } = useAuth();
@@ -137,10 +135,6 @@ function CreatePersonProfilePageContent() {
       setError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      setError('File too large. Maximum size is 5 MB.');
-      return;
-    }
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
   };
@@ -207,12 +201,11 @@ function CreatePersonProfilePageContent() {
       // If a photo file was selected, upload it after creating the profile
       if (photoFile && newProfileId) {
         try {
-          const uploadFile = isHeicFile(photoFile)
-            ? await normalizeUploadImage(photoFile)
-            : photoFile;
+          const uploadFile = await normalizeUploadImage(photoFile, UPLOAD_PRESETS.avatar);
           await personAPI.uploadPersonPhoto(newProfileId, uploadFile);
-        } catch {
-          // Profile was created — navigate to edit page so admin can retry the photo upload
+        } catch (uploadErr) {
+          // Profile was created but photo upload failed — navigate to edit so admin can retry.
+          console.error('Photo upload failed after profile creation:', uploadErr);
           router.push(`/admin/persons/${newProfileId}/edit?photoError=1`);
           return;
         }

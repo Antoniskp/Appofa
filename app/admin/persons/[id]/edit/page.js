@@ -9,12 +9,10 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
 import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
-import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
+import { normalizeUploadImage, isHeicFile, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
-
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -49,7 +47,7 @@ function EditPersonProfilePageContent({ params }) {
   const [photoPreview, setPhotoPreview] = useState('');
   const [photoTimestamp, setPhotoTimestamp] = useState(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [uploadStep, setUploadStep] = useState(''); // '' | 'converting' | 'uploading'
+  const [uploadStep, setUploadStep] = useState(''); // '' | 'converting' | 'compressing' | 'uploading'
   const [photoUploadError, setPhotoUploadError] = useState('');
   const [photoUploadSuccess, setPhotoUploadSuccess] = useState(false);
   const [socialLinks, setSocialLinks] = useState(
@@ -213,10 +211,6 @@ function EditPersonProfilePageContent({ params }) {
       setPhotoUploadError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      setPhotoUploadError('File too large. Maximum size is 5 MB.');
-      return;
-    }
     setPhotoUploadError('');
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
@@ -228,11 +222,12 @@ function EditPersonProfilePageContent({ params }) {
     setPhotoUploadError('');
     setPhotoUploadSuccess(false);
     try {
-      let uploadFile = photoFile;
       if (isHeicFile(photoFile)) {
         setUploadStep('converting');
-        uploadFile = await normalizeUploadImage(photoFile);
+      } else if (photoFile.size > UPLOAD_PRESETS.avatar.maxBytes) {
+        setUploadStep('compressing');
       }
+      const uploadFile = await normalizeUploadImage(photoFile, UPLOAD_PRESETS.avatar);
       setUploadStep('uploading');
       const res = await personAPI.uploadPersonPhoto(id, uploadFile);
       if (res.success && res.data?.photoUrl) {
@@ -436,7 +431,9 @@ function EditPersonProfilePageContent({ params }) {
                       disabled={isUploadingPhoto}
                       className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                     >
-                      {isUploadingPhoto ? (uploadStep === 'converting' ? 'Μετατροπή...' : 'Ανάρτηση...') : 'Ανάρτηση'}
+                      {isUploadingPhoto
+                        ? ({ converting: 'Μετατροπή...', compressing: 'Συμπίεση...', uploading: 'Ανάρτηση...' }[uploadStep] ?? 'Ανάρτηση...')
+                        : 'Ανάρτηση'}
                     </button>
                   )}
                   {photoFile && (

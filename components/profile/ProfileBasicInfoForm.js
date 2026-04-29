@@ -6,13 +6,11 @@ import { DEFAULT_AVATAR_COLOR } from '@/lib/constants/profile';
 import { authAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
-import { normalizeUploadImage, isHeicFile } from '@/lib/utils/normalizeUploadImage';
+import { normalizeUploadImage, isHeicFile, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
 
 const USERNAME_CHECK_DEBOUNCE_MS = 500;
 /** Accepted MIME types / extensions for avatar upload (must match backend allowlist). */
 const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence', '.heic', '.heif'];
-/** 5 MB client-side guard (backend enforces the same limit). */
-const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
  * Tries to detect if a string is a valid absolute URL (http/https) or a
@@ -68,18 +66,16 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
       toastError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
-    if (file.size > AVATAR_MAX_BYTES) {
-      toastError('File too large. Maximum size is 5 MB.');
-      return;
-    }
 
     setIsUploadingAvatar(true);
     try {
-      let uploadFile = file;
+      // Show a contextual processing label before the async work starts.
       if (isHeicFile(file)) {
         setUploadStep('converting');
-        uploadFile = await normalizeUploadImage(file);
+      } else if (file.size > UPLOAD_PRESETS.avatar.maxBytes) {
+        setUploadStep('compressing');
       }
+      const uploadFile = await normalizeUploadImage(file, UPLOAD_PRESETS.avatar);
       setUploadStep('uploading');
       const response = await authAPI.uploadAvatar(uploadFile);
       if (response.success && response.data?.avatarUrl) {
@@ -203,7 +199,7 @@ export default function ProfileBasicInfoForm({ profileData, onChange, currentUse
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                 </svg>
-                {uploadStep === 'converting' ? 'Converting…' : 'Uploading…'}
+                {{ converting: 'Converting…', compressing: 'Compressing…', uploading: 'Uploading…' }[uploadStep] ?? 'Uploading…'}
               </>
             ) : (
               'Upload Photo'
