@@ -60,7 +60,7 @@ describe('Dream Team API Tests', () => {
     ({ token: userToken, id: userId } = await registerAndLogin('dt_user1'));
     ({ token: secondUserToken, id: secondUserId } = await registerAndLogin('dt_user2'));
 
-    // Seed a government position
+    // Seed a GR government position (used by voting tests)
     const pos = await GovernmentPosition.create({
       slug: 'prime_minister_test',
       title: 'Πρωθυπουργός',
@@ -72,6 +72,24 @@ describe('Dream Team API Tests', () => {
       isActive: true,
     });
     positionId = pos.id;
+
+    // Seed CY government positions (simulates the migration)
+    const cyJson = require('../../../config/countries/CY.json');
+    for (const p of cyJson.positions) {
+      await GovernmentPosition.findOrCreate({
+        where: { slug: p.slug },
+        defaults: {
+          slug: p.slug,
+          title: p.title,
+          titleEn: p.titleEn || null,
+          positionTypeKey: p.positionTypeKey,
+          scope: p.scope || 'national',
+          countryCode: 'CY',
+          order: p.order,
+          isActive: true,
+        },
+      });
+    }
 
     // Create a candidate user to vote for
     const candidateUser = await User.create({
@@ -107,6 +125,18 @@ describe('Dream Team API Tests', () => {
       expect(position).toHaveProperty('votes');
       expect(position).toHaveProperty('myVote');
       expect(Array.isArray(position.votes)).toBe(true);
+    });
+
+    it('returns Cyprus positions when countryCode=CY', async () => {
+      const cyJson = require('../../../config/countries/CY.json');
+      const res = await request(app).get('/api/dream-team/positions?countryCode=CY');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBe(cyJson.positions.length);
+      res.body.data.forEach((pos) => {
+        expect(pos.countryCode).toBe('CY');
+      });
     });
 
     it('returns 500 on DB error (mocked)', async () => {
