@@ -352,6 +352,24 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       expect(res.status).not.toBe(415);
     });
 
+    it('accepts HEIC file extension when MIME is application/octet-stream (not 415)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', Buffer.from('not-real-heic-data'), { filename: 'photo.HEIC', contentType: 'application/octet-stream' });
+      // Safari/iOS may report HEIC as generic octet-stream; this should still pass MIME gate
+      expect(res.status).not.toBe(415);
+    });
+
+    it('accepts HEIF file extension when MIME is application/octet-stream (not 415)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', Buffer.from('not-real-heif-data'), { filename: 'photo.HEIF', contentType: 'application/octet-stream' });
+      // Safari/iOS may report HEIF as generic octet-stream; this should still pass MIME gate
+      expect(res.status).not.toBe(415);
+    });
+
     it('returns HEIC-specific error message when HEIC cannot be decoded (422)', async () => {
       const res = await request(app)
         .post(`/api/persons/${profileIdForPhoto}/photo`)

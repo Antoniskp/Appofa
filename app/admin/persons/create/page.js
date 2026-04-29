@@ -7,6 +7,7 @@ import { personAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
 import { getAllParties } from '@/lib/utils/politicalParties';
+import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
@@ -23,7 +24,6 @@ const SOCIAL_LINK_KEYS = [
 ];
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
 
 function CreatePersonProfilePageContent() {
   const { user, loading: authLoading } = useAuth();
@@ -132,7 +132,7 @@ function CreatePersonProfilePageContent() {
   const handlePhotoFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
+    if (!isAcceptedAvatarFile(file)) {
       setError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
@@ -302,7 +302,7 @@ function CreatePersonProfilePageContent() {
                     <input
                       ref={photoFileRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/heic-sequence,image/heif-sequence"
+                      accept={AVATAR_ACCEPTED_TYPES.join(',')}
                       className="hidden"
                       onChange={handlePhotoFileChange}
                     />

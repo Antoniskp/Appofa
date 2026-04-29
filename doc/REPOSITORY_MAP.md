@@ -307,7 +307,7 @@ Appofa/
 | POST | /claims/:id/approve | admin | Approve claim |
 | POST | /claims/:id/reject | admin | Reject claim |
 | POST | / | admin | Create unclaimed person profile (requires `firstNameEn` + `lastNameEn`; slug derived from English name) |
-| POST | /:id/photo | admin | Upload/replace profile photo for an unclaimed person (multipart `photo` field; max 5 MB; saves to `/uploads/profiles/{id}.webp`; updates `User.photo`, `User.avatar`, `User.avatarUrl`) |
+| POST | /:id/photo | admin | Upload/replace profile photo for an unclaimed person (multipart `photo` field; max 5 MB; accepts JPEG/PNG/WebP/HEIC/HEIF, including `.heic/.heif` with generic `application/octet-stream`; saves to `/uploads/profiles/{id}.webp`; updates `User.photo`, `User.avatar`, `User.avatarUrl`) |
 | DELETE | /:id | admin | Delete person |
 | POST | /:id/claim | ✅ | Submit a claim for a person profile |
 | PUT | /:id | ✅ | Update person profile |
