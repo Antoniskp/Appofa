@@ -32,6 +32,16 @@ describe('geoDetectRoutes helpers', () => {
       expect(parseClientIp(req)).toBe('198.51.100.4');
     });
 
+
+    it('strips IPv4 port suffixes', () => {
+      const req = { headers: { 'x-forwarded-for': '203.0.113.10:443' }, ip: '10.0.0.2' };
+      expect(parseClientIp(req)).toBe('203.0.113.10');
+    });
+
+    it('unwraps bracketed IPv6 values', () => {
+      const req = { headers: { 'x-real-ip': '[2001:db8::1]:8443' }, ip: '10.0.0.2' };
+      expect(parseClientIp(req)).toBe('2001:db8::1');
+    });
     it('returns null for loopback IPs', () => {
       expect(parseClientIp({ headers: {}, ip: '127.0.0.1' })).toBeNull();
       expect(parseClientIp({ headers: {}, ip: '::1' })).toBeNull();
