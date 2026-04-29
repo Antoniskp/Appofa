@@ -23,7 +23,7 @@ const SOCIAL_LINK_KEYS = [
 ];
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
 
 function CreatePersonProfilePageContent() {
   const { user, loading: authLoading } = useAuth();
@@ -133,7 +133,7 @@ function CreatePersonProfilePageContent() {
     const file = e.target.files[0];
     if (!file) return;
     if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
-      setError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      setError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
@@ -302,7 +302,7 @@ function CreatePersonProfilePageContent() {
                     <input
                       ref={photoFileRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                       className="hidden"
                       onChange={handlePhotoFileChange}
                     />
@@ -317,7 +317,7 @@ function CreatePersonProfilePageContent() {
                     </button>
                   )}
                 </div>
-                <p className="text-xs text-gray-400">JPEG, PNG ή WebP · έως 5 MB. Εάν δεν επιλεγεί αρχείο, μπορείτε να εισάγετε απευθείας URL παρακάτω.</p>
+                <p className="text-xs text-gray-400">JPEG, PNG, WebP ή HEIC/HEIF · έως 5 MB. Εάν δεν επιλεγεί αρχείο, μπορείτε να εισάγετε απευθείας URL παρακάτω.</p>
                 <input
                   type="url"
                   value={form.photo}

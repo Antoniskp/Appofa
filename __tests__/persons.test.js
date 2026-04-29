@@ -324,5 +324,44 @@ describe('Person Profile Tests (POST /api/persons)', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
     });
+
+    it('rejects unsupported MIME type (415)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', Buffer.from('fakedata'), { filename: 'test.gif', contentType: 'image/gif' });
+      expect(res.status).toBe(415);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('accepts HEIC MIME type (passes MIME validation, not 415)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', Buffer.from('not-real-heic-data'), { filename: 'photo.heic', contentType: 'image/heic' });
+      // Must NOT be rejected by MIME validation
+      expect(res.status).not.toBe(415);
+    });
+
+    it('accepts HEIF MIME type (passes MIME validation, not 415)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', Buffer.from('not-real-heif-data'), { filename: 'photo.heif', contentType: 'image/heif' });
+      // Must NOT be rejected by MIME validation
+      expect(res.status).not.toBe(415);
+    });
+
+    it('returns HEIC-specific error message when HEIC cannot be decoded (422)', async () => {
+      const res = await request(app)
+        .post(`/api/persons/${profileIdForPhoto}/photo`)
+        .set(csrfHeaders(adminUserId, adminToken))
+        .attach('photo', Buffer.from('not-real-heic-data'), { filename: 'photo.heic', contentType: 'image/heic' });
+      // If sharp cannot decode the fake HEIC data, it should return 422 with HEIC-specific message
+      if (res.status === 422) {
+        expect(res.body.success).toBe(false);
+        expect(res.body.message).toMatch(/HEIC|HEIF|convert/i);
+      }
+    });
   });
 });

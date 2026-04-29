@@ -13,7 +13,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
-const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const AVATAR_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence'];
 
 const SOCIAL_LINK_KEYS = [
   { key: 'website', label: 'Ιστοσελίδα' },
@@ -208,7 +208,7 @@ function EditPersonProfilePageContent({ params }) {
     const file = e.target.files[0];
     if (!file) return;
     if (!AVATAR_ACCEPTED_TYPES.includes(file.type)) {
-      setPhotoUploadError('Unsupported file type. Please use JPEG, PNG, or WebP.');
+      setPhotoUploadError('Unsupported file type. Please use JPEG, PNG, WebP, or HEIC/HEIF.');
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
@@ -415,7 +415,7 @@ function EditPersonProfilePageContent({ params }) {
                     <input
                       ref={photoFileRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp"
+                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                       className="hidden"
                       onChange={handlePhotoFileChange}
                     />
@@ -442,7 +442,7 @@ function EditPersonProfilePageContent({ params }) {
                 </div>
                 {photoUploadError && <p className="text-xs text-red-600">{photoUploadError}</p>}
                 {photoUploadSuccess && <p className="text-xs text-green-600">Η φωτογραφία ανέβηκε επιτυχώς!</p>}
-                <p className="text-xs text-gray-400">JPEG, PNG ή WebP · έως 5 MB. Μπορείτε επίσης να εισάγετε απευθείας URL παρακάτω.</p>
+                <p className="text-xs text-gray-400">JPEG, PNG, WebP ή HEIC/HEIF · έως 5 MB. Μπορείτε επίσης να εισάγετε απευθείας URL παρακάτω.</p>
                 <input
                   type="url"
                   value={form.photo}
