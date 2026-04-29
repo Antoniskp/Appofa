@@ -67,94 +67,95 @@ export default function CookieBanner() {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg">
-      <div className="max-w-5xl mx-auto px-4 py-4">
-        <p className="text-lg font-semibold text-gray-900 mb-1">{t('banner_title')}</p>
-        <p className="text-sm text-gray-600 mb-3">{t('banner_description')}</p>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cookie-banner-title"
+      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50"
+    >
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4">
+        <p id="cookie-banner-title" className="text-sm font-semibold text-gray-900">{t('banner_title')}</p>
+        <p className="text-xs text-gray-500 mt-1 leading-relaxed">{t('banner_description')}</p>
 
         {showPanel && (
-          <div className="mb-4 space-y-3 border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{t('necessary_title')}</p>
-                <p className="text-xs text-gray-500">{t('necessary_description')}</p>
+          <div className="mt-3 space-y-2 rounded-xl border border-gray-100 p-3 bg-gray-50 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium text-gray-800">{t('necessary_title')}</p>
+                <p className="text-gray-400 leading-tight">{t('necessary_description')}</p>
               </div>
-              <div className="ml-4 flex-shrink-0">
-                <button
-                  disabled
-                  className="relative inline-flex h-5 w-9 items-center rounded-full bg-blue-600 opacity-50 cursor-not-allowed"
-                  aria-checked="true"
-                  role="switch"
-                >
-                  <span className="inline-block h-3 w-3 transform translate-x-5 rounded-full bg-white" />
-                </button>
-              </div>
+              <button
+                disabled
+                className="relative inline-flex h-4 w-8 flex-shrink-0 items-center rounded-full bg-blue-500 opacity-50 cursor-not-allowed"
+                aria-checked="true"
+                role="switch"
+              >
+                <span className="inline-block h-3 w-3 transform translate-x-[18px] rounded-full bg-white shadow" />
+              </button>
             </div>
 
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{t('analytics_title')}</p>
-                <p className="text-xs text-gray-500">{t('analytics_description')}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium text-gray-800">{t('analytics_title')}</p>
+                <p className="text-gray-400 leading-tight">{t('analytics_description')}</p>
               </div>
-              <div className="ml-4 flex-shrink-0">
-                <button
-                  onClick={() => setAnalytics(!analytics)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${analytics ? 'bg-blue-600' : 'bg-gray-300'}`}
-                  aria-checked={analytics}
-                  role="switch"
-                >
-                  <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${analytics ? 'translate-x-5' : 'translate-x-1'}`} />
-                </button>
-              </div>
+              <button
+                onClick={() => setAnalytics(!analytics)}
+                className={`relative inline-flex h-4 w-8 flex-shrink-0 items-center rounded-full transition-colors ${analytics ? 'bg-blue-500' : 'bg-gray-300'}`}
+                aria-checked={analytics}
+                role="switch"
+              >
+                <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${analytics ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+              </button>
             </div>
 
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">{t('functional_title')}</p>
-                <p className="text-xs text-gray-500">{t('functional_description')}</p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="font-medium text-gray-800">{t('functional_title')}</p>
+                <p className="text-gray-400 leading-tight">{t('functional_description')}</p>
               </div>
-              <div className="ml-4 flex-shrink-0">
-                <button
-                  onClick={() => setFunctional(!functional)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${functional ? 'bg-blue-600' : 'bg-gray-300'}`}
-                  aria-checked={functional}
-                  role="switch"
-                >
-                  <span className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ${functional ? 'translate-x-5' : 'translate-x-1'}`} />
-                </button>
-              </div>
+              <button
+                onClick={() => setFunctional(!functional)}
+                className={`relative inline-flex h-4 w-8 flex-shrink-0 items-center rounded-full transition-colors ${functional ? 'bg-blue-500' : 'bg-gray-300'}`}
+                aria-checked={functional}
+                role="switch"
+              >
+                <span className={`inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform ${functional ? 'translate-x-[18px]' : 'translate-x-[2px]'}`} />
+              </button>
             </div>
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-col gap-2">
           <button
             onClick={handleAcceptAll}
-            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors"
+            className="w-full px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors"
           >
             {t('accept_all')}
           </button>
-          <button
-            onClick={handleRejectNonEssential}
-            className="px-4 py-2 bg-gray-200 text-gray-800 text-sm font-medium rounded-md hover:bg-gray-300 transition-colors"
-          >
-            {t('reject_non_essential')}
-          </button>
-          {showPanel ? (
+          <div className="flex gap-2">
             <button
-              onClick={handleSavePreferences}
-              className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
+              onClick={handleRejectNonEssential}
+              className="flex-1 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
             >
-              {t('save_preferences')}
+              {t('reject_non_essential')}
             </button>
-          ) : (
-            <button
-              onClick={() => setShowPanel(true)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-50 transition-colors"
-            >
-              {t('manage_preferences')}
-            </button>
-          )}
+            {showPanel ? (
+              <button
+                onClick={handleSavePreferences}
+                className="flex-1 px-3 py-1.5 bg-green-600 text-white text-xs font-semibold rounded-lg hover:bg-green-700 transition-colors"
+              >
+                {t('save_preferences')}
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowPanel(true)}
+                className="flex-1 px-3 py-1.5 border border-gray-200 text-gray-500 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                {t('manage_preferences')}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
