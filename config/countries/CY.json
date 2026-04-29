@@ -1,0 +1,24 @@
+{
+  "countryCode": "CY",
+  "positions": [
+    { "slug": "cy-proedros-dimokratias",   "title": "Πρόεδρος της Δημοκρατίας",                                              "titleEn": "President of the Republic",                               "positionTypeKey": "head_of_state",      "icon": "👑", "order": 1,  "scope": "national" },
+    { "slug": "cy-proedros-voulis",        "title": "Πρόεδρος Βουλής των Αντιπροσώπων",                                      "titleEn": "President of the House of Representatives",               "positionTypeKey": "parliament_speaker", "icon": "🗳️", "order": 2,  "scope": "national" },
+
+    { "slug": "cy-ypoyrgos-oikonomikon",   "title": "Υπουργός Οικονομικών",                                                  "titleEn": "Minister of Finance",                                     "positionTypeKey": "minister", "ministerCategory": "core",        "icon": "💰", "order": 10, "scope": "national" },
+    { "slug": "cy-ypoyrgos-eksoterikon",   "title": "Υπουργός Εξωτερικών",                                                   "titleEn": "Minister of Foreign Affairs",                             "positionTypeKey": "minister", "ministerCategory": "core",        "icon": "🌍", "order": 11, "scope": "national" },
+    { "slug": "cy-ypoyrgos-amynas",        "title": "Υπουργός Άμυνας",                                                       "titleEn": "Minister of Defence",                                     "positionTypeKey": "minister", "ministerCategory": "core",        "icon": "🛡️", "order": 12, "scope": "national" },
+    { "slug": "cy-ypoyrgos-esoterikon",    "title": "Υπουργός Εσωτερικών",                                                   "titleEn": "Minister of Interior",                                    "positionTypeKey": "minister", "ministerCategory": "core",        "icon": "🏠", "order": 13, "scope": "national" },
+
+    { "slug": "cy-ypoyrgos-paideias",      "title": "Υπουργός Παιδείας, Πολιτισμού, Αθλητισμού και Νεολαίας",               "titleEn": "Minister of Education, Culture, Sport and Youth",         "positionTypeKey": "minister", "ministerCategory": "social",      "icon": "📚", "order": 20, "scope": "national" },
+    { "slug": "cy-ypoyrgos-ygeias",        "title": "Υπουργός Υγείας",                                                       "titleEn": "Minister of Health",                                      "positionTypeKey": "minister", "ministerCategory": "social",      "icon": "⚕️", "order": 21, "scope": "national" },
+    { "slug": "cy-ypoyrgos-ergasias",      "title": "Υπουργός Εργασίας και Κοινωνικών Ασφαλίσεων",                          "titleEn": "Minister of Labour and Social Insurance",                 "positionTypeKey": "minister", "ministerCategory": "social",      "icon": "👷", "order": 22, "scope": "national" },
+
+    { "slug": "cy-ypoyrgos-dikaiosynis",   "title": "Υπουργός Δικαιοσύνης και Δημόσιας Τάξης",                              "titleEn": "Minister of Justice and Public Order",                    "positionTypeKey": "minister", "ministerCategory": "governance",  "icon": "⚖️", "order": 30, "scope": "national" },
+
+    { "slug": "cy-ypoyrgos-metaforon",     "title": "Υπουργός Μεταφορών, Επικοινωνιών και Έργων",                           "titleEn": "Minister of Transport, Communications and Works",         "positionTypeKey": "minister", "ministerCategory": "development", "icon": "🚧", "order": 40, "scope": "national" },
+    { "slug": "cy-ypoyrgos-georgias",      "title": "Υπουργός Γεωργίας, Αγροτικής Ανάπτυξης και Περιβάλλοντος",            "titleEn": "Minister of Agriculture, Rural Development and Environment","positionTypeKey": "minister", "ministerCategory": "development", "icon": "🌾", "order": 41, "scope": "national" },
+    { "slug": "cy-ypoyrgos-energeias",     "title": "Υπουργός Ενέργειας, Εμπορίου και Βιομηχανίας",                         "titleEn": "Minister of Energy, Commerce and Industry",               "positionTypeKey": "minister", "ministerCategory": "development", "icon": "⚡", "order": 42, "scope": "national" },
+    { "slug": "cy-ypoyrgos-tourismoy",     "title": "Υπουργός Τουρισμού",                                                    "titleEn": "Minister of Tourism",                                     "positionTypeKey": "minister", "ministerCategory": "sectoral",    "icon": "✈️", "order": 50, "scope": "national" },
+    { "slug": "cy-ypoyrgos-ereynas",       "title": "Υπουργός Έρευνας, Καινοτομίας και Ψηφιακής Πολιτικής",                "titleEn": "Minister of Research, Innovation and Digital Policy",     "positionTypeKey": "minister", "ministerCategory": "sectoral",    "icon": "💻", "order": 51, "scope": "national" }
+  ]
+}
