@@ -30,7 +30,7 @@ const COUNTRY_META = {
   NL: { name: 'Netherlands', flag: '🇳🇱' },
   BE: { name: 'Belgium', flag: '🇧🇪' },
   PL: { name: 'Poland', flag: '🇵🇱' },
-  CY: { name: 'Cyprus', flag: '🇨🇾' },
+  CY: { name: 'Κύπρος', flag: '🇨🇾' },
   US: { name: 'United States', flag: '🇺🇸' },
   GB: { name: 'United Kingdom', flag: '🇬🇧' },
   TR: { name: 'Turkey', flag: '🇹🇷' },
@@ -434,6 +434,10 @@ function DreamTeamCountryPageInner() {
                     onVote={user ? handleVote : undefined}
                     onDeleteVote={user ? handleDeleteVote : undefined}
                     loading={votingPosition === position.id}
+                    // Non-GR countries restrict the person search to nationals of that
+                    // country. GR keeps the original open-search behaviour (no filter)
+                    // because the nationality filter requirement is scoped to CY only.
+                    nationalityFilter={countryCode !== 'GR' ? countryCode : undefined}
                   />
                 ))}
               </div>

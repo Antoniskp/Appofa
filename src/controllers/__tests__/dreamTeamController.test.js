@@ -11,6 +11,7 @@ const {
 } = require('../../models');
 const authRoutes = require('../../routes/authRoutes');
 const dreamTeamRoutes = require('../../routes/dreamTeamRoutes');
+const personRoutes = require('../../routes/personRoutes');
 
 const app = express();
 app.use(helmet(helmetConfig));
@@ -18,6 +19,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/dream-team', dreamTeamRoutes);
+app.use('/api/persons', personRoutes);
 
 describe('Dream Team API Tests', () => {
   let userToken, userId;
@@ -409,6 +411,73 @@ describe('Dream Team API Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.data.users)).toBe(true);
+    });
+  });
+
+  // ── GET /api/persons/unified-search — nationality filter ─────────────────
+
+  describe('GET /api/persons/unified-search — nationality filter', () => {
+    let cypUser, grUser;
+
+    beforeAll(async () => {
+      cypUser = await User.create({
+        username: 'cyp_user_nation',
+        email: 'cyp_user_nation@dt.test',
+        password: null,
+        role: 'viewer',
+        firstNameNative: 'Κυπριακός',
+        lastNameNative: 'Χρήστης',
+        searchable: true,
+        nationality: 'CY',
+      });
+      grUser = await User.create({
+        username: 'gr_user_nation',
+        email: 'gr_user_nation@dt.test',
+        password: null,
+        role: 'viewer',
+        firstNameNative: 'Ελληνικός',
+        lastNameNative: 'Χρήστης',
+        searchable: true,
+        nationality: 'GR',
+      });
+    });
+
+    afterAll(async () => {
+      await User.destroy({ where: { username: ['cyp_user_nation', 'gr_user_nation'] } });
+    });
+
+    it('returns only CY users when nationality=CY is requested', async () => {
+      const res = await request(app).get('/api/persons/unified-search?nationality=CY');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const ids = res.body.data.results.map((r) => r.id);
+      expect(ids).toContain(cypUser.id);
+      expect(ids).not.toContain(grUser.id);
+    });
+
+    it('returns only GR users when nationality=GR is requested', async () => {
+      const res = await request(app).get('/api/persons/unified-search?nationality=GR');
+      expect(res.status).toBe(200);
+      const ids = res.body.data.results.map((r) => r.id);
+      expect(ids).toContain(grUser.id);
+      expect(ids).not.toContain(cypUser.id);
+    });
+
+    it('returns all nationalities when no nationality filter is provided', async () => {
+      const res = await request(app).get('/api/persons/unified-search');
+      expect(res.status).toBe(200);
+      const ids = res.body.data.results.map((r) => r.id);
+      expect(ids).toContain(cypUser.id);
+      expect(ids).toContain(grUser.id);
+    });
+
+    it('ignores invalid nationality values (non-alpha-2)', async () => {
+      const res = await request(app).get('/api/persons/unified-search?nationality=INVALID');
+      expect(res.status).toBe(200);
+      // Invalid value treated as no filter — both users should appear
+      const ids = res.body.data.results.map((r) => r.id);
+      expect(ids).toContain(cypUser.id);
+      expect(ids).toContain(grUser.id);
     });
   });
 });

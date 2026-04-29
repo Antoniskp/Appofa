@@ -5,6 +5,9 @@ import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 import positionTypesData from '@/config/governmentPositionTypes.json';
 import positionsData from '@/config/governmentPositions.json';
+// Country-specific icon maps — add a new import here when adding a new country config.
+// (Dynamic fs.readdirSync is not available in Next.js client components.)
+import cyPositionsData from '@/config/countries/CY.json';
 import PersonSearch from './PersonSearch';
 
 const positionTypesMap = positionTypesData.reduce((acc, pt) => {
@@ -12,7 +15,13 @@ const positionTypesMap = positionTypesData.reduce((acc, pt) => {
   return acc;
 }, {});
 
-const positionIconMap = positionsData.positions.reduce((acc, p) => {
+// Build icon map from GR positions and all supported country configs.
+// CY slugs (cy-ypoyrgos-*) are not in governmentPositions.json (GR-only) so they
+// would otherwise fall back to the generic ⚖️ minister icon.
+const positionIconMap = [
+  ...positionsData.positions,
+  ...cyPositionsData.positions,
+].reduce((acc, p) => {
   if (p.icon) acc[p.slug] = p.icon;
   return acc;
 }, {});
@@ -47,7 +56,7 @@ function PersonAvatar({ photo, name, avatarColor, size = 'md' }) {
   );
 }
 
-export default function PositionCard({ position, myVote, onVote, onDeleteVote, loading }) {
+export default function PositionCard({ position, myVote, onVote, onDeleteVote, loading, nationalityFilter }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPerson, setSelectedPerson] = useState(null);
   const prevMyVoteRef = useRef(null);
@@ -164,6 +173,7 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Αναζητήστε πρόσωπο..."
+                  nationality={nationalityFilter}
                 />
                 {searchQuery && (
                   <button

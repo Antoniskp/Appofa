@@ -517,21 +517,29 @@ async function searchPersons(search, limit = 8) {
   return users;
 }
 
-async function unifiedSearch(search, limit = 8) {
+async function unifiedSearch(search, limit = 8, nationality = null) {
   const lim = Math.min(50, parseInt(limit, 10) || 8);
+
+  // Validate and normalize nationality filter (must be a 2-letter ISO code)
+  const nationalityFilter = nationality && /^[A-Za-z]{2}$/.test(nationality)
+    ? nationality.toUpperCase()
+    : null;
 
   // 1. Search real users (claimStatus IS NULL)
   let realUsers = [];
+  const realUserBaseWhere = { searchable: true, claimStatus: null };
+  if (nationalityFilter) realUserBaseWhere.nationality = nationalityFilter;
+
   if (search && search.trim()) {
     const nameWhere = buildNameSearchWhere(search);
     realUsers = await User.findAll({
-      where: { searchable: true, claimStatus: null, ...nameWhere },
+      where: { ...realUserBaseWhere, ...nameWhere },
       attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus'],
       limit: lim
     });
   } else {
     realUsers = await User.findAll({
-      where: { searchable: true, claimStatus: null },
+      where: realUserBaseWhere,
       attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus'],
       limit: lim,
       order: [['createdAt', 'DESC']]
@@ -540,12 +548,23 @@ async function unifiedSearch(search, limit = 8) {
 
   // 2. Search person profiles (claimStatus IS NOT NULL)
   let persons = [];
+  const personBaseWhere = { claimStatus: { [Op.ne]: null } };
+  if (nationalityFilter) personBaseWhere.nationality = nationalityFilter;
+
   if (search && search.trim()) {
     const nameWhere = buildNameSearchWhere(search);
     persons = await User.findAll({
-      where: { claimStatus: { [Op.ne]: null }, ...nameWhere },
+      where: { ...personBaseWhere, ...nameWhere },
       attributes: ['id', 'slug', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'photo', 'avatar', 'claimStatus', 'claimedByUserId'],
       limit: lim
+    });
+  } else if (nationalityFilter) {
+    // When no search term but nationality filter is set, return top unclaimed persons
+    persons = await User.findAll({
+      where: personBaseWhere,
+      attributes: ['id', 'slug', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'photo', 'avatar', 'claimStatus', 'claimedByUserId'],
+      limit: lim,
+      order: [['createdAt', 'DESC']]
     });
   }
 
