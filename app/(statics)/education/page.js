@@ -122,7 +122,8 @@ export default function EducationPage() {
               <a href="https://www.wikipedia.org/" target="_blank" rel="noopener noreferrer" className="hover:underline">🌐 Wikipedia</a>
             </h3>
             <p className="text-gray-700 text-sm">
-              Free online encyclopedia with articles in many languages on history, science, culture, technology, and more.
+              Ελεύθερη διαδικτυακή εγκυκλοπαίδεια με άρθρα σε πολλές γλώσσες για ιστορία,
+              επιστήμη, πολιτισμό, τεχνολογία και πολλά ακόμη.
             </p>
           </div>
 
@@ -131,7 +132,8 @@ export default function EducationPage() {
               <a href="https://learn.mit.edu/search" target="_blank" rel="noopener noreferrer" className="hover:underline">🎓 MIT Learn Search</a>
             </h3>
             <p className="text-gray-700 text-sm">
-              Search MIT learning resources, courses, and educational materials from the Massachusetts Institute of Technology.
+              Αναζήτηση εκπαιδευτικών πόρων, μαθημάτων και εκπαιδευτικού υλικού του MIT
+              (Massachusetts Institute of Technology).
             </p>
           </div>
         </div>
