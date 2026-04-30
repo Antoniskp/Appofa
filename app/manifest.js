@@ -10,10 +10,10 @@ export default function manifest() {
     orientation: 'any',
     icons: [
       {
-        src: '/images/branding/appofasi-high-resolution-logo-transparent.png',
-        sizes: 'any',
+        src: '/images/branding/appofa-app-icon.png',
+        sizes: '512x512',
         type: 'image/png',
-        purpose: 'any',
+        purpose: 'any maskable',
       },
     ],
   };

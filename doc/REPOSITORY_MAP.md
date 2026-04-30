@@ -95,6 +95,7 @@ Appofa/
 ├── doc/                    # Documentation (30+ files)
 ├── scripts/                # Deployment & setup scripts
 ├── public/                 # Static assets
+│   ├── images/branding/    # Branding images: `appofa-app-icon.png` (512x512, PWA/home-screen/OG share icon — canonical branding icon), `appofasi-high-resolution-logo-transparent.png` (wide transparent logo, legacy/marketing use only)
 │   └── 502.html            # Self-contained Nginx 502 fallback page (inline CSS/JS + editable countdown target)
 └── .github/                # CI workflows, agents, copilot instructions
 ```
