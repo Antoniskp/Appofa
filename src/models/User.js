@@ -106,16 +106,6 @@ const User = sequelize.define('User', {
     },
     onDelete: 'SET NULL'
   },
-  moderatorLocationId: {
-    type: DataTypes.INTEGER,
-    allowNull: true,
-    references: {
-      model: 'Locations',
-      key: 'id'
-    },
-    onDelete: 'SET NULL',
-    comment: 'The location this user moderates (separate from homeLocationId)'
-  },
   searchable: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

@@ -44,6 +44,7 @@ const GeoAccessSetting = require('./GeoAccessSetting');
 const Organization = require('./Organization');
 const OrganizationMember = require('./OrganizationMember');
 const OrganizationAnalytics = require('./OrganizationAnalytics');
+const ModeratorAssignment = require('./ModeratorAssignment');
 
 // Define associations
 User.hasMany(Article, {
@@ -84,10 +85,26 @@ User.belongsTo(Location, {
   as: 'homeLocation'
 });
 
-// User moderator location (separate from home location)
-User.belongsTo(Location, {
-  foreignKey: 'moderatorLocationId',
-  as: 'moderatorLocation'
+// Moderator assignment (separate table)
+User.hasOne(ModeratorAssignment, {
+  foreignKey: 'userId',
+  as: 'moderatorAssignment'
+});
+ModeratorAssignment.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+ModeratorAssignment.belongsTo(User, {
+  foreignKey: 'assignedByUserId',
+  as: 'assignedBy'
+});
+ModeratorAssignment.belongsTo(Location, {
+  foreignKey: 'locationId',
+  as: 'location'
+});
+Location.hasMany(ModeratorAssignment, {
+  foreignKey: 'locationId',
+  as: 'moderatorAssignments'
 });
 
 // Poll associations
@@ -454,4 +471,5 @@ module.exports = {
   Organization,
   OrganizationMember,
   OrganizationAnalytics,
+  ModeratorAssignment,
 };

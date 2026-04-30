@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, LocationSection } = require('../src/models');
+const { sequelize, User, Location, LocationSection, ModeratorAssignment } = require('../src/models');
 const { validateContent, isValidHttpsUrl } = require('../src/controllers/locationSectionController');
 
 describe('Location Sections', () => {
@@ -38,14 +38,14 @@ describe('Location Sections', () => {
 
     outOfScopeLocation = parentLocation;
 
-    await User.create({
+    const moderator = await User.create({
       username: 'moderator',
       email: 'mod@test.com',
       password: 'password123',
       role: 'moderator',
-      homeLocationId: testLocation.id,
-      moderatorLocationId: testLocation.id
+      homeLocationId: testLocation.id
     });
+    await ModeratorAssignment.create({ userId: moderator.id, locationId: testLocation.id });
 
     const adminLogin = await request(app).post('/api/auth/login').send({ email: 'admin@test.com', password: 'password123' });
     adminToken = adminLogin.headers['set-cookie'].find(c => c.startsWith('auth_token=')).split(';')[0].replace('auth_token=', '');

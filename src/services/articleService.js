@@ -5,6 +5,7 @@ const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
+const { getModeratorLocationId } = require('./moderatorAssignmentService');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -462,8 +463,8 @@ const updateArticle = async (articleId, user, updateData) => {
     const isModerator = user.role === 'moderator';
     let moderatorAllowed = false;
     if (isModerator) {
-      const moderatorUser = await User.findByPk(user.id, { attributes: ['moderatorLocationId'] });
-      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.moderatorLocationId);
+      const moderatorLocationId = await getModeratorLocationId(user.id);
+      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorLocationId);
     }
     if (article.authorId !== user.id && !['admin', 'editor'].includes(user.role) && !moderatorAllowed) {
       return { success: false, status: 403, message: 'You do not have permission to update this article.' };
@@ -632,8 +633,8 @@ const deleteArticle = async (articleId, user) => {
     const isModerator = user.role === 'moderator';
     let moderatorAllowed = false;
     if (isModerator) {
-      const moderatorUser = await User.findByPk(user.id, { attributes: ['moderatorLocationId'] });
-      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.moderatorLocationId);
+      const moderatorLocationId = await getModeratorLocationId(user.id);
+      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorLocationId);
     }
     if (article.authorId !== user.id && user.role !== 'admin' && !moderatorAllowed) {
       return { success: false, status: 403, message: 'You do not have permission to delete this article.' };

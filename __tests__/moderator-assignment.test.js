@@ -2,13 +2,13 @@
  * Moderator Assignment Tests
  *
  * Tests the separation of homeLocationId (where user lives) from
- * moderatorLocationId (where user moderates), ancestor-chain validation,
+ * ModeratorAssignments table (where user moderates), ancestor-chain validation,
  * and exact-only moderator display on location pages.
  */
 
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location } = require('../src/models');
+const { sequelize, User, Location, ModeratorAssignment } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Moderator Assignment', () => {
@@ -80,8 +80,9 @@ describe('Moderator Assignment', () => {
 
       // Reload user from DB to verify fields
       const updated = await User.findByPk(viewer.id);
+      const assignment = await ModeratorAssignment.findOne({ where: { userId: viewer.id } });
       expect(updated.role).toBe('moderator');
-      expect(updated.moderatorLocationId).toBe(country.id); // moderator location set
+      expect(assignment?.locationId).toBe(country.id); // moderator location set
       expect(updated.homeLocationId).toBe(city.id); // home location unchanged
     });
 
@@ -93,9 +94,9 @@ describe('Moderator Assignment', () => {
         email: 'ma_user2@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: loc.id,
-        moderatorLocationId: loc.id
+        homeLocationId: loc.id
       });
+      await ModeratorAssignment.create({ userId: mod.id, locationId: loc.id });
 
       const csrfToken = 'ma-remove-mod-2';
       storeCsrfToken(csrfToken, adminUserId);
@@ -109,8 +110,9 @@ describe('Moderator Assignment', () => {
         .expect(200);
 
       const updated = await User.findByPk(mod.id);
+      const assignment = await ModeratorAssignment.findOne({ where: { userId: mod.id } });
       expect(updated.role).toBe('viewer');
-      expect(updated.moderatorLocationId).toBeNull(); // cleared on role removal
+      expect(assignment).toBeNull(); // cleared on role removal
       expect(updated.homeLocationId).toBe(loc.id); // home location still unchanged
     });
   });
@@ -167,7 +169,8 @@ describe('Moderator Assignment', () => {
 
       expect(response.body.success).toBe(true);
       const updated = await User.findByPk(user.id);
-      expect(updated.moderatorLocationId).toBe(country.id);
+      const assignment = await ModeratorAssignment.findOne({ where: { userId: user.id } });
+      expect(assignment?.locationId).toBe(country.id);
       expect(updated.homeLocationId).toBe(city.id); // home unchanged
     });
 
@@ -199,7 +202,8 @@ describe('Moderator Assignment', () => {
 
       // homeLocationId should remain unchanged
       const notUpdated = await User.findByPk(user.id);
-      expect(notUpdated.moderatorLocationId).toBeNull();
+      const assignment = await ModeratorAssignment.findOne({ where: { userId: user.id } });
+      expect(assignment).toBeNull();
       expect(notUpdated.homeLocationId).toBe(homeCountry.id);
     });
 
@@ -238,9 +242,10 @@ describe('Moderator Assignment', () => {
         email: 'ma_disp_mod@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: loc.id,
-        moderatorLocationId: loc.id
+        homeLocationId: loc.id
       });
+      const mod = await User.findOne({ where: { username: 'ma_disp_mod' } });
+      await ModeratorAssignment.create({ userId: mod.id, locationId: loc.id });
 
       const response = await request(app)
         .get(`/api/locations/${loc.id}`)
@@ -261,9 +266,10 @@ describe('Moderator Assignment', () => {
         email: 'ma_parent_mod@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: parent.id,
-        moderatorLocationId: parent.id
+        homeLocationId: parent.id
       });
+      const parentMod = await User.findOne({ where: { username: 'ma_parent_mod' } });
+      await ModeratorAssignment.create({ userId: parentMod.id, locationId: parent.id });
 
       // Parent should have a moderator
       const parentRes = await request(app).get(`/api/locations/${parent.id}`).expect(200);
@@ -285,9 +291,10 @@ describe('Moderator Assignment', () => {
         email: 'ma_consist_mod@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: country.id,
-        moderatorLocationId: country.id
+        homeLocationId: country.id
       });
+      const consistMod = await User.findOne({ where: { username: 'ma_consist_mod' } });
+      await ModeratorAssignment.create({ userId: consistMod.id, locationId: country.id });
 
       const listRes = await request(app).get(`/api/locations?type=prefecture`).expect(200);
       const detailRes = await request(app).get(`/api/locations/${child.id}`).expect(200);

@@ -101,11 +101,12 @@ Appofa/
 
 ---
 
-## Models (45)
+## Models (46)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
-| User | Users | id, username (nullable), email (nullable), password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, githubAvatar, googleAvatar, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge, homeLocationId (FK: where user lives), moderatorLocationId (FK: where user moderates — separate from home) | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
+| User | Users | id, username (nullable), email (nullable), password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, githubAvatar, googleAvatar, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge, homeLocationId (FK: where user lives) | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
+| ModeratorAssignment | ModeratorAssignments | id, userId (unique FK), locationId (FK), assignedByUserId (FK nullable) | belongsTo: User (moderator), User (assignedBy), Location |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
 | Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility, organizationId | belongsTo: User, Location, Organization; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |

@@ -10,7 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
-- **2026-04-30** — Separated moderator location from home location: added `User.moderatorLocationId` (FK to Locations); `updateUserRole` now sets `moderatorLocationId` (not `homeLocationId`) when assigning moderator; added ancestor-chain validation (moderator location must be home location or an ancestor); all scope checks (location update/delete, article manage, section manage, role manage, user scope, verify user) now use `moderatorLocationId` instead of `homeLocationId`; admin UI `/admin/users` shows correct separate fields; added migration `20260430000001-add-moderator-location-to-users.js`; added 9 new tests in `__tests__/moderator-assignment.test.js`; updated existing tests in `locations.test.js`, `location-sections.test.js`, `user-profiles-verification.test.js`
+- **2026-04-30** — Replaced `Users.moderatorLocationId` with normalized `ModeratorAssignments` join table (`userId` unique, `locationId`, `assignedByUserId`): role assignment now writes/deletes assignments there, scope checks read assignment location, location moderator previews resolve from assignment rows, API responses still expose `moderatorLocationId`/`moderatorLocation` for UI compatibility; added migrations `20260430000002-create-moderator-assignments.js` + `20260430000003-drop-moderator-location-from-users.js`; updated moderator-related tests.
 
 - **2026-04-29** — Fixed security tracking consent gate: `GeoTracker` no longer requires `analyticsConsent` to fire; all visitors are now tracked (security/anti-tampering telemetry); removed `analyticsConsent` state and consent event listener from `GeoTracker.js`; updated `gdpr.banner_description` and `gdpr.necessary_description` i18n keys (en + el) to disclose always-on security tracking; added `__tests__/geo-tracker-security.test.js` with 10 tests covering always-on backend tracking and readCookie helper
 - **2026-04-29** — Added "Root-Cause First Principle" section to Copilot instructions: agents must identify root causes, fix at the highest shared layer when safe, generalize before patching locally, preserve downstream caller behavior, and add/update tests
@@ -99,7 +99,8 @@ Compact table of every model where wrong field names have caused bugs:
 | Poll | `visibility`, `voteRestriction`, `organizationId`, `isOfficialPost`, `officialPostScope` | `allowUnauthenticatedVotes`, `tags` (JSON) |
 | Suggestion | `visibility`, `voteRestriction`, `organizationId` | — |
 | Article | `type` (`'news'`, `'articles'`, `'personal'`, `'video'`) | `isNews` |
-| User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn`, `homeLocationId` (where user lives), `moderatorLocationId` (where user moderates — separate field) | `isPlaceholder`, `personId` |
+| User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn`, `homeLocationId` (where user lives) | `isPlaceholder`, `personId`, `moderatorLocationId` |
+| ModeratorAssignment | `userId`, `locationId`, `assignedByUserId` | Store moderator scope on `Users` table |
 | Organization | `slug` (from `organizationService.generateSlug`), `parentId`, `isVerified` | — |
 | OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`), `inviteToken` | — |
 | LocationElectionVote | `locationId`, `roleKey`, `voterId`, `candidateUserId` | — |
@@ -120,7 +121,7 @@ Compact table of every model where wrong field names have caused bugs:
 - **Controller pattern**: validate → authorize → business logic → `{ success, data/message }`
 - **Service layer**: `src/services/` — complex logic extracted from controllers
 - **Errors**: `{ success: false, message }` — never leak stack traces in production
-- **Moderator location (separate from home)**: `User.moderatorLocationId` stores where a user moderates; `User.homeLocationId` stores where a user lives. These are independent. When admin assigns moderator role, `updateUserRole` validates that the chosen location is in the ancestor chain of the user's `homeLocationId` (or skips if no home location). All moderator scope checks (location CRUD, article CRUD, section CRUD, user management, verification) use `moderatorLocationId`, not `homeLocationId`.
+- **Moderator location (separate from home)**: moderation scope is stored in `ModeratorAssignments.locationId` (linked by `userId`), while `User.homeLocationId` stores where a user lives. When admin assigns moderator role, `updateUserRole` validates that the chosen moderator location is in the ancestor chain of the user's `homeLocationId` (or skips if no home location). All moderator scope checks (location CRUD, article CRUD, section CRUD, user management, verification) read the assigned location from `ModeratorAssignments`.
 - **Articles/news**: treat `Article.type` as source-of-truth (`type === 'news'`); do not use a separate `isNews` flag
 - **Poll tags**: use unified `Tag`/`TaggableItem` (`entityType: 'poll'`), not a JSON `Polls.tags` column
 - **Poll visibility vs voting**: `visibility` controls who sees polls; `voteRestriction` controls who can vote (`anyone`/`authenticated`/`locals_only`). Do not use `allowUnauthenticatedVotes`.

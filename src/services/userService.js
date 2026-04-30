@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookmark, Follow, sequelize } = require('../models');
+const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookmark, Follow, ModeratorAssignment, sequelize } = require('../models');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -11,6 +11,7 @@ const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
 const politicalParties = require('../../config/politicalParties.json');
+const { getModeratorLocationId, serializeUserModeratorFields } = require('./moderatorAssignmentService');
 
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
@@ -69,16 +70,39 @@ function buildUserStatsFromList(users = []) {
   return { total: users.length, byRole };
 }
 
+const moderatorAssignmentInclude = {
+  model: ModeratorAssignment,
+  as: 'moderatorAssignment',
+  attributes: ['id', 'locationId', 'assignedByUserId', 'createdAt', 'updatedAt'],
+  required: false,
+  include: [
+    {
+      model: Location,
+      as: 'location',
+      attributes: ['id', 'name', 'type', 'slug'],
+      required: false
+    }
+  ]
+};
+
+const mapUsersWithModeratorFields = (users = []) =>
+  users.map((user) => serializeUserModeratorFields(user));
+
 async function getUserStatsForModeratorScope(moderatorUserId) {
   const actor = await User.findByPk(moderatorUserId, {
-    attributes: ['id', 'role', 'moderatorLocationId']
+    attributes: ['id', 'role']
   });
 
-  if (!actor || actor.role !== 'moderator' || !actor.moderatorLocationId) {
+  if (!actor || actor.role !== 'moderator') {
     return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
   }
 
-  const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
+  const moderatorLocationId = await getModeratorLocationId(moderatorUserId);
+  if (!moderatorLocationId) {
+    return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
+  }
+
+  const manageableLocationIds = await getDescendantLocationIds(moderatorLocationId, true);
   if (manageableLocationIds.length === 0) {
     return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
   }
@@ -120,13 +144,14 @@ async function getUserProfile(userId) {
             ]
           }
         ]
-      }
+      },
+      moderatorAssignmentInclude
     ]
   });
 
   if (!user) throw new ServiceError(404, 'User not found.');
 
-  const userJson = user.toJSON();
+  const userJson = serializeUserModeratorFields(user);
   const rawUser = await User.findByPk(userId, { attributes: ['password'] });
   userJson.hasPassword = !!(rawUser && rawUser.password);
 
@@ -534,7 +559,7 @@ async function adminDeleteUser(actorId, actorRole, targetId) {
 
 async function getUsers(actorId, actorRole) {
   const baseQuery = {
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'moderatorLocationId', 'createdAt', 'isVerified', 'claimStatus'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
     include: [
       {
         model: Location,
@@ -542,12 +567,7 @@ async function getUsers(actorId, actorRole) {
         attributes: ['id', 'name', 'type', 'slug'],
         required: false
       },
-      {
-        model: Location,
-        as: 'moderatorLocation',
-        attributes: ['id', 'name', 'type', 'slug'],
-        required: false
-      }
+      moderatorAssignmentInclude
     ],
     order: [['createdAt', 'DESC']]
   };
@@ -560,18 +580,19 @@ async function getUsers(actorId, actorRole) {
     stats = await buildUserStats();
   } else {
     const actor = await User.findByPk(actorId, {
-      attributes: ['id', 'role', 'moderatorLocationId']
+      attributes: ['id', 'role']
     });
 
     if (!actor || actor.role !== 'moderator') {
       throw new ServiceError(403, 'Insufficient permissions.');
     }
 
-    if (!actor.moderatorLocationId) {
+    const actorModeratorLocationId = await getModeratorLocationId(actorId);
+    if (!actorModeratorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
     }
 
-    const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
+    const manageableLocationIds = await getDescendantLocationIds(actorModeratorLocationId, true);
 
     users = manageableLocationIds.length > 0
       ? await User.findAll({
@@ -583,7 +604,7 @@ async function getUsers(actorId, actorRole) {
     stats = buildUserStatsFromList(users);
   }
 
-  return { users, stats };
+  return { users: mapUsersWithModeratorFields(users), stats };
 }
 
 async function getAdminUsers(actorId, actorRole, { search, role, verified, placeholder, page, limit } = {}) {
@@ -643,18 +664,19 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
   // Scope for moderators
   if (actorRole !== 'admin') {
     const actor = await User.findByPk(actorId, {
-      attributes: ['id', 'role', 'moderatorLocationId']
+      attributes: ['id', 'role']
     });
 
     if (!actor || actor.role !== 'moderator') {
       throw new ServiceError(403, 'Insufficient permissions.');
     }
 
-    if (!actor.moderatorLocationId) {
+    const actorModeratorLocationId = await getModeratorLocationId(actorId);
+    if (!actorModeratorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location.');
     }
 
-    const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
+    const manageableLocationIds = await getDescendantLocationIds(actorModeratorLocationId, true);
     if (manageableLocationIds.length > 0) {
       whereClause.homeLocationId = { [Op.in]: manageableLocationIds };
     } else {
@@ -664,7 +686,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'moderatorLocationId', 'createdAt', 'isVerified', 'claimStatus'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
     include: [
       {
         model: Location,
@@ -672,12 +694,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
         attributes: ['id', 'name', 'type', 'slug'],
         required: false
       },
-      {
-        model: Location,
-        as: 'moderatorLocation',
-        attributes: ['id', 'name', 'type', 'slug'],
-        required: false
-      }
+      moderatorAssignmentInclude
     ],
     order: [['createdAt', 'DESC']],
     limit: limitNum,
@@ -688,7 +705,7 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
   const stats = actorRole === 'admin' ? await buildUserStats() : buildUserStatsFromList(users);
 
   return {
-    users,
+    users: mapUsersWithModeratorFields(users),
     stats,
     pagination: {
       currentPage: pageNum,
@@ -705,18 +722,19 @@ async function getUserStats(actorId, actorRole) {
   }
 
   const actor = await User.findByPk(actorId, {
-    attributes: ['id', 'role', 'moderatorLocationId']
+    attributes: ['id', 'role']
   });
 
   if (!actor || actor.role !== 'moderator') {
     throw new ServiceError(403, 'Insufficient permissions.');
   }
 
-  if (!actor.moderatorLocationId) {
+  const actorModeratorLocationId = await getModeratorLocationId(actorId);
+  if (!actorModeratorLocationId) {
     throw new ServiceError(403, 'Moderator must have an assigned location to view scoped stats.');
   }
 
-  const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
+  const manageableLocationIds = await getDescendantLocationIds(actorModeratorLocationId, true);
   const users = manageableLocationIds.length > 0
     ? await User.findAll({
         where: { homeLocationId: { [Op.in]: manageableLocationIds } },
@@ -750,18 +768,19 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
   }
 
   const actingUser = await User.findByPk(actorId, {
-    attributes: ['id', 'role', 'moderatorLocationId']
+    attributes: ['id', 'role']
   });
 
   if (!actingUser) throw new ServiceError(401, 'Authentication required.');
 
   let moderatorManageableLocationIds = [];
   if (actingUser.role === 'moderator') {
-    if (!actingUser.moderatorLocationId) {
+    const actingModeratorLocationId = await getModeratorLocationId(actorId);
+    if (!actingModeratorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
     }
 
-    moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.moderatorLocationId, true);
+    moderatorManageableLocationIds = await getDescendantLocationIds(actingModeratorLocationId, true);
 
     if (role === 'admin') {
       throw new ServiceError(403, 'Moderators cannot assign admin role.');
@@ -807,11 +826,24 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
     }
 
     const isSameRole = user.role === role;
-    const isSameModeratorLocation = role !== 'moderator' || user.moderatorLocationId === validatedModeratorLocationId;
+    const isSameModeratorLocation = role !== 'moderator' || existingAssignment?.locationId === validatedModeratorLocationId;
 
     if (isSameRole && isSameModeratorLocation) {
       roleAlreadySet = true;
-      updatedUser = user;
+      const unchangedUserRecord = await User.findByPk(user.id, {
+        transaction,
+        attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt'],
+        include: [
+          {
+            model: Location,
+            as: 'homeLocation',
+            attributes: ['id', 'name', 'type', 'slug'],
+            required: false
+          },
+          moderatorAssignmentInclude
+        ]
+      });
+      updatedUser = serializeUserModeratorFields(unchangedUserRecord);
       return;
     }
 
@@ -830,16 +862,28 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
 
     user.role = role;
     if (role === 'moderator') {
-      user.moderatorLocationId = validatedModeratorLocationId;
+      if (existingAssignment) {
+        existingAssignment.locationId = validatedModeratorLocationId;
+        existingAssignment.assignedByUserId = actorId;
+        await existingAssignment.save({ transaction });
+      } else {
+        await ModeratorAssignment.create({
+          userId: user.id,
+          locationId: validatedModeratorLocationId,
+          assignedByUserId: actorId
+        }, { transaction });
+      }
     } else {
-      // Clear moderator location when user is no longer a moderator
-      user.moderatorLocationId = null;
+      // Clear moderator assignment when user is no longer a moderator
+      if (existingAssignment) {
+        await existingAssignment.destroy({ transaction });
+      }
     }
     await user.save({ transaction });
 
-    updatedUser = await User.findByPk(user.id, {
+    const updatedUserRecord = await User.findByPk(user.id, {
       transaction,
-      attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'moderatorLocationId', 'createdAt'],
+      attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt'],
       include: [
         {
           model: Location,
@@ -847,14 +891,10 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
           attributes: ['id', 'name', 'type', 'slug'],
           required: false
         },
-        {
-          model: Location,
-          as: 'moderatorLocation',
-          attributes: ['id', 'name', 'type', 'slug'],
-          required: false
-        }
+        moderatorAssignmentInclude
       ]
     });
+    updatedUser = serializeUserModeratorFields(updatedUserRecord);
   });
 
   const stats = actorRole === 'admin'
@@ -864,34 +904,38 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
   return { user: updatedUser, stats, roleAlreadySet };
 }
 
-async function verifyUser(actorId, actorRole, actorModeratorLocationId, targetId, isVerified) {
+async function verifyUser(actorId, targetId, isVerified) {
   if (!targetId) throw new ServiceError(400, 'Invalid user id.');
   if (typeof isVerified !== 'boolean') throw new ServiceError(400, 'isVerified must be a boolean.');
 
-  const actor = await User.findByPk(actorId, { attributes: ['id', 'role', 'moderatorLocationId'] });
+  const actor = await User.findByPk(actorId, { attributes: ['id', 'role'] });
   if (!actor) throw new ServiceError(403, 'Insufficient permissions.');
 
   const target = await User.findByPk(targetId);
   if (!target) throw new ServiceError(404, 'User not found.');
 
   if (actor.role === 'moderator') {
-    if (!actor.moderatorLocationId) {
+    const moderatorLocationId = await getModeratorLocationId(actorId);
+    if (!moderatorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location.');
     }
     if (!target.homeLocationId) {
       throw new ServiceError(403, 'Target user is not within your manageable scope.');
     }
-    const manageableIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
+    const manageableIds = await getDescendantLocationIds(moderatorLocationId, true);
     if (!manageableIds.includes(target.homeLocationId)) {
       throw new ServiceError(403, 'Target user is not within your manageable scope.');
     }
   }
 
   if (isVerified) {
+    const moderatorLocationId = actor.role === 'moderator'
+      ? await getModeratorLocationId(actorId)
+      : null;
     target.isVerified = true;
     target.verifiedAt = new Date();
     target.verifiedByUserId = actor.id;
-    target.verifiedScopeLocationId = actor.role === 'admin' ? null : actor.moderatorLocationId;
+    target.verifiedScopeLocationId = actor.role === 'admin' ? null : moderatorLocationId;
   } else {
     target.isVerified = false;
     target.verifiedAt = null;
@@ -1054,3 +1098,8 @@ module.exports = {
   getPublicUserStats,
   isUsernameAvailable
 };
+    const existingAssignment = await ModeratorAssignment.findOne({
+      where: { userId: user.id },
+      transaction,
+      lock: transaction.LOCK.UPDATE
+    });

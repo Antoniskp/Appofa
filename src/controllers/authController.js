@@ -485,8 +485,6 @@ const authController = {
       const { isVerified } = req.body;
       const updatedUser = await userService.verifyUser(
         req.user.id,
-        req.user.role,
-        req.user.moderatorLocationId,
         targetId,
         isVerified
       );

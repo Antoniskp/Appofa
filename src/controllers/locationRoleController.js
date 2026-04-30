@@ -1,6 +1,7 @@
 const { LocationRole, Location, User, GovernmentPosition, GovernmentCurrentHolder } = require('../models');
 const locationRolesConfig = require('../../config/locationRoles.json');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { getModeratorLocationId } = require('../services/moderatorAssignmentService');
 
 // Maps LocationRole roleKey → universal positionTypeKey used in GovernmentPositions.
 // This allows the sync to work for any country dynamically — the countryCode is read
@@ -140,11 +141,11 @@ exports.upsertRoles = async (req, res) => {
     }
 
     if (req.user && req.user.role === 'moderator') {
-      const actor = await User.findByPk(req.user.id, { attributes: ['id', 'moderatorLocationId'] });
-      if (!actor || !actor.moderatorLocationId) {
+      const actorModeratorLocationId = await getModeratorLocationId(req.user.id);
+      if (!actorModeratorLocationId) {
         return res.status(403).json({ success: false, message: 'Moderator must have an assigned location.' });
       }
-      const allowedIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
+      const allowedIds = await getDescendantLocationIds(actorModeratorLocationId, true);
       const allowedIdSet = new Set(allowedIds.map(Number));
       if (!allowedIdSet.has(Number(locationId))) {
         return res.status(403).json({ success: false, message: 'Forbidden: location outside your scope.' });

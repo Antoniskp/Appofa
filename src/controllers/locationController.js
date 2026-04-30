@@ -1,15 +1,15 @@
 'use strict';
 
 const locationService = require('../services/locationService');
-const { User, Location } = require('../models');
+const { Location } = require('../models');
+const { getModeratorLocationId } = require('../services/moderatorAssignmentService');
 
 const toUserObj = (reqUser) =>
   reqUser ? { id: reqUser.id, role: reqUser.role, homeLocationId: reqUser.homeLocationId } : null;
 
 const getActorModeratorLocationId = async (reqUser) => {
   if (!reqUser || !reqUser.id) return null;
-  const actor = await User.findByPk(reqUser.id, { attributes: ['id', 'moderatorLocationId'] });
-  return actor?.moderatorLocationId || null;
+  return getModeratorLocationId(reqUser.id);
 };
 
 // Create a new location (admin/moderator only)

@@ -2,7 +2,7 @@
  * Tests for enhanced user profiles and verification feature.
  */
 const request = require('supertest');
-const { sequelize, User, Location } = require('../src/models');
+const { sequelize, User, Location, ModeratorAssignment } = require('../src/models');
 
 const express = require('express');
 const cors = require('cors');
@@ -67,9 +67,10 @@ describe('Enhanced User Profiles and Verification', () => {
     const adminCookie = adminLogin.headers['set-cookie'].find((c) => c.startsWith('auth_token='));
     adminToken = adminCookie.split(';')[0].replace('auth_token=', '');
 
-    // Moderator user (with homeLocationId = scopeLocationId and moderatorLocationId = scopeLocationId)
-    await User.create({ username: 'moduser', email: 'mod@verify.test', password: 'pass123', role: 'moderator', homeLocationId: scopeLocationId, moderatorLocationId: scopeLocationId });
+    // Moderator user (with homeLocationId = scopeLocationId and assignment at scopeLocationId)
+    await User.create({ username: 'moduser', email: 'mod@verify.test', password: 'pass123', role: 'moderator', homeLocationId: scopeLocationId });
     const modUser = await User.findOne({ where: { email: 'mod@verify.test' } });
+    await ModeratorAssignment.create({ userId: modUser.id, locationId: scopeLocationId });
     moderatorUserId = modUser.id;
     const modLogin = await request(app).post('/api/auth/login').send({ email: 'mod@verify.test', password: 'pass123' });
     const modCookie = modLogin.headers['set-cookie'].find((c) => c.startsWith('auth_token='));

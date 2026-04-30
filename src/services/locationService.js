@@ -1,6 +1,6 @@
 'use strict';
 
-const { sequelize, Location, LocationLink, Article, User, Poll, LocationRequest } = require('../models');
+const { sequelize, Location, LocationLink, Article, User, Poll, LocationRequest, ModeratorAssignment } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
@@ -263,29 +263,37 @@ const getLocations = async (queryParams) => {
     const moderatorPreviewByLocationId = new Map();
 
     if (locationIds.length > 0) {
-      const moderatorAssignments = await User.findAll({
+      const moderatorAssignments = await ModeratorAssignment.findAll({
         where: {
-          role: 'moderator',
-          moderatorLocationId: { [Op.in]: locationIds }
+          locationId: { [Op.in]: locationIds }
         },
-        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'moderatorLocationId'],
+        include: [
+          {
+            model: User,
+            as: 'user',
+            where: { role: 'moderator' },
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+            required: true
+          }
+        ],
+        attributes: ['locationId'],
         order: [['createdAt', 'ASC'], ['id', 'ASC']],
         raw: true
       });
 
       moderatorAssignments.forEach((assignment) => {
-        const modLocId = Number(assignment.moderatorLocationId);
+        const modLocId = Number(assignment.locationId);
         if (Number.isInteger(modLocId)) {
           moderatorLocationIds.add(modLocId);
 
           if (!moderatorPreviewByLocationId.has(modLocId)) {
             moderatorPreviewByLocationId.set(modLocId, {
-              id: assignment.id,
-              username: assignment.username,
-              firstNameNative: assignment.firstNameNative,
-              lastNameNative: assignment.lastNameNative,
-              avatar: assignment.avatar,
-              avatarColor: assignment.avatarColor
+              id: assignment['user.id'],
+              username: assignment['user.username'],
+              firstNameNative: assignment['user.firstNameNative'],
+              lastNameNative: assignment['user.lastNameNative'],
+              avatar: assignment['user.avatar'],
+              avatarColor: assignment['user.avatarColor']
             });
           }
         }
@@ -408,14 +416,21 @@ const getLocation = async (id) => {
       where: { location_id: locationId, entity_type: 'poll' }
     });
 
-    const moderator = await User.findOne({
-      where: {
-        role: 'moderator',
-        moderatorLocationId: locationId
-      },
-      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+    const moderatorAssignment = await ModeratorAssignment.findOne({
+      where: { locationId },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          where: { role: 'moderator' },
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+          required: true
+        }
+      ],
+      attributes: ['id'],
       order: [['createdAt', 'ASC'], ['id', 'ASC']]
     });
+    const moderator = moderatorAssignment?.user || null;
 
     const locationData = location.toJSON();
     locationData.hasModerator = !!moderator;

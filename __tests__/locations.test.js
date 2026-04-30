@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, LocationLink, Article } = require('../src/models');
+const { sequelize, User, Location, LocationLink, Article, ModeratorAssignment } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Location API Tests', () => {
@@ -433,9 +433,9 @@ describe('Location API Tests', () => {
         email: 'direct_mod@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: child.id,
-        moderatorLocationId: child.id
+        homeLocationId: child.id
       });
+      await ModeratorAssignment.create({ userId: moderator.id, locationId: child.id });
 
       const response = await request(app)
         .get(`/api/locations/${child.id}`)
@@ -714,9 +714,9 @@ describe('Location API Tests', () => {
         email: 'scoped_moderator@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: inScopeChild.id,
-        moderatorLocationId: inScopeChild.id
+        homeLocationId: inScopeChild.id
       });
+      await ModeratorAssignment.create({ userId: moderator.id, locationId: inScopeChild.id });
       moderatorUserId = moderator.id;
 
       const login = await request(app)
