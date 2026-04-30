@@ -5,24 +5,9 @@ const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
-const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
-const rateLimit = require('express-rate-limit');
+const { apiLimiter, createLimiter, anonVoteLimiter, authVoteLimiter } = require('../middleware/rateLimiter');
 const { getCookie } = require('../utils/cookies');
 const { CSRF_COOKIE, CSRF_HEADER, ensureCsrfToken } = require('../utils/csrf');
-
-// Vote rate limiter - 10 votes per hour for unauthenticated users
-const voteLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 votes per hour
-  message: {
-    success: false,
-    message: 'Too many votes from this IP, please try again later.'
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-  // Skip rate limiting for authenticated users and in test environment
-  skip: (req) => !!req.user || process.env.NODE_ENV === 'test'
-});
 
 // Optional CSRF protection - works for both authenticated and unauthenticated users
 const optionalCsrfProtection = (req, res, next) => {
@@ -75,8 +60,8 @@ router.get('/:id', apiLimiter, optionalAuthMiddleware, pollController.getPollByI
 router.get('/:id/results', apiLimiter, optionalAuthMiddleware, pollController.getResults);
 router.get('/:id/export', apiLimiter, authMiddleware, pollController.exportPoll);
 
-// Voting route - public or authenticated based on poll settings
-router.post('/:id/vote', voteLimiter, optionalAuthMiddleware, optionalCsrfProtection, pollController.votePoll);
+// Voting route - optionalAuth runs first so limiters can distinguish auth state
+router.post('/:id/vote', optionalAuthMiddleware, anonVoteLimiter, authVoteLimiter, optionalCsrfProtection, pollController.votePoll);
 
 // Protected routes - require authentication
 router.post('/', createLimiter, authMiddleware, csrfProtection, pollController.createPoll);

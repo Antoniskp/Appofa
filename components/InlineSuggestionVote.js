@@ -5,6 +5,7 @@ import { HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon as HandThumbUpSolid, HandThumbDownIcon as HandThumbDownSolid } from '@heroicons/react/24/solid';
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import RateLimitBanner from '@/components/ui/RateLimitBanner';
 
 const VOTE_LABELS = {
   idea:                { up: 'Συμφωνώ',         down: 'Διαφωνώ'             },
@@ -34,6 +35,7 @@ export default function InlineSuggestionVote({
   const [downvotes, setDownvotes] = useState(initialDownvotes);
   const [myVote, setMyVote]       = useState(initialMyVote);
   const [isVoting, setIsVoting]   = useState(false);
+  const [rateLimit, setRateLimit] = useState(null); // { retryAfter, resetTime }
 
   const labels = VOTE_LABELS[type] || VOTE_LABELS.idea;
 
@@ -75,7 +77,10 @@ export default function InlineSuggestionVote({
         setUpvotes(prevUpvotes);
         setDownvotes(prevDownvotes);
       }
-    } catch {
+    } catch (err) {
+      if (err?.status === 429) {
+        setRateLimit({ retryAfter: err.retryAfter ?? null, resetTime: err.resetTime ?? null });
+      }
       // Rollback on error
       setMyVote(prevMyVote);
       setUpvotes(prevUpvotes);
@@ -86,12 +91,22 @@ export default function InlineSuggestionVote({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div>
+      {rateLimit && (
+        <div className="mb-2">
+          <RateLimitBanner
+            retryAfter={rateLimit.retryAfter}
+            resetTime={rateLimit.resetTime}
+            isAuthenticated={!!user}
+          />
+        </div>
+      )}
+      <div className="flex items-center gap-2">
       {/* Upvote */}
       <button
         type="button"
         onClick={(e) => handleVote(e, 1)}
-        disabled={!user || isVoting}
+        disabled={!user || isVoting || !!rateLimit}
         title={user ? labels.up : 'Συνδεθείτε για να ψηφίσετε'}
         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           myVote === 1
@@ -109,7 +124,7 @@ export default function InlineSuggestionVote({
       <button
         type="button"
         onClick={(e) => handleVote(e, -1)}
-        disabled={!user || isVoting}
+        disabled={!user || isVoting || !!rateLimit}
         title={user ? labels.down : 'Συνδεθείτε για να ψηφίσετε'}
         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           myVote === -1
@@ -122,6 +137,7 @@ export default function InlineSuggestionVote({
           : <HandThumbDownIcon  className="h-4 w-4" />}
         <span>{downvotes}</span>
       </button>
+    </div>
     </div>
   );
 }

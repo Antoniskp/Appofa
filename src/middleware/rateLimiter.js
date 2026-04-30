@@ -9,10 +9,26 @@ const skipForWhitelist = async (req) => {
   return rules.whitelist.has(clientIp);
 };
 
+/**
+ * Creates a structured 429 handler for rate limiters.
+ * Returns `retryAfter` (seconds) and `resetTime` (epoch ms) alongside the error message.
+ * @param {string} message - Human-readable error message
+ * @returns {Function} express-rate-limit handler
+ */
+const makeRateLimitHandler = (message) => (req, res) => {
+  const info = req.rateLimit;
+  const resetTime =
+    info?.resetTime instanceof Date
+      ? info.resetTime.getTime()
+      : Date.now() + (info?.windowMs ?? 60 * 60 * 1000);
+  const retryAfter = Math.max(0, Math.ceil((resetTime - Date.now()) / 1000));
+  return res.status(429).json({ success: false, message, retryAfter, resetTime });
+};
+
 // General API rate limiter - 100 requests per 15 minutes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 100 requests per windowMs
+  max: 200, // Limit each IP to 200 requests per windowMs
   skip: skipForWhitelist,
   message: {
     success: false,
@@ -62,6 +78,32 @@ const uploadLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Vote rate limiter for anonymous users - 10 votes per hour.
+// Skipped for authenticated users (req.user must be set before this middleware runs).
+const anonVoteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  skip: (req) => !!req.user || process.env.NODE_ENV === 'test',
+  handler: makeRateLimitHandler(
+    'Too many votes. Create an account or sign in for higher limits.'
+  ),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Vote rate limiter for authenticated users - 50 votes per hour.
+// Skipped for unauthenticated users (handled by anonVoteLimiter).
+const authVoteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 50,
+  skip: (req) => !req.user || process.env.NODE_ENV === 'test',
+  handler: makeRateLimitHandler(
+    'Too many votes from this account, please try again later.'
+  ),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 const ipBlockMiddleware = async (req, res, next) => {
   try {
     if (process.env.NODE_ENV === 'test') return next();
@@ -81,6 +123,9 @@ module.exports = {
   authLimiter,
   createLimiter,
   uploadLimiter,
+  anonVoteLimiter,
+  authVoteLimiter,
+  makeRateLimitHandler,
   ipBlockMiddleware,
 };
 
