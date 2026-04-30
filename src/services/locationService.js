@@ -411,7 +411,7 @@ const getLocation = async (id) => {
     const moderator = await User.findOne({
       where: {
         role: 'moderator',
-        homeLocationId: { [Op.in]: await getAncestorLocationIds(locationId, true) }
+        homeLocationId: locationId
       },
       attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
       order: [['createdAt', 'ASC'], ['id', 'ASC']]
