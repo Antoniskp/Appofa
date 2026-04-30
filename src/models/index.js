@@ -84,6 +84,12 @@ User.belongsTo(Location, {
   as: 'homeLocation'
 });
 
+// User moderator location (separate from home location)
+User.belongsTo(Location, {
+  foreignKey: 'moderatorLocationId',
+  as: 'moderatorLocation'
+});
+
 // Poll associations
 Poll.belongsTo(User, {
   foreignKey: 'creatorId',

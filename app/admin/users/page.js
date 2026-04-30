@@ -161,25 +161,25 @@ function AdminUsersContent() {
   const getModeratorLocationOptions = (targetUser) => {
     const baseLocations = Array.isArray(locations) ? locations : [];
     const overriddenLocationId = moderatorLocationOverrides[targetUser?.id];
-    const effectiveHomeLocationId = overriddenLocationId || targetUser?.homeLocationId;
+    const effectiveModeratorLocationId = overriddenLocationId || targetUser?.moderatorLocationId;
 
-    if (!effectiveHomeLocationId) return baseLocations;
+    if (!effectiveModeratorLocationId) return baseLocations;
 
     const hasCurrentLocation = baseLocations.some(
-      (location) => Number(location.id) === Number(effectiveHomeLocationId)
+      (location) => Number(location.id) === Number(effectiveModeratorLocationId)
     );
 
     if (hasCurrentLocation) return baseLocations;
 
-    if (!overriddenLocationId && targetUser.homeLocation?.id && targetUser.homeLocation?.name) {
+    if (!overriddenLocationId && targetUser.moderatorLocation?.id && targetUser.moderatorLocation?.name) {
       return [
-        { id: targetUser.homeLocation.id, name: targetUser.homeLocation.name, type: targetUser.homeLocation.type, slug: targetUser.homeLocation.slug },
+        { id: targetUser.moderatorLocation.id, name: targetUser.moderatorLocation.name, type: targetUser.moderatorLocation.type, slug: targetUser.moderatorLocation.slug },
         ...baseLocations
       ];
     }
 
     return [
-      { id: effectiveHomeLocationId, name: `Location #${effectiveHomeLocationId}` },
+      { id: effectiveModeratorLocationId, name: `Location #${effectiveModeratorLocationId}` },
       ...baseLocations
     ];
   };
@@ -203,7 +203,7 @@ function AdminUsersContent() {
   const canVerifyUser = (targetUser) => {
     if (!user) return false;
     if (user.role === 'admin') return true;
-    if (user.role === 'moderator' && user.homeLocationId && targetUser.homeLocationId) return true;
+    if (user.role === 'moderator' && user.moderatorLocationId && targetUser.homeLocationId) return true;
     return false;
   };
 
@@ -393,7 +393,7 @@ function AdminUsersContent() {
                         <td className="px-4 py-3">
                           {u.role === 'moderator' ? (
                             <select
-                              value={String(moderatorLocationOverrides[u.id] || u.homeLocationId || '')}
+                              value={String(moderatorLocationOverrides[u.id] || u.moderatorLocationId || '')}
                               onChange={(e) => handleModeratorLocationChange(u, e.target.value)}
                               className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[200px]"
                             >

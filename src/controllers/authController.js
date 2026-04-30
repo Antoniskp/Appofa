@@ -237,6 +237,8 @@ const authController = {
             lastNameNative: user.lastNameNative,
             homeLocationId: user.homeLocationId,
             homeLocation: user.homeLocation,
+            moderatorLocationId: user.moderatorLocationId,
+            moderatorLocation: user.moderatorLocation,
             createdAt: user.createdAt
           },
           stats
@@ -484,7 +486,7 @@ const authController = {
       const updatedUser = await userService.verifyUser(
         req.user.id,
         req.user.role,
-        req.user.homeLocationId,
+        req.user.moderatorLocationId,
         targetId,
         isVerified
       );

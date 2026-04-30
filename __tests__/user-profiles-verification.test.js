@@ -67,8 +67,8 @@ describe('Enhanced User Profiles and Verification', () => {
     const adminCookie = adminLogin.headers['set-cookie'].find((c) => c.startsWith('auth_token='));
     adminToken = adminCookie.split(';')[0].replace('auth_token=', '');
 
-    // Moderator user (with homeLocationId = scopeLocationId)
-    await User.create({ username: 'moduser', email: 'mod@verify.test', password: 'pass123', role: 'moderator', homeLocationId: scopeLocationId });
+    // Moderator user (with homeLocationId = scopeLocationId and moderatorLocationId = scopeLocationId)
+    await User.create({ username: 'moduser', email: 'mod@verify.test', password: 'pass123', role: 'moderator', homeLocationId: scopeLocationId, moderatorLocationId: scopeLocationId });
     const modUser = await User.findOne({ where: { email: 'mod@verify.test' } });
     moderatorUserId = modUser.id;
     const modLogin = await request(app).post('/api/auth/login').send({ email: 'mod@verify.test', password: 'pass123' });

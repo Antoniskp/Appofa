@@ -43,7 +43,8 @@ describe('Location Sections', () => {
       email: 'mod@test.com',
       password: 'password123',
       role: 'moderator',
-      homeLocationId: testLocation.id
+      homeLocationId: testLocation.id,
+      moderatorLocationId: testLocation.id
     });
 
     const adminLogin = await request(app).post('/api/auth/login').send({ email: 'admin@test.com', password: 'password123' });

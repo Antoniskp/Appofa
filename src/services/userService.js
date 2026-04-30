@@ -6,7 +6,7 @@ const {
   normalizeInteger,
   normalizePassword
 } = require('../utils/validators');
-const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
@@ -71,14 +71,14 @@ function buildUserStatsFromList(users = []) {
 
 async function getUserStatsForModeratorScope(moderatorUserId) {
   const actor = await User.findByPk(moderatorUserId, {
-    attributes: ['id', 'role', 'homeLocationId']
+    attributes: ['id', 'role', 'moderatorLocationId']
   });
 
-  if (!actor || actor.role !== 'moderator' || !actor.homeLocationId) {
+  if (!actor || actor.role !== 'moderator' || !actor.moderatorLocationId) {
     return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
   }
 
-  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
+  const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
   if (manageableLocationIds.length === 0) {
     return { total: 0, byRole: { admin: 0, moderator: 0, editor: 0, viewer: 0 } };
   }
@@ -534,11 +534,17 @@ async function adminDeleteUser(actorId, actorRole, targetId) {
 
 async function getUsers(actorId, actorRole) {
   const baseQuery = {
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'moderatorLocationId', 'createdAt', 'isVerified', 'claimStatus'],
     include: [
       {
         model: Location,
         as: 'homeLocation',
+        attributes: ['id', 'name', 'type', 'slug'],
+        required: false
+      },
+      {
+        model: Location,
+        as: 'moderatorLocation',
         attributes: ['id', 'name', 'type', 'slug'],
         required: false
       }
@@ -554,18 +560,18 @@ async function getUsers(actorId, actorRole) {
     stats = await buildUserStats();
   } else {
     const actor = await User.findByPk(actorId, {
-      attributes: ['id', 'role', 'homeLocationId']
+      attributes: ['id', 'role', 'moderatorLocationId']
     });
 
     if (!actor || actor.role !== 'moderator') {
       throw new ServiceError(403, 'Insufficient permissions.');
     }
 
-    if (!actor.homeLocationId) {
+    if (!actor.moderatorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
     }
 
-    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
+    const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
 
     users = manageableLocationIds.length > 0
       ? await User.findAll({
@@ -637,18 +643,18 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
   // Scope for moderators
   if (actorRole !== 'admin') {
     const actor = await User.findByPk(actorId, {
-      attributes: ['id', 'role', 'homeLocationId']
+      attributes: ['id', 'role', 'moderatorLocationId']
     });
 
     if (!actor || actor.role !== 'moderator') {
       throw new ServiceError(403, 'Insufficient permissions.');
     }
 
-    if (!actor.homeLocationId) {
+    if (!actor.moderatorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location.');
     }
 
-    const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
+    const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
     if (manageableLocationIds.length > 0) {
       whereClause.homeLocationId = { [Op.in]: manageableLocationIds };
     } else {
@@ -658,11 +664,17 @@ async function getAdminUsers(actorId, actorRole, { search, role, verified, place
 
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt', 'isVerified', 'claimStatus'],
+    attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'moderatorLocationId', 'createdAt', 'isVerified', 'claimStatus'],
     include: [
       {
         model: Location,
         as: 'homeLocation',
+        attributes: ['id', 'name', 'type', 'slug'],
+        required: false
+      },
+      {
+        model: Location,
+        as: 'moderatorLocation',
         attributes: ['id', 'name', 'type', 'slug'],
         required: false
       }
@@ -693,18 +705,18 @@ async function getUserStats(actorId, actorRole) {
   }
 
   const actor = await User.findByPk(actorId, {
-    attributes: ['id', 'role', 'homeLocationId']
+    attributes: ['id', 'role', 'moderatorLocationId']
   });
 
   if (!actor || actor.role !== 'moderator') {
     throw new ServiceError(403, 'Insufficient permissions.');
   }
 
-  if (!actor.homeLocationId) {
+  if (!actor.moderatorLocationId) {
     throw new ServiceError(403, 'Moderator must have an assigned location to view scoped stats.');
   }
 
-  const manageableLocationIds = await getDescendantLocationIds(actor.homeLocationId, true);
+  const manageableLocationIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
   const users = manageableLocationIds.length > 0
     ? await User.findAll({
         where: { homeLocationId: { [Op.in]: manageableLocationIds } },
@@ -738,18 +750,18 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
   }
 
   const actingUser = await User.findByPk(actorId, {
-    attributes: ['id', 'role', 'homeLocationId']
+    attributes: ['id', 'role', 'moderatorLocationId']
   });
 
   if (!actingUser) throw new ServiceError(401, 'Authentication required.');
 
   let moderatorManageableLocationIds = [];
   if (actingUser.role === 'moderator') {
-    if (!actingUser.homeLocationId) {
+    if (!actingUser.moderatorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location to manage moderators.');
     }
 
-    moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.homeLocationId, true);
+    moderatorManageableLocationIds = await getDescendantLocationIds(actingUser.moderatorLocationId, true);
 
     if (role === 'admin') {
       throw new ServiceError(403, 'Moderators cannot assign admin role.');
@@ -784,8 +796,18 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
       }
     }
 
+    // Validate ancestor-chain: moderator location must be the user's home location or one of its ancestors
+    if (role === 'moderator' && user.homeLocationId) {
+      const ancestorIds = await getAncestorLocationIds(user.homeLocationId, true);
+      if (!ancestorIds.includes(validatedModeratorLocationId)) {
+        const err = new Error('Moderator location must be the user\'s home location or one of its ancestor locations.');
+        err.status = 400;
+        throw err;
+      }
+    }
+
     const isSameRole = user.role === role;
-    const isSameModeratorLocation = role !== 'moderator' || user.homeLocationId === validatedModeratorLocationId;
+    const isSameModeratorLocation = role !== 'moderator' || user.moderatorLocationId === validatedModeratorLocationId;
 
     if (isSameRole && isSameModeratorLocation) {
       roleAlreadySet = true;
@@ -808,17 +830,26 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
 
     user.role = role;
     if (role === 'moderator') {
-      user.homeLocationId = validatedModeratorLocationId;
+      user.moderatorLocationId = validatedModeratorLocationId;
+    } else {
+      // Clear moderator location when user is no longer a moderator
+      user.moderatorLocationId = null;
     }
     await user.save({ transaction });
 
     updatedUser = await User.findByPk(user.id, {
       transaction,
-      attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'createdAt'],
+      attributes: ['id', 'username', 'email', 'role', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'homeLocationId', 'moderatorLocationId', 'createdAt'],
       include: [
         {
           model: Location,
           as: 'homeLocation',
+          attributes: ['id', 'name', 'type', 'slug'],
+          required: false
+        },
+        {
+          model: Location,
+          as: 'moderatorLocation',
           attributes: ['id', 'name', 'type', 'slug'],
           required: false
         }
@@ -833,24 +864,24 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
   return { user: updatedUser, stats, roleAlreadySet };
 }
 
-async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isVerified) {
+async function verifyUser(actorId, actorRole, actorModeratorLocationId, targetId, isVerified) {
   if (!targetId) throw new ServiceError(400, 'Invalid user id.');
   if (typeof isVerified !== 'boolean') throw new ServiceError(400, 'isVerified must be a boolean.');
 
-  const actor = await User.findByPk(actorId, { attributes: ['id', 'role', 'homeLocationId'] });
+  const actor = await User.findByPk(actorId, { attributes: ['id', 'role', 'moderatorLocationId'] });
   if (!actor) throw new ServiceError(403, 'Insufficient permissions.');
 
   const target = await User.findByPk(targetId);
   if (!target) throw new ServiceError(404, 'User not found.');
 
   if (actor.role === 'moderator') {
-    if (!actor.homeLocationId) {
+    if (!actor.moderatorLocationId) {
       throw new ServiceError(403, 'Moderator must have an assigned location.');
     }
     if (!target.homeLocationId) {
       throw new ServiceError(403, 'Target user is not within your manageable scope.');
     }
-    const manageableIds = await getDescendantLocationIds(actor.homeLocationId, true);
+    const manageableIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
     if (!manageableIds.includes(target.homeLocationId)) {
       throw new ServiceError(403, 'Target user is not within your manageable scope.');
     }
@@ -860,7 +891,7 @@ async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isV
     target.isVerified = true;
     target.verifiedAt = new Date();
     target.verifiedByUserId = actor.id;
-    target.verifiedScopeLocationId = actor.role === 'admin' ? null : actor.homeLocationId;
+    target.verifiedScopeLocationId = actor.role === 'admin' ? null : actor.moderatorLocationId;
   } else {
     target.isVerified = false;
     target.verifiedAt = null;

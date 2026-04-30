@@ -56,9 +56,9 @@ const normalizeBannerImageUrl = (value) => normalizeUrl(value, 'Banner image URL
 /**
  * Check if a moderator can manage (update/delete) a given article.
  */
-const canModeratorManageArticle = async (articleId, homeLocationId) => {
-  if (!homeLocationId) return false;
-  const manageableIds = await getDescendantLocationIds(homeLocationId, true);
+const canModeratorManageArticle = async (articleId, moderatorLocationId) => {
+  if (!moderatorLocationId) return false;
+  const manageableIds = await getDescendantLocationIds(moderatorLocationId, true);
   if (manageableIds.length === 0) return false;
   const link = await LocationLink.findOne({
     where: {
@@ -462,8 +462,8 @@ const updateArticle = async (articleId, user, updateData) => {
     const isModerator = user.role === 'moderator';
     let moderatorAllowed = false;
     if (isModerator) {
-      const moderatorUser = await User.findByPk(user.id, { attributes: ['homeLocationId'] });
-      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.homeLocationId);
+      const moderatorUser = await User.findByPk(user.id, { attributes: ['moderatorLocationId'] });
+      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.moderatorLocationId);
     }
     if (article.authorId !== user.id && !['admin', 'editor'].includes(user.role) && !moderatorAllowed) {
       return { success: false, status: 403, message: 'You do not have permission to update this article.' };
@@ -632,8 +632,8 @@ const deleteArticle = async (articleId, user) => {
     const isModerator = user.role === 'moderator';
     let moderatorAllowed = false;
     if (isModerator) {
-      const moderatorUser = await User.findByPk(user.id, { attributes: ['homeLocationId'] });
-      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.homeLocationId);
+      const moderatorUser = await User.findByPk(user.id, { attributes: ['moderatorLocationId'] });
+      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.moderatorLocationId);
     }
     if (article.authorId !== user.id && user.role !== 'admin' && !moderatorAllowed) {
       return { success: false, status: 403, message: 'You do not have permission to delete this article.' };

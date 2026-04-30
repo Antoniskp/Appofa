@@ -406,12 +406,14 @@ describe('Location API Tests', () => {
     it('should NOT show parent-assigned moderator on child location', async () => {
       const country = await Location.create({ name: 'Exact Mod Country', slug: 'exact-mod-country', type: 'country' });
       const child = await Location.create({ name: 'Exact Mod Child', slug: 'exact-mod-child', type: 'prefecture', parent_id: country.id });
+      // Create moderator with homeLocationId=country but no moderatorLocationId assignment
       await User.create({
         username: 'parent_mod',
         email: 'parent_mod@test.com',
         password: 'password123',
         role: 'moderator',
         homeLocationId: country.id
+        // moderatorLocationId intentionally not set — no explicit assignment
       });
 
       const response = await request(app)
@@ -431,7 +433,8 @@ describe('Location API Tests', () => {
         email: 'direct_mod@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: child.id
+        homeLocationId: child.id,
+        moderatorLocationId: child.id
       });
 
       const response = await request(app)
@@ -466,7 +469,8 @@ describe('Location API Tests', () => {
       const childInList = listResponse.body.locations?.find(l => l.id === child.id);
       const childInDetail = detailResponse.body.location;
 
-      // Both list and detail should agree: child has no moderator since parent mod does not inherit
+      // Both list and detail should agree: child has no moderator because the moderator has
+      // moderatorLocationId=null (no explicit moderator assignment), not homeLocationId
       expect(childInList?.hasModerator).toBe(childInDetail.hasModerator);
     });
   });
@@ -710,7 +714,8 @@ describe('Location API Tests', () => {
         email: 'scoped_moderator@test.com',
         password: 'password123',
         role: 'moderator',
-        homeLocationId: inScopeChild.id
+        homeLocationId: inScopeChild.id,
+        moderatorLocationId: inScopeChild.id
       });
       moderatorUserId = moderator.id;
 

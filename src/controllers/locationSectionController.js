@@ -331,11 +331,11 @@ exports.validateContent = validateContent;
 exports.isValidHttpsUrl = isValidHttpsUrl;
 const ensureModeratorWithinScope = async (req, locationId) => {
   if (!(req.user && req.user.role === 'moderator')) return null;
-  const actor = await User.findByPk(req.user.id, { attributes: ['id', 'homeLocationId'] });
-  if (!actor || !actor.homeLocationId) {
+  const actor = await User.findByPk(req.user.id, { attributes: ['id', 'moderatorLocationId'] });
+  if (!actor || !actor.moderatorLocationId) {
     return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
   }
-  const allowedIds = await getDescendantLocationIds(actor.homeLocationId, true);
+  const allowedIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
   const allowedIdSet = new Set(allowedIds.map(Number));
   if (!allowedIdSet.has(Number(locationId))) {
     return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };

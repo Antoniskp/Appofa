@@ -6,10 +6,10 @@ const { User, Location } = require('../models');
 const toUserObj = (reqUser) =>
   reqUser ? { id: reqUser.id, role: reqUser.role, homeLocationId: reqUser.homeLocationId } : null;
 
-const getActorHomeLocationId = async (reqUser) => {
+const getActorModeratorLocationId = async (reqUser) => {
   if (!reqUser || !reqUser.id) return null;
-  const actor = await User.findByPk(reqUser.id, { attributes: ['id', 'homeLocationId'] });
-  return actor?.homeLocationId || null;
+  const actor = await User.findByPk(reqUser.id, { attributes: ['id', 'moderatorLocationId'] });
+  return actor?.moderatorLocationId || null;
 };
 
 // Create a new location (admin/moderator only)
@@ -65,12 +65,12 @@ exports.getLocation = async (req, res) => {
 
 // Update a location (admin/moderator only)
 exports.updateLocation = async (req, res) => {
-  const actorHomeLocationId = await getActorHomeLocationId(req.user);
+  const actorModeratorLocationId = await getActorModeratorLocationId(req.user);
   const result = await locationService.updateLocation(
     req.params.id,
     req.body,
     req.user?.role,
-    actorHomeLocationId
+    actorModeratorLocationId
   );
   if (!result.success) {
     return res.status(result.status).json({
@@ -88,11 +88,11 @@ exports.updateLocation = async (req, res) => {
 
 // Delete a location (admin/moderator only)
 exports.deleteLocation = async (req, res) => {
-  const actorHomeLocationId = await getActorHomeLocationId(req.user);
+  const actorModeratorLocationId = await getActorModeratorLocationId(req.user);
   const result = await locationService.deleteLocation(
     req.params.id,
     req.user?.role,
-    actorHomeLocationId
+    actorModeratorLocationId
   );
   if (!result.success) {
     return res.status(result.status).json({

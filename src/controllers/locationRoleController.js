@@ -140,11 +140,11 @@ exports.upsertRoles = async (req, res) => {
     }
 
     if (req.user && req.user.role === 'moderator') {
-      const actor = await User.findByPk(req.user.id, { attributes: ['id', 'homeLocationId'] });
-      if (!actor || !actor.homeLocationId) {
+      const actor = await User.findByPk(req.user.id, { attributes: ['id', 'moderatorLocationId'] });
+      if (!actor || !actor.moderatorLocationId) {
         return res.status(403).json({ success: false, message: 'Moderator must have an assigned location.' });
       }
-      const allowedIds = await getDescendantLocationIds(actor.homeLocationId, true);
+      const allowedIds = await getDescendantLocationIds(actor.moderatorLocationId, true);
       const allowedIdSet = new Set(allowedIds.map(Number));
       if (!allowedIdSet.has(Number(locationId))) {
         return res.status(403).json({ success: false, message: 'Forbidden: location outside your scope.' });

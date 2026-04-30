@@ -266,20 +266,20 @@ const getLocations = async (queryParams) => {
       const moderatorAssignments = await User.findAll({
         where: {
           role: 'moderator',
-          homeLocationId: { [Op.in]: locationIds }
+          moderatorLocationId: { [Op.in]: locationIds }
         },
-        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'homeLocationId'],
+        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'moderatorLocationId'],
         order: [['createdAt', 'ASC'], ['id', 'ASC']],
         raw: true
       });
 
       moderatorAssignments.forEach((assignment) => {
-        const homeLocationId = Number(assignment.homeLocationId);
-        if (Number.isInteger(homeLocationId)) {
-          moderatorLocationIds.add(homeLocationId);
+        const modLocId = Number(assignment.moderatorLocationId);
+        if (Number.isInteger(modLocId)) {
+          moderatorLocationIds.add(modLocId);
 
-          if (!moderatorPreviewByLocationId.has(homeLocationId)) {
-            moderatorPreviewByLocationId.set(homeLocationId, {
+          if (!moderatorPreviewByLocationId.has(modLocId)) {
+            moderatorPreviewByLocationId.set(modLocId, {
               id: assignment.id,
               username: assignment.username,
               firstNameNative: assignment.firstNameNative,
@@ -411,7 +411,7 @@ const getLocation = async (id) => {
     const moderator = await User.findOne({
       where: {
         role: 'moderator',
-        homeLocationId: locationId
+        moderatorLocationId: locationId
       },
       attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
       order: [['createdAt', 'ASC'], ['id', 'ASC']]
@@ -447,7 +447,7 @@ const getLocation = async (id) => {
  * @param {object} updateData - fields from req.body
  * @returns {Promise<{success: boolean, status?: number, message?: string, location?: object}>}
  */
-const updateLocation = async (id, updateData, actorRole = null, actorHomeLocationId = null) => {
+const updateLocation = async (id, updateData, actorRole = null, actorModeratorLocationId = null) => {
   try {
     const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = updateData;
 
@@ -457,10 +457,10 @@ const updateLocation = async (id, updateData, actorRole = null, actorHomeLocatio
     }
 
     if (actorRole === 'moderator') {
-      if (!actorHomeLocationId) {
+      if (!actorModeratorLocationId) {
         return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
       }
-      const allowedIds = await getDescendantLocationIds(actorHomeLocationId, true);
+      const allowedIds = await getDescendantLocationIds(actorModeratorLocationId, true);
       const allowedIdSet = new Set(allowedIds.map(Number));
       if (!allowedIdSet.has(Number(location.id))) {
         return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
@@ -554,7 +554,7 @@ const updateLocation = async (id, updateData, actorRole = null, actorHomeLocatio
  * @param {string|number} id - location primary key
  * @returns {Promise<{success: boolean, status?: number, message?: string}>}
  */
-const deleteLocation = async (id, actorRole = null, actorHomeLocationId = null) => {
+const deleteLocation = async (id, actorRole = null, actorModeratorLocationId = null) => {
   try {
     const location = await Location.findByPk(id);
     if (!location) {
@@ -562,10 +562,10 @@ const deleteLocation = async (id, actorRole = null, actorHomeLocationId = null) 
     }
 
     if (actorRole === 'moderator') {
-      if (!actorHomeLocationId) {
+      if (!actorModeratorLocationId) {
         return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
       }
-      const allowedIds = await getDescendantLocationIds(actorHomeLocationId, true);
+      const allowedIds = await getDescendantLocationIds(actorModeratorLocationId, true);
       const allowedIdSet = new Set(allowedIds.map(Number));
       if (!allowedIdSet.has(Number(location.id))) {
         return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
