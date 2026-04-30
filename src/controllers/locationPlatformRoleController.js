@@ -8,20 +8,55 @@
  * Platform roles here are things like 'moderator' — users assigned to
  * moderate a specific location.
  *
- * Endpoints (all admin-only):
+ * Endpoints (admin, or in-scope moderator):
  *   GET    /api/locations/:locationId/platform-roles   list assignments for a location
  *   POST   /api/locations/:locationId/platform-roles   add a new assignment
  *   DELETE /api/locations/:locationId/platform-roles/:id   remove one assignment
  */
 
 const { UserLocationRole, User, Location } = require('../models');
-const { getAncestorLocationIds } = require('../utils/locationUtils');
+const { getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 
 const ALLOWED_ROLE_KEYS = ['moderator'];
 
 /**
+ * For a moderator actor, return the set of manageable location IDs (their assigned
+ * locations + all descendants).  Returns null for admins (no scope restriction).
+ * Returns an empty array if the moderator has no assignments.
+ *
+ * @param {object} reqUser  - req.user from JWT middleware
+ * @returns {Promise<number[]|null>}
+ */
+async function getModeratorAllowedIds(reqUser) {
+  if (!reqUser || reqUser.role === 'admin') return null;
+
+  const assignments = await UserLocationRole.findAll({
+    where: { userId: reqUser.id, roleKey: 'moderator' },
+    attributes: ['locationId'],
+  });
+  return getManageableLocationIdsFromAssignments(assignments);
+}
+
+/**
+ * Returns a 403 response object if the moderator is not allowed to manage
+ * the given locationId, or null if the check passes (or actor is admin).
+ */
+async function checkModeratorScope(reqUser, locationId) {
+  const allowedIds = await getModeratorAllowedIds(reqUser);
+  if (allowedIds === null) return null; // admin — no restriction
+
+  if (allowedIds.length === 0) {
+    return { status: 403, message: 'Moderator must have an assigned location.' };
+  }
+  if (!allowedIds.includes(Number(locationId))) {
+    return { status: 403, message: 'Forbidden: location outside your scope.' };
+  }
+  return null;
+}
+
+/**
  * GET /api/locations/:locationId/platform-roles
- * Admin only.
+ * Admin or in-scope moderator.
  * Returns all UserLocationRole records for this exact location.
  */
 exports.listAssignments = async (req, res) => {
@@ -30,6 +65,11 @@ exports.listAssignments = async (req, res) => {
     const parsedId = parseInt(locationId, 10);
     if (!Number.isInteger(parsedId) || parsedId < 1) {
       return res.status(400).json({ success: false, message: 'Invalid location ID.' });
+    }
+
+    const scopeError = await checkModeratorScope(req.user, parsedId);
+    if (scopeError) {
+      return res.status(scopeError.status).json({ success: false, message: scopeError.message });
     }
 
     const location = await Location.findByPk(parsedId, { attributes: ['id', 'name'] });
@@ -69,7 +109,7 @@ exports.listAssignments = async (req, res) => {
 
 /**
  * POST /api/locations/:locationId/platform-roles
- * Admin only.
+ * Admin or in-scope moderator.
  * Body: { userId, roleKey }
  *
  * Validates:
@@ -77,6 +117,7 @@ exports.listAssignments = async (req, res) => {
  * - userId must exist
  * - For 'moderator': locationId must be an ancestor-or-self of user's homeLocationId
  * - Duplicate (userId, locationId, roleKey) is prevented (DB unique constraint + pre-check)
+ * - Moderators may only assign within their own manageable scope
  *
  * Side-effect: ensures the user's global role is set to 'moderator' when roleKey='moderator'.
  */
@@ -100,6 +141,12 @@ exports.addAssignment = async (req, res) => {
     const parsedUserId = parseInt(userId, 10);
     if (!Number.isInteger(parsedUserId) || parsedUserId < 1) {
       return res.status(400).json({ success: false, message: 'Invalid user ID.' });
+    }
+
+    // Moderator scope check: the target location must be within the actor's manageable scope
+    const scopeError = await checkModeratorScope(req.user, parsedLocationId);
+    if (scopeError) {
+      return res.status(scopeError.status).json({ success: false, message: scopeError.message });
     }
 
     const location = await Location.findByPk(parsedLocationId, { attributes: ['id', 'name'] });
@@ -190,7 +237,7 @@ exports.addAssignment = async (req, res) => {
 
 /**
  * DELETE /api/locations/:locationId/platform-roles/:assignmentId
- * Admin only.
+ * Admin or in-scope moderator.
  * Removes one UserLocationRole record.
  *
  * If this was the last moderator assignment for the user AND the user's global
@@ -208,6 +255,12 @@ exports.removeAssignment = async (req, res) => {
     }
     if (!Number.isInteger(parsedAssignmentId) || parsedAssignmentId < 1) {
       return res.status(400).json({ success: false, message: 'Invalid assignment ID.' });
+    }
+
+    // Moderator scope check: the target location must be within the actor's manageable scope
+    const scopeError = await checkModeratorScope(req.user, parsedLocationId);
+    if (scopeError) {
+      return res.status(scopeError.status).json({ success: false, message: scopeError.message });
     }
 
     const assignment = await UserLocationRole.findOne({

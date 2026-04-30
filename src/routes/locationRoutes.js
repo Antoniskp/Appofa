@@ -41,10 +41,10 @@ router.delete('/:locationId/sections/:id', apiLimiter, authMiddleware, checkRole
 router.get('/:locationId/roles', apiLimiter, optionalAuthMiddleware, locationRoleController.getRoles);
 router.put('/:locationId/roles', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, locationRoleController.upsertRoles);
 
-// Platform role assignment routes (admin only) — manages UserLocationRole join table
-router.get('/:locationId/platform-roles', apiLimiter, authMiddleware, checkRole('admin'), locationPlatformRoleController.listAssignments);
-router.post('/:locationId/platform-roles', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, locationPlatformRoleController.addAssignment);
-router.delete('/:locationId/platform-roles/:assignmentId', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, locationPlatformRoleController.removeAssignment);
+// Platform role assignment routes (admin or in-scope moderator) — manages UserLocationRole join table
+router.get('/:locationId/platform-roles', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationPlatformRoleController.listAssignments);
+router.post('/:locationId/platform-roles', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, locationPlatformRoleController.addAssignment);
+router.delete('/:locationId/platform-roles/:assignmentId', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, locationPlatformRoleController.removeAssignment);
 router.get('/:locationId/elections', apiLimiter, optionalAuthMiddleware, locationElectionController.getElections);
 router.post('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.castVote);
 router.delete('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.removeVote);
