@@ -408,7 +408,7 @@ Appofa/
 | csrfProtection.js | CSRF token validation |
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
-| rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`, `uploadLimiter`); `makeRateLimitHandler(message)` shared handler returns `{ success, message, retryAfter, resetTime }` on 429 so the UI can show a countdown; `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior |
 
@@ -493,7 +493,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
-| `ui/` | 21+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, SkeletonLoader, TagInput, Tooltip |
+| `ui/` | 22+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer shown on 429 rate-limit errors), SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)

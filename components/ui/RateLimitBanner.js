@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 
@@ -17,21 +17,23 @@ export default function RateLimitBanner({ retryAfter, onExpired }) {
   const [secondsLeft, setSecondsLeft] = useState(
     typeof retryAfter === 'number' && retryAfter > 0 ? retryAfter : 0
   );
+  // Keep a stable ref to the latest onExpired so the effect never goes stale.
+  const onExpiredRef = useRef(onExpired);
+  useEffect(() => { onExpiredRef.current = onExpired; }, [onExpired]);
 
   useEffect(() => {
     if (secondsLeft <= 0) {
-      if (onExpired) onExpired();
+      onExpiredRef.current?.();
       return;
     }
     const timer = setInterval(() => {
       setSecondsLeft((s) => {
-        const next = s - 1;
-        if (next <= 0) {
+        if (s <= 1) {
           clearInterval(timer);
-          if (onExpired) onExpired();
+          onExpiredRef.current?.();
           return 0;
         }
-        return next;
+        return s - 1;
       });
     }, 1000);
     return () => clearInterval(timer);

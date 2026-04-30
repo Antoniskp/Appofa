@@ -119,6 +119,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
       }
     } catch (err) {
       if (err.status === 429) {
+        setError('');
+        setSuccess('');
         setRateLimitInfo({ retryAfter: err.retryAfter ?? 60 });
       } else {
         setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
@@ -216,6 +218,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                   }
                 } catch (err) {
                   if (err.status === 429) {
+                    setError('');
+                    setSuccess('');
                     setRateLimitInfo({ retryAfter: err.retryAfter ?? 60 });
                   } else {
                     setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
