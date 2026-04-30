@@ -358,9 +358,9 @@ describe('Location platform-roles endpoints', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // 12–14. Non-admin access control
+  // 12–14. Access control — viewer (non-moderator) cannot manage platform roles
   // ---------------------------------------------------------------------------
-  describe('12–14. Access control — non-admin cannot manage platform roles', () => {
+  describe('12–14. Access control — viewer cannot manage platform roles', () => {
     let viewerToken;
     let viewerUserId;
 
@@ -376,7 +376,7 @@ describe('Location platform-roles endpoints', () => {
         .replace('auth_token=', '');
     });
 
-    it('non-admin cannot list platform role assignments', async () => {
+    it('viewer cannot list platform role assignments', async () => {
       const loc = await Location.create({ name: 'PLR Country N', slug: 'plr-country-n', type: 'country' });
       const csrf = `csrf-viewer-${Date.now()}`;
       storeCsrfToken(csrf, viewerUserId);
@@ -387,7 +387,7 @@ describe('Location platform-roles endpoints', () => {
         .expect(403);
     });
 
-    it('non-admin cannot add platform role assignment', async () => {
+    it('viewer cannot add platform role assignment', async () => {
       const loc = await Location.create({ name: 'PLR Country O', slug: 'plr-country-o', type: 'country' });
       const csrf = `csrf-viewer-add-${Date.now()}`;
       storeCsrfToken(csrf, viewerUserId);
@@ -399,7 +399,7 @@ describe('Location platform-roles endpoints', () => {
         .expect(403);
     });
 
-    it('non-admin cannot remove platform role assignment', async () => {
+    it('viewer cannot remove platform role assignment', async () => {
       const loc = await Location.create({ name: 'PLR Country P', slug: 'plr-country-p', type: 'country' });
       const csrf = `csrf-viewer-del-${Date.now()}`;
       storeCsrfToken(csrf, viewerUserId);
@@ -408,6 +408,198 @@ describe('Location platform-roles endpoints', () => {
         .set('Cookie', [`auth_token=${viewerToken}`, `csrf_token=${csrf}`])
         .set('x-csrf-token', csrf)
         .expect(403);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 16. Moderator hierarchical permissions
+  //
+  //   Setup: country → child (municipality) → grandchild (community)
+  //   Actor moderator is assigned to `child`.
+  //   Expected:
+  //     - can list/add/remove for child (direct assignment)
+  //     - can list/add/remove for grandchild (descendant)
+  //     - CANNOT list/add/remove for country (parent — out of scope)
+  //     - CANNOT list/add/remove for sibling location (unrelated branch)
+  // ---------------------------------------------------------------------------
+  describe('16. Moderator hierarchical scope for platform-roles endpoints', () => {
+    let modToken;
+    let modUserId;
+
+    let country;      // parent — out of scope for the moderator
+    let child;        // moderator is assigned here (direct)
+    let grandchild;   // descendant — should be in scope
+    let sibling;      // unrelated branch — out of scope
+
+    let targetUser;   // a user whose homeLocationId = grandchild (for add tests)
+
+    const makeModCsrf = () => {
+      const token = `csrf-mod-hier-${Date.now()}-${Math.random()}`;
+      storeCsrfToken(token, modUserId);
+      return token;
+    };
+
+    beforeAll(async () => {
+      // Build the location tree
+      country = await Location.create({ name: 'PLR Hier Country', slug: 'plr-hier-country', type: 'country' });
+      child = await Location.create({ name: 'PLR Hier Child', slug: 'plr-hier-child', type: 'prefecture', parent_id: country.id });
+      grandchild = await Location.create({ name: 'PLR Hier Grandchild', slug: 'plr-hier-grandchild', type: 'municipality', parent_id: child.id });
+      sibling = await Location.create({ name: 'PLR Hier Sibling', slug: 'plr-hier-sibling', type: 'prefecture', parent_id: country.id });
+
+      // Create the moderator user, assigned to `child`
+      const modUser = await User.create({
+        username: 'plr_hier_mod',
+        email: 'plr_hier_mod@test.com',
+        password: 'password123',
+        role: 'moderator',
+        homeLocationId: child.id,
+      });
+      modUserId = modUser.id;
+      await UserLocationRole.create({ userId: modUserId, locationId: child.id, roleKey: 'moderator' });
+
+      const login = await request(app)
+        .post('/api/auth/login')
+        .send({ email: 'plr_hier_mod@test.com', password: 'password123' });
+      modToken = login.headers['set-cookie']
+        .find((c) => c.startsWith('auth_token='))
+        .split(';')[0]
+        .replace('auth_token=', '');
+
+      // A user who will be assigned as moderator in tests (lives in grandchild)
+      targetUser = await User.create({
+        username: 'plr_hier_target',
+        email: 'plr_hier_target@test.com',
+        password: 'password123',
+        role: 'viewer',
+        homeLocationId: grandchild.id,
+      });
+    });
+
+    // --- LIST ---
+    it('moderator can list assignments for their direct assigned location', async () => {
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .get(`/api/locations/${child.id}/platform-roles`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.assignments)).toBe(true);
+    });
+
+    it('moderator can list assignments for a descendant location', async () => {
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .get(`/api/locations/${grandchild.id}/platform-roles`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    it('moderator cannot list assignments for a parent location (out of scope)', async () => {
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .get(`/api/locations/${country.id}/platform-roles`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .expect(403);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('moderator cannot list assignments for a sibling location (out of scope)', async () => {
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .get(`/api/locations/${sibling.id}/platform-roles`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .expect(403);
+      expect(res.body.success).toBe(false);
+    });
+
+    // --- ADD ---
+    it('moderator can add a moderator assignment within their subtree (descendant location)', async () => {
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .post(`/api/locations/${grandchild.id}/platform-roles`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .send({ userId: targetUser.id, roleKey: 'moderator' })
+        .expect(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.assignment.userId).toBe(targetUser.id);
+      // Clean up the assignment so it doesn't interfere with other tests
+      await UserLocationRole.destroy({ where: { userId: targetUser.id, locationId: grandchild.id, roleKey: 'moderator' } });
+      await targetUser.update({ role: 'viewer' });
+    });
+
+    it('moderator cannot add an assignment to a parent location (out of scope)', async () => {
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .post(`/api/locations/${country.id}/platform-roles`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .send({ userId: targetUser.id, roleKey: 'moderator' })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('moderator cannot add an assignment to a sibling location (out of scope)', async () => {
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .post(`/api/locations/${sibling.id}/platform-roles`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .send({ userId: targetUser.id, roleKey: 'moderator' })
+        .expect(403);
+      expect(res.body.success).toBe(false);
+    });
+
+    // --- REMOVE ---
+    it('moderator can remove an assignment within their subtree', async () => {
+      // Pre-create an assignment in grandchild (within scope)
+      const a = await UserLocationRole.create({ userId: targetUser.id, locationId: grandchild.id, roleKey: 'moderator' });
+      await targetUser.update({ role: 'moderator' });
+
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .delete(`/api/locations/${grandchild.id}/platform-roles/${a.id}`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .expect(200);
+      expect(res.body.success).toBe(true);
+    });
+
+    it('moderator cannot remove an assignment from a parent location (out of scope)', async () => {
+      // Pre-create an assignment in country (out of scope for the moderator)
+      const a = await UserLocationRole.create({ userId: targetUser.id, locationId: country.id, roleKey: 'moderator' });
+
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .delete(`/api/locations/${country.id}/platform-roles/${a.id}`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .expect(403);
+      expect(res.body.success).toBe(false);
+
+      // Clean up
+      await a.destroy();
+    });
+
+    it('moderator cannot remove an assignment from a sibling location (out of scope)', async () => {
+      // Sibling location is out of scope
+      const a = await UserLocationRole.create({ userId: targetUser.id, locationId: sibling.id, roleKey: 'moderator' });
+
+      const csrf = makeModCsrf();
+      const res = await request(app)
+        .delete(`/api/locations/${sibling.id}/platform-roles/${a.id}`)
+        .set('Cookie', [`auth_token=${modToken}`, `csrf_token=${csrf}`])
+        .set('x-csrf-token', csrf)
+        .expect(403);
+      expect(res.body.success).toBe(false);
+
+      // Clean up
+      await a.destroy();
     });
   });
 
