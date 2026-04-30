@@ -104,6 +104,7 @@ const roleResponsibilities = [
       'Αμερόληπτη αξιολόγηση υποβολών',
       'Τήρηση editorial guidelines',
       'Αναφορά παραβιάσεων στον admin',
+      'Περιορισμένη διαχείριση χρηστών μόνο εντός child/location scope (verify + moderator assignments)',
       'Ο ρόλος δεν μεταφέρεται — ισχύει μόνο για την ανατεθειμένη τοποθεσία',
     ],
   },
@@ -142,7 +143,9 @@ const domainMatrix = [
   { domain: 'Έγκριση ειδήσεων',              viewer: '—', editor: 'Υποβάλλει', moderator: 'Εγκρίνει', admin: 'Εγκρίνει' },
   { domain: 'Ποιότητα άρθρων',               viewer: '—', editor: 'Owner', moderator: 'Εποπτεύει', admin: 'Override' },
   { domain: 'Διαχείριση τοποθεσιών',         viewer: '—', editor: '—', moderator: 'Owner (τοπικά)', admin: 'Owner' },
-  { domain: 'Διαχείριση χρηστών',            viewer: '—', editor: '—', moderator: '—',            admin: 'Owner' },
+  { domain: 'Επαλήθευση χρηστών',            viewer: '—', editor: '—', moderator: 'Scope-limited', admin: 'Owner' },
+  { domain: 'Αναθέσεις moderator ρόλου',     viewer: '—', editor: '—', moderator: 'Child scope',   admin: 'Owner' },
+  { domain: 'Πλήρης διαχείριση χρηστών',     viewer: '—', editor: '—', moderator: '—',             admin: 'Owner' },
   { domain: 'Platform docs (αυτή η σελίδα)', viewer: 'Διαβάζει', editor: 'Διαβάζει', moderator: 'Διαβάζει', admin: 'Ενημερώνει' },
 ];
 

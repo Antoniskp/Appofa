@@ -45,7 +45,9 @@ const tableRows = [
   { capability: 'Έγκριση / απόρριψη ειδήσεων',      viewer: false, editor: false, moderator: true,  admin: true  },
   { capability: 'Διαχείριση τοποθεσιών',            viewer: false, editor: false, moderator: true,  admin: true  },
   { capability: 'Πρόσβαση στο admin dashboard',      viewer: false, editor: false, moderator: true,  admin: true  },
-  { capability: 'Διαχείριση χρηστών & ρόλων',       viewer: false, editor: false, moderator: false, admin: true  },
+  { capability: 'Επαλήθευση χρηστών (εντός scope)', viewer: false, editor: false, moderator: true,  admin: true  },
+  { capability: 'Ανάθεση/αφαίρεση moderator (child scope)', viewer: false, editor: false, moderator: true, admin: true },
+  { capability: 'Πλήρης διαχείριση χρηστών & ρόλων', viewer: false, editor: false, moderator: false, admin: true  },
   { capability: 'Πλήρης έλεγχος πλατφόρμας',       viewer: false, editor: false, moderator: false, admin: true  },
 ];
 
@@ -109,6 +111,8 @@ const roleCards = [
       'Έγκριση / απόρριψη ειδήσεων',
       'Διαχείριση τοποθεσιών',
       'Πρόσβαση στο admin dashboard (περιορισμένη)',
+      'Επαλήθευση χρηστών εντός διαχειρίσιμου scope',
+      'Ανάθεση/ανάκληση moderator μόνο σε child τοποθεσίες',
       'Ο ρόλος ανατίθεται ανά τοποθεσία (UserLocationRole)',
     ],
   },
