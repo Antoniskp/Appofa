@@ -1,6 +1,6 @@
 'use strict';
 
-const { Article, User, LocationLink, TaggableItem, Tag, sequelize } = require('../models');
+const { Article, User, LocationLink, TaggableItem, Tag, UserLocationRole, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
@@ -55,16 +55,30 @@ const normalizeBannerImageUrl = (value) => normalizeUrl(value, 'Banner image URL
 
 /**
  * Check if a moderator can manage (update/delete) a given article.
+ * Uses UserLocationRole join table to determine moderator scope.
  */
-const canModeratorManageArticle = async (articleId, homeLocationId) => {
-  if (!homeLocationId) return false;
-  const manageableIds = await getDescendantLocationIds(homeLocationId, true);
-  if (manageableIds.length === 0) return false;
+const canModeratorManageArticle = async (articleId, moderatorUserId) => {
+  if (!moderatorUserId) return false;
+
+  const assignments = await UserLocationRole.findAll({
+    where: { userId: moderatorUserId, roleKey: 'moderator' },
+    attributes: ['locationId'],
+  });
+
+  if (assignments.length === 0) return false;
+
+  const manageableIds = new Set();
+  for (const a of assignments) {
+    const ids = await getDescendantLocationIds(a.locationId, true);
+    ids.forEach((i) => manageableIds.add(Number(i)));
+  }
+  if (manageableIds.size === 0) return false;
+
   const link = await LocationLink.findOne({
     where: {
       entity_type: 'article',
       entity_id: articleId,
-      location_id: { [Op.in]: manageableIds }
+      location_id: { [Op.in]: Array.from(manageableIds) }
     }
   });
   return !!link;
@@ -462,8 +476,7 @@ const updateArticle = async (articleId, user, updateData) => {
     const isModerator = user.role === 'moderator';
     let moderatorAllowed = false;
     if (isModerator) {
-      const moderatorUser = await User.findByPk(user.id, { attributes: ['homeLocationId'] });
-      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.homeLocationId);
+      moderatorAllowed = await canModeratorManageArticle(articleId, user.id);
     }
     if (article.authorId !== user.id && !['admin', 'editor'].includes(user.role) && !moderatorAllowed) {
       return { success: false, status: 403, message: 'You do not have permission to update this article.' };
@@ -632,8 +645,7 @@ const deleteArticle = async (articleId, user) => {
     const isModerator = user.role === 'moderator';
     let moderatorAllowed = false;
     if (isModerator) {
-      const moderatorUser = await User.findByPk(user.id, { attributes: ['homeLocationId'] });
-      moderatorAllowed = await canModeratorManageArticle(articleId, moderatorUser?.homeLocationId);
+      moderatorAllowed = await canModeratorManageArticle(articleId, user.id);
     }
     if (article.authorId !== user.id && user.role !== 'admin' && !moderatorAllowed) {
       return { success: false, status: 403, message: 'You do not have permission to delete this article.' };

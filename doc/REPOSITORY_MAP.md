@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-04-26
+> **Last updated**: 2026-04-30
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 
@@ -110,10 +110,11 @@ Appofa/
 | Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility, organizationId | belongsTo: User, Location, Organization; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
 | PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
-| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote; belongsTo: parent |
+| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote, UserLocationRole; belongsTo: parent |
 | LocationLink | LocationLinks | id, locationId, url, type, pollId | belongsTo: Location, Poll |
 | LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
 | LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User |
+| UserLocationRole | UserLocationRoles | id, userId, locationId, roleKey, createdAt, updatedAt | Unique (userId, locationId, roleKey); belongsTo: User, Location. Platform role assignments (e.g. 'moderator'). Validated at service layer: moderator location must be ancestor/self of user's homeLocationId. |
 | LocationElectionVote | LocationElectionVotes | id, locationId, roleKey, voterId, candidateUserId | belongsTo: Location, User(voter), User(candidate) |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
 | Suggestion | Suggestions | id, title, body, type, locationId, organizationId, authorId, status, visibility, voteRestriction, category | belongsTo: Location, Organization, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |

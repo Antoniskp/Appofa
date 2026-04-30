@@ -2,7 +2,7 @@
  * Tests for enhanced user profiles and verification feature.
  */
 const request = require('supertest');
-const { sequelize, User, Location } = require('../src/models');
+const { sequelize, User, Location, UserLocationRole } = require('../src/models');
 
 const express = require('express');
 const cors = require('cors');
@@ -71,6 +71,8 @@ describe('Enhanced User Profiles and Verification', () => {
     await User.create({ username: 'moduser', email: 'mod@verify.test', password: 'pass123', role: 'moderator', homeLocationId: scopeLocationId });
     const modUser = await User.findOne({ where: { email: 'mod@verify.test' } });
     moderatorUserId = modUser.id;
+    // Assign moderator scope to the scope location
+    await UserLocationRole.create({ userId: moderatorUserId, locationId: scopeLocationId, roleKey: 'moderator' });
     const modLogin = await request(app).post('/api/auth/login').send({ email: 'mod@verify.test', password: 'pass123' });
     const modCookie = modLogin.headers['set-cookie'].find((c) => c.startsWith('auth_token='));
     moderatorToken = modCookie.split(';')[0].replace('auth_token=', '');

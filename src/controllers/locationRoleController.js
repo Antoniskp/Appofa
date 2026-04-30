@@ -1,4 +1,4 @@
-const { LocationRole, Location, User, GovernmentPosition, GovernmentCurrentHolder } = require('../models');
+const { LocationRole, Location, User, GovernmentPosition, GovernmentCurrentHolder, UserLocationRole } = require('../models');
 const locationRolesConfig = require('../../config/locationRoles.json');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 
@@ -140,12 +140,18 @@ exports.upsertRoles = async (req, res) => {
     }
 
     if (req.user && req.user.role === 'moderator') {
-      const actor = await User.findByPk(req.user.id, { attributes: ['id', 'homeLocationId'] });
-      if (!actor || !actor.homeLocationId) {
+      const assignments = await UserLocationRole.findAll({
+        where: { userId: req.user.id, roleKey: 'moderator' },
+        attributes: ['locationId'],
+      });
+      if (assignments.length === 0) {
         return res.status(403).json({ success: false, message: 'Moderator must have an assigned location.' });
       }
-      const allowedIds = await getDescendantLocationIds(actor.homeLocationId, true);
-      const allowedIdSet = new Set(allowedIds.map(Number));
+      let allowedIdSet = new Set();
+      for (const a of assignments) {
+        const ids = await getDescendantLocationIds(a.locationId, true);
+        ids.forEach((i) => allowedIdSet.add(Number(i)));
+      }
       if (!allowedIdSet.has(Number(locationId))) {
         return res.status(403).json({ success: false, message: 'Forbidden: location outside your scope.' });
       }
