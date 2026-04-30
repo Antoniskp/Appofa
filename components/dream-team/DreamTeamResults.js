@@ -50,11 +50,11 @@ function WinnerCard({ item }) {
           <img
             src={winner.photo || winner.avatar}
             alt={winner.personName}
-            className="h-20 w-20 rounded-full object-cover border-4 border-white shadow-md"
+            className="h-24 w-24 rounded-full object-cover border-4 border-white shadow-md"
           />
         ) : (
-          <div className="h-20 w-20 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-md">
-            <UserCircleIcon className="h-10 w-10 text-gray-400" />
+          <div className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center border-4 border-white shadow-md">
+            <UserCircleIcon className="h-12 w-12 text-gray-400" />
           </div>
         )}
         {winner && (
@@ -77,7 +77,7 @@ function WinnerCard({ item }) {
       {/* Winner name */}
       {winner ? (
         <div>
-          <p className="font-bold text-gray-900 text-base">{winner.personName}</p>
+          <p className="font-bold text-gray-900 text-lg">{winner.personName}</p>
           <p className="text-xs text-gray-500 mt-0.5">
             {winner.voteCount.toLocaleString('el-GR')} ψήφοι · {winner.percentage}%
           </p>
