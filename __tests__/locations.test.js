@@ -403,12 +403,12 @@ describe('Location API Tests', () => {
       expect(response.body.stats.userCount).toBe(3);
     });
 
-    it('should show ancestor-assigned moderator on descendant location', async () => {
-      const country = await Location.create({ name: 'Ancestor Mod Country', slug: 'ancestor-mod-country', type: 'country' });
-      const child = await Location.create({ name: 'Ancestor Mod Child', slug: 'ancestor-mod-child', type: 'prefecture', parent_id: country.id });
-      const moderator = await User.create({
-        username: 'ancestor_mod',
-        email: 'ancestor_mod@test.com',
+    it('should NOT show parent-assigned moderator on child location', async () => {
+      const country = await Location.create({ name: 'Exact Mod Country', slug: 'exact-mod-country', type: 'country' });
+      const child = await Location.create({ name: 'Exact Mod Child', slug: 'exact-mod-child', type: 'prefecture', parent_id: country.id });
+      await User.create({
+        username: 'parent_mod',
+        email: 'parent_mod@test.com',
         password: 'password123',
         role: 'moderator',
         homeLocationId: country.id
@@ -419,8 +419,55 @@ describe('Location API Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
+      expect(response.body.location.hasModerator).toBe(false);
+      expect(response.body.location.moderatorPreview).toBeNull();
+    });
+
+    it('should show moderator assigned to exact location on detail page', async () => {
+      const country = await Location.create({ name: 'Direct Mod Country', slug: 'direct-mod-country', type: 'country' });
+      const child = await Location.create({ name: 'Direct Mod Child', slug: 'direct-mod-child', type: 'prefecture', parent_id: country.id });
+      const moderator = await User.create({
+        username: 'direct_mod',
+        email: 'direct_mod@test.com',
+        password: 'password123',
+        role: 'moderator',
+        homeLocationId: child.id
+      });
+
+      const response = await request(app)
+        .get(`/api/locations/${child.id}`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
       expect(response.body.location.hasModerator).toBe(true);
       expect(response.body.location.moderatorPreview.id).toBe(moderator.id);
+    });
+
+    it('should be consistent between list and detail for moderator presence', async () => {
+      const country = await Location.create({ name: 'Consistent Mod Country', slug: 'consistent-mod-country', type: 'country' });
+      const child = await Location.create({ name: 'Consistent Mod Child', slug: 'consistent-mod-child', type: 'prefecture', parent_id: country.id });
+      // Moderator assigned to parent only
+      await User.create({
+        username: 'consistency_mod',
+        email: 'consistency_mod@test.com',
+        password: 'password123',
+        role: 'moderator',
+        homeLocationId: country.id
+      });
+
+      const listResponse = await request(app)
+        .get(`/api/locations?type=prefecture`)
+        .expect(200);
+
+      const detailResponse = await request(app)
+        .get(`/api/locations/${child.id}`)
+        .expect(200);
+
+      const childInList = listResponse.body.locations?.find(l => l.id === child.id);
+      const childInDetail = detailResponse.body.location;
+
+      // Both list and detail should agree: child has no moderator since parent mod does not inherit
+      expect(childInList?.hasModerator).toBe(childInDetail.hasModerator);
     });
   });
 
