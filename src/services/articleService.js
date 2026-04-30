@@ -3,7 +3,7 @@
 const { Article, User, LocationLink, TaggableItem, Tag, UserLocationRole, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { ARTICLE_TYPES } = require('../constants/articleTypes');
-const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 const {
   normalizeRequiredText,
@@ -67,18 +67,14 @@ const canModeratorManageArticle = async (articleId, moderatorUserId) => {
 
   if (assignments.length === 0) return false;
 
-  const manageableIds = new Set();
-  for (const a of assignments) {
-    const ids = await getDescendantLocationIds(a.locationId, true);
-    ids.forEach((i) => manageableIds.add(Number(i)));
-  }
-  if (manageableIds.size === 0) return false;
+  const manageableIds = await getManageableLocationIdsFromAssignments(assignments);
+  if (manageableIds.length === 0) return false;
 
   const link = await LocationLink.findOne({
     where: {
       entity_type: 'article',
       entity_id: articleId,
-      location_id: { [Op.in]: Array.from(manageableIds) }
+      location_id: { [Op.in]: manageableIds }
     }
   });
   return !!link;

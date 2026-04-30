@@ -3,7 +3,7 @@
 const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
-const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -480,11 +480,8 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
       if (assignments.length === 0) {
         return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
       }
-      let allowedIdSet = new Set();
-      for (const a of assignments) {
-        const ids = await getDescendantLocationIds(a.locationId, true);
-        ids.forEach((i) => allowedIdSet.add(Number(i)));
-      }
+      const allowedIds = await getManageableLocationIdsFromAssignments(assignments);
+      const allowedIdSet = new Set(allowedIds);
       if (!allowedIdSet.has(Number(location.id))) {
         return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
       }
@@ -595,11 +592,8 @@ const deleteLocation = async (id, actorRole = null, actorUserId = null) => {
       if (assignments.length === 0) {
         return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
       }
-      let allowedIdSet = new Set();
-      for (const a of assignments) {
-        const ids = await getDescendantLocationIds(a.locationId, true);
-        ids.forEach((i) => allowedIdSet.add(Number(i)));
-      }
+      const allowedIds = await getManageableLocationIdsFromAssignments(assignments);
+      const allowedIdSet = new Set(allowedIds);
       if (!allowedIdSet.has(Number(location.id))) {
         return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
       }

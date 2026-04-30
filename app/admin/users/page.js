@@ -91,9 +91,9 @@ function AdminUsersContent() {
     if (newRole === 'moderator') {
       setRoleChangeTarget(targetUser);
       setRoleChangeNewRole(newRole);
-      // Default to user's home location as the starting suggestion for moderator scope
-      const defaultLocationId = targetUser.homeLocationId ? String(targetUser.homeLocationId) : '';
-      setSelectedLocationForRole(defaultLocationId);
+      // Open the moderator-location dialog; leave location selection empty by default
+      // (homeLocationId is the user's home, which may or may not be a valid moderator scope location)
+      setSelectedLocationForRole('');
       setRoleChangeDialogOpen(true);
       return;
     }

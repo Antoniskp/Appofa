@@ -1,10 +1,10 @@
 'use strict';
 
 const locationService = require('../services/locationService');
-const { User, Location } = require('../models');
+const { Location } = require('../models');
 
 const toUserObj = (reqUser) =>
-  reqUser ? { id: reqUser.id, role: reqUser.role, homeLocationId: reqUser.homeLocationId } : null;
+  reqUser ? { id: reqUser.id, role: reqUser.role } : null;
 
 // Create a new location (admin/moderator only)
 exports.createLocation = async (req, res) => {

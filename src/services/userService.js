@@ -6,7 +6,7 @@ const {
   normalizeInteger,
   normalizePassword
 } = require('../utils/validators');
-const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
@@ -80,15 +80,7 @@ async function getModeratorScopeLocationIds(moderatorUserId) {
     where: { userId: moderatorUserId, roleKey: 'moderator' },
     attributes: ['locationId'],
   });
-
-  if (assignments.length === 0) return [];
-
-  const allIds = new Set();
-  for (const a of assignments) {
-    const ids = await getDescendantLocationIds(a.locationId, true);
-    ids.forEach((i) => allIds.add(Number(i)));
-  }
-  return Array.from(allIds);
+  return getManageableLocationIdsFromAssignments(assignments);
 }
 
 async function getUserStatsForModeratorScope(moderatorUserId) {
@@ -846,7 +838,6 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
     if (role === 'moderator') {
       await UserLocationRole.findOrCreate({
         where: { userId: user.id, locationId: validatedModeratorLocationId, roleKey: 'moderator' },
-        defaults: { userId: user.id, locationId: validatedModeratorLocationId, roleKey: 'moderator' },
         transaction,
       });
     } else {
