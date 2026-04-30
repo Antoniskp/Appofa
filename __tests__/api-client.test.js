@@ -310,3 +310,87 @@ describe('apiRequest CSRF retry logic', () => {
     }
   );
 });
+
+describe('apiRequest 429 rate-limit handling', () => {
+  const originalFetch = global.fetch;
+  const originalWindow = global.window;
+  const originalDocument = global.document;
+
+  beforeEach(() => {
+    delete global.window;
+    delete global.document;
+  });
+
+  afterEach(() => {
+    global.fetch = originalFetch;
+    if (originalWindow === undefined) {
+      delete global.window;
+    } else {
+      global.window = originalWindow;
+    }
+    if (originalDocument === undefined) {
+      delete global.document;
+    } else {
+      global.document = originalDocument;
+    }
+  });
+
+  test('attaches retryAfter and resetTime from 429 JSON body to thrown error', async () => {
+    const now = Date.now();
+    const resetTime = now + 60000;
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 429,
+        headers: jsonHeaders,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              success: false,
+              message: 'Too many votes from this IP, please try again later.',
+              retryAfter: 60,
+              resetTime,
+            })
+          ),
+      })
+    );
+
+    let thrown;
+    try {
+      await apiRequest('/api/polls/1/vote', { method: 'POST', body: '{}' });
+    } catch (err) {
+      thrown = err;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown.status).toBe(429);
+    expect(thrown.retryAfter).toBe(60);
+    expect(thrown.resetTime).toBe(resetTime);
+    expect(thrown.message).toBe('Too many votes from this IP, please try again later.');
+  });
+
+  test('throws 429 error without retryAfter when JSON body omits it', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: false,
+        status: 429,
+        headers: jsonHeaders,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ success: false, message: 'Too many requests.' })
+          ),
+      })
+    );
+
+    let thrown;
+    try {
+      await apiRequest('/api/test', { method: 'POST', body: '{}' });
+    } catch (err) {
+      thrown = err;
+    }
+
+    expect(thrown.status).toBe(429);
+    expect(thrown.retryAfter).toBeUndefined();
+    expect(thrown.resetTime).toBeUndefined();
+  });
+});

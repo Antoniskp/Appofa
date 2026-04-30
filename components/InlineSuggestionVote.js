@@ -5,6 +5,7 @@ import { HandThumbUpIcon, HandThumbDownIcon } from '@heroicons/react/24/outline'
 import { HandThumbUpIcon as HandThumbUpSolid, HandThumbDownIcon as HandThumbDownSolid } from '@heroicons/react/24/solid';
 import { suggestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import RateLimitBanner from '@/components/ui/RateLimitBanner';
 
 const VOTE_LABELS = {
   idea:                { up: 'Συμφωνώ',         down: 'Διαφωνώ'             },
@@ -34,6 +35,7 @@ export default function InlineSuggestionVote({
   const [downvotes, setDownvotes] = useState(initialDownvotes);
   const [myVote, setMyVote]       = useState(initialMyVote);
   const [isVoting, setIsVoting]   = useState(false);
+  const [rateLimitInfo, setRateLimitInfo] = useState(null); // { retryAfter }
 
   const labels = VOTE_LABELS[type] || VOTE_LABELS.idea;
 
@@ -41,7 +43,7 @@ export default function InlineSuggestionVote({
     e.preventDefault();
     e.stopPropagation();
 
-    if (!user || isVoting) return;
+    if (!user || isVoting || rateLimitInfo) return;
 
     const prevUpvotes   = upvotes;
     const prevDownvotes = downvotes;
@@ -75,15 +77,29 @@ export default function InlineSuggestionVote({
         setUpvotes(prevUpvotes);
         setDownvotes(prevDownvotes);
       }
-    } catch {
+    } catch (err) {
       // Rollback on error
       setMyVote(prevMyVote);
       setUpvotes(prevUpvotes);
       setDownvotes(prevDownvotes);
+      if (err.status === 429) {
+        setRateLimitInfo({ retryAfter: err.retryAfter ?? 60 });
+      }
     } finally {
       setIsVoting(false);
     }
   };
+
+  const isRateLimited = !!rateLimitInfo;
+
+  if (isRateLimited) {
+    return (
+      <RateLimitBanner
+        retryAfter={rateLimitInfo.retryAfter}
+        onExpired={() => setRateLimitInfo(null)}
+      />
+    );
+  }
 
   return (
     <div className="flex items-center gap-2">

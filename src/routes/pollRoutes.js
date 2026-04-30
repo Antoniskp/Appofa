@@ -5,19 +5,16 @@ const commentController = require('../controllers/commentController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
-const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
+const { apiLimiter, createLimiter, makeRateLimitHandler } = require('../middleware/rateLimiter');
 const rateLimit = require('express-rate-limit');
 const { getCookie } = require('../utils/cookies');
 const { CSRF_COOKIE, CSRF_HEADER, ensureCsrfToken } = require('../utils/csrf');
 
-// Vote rate limiter - 10 votes per hour for unauthenticated users
+// Vote rate limiter - 30 votes per hour for unauthenticated users
 const voteLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 10, // Limit each IP to 10 votes per hour
-  message: {
-    success: false,
-    message: 'Too many votes from this IP, please try again later.'
-  },
+  max: 30, // Limit each IP to 30 votes per hour
+  handler: makeRateLimitHandler('Too many votes from this IP, please try again later.'),
   standardHeaders: true,
   legacyHeaders: false,
   // Skip rate limiting for authenticated users and in test environment

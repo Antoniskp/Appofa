@@ -338,7 +338,11 @@
     "status_inactive": "Inactive",
     "status_pending": "Pending",
     "app_name": "Appofasi",
-    "information": "Information"
+    "information": "Information",
+    "rate_limit_title": "Rating limit reached",
+    "rate_limit_reason": "To keep the service fair and stable for everyone, there is a temporary limit on how many ratings you can submit.",
+    "rate_limit_retry_in": "Try again in {time}",
+    "rate_limit_retry_now": "You can rate again now"
   },
   "footer": {
     "rights": "All rights reserved.",

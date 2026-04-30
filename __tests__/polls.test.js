@@ -1558,6 +1558,33 @@ describe('Poll API Tests', () => {
       // First vote should succeed
       expect([200, 429]).toContain(response.status);
     }, 30000); // Increase timeout for rate limit test
+
+    test('rate-limit 429 response includes retryAfter and resetTime fields', async () => {
+      // Use the makeRateLimitHandler directly to verify its output shape.
+      // We simulate the call that express-rate-limit makes to the handler.
+      const { makeRateLimitHandler } = require('../src/middleware/rateLimiter');
+      const handler = makeRateLimitHandler('Too many votes from this IP, please try again later.');
+
+      const now = Date.now();
+      const resetTime = new Date(now + 3600000); // 1 hour from now
+      const mockReq = { rateLimit: { resetTime } };
+      const sentData = {};
+      const mockRes = {
+        status(code) { sentData.status = code; return this; },
+        json(body) { sentData.body = body; return this; },
+      };
+      const mockOptions = { statusCode: 429, windowMs: 3600000 };
+
+      handler(mockReq, mockRes, () => {}, mockOptions);
+
+      expect(sentData.status).toBe(429);
+      expect(sentData.body.success).toBe(false);
+      expect(sentData.body.message).toBe('Too many votes from this IP, please try again later.');
+      expect(typeof sentData.body.retryAfter).toBe('number');
+      expect(sentData.body.retryAfter).toBeGreaterThan(0);
+      expect(typeof sentData.body.resetTime).toBe('number');
+      expect(sentData.body.resetTime).toBeGreaterThan(now);
+    });
   });
 
   describe('Security & Validation', () => {

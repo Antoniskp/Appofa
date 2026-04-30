@@ -6,6 +6,7 @@ import { CheckCircleIcon, LinkIcon, PhotoIcon } from '@heroicons/react/24/outlin
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/ui/AlertMessage';
+import RateLimitBanner from '@/components/ui/RateLimitBanner';
 
 /**
  * Poll voting interface component
@@ -21,6 +22,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const [hasVoted, setHasVoted] = useState(false);
   const [userVote, setUserVote] = useState(null);
   const [showRegisterCta, setShowRegisterCta] = useState(false);
+  const [rateLimitInfo, setRateLimitInfo] = useState(null); // { retryAfter }
   
   // State for adding new options
   const [showAddOption, setShowAddOption] = useState(false);
@@ -116,7 +118,11 @@ export default function PollVoting({ poll, onVoteSuccess }) {
         }
       }
     } catch (err) {
-      setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+      if (err.status === 429) {
+        setRateLimitInfo({ retryAfter: err.retryAfter ?? 60 });
+      } else {
+        setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -138,8 +144,14 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   
   return (
     <div className="space-y-4">
-      {error && <AlertMessage message={error} />}
-      {success && <AlertMessage message={success} tone="success" />}
+      {rateLimitInfo && (
+        <RateLimitBanner
+          retryAfter={rateLimitInfo.retryAfter}
+          onExpired={() => setRateLimitInfo(null)}
+        />
+      )}
+      {!rateLimitInfo && error && <AlertMessage message={error} />}
+      {!rateLimitInfo && success && <AlertMessage message={success} tone="success" />}
       {showRegisterCta && !user && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start gap-3">
           <span className="text-2xl">🎉</span>
@@ -203,7 +215,11 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                     }
                   }
                 } catch (err) {
-                  setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+                  if (err.status === 429) {
+                    setRateLimitInfo({ retryAfter: err.retryAfter ?? 60 });
+                  } else {
+                    setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+                  }
                 } finally {
                   setIsSubmitting(false);
                 }
@@ -268,7 +284,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
           <div className="flex items-center gap-4 pt-4">
             <button
               onClick={handleSubmitVote}
-              disabled={isSubmitting || !selectedOptionId}
+              disabled={isSubmitting || !selectedOptionId || !!rateLimitInfo}
               className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {isSubmitting ? 'Υποβολή...' : hasVoted ? 'Ενημέρωση Ψήφου' : 'Υποβολή Ψήφου'}
