@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-04-30** — Redesigned location-based role assignments with `UserLocationRole` join table: `homeLocationId` is now home-location only; moderator and other location-scoped roles use `UserLocationRole` (userId, locationId, roleKey, timestamps); moderator display on location pages is exact-only (no parent→child leakage); moderator location assignment validated against ancestor chain of user's `homeLocationId`; `locationService`, `articleService`, `userService`, `locationController`, `locationRoleController` all updated; admin UI shows separate "Αναθέσεις Συντονιστή" column with join-table data; new tests in `user-location-roles.test.js` (16 tests); migration `20260430100000-create-user-location-roles.js` includes data migration from legacy `homeLocationId` moderator values
 - **2026-04-30** — Improved rate-limit UX for voting/ratings: added `makeRateLimitHandler` factory + `anonVoteLimiter` (10/hr, skips auth) + `authVoteLimiter` (50/hr, skips anon) to `src/middleware/rateLimiter.js`; fixed poll vote route middleware order (`optionalAuthMiddleware` now runs before limiters); applied `authVoteLimiter` to suggestion vote route; `lib/api/client.js` attaches `retryAfter`/`resetTime` from 429 bodies to thrown errors; added `components/ui/RateLimitBanner.js` (countdown timer + guest registration CTA); updated `PollVoting.js` and `InlineSuggestionVote.js` to show banner + disable buttons when rate-limited; added `common.rate_limit.*` i18n keys; 16 new tests (rate-limit-voting.test.js + rate-limit-banner.test.js)
 - **2026-04-29** — Fixed security tracking consent gate: `GeoTracker` no longer requires `analyticsConsent` to fire; all visitors are now tracked (security/anti-tampering telemetry); removed `analyticsConsent` state and consent event listener from `GeoTracker.js`; updated `gdpr.banner_description` and `gdpr.necessary_description` i18n keys (en + el) to disclose always-on security tracking; added `__tests__/geo-tracker-security.test.js` with 10 tests covering always-on backend tracking and readCookie helper
 - **2026-04-29** — Added "Root-Cause First Principle" section to Copilot instructions: agents must identify root causes, fix at the highest shared layer when safe, generalize before patching locally, preserve downstream caller behavior, and add/update tests
@@ -96,10 +97,11 @@ Compact table of every model where wrong field names have caused bugs:
 | Poll | `visibility`, `voteRestriction`, `organizationId`, `isOfficialPost`, `officialPostScope` | `allowUnauthenticatedVotes`, `tags` (JSON) |
 | Suggestion | `visibility`, `voteRestriction`, `organizationId` | — |
 | Article | `type` (`'news'`, `'articles'`, `'personal'`, `'video'`) | `isNews` |
-| User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn` | `isPlaceholder`, `personId` |
+| User | `avatar`, `githubAvatar`, `googleAvatar`, `slug`, `claimStatus`, `firstNameEn`, `lastNameEn`, `homeLocationId` | `isPlaceholder`, `personId`, `moderatorLocationId` |
 | Organization | `slug` (from `organizationService.generateSlug`), `parentId`, `isVerified` | — |
 | OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`), `inviteToken` | — |
 | LocationElectionVote | `locationId`, `roleKey`, `voterId`, `candidateUserId` | — |
+| UserLocationRole | `userId`, `locationId`, `roleKey` | `homeLocationId` (do NOT use for mod scope) |
 | GeoVisit | `countryCode`, `sessionHash`, `ipAddress`, `userId` | — |
 
 ## Project at a Glance
@@ -122,7 +124,7 @@ Compact table of every model where wrong field names have caused bugs:
 - **Poll tags**: use unified `Tag`/`TaggableItem` (`entityType: 'poll'`), not a JSON `Polls.tags` column
 - **Poll visibility vs voting**: `visibility` controls who sees polls; `voteRestriction` controls who can vote (`anyone`/`authenticated`/`locals_only`). Do not use `allowUnauthenticatedVotes`.
 - **Suggestions access fields**: use `Suggestion.visibility` (`public`/`private`/`locals_only`) for read access and `voteRestriction` (`authenticated`/`locals_only`) for voting eligibility
-- **Location elections**: use `LocationElectionVote` with unique `(locationId, roleKey, voterId)` for liquid one-vote-per-role behavior, and include descendant locations (`parent_id` hierarchy) fo[...]
+- **Location-scoped role assignments**: use `UserLocationRole` join table (`userId`, `locationId`, `roleKey`) for platform roles like `moderator`; `User.homeLocationId` is ONLY the user's home location; moderator assignment validates that locationId is an ancestor/self of user's `homeLocationId`; moderator display on location pages uses exact `UserLocationRole` match (no parent→child inheritance)
 - **Unclaimed person creation**: require `firstNameEn` + `lastNameEn`; generate `User.slug` from English names; native names are optional metadata
 - **Homepage settings**: use single-row `HomepageSettings` with JSON fields (`manifestSection`, `infoSection`) and defaults via controller/model getters
 - **Geo analytics**: use `GeoVisit` as append-only traffic telemetry (country/path/locale/sessionHash/ipAddress/userId) with backend IP fallback from request headers (`x-forwarded-for`/`req.ip`); country codes are normalized to strict ISO-2 only — pseudo-codes `XX` (Cloudflare unknown) and `T1` (Tor/VPN) are stored as `null`; `getCountryNameLocal` validates code before calling `Intl.DisplayNames`; UI `countryCodeToFlag` returns 🌍 globe for null/invalid/non-ISO codes

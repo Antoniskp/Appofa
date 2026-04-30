@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, LocationLink, Article } = require('../src/models');
+const { sequelize, User, Location, LocationLink, Article, UserLocationRole } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Location API Tests', () => {
@@ -406,13 +406,15 @@ describe('Location API Tests', () => {
     it('should NOT show parent-assigned moderator on child location', async () => {
       const country = await Location.create({ name: 'Exact Mod Country', slug: 'exact-mod-country', type: 'country' });
       const child = await Location.create({ name: 'Exact Mod Child', slug: 'exact-mod-child', type: 'prefecture', parent_id: country.id });
-      await User.create({
+      const parentMod = await User.create({
         username: 'parent_mod',
         email: 'parent_mod@test.com',
         password: 'password123',
         role: 'moderator',
         homeLocationId: country.id
       });
+      // Assign moderator only to the parent (country), NOT to the child
+      await UserLocationRole.create({ userId: parentMod.id, locationId: country.id, roleKey: 'moderator' });
 
       const response = await request(app)
         .get(`/api/locations/${child.id}`)
@@ -433,6 +435,8 @@ describe('Location API Tests', () => {
         role: 'moderator',
         homeLocationId: child.id
       });
+      // Assign moderator directly to the child location
+      await UserLocationRole.create({ userId: moderator.id, locationId: child.id, roleKey: 'moderator' });
 
       const response = await request(app)
         .get(`/api/locations/${child.id}`)
@@ -446,14 +450,15 @@ describe('Location API Tests', () => {
     it('should be consistent between list and detail for moderator presence', async () => {
       const country = await Location.create({ name: 'Consistent Mod Country', slug: 'consistent-mod-country', type: 'country' });
       const child = await Location.create({ name: 'Consistent Mod Child', slug: 'consistent-mod-child', type: 'prefecture', parent_id: country.id });
-      // Moderator assigned to parent only
-      await User.create({
+      // Moderator assigned to parent only (no UserLocationRole for child)
+      const consistencyMod = await User.create({
         username: 'consistency_mod',
         email: 'consistency_mod@test.com',
         password: 'password123',
         role: 'moderator',
         homeLocationId: country.id
       });
+      await UserLocationRole.create({ userId: consistencyMod.id, locationId: country.id, roleKey: 'moderator' });
 
       const listResponse = await request(app)
         .get(`/api/locations?type=prefecture`)
@@ -713,6 +718,8 @@ describe('Location API Tests', () => {
         homeLocationId: inScopeChild.id
       });
       moderatorUserId = moderator.id;
+      // Assign moderator scope to inScopeChild (NOT to the whole country)
+      await UserLocationRole.create({ userId: moderator.id, locationId: inScopeChild.id, roleKey: 'moderator' });
 
       const login = await request(app)
         .post('/api/auth/login')

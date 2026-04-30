@@ -62,7 +62,30 @@ const getAncestorLocationIds = async (locationId, includeSelf = false) => {
   return ancestorIds;
 };
 
+/**
+ * Given an array of UserLocationRole assignment objects (each with .locationId),
+ * return the union of all their descendant location IDs (inclusive of the assigned locations).
+ * Queries are executed in parallel for performance.
+ *
+ * @param {Array<{locationId: number}>} assignments
+ * @returns {Promise<number[]>}
+ */
+const getManageableLocationIdsFromAssignments = async (assignments) => {
+  if (!assignments || assignments.length === 0) return [];
+
+  const nestedArrays = await Promise.all(
+    assignments.map((a) => getDescendantLocationIds(a.locationId, true))
+  );
+
+  const allIds = new Set();
+  for (const ids of nestedArrays) {
+    ids.forEach((i) => allIds.add(Number(i)));
+  }
+  return Array.from(allIds);
+};
+
 module.exports = {
   getDescendantLocationIds,
-  getAncestorLocationIds
+  getAncestorLocationIds,
+  getManageableLocationIdsFromAssignments,
 };

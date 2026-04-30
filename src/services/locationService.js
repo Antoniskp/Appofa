@@ -1,9 +1,9 @@
 'use strict';
 
-const { sequelize, Location, LocationLink, Article, User, Poll, LocationRequest } = require('../models');
+const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
-const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -263,29 +263,36 @@ const getLocations = async (queryParams) => {
     const moderatorPreviewByLocationId = new Map();
 
     if (locationIds.length > 0) {
-      const moderatorAssignments = await User.findAll({
+      // Use UserLocationRole join table: find moderator assignments for these exact locations
+      const moderatorAssignments = await UserLocationRole.findAll({
         where: {
-          role: 'moderator',
-          homeLocationId: { [Op.in]: locationIds }
+          locationId: { [Op.in]: locationIds },
+          roleKey: 'moderator',
         },
-        attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'homeLocationId'],
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+            required: true,
+          },
+        ],
         order: [['createdAt', 'ASC'], ['id', 'ASC']],
-        raw: true
       });
 
       moderatorAssignments.forEach((assignment) => {
-        const homeLocationId = Number(assignment.homeLocationId);
-        if (Number.isInteger(homeLocationId)) {
-          moderatorLocationIds.add(homeLocationId);
+        const locId = Number(assignment.locationId);
+        if (Number.isInteger(locId) && assignment.user) {
+          moderatorLocationIds.add(locId);
 
-          if (!moderatorPreviewByLocationId.has(homeLocationId)) {
-            moderatorPreviewByLocationId.set(homeLocationId, {
-              id: assignment.id,
-              username: assignment.username,
-              firstNameNative: assignment.firstNameNative,
-              lastNameNative: assignment.lastNameNative,
-              avatar: assignment.avatar,
-              avatarColor: assignment.avatarColor
+          if (!moderatorPreviewByLocationId.has(locId)) {
+            moderatorPreviewByLocationId.set(locId, {
+              id: assignment.user.id,
+              username: assignment.user.username,
+              firstNameNative: assignment.user.firstNameNative,
+              lastNameNative: assignment.user.lastNameNative,
+              avatar: assignment.user.avatar,
+              avatarColor: assignment.user.avatarColor,
             });
           }
         }
@@ -408,14 +415,20 @@ const getLocation = async (id) => {
       where: { location_id: locationId, entity_type: 'poll' }
     });
 
-    const moderator = await User.findOne({
-      where: {
-        role: 'moderator',
-        homeLocationId: locationId
-      },
-      attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
-      order: [['createdAt', 'ASC'], ['id', 'ASC']]
+    const moderatorAssignment = await UserLocationRole.findOne({
+      where: { locationId, roleKey: 'moderator' },
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor'],
+          required: true,
+        },
+      ],
+      order: [['createdAt', 'ASC'], ['id', 'ASC']],
     });
+
+    const moderator = moderatorAssignment ? moderatorAssignment.user : null;
 
     const locationData = location.toJSON();
     locationData.hasModerator = !!moderator;
@@ -447,7 +460,7 @@ const getLocation = async (id) => {
  * @param {object} updateData - fields from req.body
  * @returns {Promise<{success: boolean, status?: number, message?: string, location?: object}>}
  */
-const updateLocation = async (id, updateData, actorRole = null, actorHomeLocationId = null) => {
+const updateLocation = async (id, updateData, actorRole = null, actorUserId = null) => {
   try {
     const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = updateData;
 
@@ -457,11 +470,18 @@ const updateLocation = async (id, updateData, actorRole = null, actorHomeLocatio
     }
 
     if (actorRole === 'moderator') {
-      if (!actorHomeLocationId) {
+      if (!actorUserId) {
         return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
       }
-      const allowedIds = await getDescendantLocationIds(actorHomeLocationId, true);
-      const allowedIdSet = new Set(allowedIds.map(Number));
+      const assignments = await UserLocationRole.findAll({
+        where: { userId: actorUserId, roleKey: 'moderator' },
+        attributes: ['locationId'],
+      });
+      if (assignments.length === 0) {
+        return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
+      }
+      const allowedIds = await getManageableLocationIdsFromAssignments(assignments);
+      const allowedIdSet = new Set(allowedIds);
       if (!allowedIdSet.has(Number(location.id))) {
         return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
       }
@@ -554,7 +574,7 @@ const updateLocation = async (id, updateData, actorRole = null, actorHomeLocatio
  * @param {string|number} id - location primary key
  * @returns {Promise<{success: boolean, status?: number, message?: string}>}
  */
-const deleteLocation = async (id, actorRole = null, actorHomeLocationId = null) => {
+const deleteLocation = async (id, actorRole = null, actorUserId = null) => {
   try {
     const location = await Location.findByPk(id);
     if (!location) {
@@ -562,11 +582,18 @@ const deleteLocation = async (id, actorRole = null, actorHomeLocationId = null) 
     }
 
     if (actorRole === 'moderator') {
-      if (!actorHomeLocationId) {
+      if (!actorUserId) {
         return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
       }
-      const allowedIds = await getDescendantLocationIds(actorHomeLocationId, true);
-      const allowedIdSet = new Set(allowedIds.map(Number));
+      const assignments = await UserLocationRole.findAll({
+        where: { userId: actorUserId, roleKey: 'moderator' },
+        attributes: ['locationId'],
+      });
+      if (assignments.length === 0) {
+        return { success: false, status: 403, message: 'Moderator must have an assigned location.' };
+      }
+      const allowedIds = await getManageableLocationIdsFromAssignments(assignments);
+      const allowedIdSet = new Set(allowedIds);
       if (!allowedIdSet.has(Number(location.id))) {
         return { success: false, status: 403, message: 'Forbidden: location outside your scope.' };
       }

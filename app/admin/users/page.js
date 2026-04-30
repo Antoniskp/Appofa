@@ -40,7 +40,6 @@ function AdminUsersContent() {
   const [roleChangeNewRole, setRoleChangeNewRole] = useState('');
   const [selectedLocationForRole, setSelectedLocationForRole] = useState('');
   const [verifyingUserId, setVerifyingUserId] = useState(null);
-  const [moderatorLocationOverrides, setModeratorLocationOverrides] = useState({});
 
   // Fetch users with server-side pagination and filtering
   const { data: usersData, loading, refetch } = useAsyncData(
@@ -92,8 +91,9 @@ function AdminUsersContent() {
     if (newRole === 'moderator') {
       setRoleChangeTarget(targetUser);
       setRoleChangeNewRole(newRole);
-      const defaultLocationId = targetUser.homeLocationId ? String(targetUser.homeLocationId) : '';
-      setSelectedLocationForRole(defaultLocationId);
+      // Open the moderator-location dialog; leave location selection empty by default
+      // (homeLocationId is the user's home, which may or may not be a valid moderator scope location)
+      setSelectedLocationForRole('');
       setRoleChangeDialogOpen(true);
       return;
     }
@@ -138,8 +138,8 @@ function AdminUsersContent() {
     }
   };
 
-  // Moderator location change
-  const handleModeratorLocationChange = async (targetUser, nextLocationId) => {
+  // Add an additional moderator location assignment for an existing moderator
+  const handleAddModeratorLocation = async (targetUser, nextLocationId) => {
     const parsed = Number.parseInt(nextLocationId, 10);
     if (!Number.isInteger(parsed) || parsed < 1) {
       addToast('Επιλέξτε έγκυρη τοποθεσία.', { type: 'error' });
@@ -149,39 +149,12 @@ function AdminUsersContent() {
     try {
       const response = await authAPI.updateUserRole(targetUser.id, 'moderator', parsed);
       if (response.success) {
-        setModeratorLocationOverrides((prev) => ({ ...prev, [targetUser.id]: parsed }));
         await refetch();
-        addToast('Η τοποθεσία συντονιστή ενημερώθηκε!', { type: 'success' });
+        addToast('Η τοποθεσία συντονιστή προστέθηκε!', { type: 'success' });
       }
     } catch (error) {
       addToast(`Αποτυχία ενημέρωσης: ${error.message}`, { type: 'error' });
     }
-  };
-
-  const getModeratorLocationOptions = (targetUser) => {
-    const baseLocations = Array.isArray(locations) ? locations : [];
-    const overriddenLocationId = moderatorLocationOverrides[targetUser?.id];
-    const effectiveHomeLocationId = overriddenLocationId || targetUser?.homeLocationId;
-
-    if (!effectiveHomeLocationId) return baseLocations;
-
-    const hasCurrentLocation = baseLocations.some(
-      (location) => Number(location.id) === Number(effectiveHomeLocationId)
-    );
-
-    if (hasCurrentLocation) return baseLocations;
-
-    if (!overriddenLocationId && targetUser.homeLocation?.id && targetUser.homeLocation?.name) {
-      return [
-        { id: targetUser.homeLocation.id, name: targetUser.homeLocation.name, type: targetUser.homeLocation.type, slug: targetUser.homeLocation.slug },
-        ...baseLocations
-      ];
-    }
-
-    return [
-      { id: effectiveHomeLocationId, name: `Location #${effectiveHomeLocationId}` },
-      ...baseLocations
-    ];
   };
 
   // Verify user
@@ -203,7 +176,8 @@ function AdminUsersContent() {
   const canVerifyUser = (targetUser) => {
     if (!user) return false;
     if (user.role === 'admin') return true;
-    if (user.role === 'moderator' && user.homeLocationId && targetUser.homeLocationId) return true;
+    // Moderator can verify users if they have any location assignment
+    if (user.role === 'moderator') return true;
     return false;
   };
 
@@ -345,7 +319,7 @@ function AdminUsersContent() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Χρήστης</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Email</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Ρόλος</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Τοποθεσία Συντονιστή</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Αναθέσεις Συντονιστή</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Τοποθεσία</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Εγγραφή</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Κατάσταση</th>
@@ -389,21 +363,31 @@ function AdminUsersContent() {
                           </Tooltip>
                         </td>
 
-                        {/* Moderator Location */}
+                        {/* Moderator Location Assignments */}
                         <td className="px-4 py-3">
                           {u.role === 'moderator' ? (
-                            <select
-                              value={String(moderatorLocationOverrides[u.id] || u.homeLocationId || '')}
-                              onChange={(e) => handleModeratorLocationChange(u, e.target.value)}
-                              className="border border-gray-300 rounded px-2 py-1 text-sm max-w-[200px]"
-                            >
-                              <option value="">Επιλογή τοποθεσίας</option>
-                              {getModeratorLocationOptions(u).map((loc) => (
-                                <option key={loc.id} value={String(loc.id)}>
-                                  {loc.name} (#{loc.id})
-                                </option>
-                              ))}
-                            </select>
+                            <div className="space-y-1">
+                              {(u.locationRoleAssignments || [])
+                                .filter((a) => a.roleKey === 'moderator')
+                                .map((a) => (
+                                  <span key={a.id} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 mr-1">
+                                    {a.location?.name || `#${a.locationId}`}
+                                  </span>
+                                ))}
+                              {/* Dropdown to add another assignment */}
+                              <select
+                                value=""
+                                onChange={(e) => handleAddModeratorLocation(u, e.target.value)}
+                                className="border border-dashed border-gray-300 rounded px-2 py-0.5 text-xs text-gray-500 max-w-[160px] mt-1"
+                              >
+                                <option value="">+ Προσθήκη τοποθεσίας</option>
+                                {(Array.isArray(locations) ? locations : []).map((loc) => (
+                                  <option key={loc.id} value={String(loc.id)}>
+                                    {loc.name} (#{loc.id})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>
                           )}
@@ -515,7 +499,7 @@ function AdminUsersContent() {
         }
       >
         <label htmlFor="roleLocationSelect" className="text-gray-700 mb-2 block">
-          Επιλέξτε τοποθεσία για τον συντονιστή:
+          Επιλέξτε τοποθεσία ανάθεσης συντονιστή (πρέπει να είναι η κατοικία του χρήστη ή ανώτερη τοποθεσία):
         </label>
         <select
           id="roleLocationSelect"
