@@ -20,6 +20,8 @@ import {
   CurrencyEuroIcon,
   TrophyIcon,
   CodeBracketIcon,
+  ClipboardDocumentListIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -33,13 +35,21 @@ const categories = [
     title: '🗺️ Οδηγός Πλατφόρμας',
     pages: [
       { href: '/platform/flows', label: 'Ροές Εφαρμογής', description: 'Πώς λειτουργούν οι κύριες ροές', Icon: ArrowPathIcon },
-      { href: '/platform/roles', label: 'Ρόλοι Χρηστών', description: 'Δικαιώματα και ρόλοι (viewer, editor, admin)', Icon: UsersIcon },
+      { href: '/platform/roles', label: 'Ρόλοι & Δικαιώματα', description: 'Viewer, Editor, Moderator και Admin — τι μπορεί ο καθένας', Icon: UsersIcon },
       { href: '/platform/objects', label: 'Αντικείμενα', description: 'Άρθρα, χρήστες, ψηφοφορίες, τοποθεσίες', Icon: CubeIcon },
       { href: '/platform/features', label: 'Χαρακτηριστικά', description: 'Όλες οι δυνατότητες της πλατφόρμας', Icon: SparklesIcon },
       { href: '/platform/modules', label: 'Ενότητες Εφαρμογής', description: 'Όλες οι ενότητες και σελίδες της εφαρμογής', Icon: PuzzlePieceIcon },
       { href: '/platform/cost', label: 'Κόστος & Ώρες', description: 'Εκτιμώμενο κόστος ανάπτυξης και συντήρησης', Icon: CurrencyEuroIcon },
       { href: '/platform/badges', label: 'Badges & Επιτεύγματα', description: 'Σύστημα badges και τρόπος απόκτησης', Icon: TrophyIcon },
       { href: '/github-files', label: 'Αρχεία GitHub', description: 'Άμεσοι σύνδεσμοι σε αρχεία που αλλάζουν συχνά — κατηγορίες, χρώματα, μεταφράσεις', Icon: CodeBracketIcon },
+    ],
+  },
+  {
+    title: '🔐 Διακυβέρνηση & Ασφάλεια',
+    pages: [
+      { href: '/platform/security', label: 'Ασφάλεια', description: 'Αυθεντικοποίηση, CSRF, rate limiting και προστασία δεδομένων', Icon: ShieldCheckIcon },
+      { href: '/platform/production-rules', label: 'Κανόνες Παραγωγής', description: 'Κανόνες αλλαγών κώδικα, deployment και CI/CD', Icon: WrenchScrewdriverIcon },
+      { href: '/platform/responsibilities', label: 'Υπευθυνότητες', description: 'Ποιος είναι υπεύθυνος για τι — governance matrix', Icon: ClipboardDocumentListIcon },
     ],
   },
   {

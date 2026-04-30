@@ -476,8 +476,25 @@ Appofa/
 | `/admin/removal-requests` | Removal request admin |
 | `/admin/reports` | Report admin |
 
-### Static Pages (47 pages in `(statics)` layout)
+### Static Pages (50 pages in `(statics)` layout)
 Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, github-files, etc.
+
+#### Platform Documentation (`/platform/*`) — canonical source of truth for users and AI agents
+| Route | Description |
+|-------|-------------|
+| `/platform` | Landing page with categorized links to all platform pages |
+| `/platform/flows` | Application flows (registration, article creation, news approval, polls) |
+| `/platform/roles` | **Canonical** role & permissions reference — Viewer, Editor, Moderator, Admin with full permissions table (updated 2026-04-30: added Moderator role) |
+| `/platform/objects` | Data objects: articles, users, polls, locations |
+| `/platform/features` | Platform features overview |
+| `/platform/modules` | Application modules and pages |
+| `/platform/cost` | Estimated development and maintenance cost |
+| `/platform/badges` | Badge system and acquisition |
+| `/platform/security` | **Canonical** public security overview — auth, CSRF, rate limiting, geo controls, incident response |
+| `/platform/production-rules` | **Canonical** production/deployment rules — PR-only workflow, CI checks, testing standards, AI agent rules |
+| `/platform/responsibilities` | **Canonical** governance matrix — who owns what across Viewer/Editor/Moderator/Admin |
+
+> **Maintenance convention**: Pages marked **Canonical** must be kept in sync with implementation. When roles, security controls, deployment rules, or governance structures change, the relevant `/platform/*` page must be updated in the same PR/commit. This applies to both human developers and AI coding agents.
 
 ---
 
