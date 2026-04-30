@@ -242,6 +242,9 @@ Appofa/
 | DELETE | /:locationId/sections/:id | mod | Delete section |
 | GET | /:locationId/roles | — | Get roles |
 | PUT | /:locationId/roles | mod | Upsert roles |
+| GET | /:locationId/platform-roles | admin | List platform-level role assignments (UserLocationRole) for a location |
+| POST | /:locationId/platform-roles | admin | Add a platform role assignment (userId + roleKey; validates ancestor-chain for moderator; auto-elevates global role) |
+| DELETE | /:locationId/platform-roles/:id | admin | Remove a platform role assignment (auto-demotes to viewer if last moderator assignment) |
 | GET | /:locationId/elections | opt | Get elections/live results with hierarchical `canVote` (includes descendant locations) |
 | POST | /:locationId/elections/:roleKey/vote | ✅ | Cast or change vote |
 | DELETE | /:locationId/elections/:roleKey/vote | ✅ | Remove vote |
@@ -356,6 +359,7 @@ Appofa/
 | heroSettingsController.js | Hero section config |
 | linkPreviewController.js | Link preview caching |
 | locationController.js | Location CRUD, sections, roles |
+| locationPlatformRoleController.js | Platform-level location role assignment management (UserLocationRole): list/add/remove; admin-only; auto-elevates/demotes global role; ancestor-chain validation |
 | locationRoleController.js | Location role management |
 | locationSectionController.js | Location section management |
 | manifestController.js | Manifest CRUD & acceptance |
@@ -508,7 +512,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
-| `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
+| `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 22+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |
@@ -543,7 +547,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | homepageSettings.js | Homepage settings |
 | ipRules.js | IP whitelist/blacklist management |
 | linkPreview.js | Link previews |
-| locations.js | Locations |
+| locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI`, `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments) |
 | manifest.js | Manifests |
 | messages.js | Messages |
 | organizations.js | Organizations CRUD + members |

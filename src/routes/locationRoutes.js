@@ -3,6 +3,7 @@ const router = express.Router();
 const locationController = require('../controllers/locationController');
 const locationSectionController = require('../controllers/locationSectionController');
 const locationRoleController = require('../controllers/locationRoleController');
+const locationPlatformRoleController = require('../controllers/locationPlatformRoleController');
 const locationElectionController = require('../controllers/locationElectionController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
@@ -39,6 +40,11 @@ router.delete('/:locationId/sections/:id', apiLimiter, authMiddleware, checkRole
 // Location roles routes
 router.get('/:locationId/roles', apiLimiter, optionalAuthMiddleware, locationRoleController.getRoles);
 router.put('/:locationId/roles', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, locationRoleController.upsertRoles);
+
+// Platform role assignment routes (admin only) — manages UserLocationRole join table
+router.get('/:locationId/platform-roles', apiLimiter, authMiddleware, checkRole('admin'), locationPlatformRoleController.listAssignments);
+router.post('/:locationId/platform-roles', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, locationPlatformRoleController.addAssignment);
+router.delete('/:locationId/platform-roles/:assignmentId', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, locationPlatformRoleController.removeAssignment);
 router.get('/:locationId/elections', apiLimiter, optionalAuthMiddleware, locationElectionController.getElections);
 router.post('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.castVote);
 router.delete('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.removeVote);
