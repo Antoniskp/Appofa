@@ -16,6 +16,7 @@ export { default as LocationSelector } from './LocationSelector';
 export { default as Modal } from './Modal';
 export { default as OAuthButtons } from './OAuthButtons';
 export { default as Pagination } from './Pagination';
+export { default as RateLimitBanner } from './RateLimitBanner';
 export { default as SearchInput } from './SearchInput';
 export { default as SkeletonLoader } from './SkeletonLoader';
 export { default as TagInput } from './TagInput';

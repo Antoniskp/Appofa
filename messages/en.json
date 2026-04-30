@@ -338,7 +338,15 @@
     "status_inactive": "Inactive",
     "status_pending": "Pending",
     "app_name": "Appofasi",
-    "information": "Information"
+    "information": "Information",
+    "rate_limit": {
+      "title": "Rate limit reached",
+      "try_again_in": "Try again in {time}.",
+      "try_again_now": "You can try again now.",
+      "guest_cta": "Get higher limits by creating an account:",
+      "sign_up": "Create account",
+      "sign_in": "Sign in"
+    }
   },
   "footer": {
     "rights": "All rights reserved.",

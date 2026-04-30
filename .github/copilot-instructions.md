@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-04-30** — Improved rate-limit UX for voting/ratings: added `makeRateLimitHandler` factory + `anonVoteLimiter` (10/hr, skips auth) + `authVoteLimiter` (50/hr, skips anon) to `src/middleware/rateLimiter.js`; fixed poll vote route middleware order (`optionalAuthMiddleware` now runs before limiters); applied `authVoteLimiter` to suggestion vote route; `lib/api/client.js` attaches `retryAfter`/`resetTime` from 429 bodies to thrown errors; added `components/ui/RateLimitBanner.js` (countdown timer + guest registration CTA); updated `PollVoting.js` and `InlineSuggestionVote.js` to show banner + disable buttons when rate-limited; added `common.rate_limit.*` i18n keys; 16 new tests (rate-limit-voting.test.js + rate-limit-banner.test.js)
 - **2026-04-29** — Fixed security tracking consent gate: `GeoTracker` no longer requires `analyticsConsent` to fire; all visitors are now tracked (security/anti-tampering telemetry); removed `analyticsConsent` state and consent event listener from `GeoTracker.js`; updated `gdpr.banner_description` and `gdpr.necessary_description` i18n keys (en + el) to disclose always-on security tracking; added `__tests__/geo-tracker-security.test.js` with 10 tests covering always-on backend tracking and readCookie helper
 - **2026-04-29** — Added "Root-Cause First Principle" section to Copilot instructions: agents must identify root causes, fix at the highest shared layer when safe, generalize before patching locally, preserve downstream caller behavior, and add/update tests
 - **2026-04-29** — Improved organizations UX: `/admin/organizations` now has search/filter bar, parent-org dropdown (replaces raw number input), parent/location columns with links, editing-row highlight, and direct public profile links; `/organizations/[slug]` polls/suggestions tabs upgraded with collapsible create forms, richer cards (deadline chip, type badge, creator/author info), and styled dashed empty states; added i18n keys `poll_closed_label`, `poll_ends_label`, `view_profile`, `parent_org`, `no_parent`, `no_organizations_filtered`, `editing`
@@ -17,8 +18,6 @@ This instruction is permanent and must never be removed.
 - **2026-04-29** — Fixed final HEIC/HEIF upload gap for unclaimed person flows: admin create/edit file validation now accepts `.heic/.heif` when browsers send empty/generic MIME (`application/octet-stream`); backend upload MIME filter also allows HEIC/HEIF by filename extension in that generic MIME case; added regression tests for `/api/persons/:id/photo` octet-stream + HEIC/HEIF extension handling
 - **2026-04-28** — Enabled image upload for unclaimed person profiles: added `POST /api/persons/:id/photo` endpoint (admin/moderator only; multer + sharp; saves to `/uploads/profiles/{id}.webp`; updates `User.photo`, `User.avatar`, `User.avatarUrl`); added `personAPI.uploadPersonPhoto` frontend method; added file-upload UI to `/admin/persons/create` and `/admin/persons/[id]/edit` (file input with preview + URL fallback); added 6 new tests in `__tests__/persons.test.js`
 - **2026-04-28** — Fixed `/uploads/*` 500 regressions: removed `NEXT_PUBLIC_API_URL` fallback from uploads proxy route (prevents infinite proxy loop); switched `imageStorageService` + Express static middleware to `__dirname`-based paths (reliable regardless of working directory); added timeout to uploads proxy route; added `__tests__/uploads-proxy.test.js`
-- **2026-04-27** — Added role-gated "Create organization" CTA on `/organizations` linking to `/admin/organizations`; visible only for `admin`/`moderator` roles; added `organizations.create_button` i18n key
-- **2026-04-26** — Fixed geo tracking: reject `XX`/`T1` pseudo-codes in `/track` endpoint; `countryCodeToFlag` now shows globe for invalid codes; `getCountryNameLocal` validates before `Intl.DisplayNames`
 
 ## 🚨 MANDATORY: PR-Only Workflow
 
@@ -181,7 +180,7 @@ Compact table of every model where wrong field names have caused bugs:
 ### Security (always applied)
 - `authMiddleware` on protected routes · `checkRole([...])` for role-gated routes
 - `csrfProtection` on all POST/PUT/DELETE · `optionalAuthMiddleware` for public routes needing user context
-- Rate limiters: `authLimiter` (5/15m), `createLimiter` (20/15m), `apiLimiter` (100/15m)
+- Rate limiters: `authLimiter` (5/15m), `createLimiter` (20/15m), `apiLimiter` (100/15m); `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); use `makeRateLimitHandler(msg)` for structured 429s with `retryAfter`+`resetTime`
 
 ### Testing
 - Jest + Supertest · SQLite in-memory for tests · `sequelize.sync({ force: true })` in `beforeAll`

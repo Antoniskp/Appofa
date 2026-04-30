@@ -6,6 +6,7 @@ import { CheckCircleIcon, LinkIcon, PhotoIcon } from '@heroicons/react/24/outlin
 import { pollAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import AlertMessage from '@/components/ui/AlertMessage';
+import RateLimitBanner from '@/components/ui/RateLimitBanner';
 
 /**
  * Poll voting interface component
@@ -21,6 +22,7 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   const [hasVoted, setHasVoted] = useState(false);
   const [userVote, setUserVote] = useState(null);
   const [showRegisterCta, setShowRegisterCta] = useState(false);
+  const [rateLimit, setRateLimit] = useState(null); // { retryAfter, resetTime }
   
   // State for adding new options
   const [showAddOption, setShowAddOption] = useState(false);
@@ -41,7 +43,8 @@ export default function PollVoting({ poll, onVoteSuccess }) {
   }, [poll]);
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
-  const canVote = isPollActive && (user || poll.voteRestriction === 'anyone');
+  const isRateLimited = !!rateLimit && (rateLimit.resetTime ? rateLimit.resetTime > Date.now() : false);
+  const canVote = isPollActive && !isRateLimited && (user || poll.voteRestriction === 'anyone');
   
   const resetAddOptionForm = () => {
     setNewOptionText('');
@@ -116,7 +119,11 @@ export default function PollVoting({ poll, onVoteSuccess }) {
         }
       }
     } catch (err) {
-      setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+      if (err.status === 429) {
+        setRateLimit({ retryAfter: err.retryAfter ?? null, resetTime: err.resetTime ?? null });
+      } else {
+        setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -140,6 +147,13 @@ export default function PollVoting({ poll, onVoteSuccess }) {
     <div className="space-y-4">
       {error && <AlertMessage message={error} />}
       {success && <AlertMessage message={success} tone="success" />}
+      {rateLimit && (
+        <RateLimitBanner
+          retryAfter={rateLimit.retryAfter}
+          resetTime={rateLimit.resetTime}
+          isAuthenticated={!!user}
+        />
+      )}
       {showRegisterCta && !user && (
         <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4 flex items-start gap-3">
           <span className="text-2xl">🎉</span>
@@ -203,7 +217,11 @@ export default function PollVoting({ poll, onVoteSuccess }) {
                     }
                   }
                 } catch (err) {
-                  setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+                  if (err.status === 429) {
+                    setRateLimit({ retryAfter: err.retryAfter ?? null, resetTime: err.resetTime ?? null });
+                  } else {
+                    setError(err.message || 'Σφάλμα κατά την υποβολή της ψήφου');
+                  }
                 } finally {
                   setIsSubmitting(false);
                 }
