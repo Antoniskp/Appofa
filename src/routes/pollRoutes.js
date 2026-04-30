@@ -60,8 +60,9 @@ router.get('/:id', apiLimiter, optionalAuthMiddleware, pollController.getPollByI
 router.get('/:id/results', apiLimiter, optionalAuthMiddleware, pollController.getResults);
 router.get('/:id/export', apiLimiter, authMiddleware, pollController.exportPoll);
 
-// Voting route - optionalAuth runs first so limiters can distinguish auth state
-router.post('/:id/vote', optionalAuthMiddleware, anonVoteLimiter, authVoteLimiter, optionalCsrfProtection, pollController.votePoll);
+// Voting route - apiLimiter guards the route first; optionalAuth runs before the
+// per-role limiters so their skip() functions can check req.user correctly.
+router.post('/:id/vote', apiLimiter, optionalAuthMiddleware, anonVoteLimiter, authVoteLimiter, optionalCsrfProtection, pollController.votePoll);
 
 // Protected routes - require authentication
 router.post('/', createLimiter, authMiddleware, csrfProtection, pollController.createPoll);

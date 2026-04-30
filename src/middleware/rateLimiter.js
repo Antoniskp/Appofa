@@ -25,7 +25,7 @@ const makeRateLimitHandler = (message) => (req, res) => {
   return res.status(429).json({ success: false, message, retryAfter, resetTime });
 };
 
-// General API rate limiter - 100 requests per 15 minutes
+// General API rate limiter - 200 requests per 15 minutes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200, // Limit each IP to 200 requests per windowMs

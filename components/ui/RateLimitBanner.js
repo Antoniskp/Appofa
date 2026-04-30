@@ -24,10 +24,15 @@ export default function RateLimitBanner({ retryAfter, resetTime, isAuthenticated
   const [secondsLeft, setSecondsLeft] = useState(computeSeconds);
 
   useEffect(() => {
-    if (secondsLeft <= 0) return;
-    const timer = setInterval(() => setSecondsLeft(computeSeconds()), 1000);
+    const getSecondsLeft = () => {
+      if (resetTime) return Math.max(0, Math.ceil((resetTime - Date.now()) / 1000));
+      if (retryAfter) return Math.max(0, retryAfter);
+      return 0;
+    };
+    const current = getSecondsLeft();
+    if (current <= 0) return;
+    const timer = setInterval(() => setSecondsLeft(getSecondsLeft()), 1000);
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resetTime, retryAfter]);
 
   const formatTime = (secs) => {

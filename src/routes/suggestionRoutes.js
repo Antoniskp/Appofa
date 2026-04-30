@@ -17,6 +17,8 @@ router.post('/', createLimiter, authMiddleware, csrfProtection, suggestionContro
 router.patch('/:id', apiLimiter, authMiddleware, csrfProtection, suggestionController.updateSuggestion);
 router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, suggestionController.deleteSuggestion);
 router.post('/:id/solutions', createLimiter, authMiddleware, csrfProtection, suggestionController.createSolution);
-router.post('/:id/vote', authMiddleware, authVoteLimiter, csrfProtection, suggestionController.voteSuggestion);
+// apiLimiter runs first (satisfies rate-limit check); authMiddleware sets req.user;
+// authVoteLimiter applies the per-authenticated-user 50/hr cap.
+router.post('/:id/vote', apiLimiter, authMiddleware, authVoteLimiter, csrfProtection, suggestionController.voteSuggestion);
 
 module.exports = router;
