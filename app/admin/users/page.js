@@ -4,13 +4,12 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { TrashIcon, ShieldCheckIcon, UserGroupIcon, ShieldExclamationIcon, UserIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI, locationAPI } from '@/lib/api';
+import { authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { StatsCard } from '@/components/ui/Card';
 import { ConfirmDialog } from '@/components/ui/Modal';
-import Modal from '@/components/ui/Modal';
 import Tooltip from '@/components/ui/Tooltip';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import Pagination from '@/components/ui/Pagination';
@@ -35,10 +34,6 @@ function AdminUsersContent() {
   // Dialogs
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [roleChangeDialogOpen, setRoleChangeDialogOpen] = useState(false);
-  const [roleChangeTarget, setRoleChangeTarget] = useState(null);
-  const [roleChangeNewRole, setRoleChangeNewRole] = useState('');
-  const [selectedLocationForRole, setSelectedLocationForRole] = useState('');
   const [verifyingUserId, setVerifyingUserId] = useState(null);
 
   // Fetch users with server-side pagination and filtering
@@ -65,20 +60,6 @@ function AdminUsersContent() {
   const stats = usersData?.stats || { total: 0, byRole: {} };
   const pagination = usersData?.pagination || { currentPage: 1, totalPages: 1, totalItems: 0 };
 
-  // Fetch locations for moderator assignment (sorted alphabetically)
-  const { data: locations } = useAsyncData(
-    async () => {
-      const response = await locationAPI.getAll({ limit: 500 });
-      if (response.success) {
-        const locs = response.locations || [];
-        return locs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'el'));
-      }
-      return [];
-    },
-    [],
-    { initialData: [] }
-  );
-
   // Handle search submit (debounced by Enter or button)
   const handleSearch = (e) => {
     e?.preventDefault?.();
@@ -86,15 +67,14 @@ function AdminUsersContent() {
     setPage(1);
   };
 
-  // Role change
+  // Role change — moderator assignments are now managed from the location page
   const handleRoleChange = async (targetUser, newRole) => {
     if (newRole === 'moderator') {
-      setRoleChangeTarget(targetUser);
-      setRoleChangeNewRole(newRole);
-      // Open the moderator-location dialog; leave location selection empty by default
-      // (homeLocationId is the user's home, which may or may not be a valid moderator scope location)
-      setSelectedLocationForRole('');
-      setRoleChangeDialogOpen(true);
+      // Direct admin to manage moderator assignments from the location edit page
+      addToast(
+        'Για να αναθέσετε ρόλο συντονιστή, επεξεργαστείτε την τοποθεσία από τη σελίδα διαχείρισης τοποθεσιών.',
+        { type: 'info' }
+      );
       return;
     }
 
@@ -106,54 +86,6 @@ function AdminUsersContent() {
       }
     } catch (error) {
       addToast(`Αποτυχία αλλαγής ρόλου: ${error.message}`, { type: 'error' });
-    }
-  };
-
-  const confirmRoleChange = async () => {
-    if (!roleChangeTarget || !roleChangeNewRole) return;
-
-    let locationId;
-    if (roleChangeNewRole === 'moderator') {
-      const parsed = Number.parseInt(selectedLocationForRole, 10);
-      if (!Number.isInteger(parsed) || parsed < 1) {
-        addToast('Απαιτείται έγκυρη τοποθεσία για τον ρόλο συντονιστή.', { type: 'error' });
-        return;
-      }
-      locationId = parsed;
-    }
-
-    setRoleChangeDialogOpen(false);
-    try {
-      const response = await authAPI.updateUserRole(roleChangeTarget.id, roleChangeNewRole, locationId);
-      if (response.success) {
-        await refetch();
-        addToast('Ο ρόλος ενημερώθηκε επιτυχώς!', { type: 'success' });
-      }
-    } catch (error) {
-      addToast(`Αποτυχία αλλαγής ρόλου: ${error.message}`, { type: 'error' });
-    } finally {
-      setRoleChangeTarget(null);
-      setRoleChangeNewRole('');
-      setSelectedLocationForRole('');
-    }
-  };
-
-  // Add an additional moderator location assignment for an existing moderator
-  const handleAddModeratorLocation = async (targetUser, nextLocationId) => {
-    const parsed = Number.parseInt(nextLocationId, 10);
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      addToast('Επιλέξτε έγκυρη τοποθεσία.', { type: 'error' });
-      return;
-    }
-
-    try {
-      const response = await authAPI.updateUserRole(targetUser.id, 'moderator', parsed);
-      if (response.success) {
-        await refetch();
-        addToast('Η τοποθεσία συντονιστή προστέθηκε!', { type: 'success' });
-      }
-    } catch (error) {
-      addToast(`Αποτυχία ενημέρωσης: ${error.message}`, { type: 'error' });
     }
   };
 
@@ -363,30 +295,25 @@ function AdminUsersContent() {
                           </Tooltip>
                         </td>
 
-                        {/* Moderator Location Assignments */}
+                        {/* Moderator Location Assignments — read-only summary; managed from location page */}
                         <td className="px-4 py-3">
                           {u.role === 'moderator' ? (
-                            <div className="space-y-1">
+                            <div className="flex flex-wrap gap-1">
                               {(u.locationRoleAssignments || [])
                                 .filter((a) => a.roleKey === 'moderator')
                                 .map((a) => (
-                                  <span key={a.id} className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 mr-1">
+                                  <Link
+                                    key={a.id}
+                                    href={`/locations/${a.location?.slug || a.locationId}`}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 transition-colors"
+                                    title="Διαχείριση από τη σελίδα τοποθεσίας"
+                                  >
                                     {a.location?.name || `#${a.locationId}`}
-                                  </span>
+                                  </Link>
                                 ))}
-                              {/* Dropdown to add another assignment */}
-                              <select
-                                value=""
-                                onChange={(e) => handleAddModeratorLocation(u, e.target.value)}
-                                className="border border-dashed border-gray-300 rounded px-2 py-0.5 text-xs text-gray-500 max-w-[160px] mt-1"
-                              >
-                                <option value="">+ Προσθήκη τοποθεσίας</option>
-                                {(Array.isArray(locations) ? locations : []).map((loc) => (
-                                  <option key={loc.id} value={String(loc.id)}>
-                                    {loc.name} (#{loc.id})
-                                  </option>
-                                ))}
-                              </select>
+                              {(u.locationRoleAssignments || []).filter((a) => a.roleKey === 'moderator').length === 0 && (
+                                <span className="text-xs text-amber-600 italic">Χωρίς τοποθεσία</span>
+                              )}
                             </div>
                           ) : (
                             <span className="text-gray-400 text-sm">—</span>
@@ -462,60 +389,6 @@ function AdminUsersContent() {
           )}
         </div>
       </div>
-
-      {/* Role Change Dialog */}
-      <Modal
-        isOpen={roleChangeDialogOpen}
-        onClose={() => {
-          setRoleChangeDialogOpen(false);
-          setRoleChangeTarget(null);
-          setRoleChangeNewRole('');
-          setSelectedLocationForRole('');
-        }}
-        title="Αντιστοίχιση Τοποθεσίας Συντονιστή"
-        size="sm"
-        footer={
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                setRoleChangeDialogOpen(false);
-                setRoleChangeTarget(null);
-                setRoleChangeNewRole('');
-                setSelectedLocationForRole('');
-              }}
-              className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-            >
-              Ακύρωση
-            </button>
-            <button
-              type="button"
-              onClick={confirmRoleChange}
-              className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-md"
-            >
-              Επιβεβαίωση
-            </button>
-          </>
-        }
-      >
-        <label htmlFor="roleLocationSelect" className="text-gray-700 mb-2 block">
-          Επιλέξτε τοποθεσία ανάθεσης συντονιστή (πρέπει να είναι η κατοικία του χρήστη ή ανώτερη τοποθεσία):
-        </label>
-        <select
-          id="roleLocationSelect"
-          aria-label="Τοποθεσία συντονιστή"
-          value={selectedLocationForRole}
-          onChange={(e) => setSelectedLocationForRole(e.target.value)}
-          className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-        >
-          <option value="">Επιλέξτε τοποθεσία</option>
-          {(locations ?? []).map((loc) => (
-            <option key={loc.id} value={String(loc.id)}>
-              {loc.name} (#{loc.id})
-            </option>
-          ))}
-        </select>
-      </Modal>
 
       {/* Delete User Dialog */}
       <ConfirmDialog

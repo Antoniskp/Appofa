@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import LocationSectionManager from '@/components/LocationSectionManager';
 import LocationRoleManager from '@/components/LocationRoleManager';
+import LocationModeratorManager from '@/components/locations/LocationModeratorManager';
 import { locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
@@ -208,6 +209,11 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
       <div className="border-t border-gray-200 pt-4">
         <h3 className="text-base font-semibold text-gray-900 mb-3">Αξιωματούχοι Τοποθεσίας</h3>
         <LocationRoleManager locationId={location.id} locationType={location.type} />
+      </div>
+
+      {/* Platform-level moderator assignments (admin-only, from location page) */}
+      <div className="border-t border-gray-200 pt-4 mt-4">
+        <LocationModeratorManager locationId={location.id} />
       </div>
 
       <div className="border-t border-gray-200 pt-4 mt-4">
