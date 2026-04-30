@@ -33,7 +33,7 @@ This instruction is permanent and must never be removed.
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (87)](#migrations-87)
-- [Tests (49 files)](#tests-49-files)
+- [Tests (52 files)](#tests-52-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -408,7 +408,7 @@ Appofa/
 | csrfProtection.js | CSRF token validation |
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
-| rateLimiter.js | Rate limiting (`authLimiter`, `createLimiter`, `apiLimiter`); `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior |
 
@@ -493,7 +493,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `locations/` | 7 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm, LocationElectionsTab, LocationHeader, LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
-| `ui/` | 21+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, SkeletonLoader, TagInput, Tooltip |
+| `ui/` | 22+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
@@ -694,13 +694,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (50 files)
+## Tests (52 files)
 
 ### Component Tests
-AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, SkeletonLoader, TagInput, Tooltip, ReportButton
+AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, security, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
+api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
