@@ -114,6 +114,29 @@ export default function EducationPage() {
         </div>
       </section>
 
+      <section>
+        <h2 className="text-2xl font-semibold mb-3">Εκπαιδευτικοί Πόροι</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <h3 className="text-lg font-semibold mb-2 text-indigo-700">
+              <a href="https://www.wikipedia.org/" target="_blank" rel="noopener noreferrer" className="hover:underline">🌐 Wikipedia</a>
+            </h3>
+            <p className="text-gray-700 text-sm">
+              Free online encyclopedia with articles in many languages on history, science, culture, technology, and more.
+            </p>
+          </div>
+
+          <div className="bg-white border border-gray-200 rounded-lg p-5">
+            <h3 className="text-lg font-semibold mb-2 text-indigo-700">
+              <a href="https://learn.mit.edu/search" target="_blank" rel="noopener noreferrer" className="hover:underline">🎓 MIT Learn Search</a>
+            </h3>
+            <p className="text-gray-700 text-sm">
+              Search MIT learning resources, courses, and educational materials from the Massachusetts Institute of Technology.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
         <h2 className="text-xl font-semibold mb-2">Μοιράσου την άποψή σου</h2>
         <p className="text-gray-700 text-sm">
