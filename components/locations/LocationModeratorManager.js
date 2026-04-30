@@ -22,8 +22,7 @@ import {
   PlusIcon,
   ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
-import { locationPlatformRoleAPI } from '@/lib/api';
-import { apiRequest } from '@/lib/api/client.js';
+import { locationPlatformRoleAPI, authAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 
 // ---------------------------------------------------------------------------
@@ -59,9 +58,7 @@ function UserSearchPicker({ onSelect, onClose }) {
     debounceRef.current = setTimeout(async () => {
       setSearching(true);
       try {
-        const res = await apiRequest(
-          `/api/auth/users/admin?search=${encodeURIComponent(query)}&limit=8&placeholder=false`
-        ).catch(() => null);
+        const res = await authAPI.getAdminUsers({ search: query, limit: 8, placeholder: 'false' }).catch(() => null);
         const items = res?.data?.users || [];
         setResults(items);
       } catch {
@@ -143,7 +140,7 @@ function UserSearchPicker({ onSelect, onClose }) {
 // Main component
 // ---------------------------------------------------------------------------
 export default function LocationModeratorManager({ locationId }) {
-  const { addToast } = useToast();
+  const { success: toastSuccess, error: toastError } = useToast();
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPicker, setShowPicker] = useState(false);
@@ -173,11 +170,11 @@ export default function LocationModeratorManager({ locationId }) {
     try {
       const res = await locationPlatformRoleAPI.addAssignment(locationId, user.id, 'moderator');
       if (res.success) {
-        addToast('Ο συντονιστής προστέθηκε!', { type: 'success' });
+        toastSuccess('Ο συντονιστής προστέθηκε!');
         setAssignments((prev) => [...prev, res.assignment]);
       }
     } catch (err) {
-      addToast(err.message || 'Αποτυχία προσθήκης συντονιστή.', { type: 'error' });
+      toastError(err.message || 'Αποτυχία προσθήκης συντονιστή.');
     }
   };
 
@@ -186,11 +183,11 @@ export default function LocationModeratorManager({ locationId }) {
     try {
       const res = await locationPlatformRoleAPI.removeAssignment(locationId, assignment.id);
       if (res.success) {
-        addToast('Η ανάθεση αφαιρέθηκε.', { type: 'success' });
+        toastSuccess('Η ανάθεση αφαιρέθηκε.');
         setAssignments((prev) => prev.filter((a) => a.id !== assignment.id));
       }
     } catch (err) {
-      addToast(err.message || 'Αποτυχία αφαιρέσης ανάθεσης.', { type: 'error' });
+      toastError(err.message || 'Αποτυχία αφαιρέσης ανάθεσης.');
     } finally {
       setRemovingId(null);
     }
