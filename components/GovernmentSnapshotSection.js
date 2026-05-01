@@ -107,9 +107,9 @@ export default function GovernmentSnapshotSection() {
           </div>
           <Link
             href="/dream-team"
-            className="shrink-0 text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors"
           >
-            {t('cta_view_all')} →
+            {t('cta_view_all')}
           </Link>
         </div>
 

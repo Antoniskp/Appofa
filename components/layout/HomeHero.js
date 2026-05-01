@@ -59,12 +59,6 @@ const NAV_CARDS = [
     href: '/mission',
   },
   {
-    icon: UsersIcon,
-    title: 'Dream Team',
-    description: 'Ψήφισε για την ιδανική κυβέρνηση',
-    href: '/dream-team',
-  },
-  {
     icon: HandRaisedIcon,
     title: 'Συνεισφορά',
     description: 'Βοήθησε το project',
