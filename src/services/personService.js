@@ -140,7 +140,9 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
   if (domainId && typeof domainId === 'string' && DOMAIN_MAP.has(domainId)) {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
-    where.professions = { [likeOp]: `%"domainId":"${domainId}"%` };
+    // domainId is validated against DOMAIN_MAP (known whitelist); sanitizeForLike adds extra defence
+    const safeDomainId = sanitizeForLike(domainId);
+    where.professions = { [likeOp]: `%"domainId":"${safeDomainId}"%` };
   }
 
   const { count, rows } = await User.findAndCountAll({

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAuth } from '@/lib/auth-context';
 import DreamTeamHero from '@/components/dream-team/DreamTeamHero';
@@ -76,6 +77,7 @@ function DreamTeamCountryPageInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const params = useParams();
+  const tDiscover = useTranslations('discover_people');
 
   // Normalize countryCode to uppercase
   const countryCode = (params.countryCode || 'gr').toUpperCase();
@@ -401,13 +403,13 @@ function DreamTeamCountryPageInner() {
             {/* Discover People prompt */}
             <div className="mb-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between gap-4">
               <p className="text-sm text-indigo-800">
-                🔍 <span className="font-medium">Learn about people before voting.</span> Browse profiles, expertise, and backgrounds.
+                🔍 <span className="font-medium">{tDiscover('dream_team_banner')}</span>
               </p>
               <Link
                 href="/discover-people"
                 className="shrink-0 inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
               >
-                Discover People →
+                {tDiscover('dream_team_cta')}
               </Link>
             </div>
             {!user && (
