@@ -316,11 +316,11 @@ function CreatePersonProfilePageContent() {
                 </div>
                 <p className="text-xs text-gray-400">JPEG, PNG, WebP ή HEIC/HEIF · έως 10 MB. Εάν δεν επιλεγεί αρχείο, μπορείτε να εισάγετε απευθείας URL παρακάτω.</p>
                 <input
-                  type="url"
+                  type="text"
                   value={form.photo}
                   onChange={(e) => handleChange('photo', e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="https://... (εναλλακτικά)"
+                  placeholder="/uploads/profiles/... ή https://... (εναλλακτικά)"
                 />
               </div>
             </div>
