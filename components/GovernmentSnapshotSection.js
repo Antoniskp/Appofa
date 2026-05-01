@@ -6,32 +6,40 @@ import { useTranslations } from 'next-intl';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import positionTypes from '@/config/governmentPositionTypes.json';
-import positionsData from '@/config/governmentPositions.json';
+import positionsConfig from '@/config/governmentPositions.json';
 
 const MAX_PREVIEW = 6;
 
 // Build lookup maps at module scope (computed once)
 const typeMap = Object.fromEntries(positionTypes.map((t) => [t.key, t]));
-const iconMap = positionsData.positions.reduce((acc, p) => {
+const iconMap = positionsConfig.positions.reduce((acc, p) => {
   if (p.icon) acc[p.slug] = p.icon;
   return acc;
 }, {});
 
-function HolderAvatar({ photo, name, avatarColor }) {
+function SmallAvatar({ photo, name, avatarColor, indigo = false }) {
   if (photo) {
     return (
       <img
         src={photo}
         alt={name || ''}
-        className="h-10 w-10 rounded-full object-cover flex-shrink-0"
+        className="h-7 w-7 rounded-full object-cover flex-shrink-0"
       />
     );
   }
   const initial = (name?.trim() || '').charAt(0).toUpperCase() || '?';
+  const base = 'h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white text-xs';
+  if (indigo) {
+    return (
+      <div className={`${base} bg-indigo-500`} aria-label={name || ''}>
+        {initial}
+      </div>
+    );
+  }
   return (
     <div
-      className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white text-sm"
-      style={{ backgroundColor: avatarColor || '#6b7280' }}
+      className={`${base} bg-gray-500`}
+      style={avatarColor ? { backgroundColor: avatarColor } : undefined}
       aria-label={name || ''}
     >
       {initial}
@@ -41,16 +49,22 @@ function HolderAvatar({ photo, name, avatarColor }) {
 
 function PositionCardSkeleton() {
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 animate-pulse">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2.5 animate-pulse">
       <div className="flex items-start justify-between gap-2">
         <div className="h-8 w-8 bg-gray-200 rounded" />
         <div className="h-5 w-16 bg-gray-200 rounded-full" />
       </div>
-      <div className="flex items-center gap-3">
-        <div className="h-10 w-10 bg-gray-200 rounded-full" />
-        <div className="flex-1 space-y-1.5">
-          <div className="h-3 bg-gray-200 rounded w-full" />
-          <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="h-4 bg-gray-200 rounded w-3/4" />
+      <div className="border-t border-gray-100 pt-2 space-y-2">
+        <div className="flex items-center gap-2">
+          <div className="h-3 bg-gray-200 rounded w-14 shrink-0" />
+          <div className="h-7 w-7 bg-gray-200 rounded-full shrink-0" />
+          <div className="h-3 bg-gray-200 rounded flex-1" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="h-3 bg-indigo-100 rounded w-14 shrink-0" />
+          <div className="h-7 w-7 bg-indigo-100 rounded-full shrink-0" />
+          <div className="h-3 bg-indigo-100 rounded flex-1" />
         </div>
       </div>
     </div>
@@ -60,19 +74,33 @@ function PositionCardSkeleton() {
 export default function GovernmentSnapshotSection() {
   const t = useTranslations('governmentSnapshot');
 
-  const { data: positionsData, loading } = useAsyncData(
-    () => dreamTeamAPI.getPositions('GR'),
+  const { data: combined, loading } = useAsyncData(
+    async () => {
+      const [posRes, resRes] = await Promise.all([
+        dreamTeamAPI.getPositions('GR'),
+        dreamTeamAPI.getResults('GR'),
+      ]);
+      const positions = posRes?.success ? posRes.data : [];
+      const resultsMap = (resRes?.success ? resRes.data : []).reduce((acc, item) => {
+        if (item.position?.id) acc[item.position.id] = item.winner;
+        return acc;
+      }, {});
+      return { positions, resultsMap };
+    },
     [],
-    { transform: (res) => (res?.success ? res.data : []) },
   );
 
-  const positions = useMemo(() => (positionsData || []).slice(0, MAX_PREVIEW), [positionsData]);
+  const positions = useMemo(
+    () => (combined?.positions || []).slice(0, MAX_PREVIEW),
+    [combined],
+  );
+  const resultsMap = combined?.resultsMap || {};
 
   return (
     <section className="bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
       <div className="app-container py-8">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-3">
+        <div className="flex items-center justify-between gap-4 mb-4">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">{t('title')}</h2>
             <p className="mt-0.5 text-xs text-gray-500">{t('subtitle')}</p>
@@ -85,12 +113,6 @@ export default function GovernmentSnapshotSection() {
           </Link>
         </div>
 
-        {/* Educational disclaimer */}
-        <p className="text-xs text-gray-400 mb-4 flex items-center gap-1.5">
-          <span>ℹ️</span>
-          {t('disclaimer')}
-        </p>
-
         {/* Position cards grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {loading
@@ -99,6 +121,7 @@ export default function GovernmentSnapshotSection() {
                 const typeConfig = typeMap[pos.positionTypeKey] || {};
                 const badgeColor = typeConfig.color || 'bg-gray-100 text-gray-600';
                 const icon = iconMap[pos.slug] || typeConfig.icon || '⚖️';
+
                 const holder = pos.currentHolders?.[0] || null;
                 const holderPhoto = holder?.holderPhoto || holder?.user?.photo || holder?.user?.avatar || null;
                 const holderName = holder?.user
@@ -106,10 +129,12 @@ export default function GovernmentSnapshotSection() {
                   : null;
                 const holderAvatarColor = holder?.holderAvatarColor || holder?.user?.avatarColor || null;
 
+                const winner = resultsMap[pos.id] || null;
+
                 return (
                   <div
                     key={pos.id || pos.slug}
-                    className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                    className="bg-white border border-gray-200 rounded-xl p-4 flex flex-col gap-2.5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                   >
                     {/* Position type badge + icon */}
                     <div className="flex items-start justify-between gap-2">
@@ -120,21 +145,39 @@ export default function GovernmentSnapshotSection() {
                     </div>
 
                     {/* Position title */}
-                    <p className="text-xs text-gray-500 leading-snug">{pos.title}</p>
+                    <p className="text-sm font-semibold text-gray-800 leading-snug">{pos.title}</p>
 
-                    {/* Current holder */}
-                    {holderName ? (
-                      <div className="flex items-center gap-3">
-                        <HolderAvatar
-                          photo={holderPhoto}
-                          name={holderName}
-                          avatarColor={holderAvatarColor}
-                        />
-                        <p className="text-sm font-semibold text-gray-900 leading-snug">{holderName}</p>
+                    {/* Comparison rows */}
+                    <div className="border-t border-gray-100 pt-2 space-y-2">
+                      {/* Today row */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 shrink-0 min-w-[5rem]">{t('today')}:</span>
+                        {holderName ? (
+                          <>
+                            <SmallAvatar photo={holderPhoto} name={holderName} avatarColor={holderAvatarColor} />
+                            <span className="text-xs font-medium text-gray-700 truncate">{holderName}</span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">{t('no_holder')}</span>
+                        )}
                       </div>
-                    ) : (
-                      <p className="text-xs text-gray-400 italic">{t('no_holder')}</p>
-                    )}
+
+                      {/* Community row */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-indigo-500 shrink-0 min-w-[5rem]">{t('community')}:</span>
+                        {winner ? (
+                          <>
+                            <SmallAvatar photo={winner.avatar || winner.photo} name={winner.personName} indigo />
+                            <span className="text-xs font-medium text-indigo-700 truncate">{winner.personName}</span>
+                            <span className="ml-auto text-xs text-gray-400 shrink-0 tabular-nums">
+                              {winner.voteCount} {t('votes_suffix')}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-xs text-gray-400 italic">{t('no_votes')}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 );
               })}
