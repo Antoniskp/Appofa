@@ -356,7 +356,7 @@ function DreamTeamCountryPageInner() {
             {countryMeta.flag} {countryMeta.name}
           </span>
           <span className="text-gray-300">•</span>
-          <Link href="/dream-team" className="hover:text-blue-600 transition-colors">
+          <Link href="/dream-team?browse=1" className="hover:text-blue-600 transition-colors">
             Άλλες χώρες
           </Link>
         </div>

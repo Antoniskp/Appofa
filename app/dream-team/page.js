@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -35,10 +35,17 @@ function getCountryMeta(code) {
  * Loads the list of countries with active configurations from the backend.
  * When only one country is available, redirects immediately to its page
  * for backward compatibility.
+ *
+ * The `?browse=1` query param suppresses the logged-in-user auto-redirect so
+ * that the country selector is shown intentionally (e.g. from "Άλλες χώρες").
  */
-export default function DreamTeamPage() {
+function DreamTeamPageInner() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const searchParams = useSearchParams();
+
+  // When ?browse=1 is present the user intentionally wants the selector — skip redirect.
+  const browseMode = searchParams.get('browse') === '1';
 
   const { data: countriesData, loading } = useAsyncData(
     () => dreamTeamAPI.getCountries(),
@@ -49,8 +56,10 @@ export default function DreamTeamPage() {
 
   // Auto-redirect to user's own country when available.
   // Fallback to single-country auto redirect for compatibility.
+  // Skip redirect in browse mode so the selector is shown intentionally.
   useEffect(() => {
     if (loading || authLoading) return;
+    if (browseMode) return;
 
     if (user) {
       const availableCountryCodes = countries.map((country) => country.countryCode);
@@ -66,7 +75,7 @@ export default function DreamTeamPage() {
     if (countries.length === 1) {
       router.replace(`/dream-team/${countries[0].countryCode.toLowerCase()}`);
     }
-  }, [loading, authLoading, countries, router, user]);
+  }, [loading, authLoading, browseMode, countries, router, user]);
 
   if (loading) {
     return (
@@ -112,5 +121,19 @@ export default function DreamTeamPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function DreamTeamPage() {
+  return (
+    <Suspense fallback={
+      <div className="bg-gray-50 min-h-screen py-16">
+        <div className="app-container max-w-2xl mx-auto">
+          <SkeletonLoader count={2} type="card" />
+        </div>
+      </div>
+    }>
+      <DreamTeamPageInner />
+    </Suspense>
   );
 }
