@@ -21,7 +21,7 @@ export default function HomepageSection({
   tagLinkPrefix,
 }) {
   return (
-    <section className={bgColor}>
+    <section className={`${bgColor} border-t border-gray-200`}>
       <div className="app-container py-16">
         <div className="flex flex-wrap items-center gap-3 mb-1">
           <h2 className="section-title !mb-0">{title}</h2>

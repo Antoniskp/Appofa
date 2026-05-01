@@ -260,21 +260,6 @@ export default function HomePage() {
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
 
-      <HomepageSection
-        title={tHome('latest_articles_title')}
-        subtitle={tHome('latest_articles_subtitle')}
-        linkHref="/articles"
-        loading={articlesLoading}
-        error={articlesError}
-        items={latestArticles}
-        emptyTitle={tHome('empty_articles_title')}
-        emptyDescription={tHome('empty_articles_description')}
-        skeletonCount={3}
-        bgColor="bg-white"
-        renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
-        topTags={articleTags}
-      />
-
       {!user && (
         <HomepageSection
           title="Ψηφίστε χωρίς εγγραφή"
@@ -333,10 +318,25 @@ export default function HomePage() {
           emptyTitle=""
           emptyDescription=""
           skeletonCount={6}
-          bgColor="bg-gray-50"
+          bgColor="bg-white"
           renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
         />
       )}
+
+      <HomepageSection
+        title={tHome('latest_articles_title')}
+        subtitle={tHome('latest_articles_subtitle')}
+        linkHref="/articles"
+        loading={articlesLoading}
+        error={articlesError}
+        items={latestArticles}
+        emptyTitle={tHome('empty_articles_title')}
+        emptyDescription={tHome('empty_articles_description')}
+        skeletonCount={3}
+        bgColor="bg-gray-50"
+        renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
+        topTags={articleTags}
+      />
 
       {/* CTA / Engagement Banner */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800">
@@ -470,7 +470,7 @@ export default function HomePage() {
         emptyTitle={tHome('empty_news_title')}
         emptyDescription={tHome('empty_news_description')}
         skeletonCount={3}
-        bgColor="bg-gray-50"
+        bgColor="bg-white"
         renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
         topTags={articleTags}
         tagLinkPrefix="/news"
@@ -486,7 +486,7 @@ export default function HomePage() {
         emptyTitle={tHome('empty_videos_title')}
         emptyDescription={tHome('empty_videos_description')}
         skeletonCount={3}
-        bgColor="bg-white"
+        bgColor="bg-gray-50"
         renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
         topTags={articleTags}
         tagLinkPrefix="/videos"
