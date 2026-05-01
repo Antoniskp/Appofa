@@ -18,7 +18,7 @@ import FormationComparison from '@/components/dream-team/FormationComparison';
 import EmptyState from '@/components/ui/EmptyState';
 import LoginLink from '@/components/ui/LoginLink';
 import Link from 'next/link';
-import { resolveUserDreamTeamCountryCode } from '@/lib/utils/userCountryCode';
+import { normalizeCountryCode, resolveUserDreamTeamCountryCode } from '@/lib/utils/userCountryCode';
 
 /** Display metadata for known ISO country codes — used for flag/name enrichment only. */
 const COUNTRY_META = {
@@ -146,7 +146,7 @@ function DreamTeamCountryPageInner() {
       if (countriesRes?.success) {
         setAvailableCountryCodes(
           (countriesRes.data || [])
-            .map((country) => String(country.countryCode || '').trim().toUpperCase())
+            .map((country) => normalizeCountryCode(country.countryCode))
             .filter(Boolean),
         );
       }
