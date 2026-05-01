@@ -6,6 +6,7 @@ const { helmetConfig, corsOptions } = require('../../config/securityHeaders');
 const {
   sequelize,
   User,
+  Location,
   GovernmentPosition,
   DreamTeamVote,
 } = require('../../models');
@@ -24,7 +25,10 @@ app.use('/api/persons', personRoutes);
 describe('Dream Team API Tests', () => {
   let userToken, userId;
   let secondUserToken, secondUserId;
+  let cyNationalityUserToken, cyNationalityUserId;
+  let cyHomeLocationUserToken, cyHomeLocationUserId;
   let positionId;
+  let cyPositionId;
   let candidateUserId;
 
   const csrfToken = 'test-csrf-dreamteam';
@@ -61,6 +65,10 @@ describe('Dream Team API Tests', () => {
 
     ({ token: userToken, id: userId } = await registerAndLogin('dt_user1'));
     ({ token: secondUserToken, id: secondUserId } = await registerAndLogin('dt_user2'));
+    ({ token: cyNationalityUserToken, id: cyNationalityUserId } = await registerAndLogin('dt_user_cy_nationality'));
+    ({ token: cyHomeLocationUserToken, id: cyHomeLocationUserId } = await registerAndLogin('dt_user_cy_home'));
+
+    await User.update({ nationality: 'CY' }, { where: { id: cyNationalityUserId } });
 
     // Seed a GR government position (used by voting tests)
     const pos = await GovernmentPosition.create({
@@ -78,7 +86,7 @@ describe('Dream Team API Tests', () => {
     // Seed CY government positions (simulates the migration)
     const cyJson = require('../../../config/countries/CY.json');
     for (const p of cyJson.positions) {
-      await GovernmentPosition.findOrCreate({
+      const [position] = await GovernmentPosition.findOrCreate({
         where: { slug: p.slug },
         defaults: {
           slug: p.slug,
@@ -91,7 +99,22 @@ describe('Dream Team API Tests', () => {
           isActive: true,
         },
       });
+      if (!cyPositionId) cyPositionId = position.id;
     }
+
+    const cyCountry = await Location.create({
+      name: 'Cyprus',
+      type: 'country',
+      code: 'CY',
+      slug: 'cyprus-test-country',
+    });
+    const cyMunicipality = await Location.create({
+      name: 'Nicosia',
+      type: 'municipality',
+      slug: 'nicosia-test-municipality',
+      parent_id: cyCountry.id,
+    });
+    await User.update({ homeLocationId: cyMunicipality.id }, { where: { id: cyHomeLocationUserId } });
 
     // Create a candidate user to vote for
     const candidateUser = await User.create({
@@ -208,6 +231,50 @@ describe('Dream Team API Tests', () => {
       expect(res.body.data).toHaveProperty('candidateUserId', candidateUserId);
       expect(res.body.data).toHaveProperty('personName');
       expect(res.body.message).toBe('Ψήφος καταγράφηκε επιτυχώς.');
+    });
+
+    it('returns 403 when user nationality is for another configured country', async () => {
+      const res = await request(app)
+        .post('/api/dream-team/vote')
+        .set(csrfHeaders(cyNationalityUserId, cyNationalityUserToken))
+        .send({ positionId, candidateUserId });
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Μπορείτε να ψηφίσετε μόνο στη δική σας χώρα.');
+    });
+
+    it('returns 403 when user home location resolves to another country', async () => {
+      await User.update({ nationality: null }, { where: { id: cyHomeLocationUserId } });
+
+      const res = await request(app)
+        .post('/api/dream-team/vote')
+        .set(csrfHeaders(cyHomeLocationUserId, cyHomeLocationUserToken))
+        .send({ positionId, candidateUserId });
+
+      expect(res.status).toBe(403);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toBe('Μπορείτε να ψηφίσετε μόνο στη δική σας χώρα.');
+    });
+
+    it('allows users to vote when their configured country matches the requested position country', async () => {
+      const candidate2 = await User.create({
+        username: 'dt_candidate_cy',
+        email: 'dt_candidate_cy@dt.test',
+        password: null,
+        role: 'viewer',
+        firstNameNative: 'Κυπριακός',
+        lastNameNative: 'Υποψήφιος',
+      });
+
+      const res = await request(app)
+        .post('/api/dream-team/vote')
+        .set(csrfHeaders(cyNationalityUserId, cyNationalityUserToken))
+        .send({ positionId: cyPositionId, candidateUserId: candidate2.id });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data).toHaveProperty('positionId', cyPositionId);
     });
 
     it('upserts (updates) vote when user votes again for same position', async () => {

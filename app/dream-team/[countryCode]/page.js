@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAuth } from '@/lib/auth-context';
@@ -18,6 +18,7 @@ import FormationComparison from '@/components/dream-team/FormationComparison';
 import EmptyState from '@/components/ui/EmptyState';
 import LoginLink from '@/components/ui/LoginLink';
 import Link from 'next/link';
+import { normalizeCountryCode, resolveUserDreamTeamCountryCode } from '@/lib/utils/userCountryCode';
 
 /** Display metadata for known ISO country codes — used for flag/name enrichment only. */
 const COUNTRY_META = {
@@ -95,6 +96,7 @@ function DreamTeamCountryPageInner() {
   const [toast, setToast] = useState(null);
   const [totalPublicFormations, setTotalPublicFormations] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [availableCountryCodes, setAvailableCountryCodes] = useState([]);
 
   const myVotesMapRef = useRef({});
   useEffect(() => { myVotesMapRef.current = myVotesMap; }, [myVotesMap]);
@@ -112,6 +114,12 @@ function DreamTeamCountryPageInner() {
   const [publicFormationsForCompare, setPublicFormationsForCompare] = useState([]);
   const [myFormationsForCompare, setMyFormationsForCompare] = useState([]);
 
+  const userCountryCode = useMemo(() => {
+    if (availableCountryCodes.length === 0) return null;
+    return resolveUserDreamTeamCountryCode(user, { allowedCountryCodes: availableCountryCodes });
+  }, [user, availableCountryCodes]);
+  const isOwnCountryContext = !user || !userCountryCode || userCountryCode === countryCode;
+
   const handleTabChange = useCallback((tabId) => {
     setActiveTab(tabId);
     const base = `/dream-team/${params.countryCode}`;
@@ -128,13 +136,21 @@ function DreamTeamCountryPageInner() {
     setLoading(true);
     setError(null);
     try {
-      const [posRes, resRes] = await Promise.all([
+      const [posRes, resRes, countriesRes] = await Promise.all([
         dreamTeamAPI.getPositions(countryCode),
         dreamTeamAPI.getResults(countryCode),
+        dreamTeamAPI.getCountries(),
       ]);
 
       if (posRes?.success) setPositions(posRes.data || []);
       if (resRes?.success) setResults(resRes.data || []);
+      if (countriesRes?.success) {
+        setAvailableCountryCodes(
+          (countriesRes.data || [])
+            .map((country) => normalizeCountryCode(country.countryCode))
+            .filter(Boolean),
+        );
+      }
 
       if (user) {
         try {
@@ -339,6 +355,10 @@ function DreamTeamCountryPageInner() {
           <span className="font-semibold text-gray-700">
             {countryMeta.flag} {countryMeta.name}
           </span>
+          <span className="text-gray-300">•</span>
+          <Link href="/dream-team" className="hover:text-blue-600 transition-colors">
+            Άλλες χώρες
+          </Link>
         </div>
 
         <DreamTeamHero
@@ -401,7 +421,7 @@ function DreamTeamCountryPageInner() {
                 </div>
               </div>
             )}
-            {user && (
+            {user && isOwnCountryContext && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl text-blue-700 text-sm flex items-center justify-between gap-4">
                 <span>🔗 Οι ψήφοι σας συγχρονίζονται αυτόματα με την &ldquo;Η Κυβέρνησή μου&rdquo; στις Συνθέσεις σας.</span>
                 <button
@@ -410,6 +430,19 @@ function DreamTeamCountryPageInner() {
                 >
                   Δείτε τη Σύνθεσή σας →
                 </button>
+              </div>
+            )}
+            {user && userCountryCode && !isOwnCountryContext && (
+              <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 text-sm flex items-center justify-between gap-4">
+                <span>
+                  🌍 Παρακολουθείτε το Dream Team της {countryMeta.flag} {countryMeta.name}. Η ψηφοφορία επιτρέπεται μόνο στη δική σας χώρα.
+                </span>
+                <Link
+                  href={`/dream-team/${userCountryCode?.toLowerCase()}`}
+                  className="shrink-0 text-xs font-semibold underline hover:no-underline whitespace-nowrap"
+                >
+                  Ψηφίστε στη χώρα σας →
+                </Link>
               </div>
             )}
             {loading ? (
@@ -431,8 +464,8 @@ function DreamTeamCountryPageInner() {
                     key={position.id}
                     position={position}
                     myVote={myVotesMap[position.id] || null}
-                    onVote={user ? handleVote : undefined}
-                    onDeleteVote={user ? handleDeleteVote : undefined}
+                    onVote={user && isOwnCountryContext ? handleVote : undefined}
+                    onDeleteVote={user && isOwnCountryContext ? handleDeleteVote : undefined}
                     loading={votingPosition === position.id}
                     // Non-GR countries restrict the person search to nationals of that
                     // country. GR keeps the original open-search behaviour (no filter)

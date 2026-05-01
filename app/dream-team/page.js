@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import { useAuth } from '@/lib/auth-context';
+import { resolveUserDreamTeamCountryCode } from '@/lib/utils/userCountryCode';
 
 /**
  * Display metadata (name, flag) for known ISO country codes.
@@ -36,6 +38,7 @@ function getCountryMeta(code) {
  */
 export default function DreamTeamPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const { data: countriesData, loading } = useAsyncData(
     () => dreamTeamAPI.getCountries(),
@@ -44,12 +47,26 @@ export default function DreamTeamPage() {
 
   const countries = countriesData?.data || [];
 
-  // Auto-redirect when only one country is configured
+  // Auto-redirect to user's own country when available.
+  // Fallback to single-country auto redirect for compatibility.
   useEffect(() => {
-    if (!loading && countries.length === 1) {
+    if (loading || authLoading) return;
+
+    if (user) {
+      const availableCountryCodes = countries.map((country) => country.countryCode);
+      const userCountryCode = resolveUserDreamTeamCountryCode(user, {
+        allowedCountryCodes: availableCountryCodes,
+      });
+      if (userCountryCode) {
+        router.replace(`/dream-team/${userCountryCode.toLowerCase()}`);
+        return;
+      }
+    }
+
+    if (countries.length === 1) {
       router.replace(`/dream-team/${countries[0].countryCode.toLowerCase()}`);
     }
-  }, [loading, countries, router]);
+  }, [loading, authLoading, countries, router, user]);
 
   if (loading) {
     return (
