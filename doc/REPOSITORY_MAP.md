@@ -517,7 +517,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
-| `profile/` | 14 | ProfileAboutSection, ProfileBadgesSection, ProfileBasicInfoForm, ProfileManifestSection, ProfileTwitchSection, TwitchEmbed |
+| `profile/` | 17 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 22+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 

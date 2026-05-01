@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { personAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
+import { EXPERTISE_TAGS, getExpertiseTagLabel } from '@/lib/utils/professionTaxonomy';
 import { getAllParties } from '@/lib/utils/politicalParties';
 import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
 import { normalizeUploadImage, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
@@ -424,29 +424,30 @@ function CreatePersonProfilePageContent() {
 
             {/* Expertise Area */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Τομέας Εξειδίκευσης</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Τομείς Εμπειρογνωμοσύνης</label>
               <div className="flex flex-wrap gap-2 mb-2">
                 {expertiseArea.map((area) => (
                   <span key={area} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                    {area}
+                    {getExpertiseTagLabel(area)}
                     <button
                       type="button"
                       onClick={() => setExpertiseArea((prev) => prev.filter((a) => a !== area))}
                       className="ml-1 text-purple-600 hover:text-purple-900 font-bold leading-none"
-                      aria-label={`Remove ${area}`}
+                      aria-label={`Remove ${getExpertiseTagLabel(area)}`}
                     >✕</button>
                   </span>
                 ))}
               </div>
               <div className="flex flex-wrap gap-2">
-                {EXPERTISE_AREAS.filter((area) => !expertiseArea.includes(area)).map((area) => (
+                {EXPERTISE_TAGS.filter((tag) => !expertiseArea.includes(tag.id)).map((tag) => (
                   <button
-                    key={area}
+                    key={tag.id}
                     type="button"
-                    onClick={() => setExpertiseArea((prev) => [...prev, area])}
-                    className="inline-flex items-center px-3 py-1 rounded-full border border-purple-300 text-xs text-purple-700 hover:bg-purple-50 transition"
+                    disabled={expertiseArea.length >= 5}
+                    onClick={() => setExpertiseArea((prev) => [...prev, tag.id])}
+                    className="inline-flex items-center px-3 py-1 rounded-full border border-purple-300 text-xs text-purple-700 hover:bg-purple-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    + {area}
+                    + {tag.label}
                   </button>
                 ))}
               </div>

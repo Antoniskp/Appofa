@@ -934,7 +934,7 @@ async function getPublicUserProfile(userId) {
 
   const user = await User.findOne({
     where: { id: userId, searchable: true },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -948,7 +948,7 @@ async function getPublicUserProfileByUsername(username) {
 
   const user = await User.findOne({
     where: { username: username.trim(), searchable: true },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
