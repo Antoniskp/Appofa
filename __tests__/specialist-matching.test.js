@@ -374,4 +374,16 @@ describe('searchUsers — taxonomy filtering (integration)', () => {
     });
     expect(res.body.data.pagination.totalItems).toBeGreaterThanOrEqual(1);
   });
+
+  test('rejects invalid (non-kebab-case) domainId without crashing', async () => {
+    // An injected value like `x","injected":"y` should not produce a 500
+    const res = await request(app)
+      .get('/api/auth/users/search?domainId=bad%22injection')
+      .set('Cookie', adminToken);
+    expect(res.status).toBe(200);
+    // The filter is silently ignored, so all users are returned
+    const usernames = res.body.data.users.map((u) => u.username);
+    expect(usernames).toContain('devuser');
+    expect(usernames).toContain('docuser');
+  });
 });

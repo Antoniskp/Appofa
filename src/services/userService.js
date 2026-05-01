@@ -1007,16 +1007,25 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
   }
 
   // ── Taxonomy (profession hierarchy) filtering ─────────────────────────────
+  // Validate taxonomy IDs: all canonical IDs are kebab-case (a-z0-9 and hyphens).
+  // Reject any value that doesn't match to prevent injection via the LIKE pattern.
+  const TAXONOMY_ID_RE = /^[a-z0-9][a-z0-9-]*$/;
+  const safeId = (v) => (v && TAXONOMY_ID_RE.test(String(v)) ? String(v) : null);
+  const safeDomainId = safeId(domainId);
+  const safeProfessionId = safeId(professionId);
+  const safeSpecializationId = safeId(specializationId);
+  const safeSubspecializationId = safeId(subspecializationId);
+  const hasSafeTaxonomyFilter = !!(safeDomainId || safeProfessionId || safeSpecializationId || safeSubspecializationId);
+
   // Apply all provided taxonomy conditions as AND constraints on the JSON text.
-  if (hasTaxonomyFilter) {
+  if (hasSafeTaxonomyFilter) {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
-    const esc = (v) => String(v).replace(/[%_\\]/g, '\\$&');
     const professionsConds = [];
-    if (domainId) professionsConds.push({ [likeOp]: `%"domainId":"${esc(domainId)}"%` });
-    if (professionId) professionsConds.push({ [likeOp]: `%"professionId":"${esc(professionId)}"%` });
-    if (specializationId) professionsConds.push({ [likeOp]: `%"specializationId":"${esc(specializationId)}"%` });
-    if (subspecializationId) professionsConds.push({ [likeOp]: `%"subspecializationId":"${esc(subspecializationId)}"%` });
+    if (safeDomainId) professionsConds.push({ [likeOp]: `%"domainId":"${safeDomainId}"%` });
+    if (safeProfessionId) professionsConds.push({ [likeOp]: `%"professionId":"${safeProfessionId}"%` });
+    if (safeSpecializationId) professionsConds.push({ [likeOp]: `%"specializationId":"${safeSpecializationId}"%` });
+    if (safeSubspecializationId) professionsConds.push({ [likeOp]: `%"subspecializationId":"${safeSubspecializationId}"%` });
 
     if (professionsConds.length === 1) {
       whereClause.professions = professionsConds[0];
@@ -1029,7 +1038,7 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
 
   // When a taxonomy filter is active, fetch all matching users (capped at 500)
   // so we can score and sort by relevance before applying pagination.
-  if (hasTaxonomyFilter) {
+  if (hasSafeTaxonomyFilter) {
     const allMatchingUsers = await User.findAll({
       where: whereClause,
       attributes: SEARCH_ATTRIBUTES,
@@ -1037,7 +1046,7 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
       limit: 500,
     });
 
-    const query = { domainId, professionId, specializationId, subspecializationId };
+    const query = { domainId: safeDomainId, professionId: safeProfessionId, specializationId: safeSpecializationId, subspecializationId: safeSubspecializationId };
     const scored = allMatchingUsers
       .map((u) => ({
         user: u,
