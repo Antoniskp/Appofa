@@ -10,12 +10,14 @@ const {
   GovernmentPositionSuggestion,
   DreamTeamVote,
   User,
+  Location,
   Formation,
   FormationPick,
   FormationLike,
 } = require('../models');
 const badgeService = require('../services/badgeService');
 const { allCountries } = require(path.join(__dirname, '../../config/countries/index.js'));
+const { resolveUserDreamTeamCountryCode } = require('../utils/userCountryCode');
 
 // National position slugs that are managed from the Location (Greece) page.
 // Editing holders for these positions via Dream Team admin is blocked.
@@ -168,6 +170,56 @@ const dreamTeamController = {
         return res.status(404).json({
           success: false,
           message: 'Η θέση δεν βρέθηκε.',
+        });
+      }
+
+      const voter = await User.findByPk(req.user.id, {
+        attributes: ['id', 'nationality', 'homeLocationId'],
+        include: [
+          {
+            model: Location,
+            as: 'homeLocation',
+            attributes: ['id', 'type', 'code'],
+            required: false,
+            include: [
+              {
+                model: Location,
+                as: 'parent',
+                attributes: ['id', 'type', 'code'],
+                required: false,
+                include: [
+                  {
+                    model: Location,
+                    as: 'parent',
+                    attributes: ['id', 'type', 'code'],
+                    required: false,
+                    include: [
+                      {
+                        model: Location,
+                        as: 'parent',
+                        attributes: ['id', 'type', 'code'],
+                        required: false,
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+      if (!voter) {
+        return res.status(404).json({
+          success: false,
+          message: 'Ο χρήστης δεν βρέθηκε.',
+        });
+      }
+
+      const voterCountryCode = resolveUserDreamTeamCountryCode(voter.toJSON());
+      if (voterCountryCode && voterCountryCode !== position.countryCode) {
+        return res.status(403).json({
+          success: false,
+          message: 'Μπορείτε να ψηφίσετε μόνο στη δική σας χώρα.',
         });
       }
 

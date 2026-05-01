@@ -287,7 +287,7 @@ Appofa/
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /positions | — | List positions |
-| POST | /vote | ✅ | Cast vote |
+| POST | /vote | ✅ | Cast vote (country-scoped: user can vote only in resolved own country; mismatch returns 403) |
 | DELETE | /vote/:positionId | ✅ | Remove vote |
 | GET | /results | — | Results |
 | GET | /my-votes | ✅ | My votes |
@@ -401,6 +401,7 @@ Appofa/
 | Utility | Purpose |
 |---------|---------|
 | organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
+| userCountryCode.js | Dream Team country resolution helper (`nationality` first, then `homeLocation` country ancestor via `Location.type='country'` + `code`) used by vote authorization |
 
 ---
 
@@ -452,7 +453,7 @@ Appofa/
 | `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile with improved poll/suggestion tabs: collapsible create forms, richer cards with deadline/type/author metadata, styled empty states |
 | `/official-posts` | Public discovery feed for platform-wide official organization posts |
 | `/country/[code]` | Country landing page after first-visit geo redirect |
-| `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations |
+| `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations (`/dream-team` auto-redirects logged-in users to their resolved own country when available; `/dream-team/[countryCode]` keeps other countries browseable in read-only mode for voting) |
 | `/persons`, `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles |
 | `/candidates/*` | Backward-compat alias for persons |
 | `/worthy-citizens` | Worthy citizens page |
