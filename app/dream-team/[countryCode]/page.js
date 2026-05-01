@@ -398,6 +398,18 @@ function DreamTeamCountryPageInner() {
         {/* Vote Tab */}
         {!error && activeTab === 'vote' && (
           <>
+            {/* Discover People prompt */}
+            <div className="mb-4 p-4 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between gap-4">
+              <p className="text-sm text-indigo-800">
+                🔍 <span className="font-medium">Learn about people before voting.</span> Browse profiles, expertise, and backgrounds.
+              </p>
+              <Link
+                href="/discover-people"
+                className="shrink-0 inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+              >
+                Discover People →
+              </Link>
+            </div>
             {!user && (
               <div className="mb-6 p-6 bg-amber-50 border border-amber-200 rounded-2xl">
                 <p className="text-amber-900 font-semibold text-base mb-2">
