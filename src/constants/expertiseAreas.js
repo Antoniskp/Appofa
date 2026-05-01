@@ -1,19 +1,10 @@
 /**
- * Predefined expertise area categories for user and public person profiles.
+ * Expertise tag IDs for user and public person profiles.
+ * Derived from src/data/expertiseTags.json (taxonomy v2).
  */
 
-const EXPERTISE_AREAS = [
-  'IT / Technology',
-  'Politics',
-  'Art',
-  'Science',
-  'Sports / Athletics',
-  'Journalism',
-  'Education',
-  'Business',
-  'Law',
-  'Health / Medicine',
-  'Other',
-];
+const expertiseTagsData = require('../data/expertiseTags.json');
+
+const EXPERTISE_AREAS = expertiseTagsData.expertiseTags.map((t) => t.id);
 
 module.exports = { EXPERTISE_AREAS };

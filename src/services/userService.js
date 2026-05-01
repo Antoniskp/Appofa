@@ -9,7 +9,13 @@ const {
 const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
-const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
+const {
+  normalizeLegacyProfession,
+  normalizeProfessions,
+  validateProfessionalIdentity,
+  validateExpertiseTagIds,
+  normalizeExpertiseTags,
+} = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
 
 const USERNAME_MIN_LENGTH = 3;
@@ -20,7 +26,6 @@ const BIO_MAX_LENGTH = 280;
 const PASSWORD_MIN_LENGTH = 6;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
-const VALID_EXPERTISE_AREAS = new Set(EXPERTISE_AREAS);
 const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
 const MAX_PROFESSIONS = 5;
 const MAX_INTERESTS = 10;
@@ -346,12 +351,14 @@ async function updateUserProfile(userId, data) {
     } else if (professions.length > MAX_PROFESSIONS) {
       throw new ServiceError(400, `You can add at most ${MAX_PROFESSIONS} professions.`);
     } else {
-      for (const p of professions) {
-        if (!p || typeof p !== 'object') throw new ServiceError(400, 'Each profession must be an object.');
-        if (!p.categoryId || typeof p.categoryId !== 'string') throw new ServiceError(400, 'Each profession must have a categoryId.');
-        if (!p.professionId || typeof p.professionId !== 'string') throw new ServiceError(400, 'Each profession must have a professionId.');
+      // Normalize legacy entries to canonical format before validation
+      const normalized = normalizeProfessions(professions);
+      try {
+        const validated = normalized.map(validateProfessionalIdentity);
+        user.professions = validated.length > 0 ? validated : null;
+      } catch (err) {
+        throw new ServiceError(400, err.message);
       }
-      user.professions = professions.length > 0 ? professions : null;
     }
   }
 
@@ -380,11 +387,14 @@ async function updateUserProfile(userId, data) {
     } else if (expertiseArea.length > MAX_EXPERTISE_AREAS) {
       throw new ServiceError(400, `You can add at most ${MAX_EXPERTISE_AREAS} expertise areas.`);
     } else {
-      for (const area of expertiseArea) {
-        if (typeof area !== 'string') throw new ServiceError(400, 'Each expertise area must be a string.');
-        if (!VALID_EXPERTISE_AREAS.has(area)) throw new ServiceError(400, `Invalid expertise area: "${area}".`);
+      // Normalize legacy string labels to tag IDs before validation
+      const normalized = normalizeExpertiseTags(expertiseArea);
+      try {
+        const validated = validateExpertiseTagIds(normalized);
+        user.expertiseArea = validated.length > 0 ? validated : null;
+      } catch (err) {
+        throw new ServiceError(400, err.message);
       }
-      user.expertiseArea = expertiseArea.length > 0 ? expertiseArea : null;
     }
   }
 

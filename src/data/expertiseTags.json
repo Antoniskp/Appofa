@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "expertiseTags": [
+    { "id": "artificial-intelligence", "label": "Artificial Intelligence", "domainIds": ["technology-it"] },
+    { "id": "cybersecurity", "label": "Cybersecurity", "domainIds": ["technology-it"] },
+    { "id": "web-development", "label": "Web Development", "domainIds": ["technology-it"] },
+    { "id": "mobile-apps", "label": "Mobile Apps", "domainIds": ["technology-it"] },
+    { "id": "cloud-computing", "label": "Cloud Computing", "domainIds": ["technology-it"] },
+    { "id": "data-science", "label": "Data Science", "domainIds": ["technology-it"] },
+    { "id": "devops", "label": "DevOps", "domainIds": ["technology-it"] },
+    { "id": "product-management", "label": "Product Management", "domainIds": ["technology-it", "business-entrepreneurship"] },
+
+    { "id": "startups", "label": "Startups", "domainIds": ["business-entrepreneurship"] },
+    { "id": "strategy", "label": "Strategy", "domainIds": ["business-entrepreneurship"] },
+    { "id": "marketing", "label": "Marketing", "domainIds": ["business-entrepreneurship"] },
+    { "id": "sales", "label": "Sales", "domainIds": ["business-entrepreneurship"] },
+    { "id": "operations", "label": "Operations", "domainIds": ["business-entrepreneurship"] },
+    { "id": "leadership", "label": "Leadership", "domainIds": ["business-entrepreneurship"] },
+    { "id": "e-commerce-tag", "label": "E-commerce", "domainIds": ["business-entrepreneurship"] },
+    { "id": "retail", "label": "Retail", "domainIds": ["business-entrepreneurship"] },
+
+    { "id": "investing", "label": "Investing", "domainIds": ["finance-economics"] },
+    { "id": "accounting-tag", "label": "Accounting", "domainIds": ["finance-economics"] },
+    { "id": "taxation", "label": "Taxation", "domainIds": ["finance-economics"] },
+    { "id": "banking", "label": "Banking", "domainIds": ["finance-economics"] },
+    { "id": "macroeconomics-tag", "label": "Macroeconomics", "domainIds": ["finance-economics", "education-academia"] },
+    { "id": "risk-management", "label": "Risk Management", "domainIds": ["finance-economics"] },
+
+    { "id": "surgery", "label": "Surgery", "domainIds": ["health-medicine"] },
+    { "id": "cardiology", "label": "Cardiology", "domainIds": ["health-medicine"] },
+    { "id": "mental-health", "label": "Mental Health", "domainIds": ["health-medicine"] },
+    { "id": "nutrition", "label": "Nutrition", "domainIds": ["health-medicine"] },
+    { "id": "rehabilitation", "label": "Rehabilitation", "domainIds": ["health-medicine", "sports-athletics"] },
+    { "id": "public-health-tag", "label": "Public Health", "domainIds": ["health-medicine"] },
+    { "id": "sports-medicine", "label": "Sports Medicine", "domainIds": ["health-medicine", "sports-athletics"] },
+    { "id": "trauma-care", "label": "Trauma Care", "domainIds": ["health-medicine"] },
+
+    { "id": "corporate-law", "label": "Corporate Law", "domainIds": ["law-legal"] },
+    { "id": "criminal-law-tag", "label": "Criminal Law", "domainIds": ["law-legal"] },
+    { "id": "tax-law", "label": "Tax Law", "domainIds": ["law-legal", "finance-economics"] },
+    { "id": "intellectual-property", "label": "Intellectual Property", "domainIds": ["law-legal"] },
+    { "id": "human-rights-law", "label": "Human Rights Law", "domainIds": ["law-legal", "social-impact"] },
+    { "id": "regulatory-affairs", "label": "Regulatory Affairs", "domainIds": ["law-legal"] },
+
+    { "id": "public-policy", "label": "Public Policy", "domainIds": ["politics-government"] },
+    { "id": "international-relations-tag", "label": "International Relations", "domainIds": ["politics-government"] },
+    { "id": "governance", "label": "Governance", "domainIds": ["politics-government"] },
+    { "id": "elections", "label": "Elections", "domainIds": ["politics-government"] },
+    { "id": "diplomacy", "label": "Diplomacy", "domainIds": ["politics-government"] },
+    { "id": "eu-affairs", "label": "EU Affairs", "domainIds": ["politics-government"] },
+
+    { "id": "higher-education", "label": "Higher Education", "domainIds": ["education-academia"] },
+    { "id": "research-methods", "label": "Research Methods", "domainIds": ["education-academia", "science-research"] },
+    { "id": "curriculum-design", "label": "Curriculum Design", "domainIds": ["education-academia"] },
+    { "id": "academic-publishing", "label": "Academic Publishing", "domainIds": ["education-academia"] },
+
+    { "id": "climate-science", "label": "Climate Science", "domainIds": ["science-research", "agriculture-environment"] },
+    { "id": "biotechnology", "label": "Biotechnology", "domainIds": ["science-research", "health-medicine"] },
+    { "id": "materials-science-tag", "label": "Materials Science", "domainIds": ["science-research", "engineering-industry"] },
+    { "id": "mathematics", "label": "Mathematics", "domainIds": ["science-research"] },
+
+    { "id": "investigative-reporting", "label": "Investigative Reporting", "domainIds": ["media-journalism"] },
+    { "id": "digital-media", "label": "Digital Media", "domainIds": ["media-journalism"] },
+    { "id": "broadcasting-tag", "label": "Broadcasting", "domainIds": ["media-journalism"] },
+
+    { "id": "performance-training", "label": "Performance Training", "domainIds": ["sports-athletics"] },
+    { "id": "coaching-tag", "label": "Coaching", "domainIds": ["sports-athletics"] },
+    { "id": "recovery-tag", "label": "Recovery", "domainIds": ["sports-athletics", "health-medicine"] },
+    { "id": "sports-nutrition", "label": "Sports Nutrition", "domainIds": ["sports-athletics", "health-medicine"] },
+    { "id": "biomechanics-tag", "label": "Biomechanics", "domainIds": ["sports-athletics", "science-research"] },
+
+    { "id": "music", "label": "Music", "domainIds": ["arts-culture"] },
+    { "id": "visual-arts", "label": "Visual Arts", "domainIds": ["arts-culture"] },
+    { "id": "film", "label": "Film", "domainIds": ["arts-culture"] },
+    { "id": "literature", "label": "Literature", "domainIds": ["arts-culture"] },
+
+    { "id": "civil-engineering-tag", "label": "Civil Engineering", "domainIds": ["engineering-industry"] },
+    { "id": "mechanical-engineering-tag", "label": "Mechanical Engineering", "domainIds": ["engineering-industry"] },
+    { "id": "renewable-energy-tag", "label": "Renewable Energy", "domainIds": ["engineering-industry", "agriculture-environment"] },
+    { "id": "automation", "label": "Automation", "domainIds": ["engineering-industry", "technology-it"] },
+
+    { "id": "social-entrepreneurship", "label": "Social Entrepreneurship", "domainIds": ["social-impact"] },
+    { "id": "philanthropy", "label": "Philanthropy", "domainIds": ["social-impact"] },
+    { "id": "community-development", "label": "Community Development", "domainIds": ["social-impact"] },
+
+    { "id": "agriculture-tag", "label": "Agriculture", "domainIds": ["agriculture-environment"] },
+    { "id": "sustainability-tag", "label": "Sustainability", "domainIds": ["agriculture-environment", "engineering-industry"] },
+    { "id": "environmental-policy-tag", "label": "Environmental Policy", "domainIds": ["agriculture-environment", "politics-government"] }
+  ]
+}

@@ -1,6 +1,7 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
+const { normalizeProfessions, normalizeExpertiseTags } = require('../utils/professionTaxonomy');
 
 const User = sequelize.define('User', {
   id: {
@@ -154,7 +155,10 @@ const User = sequelize.define('User', {
     get() {
       const raw = this.getDataValue('professions');
       if (!raw) return [];
-      try { return JSON.parse(raw); } catch (err) {
+      try {
+        const parsed = JSON.parse(raw);
+        return normalizeProfessions(parsed);
+      } catch (err) {
         console.error('Failed to parse professions JSON:', err.message);
         return [];
       }
@@ -184,7 +188,10 @@ const User = sequelize.define('User', {
     get() {
       const raw = this.getDataValue('expertiseArea');
       if (!raw) return [];
-      try { return JSON.parse(raw); } catch (err) {
+      try {
+        const parsed = JSON.parse(raw);
+        return normalizeExpertiseTags(parsed);
+      } catch (err) {
         console.error('Failed to parse expertiseArea JSON:', err.message);
         return [];
       }

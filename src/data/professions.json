@@ -1,139 +1,590 @@
 {
-  "categories": [
+  "version": 2,
+  "domains": [
     {
-      "id": "technology",
-      "label": "Technology & IT",
+      "id": "technology-it",
+      "label": "Technology / IT",
       "professions": [
         {
-          "id": "software_engineer", "label": "Software Engineer",
-          "subProfessions": [
-            { "id": "frontend", "label": "Frontend Developer" },
-            { "id": "backend", "label": "Backend Developer" },
-            { "id": "fullstack", "label": "Full Stack Developer" },
-            { "id": "devops", "label": "DevOps Engineer" },
-            { "id": "mobile", "label": "Mobile Developer" }
+          "id": "software-engineer",
+          "label": "Software Engineer",
+          "specializations": [
+            { "id": "frontend-developer", "label": "Frontend Developer", "subspecializations": [
+              { "id": "react", "label": "React" },
+              { "id": "angular", "label": "Angular" },
+              { "id": "vue", "label": "Vue" }
+            ]},
+            { "id": "backend-developer", "label": "Backend Developer", "subspecializations": [
+              { "id": "nodejs", "label": "Node.js" },
+              { "id": "python-backend", "label": "Python" },
+              { "id": "java", "label": "Java" },
+              { "id": "go", "label": "Go" }
+            ]},
+            { "id": "fullstack-developer", "label": "Full Stack Developer", "subspecializations": [] },
+            { "id": "mobile-developer", "label": "Mobile Developer", "subspecializations": [
+              { "id": "ios", "label": "iOS" },
+              { "id": "android", "label": "Android" },
+              { "id": "react-native", "label": "React Native" }
+            ]},
+            { "id": "embedded-systems", "label": "Embedded Systems Engineer", "subspecializations": [] },
+            { "id": "game-developer", "label": "Game Developer", "subspecializations": [] }
           ]
         },
         {
-          "id": "data_scientist", "label": "Data Scientist",
-          "subProfessions": [
-            { "id": "ml_engineer", "label": "ML Engineer" },
-            { "id": "data_analyst", "label": "Data Analyst" },
-            { "id": "data_engineer", "label": "Data Engineer" }
+          "id": "data-scientist",
+          "label": "Data Scientist",
+          "specializations": [
+            { "id": "machine-learning", "label": "Machine Learning Engineer", "subspecializations": [
+              { "id": "nlp", "label": "NLP" },
+              { "id": "computer-vision", "label": "Computer Vision" },
+              { "id": "llm-applications", "label": "LLM Applications" }
+            ]},
+            { "id": "data-analyst", "label": "Data Analyst", "subspecializations": [] },
+            { "id": "data-engineer", "label": "Data Engineer", "subspecializations": [] }
           ]
         },
-        { "id": "cybersecurity", "label": "Cybersecurity Specialist", "subProfessions": [] },
-        { "id": "ux_designer", "label": "UX/UI Designer", "subProfessions": [] },
-        { "id": "sysadmin", "label": "System Administrator", "subProfessions": [] }
-      ]
-    },
-    {
-      "id": "healthcare",
-      "label": "Healthcare & Medicine",
-      "professions": [
         {
-          "id": "doctor", "label": "Doctor / Physician",
-          "subProfessions": [
-            { "id": "gp", "label": "General Practitioner" },
-            { "id": "surgeon", "label": "Surgeon" },
-            { "id": "cardiologist", "label": "Cardiologist" },
-            { "id": "pediatrician", "label": "Pediatrician" },
-            { "id": "neurologist", "label": "Neurologist" }
+          "id": "ai-engineer",
+          "label": "AI Engineer",
+          "specializations": [
+            { "id": "ai-nlp", "label": "NLP", "subspecializations": [] },
+            { "id": "ai-computer-vision", "label": "Computer Vision", "subspecializations": [] },
+            { "id": "ai-llm", "label": "LLM Applications", "subspecializations": [] }
           ]
         },
-        { "id": "nurse", "label": "Nurse", "subProfessions": [] },
-        { "id": "pharmacist", "label": "Pharmacist", "subProfessions": [] },
-        { "id": "psychologist", "label": "Psychologist", "subProfessions": [] },
-        { "id": "dentist", "label": "Dentist", "subProfessions": [] }
-      ]
-    },
-    {
-      "id": "education",
-      "label": "Education",
-      "professions": [
         {
-          "id": "teacher", "label": "Teacher",
-          "subProfessions": [
-            { "id": "primary", "label": "Primary School" },
-            { "id": "secondary", "label": "Secondary School" },
-            { "id": "university", "label": "University Lecturer" }
+          "id": "cybersecurity-specialist",
+          "label": "Cybersecurity Specialist",
+          "specializations": [
+            { "id": "network-security", "label": "Network Security", "subspecializations": [] },
+            { "id": "application-security", "label": "Application Security", "subspecializations": [] },
+            { "id": "cloud-security", "label": "Cloud Security", "subspecializations": [] },
+            { "id": "incident-response", "label": "Incident Response", "subspecializations": [] }
           ]
         },
-        { "id": "researcher", "label": "Researcher / Academic", "subProfessions": [] },
-        { "id": "school_counselor", "label": "School Counselor", "subProfessions": [] }
-      ]
-    },
-    {
-      "id": "law",
-      "label": "Law & Legal",
-      "professions": [
         {
-          "id": "lawyer", "label": "Lawyer / Attorney",
-          "subProfessions": [
-            { "id": "civil_law", "label": "Civil Law" },
-            { "id": "criminal_law", "label": "Criminal Law" },
-            { "id": "corporate_law", "label": "Corporate Law" }
+          "id": "devops-engineer",
+          "label": "DevOps Engineer",
+          "specializations": [
+            { "id": "cloud-infrastructure", "label": "Cloud Infrastructure", "subspecializations": [] },
+            { "id": "ci-cd", "label": "CI/CD", "subspecializations": [] },
+            { "id": "site-reliability", "label": "Site Reliability Engineering", "subspecializations": [] }
           ]
         },
-        { "id": "judge", "label": "Judge", "subProfessions": [] },
-        { "id": "notary", "label": "Notary", "subProfessions": [] }
+        { "id": "product-manager", "label": "Product Manager", "specializations": [
+          { "id": "technical-pm", "label": "Technical PM", "subspecializations": [] },
+          { "id": "growth-pm", "label": "Growth PM", "subspecializations": [] }
+        ]},
+        { "id": "ux-designer", "label": "UX/UI Designer", "specializations": [
+          { "id": "ux-research", "label": "UX Research", "subspecializations": [] },
+          { "id": "ui-design", "label": "UI Design", "subspecializations": [] },
+          { "id": "product-design", "label": "Product Design", "subspecializations": [] }
+        ]},
+        { "id": "it-administrator", "label": "IT Administrator", "specializations": [
+          { "id": "network-admin", "label": "Network Administrator", "subspecializations": [] },
+          { "id": "systems-admin", "label": "Systems Administrator", "subspecializations": [] }
+        ]},
+        { "id": "cto", "label": "CTO", "specializations": [] },
+        { "id": "technical-consultant", "label": "Technical Consultant", "specializations": [] }
       ]
     },
     {
-      "id": "business",
-      "label": "Business & Finance",
+      "id": "business-entrepreneurship",
+      "label": "Business / Entrepreneurship",
       "professions": [
-        { "id": "accountant", "label": "Accountant", "subProfessions": [] },
-        { "id": "financial_analyst", "label": "Financial Analyst", "subProfessions": [] },
-        { "id": "entrepreneur", "label": "Entrepreneur / Business Owner", "subProfessions": [] },
         {
-          "id": "manager", "label": "Manager",
-          "subProfessions": [
-            { "id": "project_manager", "label": "Project Manager" },
-            { "id": "hr_manager", "label": "HR Manager" },
-            { "id": "operations_manager", "label": "Operations Manager" }
+          "id": "entrepreneur",
+          "label": "Entrepreneur",
+          "specializations": [
+            { "id": "startup-founder", "label": "Startup Founder", "subspecializations": [
+              { "id": "saas", "label": "SaaS" },
+              { "id": "e-commerce", "label": "E-commerce" },
+              { "id": "fintech", "label": "Fintech" },
+              { "id": "marketplace", "label": "Marketplace" }
+            ]},
+            { "id": "small-business-owner", "label": "Small Business Owner", "subspecializations": [] },
+            { "id": "franchise-owner", "label": "Franchise Owner", "subspecializations": [] }
           ]
-        }
+        },
+        { "id": "ceo", "label": "CEO", "specializations": [] },
+        { "id": "coo", "label": "COO", "specializations": [] },
+        {
+          "id": "consultant",
+          "label": "Consultant",
+          "specializations": [
+            { "id": "strategy-consultant", "label": "Strategy Consultant", "subspecializations": [] },
+            { "id": "management-consultant", "label": "Management Consultant", "subspecializations": [] },
+            { "id": "operations-consultant", "label": "Operations Consultant", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "marketing-professional",
+          "label": "Marketing Professional",
+          "specializations": [
+            { "id": "digital-marketing", "label": "Digital Marketing", "subspecializations": [] },
+            { "id": "brand-marketing", "label": "Brand Marketing", "subspecializations": [] },
+            { "id": "growth-marketing", "label": "Growth Marketing", "subspecializations": [] },
+            { "id": "performance-marketing", "label": "Performance Marketing", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "sales-professional",
+          "label": "Sales Professional",
+          "specializations": [
+            { "id": "b2b-sales", "label": "B2B Sales", "subspecializations": [] },
+            { "id": "b2c-sales", "label": "B2C Sales", "subspecializations": [] },
+            { "id": "enterprise-sales", "label": "Enterprise Sales", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "operations-manager",
+          "label": "Operations Manager",
+          "specializations": [
+            { "id": "supply-chain", "label": "Supply Chain", "subspecializations": [] },
+            { "id": "logistics", "label": "Logistics", "subspecializations": [] },
+            { "id": "retail-operations", "label": "Retail Operations", "subspecializations": [] }
+          ]
+        },
+        { "id": "hr-professional", "label": "HR Professional", "specializations": [
+          { "id": "talent-acquisition", "label": "Talent Acquisition", "subspecializations": [] },
+          { "id": "people-ops", "label": "People Operations", "subspecializations": [] }
+        ]},
+        { "id": "project-manager", "label": "Project Manager", "specializations": [] },
+        { "id": "business-analyst", "label": "Business Analyst", "specializations": [] },
+        { "id": "product-strategist", "label": "Product Strategist", "specializations": [] }
       ]
     },
     {
-      "id": "creative",
-      "label": "Creative & Media",
+      "id": "finance-economics",
+      "label": "Finance / Economics",
       "professions": [
-        { "id": "journalist", "label": "Journalist", "subProfessions": [] },
-        { "id": "graphic_designer", "label": "Graphic Designer", "subProfessions": [] },
-        { "id": "photographer", "label": "Photographer", "subProfessions": [] },
-        { "id": "writer", "label": "Writer / Author", "subProfessions": [] },
-        { "id": "filmmaker", "label": "Filmmaker / Videographer", "subProfessions": [] }
+        {
+          "id": "economist",
+          "label": "Economist",
+          "specializations": [
+            { "id": "macroeconomics", "label": "Macroeconomics", "subspecializations": [] },
+            { "id": "microeconomics", "label": "Microeconomics", "subspecializations": [] },
+            { "id": "development-economics", "label": "Development Economics", "subspecializations": [] },
+            { "id": "behavioral-economics", "label": "Behavioral Economics", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "accountant",
+          "label": "Accountant",
+          "specializations": [
+            { "id": "corporate-accounting", "label": "Corporate Accounting", "subspecializations": [] },
+            { "id": "public-accounting", "label": "Public Accounting", "subspecializations": [] },
+            { "id": "forensic-accounting", "label": "Forensic Accounting", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "financial-analyst",
+          "label": "Financial Analyst",
+          "specializations": [
+            { "id": "equity-research", "label": "Equity Research", "subspecializations": [] },
+            { "id": "risk-analysis", "label": "Risk Analysis", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "investment-professional",
+          "label": "Investment Professional",
+          "specializations": [
+            { "id": "venture-capital", "label": "Venture Capital", "subspecializations": [] },
+            { "id": "private-equity", "label": "Private Equity", "subspecializations": [] },
+            { "id": "asset-management", "label": "Asset Management", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "banker",
+          "label": "Banker",
+          "specializations": [
+            { "id": "retail-banking", "label": "Retail Banking", "subspecializations": [] },
+            { "id": "corporate-banking", "label": "Corporate Banking", "subspecializations": [] },
+            { "id": "investment-banking", "label": "Investment Banking", "subspecializations": [] }
+          ]
+        },
+        { "id": "auditor", "label": "Auditor", "specializations": [] },
+        { "id": "tax-advisor", "label": "Tax Advisor", "specializations": [] },
+        { "id": "cfo", "label": "CFO", "specializations": [] },
+        { "id": "risk-analyst", "label": "Risk Analyst", "specializations": [] }
       ]
     },
     {
-      "id": "engineering",
-      "label": "Engineering",
+      "id": "health-medicine",
+      "label": "Health / Medicine",
       "professions": [
-        { "id": "civil_engineer", "label": "Civil Engineer", "subProfessions": [] },
-        { "id": "mechanical_engineer", "label": "Mechanical Engineer", "subProfessions": [] },
-        { "id": "electrical_engineer", "label": "Electrical Engineer", "subProfessions": [] },
-        { "id": "architect", "label": "Architect", "subProfessions": [] }
+        {
+          "id": "doctor",
+          "label": "Doctor",
+          "specializations": [
+            { "id": "general-practitioner", "label": "General Practitioner", "subspecializations": [] },
+            { "id": "cardiologist", "label": "Cardiologist", "subspecializations": [
+              { "id": "interventional-cardiology", "label": "Interventional Cardiology" },
+              { "id": "electrophysiology", "label": "Electrophysiology" }
+            ]},
+            { "id": "pediatrician", "label": "Pediatrician", "subspecializations": [] },
+            { "id": "neurologist", "label": "Neurologist", "subspecializations": [] },
+            { "id": "oncologist", "label": "Oncologist", "subspecializations": [] },
+            { "id": "dermatologist", "label": "Dermatologist", "subspecializations": [] },
+            { "id": "endocrinologist", "label": "Endocrinologist", "subspecializations": [] },
+            { "id": "gynecologist", "label": "Gynecologist", "subspecializations": [] },
+            { "id": "internal-medicine", "label": "Internal Medicine", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "surgeon",
+          "label": "Surgeon",
+          "specializations": [
+            { "id": "orthopedic-surgeon", "label": "Orthopedic Surgeon", "subspecializations": [
+              { "id": "sports-injuries", "label": "Sports Injuries" },
+              { "id": "joint-replacement", "label": "Joint Replacement" },
+              { "id": "trauma-surgery", "label": "Trauma Surgery" }
+            ]},
+            { "id": "neurosurgeon", "label": "Neurosurgeon", "subspecializations": [] },
+            { "id": "cardiac-surgeon", "label": "Cardiac Surgeon", "subspecializations": [] },
+            { "id": "general-surgeon", "label": "General Surgeon", "subspecializations": [] },
+            { "id": "plastic-surgeon", "label": "Plastic Surgeon", "subspecializations": [] }
+          ]
+        },
+        { "id": "nurse", "label": "Nurse", "specializations": [
+          { "id": "icu-nurse", "label": "ICU Nurse", "subspecializations": [] },
+          { "id": "pediatric-nurse", "label": "Pediatric Nurse", "subspecializations": [] }
+        ]},
+        { "id": "psychologist", "label": "Psychologist", "specializations": [
+          { "id": "clinical-psychologist", "label": "Clinical Psychologist", "subspecializations": [] },
+          { "id": "counseling-psychologist", "label": "Counseling Psychologist", "subspecializations": [] },
+          { "id": "sports-psychologist", "label": "Sports Psychologist", "subspecializations": [] }
+        ]},
+        { "id": "psychiatrist", "label": "Psychiatrist", "specializations": [] },
+        { "id": "pharmacist", "label": "Pharmacist", "specializations": [] },
+        { "id": "physiotherapist", "label": "Physiotherapist", "specializations": [
+          { "id": "sports-rehabilitation", "label": "Sports Rehabilitation", "subspecializations": [] },
+          { "id": "orthopedic-rehab", "label": "Orthopedic Rehabilitation", "subspecializations": [] },
+          { "id": "neurological-rehab", "label": "Neurological Rehabilitation", "subspecializations": [] }
+        ]},
+        { "id": "nutritionist", "label": "Nutritionist / Dietitian", "specializations": [] },
+        { "id": "public-health-specialist", "label": "Public Health Specialist", "specializations": [
+          { "id": "epidemiology", "label": "Epidemiology", "subspecializations": [] },
+          { "id": "health-policy", "label": "Health Policy", "subspecializations": [] },
+          { "id": "global-health", "label": "Global Health", "subspecializations": [] }
+        ]},
+        { "id": "dentist", "label": "Dentist", "specializations": [] },
+        { "id": "medical-researcher", "label": "Medical Researcher", "specializations": [] }
       ]
     },
     {
-      "id": "public_sector",
-      "label": "Public Sector & Politics",
+      "id": "law-legal",
+      "label": "Law / Legal Services",
       "professions": [
-        { "id": "civil_servant", "label": "Civil Servant", "subProfessions": [] },
-        { "id": "politician", "label": "Politician / Public Official", "subProfessions": [] },
-        { "id": "military", "label": "Military / Defence", "subProfessions": [] },
-        { "id": "police", "label": "Police / Law Enforcement", "subProfessions": [] }
+        {
+          "id": "lawyer",
+          "label": "Lawyer / Attorney",
+          "specializations": [
+            { "id": "corporate-lawyer", "label": "Corporate Lawyer", "subspecializations": [
+              { "id": "mergers-acquisitions", "label": "M&A" },
+              { "id": "startup-law", "label": "Startups" },
+              { "id": "contracts", "label": "Contracts" }
+            ]},
+            { "id": "criminal-lawyer", "label": "Criminal Lawyer", "subspecializations": [] },
+            { "id": "civil-lawyer", "label": "Civil Lawyer", "subspecializations": [] },
+            { "id": "tax-lawyer", "label": "Tax Lawyer", "subspecializations": [] },
+            { "id": "labor-lawyer", "label": "Labor Lawyer", "subspecializations": [] },
+            { "id": "family-lawyer", "label": "Family Lawyer", "subspecializations": [] },
+            { "id": "ip-lawyer", "label": "Intellectual Property Lawyer", "subspecializations": [
+              { "id": "patents", "label": "Patents" },
+              { "id": "copyright", "label": "Copyright" },
+              { "id": "trademarks", "label": "Trademarks" }
+            ]},
+            { "id": "international-lawyer", "label": "International Lawyer", "subspecializations": [] }
+          ]
+        },
+        { "id": "judge", "label": "Judge", "specializations": [] },
+        { "id": "legal-consultant", "label": "Legal Consultant", "specializations": [] },
+        { "id": "compliance-officer", "label": "Compliance Officer", "specializations": [
+          { "id": "regulatory-compliance", "label": "Regulatory Compliance", "subspecializations": [] },
+          { "id": "corporate-governance", "label": "Corporate Governance", "subspecializations": [] },
+          { "id": "aml-kyc", "label": "AML / KYC", "subspecializations": [] }
+        ]},
+        { "id": "notary", "label": "Notary", "specializations": [] },
+        { "id": "mediator", "label": "Mediator", "specializations": [] }
+      ]
+    },
+    {
+      "id": "politics-government",
+      "label": "Politics / Government / Public Policy",
+      "professions": [
+        {
+          "id": "politician",
+          "label": "Politician",
+          "specializations": [
+            { "id": "local-government", "label": "Local Government", "subspecializations": [] },
+            { "id": "national-government", "label": "National Government", "subspecializations": [] },
+            { "id": "eu-international-politics", "label": "EU / International Politics", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "policy-advisor",
+          "label": "Policy Advisor",
+          "specializations": [
+            { "id": "economic-policy", "label": "Economic Policy", "subspecializations": [] },
+            { "id": "education-policy", "label": "Education Policy", "subspecializations": [] },
+            { "id": "health-policy-gov", "label": "Health Policy", "subspecializations": [] },
+            { "id": "foreign-policy", "label": "Foreign Policy", "subspecializations": [] },
+            { "id": "environmental-policy", "label": "Environmental Policy", "subspecializations": [] }
+          ]
+        },
+        { "id": "public-servant", "label": "Public Servant", "specializations": [
+          { "id": "municipal-administration", "label": "Municipal Administration", "subspecializations": [] },
+          { "id": "public-finance", "label": "Public Finance", "subspecializations": [] },
+          { "id": "regulation", "label": "Regulation", "subspecializations": [] }
+        ]},
+        { "id": "diplomat", "label": "Diplomat", "specializations": [
+          { "id": "international-relations", "label": "International Relations", "subspecializations": [] },
+          { "id": "trade-policy", "label": "Trade Policy", "subspecializations": [] },
+          { "id": "security-policy", "label": "Security Policy", "subspecializations": [] }
+        ]},
+        { "id": "political-analyst", "label": "Political Analyst", "specializations": [] },
+        { "id": "campaign-strategist", "label": "Campaign Strategist", "specializations": [] },
+        { "id": "government-administrator", "label": "Government Administrator", "specializations": [] }
+      ]
+    },
+    {
+      "id": "education-academia",
+      "label": "Education / Academia",
+      "professions": [
+        {
+          "id": "teacher",
+          "label": "Teacher",
+          "specializations": [
+            { "id": "primary-education", "label": "Primary Education", "subspecializations": [] },
+            { "id": "secondary-education", "label": "Secondary Education", "subspecializations": [] },
+            { "id": "special-education", "label": "Special Education", "subspecializations": [] }
+          ]
+        },
+        {
+          "id": "professor",
+          "label": "Professor",
+          "specializations": [
+            { "id": "prof-economics", "label": "Economics", "subspecializations": [
+              { "id": "macroeconomics-acad", "label": "Macroeconomics" },
+              { "id": "public-policy-econ", "label": "Public Policy" },
+              { "id": "development-econ", "label": "Development Economics" }
+            ]},
+            { "id": "prof-history", "label": "History", "subspecializations": [] },
+            { "id": "prof-physics", "label": "Physics", "subspecializations": [
+              { "id": "astrophysics", "label": "Astrophysics" },
+              { "id": "theoretical-physics", "label": "Theoretical Physics" }
+            ]},
+            { "id": "prof-sociology", "label": "Sociology", "subspecializations": [] },
+            { "id": "prof-political-science", "label": "Political Science", "subspecializations": [] },
+            { "id": "prof-computer-science", "label": "Computer Science", "subspecializations": [
+              { "id": "ai-academia", "label": "AI" },
+              { "id": "algorithms", "label": "Algorithms" }
+            ]},
+            { "id": "prof-law", "label": "Law", "subspecializations": [] },
+            { "id": "prof-medicine", "label": "Medicine", "subspecializations": [] }
+          ]
+        },
+        { "id": "lecturer", "label": "Lecturer", "specializations": [] },
+        { "id": "academic-researcher", "label": "Researcher", "specializations": [
+          { "id": "quantitative-research", "label": "Quantitative Research", "subspecializations": [] },
+          { "id": "qualitative-research", "label": "Qualitative Research", "subspecializations": [] },
+          { "id": "applied-research", "label": "Applied Research", "subspecializations": [] }
+        ]},
+        { "id": "academic-administrator", "label": "Academic Administrator", "specializations": [] },
+        { "id": "education-consultant", "label": "Education Consultant", "specializations": [] }
+      ]
+    },
+    {
+      "id": "science-research",
+      "label": "Science / Research",
+      "professions": [
+        {
+          "id": "scientist",
+          "label": "Scientist",
+          "specializations": [
+            { "id": "biologist", "label": "Biologist", "subspecializations": [
+              { "id": "molecular-biology", "label": "Molecular Biology" },
+              { "id": "genetics", "label": "Genetics" },
+              { "id": "marine-biology", "label": "Marine Biology" }
+            ]},
+            { "id": "chemist", "label": "Chemist", "subspecializations": [] },
+            { "id": "physicist", "label": "Physicist", "subspecializations": [
+              { "id": "astrophysics-sci", "label": "Astrophysics" },
+              { "id": "theoretical-physics-sci", "label": "Theoretical Physics" }
+            ]},
+            { "id": "environmental-scientist", "label": "Environmental Scientist", "subspecializations": [] },
+            { "id": "materials-scientist", "label": "Materials Scientist", "subspecializations": [] }
+          ]
+        },
+        { "id": "researcher", "label": "Researcher", "specializations": [
+          { "id": "biomedical-research", "label": "Biomedical Research", "subspecializations": [] },
+          { "id": "climate-research", "label": "Climate Research", "subspecializations": [] },
+          { "id": "data-research", "label": "Data Research", "subspecializations": [] }
+        ]},
+        { "id": "lab-specialist", "label": "Lab Specialist", "specializations": [] },
+        { "id": "mathematician", "label": "Mathematician", "specializations": [] }
+      ]
+    },
+    {
+      "id": "media-journalism",
+      "label": "Media / Journalism",
+      "professions": [
+        {
+          "id": "journalist",
+          "label": "Journalist",
+          "specializations": [
+            { "id": "political-journalism", "label": "Political Journalism", "subspecializations": [] },
+            { "id": "business-journalism", "label": "Business Journalism", "subspecializations": [] },
+            { "id": "sports-journalism", "label": "Sports Journalism", "subspecializations": [] },
+            { "id": "war-correspondent", "label": "War Correspondent", "subspecializations": [] },
+            { "id": "cultural-journalism", "label": "Cultural Journalism", "subspecializations": [] },
+            { "id": "investigative-journalism", "label": "Investigative Journalism", "subspecializations": [] }
+          ]
+        },
+        { "id": "editor", "label": "Editor", "specializations": [] },
+        { "id": "broadcaster", "label": "Broadcaster", "specializations": [] },
+        { "id": "media-analyst", "label": "Media Analyst", "specializations": [] },
+        { "id": "content-producer", "label": "Content Producer", "specializations": [
+          { "id": "podcasting", "label": "Podcasting", "subspecializations": [] },
+          { "id": "video-production", "label": "Video Production", "subspecializations": [] },
+          { "id": "documentary", "label": "Documentary", "subspecializations": [] }
+        ]}
+      ]
+    },
+    {
+      "id": "sports-athletics",
+      "label": "Sports / Athletics",
+      "professions": [
+        {
+          "id": "athlete",
+          "label": "Athlete",
+          "specializations": [
+            { "id": "football-player", "label": "Football", "subspecializations": [
+              { "id": "goalkeeper", "label": "Goalkeeper" },
+              { "id": "defender", "label": "Defender" },
+              { "id": "midfielder", "label": "Midfielder" },
+              { "id": "forward", "label": "Forward" }
+            ]},
+            { "id": "basketball-player", "label": "Basketball", "subspecializations": [] },
+            { "id": "tennis-player", "label": "Tennis", "subspecializations": [] },
+            { "id": "track-field", "label": "Track & Field", "subspecializations": [] },
+            { "id": "swimmer", "label": "Swimming", "subspecializations": [] },
+            { "id": "martial-arts", "label": "Martial Arts", "subspecializations": [] },
+            { "id": "cyclist", "label": "Cycling", "subspecializations": [] }
+          ]
+        },
+        { "id": "coach", "label": "Coach", "specializations": [
+          { "id": "football-coach", "label": "Football Coach", "subspecializations": [] },
+          { "id": "basketball-coach", "label": "Basketball Coach", "subspecializations": [] },
+          { "id": "strength-conditioning", "label": "Strength & Conditioning Coach", "subspecializations": [] }
+        ]},
+        { "id": "trainer", "label": "Trainer", "specializations": [
+          { "id": "personal-trainer", "label": "Personal Trainer", "subspecializations": [] },
+          { "id": "rehabilitation-trainer", "label": "Rehabilitation Trainer", "subspecializations": [] }
+        ]},
+        { "id": "referee", "label": "Referee", "specializations": [] },
+        { "id": "sports-scientist", "label": "Sports Scientist", "specializations": [
+          { "id": "performance-testing", "label": "Performance Testing", "subspecializations": [] },
+          { "id": "recovery", "label": "Recovery", "subspecializations": [] },
+          { "id": "biomechanics", "label": "Biomechanics", "subspecializations": [] }
+        ]},
+        { "id": "performance-analyst", "label": "Performance Analyst", "specializations": [] },
+        { "id": "sports-doctor", "label": "Sports Doctor", "specializations": [] }
+      ]
+    },
+    {
+      "id": "arts-culture",
+      "label": "Arts / Culture / Entertainment",
+      "professions": [
+        { "id": "artist", "label": "Artist", "specializations": [
+          { "id": "painter", "label": "Painter", "subspecializations": [] },
+          { "id": "sculptor", "label": "Sculptor", "subspecializations": [] },
+          { "id": "digital-artist", "label": "Digital Artist", "subspecializations": [] }
+        ]},
+        { "id": "musician", "label": "Musician", "specializations": [
+          { "id": "composer", "label": "Composer", "subspecializations": [] },
+          { "id": "performer", "label": "Performer", "subspecializations": [] },
+          { "id": "music-producer", "label": "Producer", "subspecializations": [] }
+        ]},
+        { "id": "actor", "label": "Actor", "specializations": [] },
+        { "id": "director", "label": "Director", "specializations": [] },
+        { "id": "writer", "label": "Writer / Author", "specializations": [
+          { "id": "fiction-writer", "label": "Fiction", "subspecializations": [] },
+          { "id": "nonfiction-writer", "label": "Non-fiction", "subspecializations": [] },
+          { "id": "screenwriter", "label": "Screenwriting", "subspecializations": [] }
+        ]},
+        { "id": "designer", "label": "Designer", "specializations": [
+          { "id": "graphic-designer", "label": "Graphic Design", "subspecializations": [] },
+          { "id": "fashion-designer", "label": "Fashion Design", "subspecializations": [] },
+          { "id": "industrial-designer", "label": "Industrial Design", "subspecializations": [] }
+        ]},
+        { "id": "photographer", "label": "Photographer", "specializations": [] },
+        { "id": "filmmaker", "label": "Filmmaker / Videographer", "specializations": [] }
+      ]
+    },
+    {
+      "id": "engineering-industry",
+      "label": "Engineering / Industry / Manufacturing",
+      "professions": [
+        { "id": "civil-engineer", "label": "Civil Engineer", "specializations": [
+          { "id": "structural-engineering", "label": "Structural", "subspecializations": [] },
+          { "id": "transportation-engineering", "label": "Transportation", "subspecializations": [] },
+          { "id": "geotechnical", "label": "Geotechnical", "subspecializations": [] }
+        ]},
+        { "id": "mechanical-engineer", "label": "Mechanical Engineer", "specializations": [
+          { "id": "automotive", "label": "Automotive", "subspecializations": [] },
+          { "id": "robotics", "label": "Robotics", "subspecializations": [] },
+          { "id": "energy-systems", "label": "Energy Systems", "subspecializations": [] }
+        ]},
+        { "id": "electrical-engineer", "label": "Electrical Engineer", "specializations": [] },
+        { "id": "industrial-engineer", "label": "Industrial Engineer", "specializations": [] },
+        { "id": "architect", "label": "Architect", "specializations": [] },
+        { "id": "manufacturing-specialist", "label": "Manufacturing Specialist", "specializations": [] }
+      ]
+    },
+    {
+      "id": "social-impact",
+      "label": "Social Impact / Nonprofit / Community",
+      "professions": [
+        { "id": "ngo-professional", "label": "NGO Professional", "specializations": [
+          { "id": "refugee-support", "label": "Refugee Support", "subspecializations": [] },
+          { "id": "education-access", "label": "Education Access", "subspecializations": [] },
+          { "id": "human-rights", "label": "Human Rights", "subspecializations": [] },
+          { "id": "poverty-alleviation", "label": "Poverty Alleviation", "subspecializations": [] }
+        ]},
+        { "id": "social-worker", "label": "Social Worker", "specializations": [] },
+        { "id": "community-organizer", "label": "Community Organizer", "specializations": [] },
+        { "id": "humanitarian-specialist", "label": "Humanitarian Specialist", "specializations": [] },
+        { "id": "advocacy-specialist", "label": "Advocacy Specialist", "specializations": [] }
+      ]
+    },
+    {
+      "id": "agriculture-environment",
+      "label": "Agriculture / Environment",
+      "professions": [
+        { "id": "farmer", "label": "Farmer", "specializations": [] },
+        { "id": "agronomist", "label": "Agronomist", "specializations": [
+          { "id": "crop-science", "label": "Crop Science", "subspecializations": [] },
+          { "id": "soil-science", "label": "Soil Science", "subspecializations": [] },
+          { "id": "agricultural-technology", "label": "Agricultural Technology", "subspecializations": [] }
+        ]},
+        { "id": "environmental-consultant", "label": "Environmental Consultant", "specializations": [] },
+        { "id": "sustainability-specialist", "label": "Sustainability Specialist", "specializations": [
+          { "id": "esg", "label": "ESG", "subspecializations": [] },
+          { "id": "renewable-energy", "label": "Renewable Energy", "subspecializations": [] },
+          { "id": "circular-economy", "label": "Circular Economy", "subspecializations": [] }
+        ]},
+        { "id": "forester", "label": "Forester", "specializations": [] }
       ]
     },
     {
       "id": "other",
       "label": "Other",
       "professions": [
-        { "id": "student", "label": "Student", "subProfessions": [] },
-        { "id": "retired", "label": "Retired", "subProfessions": [] },
-        { "id": "other", "label": "Other / Not listed", "subProfessions": [] }
+        { "id": "student", "label": "Student", "specializations": [] },
+        { "id": "retired", "label": "Retired", "specializations": [] },
+        { "id": "other-profession", "label": "Other / Not listed", "specializations": [] }
       ]
     }
   ]
