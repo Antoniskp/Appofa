@@ -424,8 +424,41 @@ const authController = {
   // Search users (public, returns only searchable users)
   searchUsers: async (req, res) => {
     try {
-      const { search = '', page = 1, limit = 20, expertiseArea, locationId } = req.query;
-      const result = await userService.searchUsers(search, page, limit, expertiseArea, locationId);
+      const {
+        search = '',
+        page = 1,
+        limit = 20,
+        expertiseArea,
+        locationId,
+        domainId,
+        professionId,
+        specializationId,
+        subspecializationId,
+        expertiseTags,
+      } = req.query;
+
+      // Build taxonomy query if at least domainId is provided
+      const TAXONOMY_ID_RE = /^[a-z0-9][a-z0-9-]*$/;
+      let taxonomyQuery = null;
+      if (domainId && TAXONOMY_ID_RE.test(domainId)) {
+        taxonomyQuery = { domainId };
+        if (professionId && TAXONOMY_ID_RE.test(professionId)) {
+          taxonomyQuery.professionId = professionId;
+        }
+        if (specializationId && TAXONOMY_ID_RE.test(specializationId)) {
+          taxonomyQuery.specializationId = specializationId;
+        }
+        if (subspecializationId && TAXONOMY_ID_RE.test(subspecializationId)) {
+          taxonomyQuery.subspecializationId = subspecializationId;
+        }
+        if (expertiseTags) {
+          const tags = (Array.isArray(expertiseTags) ? expertiseTags : [expertiseTags])
+            .filter((t) => typeof t === 'string' && TAXONOMY_ID_RE.test(t));
+          if (tags.length > 0) taxonomyQuery.expertiseTags = tags;
+        }
+      }
+
+      const result = await userService.searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery);
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       if (error.status) {
