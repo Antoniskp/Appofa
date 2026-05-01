@@ -180,7 +180,7 @@ Appofa/
 | PUT | /users/:id/role | admin | Update user role |
 | PUT | /users/:id/verify | admin | Verify/unverify user |
 | DELETE | /users/:id | admin | Delete user |
-| GET | /users/search | ✅ | Search users (public) |
+| GET | /users/search | ✅ | Search users — query params: `search`, `expertiseArea`, `domainId`, `professionId`, `specializationId`, `subspecializationId`, `locationId`; taxonomy filters score + sort by relevance (`_relevanceScore`) |
 | GET | /users/:id/public | ✅ | Public user profile |
 | GET | /users/public-stats | — | Public user stats |
 
@@ -402,7 +402,7 @@ Appofa/
 |---------|---------|
 | organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
 | userCountryCode.js | Dream Team country resolution helper (`nationality` first, then `homeLocation` country ancestor via `Location.type='country'` + `code`) used by vote authorization |
-| professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeLegacyProfession`, `normalizeProfessions` (legacy v1→v2 normalization), `validateProfessionalIdentity`, `validateExpertiseTagIds`, `normalizeExpertiseTags`, `resolveProfessionLabel`, `VALID_EXPERTISE_TAG_IDS`; loaded by User model getters + userService + personService |
+| professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeLegacyProfession`, `normalizeProfessions` (legacy v1→v2 normalization), `validateProfessionalIdentity`, `validateExpertiseTagIds`, `normalizeExpertiseTags`, `resolveProfessionLabel`, `VALID_EXPERTISE_TAG_IDS`, `scoreSpecialistMatch` (Phase 3 relevance scoring: domain=2, +profession=3, +specialization=4, +subspecialization=5, expertise tag=4 per tag); loaded by User model getters + userService + personService |
 
 ---
 

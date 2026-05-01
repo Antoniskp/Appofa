@@ -10,7 +10,7 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
-import { EXPERTISE_TAGS, getExpertiseTagLabel } from '@/lib/utils/professionTaxonomy';
+import { DOMAINS, EXPERTISE_TAGS, getExpertiseTagLabel, getProfession, getSpecializations } from '@/lib/utils/professionTaxonomy';
 import LoginLink from '@/components/ui/LoginLink';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
@@ -25,14 +25,21 @@ export default function UsersPage() {
     totalPages,
     setTotalPages,
     updateFilter,
+    updateFilters,
     nextPage,
     prevPage,
     goToPage,
   } = useFilters({
     search: '',
     expertiseArea: '',
+    domainId: '',
+    professionId: '',
     locationId: null,
   });
+
+  // Cascading: professions for the selected domain
+  const selectedDomain = DOMAINS.find((d) => d.id === filters.domainId);
+  const domainProfessions = selectedDomain ? selectedDomain.professions : [];
 
   const { data: usersData, loading, error } = useAsyncData(
     async () => {
@@ -302,10 +309,16 @@ export default function UsersPage() {
         {/* Show user cards only for authenticated users */}
         {isAuthenticated && (
           <>
-            {/* Search using FilterBar */}
+            {/* Search / filter controls */}
             <FilterBar
               filters={filters}
-              onChange={(e) => updateFilter(e.target.name, e.target.value)}
+              onChange={(e) => {
+                if (e.target.name === 'domainId') {
+                  updateFilters({ domainId: e.target.value, professionId: '' });
+                } else {
+                  updateFilter(e.target.name, e.target.value);
+                }
+              }}
               filterConfig={[
                 {
                   name: 'search',
@@ -315,14 +328,36 @@ export default function UsersPage() {
                 },
                 {
                   name: 'expertiseArea',
+                  label: 'Εξειδίκευση',
+                  type: 'select',
+                  placeholder: 'Όλες οι εξειδικεύσεις',
+                  options: [
+                    { value: '', label: 'Όλες οι εξειδικεύσεις' },
+                    ...EXPERTISE_TAGS.map((tag) => ({ value: tag.id, label: tag.label })),
+                  ],
+                },
+                {
+                  name: 'domainId',
                   label: 'Τομέας',
                   type: 'select',
                   placeholder: 'Όλοι οι τομείς',
                   options: [
                     { value: '', label: 'Όλοι οι τομείς' },
-                    ...EXPERTISE_TAGS.map((tag) => ({ value: tag.id, label: tag.label })),
+                    ...DOMAINS.map((d) => ({ value: d.id, label: d.label })),
                   ],
                 },
+                ...(domainProfessions.length > 0
+                  ? [{
+                      name: 'professionId',
+                      label: 'Επάγγελμα',
+                      type: 'select',
+                      placeholder: 'Όλα τα επαγγέλματα',
+                      options: [
+                        { value: '', label: 'Όλα τα επαγγέλματα' },
+                        ...domainProfessions.map((p) => ({ value: p.id, label: p.label })),
+                      ],
+                    }]
+                  : []),
               ]}
               className="mb-4"
             />

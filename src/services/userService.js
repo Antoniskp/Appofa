@@ -15,6 +15,7 @@ const {
   validateProfessionalIdentity,
   validateExpertiseTagIds,
   normalizeExpertiseTags,
+  scoreSpecialistMatch,
 } = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
 
@@ -955,10 +956,13 @@ async function getPublicUserProfileByUsername(username) {
   return user;
 }
 
-async function searchUsers(search, page, limit, expertiseArea, locationId) {
+async function searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery = {}) {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
+
+  const { domainId, professionId, specializationId, subspecializationId } = taxonomyQuery;
+  const hasTaxonomyFilter = !!(domainId || professionId || specializationId || subspecializationId);
 
   const whereClause = { searchable: true, claimStatus: null };
 
@@ -1002,9 +1006,69 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
     }
   }
 
+  // ── Taxonomy (profession hierarchy) filtering ─────────────────────────────
+  // Apply all provided taxonomy conditions as AND constraints on the JSON text.
+  if (hasTaxonomyFilter) {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    const esc = (v) => String(v).replace(/[%_\\]/g, '\\$&');
+    const professionsConds = [];
+    if (domainId) professionsConds.push({ [likeOp]: `%"domainId":"${esc(domainId)}"%` });
+    if (professionId) professionsConds.push({ [likeOp]: `%"professionId":"${esc(professionId)}"%` });
+    if (specializationId) professionsConds.push({ [likeOp]: `%"specializationId":"${esc(specializationId)}"%` });
+    if (subspecializationId) professionsConds.push({ [likeOp]: `%"subspecializationId":"${esc(subspecializationId)}"%` });
+
+    if (professionsConds.length === 1) {
+      whereClause.professions = professionsConds[0];
+    } else {
+      whereClause.professions = { [Op.and]: professionsConds };
+    }
+  }
+
+  const SEARCH_ATTRIBUTES = ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus', 'expertiseArea', 'professions', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier'];
+
+  // When a taxonomy filter is active, fetch all matching users (capped at 500)
+  // so we can score and sort by relevance before applying pagination.
+  if (hasTaxonomyFilter) {
+    const allMatchingUsers = await User.findAll({
+      where: whereClause,
+      attributes: SEARCH_ATTRIBUTES,
+      order: [['username', 'ASC']],
+      limit: 500,
+    });
+
+    const query = { domainId, professionId, specializationId, subspecializationId };
+    const scored = allMatchingUsers
+      .map((u) => ({
+        user: u,
+        score: scoreSpecialistMatch(
+          { professions: u.professions, expertiseTags: u.expertiseArea },
+          query
+        ),
+      }))
+      .sort((a, b) => b.score - a.score || a.user.username.localeCompare(b.user.username));
+
+    const total = scored.length;
+    const pageUsers = scored.slice(offset, offset + limitNum).map(({ user, score }) => {
+      const plain = user.toJSON();
+      if (score > 0) plain._relevanceScore = score;
+      return plain;
+    });
+
+    return {
+      users: pageUsers,
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(total / limitNum) || 1,
+        totalItems: total,
+        itemsPerPage: limitNum,
+      },
+    };
+  }
+
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier'],
+    attributes: SEARCH_ATTRIBUTES,
     order: [['username', 'ASC']],
     limit: limitNum,
     offset

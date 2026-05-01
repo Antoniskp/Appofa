@@ -424,8 +424,8 @@ const authController = {
   // Search users (public, returns only searchable users)
   searchUsers: async (req, res) => {
     try {
-      const { search = '', page = 1, limit = 20, expertiseArea, locationId } = req.query;
-      const result = await userService.searchUsers(search, page, limit, expertiseArea, locationId);
+      const { search = '', page = 1, limit = 20, expertiseArea, locationId, domainId, professionId, specializationId, subspecializationId } = req.query;
+      const result = await userService.searchUsers(search, page, limit, expertiseArea, locationId, { domainId, professionId, specializationId, subspecializationId });
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       if (error.status) {
