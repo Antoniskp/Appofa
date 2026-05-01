@@ -219,12 +219,46 @@ export default function PositionCard({ position, myVote, onVote, onDeleteVote, l
                 const pct = totalVotes > 0 ? Math.round((count / totalVotes) * 100) : 0;
                 const isMyVote = v.candidateUserId && v.candidateUserId === myVote?.candidateUserId;
                 const photo = v.candidateUser?.photo || v.candidateUser?.avatar || null;
+                const avatarColor = v.candidateUser?.avatarColor || null;
+                if (idx === 0) {
+                  return (
+                    <div key={`${v.candidateUserId}-${idx}`}>
+                      <div className="flex items-center gap-3 mb-1">
+                        <PersonAvatar
+                          photo={photo}
+                          name={v.personName}
+                          avatarColor={avatarColor}
+                          size="md"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-semibold text-sm truncate ${isMyVote ? 'text-blue-600' : 'text-gray-800'}`}>
+                            {isMyVote && <span className="mr-1">✓</span>}
+                            {v.personName}
+                          </p>
+                          <p className="text-xs text-gray-400">{pct}% · {count.toLocaleString('el-GR')} ψήφοι</p>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${isMyVote ? 'bg-blue-500' : 'bg-indigo-400'}`}
+                          style={{ width: `${pct}%` }}
+                          role="progressbar"
+                          aria-valuenow={pct}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                        />
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div key={`${v.candidateUserId}-${idx}`}>
                     <div className="flex items-center justify-between text-xs mb-1">
                       <div className="flex items-center gap-1.5 flex-1 mr-2 min-w-0">
-                        {photo && (
+                        {photo ? (
                           <img src={photo} alt="" className="h-5 w-5 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <PersonAvatar photo={null} name={v.personName} avatarColor={avatarColor} size="sm" />
                         )}
                         <span className={`font-medium truncate ${isMyVote ? 'text-blue-600' : 'text-gray-700'}`}>
                           {isMyVote && <span className="mr-1">✓</span>}
