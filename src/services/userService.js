@@ -10,11 +10,8 @@ const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationI
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const {
-  normalizeLegacyProfession,
-  normalizeProfessions,
   validateProfessionalIdentity,
   validateExpertiseTagIds,
-  normalizeExpertiseTags,
   scoreSpecialistMatch,
 } = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
@@ -352,10 +349,8 @@ async function updateUserProfile(userId, data) {
     } else if (professions.length > MAX_PROFESSIONS) {
       throw new ServiceError(400, `You can add at most ${MAX_PROFESSIONS} professions.`);
     } else {
-      // Normalize legacy entries to canonical format before validation
-      const normalized = normalizeProfessions(professions);
       try {
-        const validated = normalized.map(validateProfessionalIdentity);
+        const validated = professions.map(validateProfessionalIdentity);
         user.professions = validated.length > 0 ? validated : null;
       } catch (err) {
         throw new ServiceError(400, err.message);
@@ -388,10 +383,8 @@ async function updateUserProfile(userId, data) {
     } else if (expertiseArea.length > MAX_EXPERTISE_AREAS) {
       throw new ServiceError(400, `You can add at most ${MAX_EXPERTISE_AREAS} expertise areas.`);
     } else {
-      // Normalize legacy string labels to tag IDs before validation
-      const normalized = normalizeExpertiseTags(expertiseArea);
       try {
-        const validated = validateExpertiseTagIds(normalized);
+        const validated = validateExpertiseTagIds(expertiseArea);
         user.expertiseArea = validated.length > 0 ? validated : null;
       } catch (err) {
         throw new ServiceError(400, err.message);
