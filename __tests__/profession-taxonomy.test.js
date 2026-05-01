@@ -2,7 +2,6 @@
 
 /**
  * Tests for the profession taxonomy helpers:
- * - normalizeLegacyProfession
  * - normalizeProfessions
  * - normalizeExpertiseTagId
  * - normalizeExpertiseTags
@@ -12,7 +11,6 @@
  */
 
 const {
-  normalizeLegacyProfession,
   normalizeProfessions,
   normalizeExpertiseTagId,
   normalizeExpertiseTags,
@@ -22,127 +20,6 @@ const {
   VALID_EXPERTISE_TAG_IDS,
 } = require('../src/utils/professionTaxonomy');
 
-// ─── normalizeLegacyProfession ────────────────────────────────────────────────
-
-describe('normalizeLegacyProfession', () => {
-  test('returns null for falsy input', () => {
-    expect(normalizeLegacyProfession(null)).toBeNull();
-    expect(normalizeLegacyProfession(undefined)).toBeNull();
-    expect(normalizeLegacyProfession('')).toBeNull();
-  });
-
-  test('passes through canonical v2 entry unchanged', () => {
-    const entry = { domainId: 'technology-it', professionId: 'software-engineer' };
-    expect(normalizeLegacyProfession(entry)).toEqual(entry);
-  });
-
-  test('passes through canonical v2 entry with optional fields', () => {
-    const entry = {
-      domainId: 'health-medicine',
-      professionId: 'surgeon',
-      specializationId: 'orthopedic-surgeon',
-      subspecializationId: 'sports-injuries',
-    };
-    expect(normalizeLegacyProfession(entry)).toEqual(entry);
-  });
-
-  test('converts legacy technology/software_engineer to v2', () => {
-    const legacy = { categoryId: 'technology', professionId: 'software_engineer' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('technology-it');
-    expect(result.professionId).toBe('software-engineer');
-    expect(result.specializationId).toBeUndefined();
-  });
-
-  test('converts legacy technology/software_engineer with frontend subProfession', () => {
-    const legacy = { categoryId: 'technology', professionId: 'software_engineer', subProfessionId: 'frontend' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('technology-it');
-    expect(result.professionId).toBe('software-engineer');
-    expect(result.specializationId).toBe('frontend-developer');
-  });
-
-  test('silently drops unknown subProfessionId instead of producing invalid specializationId', () => {
-    const legacy = { categoryId: 'technology', professionId: 'software_engineer', subProfessionId: 'completely_unknown' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('technology-it');
-    expect(result.professionId).toBe('software-engineer');
-    expect(result.specializationId).toBeUndefined();
-  });
-
-  test('converts legacy technology/software_engineer with devops subProfession to devops-engineer profession (not specialization)', () => {
-    const legacy = { categoryId: 'technology', professionId: 'software_engineer', subProfessionId: 'devops' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('technology-it');
-    expect(result.professionId).toBe('devops-engineer');
-    expect(result.specializationId).toBeUndefined();
-  });
-
-  test('converts legacy healthcare/doctor to v2', () => {
-    const legacy = { categoryId: 'healthcare', professionId: 'doctor' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('health-medicine');
-    expect(result.professionId).toBe('doctor');
-  });
-
-  test('converts legacy healthcare/doctor with surgeon subProfession', () => {
-    const legacy = { categoryId: 'healthcare', professionId: 'doctor', subProfessionId: 'surgeon' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('health-medicine');
-    expect(result.professionId).toBe('doctor');
-    expect(result.specializationId).toBe('orthopedic-surgeon');
-  });
-
-  test('converts legacy law/lawyer with corporate_law subProfession', () => {
-    const legacy = { categoryId: 'law', professionId: 'lawyer', subProfessionId: 'corporate_law' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('law-legal');
-    expect(result.professionId).toBe('lawyer');
-    expect(result.specializationId).toBe('corporate-lawyer');
-  });
-
-  test('converts legacy creative/journalist to media-journalism', () => {
-    const legacy = { categoryId: 'creative', professionId: 'journalist' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('media-journalism');
-    expect(result.professionId).toBe('journalist');
-  });
-
-  test('converts legacy public_sector/politician to politics-government', () => {
-    const legacy = { categoryId: 'public_sector', professionId: 'politician' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('politics-government');
-    expect(result.professionId).toBe('politician');
-  });
-
-  test('converts legacy other/student to other/student', () => {
-    const legacy = { categoryId: 'other', professionId: 'student' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('other');
-    expect(result.professionId).toBe('student');
-  });
-
-  test('converts legacy other/other to other/other-profession', () => {
-    const legacy = { categoryId: 'other', professionId: 'other' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('other');
-    expect(result.professionId).toBe('other-profession');
-  });
-
-  test('skips subProfessionId that maps to null (e.g. teacher/university)', () => {
-    const legacy = { categoryId: 'education', professionId: 'teacher', subProfessionId: 'university' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.specializationId).toBeUndefined();
-  });
-
-  test('falls back gracefully for unknown categoryId', () => {
-    const legacy = { categoryId: 'unknown-cat', professionId: 'some-prof' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result.domainId).toBe('unknown-cat');
-    expect(result.professionId).toBe('some-prof');
-  });
-});
-
 // ─── normalizeProfessions ─────────────────────────────────────────────────────
 
 describe('normalizeProfessions', () => {
@@ -151,9 +28,9 @@ describe('normalizeProfessions', () => {
     expect(normalizeProfessions('string')).toEqual([]);
   });
 
-  test('normalizes mixed legacy and canonical entries', () => {
+  test('passes through canonical entries unchanged', () => {
     const arr = [
-      { categoryId: 'technology', professionId: 'software_engineer' },
+      { domainId: 'technology-it', professionId: 'software-engineer' },
       { domainId: 'sports-athletics', professionId: 'athlete' },
     ];
     const result = normalizeProfessions(arr);
@@ -161,11 +38,30 @@ describe('normalizeProfessions', () => {
     expect(result[1].domainId).toBe('sports-athletics');
   });
 
+  test('passes through canonical entries with optional fields', () => {
+    const entry = {
+      domainId: 'health-medicine',
+      professionId: 'surgeon',
+      specializationId: 'orthopedic-surgeon',
+      subspecializationId: 'sports-injuries',
+    };
+    expect(normalizeProfessions([entry])).toEqual([entry]);
+  });
+
   test('filters out null entries', () => {
     const arr = [null, { domainId: 'other', professionId: 'student' }];
     const result = normalizeProfessions(arr);
     expect(result).toHaveLength(1);
     expect(result[0].professionId).toBe('student');
+  });
+
+  test('filters out entries missing domainId', () => {
+    const arr = [
+      { professionId: 'software-engineer' },
+      { domainId: 'technology-it', professionId: 'data-scientist' },
+    ];
+    expect(normalizeProfessions(arr)).toHaveLength(1);
+    expect(normalizeProfessions(arr)[0].domainId).toBe('technology-it');
   });
 });
 
@@ -178,30 +74,6 @@ describe('normalizeExpertiseTagId', () => {
     expect(normalizeExpertiseTagId('surgery')).toBe('surgery');
   });
 
-  test('maps legacy "IT / Technology" to web-development tag ID', () => {
-    expect(normalizeExpertiseTagId('IT / Technology')).toBe('web-development');
-  });
-
-  test('maps legacy "Politics" to public-policy tag ID', () => {
-    expect(normalizeExpertiseTagId('Politics')).toBe('public-policy');
-  });
-
-  test('maps legacy "Art" to visual-arts tag ID', () => {
-    expect(normalizeExpertiseTagId('Art')).toBe('visual-arts');
-  });
-
-  test('maps legacy "Sports / Athletics" to performance-training', () => {
-    expect(normalizeExpertiseTagId('Sports / Athletics')).toBe('performance-training');
-  });
-
-  test('maps legacy "Business" to strategy', () => {
-    expect(normalizeExpertiseTagId('Business')).toBe('strategy');
-  });
-
-  test('maps legacy "Law" to corporate-law', () => {
-    expect(normalizeExpertiseTagId('Law')).toBe('corporate-law');
-  });
-
   test('returns null for unrecognized string', () => {
     expect(normalizeExpertiseTagId('totally-unknown-area')).toBeNull();
   });
@@ -209,10 +81,6 @@ describe('normalizeExpertiseTagId', () => {
   test('returns null for non-string input', () => {
     expect(normalizeExpertiseTagId(42)).toBeNull();
     expect(normalizeExpertiseTagId(null)).toBeNull();
-  });
-
-  test('maps legacy "Other" to null (filtered out)', () => {
-    expect(normalizeExpertiseTagId('Other')).toBeNull();
   });
 });
 
@@ -223,12 +91,12 @@ describe('normalizeExpertiseTags', () => {
     expect(normalizeExpertiseTags(null)).toEqual([]);
   });
 
-  test('normalizes mixed legacy labels and canonical IDs, filtering nulls', () => {
-    const input = ['IT / Technology', 'public-policy', 'Other', 'Politics'];
+  test('passes through valid canonical tag IDs, drops unknowns', () => {
+    const input = ['public-policy', 'artificial-intelligence', 'not-a-tag'];
     const result = normalizeExpertiseTags(input);
-    expect(result).toContain('web-development');
     expect(result).toContain('public-policy');
-    expect(result).not.toContain('Other');
+    expect(result).toContain('artificial-intelligence');
+    expect(result).not.toContain('not-a-tag');
     expect(result).not.toContain(null);
   });
 });

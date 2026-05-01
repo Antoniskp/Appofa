@@ -19,7 +19,6 @@ const {
   getExpertiseTagLabel,
   EXPERTISE_TAGS,
   DOMAINS,
-  normalizeLegacyProfession,
   normalizeExpertiseTags,
   VALID_EXPERTISE_TAG_IDS,
 } = require('../lib/utils/professionTaxonomy');
@@ -256,30 +255,6 @@ describe('Expertise tag max enforcement', () => {
     expertiseArea = [...expertiseArea, 'artificial-intelligence'];
     expect(expertiseArea[0]).toBe('artificial-intelligence');
     expect(VALID_EXPERTISE_TAG_IDS.has(expertiseArea[0])).toBe(true);
-  });
-});
-
-// ─── Legacy data normalization ────────────────────────────────────────────────
-
-describe('Legacy data normalization (Phase 1 backward compat)', () => {
-  test('legacy expertise string labels normalize to tag IDs', () => {
-    const legacy = ['IT / Technology', 'Business', 'Health / Medicine'];
-    const result = normalizeExpertiseTags(legacy);
-    expect(result.every((id) => VALID_EXPERTISE_TAG_IDS.has(id))).toBe(true);
-  });
-
-  test('already-valid tag IDs pass through unchanged', () => {
-    const valid = ['artificial-intelligence', 'public-policy'];
-    const result = normalizeExpertiseTags(valid);
-    expect(result).toEqual(valid);
-  });
-
-  test('legacy profession entry normalizes to canonical format', () => {
-    const legacy = { categoryId: 'healthcare', professionId: 'doctor', subProfessionId: 'gp' };
-    const result = normalizeLegacyProfession(legacy);
-    expect(result).toBeTruthy();
-    expect(result.domainId).toBe('health-medicine');
-    expect(result.professionId).toBe('doctor');
   });
 });
 

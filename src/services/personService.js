@@ -7,7 +7,6 @@ const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const {
   validateExpertiseTagIds,
-  normalizeExpertiseTags,
   VALID_EXPERTISE_TAG_IDS,
 } = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
@@ -77,10 +76,8 @@ const SAFE_USER_ATTRS = [
 function validateExpertiseArea(expertiseArea) {
   if (expertiseArea === undefined || expertiseArea === null) return null;
   if (!Array.isArray(expertiseArea)) throw new ServiceError(400, 'Expertise area must be an array.');
-  // Normalize legacy string labels to tag IDs before validating
-  const normalized = normalizeExpertiseTags(expertiseArea);
   try {
-    const validated = validateExpertiseTagIds(normalized);
+    const validated = validateExpertiseTagIds(expertiseArea);
     return validated.length > 0 ? validated : null;
   } catch (err) {
     throw new ServiceError(400, err.message);

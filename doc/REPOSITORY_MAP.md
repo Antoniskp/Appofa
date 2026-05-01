@@ -402,7 +402,7 @@ Appofa/
 |---------|---------|
 | organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
 | userCountryCode.js | Dream Team country resolution helper (`nationality` first, then `homeLocation` country ancestor via `Location.type='country'` + `code`) used by vote authorization |
-| professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeLegacyProfession`, `normalizeProfessions` (legacy v1→v2 normalization), `validateProfessionalIdentity`, `validateExpertiseTagIds`, `normalizeExpertiseTags`, `resolveProfessionLabel`, `VALID_EXPERTISE_TAG_IDS`; loaded by User model getters + userService + personService |
+| professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeProfessions` (filter canonical entries only), `normalizeExpertiseTags` (filter valid tag IDs only), `normalizeExpertiseTagId`, `validateProfessionalIdentity`, `validateExpertiseTagIds`, `resolveProfessionLabel`, `scoreSpecialistMatch`, `VALID_EXPERTISE_TAG_IDS`; loaded by User model getters + userService + personService |
 
 ---
 
