@@ -215,7 +215,7 @@ const dreamTeamController = {
         });
       }
 
-      const voterCountryCode = resolveUserDreamTeamCountryCode(voter.toJSON());
+      const voterCountryCode = resolveUserDreamTeamCountryCode(voter);
       if (voterCountryCode && voterCountryCode !== position.countryCode) {
         return res.status(403).json({
           success: false,

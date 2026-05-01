@@ -58,4 +58,3 @@ function resolveUserDreamTeamCountryCode(user, options = {}) {
 }
 
 module.exports = { resolveUserDreamTeamCountryCode };
-

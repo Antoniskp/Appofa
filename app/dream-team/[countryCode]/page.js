@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from 'react';
 import { useSearchParams, useRouter, useParams } from 'next/navigation';
 import { dreamTeamAPI } from '@/lib/api/dreamTeamAPI.js';
 import { useAuth } from '@/lib/auth-context';
@@ -114,9 +114,10 @@ function DreamTeamCountryPageInner() {
   const [publicFormationsForCompare, setPublicFormationsForCompare] = useState([]);
   const [myFormationsForCompare, setMyFormationsForCompare] = useState([]);
 
-  const userCountryCode = availableCountryCodes.length > 0
-    ? resolveUserDreamTeamCountryCode(user, { allowedCountryCodes: availableCountryCodes })
-    : null;
+  const userCountryCode = useMemo(() => {
+    if (availableCountryCodes.length === 0) return null;
+    return resolveUserDreamTeamCountryCode(user, { allowedCountryCodes: availableCountryCodes });
+  }, [user, availableCountryCodes]);
   const isOwnCountryContext = !user || !userCountryCode || userCountryCode === countryCode;
 
   const handleTabChange = useCallback((tabId) => {
@@ -431,7 +432,7 @@ function DreamTeamCountryPageInner() {
                 </button>
               </div>
             )}
-            {user && !isOwnCountryContext && (
+            {user && userCountryCode && !isOwnCountryContext && (
               <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 text-sm flex items-center justify-between gap-4">
                 <span>
                   🌍 Παρακολουθείτε το Dream Team της {countryMeta.flag} {countryMeta.name}. Η ψηφοφορία επιτρέπεται μόνο στη δική σας χώρα.
