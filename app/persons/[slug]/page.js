@@ -10,6 +10,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import { getPartyById } from '@/lib/utils/politicalParties';
+import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
 import ReportButton from '@/components/ReportButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
 
@@ -133,11 +134,20 @@ export default function PersonProfilePage({ params }) {
                     </span>
                   ) : null;
                 })()}
+                {profile.professions && profile.professions.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {profile.professions.map((entry, idx) => (
+                      <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                        {resolveProfessionLabel(entry)}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 {profile.expertiseArea && profile.expertiseArea.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {profile.expertiseArea.map((area) => (
                       <span key={area} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                        {area}
+                        {getExpertiseTagLabel(area)}
                       </span>
                     ))}
                   </div>

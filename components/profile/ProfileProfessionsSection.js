@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   DOMAINS,
   getProfession,
@@ -21,6 +22,8 @@ import {
  * @param {Function} props.onRemove
  */
 export default function ProfileProfessionsSection({ professions, picker, onPickerChange, onAdd, onRemove }) {
+  const t = useTranslations('profile');
+
   const specializations = useMemo(
     () => getSpecializations(picker.domainId, picker.professionId),
     [picker.domainId, picker.professionId]
@@ -59,7 +62,7 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
           onChange={(e) => onPickerChange({ domainId: e.target.value, professionId: '', specializationId: '', subspecializationId: '' })}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
-          <option value="">— Domain —</option>
+          <option value="">{t('profession_domain_placeholder')}</option>
           {DOMAINS.map((d) => (
             <option key={d.id} value={d.id}>{d.label}</option>
           ))}
@@ -71,7 +74,7 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
           disabled={!picker.domainId}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
         >
-          <option value="">— Profession —</option>
+          <option value="">{t('profession_profession_placeholder')}</option>
           {professionList.map((p) => (
             <option key={p.id} value={p.id}>{p.label}</option>
           ))}
@@ -83,7 +86,7 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
           disabled={!picker.professionId || !specializations.length}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
         >
-          <option value="">— Specialization (optional) —</option>
+          <option value="">{t('profession_specialization_placeholder')}</option>
           {specializations.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
           ))}
@@ -95,7 +98,7 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
           disabled={!picker.specializationId || !subspecializations.length}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
         >
-          <option value="">— Sub-specialization (optional) —</option>
+          <option value="">{t('profession_subspecialization_placeholder')}</option>
           {subspecializations.map((s) => (
             <option key={s.id} value={s.id}>{s.label}</option>
           ))}
@@ -108,7 +111,7 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
           onClick={onAdd}
           className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Add
+          {t('add_profession')}
         </button>
       </div>
     </div>

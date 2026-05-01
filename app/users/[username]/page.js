@@ -18,6 +18,7 @@ import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
 import { getPartyById } from '@/lib/utils/politicalParties';
+import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
 import LoginLink from '@/components/ui/LoginLink';
 import TwitchEmbed from '@/components/profile/TwitchEmbed';
 
@@ -362,6 +363,36 @@ export default function PublicUserProfilePage() {
                 <p className="text-sm text-gray-600">
                   {getLocationBreadcrumb(user.homeLocation)}
                 </p>
+              </Card>
+            )}
+
+            {/* Professions & Expertise */}
+            {((user.professions && user.professions.length > 0) || (user.expertiseArea && user.expertiseArea.length > 0)) && (
+              <Card>
+                {user.professions && user.professions.length > 0 && (
+                  <div className="mb-3">
+                    <h2 className="text-sm font-semibold text-gray-700 mb-2">Επαγγελματική Ταυτότητα</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {user.professions.map((entry, idx) => (
+                        <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                          {resolveProfessionLabel(entry)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {user.expertiseArea && user.expertiseArea.length > 0 && (
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-700 mb-2">Τομείς Εμπειρογνωμοσύνης</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {user.expertiseArea.map((area) => (
+                        <span key={area} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                          {getExpertiseTagLabel(area)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </Card>
             )}
 

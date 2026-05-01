@@ -10,7 +10,7 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
-import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
+import { EXPERTISE_TAGS, getExpertiseTagLabel } from '@/lib/utils/professionTaxonomy';
 import LoginLink from '@/components/ui/LoginLink';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
@@ -265,7 +265,7 @@ export default function UsersPage() {
                               <div className="mt-2 flex flex-wrap gap-1.5">
                                 {profile.expertiseArea.map((area) => (
                                   <span key={area} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                                    {area}
+                                    {getExpertiseTagLabel(area)}
                                   </span>
                                 ))}
                               </div>
@@ -320,7 +320,7 @@ export default function UsersPage() {
                   placeholder: 'Όλοι οι τομείς',
                   options: [
                     { value: '', label: 'Όλοι οι τομείς' },
-                    ...EXPERTISE_AREAS.map((area) => ({ value: area, label: area })),
+                    ...EXPERTISE_TAGS.map((tag) => ({ value: tag.id, label: tag.label })),
                   ],
                 },
               ]}
