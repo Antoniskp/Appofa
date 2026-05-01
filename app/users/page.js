@@ -10,10 +10,18 @@ import { useFilters } from '@/hooks/useFilters';
 import Pagination from '@/components/ui/Pagination';
 import FilterBar from '@/components/ui/FilterBar';
 import Link from 'next/link';
-import { EXPERTISE_TAGS, getExpertiseTagLabel } from '@/lib/utils/professionTaxonomy';
+import {
+  DOMAINS,
+  EXPERTISE_TAGS,
+  getExpertiseTagLabel,
+  getProfession,
+  getSpecializations,
+  getSubspecializations,
+} from '@/lib/utils/professionTaxonomy';
 import LoginLink from '@/components/ui/LoginLink';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import { InformationCircleIcon } from '@heroicons/react/24/outline';
+import { useMemo } from 'react';
 
 export default function UsersPage() {
   const { user, loading: authLoading } = useAuth();
@@ -32,7 +40,34 @@ export default function UsersPage() {
     search: '',
     expertiseArea: '',
     locationId: null,
+    domainId: '',
+    professionId: '',
+    specializationId: '',
   });
+
+  // Cascading options derived from selected domain/profession
+  const professionOptions = useMemo(() => {
+    if (!filters.domainId) return [];
+    const domain = DOMAINS.find((d) => d.id === filters.domainId);
+    return domain ? domain.professions : [];
+  }, [filters.domainId]);
+
+  const specializationOptions = useMemo(() => {
+    if (!filters.domainId || !filters.professionId) return [];
+    return getSpecializations(filters.domainId, filters.professionId);
+  }, [filters.domainId, filters.professionId]);
+
+  // Reset lower levels when a higher level changes
+  function handleDomainChange(e) {
+    updateFilter('domainId', e.target.value);
+    updateFilter('professionId', '');
+    updateFilter('specializationId', '');
+  }
+
+  function handleProfessionChange(e) {
+    updateFilter('professionId', e.target.value);
+    updateFilter('specializationId', '');
+  }
 
   const { data: usersData, loading, error } = useAsyncData(
     async () => {
@@ -110,6 +145,8 @@ export default function UsersPage() {
     && !isAuthenticated
     && !unclaimedProfilesError
     && (unclaimedProfilesLoading || unclaimedProfiles.length > 0);
+
+  const hasActiveTaxonomyFilter = filters.domainId || filters.professionId || filters.specializationId;
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -302,7 +339,7 @@ export default function UsersPage() {
         {/* Show user cards only for authenticated users */}
         {isAuthenticated && (
           <>
-            {/* Search using FilterBar */}
+            {/* Text search + expertise tag filter */}
             <FilterBar
               filters={filters}
               onChange={(e) => updateFilter(e.target.name, e.target.value)}
@@ -315,17 +352,81 @@ export default function UsersPage() {
                 },
                 {
                   name: 'expertiseArea',
-                  label: 'Τομέας',
+                  label: 'Ετικέτα εξειδίκευσης',
                   type: 'select',
-                  placeholder: 'Όλοι οι τομείς',
+                  placeholder: 'Όλες οι ετικέτες',
                   options: [
-                    { value: '', label: 'Όλοι οι τομείς' },
+                    { value: '', label: 'Όλες οι ετικέτες' },
                     ...EXPERTISE_TAGS.map((tag) => ({ value: tag.id, label: tag.label })),
                   ],
                 },
               ]}
-              className="mb-4"
+              className="mb-3"
             />
+
+            {/* Taxonomy cascade filters: domain → profession → specialization */}
+            <div className="mb-3 flex flex-wrap gap-2">
+              <select
+                value={filters.domainId}
+                onChange={handleDomainChange}
+                aria-label="Τομέας επαγγέλματος"
+                className="h-10 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+              >
+                <option value="">Όλοι οι τομείς</option>
+                {DOMAINS.map((d) => (
+                  <option key={d.id} value={d.id}>{d.label}</option>
+                ))}
+              </select>
+
+              {professionOptions.length > 0 && (
+                <select
+                  value={filters.professionId}
+                  onChange={handleProfessionChange}
+                  aria-label="Επάγγελμα"
+                  className="h-10 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="">Όλα τα επαγγέλματα</option>
+                  {professionOptions.map((p) => (
+                    <option key={p.id} value={p.id}>{p.label}</option>
+                  ))}
+                </select>
+              )}
+
+              {specializationOptions.length > 0 && (
+                <select
+                  value={filters.specializationId}
+                  onChange={(e) => updateFilter('specializationId', e.target.value)}
+                  aria-label="Εξειδίκευση"
+                  className="h-10 min-w-[180px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                >
+                  <option value="">Όλες οι εξειδικεύσεις</option>
+                  {specializationOptions.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label}</option>
+                  ))}
+                </select>
+              )}
+
+              {hasActiveTaxonomyFilter && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateFilter('domainId', '');
+                    updateFilter('professionId', '');
+                    updateFilter('specializationId', '');
+                  }}
+                  className="h-10 px-3 text-sm text-gray-500 hover:text-gray-700 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors"
+                >
+                  ✕ Εκκαθάριση τομέα
+                </button>
+              )}
+            </div>
+
+            {hasActiveTaxonomyFilter && (
+              <p className="mb-3 text-xs text-blue-600">
+                🎯 Εμφάνιση ειδικών — ταξινομημένοι κατά σχετικότητα
+              </p>
+            )}
+
             <div className="mb-8">
               <LocationFilterBreadcrumb
                 value={filters.locationId}
@@ -386,3 +487,4 @@ export default function UsersPage() {
     </div>
   );
 }
+

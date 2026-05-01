@@ -15,6 +15,7 @@ const {
   validateProfessionalIdentity,
   validateExpertiseTagIds,
   normalizeExpertiseTags,
+  scoreSpecialistMatch,
 } = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
 
@@ -955,7 +956,7 @@ async function getPublicUserProfileByUsername(username) {
   return user;
 }
 
-async function searchUsers(search, page, limit, expertiseArea, locationId) {
+async function searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery = null) {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
@@ -1002,12 +1003,65 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
     }
   }
 
+  // Taxonomy pre-filter at DB level: use LIKE on the professions JSON text to narrow
+  // down candidates by domainId before in-memory scoring.
+  const hasTaxonomyFilter = taxonomyQuery && taxonomyQuery.domainId;
+  if (hasTaxonomyFilter) {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    const safeDomainId = taxonomyQuery.domainId.replace(/[%_\\]/g, '\\$&');
+    whereClause.professions = { [likeOp]: `%"domainId":"${safeDomainId}"%` };
+  }
+
+  const userAttributes = [
+    'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
+    'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus',
+    'professions', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier',
+  ];
+
+  // When taxonomy filtering is active, fetch all matching rows for in-memory scoring then paginate
+  if (hasTaxonomyFilter) {
+    const allUsers = await User.findAll({
+      where: whereClause,
+      attributes: userAttributes,
+      order: [['username', 'ASC']],
+    });
+
+    const scored = allUsers.map((u) => {
+      const plain = u.toJSON();
+      plain._relevanceScore = scoreSpecialistMatch(
+        { professions: plain.professions, expertiseArea: plain.expertiseArea },
+        taxonomyQuery,
+      );
+      return plain;
+    });
+
+    scored.sort((a, b) =>
+      b._relevanceScore - a._relevanceScore ||
+      (a.username || '').localeCompare(b.username || ''),
+    );
+
+    const count = scored.length;
+    const paginated = scored.slice(offset, offset + limitNum);
+    const totalPages = Math.ceil(count / limitNum);
+
+    return {
+      users: paginated,
+      pagination: {
+        currentPage: pageNum,
+        totalPages,
+        totalItems: count,
+        itemsPerPage: limitNum,
+      },
+    };
+  }
+
   const { count, rows: users } = await User.findAndCountAll({
     where: whereClause,
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier'],
+    attributes: userAttributes,
     order: [['username', 'ASC']],
     limit: limitNum,
-    offset
+    offset,
   });
 
   const totalPages = Math.ceil(count / limitNum);
@@ -1018,8 +1072,8 @@ async function searchUsers(search, page, limit, expertiseArea, locationId) {
       currentPage: pageNum,
       totalPages,
       totalItems: count,
-      itemsPerPage: limitNum
-    }
+      itemsPerPage: limitNum,
+    },
   };
 }
 
