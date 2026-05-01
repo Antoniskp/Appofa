@@ -8,6 +8,7 @@ const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const {
   validateExpertiseTagIds,
   VALID_EXPERTISE_TAG_IDS,
+  DOMAIN_MAP,
 } = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
 
@@ -136,11 +137,10 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
     const likeOp = isPostgres ? Op.iLike : Op.like;
     where.expertiseArea = { [likeOp]: `%${expertiseArea.replace(/[%_\\]/g, '\\$&')}%` };
   }
-  if (domainId && typeof domainId === 'string') {
+  if (domainId && typeof domainId === 'string' && DOMAIN_MAP.has(domainId)) {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
-    const sanitized = domainId.replace(/[%_\\]/g, '\\$&');
-    where.professions = { [likeOp]: `%"domainId":"${sanitized}"%` };
+    where.professions = { [likeOp]: `%"domainId":"${domainId}"%` };
   }
 
   const { count, rows } = await User.findAndCountAll({

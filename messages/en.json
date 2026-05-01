@@ -1237,8 +1237,27 @@
     "instructions_page_410": "Συνεισφέρετε",
     "instructions_page_411": " στην κοινότητα"
   },
+  "discover_people": {
+    "title": "Discover People",
+    "subtitle": "Learn about people before voting",
+    "search_placeholder": "Search by name…",
+    "all_locations": "All Locations",
+    "all_professions": "All Professions",
+    "all_expertise": "All Expertise",
+    "all_profiles": "All Profiles",
+    "claimed": "Claimed",
+    "unclaimed": "Unclaimed",
+    "pending": "Pending",
+    "clear_filters": "Clear filters",
+    "view_profile": "View Profile",
+    "empty": "No people found matching your filters.",
+    "error_title": "Failed to load",
+    "error_description": "Could not load profiles. Please try again.",
+    "retry": "Retry",
+    "dream_team_banner": "Learn about people before voting. Browse profiles, expertise, and backgrounds.",
+    "dream_team_cta": "Discover People →"
+  },
   "gdpr": {
-    "banner_title": "We use cookies",
     "banner_description": "We use cookies to improve your experience, analyse traffic and personalise content. For security and abuse-prevention purposes, we always record visitor entry data (IP address, country, page path) regardless of your preferences. You can manage optional cookie preferences below.",
     "accept_all": "Accept All",
     "reject_non_essential": "Reject Non-Essential",
