@@ -28,11 +28,18 @@ function SmallAvatar({ photo, name, avatarColor, indigo = false }) {
     );
   }
   const initial = (name?.trim() || '').charAt(0).toUpperCase() || '?';
-  const bg = indigo ? '#6366f1' : (avatarColor || '#6b7280');
+  const base = 'h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white text-xs';
+  if (indigo) {
+    return (
+      <div className={`${base} bg-indigo-500`} aria-label={name || ''}>
+        {initial}
+      </div>
+    );
+  }
   return (
     <div
-      className="h-7 w-7 rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white text-xs"
-      style={{ backgroundColor: bg }}
+      className={`${base} bg-gray-500`}
+      style={avatarColor ? { backgroundColor: avatarColor } : undefined}
       aria-label={name || ''}
     >
       {initial}
@@ -144,7 +151,7 @@ export default function GovernmentSnapshotSection() {
                     <div className="border-t border-gray-100 pt-2 space-y-2">
                       {/* Today row */}
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-400 shrink-0 w-20">{t('today')}:</span>
+                        <span className="text-xs text-gray-400 shrink-0 min-w-[5rem]">{t('today')}:</span>
                         {holderName ? (
                           <>
                             <SmallAvatar photo={holderPhoto} name={holderName} avatarColor={holderAvatarColor} />
@@ -157,10 +164,10 @@ export default function GovernmentSnapshotSection() {
 
                       {/* Community row */}
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-indigo-500 shrink-0 w-20">{t('community')}:</span>
+                        <span className="text-xs text-indigo-500 shrink-0 min-w-[5rem]">{t('community')}:</span>
                         {winner ? (
                           <>
-                            <SmallAvatar photo={winner.avatar} name={winner.personName} indigo />
+                            <SmallAvatar photo={winner.avatar || winner.photo} name={winner.personName} indigo />
                             <span className="text-xs font-medium text-indigo-700 truncate">{winner.personName}</span>
                             <span className="ml-auto text-xs text-gray-400 shrink-0 tabular-nums">
                               {winner.voteCount} {t('votes_suffix')}
