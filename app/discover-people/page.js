@@ -64,8 +64,8 @@ function PersonCard({ profile, t }) {
   const professions = Array.isArray(profile.professions) ? profile.professions : [];
   const primaryProfession = professions.length > 0 ? resolveProfessionLabel(professions[0]) : null;
 
-  const expertiseTags = Array.isArray(profile.expertiseArea) ? profile.expertiseArea : [];
-  const visibleTags = expertiseTags.slice(0, 3);
+  const expertiseTagIds = Array.isArray(profile.expertiseArea) ? profile.expertiseArea : [];
+  const visibleTags = expertiseTagIds.slice(0, 3);
 
   const location = profile.homeLocation?.name || profile.constituency?.name || null;
 
@@ -173,6 +173,7 @@ export default function DiscoverPeoplePage() {
     error,
     hasMore,
     loadMore,
+    reset,
   } = useInfiniteData(
     async (p, lim) => {
       const params = { page: p, limit: lim };
@@ -294,7 +295,7 @@ export default function DiscoverPeoplePage() {
             type="error"
             title={t('error_title')}
             description={t('error_description')}
-            action={{ text: t('retry'), onClick: () => window.location.reload() }}
+            action={{ text: t('retry'), onClick: reset }}
           />
         )}
 
