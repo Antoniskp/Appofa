@@ -8,6 +8,7 @@ const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const {
   validateExpertiseTagIds,
   VALID_EXPERTISE_TAG_IDS,
+  DOMAIN_MAP,
 } = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
 
@@ -120,7 +121,7 @@ function buildNameSearchWhere(search) {
 
 // ─── Public read ─────────────────────────────────────────────────────────────
 
-async function getPersons({ page = 1, limit = 12, constituencyId, search, claimStatus, expertiseArea } = {}) {
+async function getPersons({ page = 1, limit = 12, constituencyId, search, claimStatus, expertiseArea, locationId, domainId } = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
   const offset = (pageNum - 1) * limitNum;
@@ -128,12 +129,20 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
   // Only public person profiles (claimStatus IS NOT NULL)
   const where = { claimStatus: { [Op.ne]: null } };
   if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
+  if (locationId) where.homeLocationId = parseInt(locationId, 10);
   if (claimStatus && claimStatus !== 'all') where.claimStatus = claimStatus;
   if (search) Object.assign(where, buildNameSearchWhere(search));
   if (expertiseArea && typeof expertiseArea === 'string') {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
     where.expertiseArea = { [likeOp]: `%${expertiseArea.replace(/[%_\\]/g, '\\$&')}%` };
+  }
+  if (domainId && typeof domainId === 'string' && DOMAIN_MAP.has(domainId)) {
+    const isPostgres = dbConfig.getDialect() === 'postgres';
+    const likeOp = isPostgres ? Op.iLike : Op.like;
+    // domainId is validated against DOMAIN_MAP (known whitelist); sanitizeForLike adds extra defence
+    const safeDomainId = sanitizeForLike(domainId);
+    where.professions = { [likeOp]: `%"domainId":"${safeDomainId}"%` };
   }
 
   const { count, rows } = await User.findAndCountAll({
