@@ -54,12 +54,28 @@ describe('normalizeLegacyProfession', () => {
     expect(result.specializationId).toBeUndefined();
   });
 
-  test('converts legacy technology/software_engineer with subProfession', () => {
+  test('converts legacy technology/software_engineer with frontend subProfession', () => {
     const legacy = { categoryId: 'technology', professionId: 'software_engineer', subProfessionId: 'frontend' };
     const result = normalizeLegacyProfession(legacy);
     expect(result.domainId).toBe('technology-it');
     expect(result.professionId).toBe('software-engineer');
     expect(result.specializationId).toBe('frontend-developer');
+  });
+
+  test('silently drops unknown subProfessionId instead of producing invalid specializationId', () => {
+    const legacy = { categoryId: 'technology', professionId: 'software_engineer', subProfessionId: 'completely_unknown' };
+    const result = normalizeLegacyProfession(legacy);
+    expect(result.domainId).toBe('technology-it');
+    expect(result.professionId).toBe('software-engineer');
+    expect(result.specializationId).toBeUndefined();
+  });
+
+  test('converts legacy technology/software_engineer with devops subProfession to devops-engineer profession (not specialization)', () => {
+    const legacy = { categoryId: 'technology', professionId: 'software_engineer', subProfessionId: 'devops' };
+    const result = normalizeLegacyProfession(legacy);
+    expect(result.domainId).toBe('technology-it');
+    expect(result.professionId).toBe('devops-engineer');
+    expect(result.specializationId).toBeUndefined();
   });
 
   test('converts legacy healthcare/doctor to v2', () => {

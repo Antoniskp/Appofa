@@ -110,14 +110,23 @@ const LEGACY_PROFESSION_ID_MAP = {
 };
 
 /**
- * Maps old subProfession IDs to new specialization IDs.
- * Format: 'oldProfessionId/oldSubProfessionId' -> new specializationId
+ * Maps legacy subProfession IDs that should override the *professionId* in v2
+ * rather than becoming a specializationId. Used when the old sub-profession
+ * corresponds to a separate top-level profession in the v2 taxonomy.
+ * Format: 'oldProfessionId/oldSubProfessionId' -> new professionId
+ */
+const LEGACY_SUBPROF_PROFESSION_OVERRIDES = {
+  'software_engineer/devops': 'devops-engineer',
+};
+
+/**
+ * Maps old subProfession IDs to new specialization IDs (within their domain).
+ * Format: 'oldProfessionId/oldSubProfessionId' -> new specializationId (or null to drop)
  */
 const LEGACY_SUBPROF_ID_MAP = {
   'software_engineer/frontend': 'frontend-developer',
   'software_engineer/backend': 'backend-developer',
   'software_engineer/fullstack': 'fullstack-developer',
-  'software_engineer/devops': 'devops-engineer',
   'software_engineer/mobile': 'mobile-developer',
   'data_scientist/ml_engineer': 'machine-learning',
   'data_scientist/data_analyst': 'data-analyst',
@@ -196,12 +205,21 @@ function normalizeLegacyProfession(entry) {
 
   if (entry.subProfessionId) {
     const subKey = `${entry.professionId}/${entry.subProfessionId}`;
+
+    // Check if this sub-profession should override the professionId entirely
+    const profOverride = LEGACY_SUBPROF_PROFESSION_OVERRIDES[subKey];
+    if (profOverride) {
+      result.professionId = profOverride;
+      return result;
+    }
+
     const newSpecId = LEGACY_SUBPROF_ID_MAP[subKey];
     if (newSpecId !== undefined) {
+      // null means "drop the subspecialization silently" (e.g. teacher/university)
       if (newSpecId !== null) result.specializationId = newSpecId;
-    } else {
-      result.specializationId = entry.subProfessionId;
     }
+    // If not in either map, silently drop the sub-profession rather than producing
+    // an unvalidated specializationId that would fail downstream validation.
   }
 
   return result;
