@@ -402,6 +402,7 @@ Appofa/
 |---------|---------|
 | organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
 | userCountryCode.js | Dream Team country resolution helper (`nationality` first, then `homeLocation` country ancestor via `Location.type='country'` + `code`) used by vote authorization |
+| professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeLegacyProfession`, `normalizeProfessions` (legacy v1→v2 normalization), `validateProfessionalIdentity`, `validateExpertiseTagIds`, `normalizeExpertiseTags`, `resolveProfessionLabel`, `VALID_EXPERTISE_TAG_IDS`; loaded by User model getters + userService + personService |
 
 ---
 
@@ -582,12 +583,12 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | File | Contents |
 |------|----------|
 | articleTypes.js | Article type ENUM: `personal`, `articles`, `news`, `video` |
-| expertiseAreas.js | 11 expertise area values (CJS) |
+| expertiseAreas.js | Expertise tag IDs — re-exports from `src/data/expertiseTags.json` taxonomy (CJS) |
 
 ### Frontend (`lib/constants/`)
 | File | Contents |
 |------|----------|
-| expertiseAreas.js | Expertise areas (ESM mirror) |
+| expertiseAreas.js | Expertise tag IDs — re-exports from `src/data/expertiseTags.json` taxonomy (ESM mirror) |
 | i18n.js | Locale constants (`DEFAULT_LOCALE='el'`, `SUPPORTED_LOCALES=['el','en']`) |
 | locations.js | Location type definitions + location detail tab constants (`VALID_TABS`, includes `unclaimed`) |
 | profile.js | Profile field definitions |
@@ -599,6 +600,13 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | badges.json | 8 badge definitions, 3 tiers each |
 | organizationContent.json | Shared organization phase-3 content enums (`visibilities`, `suggestionTypes`) for backend/frontend |
 | organizationTypes.json | Shared Organization type list (`company`, `organization`, `institution`, `school`, `university`, `party`) |
+
+### Data (`src/data/`)
+| File | Contents |
+|------|----------|
+| professions.json | **v2 hierarchical profession taxonomy** — 14 domains, each with professions → specializations → subspecializations. Canonical ID format: kebab-case. Replaces old 3-level category/profession/subProfession structure. |
+| expertiseTags.json | **v1 expertise tag definitions** — ~70 tags with `id`, `label`, and `domainIds[]`. Tag IDs are the canonical stored format in `User.expertiseArea`. |
+| interests.json | User interest categories (category/interest/subInterest) |
 
 ---
 

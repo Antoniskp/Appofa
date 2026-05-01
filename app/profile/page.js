@@ -86,7 +86,7 @@ function ProfileContent() {
   const [avatarSourceUpdating, setAvatarSourceUpdating] = useState(false);
   const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState(null);
   const [hasPassword, setHasPassword] = useState(false);
-  const [profPicker, setProfPicker] = useState({ categoryId: '', professionId: '', subProfessionId: '' });
+  const [profPicker, setProfPicker] = useState({ domainId: '', professionId: '', specializationId: '', subspecializationId: '' });
   const [intPicker, setIntPicker] = useState({ categoryId: '', interestId: '', subInterestId: '' });
   const [followersCount, setFollowersCount] = useState(undefined);
   const [followingCount, setFollowingCount] = useState(undefined);
@@ -631,10 +631,11 @@ function ProfileContent() {
             picker={profPicker}
             onPickerChange={setProfPicker}
             onAdd={() => {
-              const entry = { categoryId: profPicker.categoryId, professionId: profPicker.professionId };
-              if (profPicker.subProfessionId) entry.subProfessionId = profPicker.subProfessionId;
+              const entry = { domainId: profPicker.domainId, professionId: profPicker.professionId };
+              if (profPicker.specializationId) entry.specializationId = profPicker.specializationId;
+              if (profPicker.subspecializationId) entry.subspecializationId = profPicker.subspecializationId;
               setProfileData((prev) => ({ ...prev, professions: [...(prev.professions || []), entry] }));
-              setProfPicker({ categoryId: '', professionId: '', subProfessionId: '' });
+              setProfPicker({ domainId: '', professionId: '', specializationId: '', subspecializationId: '' });
             }}
             onRemove={(idx) => setProfileData((prev) => ({ ...prev, professions: prev.professions.filter((_, i) => i !== idx) }))}
           />

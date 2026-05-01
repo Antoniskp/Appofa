@@ -1,14 +1,15 @@
 'use client';
 
-import { EXPERTISE_AREAS } from '@/lib/constants/expertiseAreas';
+import { EXPERTISE_TAGS, getExpertiseTagLabel } from '@/lib/utils/professionTaxonomy';
 
 /**
- * Expertise Area section: lets the user select up to 5 expertise areas.
+ * Expertise Area section: lets the user select up to 5 expertise tags.
+ * Uses tag IDs internally; shows human-readable labels in the UI.
  *
  * @param {Object} props
- * @param {Array} props.expertiseArea - currently selected areas
- * @param {Function} props.onAdd - (area: string) => void
- * @param {Function} props.onRemove - (area: string) => void
+ * @param {string[]} props.expertiseArea - currently selected tag IDs
+ * @param {Function} props.onAdd - (tagId: string) => void
+ * @param {Function} props.onRemove - (tagId: string) => void
  */
 export default function ProfileExpertiseSection({ expertiseArea, onAdd, onRemove }) {
   const selected = expertiseArea || [];
@@ -16,28 +17,28 @@ export default function ProfileExpertiseSection({ expertiseArea, onAdd, onRemove
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
-        {selected.map((area) => (
-          <span key={area} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-            {area}
+        {selected.map((tagId) => (
+          <span key={tagId} className="inline-flex items-center gap-1 bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+            {getExpertiseTagLabel(tagId)}
             <button
               type="button"
-              onClick={() => onRemove(area)}
+              onClick={() => onRemove(tagId)}
               className="ml-1 text-purple-600 hover:text-purple-900 font-bold leading-none"
-              aria-label={`Remove ${area}`}
-            >✕</button>
+              aria-label={`Remove ${getExpertiseTagLabel(tagId)}`}
+            >&#x2715;</button>
           </span>
         ))}
       </div>
       <div className="flex gap-2 flex-wrap">
-        {EXPERTISE_AREAS.filter((area) => !selected.includes(area)).map((area) => (
+        {EXPERTISE_TAGS.filter((tag) => !selected.includes(tag.id)).map((tag) => (
           <button
-            key={area}
+            key={tag.id}
             type="button"
             disabled={selected.length >= 5}
-            onClick={() => onAdd(area)}
+            onClick={() => onAdd(tag.id)}
             className="inline-flex items-center px-3 py-1 rounded-full border border-purple-300 text-xs text-purple-700 hover:bg-purple-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            + {area}
+            + {tag.label}
           </button>
         ))}
       </div>

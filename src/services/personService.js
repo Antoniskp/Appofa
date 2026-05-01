@@ -5,11 +5,14 @@ const { Op } = require('sequelize');
 const { User, Location, LocationLink, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick } = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
-const { EXPERTISE_AREAS } = require('../constants/expertiseAreas');
+const {
+  validateExpertiseTagIds,
+  normalizeExpertiseTags,
+  VALID_EXPERTISE_TAG_IDS,
+} = require('../utils/professionTaxonomy');
 const politicalParties = require('../../config/politicalParties.json');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
-const VALID_EXPERTISE_AREAS = new Set(EXPERTISE_AREAS);
 const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
 
 class ServiceError extends Error {
@@ -74,11 +77,14 @@ const SAFE_USER_ATTRS = [
 function validateExpertiseArea(expertiseArea) {
   if (expertiseArea === undefined || expertiseArea === null) return null;
   if (!Array.isArray(expertiseArea)) throw new ServiceError(400, 'Expertise area must be an array.');
-  for (const area of expertiseArea) {
-    if (typeof area !== 'string') throw new ServiceError(400, 'Each expertise area must be a string.');
-    if (!VALID_EXPERTISE_AREAS.has(area)) throw new ServiceError(400, `Invalid expertise area: "${area}".`);
+  // Normalize legacy string labels to tag IDs before validating
+  const normalized = normalizeExpertiseTags(expertiseArea);
+  try {
+    const validated = validateExpertiseTagIds(normalized);
+    return validated.length > 0 ? validated : null;
+  } catch (err) {
+    throw new ServiceError(400, err.message);
   }
-  return expertiseArea.length > 0 ? expertiseArea : null;
 }
 
 // ─── Party ID validation helper ──────────────────────────────────────────────
