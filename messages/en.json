@@ -1273,8 +1273,10 @@
   "users": {
     "title": "Community",
     "subtitle": "Discover public figures and registered users.",
+    "tab_all": "All",
     "tab_persons": "Persons",
     "tab_registered": "Registered Users",
+    "see_all_registered": "See all registered users →",
     "create_person": "Create Person",
     "stats_label": "Statistics",
     "stats_registered": "Registered",
