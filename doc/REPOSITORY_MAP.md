@@ -432,7 +432,7 @@ Appofa/
 | `/` | Home page |
 | `/login`, `/register` | Authentication |
 | `/profile` | User profile |
-| `/users`, `/users/[username]` | Unified people directory — shows person profiles (public figures, both claimed and unclaimed) and registered users via a tab toggle; full search/filter bar (name, location, domain, expertise, claim status); infinite scroll for persons, paginated search for registered users; guests see persons tab + login CTA for registered users tab |
+| `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, location, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; `/discover-people` and `/persons` list pages redirect here; person detail (`/persons/[slug]`) and claim pages are preserved |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
 | `/my-votes`, `/my-polls`, `/my-news` | User content |
