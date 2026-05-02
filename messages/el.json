@@ -1,6 +1,6 @@
 {
   "nav": {
-    "feed": "Feed",
+    "feed": "Ροή",
     "news": "Νέα",
     "articles": "Άρθρα",
     "login": "Σύνδεση",
@@ -123,15 +123,15 @@
     "gdpr_consent_error": "Πρέπει να αποδεχτείτε τους όρους για να εγγραφείτε."
   },
   "feed": {
-    "title": "Feed",
+    "title": "Ροή",
     "subtitle": "Άρθρα, Νέα και Βίντεο από την κοινότητα",
-    "search_placeholder": "Αναζήτηση στο feed...",
+    "search_placeholder": "Αναζήτηση στη ροή...",
     "filter_all": "Όλα",
     "filter_news": "Νέα",
     "filter_articles": "Άρθρα",
     "filter_video": "Βίντεο",
     "create_article": "Νέο Άρθρο",
-    "error_loading": "Σφάλμα φόρτωσης feed",
+    "error_loading": "Σφάλμα φόρτωσης ροής",
     "no_items_found": "Δεν βρέθηκε περιεχόμενο",
     "no_items_description": "Δεν υπάρχει περιεχόμενο που να ταιριάζει στα φίλτρα σας."
   },
