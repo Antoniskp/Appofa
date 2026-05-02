@@ -34,8 +34,7 @@ export default function ProfileExpertiseSection({ expertiseArea, onAdd, onRemove
       }
       return next;
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selected.join(',')]);
+  }, [selected]);
 
   const toggleGroup = (domainId) => {
     setOpenGroups((prev) => {
