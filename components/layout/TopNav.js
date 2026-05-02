@@ -253,10 +253,22 @@ export default function TopNav() {
             </Link>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
-                href="/feed"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/feed')}`}
+                href="/articles"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/articles')}`}
               >
-                {tNav('feed')}
+                {tNav('articles')}
+              </Link>
+              <Link
+                href="/news"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/news')}`}
+              >
+                {tNav('news')}
+              </Link>
+              <Link
+                href="/videos"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/videos')}`}
+              >
+                {tNav('videos')}
               </Link>
               <Link
                 href="/polls"
@@ -351,10 +363,22 @@ export default function TopNav() {
       <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
         <div className="border-t border-seafoam px-4 py-3 space-y-2">
           <Link
-            href="/feed"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/feed')}`}
+            href="/articles"
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/articles')}`}
           >
-            {tNav('feed')}
+            {tNav('articles')}
+          </Link>
+          <Link
+            href="/news"
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/news')}`}
+          >
+            {tNav('news')}
+          </Link>
+          <Link
+            href="/videos"
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/videos')}`}
+          >
+            {tNav('videos')}
           </Link>
           <Link
             href="/polls"
