@@ -1,6 +1,5 @@
 {
   "nav": {
-    "feed": "Feed",
     "news": "News",
     "articles": "Articles",
     "login": "Login",
@@ -121,19 +120,6 @@
     "gdpr_consent_required": "I agree to the Terms of Use and Privacy Policy",
     "gdpr_consent_marketing": "I agree to receive marketing communications (optional)",
     "gdpr_consent_error": "You must accept the terms to register."
-  },
-  "feed": {
-    "title": "Feed",
-    "subtitle": "Articles, News and Videos from the community",
-    "search_placeholder": "Search the feed...",
-    "filter_all": "All",
-    "filter_news": "News",
-    "filter_articles": "Articles",
-    "filter_video": "Videos",
-    "create_article": "New Article",
-    "error_loading": "Error loading feed",
-    "no_items_found": "No content found",
-    "no_items_description": "There is no content matching your filters."
   },
   "articles": {
     "title": "Articles",
