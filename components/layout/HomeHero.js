@@ -15,11 +15,10 @@ import {
   CheckBadgeIcon,
   ShieldCheckIcon,
   UserPlusIcon,
-  NewspaperIcon,
-  DocumentTextIcon,
-  AcademicCapIcon,
   FlagIcon,
   HandRaisedIcon,
+  TrophyIcon,
+  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
@@ -29,39 +28,39 @@ const SLIDE_INTERVAL_MS = 5000;
 
 const NAV_CARDS = [
   {
-    icon: NewspaperIcon,
-    title: 'Ειδήσεις',
-    description: 'Όλα τα media σε ένα σημείο',
-    href: '/news',
+    icon: TrophyIcon,
+    title: 'Dream Team',
+    description: 'Ψήφισε την κυβέρνηση που θέλεις',
+    href: '/dream-team',
+  },
+  {
+    icon: LightBulbIcon,
+    title: 'Προτάσεις',
+    description: 'Κάνε προτάσεις για τον τόπο σου',
+    href: '/suggestions',
   },
   {
     icon: ChartBarIcon,
     title: 'Ψηφοφορίες',
-    description: 'Ψηφίστε & δείτε τάσεις',
+    description: 'Δημιούργησε ή ψήφισε σε θέματα της περιοχής σου',
     href: '/polls',
   },
   {
-    icon: DocumentTextIcon,
-    title: 'Άρθρα',
-    description: 'Αναλύσεις & απόψεις πολιτών',
-    href: '/articles',
-  },
-  {
-    icon: AcademicCapIcon,
-    title: 'Εκπαίδευση',
-    description: 'Μάθε πώς λειτουργεί η εκπαίδευση στο κράτος',
-    href: '/education',
+    icon: MapPinIcon,
+    title: 'Περιοχές',
+    description: 'Βρες τον δήμο, την περιφέρεια ή τη χώρα σου',
+    href: '/locations',
   },
   {
     icon: FlagIcon,
     title: 'Αποστολή',
-    description: 'Τι επιδιώκουμε',
+    description: 'Δες τι προσπαθεί να πετύχει το project',
     href: '/mission',
   },
   {
-    icon: HandRaisedIcon,
+    icon: UserGroupIcon,
     title: 'Συνεισφορά',
-    description: 'Βοήθησε το project',
+    description: 'Βοήθησε να χτιστεί η κοινότητα',
     href: '/contribute',
   },
 ];
@@ -386,8 +385,8 @@ export default function HomeHero() {
                 href={href}
                 className="flex flex-col items-center gap-3 p-5 bg-white border border-gray-200 rounded-2xl text-center hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 group w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.75rem)] lg:w-40"
               >
-                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
-                  <Icon className="w-6 h-6 text-indigo-600" />
+                <div className="w-14 h-14 flex items-center justify-center rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
+                  <Icon className="w-7 h-7 text-indigo-600" />
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-sm">{title}</p>
