@@ -56,7 +56,7 @@ export default function ClaimProfilePage({ params }) {
     return (
       <div className="app-container py-10 text-center">
         <p className="text-red-500">Person not found.</p>
-        <Link href="/persons" className="mt-4 inline-block text-blue-600 hover:underline">← Back</Link>
+        <Link href="/users" className="mt-4 inline-block text-blue-600 hover:underline">← Back</Link>
       </div>
     );
   }

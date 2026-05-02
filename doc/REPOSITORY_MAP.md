@@ -432,7 +432,7 @@ Appofa/
 | `/` | Home page |
 | `/login`, `/register` | Authentication |
 | `/profile` | User profile |
-| `/users`, `/users/[username]` | User list & public profiles (`/users` guest view shows login CTA + unclaimed public-profile preview with claim/profile actions) |
+| `/users`, `/users/[username]` | Unified people directory — shows person profiles (public figures, both claimed and unclaimed) and registered users via a tab toggle; full search/filter bar (name, location, domain, expertise, claim status); infinite scroll for persons, paginated search for registered users; guests see persons tab + login CTA for registered users tab |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
 | `/my-votes`, `/my-polls`, `/my-news` | User content |
@@ -455,7 +455,9 @@ Appofa/
 | `/official-posts` | Public discovery feed for platform-wide official organization posts |
 | `/country/[code]` | Country landing page after first-visit geo redirect |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations (`/dream-team` auto-redirects logged-in users to their resolved own country when available; `/dream-team/[countryCode]` keeps other countries browseable in read-only mode for voting) |
-| `/persons`, `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles |
+| `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles (individual deep-links preserved) |
+| `/persons` | Redirects to `/users` |
+| `/discover-people` | Redirects to `/users` |
 | `/candidates/*` | Backward-compat alias for persons |
 | `/worthy-citizens` | Worthy citizens page |
 | `/manifest-supporters` | Manifest supporters |
