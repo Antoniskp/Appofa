@@ -151,6 +151,7 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
   const [expertiseOpen, setExpertiseOpen] = useState(false);
   const [openExpertiseGroups, setOpenExpertiseGroups] = useState(new Set());
   const expertiseRef = useRef(null);
+  const expertiseTriggerRef = useRef(null);
 
   // Close expertise dropdown on outside click
   useEffect(() => {
@@ -160,8 +161,18 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
         setExpertiseOpen(false);
       }
     }
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setExpertiseOpen(false);
+        expertiseTriggerRef.current?.focus();
+      }
+    }
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [expertiseOpen]);
 
   // Auto-open the group whose tag is currently selected
@@ -183,6 +194,12 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
       return next;
     });
   };
+
+  // Select an expertise tag and close the dropdown
+  function selectExpertiseAndClose(value) {
+    onFilterChange('expertiseArea', value);
+    setExpertiseOpen(false);
+  }
 
   // Cascade-aware domain change: reset profession + specialization
   function handleDomainChange(value) {
@@ -295,7 +312,10 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
         {/* Expertise – custom accordion dropdown */}
         <div className="relative" ref={expertiseRef}>
           <button
+            ref={expertiseTriggerRef}
             type="button"
+            aria-haspopup="listbox"
+            aria-expanded={expertiseOpen}
             onClick={() => setExpertiseOpen((v) => !v)}
             className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px] inline-flex items-center justify-between gap-2 ${
               filters.expertiseArea
@@ -303,18 +323,26 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
                 : 'border-gray-300 text-gray-700'
             }`}
           >
-            <span className="truncate max-w-[140px]">{selectedExpertiseLabel}</span>
+            <span className="truncate max-w-[140px]" title={selectedExpertiseLabel}>
+              {selectedExpertiseLabel}
+            </span>
             <ChevronDownIcon
               className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform ${expertiseOpen ? 'rotate-180' : ''}`}
             />
           </button>
 
           {expertiseOpen && (
-            <div className="absolute z-30 mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto">
+            <div
+              role="listbox"
+              aria-label={t('all_expertise')}
+              className="absolute z-30 mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto"
+            >
               {/* "All" option */}
               <button
                 type="button"
-                onClick={() => { onFilterChange('expertiseArea', ''); setExpertiseOpen(false); }}
+                role="option"
+                aria-selected={!filters.expertiseArea}
+                onClick={() => selectExpertiseAndClose('')}
                 className={`w-full text-left px-4 py-2.5 text-sm font-medium border-b border-gray-100 hover:bg-gray-50 transition-colors ${
                   !filters.expertiseArea ? 'text-blue-600 bg-blue-50' : 'text-gray-700'
                 }`}
@@ -337,7 +365,9 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
                       }`}
                     >
                       <span>{domain.label}</span>
-                      <span className={`text-xs transition-transform ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+                      <ChevronDownIcon
+                        className={`h-3.5 w-3.5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      />
                     </button>
 
                     {isOpen && (
@@ -346,7 +376,9 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
                           <button
                             key={tag.id}
                             type="button"
-                            onClick={() => { onFilterChange('expertiseArea', tag.id); setExpertiseOpen(false); }}
+                            role="option"
+                            aria-selected={filters.expertiseArea === tag.id}
+                            onClick={() => selectExpertiseAndClose(tag.id)}
                             className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs transition ${
                               filters.expertiseArea === tag.id
                                 ? 'bg-blue-600 text-white border border-blue-600'
