@@ -83,6 +83,83 @@ describe('Person Profile Tests (POST /api/persons)', () => {
     });
   });
 
+  describe('GET /api/persons - hierarchical location filtering', () => {
+    let prefectureId, municipalityId, otherMunicipalityId;
+    let personInMunicipalityId, personInPrefectureId, personInOtherMunicipalityId;
+
+    beforeAll(async () => {
+      // Build a simple location tree: Prefecture → Municipality, OtherMunicipality
+      const prefecture = await Location.create({
+        name: 'Test Prefecture',
+        slug: 'test-prefecture-hier',
+        type: 'prefecture'
+      });
+      prefectureId = prefecture.id;
+
+      const municipality = await Location.create({
+        name: 'Test Municipality',
+        slug: 'test-municipality-hier',
+        type: 'municipality',
+        parent_id: prefectureId
+      });
+      municipalityId = municipality.id;
+
+      const otherMunicipality = await Location.create({
+        name: 'Other Municipality',
+        slug: 'other-municipality-hier',
+        type: 'municipality',
+        parent_id: prefectureId
+      });
+      otherMunicipalityId = otherMunicipality.id;
+
+      // Create person profiles attached to each location via admin
+      const pInMun = await request(app)
+        .post('/api/persons')
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ firstNameEn: 'InMun', lastNameEn: 'Person', locationId: municipalityId });
+      personInMunicipalityId = pInMun.body.data.profile.id;
+
+      const pInPref = await request(app)
+        .post('/api/persons')
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ firstNameEn: 'InPref', lastNameEn: 'Person', locationId: prefectureId });
+      personInPrefectureId = pInPref.body.data.profile.id;
+
+      const pInOther = await request(app)
+        .post('/api/persons')
+        .set(csrfHeaders(adminUserId, adminToken))
+        .send({ firstNameEn: 'InOther', lastNameEn: 'Person', locationId: otherMunicipalityId });
+      personInOtherMunicipalityId = pInOther.body.data.profile.id;
+    });
+
+    it('filtering by municipality returns only persons from that municipality', async () => {
+      const res = await request(app).get(`/api/persons?locationId=${municipalityId}`);
+      expect(res.status).toBe(200);
+      const ids = res.body.data.profiles.map((p) => p.id);
+      expect(ids).toContain(personInMunicipalityId);
+      expect(ids).not.toContain(personInPrefectureId);
+      expect(ids).not.toContain(personInOtherMunicipalityId);
+    });
+
+    it('filtering by prefecture includes persons from municipality descendants', async () => {
+      const res = await request(app).get(`/api/persons?locationId=${prefectureId}`);
+      expect(res.status).toBe(200);
+      const ids = res.body.data.profiles.map((p) => p.id);
+      expect(ids).toContain(personInPrefectureId);
+      expect(ids).toContain(personInMunicipalityId);
+      expect(ids).toContain(personInOtherMunicipalityId);
+    });
+
+    it('filtering by other municipality does not include first municipality persons', async () => {
+      const res = await request(app).get(`/api/persons?locationId=${otherMunicipalityId}`);
+      expect(res.status).toBe(200);
+      const ids = res.body.data.profiles.map((p) => p.id);
+      expect(ids).toContain(personInOtherMunicipalityId);
+      expect(ids).not.toContain(personInMunicipalityId);
+      expect(ids).not.toContain(personInPrefectureId);
+    });
+  });
+
   // ── POST /api/persons ────────────────────────────────────────────────────
 
   describe('POST /api/persons', () => {
