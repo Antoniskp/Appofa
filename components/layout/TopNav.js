@@ -295,12 +295,6 @@ export default function TopNav() {
                 {tNav('users')}
               </Link>
               <Link
-                href="/discover-people"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/discover-people')}`}
-              >
-                {tNav('discover_people')}
-              </Link>
-              <Link
                 href="/pages"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/pages')}`}
               >
@@ -409,12 +403,6 @@ export default function TopNav() {
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/users')}`}
           >
             {tNav('users')}
-          </Link>
-          <Link
-            href="/discover-people"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/discover-people')}`}
-          >
-            {tNav('discover_people')}
           </Link>
           <Link
             href="/pages"
