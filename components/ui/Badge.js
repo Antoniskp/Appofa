@@ -140,7 +140,9 @@ export function TypeBadge({ type, size = 'sm', className = '' }) {
   const typeMap = {
     news: { variant: 'success', label: 'Νέα' },
     articles: { variant: 'purple', label: 'Άρθρα' },
-    personal: { variant: 'default', label: 'Προσωπικό' }
+    article: { variant: 'purple', label: 'Άρθρα' },
+    personal: { variant: 'default', label: 'Προσωπικό' },
+    video: { variant: 'danger', label: 'Βίντεο' },
   };
   
   const typeConfig = typeMap[type?.toLowerCase()] || { variant: 'default', label: type };
