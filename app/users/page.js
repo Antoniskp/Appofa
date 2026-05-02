@@ -27,6 +27,11 @@ import {
   resolveProfessionLabel,
 } from '@/lib/utils/professionTaxonomy';
 
+// ─── Constants ─────────────────────────────────────────────────────────────────
+
+const USERS_PREVIEW_LIMIT = 6;
+const USERS_FULL_PAGE_LIMIT = 20;
+
 // ─── ClaimStatusBadge ──────────────────────────────────────────────────────────
 
 function ClaimStatusBadge({ status, t }) {
@@ -224,10 +229,9 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
   const showUsers = viewMode === 'all' || viewMode === 'registered';
 
   // Reset users page when filters or viewMode change
-  const { search, locationId, domainId, expertiseArea } = filters;
   useEffect(() => {
     setUsersPage(1);
-  }, [search, locationId, domainId, expertiseArea, viewMode]);
+  }, [filters, viewMode]);
 
   // Persons – infinite scroll (all / persons modes)
   const {
@@ -257,7 +261,7 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
   );
 
   // Registered users – paginated (all / registered modes)
-  const usersLimit = viewMode === 'all' ? 6 : 20;
+  const usersLimit = viewMode === 'all' ? USERS_PREVIEW_LIMIT : USERS_FULL_PAGE_LIMIT;
   const { data: usersData, loading: usersLoading, error: usersError } = useAsyncData(
     async () => {
       if (!showUsers || authLoading) return null;
