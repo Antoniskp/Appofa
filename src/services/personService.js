@@ -10,6 +10,7 @@ const {
   VALID_EXPERTISE_TAG_IDS,
   DOMAIN_MAP,
 } = require('../utils/professionTaxonomy');
+const { getDescendantLocationIds } = require('../utils/locationUtils');
 const politicalParties = require('../../config/politicalParties.json');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -129,7 +130,13 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
   // Only public person profiles (claimStatus IS NOT NULL)
   const where = { claimStatus: { [Op.ne]: null } };
   if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
-  if (locationId) where.homeLocationId = parseInt(locationId, 10);
+  if (locationId) {
+    const parsedLocationId = parseInt(locationId, 10);
+    if (!isNaN(parsedLocationId)) {
+      const locationIds = await getDescendantLocationIds(parsedLocationId, true);
+      where.homeLocationId = { [Op.in]: locationIds };
+    }
+  }
   if (claimStatus && claimStatus !== 'all') where.claimStatus = claimStatus;
   if (search) Object.assign(where, buildNameSearchWhere(search));
   if (expertiseArea && typeof expertiseArea === 'string') {
