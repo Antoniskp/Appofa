@@ -53,7 +53,7 @@ function FeedContent() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         {/* Page header */}
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
             <p className="text-sm text-gray-500 mt-1">{t('subtitle')}</p>
@@ -69,25 +69,21 @@ function FeedContent() {
           )}
         </div>
 
-        {/* Unified filter toolbar */}
-        <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-6 space-y-3">
-          {/* Row 1: Search + Location */}
-          <div className="flex flex-col sm:flex-row gap-3 items-start">
-            <div className="flex-1 min-w-0">
-              <SearchInput
-                name="search"
-                placeholder={t('search_placeholder')}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full"
-              />
-            </div>
-            <LocationFilterBreadcrumb
-              value={locationId}
-              onChange={setLocationId}
-            />
-          </div>
-          {/* Row 2: Type filter pills */}
+        {/* Location filter */}
+        <LocationFilterBreadcrumb
+          value={locationId}
+          onChange={setLocationId}
+        />
+
+        {/* Search + type filter chips */}
+        <div className="flex flex-col gap-3 mb-8">
+          <SearchInput
+            name="search"
+            placeholder={t('search_placeholder')}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full sm:max-w-md"
+          />
           <div className="flex flex-wrap gap-2">
             {FEED_TYPES.map((type) => (
               <button
@@ -96,7 +92,7 @@ function FeedContent() {
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors border ${
                   activeType === type
                     ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-gray-50 text-gray-700 border-gray-300 hover:bg-gray-100'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 {t(`filter_${type}`)}
