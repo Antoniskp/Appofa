@@ -45,7 +45,7 @@ export default function PersonProfilePage({ params }) {
         type="error"
         title="Το προφίλ δεν βρέθηκε"
         description={error ? "Παρουσιάστηκε σφάλμα κατά τη φόρτωση του προφίλ." : "Αυτό το προφίλ δεν είναι διαθέσιμο ή δεν υπάρχει."}
-        action={{ text: '← Επιστροφή στα Πρόσωπα', href: '/persons' }}
+        action={{ text: '← Επιστροφή στα Πρόσωπα', href: '/users' }}
       />
     </div>
   );
@@ -57,7 +57,7 @@ export default function PersonProfilePage({ params }) {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-3xl mx-auto">
-        <Link href="/persons" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Πρόσωπα</Link>
+        <Link href="/users" className="text-sm text-blue-600 hover:underline mb-4 inline-block">← Όλα τα Πρόσωπα</Link>
 
         {/* Claim Banner */}
         {profile.claimStatus === 'unclaimed' && user && (

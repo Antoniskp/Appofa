@@ -406,7 +406,7 @@ function DreamTeamCountryPageInner() {
                 🔍 <span className="font-medium">{tDiscover('dream_team_banner')}</span>
               </p>
               <Link
-                href="/discover-people"
+                href="/users"
                 className="shrink-0 inline-flex items-center px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
               >
                 {tDiscover('dream_team_cta')}
