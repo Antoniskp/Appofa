@@ -413,7 +413,6 @@ function RegisteredUsersPanel({ t, isAuthenticated, authLoading }) {
         <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <input
           type="text"
-          name="search"
           placeholder={t('users_search_placeholder')}
           value={filters.search}
           onChange={(e) => updateFilter('search', e.target.value)}
