@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { useTranslations } from 'next-intl';
-import { authAPI, personAPI, locationAPI } from '@/lib/api';
+import { authAPI, personAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import UserCard from '@/components/UserCard';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -20,6 +20,7 @@ import { useInfiniteData } from '@/hooks/useInfiniteData';
 import Pagination from '@/components/ui/Pagination';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 import LoginLink from '@/components/ui/LoginLink';
+import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import {
   DOMAINS,
   EXPERTISE_TAGS,
@@ -144,11 +145,18 @@ function PersonCard({ profile, t }) {
 
 // ─── FilterBar (shared) ────────────────────────────────────────────────────────
 
-function FilterBar({ filters, onFilterChange, onReset, locations, t }) {
+function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
   const hasActiveFilters = filters.search || filters.locationId || filters.domainId || filters.expertiseArea;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
+      {/* Home-location breadcrumb filter */}
+      <LocationFilterBreadcrumb
+        key={resetKey}
+        value={filters.locationId}
+        onChange={(id) => onFilterChange('locationId', id || '')}
+      />
+
       <div className="flex flex-col sm:flex-row flex-wrap gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[200px]">
@@ -161,20 +169,6 @@ function FilterBar({ filters, onFilterChange, onReset, locations, t }) {
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-
-        {/* Location */}
-        <select
-          value={filters.locationId}
-          onChange={(e) => onFilterChange('locationId', e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px]"
-        >
-          <option value="">{t('all_locations')}</option>
-          {locations.map((loc) => (
-            <option key={loc.id} value={loc.id}>
-              {loc.name}
-            </option>
-          ))}
-        </select>
 
         {/* Domain */}
         <select
@@ -426,23 +420,17 @@ export default function UsersPage() {
     expertiseArea: '',
   });
 
+  // Increment to force LocationFilterBreadcrumb remount on reset
+  const [filterResetKey, setFilterResetKey] = useState(0);
+
   function handleFilterChange(key, value) {
     setFilters((prev) => ({ ...prev, [key]: value }));
   }
 
   function handleReset() {
     setFilters({ search: '', locationId: '', domainId: '', expertiseArea: '' });
+    setFilterResetKey((k) => k + 1);
   }
-
-  // Locations for filter dropdown
-  const { data: locations } = useAsyncData(
-    async () => {
-      const res = await locationAPI.getAll({ limit: 200 });
-      return Array.isArray(res?.locations) ? res.locations : [];
-    },
-    [],
-    { initialData: [] }
-  );
 
   // Public user statistics
   const { data: userStats, loading: statsLoading } = useAsyncData(
@@ -488,7 +476,7 @@ export default function UsersPage() {
           </div>
         )}
 
-        {/* View mode tab bar */}
+        {/* View mode tab bar + action buttons */}
         <div className="mb-6 flex items-center gap-2 flex-wrap">
           <div className="flex gap-1 bg-white rounded-xl border border-gray-200 p-1">
             {tabs.map((tab) => (
@@ -507,6 +495,14 @@ export default function UsersPage() {
             ))}
           </div>
 
+          {/* Compact action buttons */}
+          <Link
+            href="/worthy-citizens"
+            className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-medium rounded-lg border border-amber-200 transition-colors whitespace-nowrap"
+          >
+            🏆 {t('worthy_citizens_cta')}
+          </Link>
+
           {isAuthenticated && (user?.role === 'moderator' || user?.role === 'admin') && (
             <Link
               href="/admin/persons/create"
@@ -517,29 +513,12 @@ export default function UsersPage() {
           )}
         </div>
 
-        {/* Worthy citizens CTA */}
-        <div className="mb-6 bg-white rounded-lg shadow-sm border border-amber-200 px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-xl">🏆</span>
-            <div>
-              <p className="text-sm font-semibold text-gray-800">{t('worthy_citizens_title')}</p>
-              <p className="text-xs text-gray-500">{t('worthy_citizens_desc')}</p>
-            </div>
-          </div>
-          <Link
-            href="/worthy-citizens"
-            className="inline-flex items-center px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium rounded-md transition-colors whitespace-nowrap"
-          >
-            {t('worthy_citizens_cta')}
-          </Link>
-        </div>
-
         {/* Shared filter bar */}
         <FilterBar
           filters={filters}
           onFilterChange={handleFilterChange}
           onReset={handleReset}
-          locations={locations}
+          resetKey={filterResetKey}
           t={t}
         />
 
