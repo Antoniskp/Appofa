@@ -443,6 +443,8 @@
     "profession_subspecialization_placeholder": "— Sub-specialization (optional) —",
     "add_profession": "Add",
     "search_expertise_placeholder": "Search expertise...",
+    "all_selected_in_group": "All items in this category are already selected.",
+    "expertise_max_reached": "You have reached the maximum number of expertise areas (5).",
     "interests": "Interests",
     "unsaved_changes": "You have unsaved changes",
     "all_changes_saved": "All changes saved",

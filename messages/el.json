@@ -443,6 +443,8 @@
     "profession_subspecialization_placeholder": "— Υπο-εξειδίκευση (προαιρετική) —",
     "add_profession": "Προσθήκη",
     "search_expertise_placeholder": "Αναζήτηση εμπειρογνωσίας...",
+    "all_selected_in_group": "Όλα τα στοιχεία αυτής της κατηγορίας έχουν επιλεγεί.",
+    "expertise_max_reached": "Έχετε επιλέξει τον μέγιστο αριθμό τομέων (5).",
     "interests": "Ενδιαφέροντα",
     "unsaved_changes": "Έχετε μη αποθηκευμένες αλλαγές",
     "all_changes_saved": "Όλες οι αλλαγές αποθηκεύτηκαν",
