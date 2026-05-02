@@ -23,7 +23,7 @@ import LoginLink from '@/components/ui/LoginLink';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import {
   DOMAINS,
-  EXPERTISE_TAGS,
+  EXPERTISE_TAG_GROUPS,
   getExpertiseTagLabel,
   resolveProfessionLabel,
 } from '@/lib/utils/professionTaxonomy';
@@ -191,10 +191,14 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px]"
         >
           <option value="">{t('all_expertise')}</option>
-          {EXPERTISE_TAGS.map((tag) => (
-            <option key={tag.id} value={tag.id}>
-              {tag.label}
-            </option>
+          {EXPERTISE_TAG_GROUPS.map(({ domain, tags }) => (
+            <optgroup key={domain.id} label={domain.label}>
+              {tags.map((tag) => (
+                <option key={tag.id} value={tag.id}>
+                  {tag.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
 
