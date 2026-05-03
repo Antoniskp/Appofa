@@ -768,7 +768,7 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
         {
           model: Location,
           as: 'location',
-          attributes: ['id', 'name', 'slug'],
+          attributes: ['id', 'name', 'slug', 'population', 'population_override'],
           required: false
         },
         {

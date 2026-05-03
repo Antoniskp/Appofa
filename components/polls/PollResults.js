@@ -428,6 +428,17 @@ export default function PollResults({ poll, canView = true, canEdit = false }) {
               </div>
             </div>
           )}
+
+          {(() => {
+            const effectivePopulation = poll.location?.population_override ?? poll.location?.population;
+            if (!effectivePopulation || effectivePopulation <= 0 || totalVotes === 0) return null;
+            const pct = Math.round(totalVotes / effectivePopulation * 100);
+            return (
+              <p className="mt-3 text-sm text-gray-600 border-t border-gray-200 pt-2">
+                <span className="font-semibold text-gray-800">{pct}%</span> του πληθυσμού της τοποθεσίας έχει ψηφίσει.
+              </p>
+            );
+          })()}
         </div>
       </div>
         </>

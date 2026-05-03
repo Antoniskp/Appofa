@@ -111,7 +111,7 @@ Appofa/
 | Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility, organizationId | belongsTo: User, Location, Organization; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
 | PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
-| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote, UserLocationRole; belongsTo: parent |
+| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng, population (from Wikipedia), population_override (moderator-set; takes precedence over population for participation % calculations) | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote, UserLocationRole; belongsTo: parent |
 | LocationLink | LocationLinks | id, locationId, url, type, pollId | belongsTo: Location, Poll |
 | LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
 | LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User |
@@ -722,6 +722,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260423000005-add-organization-hierarchy.js | Add nullable Organizations.parentId self-FK + index (idempotent) |
 | — | 20260423000006-create-organization-analytics.js | Create OrganizationAnalytics table + unique (organizationId, date) index (idempotent) |
 | — | 20260423000010-add-org-notification-types.js | Add Notification enum values `org_invite_received`, `org_join_approved`, `org_member_removed` on postgres |
+| — | 20260503000000-add-population-override-to-locations.js | Add nullable `Locations.population_override` INTEGER for moderator-set population override |
 
 </details>
 
