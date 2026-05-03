@@ -157,56 +157,56 @@ export default function TopNav() {
       label: tNav('my_profile'),
       href: '/profile',
       icon: <UserCircleIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/profile')}`
+      className: `text-base font-medium ${isMobileActive('/profile')}`
     },
     {
       id: 'my-articles',
       label: tNav('my_articles'),
       href: '/editor',
       icon: <PencilSquareIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/editor')}`
+      className: `text-base font-medium ${isMobileActive('/editor')}`
     },
     {
       id: 'my-news',
       label: tNav('my_news'),
       href: '/my-news',
       icon: <NewspaperIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/my-news')}`
+      className: `text-base font-medium ${isMobileActive('/my-news')}`
     },
     {
       id: 'my-polls',
       label: tNav('my_polls'),
       href: '/my-polls',
       icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/my-polls')}`
+      className: `text-base font-medium ${isMobileActive('/my-polls')}`
     },
     {
       id: 'my-votes',
       label: tNav('my_votes'),
       href: '/my-votes',
       icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/my-votes')}`
+      className: `text-base font-medium ${isMobileActive('/my-votes')}`
     },
     {
       id: 'my-location',
       label: tNav('my_location'),
       href: myLocationHref,
       icon: <MapPinIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive(myLocationHref)}`
+      className: `text-base font-medium ${isMobileActive(myLocationHref)}`
     },
     {
       id: 'suggest',
       label: tNav('my_suggestions'),
       href: '/suggestions?mine=true',
       icon: <LightBulbIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/suggestions')}`
+      className: `text-base font-medium ${isMobileActive('/suggestions')}`
     },
     {
       id: 'my-organizations',
       label: tNav('my_organizations'),
       href: '/organizations?mine=true',
       icon: <BuildingOffice2Icon className="h-5 w-5" />,
-      className: `text-base font-medium ${isActive('/organizations')}`
+      className: `text-base font-medium ${isMobileActive('/organizations')}`
     },
     ...(canAccessAdmin() ? [
       { divider: true },
@@ -215,14 +215,14 @@ export default function TopNav() {
         label: tNav('admin'),
         href: '/admin',
         icon: <ShieldCheckIcon className="h-5 w-5" />,
-        className: `text-base font-medium ${isActive('/admin')}`
+        className: `text-base font-medium ${isMobileActive('/admin')}`
       },
       ...(isAdmin ? [{
         id: 'admin-status',
           label: tNav('admin_diagnostics'),
         href: '/admin/status',
         icon: <ServerIcon className="h-5 w-5" />,
-        className: `text-base font-medium ${isActive('/admin/status')}`
+        className: `text-base font-medium ${isMobileActive('/admin/status')}`
       }] : [])
     ] : []),
     { divider: true },
@@ -426,11 +426,11 @@ export default function TopNav() {
                 trigger={
                   <button
                     type="button"
-                    className="flex w-full items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
+                    className="flex w-full min-w-0 items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
                   >
-                     <span>{tNav('greeting')} {user.username}</span>
+                    <span className="truncate min-w-0">{tNav('greeting')} {user.username}</span>
                     <ChevronDownIcon
-                      className={`h-4 w-4 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
+                      className={`ml-2 h-4 w-4 flex-shrink-0 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
                     />
                   </button>
@@ -446,14 +446,14 @@ export default function TopNav() {
           ) : (
             <>
               <LoginLink
-                className="inline-flex items-center gap-2 text-base font-medium text-blue-900 hover:text-blue-700"
+                className="flex w-full items-center justify-center gap-2 text-base font-medium text-blue-900 hover:text-blue-700 border border-gray-300 rounded px-4 py-2"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
                 {tNav('login')}
               </LoginLink>
               <Link
                 href="/register"
-                className="inline-flex w-full items-center justify-center gap-2 text-base font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="flex w-full items-center justify-center gap-2 text-base font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
               >
                 <UserPlusIcon className="h-5 w-5" aria-hidden="true" />
                 {tNav('register')}
