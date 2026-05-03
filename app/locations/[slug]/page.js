@@ -91,6 +91,7 @@ export default function LocationDetailPage() {
           lat: loc.lat || '',
           lng: loc.lng || '',
           wikipedia_url: loc.wikipedia_url || '',
+          population_override: loc.population_override != null ? String(loc.population_override) : '',
         });
 
         // Use the resolved numeric ID for subsequent queries
@@ -202,6 +203,7 @@ export default function LocationDetailPage() {
         lat: location.lat || '',
         lng: location.lng || '',
         wikipedia_url: location.wikipedia_url || '',
+        population_override: location.population_override != null ? String(location.population_override) : '',
       });
     }
   };
@@ -259,6 +261,7 @@ export default function LocationDetailPage() {
         lat,
         lng,
         wikipedia_url: editedData.wikipedia_url.trim() || null,
+        population_override: editedData.population_override !== '' ? parseInt(editedData.population_override, 10) || null : null,
       };
 
       const response = await locationAPI.update(location.id, updateData);

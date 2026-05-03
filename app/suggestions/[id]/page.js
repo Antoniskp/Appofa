@@ -425,6 +425,26 @@ export default function SuggestionDetailPage() {
               για να ψηφίσετε.
             </p>
           )}
+
+          {(() => {
+            const effectivePopulation = suggestion.location?.population_override ?? suggestion.location?.population;
+            if (!effectivePopulation || effectivePopulation <= 0) return null;
+            const upvotes = suggestion.upvotes ?? 0;
+            const downvotes = suggestion.downvotes ?? 0;
+            if (upvotes === 0 && downvotes === 0) return null;
+            const approvedPct = Math.round(upvotes / effectivePopulation * 100);
+            const disapprovedPct = Math.round(downvotes / effectivePopulation * 100);
+            return (
+              <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 space-y-1">
+                {upvotes > 0 && (
+                  <p><span className="font-semibold text-green-700">{approvedPct}%</span> του πληθυσμού της τοποθεσίας ενέκρινε αυτή την πρόταση.</p>
+                )}
+                {downvotes > 0 && (
+                  <p><span className="font-semibold text-red-600">{disapprovedPct}%</span> του πληθυσμού της τοποθεσίας διαφώνησε με αυτή την πρόταση.</p>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Response Section */}

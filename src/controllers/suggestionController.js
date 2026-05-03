@@ -185,7 +185,7 @@ const suggestionController = {
       const suggestion = await Suggestion.findByPk(id, {
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-          { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false },
+          { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
           {
             model: Solution,
             as: 'solutions',

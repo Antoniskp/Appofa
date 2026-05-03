@@ -462,7 +462,7 @@ const getLocation = async (id) => {
  */
 const updateLocation = async (id, updateData, actorRole = null, actorUserId = null) => {
   try {
-    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = updateData;
+    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url, population_override } = updateData;
 
     const location = await Location.findByPk(id);
     if (!location) {
@@ -533,7 +533,8 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
       lat: lat !== undefined ? lat : location.lat,
       lng: lng !== undefined ? lng : location.lng,
       bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box,
-      wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url
+      wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url,
+      population_override: population_override !== undefined ? (population_override === null ? null : parseInt(population_override, 10) || null) : location.population_override
     };
 
     const wikipediaUrlChanged = wikipedia_url !== undefined && wikipedia_url !== location.wikipedia_url;

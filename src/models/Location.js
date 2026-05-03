@@ -72,6 +72,11 @@ const Location = sequelize.define('Location', {
     allowNull: true,
     comment: 'Population count from Wikipedia'
   },
+  population_override: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Moderator-set population override; takes precedence over the Wikipedia-derived population'
+  },
   wikipedia_data_updated_at: {
     type: DataTypes.DATE,
     allowNull: true,

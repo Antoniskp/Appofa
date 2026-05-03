@@ -203,6 +203,23 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
             placeholder="https://en.wikipedia.org/wiki/..."
           />
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Population Override
+            {location.population != null && (
+              <span className="ml-1 text-xs text-gray-400 font-normal">(Wikipedia: {location.population.toLocaleString()})</span>
+            )}
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={editedData.population_override}
+            onChange={(e) => onInputChange('population_override', e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Leave blank to use Wikipedia value"
+          />
+          <p className="mt-1 text-xs text-gray-500">Set a manual population value. This overrides the Wikipedia-derived figure for participation % calculations.</p>
+        </div>
       </div>
 
       {/* Section manager — part of the same edit flow */}
