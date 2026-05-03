@@ -534,7 +534,11 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
       lng: lng !== undefined ? lng : location.lng,
       bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box,
       wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url,
-      population_override: population_override !== undefined ? (population_override === null ? null : parseInt(population_override, 10) || null) : location.population_override
+      population_override: population_override !== undefined ? (() => {
+        if (population_override === null || population_override === '' || population_override === undefined) return null;
+        const v = parseInt(population_override, 10);
+        return isNaN(v) ? null : v;
+      })() : location.population_override
     };
 
     const wikipediaUrlChanged = wikipedia_url !== undefined && wikipedia_url !== location.wikipedia_url;

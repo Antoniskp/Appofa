@@ -261,7 +261,11 @@ export default function LocationDetailPage() {
         lat,
         lng,
         wikipedia_url: editedData.wikipedia_url.trim() || null,
-        population_override: editedData.population_override !== '' ? parseInt(editedData.population_override, 10) || null : null,
+        population_override: (() => {
+          if (editedData.population_override === '') return null;
+          const v = parseInt(editedData.population_override, 10);
+          return isNaN(v) ? null : v;
+        })(),
       };
 
       const response = await locationAPI.update(location.id, updateData);
