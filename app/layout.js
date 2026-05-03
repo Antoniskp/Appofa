@@ -69,7 +69,7 @@ export default async function RootLayout({ children }) {
           <AuthProvider>
             <ToastProvider>
               <TopNav />
-              <main className="flex-grow">
+              <main className="flex-grow pt-16">
                 {children}
               </main>
               <Footer />
