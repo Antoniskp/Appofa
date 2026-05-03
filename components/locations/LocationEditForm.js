@@ -213,7 +213,7 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
           <input
             type="number"
             min="0"
-            value={editedData.population_override}
+            value={editedData.population_override ?? ''}
             onChange={(e) => onInputChange('population_override', e.target.value)}
             className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Leave blank to use Wikipedia value"
