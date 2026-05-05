@@ -100,14 +100,14 @@ export default function GovernmentSnapshotSection() {
     <section className="bg-gradient-to-b from-slate-50 to-white border-b border-slate-200">
       <div className="app-container py-8">
         {/* Header */}
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div>
             <h2 className="text-xl md:text-2xl font-bold text-gray-900">{t('title')}</h2>
             <p className="mt-0.5 text-xs text-gray-500">{t('subtitle')}</p>
           </div>
           <Link
             href="/dream-team"
-            className="shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors"
+            className="inline-flex w-full sm:w-auto justify-center items-center gap-1.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-4 py-2 rounded-lg transition-colors"
           >
             {t('cta_view_all')}
           </Link>
