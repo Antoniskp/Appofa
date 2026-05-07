@@ -12,3 +12,5 @@
 | **[`doc/REPOSITORY_MAP.md`](doc/REPOSITORY_MAP.md)** | ✅ All models, routes, pages, components, migrations — kept up to date |
 | **[`doc/COMMON_ERRORS.md`](doc/COMMON_ERRORS.md)** | ✅ Recurring mistakes from PR history with correct patterns |
 | **[`doc/INDEX.md`](doc/INDEX.md)** | ✅ Index of all feature-specific docs |
+
+Current UI behavior note (see docs above for details): `components/layout/TopNav.js` is a stable fixed top nav without scroll-direction hide/show effects.
