@@ -29,7 +29,8 @@
     "close_menu": "Close menu",
     "notifications": "Notifications",
     "home_aria": "Appofasi home",
-    "brand_alt": "Appofasi"
+    "brand_alt": "Appofasi",
+    "civic_questions": "Civic Questions"
   },
   "governmentSnapshot": {
     "title": "Government Positions",
@@ -1315,5 +1316,110 @@
     "profession_label": "Profession",
     "specialization_label": "Specialization",
     "specialist_mode": "Showing specialists — sorted by relevance"
+  },
+  "civicQuestions": {
+    "source_types": {
+      "parliament": "Parliament",
+      "european_commission": "European Commission",
+      "municipal_council": "Municipal Council",
+      "regional_council": "Regional Council",
+      "other": "Other"
+    },
+    "status": {
+      "open": "Open",
+      "closed": "Closed",
+      "archived": "Archived"
+    },
+    "choices": {
+      "agree": "Agree",
+      "disagree": "Disagree",
+      "present": "Present"
+    },
+    "local_badge": "Local",
+    "votes_label": "votes",
+    "vote_error": "Failed to submit vote.",
+    "results_unavailable": "Results are not available yet.",
+    "total_votes": "Total votes",
+    "form": {
+      "basic_information": "Basic Information",
+      "title": "Title",
+      "original_link": "Original Link",
+      "source_type": "Source Type",
+      "source_name": "Source Name",
+      "simplified": "Simplified",
+      "pros": "Pros",
+      "cons": "Cons",
+      "settings": "Settings",
+      "date_asked": "Date Asked",
+      "deadline": "Deadline",
+      "location": "Location",
+      "visibility": "Visibility",
+      "vote_restriction": "Vote Restriction",
+      "results_visibility": "Results Visibility",
+      "status": "Status",
+      "category": "Category",
+      "official_identifier": "Official Identifier",
+      "comments_enabled": "Comments enabled",
+      "comments_locked": "Comments locked",
+      "saving": "Saving...",
+      "create": "Create Civic Question",
+      "update": "Update Civic Question",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    },
+    "visibility": {
+      "public": "Public",
+      "private": "Private",
+      "locals_only": "Locals only"
+    },
+    "vote_restrictions": {
+      "authenticated": "Authenticated",
+      "locals_only": "Locals only"
+    },
+    "results_visibility": {
+      "always": "Always",
+      "after_vote": "After vote",
+      "after_deadline": "After deadline"
+    },
+    "list": {
+      "search_placeholder": "Search civic questions...",
+      "all_statuses": "All statuses",
+      "source": "Source",
+      "all_sources": "All sources",
+      "new_civic_question": "New Civic Question",
+      "error_title": "Failed to load civic questions",
+      "empty_title": "No civic questions found",
+      "empty_description": "Create the first civic question for your community.",
+      "create_action": "Create Civic Question"
+    },
+    "create": {
+      "title": "Create Civic Question",
+      "description": "Create an official-style civic question with fixed voting choices.",
+      "error": "Failed to create civic question."
+    },
+    "detail": {
+      "load_error": "Failed to load civic question.",
+      "not_found_title": "Civic question not found",
+      "not_found_description": "The civic question you requested does not exist.",
+      "back_list": "Back to civic questions",
+      "source": "Source",
+      "original_link": "Original link",
+      "location": "Location",
+      "date_asked": "Date asked",
+      "deadline": "Deadline",
+      "edit": "Edit Civic Question",
+      "vote": "Vote",
+      "results": "Results"
+    },
+    "edit": {
+      "forbidden": "You are not allowed to edit this civic question.",
+      "update_error": "Failed to update civic question.",
+      "confirm_delete": "Delete this civic question?",
+      "delete_error": "Failed to delete civic question.",
+      "cannot_edit_title": "Cannot edit civic question",
+      "cannot_edit_description": "This civic question could not be loaded.",
+      "title": "Edit Civic Question",
+      "description": "Update civic question details and settings."
+    }
   }
 }

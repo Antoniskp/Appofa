@@ -4,6 +4,7 @@ const articleRoutes = require('./articleRoutes');
 const adminRoutes = require('./adminRoutes');
 const locationRoutes = require('./locationRoutes');
 const pollRoutes = require('./pollRoutes');
+const civicQuestionRoutes = require('./civicQuestionRoutes');
 const bookmarkRoutes = require('./bookmarkRoutes');
 const messageRoutes = require('./messageRoutes');
 const statsRoutes = require('./statsRoutes');
@@ -39,6 +40,7 @@ const routes = [
   { prefix: '/api/admin', router: adminRoutes },
   { prefix: '/api/locations', router: locationRoutes },
   { prefix: '/api/polls', router: pollRoutes },
+  { prefix: '/api/civic-questions', router: civicQuestionRoutes },
   { prefix: '/api/bookmarks', router: bookmarkRoutes },
   { prefix: '/api/messages', router: messageRoutes },
   { prefix: '/api/stats', router: statsRoutes },
