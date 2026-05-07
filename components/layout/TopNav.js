@@ -73,18 +73,25 @@ export default function TopNav() {
 
         setIsScrolled(currentY > 4);
 
-        if (currentY < HIDE_THRESHOLD) {
-          // Always show near the top of the page
-          setIsVisible(true);
-        } else if (delta > SCROLL_DELTA) {
-          // Scrolling down — hide
-          setIsVisible(false);
-          // Close menus when header hides
-          setIsMenuOpen(false);
-          setIsDesktopUserMenuOpen(false);
-          setIsMobileUserMenuOpen(false);
-        } else if (delta < -SCROLL_DELTA) {
-          // Scrolling up — show
+        // Hide-on-scroll only applies on sm+ (≥ 640 px) screens.
+        // On mobile the header stays fixed so menus remain reachable.
+        if (window.innerWidth >= 640) {
+          if (currentY < HIDE_THRESHOLD) {
+            // Always show near the top of the page
+            setIsVisible(true);
+          } else if (delta > SCROLL_DELTA) {
+            // Scrolling down — hide
+            setIsVisible(false);
+            // Close menus when header hides
+            setIsMenuOpen(false);
+            setIsDesktopUserMenuOpen(false);
+            setIsMobileUserMenuOpen(false);
+          } else if (delta < -SCROLL_DELTA) {
+            // Scrolling up — show
+            setIsVisible(true);
+          }
+        } else {
+          // On mobile always keep the header visible
           setIsVisible(true);
         }
 
@@ -409,7 +416,7 @@ export default function TopNav() {
           </Tooltip>
         </div>
       </div>
-      <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu">
+      <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-4rem)] overflow-y-auto`} id="mobile-menu">
         <div className="border-t border-seafoam px-4 py-3 space-y-2">
           <Link
             href="/articles"
@@ -487,7 +494,7 @@ export default function TopNav() {
                 items={mobileMenuItems}
                 align="left"
                 menuId="mobile-user-menu"
-                menuClassName="w-full"
+                menuClassName="w-full max-h-[55vh] overflow-y-auto"
                 open={isMobileUserMenuOpen}
                 onOpenChange={setIsMobileUserMenuOpen}
               />
