@@ -71,7 +71,7 @@ jest.mock('@/components/notifications/NotificationBell', () => {
 
 const TopNav = require('../components/layout/TopNav').default;
 
-describe('TopNav stable visibility', () => {
+describe('TopNav plain header behavior', () => {
   let container;
   let root;
 
@@ -93,11 +93,12 @@ describe('TopNav stable visibility', () => {
     document.body.innerHTML = '';
   });
 
-  test('keeps header fixed without scroll-driven translate hide/show classes', () => {
+  test('renders as regular in-flow header without fixed/sticky classes', () => {
     const nav = container.querySelector('nav');
     expect(nav).toBeTruthy();
-    expect(nav.className).toContain('fixed');
-    expect(nav.className).toContain('top-0');
+    expect(nav.className).toContain('relative');
+    expect(nav.className).not.toContain('fixed');
+    expect(nav.className).not.toContain('sticky');
     expect(nav.className).not.toContain('translate-y-0');
     expect(nav.className).not.toContain('-translate-y-full');
     expect(nav.className).not.toContain('transition-transform');
@@ -110,9 +111,9 @@ describe('TopNav stable visibility', () => {
     expect(mobileMenu.className).toContain('overflow-y-auto');
   });
 
-  test('still applies shadow-on-scroll while staying visible', async () => {
+  test('does not change nav classes on scroll events', async () => {
     let nav = container.querySelector('nav');
-    expect(nav.className).toContain('shadow-sm');
+    const beforeClassName = nav.className;
 
     await act(async () => {
       window.scrollY = 12;
@@ -120,7 +121,6 @@ describe('TopNav stable visibility', () => {
     });
 
     nav = container.querySelector('nav');
-    expect(nav.className).toContain('shadow-md');
-    expect(nav.className).not.toContain('-translate-y-full');
+    expect(nav.className).toBe(beforeClassName);
   });
 });
