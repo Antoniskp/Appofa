@@ -1,10 +1,6 @@
 'use client';
 
-const LABELS = {
-  agree: 'Agree',
-  disagree: 'Disagree',
-  present: 'Present',
-};
+import { useTranslations } from 'next-intl';
 
 const COLORS = {
   agree: 'bg-green-600',
@@ -13,10 +9,11 @@ const COLORS = {
 };
 
 export default function CivicQuestionResults({ civicQuestion }) {
+  const t = useTranslations('civicQuestions');
   if (!civicQuestion?.voteCounts || !civicQuestion?.percentages) {
     return (
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
-        Results are not available yet.
+        {t('results_unavailable')}
       </div>
     );
   }
@@ -29,7 +26,7 @@ export default function CivicQuestionResults({ civicQuestion }) {
         return (
           <div key={choice}>
             <div className="flex items-center justify-between text-sm mb-1">
-              <span className="font-medium text-gray-700">{LABELS[choice]}</span>
+              <span className="font-medium text-gray-700">{t(`choices.${choice}`)}</span>
               <span className="text-gray-600">{count} ({percent}%)</span>
             </div>
             <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
@@ -38,7 +35,7 @@ export default function CivicQuestionResults({ civicQuestion }) {
           </div>
         );
       })}
-      <div className="text-sm text-gray-600 pt-1">Total votes: <strong>{civicQuestion.totalVotes || 0}</strong></div>
+      <div className="text-sm text-gray-600 pt-1">{t('total_votes')}: <strong>{civicQuestion.totalVotes || 0}</strong></div>
     </div>
   );
 }

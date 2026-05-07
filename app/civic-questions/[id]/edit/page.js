@@ -8,8 +8,10 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import { civicQuestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useTranslations } from 'next-intl';
 
 function EditCivicQuestionContent() {
+  const t = useTranslations('civicQuestions');
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -32,13 +34,13 @@ function EditCivicQuestionContent() {
           const question = response.data;
           const canEdit = user && (question.creatorId === user.id || user.role === 'admin');
           if (!canEdit) {
-            setError('You are not allowed to edit this civic question.');
+            setError(t('edit.forbidden'));
             return;
           }
           setCivicQuestion(question);
         }
       } catch (err) {
-        setError(err.message || 'Failed to load civic question.');
+        setError(err.message || t('detail.load_error'));
       } finally {
         setLoading(false);
       }
@@ -58,21 +60,21 @@ function EditCivicQuestionContent() {
         router.push(`/civic-questions/${questionId}`);
       }
     } catch (err) {
-      setSubmitError(err.message || 'Failed to update civic question.');
+      setSubmitError(err.message || t('edit.update_error'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this civic question?')) return;
+    if (!confirm(t('edit.confirm_delete'))) return;
     try {
       const response = await civicQuestionAPI.delete(questionId);
       if (response.success) {
         router.push('/civic-questions');
       }
     } catch {
-      alert('Failed to delete civic question.');
+      alert(t('edit.delete_error'));
     }
   };
 
@@ -92,9 +94,9 @@ function EditCivicQuestionContent() {
         <div className="app-container max-w-4xl">
           <EmptyState
             type="error"
-            title="Cannot edit civic question"
-            description={error || 'This civic question could not be loaded.'}
-            action={{ label: 'Back to civic questions', href: '/civic-questions' }}
+            title={t('edit.cannot_edit_title')}
+            description={error || t('edit.cannot_edit_description')}
+            action={{ label: t('detail.back_list'), href: '/civic-questions' }}
           />
         </div>
       </div>
@@ -105,8 +107,8 @@ function EditCivicQuestionContent() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Edit Civic Question</h1>
-          <p className="text-gray-600 mt-2">Update civic question details and settings.</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('edit.title')}</h1>
+          <p className="text-gray-600 mt-2">{t('edit.description')}</p>
         </div>
         <CivicQuestionForm
           civicQuestion={civicQuestion}

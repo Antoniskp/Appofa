@@ -94,7 +94,7 @@ const buildVisibilityWhere = async (user) => {
   };
 };
 
-const parseLocation = async (locationId, fieldRequired = false) => {
+const parseLocation = async (locationId) => {
   if (locationId === undefined) return { value: undefined };
   if (locationId === null || locationId === '') return { value: null };
 
@@ -106,10 +106,6 @@ const parseLocation = async (locationId, fieldRequired = false) => {
   const location = await Location.findByPk(parsedLocationId, { attributes: ['id'] });
   if (!location) {
     return { error: 'Location not found.' };
-  }
-
-  if (fieldRequired && !parsedLocationId) {
-    return { error: 'Location is required.' };
   }
 
   return { value: parsedLocationId };
@@ -167,7 +163,9 @@ const canViewResults = async (question, user) => {
 
   if (question.resultsVisibility === 'always') return true;
   if (question.resultsVisibility === 'after_deadline') {
-    return question.status !== 'open' || (question.deadline && new Date(question.deadline) <= new Date());
+    const isClosedStatus = question.status === 'closed' || question.status === 'archived';
+    const deadlinePassed = Boolean(question.deadline) && new Date(question.deadline) <= new Date();
+    return isClosedStatus || deadlinePassed;
   }
 
   if (question.resultsVisibility === 'after_vote') {
@@ -548,7 +546,9 @@ const updateCivicQuestion = async (id, userId, userRole, payload) => {
       return { success: false, status: 400, message: validated.error };
     }
 
-    const nextVoteRestriction = validated.value.voteRestriction ?? question.voteRestriction;
+    const nextVoteRestriction = validated.value.voteRestriction !== undefined
+      ? validated.value.voteRestriction
+      : question.voteRestriction;
     const nextLocationId = validated.value.locationId !== undefined ? validated.value.locationId : question.locationId;
     if (nextVoteRestriction === 'locals_only' && !nextLocationId) {
       return { success: false, status: 400, message: 'Location is required when vote restriction is locals_only.' };

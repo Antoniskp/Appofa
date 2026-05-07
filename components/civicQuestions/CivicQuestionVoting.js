@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import { civicQuestionAPI } from '@/lib/api';
+import { useTranslations } from 'next-intl';
 
 const CHOICES = [
-  { value: 'agree', label: 'Agree', color: 'bg-green-600 hover:bg-green-700' },
-  { value: 'disagree', label: 'Disagree', color: 'bg-red-600 hover:bg-red-700' },
-  { value: 'present', label: 'Present', color: 'bg-slate-600 hover:bg-slate-700' },
+  { value: 'agree', color: 'bg-green-600 hover:bg-green-700' },
+  { value: 'disagree', color: 'bg-red-600 hover:bg-red-700' },
+  { value: 'present', color: 'bg-slate-600 hover:bg-slate-700' },
 ];
 
 export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
+  const t = useTranslations('civicQuestions');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -23,7 +25,7 @@ export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
         onVoteSuccess?.(response.data);
       }
     } catch (err) {
-      setError(err.message || 'Failed to submit vote.');
+      setError(err.message || t('vote_error'));
     } finally {
       setSubmitting(false);
     }
@@ -42,7 +44,7 @@ export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
               onClick={() => handleVote(choice.value)}
               className={`rounded-lg px-4 py-3 text-white font-medium transition ${choice.color} ${active ? 'ring-2 ring-offset-2 ring-blue-500' : ''} disabled:opacity-60`}
             >
-              {choice.label}
+              {t(`choices.${choice.value}`)}
             </button>
           );
         })}

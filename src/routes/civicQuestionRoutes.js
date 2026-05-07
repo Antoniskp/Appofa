@@ -14,6 +14,6 @@ router.get('/:id/results', apiLimiter, optionalAuthMiddleware, civicQuestionCont
 router.post('/', createLimiter, authMiddleware, csrfProtection, civicQuestionController.createCivicQuestion);
 router.put('/:id', apiLimiter, authMiddleware, csrfProtection, civicQuestionController.updateCivicQuestion);
 router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, civicQuestionController.deleteCivicQuestion);
-router.post('/:id/vote', apiLimiter, authMiddleware, authVoteLimiter, csrfProtection, civicQuestionController.voteCivicQuestion);
+router.post('/:id/vote', apiLimiter, authMiddleware, csrfProtection, authVoteLimiter, civicQuestionController.voteCivicQuestion);
 
 module.exports = router;

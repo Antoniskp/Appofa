@@ -13,8 +13,10 @@ import Pagination from '@/components/ui/Pagination';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import CivicQuestionCard from '@/components/civicQuestions/CivicQuestionCard';
+import { useTranslations } from 'next-intl';
 
 export default function CivicQuestionsPage() {
+  const t = useTranslations('civicQuestions');
   const { user } = useAuth();
   const {
     filters,
@@ -54,12 +56,12 @@ export default function CivicQuestionsPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-8">
-          <SearchInput
-            name="search"
-            placeholder="Search civic questions..."
-            value={filters.search}
-            onChange={(e) => updateFilter('search', e.target.value)}
-            className="w-full sm:flex-grow sm:max-w-md"
+            <SearchInput
+              name="search"
+              placeholder={t('list.search_placeholder')}
+              value={filters.search}
+              onChange={(e) => updateFilter('search', e.target.value)}
+              className="w-full sm:flex-grow sm:max-w-md"
           />
           <FilterBar
             filters={filters}
@@ -69,26 +71,26 @@ export default function CivicQuestionsPage() {
             filterConfig={[
               {
                 name: 'status',
-                label: 'Status',
+                label: t('form.status'),
                 type: 'select',
                 options: [
-                  { value: '', label: 'All statuses' },
-                  { value: 'open', label: 'Open' },
-                  { value: 'closed', label: 'Closed' },
-                  { value: 'archived', label: 'Archived' },
+                  { value: '', label: t('list.all_statuses') },
+                  { value: 'open', label: t('status.open') },
+                  { value: 'closed', label: t('status.closed') },
+                  { value: 'archived', label: t('status.archived') },
                 ],
               },
               {
                 name: 'sourceType',
-                label: 'Source',
+                label: t('list.source'),
                 type: 'select',
                 options: [
-                  { value: '', label: 'All sources' },
-                  { value: 'parliament', label: 'Parliament' },
-                  { value: 'european_commission', label: 'European Commission' },
-                  { value: 'municipal_council', label: 'Municipal Council' },
-                  { value: 'regional_council', label: 'Regional Council' },
-                  { value: 'other', label: 'Other' },
+                  { value: '', label: t('list.all_sources') },
+                  { value: 'parliament', label: t('source_types.parliament') },
+                  { value: 'european_commission', label: t('source_types.european_commission') },
+                  { value: 'municipal_council', label: t('source_types.municipal_council') },
+                  { value: 'regional_council', label: t('source_types.regional_council') },
+                  { value: 'other', label: t('source_types.other') },
                 ],
               },
             ]}
@@ -99,7 +101,7 @@ export default function CivicQuestionsPage() {
               className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
             >
               <PlusCircleIcon className="h-5 w-5" />
-              New Civic Question
+              {t('list.new_civic_question')}
             </Link>
           )}
         </div>
@@ -113,7 +115,7 @@ export default function CivicQuestionsPage() {
         {error && (
           <EmptyState
             type="error"
-            title="Failed to load civic questions"
+            title={t('list.error_title')}
             description={error}
           />
         )}
@@ -121,9 +123,9 @@ export default function CivicQuestionsPage() {
         {!loading && !error && civicQuestions.length === 0 && (
           <EmptyState
             type="empty"
-            title="No civic questions found"
-            description="Create the first civic question for your community."
-            action={user ? { label: 'Create Civic Question', href: '/civic-questions/create' } : undefined}
+            title={t('list.empty_title')}
+            description={t('list.empty_description')}
+            action={user ? { label: t('list.create_action'), href: '/civic-questions/create' } : undefined}
           />
         )}
 
