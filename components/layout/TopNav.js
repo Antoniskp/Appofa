@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -36,10 +36,7 @@ export default function TopNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
   const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const [isScrolled, setIsScrolled] = useState(false);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
 
   const isActive = (path) => {
     // Check if current path starts with the given path
@@ -61,45 +58,11 @@ export default function TopNav() {
   }, [pathname]);
 
   useEffect(() => {
-    const HIDE_THRESHOLD = 80;   // px scrolled down before we begin hiding
-    const SCROLL_DELTA = 8;      // px of movement required to trigger a state change
-
     const handleScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-      requestAnimationFrame(() => {
-        const currentY = window.scrollY;
-        const delta = currentY - lastScrollY.current;
-
-        setIsScrolled(currentY > 4);
-
-        // Hide-on-scroll only applies on sm+ (≥ 640 px) screens.
-        // On mobile the header stays fixed so menus remain reachable.
-        if (window.innerWidth >= 640) {
-          if (currentY < HIDE_THRESHOLD) {
-            // Always show near the top of the page
-            setIsVisible(true);
-          } else if (delta > SCROLL_DELTA) {
-            // Scrolling down — hide
-            setIsVisible(false);
-            // Close menus when header hides
-            setIsMenuOpen(false);
-            setIsDesktopUserMenuOpen(false);
-            setIsMobileUserMenuOpen(false);
-          } else if (delta < -SCROLL_DELTA) {
-            // Scrolling up — show
-            setIsVisible(true);
-          }
-        } else {
-          // On mobile always keep the header visible
-          setIsVisible(true);
-        }
-
-        lastScrollY.current = currentY;
-        ticking.current = false;
-      });
+      setIsScrolled(window.scrollY > 4);
     };
 
+    handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -289,8 +252,6 @@ export default function TopNav() {
       className={[
         'fixed top-0 left-0 right-0 z-50',
         'bg-sand border-b border-seafoam/70',
-        'motion-safe:transition-transform motion-safe:duration-300',
-        isVisible ? 'translate-y-0' : '-translate-y-full',
         isScrolled ? 'shadow-md backdrop-blur-sm' : 'shadow-sm',
       ].join(' ')}
     >
