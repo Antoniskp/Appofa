@@ -12,9 +12,11 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-01
+> **Last updated**: 2026-05-07
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
+>
+> Dependency update note: `package.json` now pins direct `axios` to `1.16.0` and no longer includes `overrides.axios`.
 
 ---
 
