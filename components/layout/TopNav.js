@@ -333,6 +333,12 @@ export default function TopNav() {
                 {tNav('polls')}
               </Link>
               <Link
+                href="/civic-questions"
+                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/civic-questions')}`}
+              >
+                {tNav('civic_questions')}
+              </Link>
+              <Link
                 href="/suggestions"
                 className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/suggestions')}`}
               >
@@ -441,6 +447,12 @@ export default function TopNav() {
             className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/polls')}`}
           >
             {tNav('polls')}
+          </Link>
+          <Link
+            href="/civic-questions"
+            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/civic-questions')}`}
+          >
+            {tNav('civic_questions')}
           </Link>
           <Link
             href="/suggestions"

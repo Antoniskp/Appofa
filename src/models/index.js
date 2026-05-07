@@ -15,6 +15,8 @@ const LocationElectionVote = require('./LocationElectionVote');
 const Poll = require('./Poll');
 const PollOption = require('./PollOption');
 const PollVote = require('./PollVote');
+const CivicQuestion = require('./CivicQuestion');
+const CivicQuestionVote = require('./CivicQuestionVote');
 const Bookmark = require('./Bookmark');
 const Message = require('./Message');
 const Follow = require('./Follow');
@@ -151,6 +153,47 @@ User.hasMany(Poll, {
 User.hasMany(PollVote, {
   foreignKey: 'userId',
   as: 'pollVotes'
+});
+
+// Civic Question associations
+CivicQuestion.belongsTo(User, {
+  foreignKey: 'creatorId',
+  as: 'creator'
+});
+
+CivicQuestion.belongsTo(Location, {
+  foreignKey: 'locationId',
+  as: 'location'
+});
+
+CivicQuestion.hasMany(CivicQuestionVote, {
+  foreignKey: 'civicQuestionId',
+  as: 'votes'
+});
+
+CivicQuestionVote.belongsTo(CivicQuestion, {
+  foreignKey: 'civicQuestionId',
+  as: 'civicQuestion'
+});
+
+CivicQuestionVote.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
+User.hasMany(CivicQuestion, {
+  foreignKey: 'creatorId',
+  as: 'civicQuestions'
+});
+
+User.hasMany(CivicQuestionVote, {
+  foreignKey: 'userId',
+  as: 'civicQuestionVotes'
+});
+
+Location.hasMany(CivicQuestion, {
+  foreignKey: 'locationId',
+  as: 'civicQuestions'
 });
 
 User.hasMany(Bookmark, {
@@ -422,6 +465,8 @@ module.exports = {
   Poll,
   PollOption,
   PollVote,
+  CivicQuestion,
+  CivicQuestionVote,
   Bookmark,
   Message,
   Follow,

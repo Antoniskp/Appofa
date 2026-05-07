@@ -53,7 +53,8 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       articles: '/api/articles',
       locations: '/api/locations',
-      polls: '/api/polls'
+      polls: '/api/polls',
+      civicQuestions: '/api/civic-questions'
     }
   });
 });

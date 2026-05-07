@@ -153,6 +153,8 @@ Appofa/
 | Organization | Organizations | id, name, slug, type, description, logo, website, contactEmail, locationId, parentId, isPublic, isVerified, createdByUserId | belongsTo: User (`createdBy`), Location (`location`), Organization (`parent`); hasMany: Organization (`children`), OrganizationMember (`members`), OrganizationAnalytics (`analytics`) |
 | OrganizationMember | OrganizationMembers | id, organizationId, userId, role, status, inviteToken, invitedByUserId | belongsTo: Organization, User (`user`), User (`invitedBy`) |
 | OrganizationAnalytics | OrganizationAnalytics | id, organizationId, date, memberCount, activeMemberCount, pollCount, suggestionCount, officialPostCount | belongsTo: Organization (`organization`) |
+| CivicQuestion | CivicQuestions | id, title, originalLink, sourceType, sourceName, simplified, pros, cons, dateAsked, deadline, status, locationId, creatorId, visibility, voteRestriction, resultsVisibility, category, officialIdentifier, commentsEnabled, commentsLocked | belongsTo: User (`creator`), Location (`location`); hasMany: CivicQuestionVote |
+| CivicQuestionVote | CivicQuestionVotes | id, civicQuestionId, userId, choice (`agree|disagree|present`) | belongsTo: CivicQuestion, User; unique (civicQuestionId, userId) |
 
 ---
 
@@ -213,6 +215,17 @@ Appofa/
 | POST | /:id/vote | opt | Vote |
 | POST | /:id/options | ✅ | Add options |
 | PATCH | /:id/comment-settings | ✅ | Toggle comments |
+
+### Civic Questions (`/api/civic-questions`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | / | opt | List civic questions |
+| GET | /:id | opt | Get civic question |
+| GET | /:id/results | opt | Civic question results (subject to results visibility rules) |
+| POST | / | ✅ | Create civic question |
+| PUT | /:id | ✅ | Update civic question |
+| DELETE | /:id | ✅ | Delete civic question |
+| POST | /:id/vote | ✅ | Cast/update vote with fixed choice (`agree|disagree|present`) |
 
 ### Suggestions (`/api/suggestions`)
 | Method | Path | Auth | Description |
@@ -370,6 +383,7 @@ Appofa/
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
+| civicQuestionController.js | Civic question CRUD, voting, results |
 | organizationController.js | Organization CRUD + member workflow + org-scoped polls/suggestions + official posts + verification status + hierarchy + analytics |
 | reportController.js | Content reporting |
 | statsController.js | Statistics |
@@ -393,6 +407,7 @@ Appofa/
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
 | pollService.js | Poll operations & calculations (including org-membership access enforcement for org-scoped private polls/results/voting) |
+| civicQuestionService.js | Civic question business logic: visibility/location-scoped access, fixed-choice voting (`agree|disagree|present`), results visibility rules |
 | organizationService.js | Organization slug generation + organization search helpers |
 | userService.js | User management & utilities |
 
@@ -447,6 +462,7 @@ Appofa/
 | `/videos`, `/videos/[id]`, `/videos/new` | Videos |
 | `/editor` | Content editor |
 | `/polls`, `/polls/[id]`, `/polls/create`, `/polls/[id]/edit` | Polls |
+| `/civic-questions`, `/civic-questions/[id]`, `/civic-questions/create`, `/civic-questions/[id]/edit` | Civic Questions |
 | `/suggestions`, `/suggestions/[id]`, `/suggestions/new`, `/suggestions/[id]/edit` | Suggestions |
 
 ### Features
@@ -518,6 +534,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `follow/` | 1 | FollowButton |
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
+| `civicQuestions/` | 4 | CivicQuestionCard, CivicQuestionForm, CivicQuestionVoting, CivicQuestionResults |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 17 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 22+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |
@@ -544,6 +561,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | bookmarks.js | Bookmarks |
 | client.js | HTTP client (axios base config) |
 | comments.js | Comments |
+| civicQuestions.js | Civic questions CRUD, voting, results |
 | dreamTeamAPI.js | Dream team |
 | endorsements.js | Endorsements |
 | geo.js | Geo detect + public country funding |
@@ -725,6 +743,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260423000006-create-organization-analytics.js | Create OrganizationAnalytics table + unique (organizationId, date) index (idempotent) |
 | — | 20260423000010-add-org-notification-types.js | Add Notification enum values `org_invite_received`, `org_join_approved`, `org_member_removed` on postgres |
 | — | 20260503000000-add-population-override-to-locations.js | Add nullable `Locations.population_override` INTEGER for moderator-set population override |
+| — | 20260507210000-create-civic-questions.js | Create CivicQuestions + CivicQuestionVotes tables with fixed vote choices (`agree|disagree|present`) and unique one-vote-per-user-per-question constraint |
 
 </details>
 
@@ -736,7 +755,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
+api-client, civicQuestions, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
