@@ -32,7 +32,7 @@ const parsePositiveInteger = (value) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
-const normalizeLikeSearchTerm = (value) => String(value).replace(/[%_]/g, '').trim();
+const normalizeLikeSearchTerm = (value) => String(value).replace(/[\\%_]/g, '').trim();
 
 const normalizeDate = (value, fieldLabel) => {
   if (value === undefined) return { value: undefined };

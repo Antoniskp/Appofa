@@ -89,7 +89,7 @@ export default function CivicQuestionForm({
     if (formData.dateAsked && formData.deadline) {
       const askedAt = new Date(formData.dateAsked).getTime();
       const deadlineAt = new Date(formData.deadline).getTime();
-      if (Number.isFinite(askedAt) && Number.isFinite(deadlineAt) && deadlineAt < askedAt) {
+      if (Number.isFinite(askedAt) && Number.isFinite(deadlineAt) && deadlineAt <= askedAt) {
         setValidationError(t('form.date_validation_error'));
         return;
       }

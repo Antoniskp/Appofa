@@ -1,3 +1,4 @@
+// "Closing soon" is intentionally defined as the last 72 hours before deadline.
 export const CLOSING_SOON_MS = 72 * 60 * 60 * 1000;
 
 export function getCivicQuestionLifecycleStatus(civicQuestion, nowTs = Date.now()) {

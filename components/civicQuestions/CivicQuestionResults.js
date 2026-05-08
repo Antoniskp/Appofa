@@ -21,7 +21,8 @@ export default function CivicQuestionResults({ civicQuestion }) {
   const totalVotes = civicQuestion.totalVotes || 0;
   const choices = ['agree', 'disagree', 'present'];
   const leadingVotes = Math.max(...choices.map((choice) => civicQuestion.voteCounts[choice] || 0), 0);
-  const isTie = choices.filter((choice) => (civicQuestion.voteCounts[choice] || 0) === leadingVotes).length > 1;
+  const isTie = leadingVotes > 0
+    && choices.filter((choice) => (civicQuestion.voteCounts[choice] || 0) === leadingVotes).length > 1;
   const effectivePopulation = civicQuestion.location?.population_override ?? civicQuestion.location?.population;
   const participationPct = effectivePopulation > 0 && totalVotes > 0
     ? Math.round((totalVotes / effectivePopulation) * 100)
