@@ -10,6 +10,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import Badge from '@/components/ui/Badge';
 import CivicQuestionVoting from '@/components/civicQuestions/CivicQuestionVoting';
 import CivicQuestionResults from '@/components/civicQuestions/CivicQuestionResults';
+import CommentsThread from '@/components/comments/CommentsThread';
 import {
   getCivicQuestionLifecycleStatus,
   getCivicQuestionStatusBadgeVariant,
@@ -89,48 +90,61 @@ export default function CivicQuestionDetailClient() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-5xl space-y-6">
-        <div className={`${sectionCardClass} space-y-4`}>
-          <div className="flex flex-wrap gap-2">
+        {/* Header card */}
+        <div className={`${sectionCardClass} space-y-3`}>
+          <div className="flex flex-wrap items-start gap-2">
             <Badge variant={getCivicQuestionStatusBadgeVariant(lifecycleStatus)}>{t(`status.${lifecycleStatus}`)}</Badge>
             <Badge variant="primary">{t(`source_types.${civicQuestion.sourceType}`)}</Badge>
             {civicQuestion.category && <Badge variant="purple">{civicQuestion.category}</Badge>}
             {civicQuestion.visibility === 'locals_only' && <Badge variant="warning">{t('local_badge')}</Badge>}
+            {civicQuestion.officialIdentifier && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                🏛 {civicQuestion.officialIdentifier}
+              </span>
+            )}
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">{civicQuestion.title}</h1>
-          {canEdit && (
-            <button
-              type="button"
-              onClick={() => router.push(`/civic-questions/${civicQuestion.id}/edit`)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-            >
-              {t('detail.edit')}
-            </button>
-          )}
+          <div className="flex items-start justify-between gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{civicQuestion.title}</h1>
+            {canEdit && (
+              <button
+                type="button"
+                aria-label={t('detail.edit')}
+                title={t('detail.edit')}
+                onClick={() => router.push(`/civic-questions/${civicQuestion.id}/edit`)}
+                className="flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                  <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <section className={sectionCardClass}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('detail.source_origin')}</h2>
-            <dl className="space-y-2 text-sm text-gray-700">
+        {/* Compact merged metadata card */}
+        <section className={sectionCardClass}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm text-gray-700">
+            {/* Left column: source / origin */}
+            <dl className="space-y-2">
               <div>
-                <dt className="font-medium">{t('detail.source_type')}</dt>
+                <dt className="font-medium text-gray-500 text-xs uppercase tracking-wide mb-0.5">{t('detail.source_type')}</dt>
                 <dd>{t(`source_types.${civicQuestion.sourceType}`)}</dd>
               </div>
               {civicQuestion.sourceName && (
                 <div>
-                  <dt className="font-medium">{t('detail.source')}</dt>
+                  <dt className="font-medium text-gray-500 text-xs uppercase tracking-wide mb-0.5">{t('detail.source')}</dt>
                   <dd>{civicQuestion.sourceName}</dd>
                 </div>
               )}
-              {civicQuestion.officialIdentifier && (
+              {civicQuestion.commissionRequirement && (
                 <div>
-                  <dt className="font-medium">{t('detail.official_identifier')}</dt>
-                  <dd>{civicQuestion.officialIdentifier}</dd>
+                  <dt className="font-medium text-gray-500 text-xs uppercase tracking-wide mb-0.5">{t('detail.commission_requirement')}</dt>
+                  <dd className="text-blue-700">{civicQuestion.commissionRequirement}</dd>
                 </div>
               )}
               {civicQuestion.originalLink && (
                 <div>
-                  <dt className="font-medium">{t('detail.original_link')}</dt>
+                  <dt className="font-medium text-gray-500 text-xs uppercase tracking-wide mb-0.5">{t('detail.original_link')}</dt>
                   <dd>
                     <a href={civicQuestion.originalLink} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline break-all">
                       {civicQuestion.originalLink}
@@ -139,34 +153,28 @@ export default function CivicQuestionDetailClient() {
                 </div>
               )}
             </dl>
-          </section>
 
-          <section className={sectionCardClass}>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('detail.important_dates')}</h2>
-            <dl className="space-y-2 text-sm text-gray-700">
+            {/* Right column: dates / location */}
+            <dl className="space-y-2">
               <div>
-                <dt className="font-medium">{t('detail.status')}</dt>
-                <dd>{t(`status.${lifecycleStatus}`)}</dd>
-              </div>
-              <div>
-                <dt className="font-medium">{t('detail.location')}</dt>
+                <dt className="font-medium text-gray-500 text-xs uppercase tracking-wide mb-0.5">{t('detail.location')}</dt>
                 <dd>{civicQuestion.location?.name || t('detail.no_location')}</dd>
               </div>
               {civicQuestion.dateAsked && (
                 <div>
-                  <dt className="font-medium">{t('detail.date_asked')}</dt>
+                  <dt className="font-medium text-gray-500 text-xs uppercase tracking-wide mb-0.5">{t('detail.date_asked')}</dt>
                   <dd>{toDisplayDate(civicQuestion.dateAsked, locale, true)}</dd>
                 </div>
               )}
               {civicQuestion.deadline && (
                 <div>
-                  <dt className="font-medium">{t('detail.deadline')}</dt>
+                  <dt className="font-medium text-gray-500 text-xs uppercase tracking-wide mb-0.5">{t('detail.deadline')}</dt>
                   <dd>{toDisplayDate(civicQuestion.deadline, locale, true)}</dd>
                 </div>
               )}
             </dl>
-          </section>
-        </div>
+          </div>
+        </section>
 
         {civicQuestion.simplified && (
           <section className={sectionCardClass}>
@@ -196,6 +204,15 @@ export default function CivicQuestionDetailClient() {
         <div className={sectionCardClass}>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">{t('detail.results')}</h2>
           <CivicQuestionResults civicQuestion={civicQuestion} />
+        </div>
+
+        <div className={sectionCardClass}>
+          <CommentsThread
+            entityType="civic_question"
+            entityId={civicQuestion.id}
+            commentsEnabled={civicQuestion.commentsEnabled !== false}
+            commentsLocked={civicQuestion.commentsLocked === true}
+          />
         </div>
 
         <Link href="/civic-questions" className="inline-block text-blue-600 hover:text-blue-800 font-medium">

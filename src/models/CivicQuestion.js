@@ -93,6 +93,10 @@ const CivicQuestion = sequelize.define('CivicQuestion', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  commissionRequirement: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   commentsEnabled: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

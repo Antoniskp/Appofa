@@ -1379,7 +1379,10 @@
       "create": "Create Civic Question",
       "update": "Update Civic Question",
       "cancel": "Cancel",
-      "delete": "Delete"
+      "delete": "Delete",
+      "commission_requirement": "European Commission Requirement",
+      "commission_requirement_placeholder": "e.g. RED III Directive",
+      "commission_requirement_help": "Fill in if the bill is required by EU (e.g. RED III Directive). Leave blank if not applicable."
     },
     "visibility": {
       "public": "Public",
@@ -1440,7 +1443,8 @@
       "cons_empty": "No cons were provided.",
       "edit": "Edit Civic Question",
       "vote": "Vote",
-      "results": "Results"
+      "results": "Results",
+      "commission_requirement": "EU Requirement"
     },
     "edit": {
       "forbidden": "You are not allowed to edit this civic question.",
