@@ -40,7 +40,7 @@ export default function CivicQuestionResults({ civicQuestion }) {
                 {t(`choices.${choice}`)}
                 {isLeading && <span className="ml-2 text-xs text-blue-700 font-semibold">{t('results.leading')}</span>}
               </span>
-              <span className="text-gray-700 font-medium">{percent}% · {count}</span>
+              <span className="text-gray-700 font-medium">{percent}% ({count})</span>
             </div>
             <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
               <div className={`h-full ${COLORS[choice]}`} style={{ width: `${percent}%` }} />

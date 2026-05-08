@@ -10,7 +10,7 @@ async function fetchCivicQuestion(id) {
     if (!numericId) return null;
 
     const response = await fetch(`${API_URL}/api/civic-questions/${numericId}`, {
-      next: { revalidate: 300 },
+      next: { revalidate: 60 },
     });
 
     if (!response.ok) return null;

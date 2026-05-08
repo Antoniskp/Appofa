@@ -14,17 +14,18 @@ import {
   getCivicQuestionLifecycleStatus,
   getCivicQuestionStatusBadgeVariant,
 } from '@/components/civicQuestions/statusUtils';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
-const toDisplayDate = (value, withTime = false) => {
+const toDisplayDate = (value, locale, withTime = false) => {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return withTime ? date.toLocaleString('el-GR') : date.toLocaleDateString('el-GR');
+  return withTime ? date.toLocaleString(locale) : date.toLocaleDateString(locale);
 };
 
 export default function CivicQuestionDetailClient() {
   const t = useTranslations('civicQuestions');
+  const locale = useLocale();
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
@@ -154,13 +155,13 @@ export default function CivicQuestionDetailClient() {
               {civicQuestion.dateAsked && (
                 <div>
                   <dt className="font-medium">{t('detail.date_asked')}</dt>
-                  <dd>{toDisplayDate(civicQuestion.dateAsked, true)}</dd>
+                  <dd>{toDisplayDate(civicQuestion.dateAsked, locale, true)}</dd>
                 </div>
               )}
               {civicQuestion.deadline && (
                 <div>
                   <dt className="font-medium">{t('detail.deadline')}</dt>
-                  <dd>{toDisplayDate(civicQuestion.deadline, true)}</dd>
+                  <dd>{toDisplayDate(civicQuestion.deadline, locale, true)}</dd>
                 </div>
               )}
             </dl>

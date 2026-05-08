@@ -32,6 +32,8 @@ const parsePositiveInteger = (value) => {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
 
+const normalizeLikeSearchTerm = (value) => String(value).replace(/[%_]/g, '').trim();
+
 const normalizeDate = (value, fieldLabel) => {
   if (value === undefined) return { value: undefined };
   if (value === null || value === '') return { value: null };
@@ -405,14 +407,14 @@ const listCivicQuestions = async (query, user) => {
     }
 
     if (query.category) {
-      const category = String(query.category).trim();
+      const category = normalizeLikeSearchTerm(query.category);
       if (category) {
         where.category = { [Op.like]: `%${category}%` };
       }
     }
 
     if (query.search) {
-      const search = String(query.search).trim();
+      const search = normalizeLikeSearchTerm(query.search);
       if (search) {
         where[Op.or] = [
           { title: { [Op.like]: `%${search}%` } },
@@ -428,7 +430,7 @@ const listCivicQuestions = async (query, user) => {
     ];
 
     if (query.location) {
-      const locationSearch = String(query.location).trim();
+      const locationSearch = normalizeLikeSearchTerm(query.location);
       if (locationSearch) {
         include[1].required = true;
         include[1].where = {
