@@ -219,7 +219,7 @@ Appofa/
 ### Civic Questions (`/api/civic-questions`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | / | opt | List civic questions |
+| GET | / | opt | List civic questions (filters: `status`, `sourceType`, `locationId`, location-name `location`, partial `category`; sort: `newest`, `closing_soon`, `most_voted`) |
 | GET | /:id | opt | Get civic question |
 | GET | /:id/results | opt | Civic question results (subject to results visibility rules) |
 | POST | / | ✅ | Create civic question |
@@ -462,7 +462,7 @@ Appofa/
 | `/videos`, `/videos/[id]`, `/videos/new` | Videos |
 | `/editor` | Content editor |
 | `/polls`, `/polls/[id]`, `/polls/create`, `/polls/[id]/edit` | Polls |
-| `/civic-questions`, `/civic-questions/[id]`, `/civic-questions/create`, `/civic-questions/[id]/edit` | Civic Questions |
+| `/civic-questions`, `/civic-questions/[id]`, `/civic-questions/create`, `/civic-questions/[id]/edit` | Civic Questions (Phase 2: list filters/sorting, official-style detail sections, enhanced results UI; detail page now includes metadata via server wrapper + client detail component split) |
 | `/suggestions`, `/suggestions/[id]`, `/suggestions/new`, `/suggestions/[id]/edit` | Suggestions |
 
 ### Features
@@ -534,7 +534,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `follow/` | 1 | FollowButton |
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
-| `civicQuestions/` | 4 | CivicQuestionCard, CivicQuestionForm, CivicQuestionVoting, CivicQuestionResults |
+| `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm, CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 17 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 22+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |

@@ -126,6 +126,141 @@ describe('Civic Questions API', () => {
     expect(response.body.data.length).toBeGreaterThan(0);
   });
 
+  test('supports list filters for sourceType, location, status, and category', async () => {
+    const athens = await Location.create({
+      name: 'Athens Center',
+      type: 'municipality',
+      slug: 'athens-center',
+    });
+
+    await CivicQuestion.create({
+      title: 'Athens transport investment package',
+      sourceType: 'parliament',
+      sourceName: 'Parliament',
+      category: 'Transport',
+      status: 'open',
+      visibility: 'public',
+      voteRestriction: 'authenticated',
+      locationId: athens.id,
+      creatorId: creator.id,
+    });
+
+    await CivicQuestion.create({
+      title: 'Regional budget revision',
+      sourceType: 'regional_council',
+      category: 'Economy',
+      status: 'closed',
+      visibility: 'public',
+      voteRestriction: 'authenticated',
+      locationId: localLocation.id,
+      creatorId: creator.id,
+    });
+
+    const response = await request(app)
+      .get('/api/civic-questions')
+      .query({
+        sourceType: 'parliament',
+        status: 'open',
+        category: 'Trans',
+        location: 'Athens',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.length).toBe(1);
+    expect(response.body.data[0].title).toBe('Athens transport investment package');
+  });
+
+  test('sorts by closing soon', async () => {
+    const now = Date.now();
+    const soonQuestion = await CivicQuestion.create({
+      title: 'Closing soon civic question',
+      sourceType: 'municipal_council',
+      category: 'phase2-closing-sort',
+      status: 'open',
+      visibility: 'public',
+      voteRestriction: 'authenticated',
+      locationId: localLocation.id,
+      creatorId: creator.id,
+      deadline: new Date(now + 60 * 60 * 1000),
+    });
+
+    const laterQuestion = await CivicQuestion.create({
+      title: 'Closing later civic question',
+      sourceType: 'municipal_council',
+      category: 'phase2-closing-sort',
+      status: 'open',
+      visibility: 'public',
+      voteRestriction: 'authenticated',
+      locationId: localLocation.id,
+      creatorId: creator.id,
+      deadline: new Date(now + 4 * 24 * 60 * 60 * 1000),
+    });
+
+    const response = await request(app)
+      .get('/api/civic-questions')
+      .query({
+        category: 'phase2-closing-sort',
+        sortBy: 'closing_soon',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data[0].id).toBe(soonQuestion.id);
+    expect(response.body.data[1].id).toBe(laterQuestion.id);
+  });
+
+  test('sorts by most voted', async () => {
+    const moreVoted = await CivicQuestion.create({
+      title: 'Most voted question',
+      sourceType: 'parliament',
+      category: 'phase2-most-voted-sort',
+      status: 'open',
+      visibility: 'public',
+      voteRestriction: 'authenticated',
+      locationId: localLocation.id,
+      creatorId: creator.id,
+    });
+
+    const lessVoted = await CivicQuestion.create({
+      title: 'Less voted question',
+      sourceType: 'parliament',
+      category: 'phase2-most-voted-sort',
+      status: 'open',
+      visibility: 'public',
+      voteRestriction: 'authenticated',
+      locationId: localLocation.id,
+      creatorId: creator.id,
+    });
+
+    await CivicQuestionVote.bulkCreate([
+      { civicQuestionId: moreVoted.id, userId: creator.id, choice: 'agree' },
+      { civicQuestionId: moreVoted.id, userId: voter.id, choice: 'agree' },
+      { civicQuestionId: lessVoted.id, userId: creator.id, choice: 'present' },
+    ]);
+
+    const response = await request(app)
+      .get('/api/civic-questions')
+      .query({
+        category: 'phase2-most-voted-sort',
+        sortBy: 'most_voted',
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data[0].id).toBe(moreVoted.id);
+    expect(response.body.data[0].totalVotes).toBeGreaterThan(response.body.data[1].totalVotes);
+  });
+
+  test('rejects invalid sort parameter', async () => {
+    const response = await request(app)
+      .get('/api/civic-questions')
+      .query({ sortBy: 'random' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+  });
+
   test('records vote and supports changing vote', async () => {
     const headers = csrfHeadersFor(voterCsrf, voter.id);
 
