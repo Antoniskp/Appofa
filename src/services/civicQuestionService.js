@@ -23,6 +23,7 @@ const CIVIC_QUESTION_VISIBILITIES = ['public', 'private', 'locals_only'];
 const CIVIC_QUESTION_VOTE_RESTRICTIONS = ['authenticated', 'locals_only'];
 const CIVIC_QUESTION_RESULTS_VISIBILITIES = ['always', 'after_vote', 'after_deadline'];
 const CIVIC_QUESTION_CHOICES = ['agree', 'disagree', 'present'];
+const CIVIC_QUESTION_SORT_OPTIONS = ['newest', 'closing_soon', 'most_voted'];
 
 const CHOICE_ORDER = ['agree', 'disagree', 'present'];
 
@@ -30,6 +31,8 @@ const parsePositiveInteger = (value) => {
   const parsed = parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 };
+
+const normalizeLikeSearchTerm = (value) => String(value).replace(/[\\%_]/g, '').trim();
 
 const normalizeDate = (value, fieldLabel) => {
   if (value === undefined) return { value: undefined };
@@ -393,6 +396,10 @@ const listCivicQuestions = async (query, user) => {
     if (sourceTypeFilter.error) return { success: false, status: 400, message: sourceTypeFilter.error };
     if (sourceTypeFilter.value) where.sourceType = sourceTypeFilter.value;
 
+    const sortByFilter = normalizeEnum(query.sortBy || query.sort, CIVIC_QUESTION_SORT_OPTIONS, 'Sort');
+    if (sortByFilter.error) return { success: false, status: 400, message: sortByFilter.error };
+    const sortBy = sortByFilter.value || 'newest';
+
     if (query.locationId !== undefined) {
       const locationId = parsePositiveInteger(query.locationId);
       if (!locationId) return { success: false, status: 400, message: 'Invalid locationId.' };
@@ -400,11 +407,14 @@ const listCivicQuestions = async (query, user) => {
     }
 
     if (query.category) {
-      where.category = String(query.category).trim();
+      const category = normalizeLikeSearchTerm(query.category);
+      if (category) {
+        where.category = { [Op.like]: `%${category}%` };
+      }
     }
 
     if (query.search) {
-      const search = String(query.search).trim();
+      const search = normalizeLikeSearchTerm(query.search);
       if (search) {
         where[Op.or] = [
           { title: { [Op.like]: `%${search}%` } },
@@ -414,18 +424,71 @@ const listCivicQuestions = async (query, user) => {
       }
     }
 
+    const include = [
+      { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
+      { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
+    ];
+
+    if (query.location) {
+      const locationSearch = normalizeLikeSearchTerm(query.location);
+      if (locationSearch) {
+        include[1].required = true;
+        include[1].where = {
+          name: { [Op.like]: `%${locationSearch}%` },
+        };
+      }
+    }
+
     const visibilityWhere = await buildVisibilityWhere(user);
     const fullWhere = Object.keys(visibilityWhere).length > 0
       ? { [Op.and]: [where, visibilityWhere] }
       : where;
 
+    if (sortBy === 'most_voted') {
+      const allRows = await CivicQuestion.findAll({
+        where: fullWhere,
+        include,
+        order: [['createdAt', 'DESC']],
+      });
+
+      const allEnriched = await Promise.all(allRows.map((row) => attachVoteData(row.toJSON(), user?.id || null)));
+      allEnriched.sort((a, b) => {
+        if ((b.totalVotes || 0) !== (a.totalVotes || 0)) {
+          return (b.totalVotes || 0) - (a.totalVotes || 0);
+        }
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
+
+      const paged = allEnriched.slice(offset, offset + limit);
+      const total = allEnriched.length;
+
+      return {
+        success: true,
+        status: 200,
+        data: {
+          civicQuestions: paged,
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+          },
+        },
+      };
+    }
+
+    const order = sortBy === 'closing_soon'
+      ? [
+          [sequelize.literal("CASE WHEN status = 'open' AND deadline IS NOT NULL AND deadline > CURRENT_TIMESTAMP THEN 0 WHEN status = 'open' THEN 1 ELSE 2 END"), 'ASC'],
+          ['deadline', 'ASC'],
+          ['createdAt', 'DESC'],
+        ]
+      : [['createdAt', 'DESC']];
+
     const { rows, count } = await CivicQuestion.findAndCountAll({
       where: fullWhere,
-      include: [
-        { model: User, as: 'creator', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
-        { model: Location, as: 'location', attributes: ['id', 'name', 'slug', 'population', 'population_override'], required: false },
-      ],
-      order: [['createdAt', 'DESC']],
+      include,
+      order,
       limit,
       offset,
       distinct: true,

@@ -21,6 +21,7 @@ export default function CivicQuestionForm({
   const t = useTranslations('civicQuestions');
   const { user } = useAuth();
   const hasAutoFilledLocation = useRef(false);
+  const [validationError, setValidationError] = useState('');
   const [formData, setFormData] = useState({
     title: '',
     originalLink: '',
@@ -83,6 +84,17 @@ export default function CivicQuestionForm({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    setValidationError('');
+
+    if (formData.dateAsked && formData.deadline) {
+      const askedAt = new Date(formData.dateAsked).getTime();
+      const deadlineAt = new Date(formData.deadline).getTime();
+      if (Number.isFinite(askedAt) && Number.isFinite(deadlineAt) && deadlineAt <= askedAt) {
+        setValidationError(t('form.date_validation_error'));
+        return;
+      }
+    }
+
     onSubmit({
       ...formData,
       dateAsked: formData.dateAsked || null,
@@ -101,6 +113,7 @@ export default function CivicQuestionForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <AlertMessage message={submitError} className="mb-2" />
+      <AlertMessage message={validationError} className="mb-2" />
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
         <h3 className="text-lg font-semibold text-gray-900">{t('form.basic_information')}</h3>
@@ -119,6 +132,7 @@ export default function CivicQuestionForm({
           <select id="civic-question-source-type" name="sourceType" value={formData.sourceType} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2">
             {SOURCE_TYPES.map((type) => <option key={type} value={type}>{t(`source_types.${type}`)}</option>)}
           </select>
+          <p className="mt-1 text-xs text-gray-500">{t('form.source_type_help')}</p>
         </div>
 
         <div>
@@ -129,16 +143,19 @@ export default function CivicQuestionForm({
         <div>
           <label htmlFor="civic-question-simplified" className="block text-sm font-medium text-gray-700">{t('form.simplified')}</label>
           <textarea id="civic-question-simplified" name="simplified" rows={4} value={formData.simplified} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+          <p className="mt-1 text-xs text-gray-500">{t('form.simplified_help')}</p>
         </div>
 
         <div>
           <label htmlFor="civic-question-pros" className="block text-sm font-medium text-gray-700">{t('form.pros')}</label>
           <textarea id="civic-question-pros" name="pros" rows={3} value={formData.pros} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+          <p className="mt-1 text-xs text-gray-500">{t('form.pros_help')}</p>
         </div>
 
         <div>
           <label htmlFor="civic-question-cons" className="block text-sm font-medium text-gray-700">{t('form.cons')}</label>
           <textarea id="civic-question-cons" name="cons" rows={3} value={formData.cons} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+          <p className="mt-1 text-xs text-gray-500">{t('form.cons_help')}</p>
         </div>
       </div>
 
@@ -148,11 +165,12 @@ export default function CivicQuestionForm({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="civic-question-date-asked" className="block text-sm font-medium text-gray-700">{t('form.date_asked')}</label>
-            <input id="civic-question-date-asked" name="dateAsked" type="datetime-local" value={formData.dateAsked} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+            <input id="civic-question-date-asked" name="dateAsked" type="datetime-local" max={formData.deadline || undefined} value={formData.dateAsked} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
           </div>
           <div>
             <label htmlFor="civic-question-deadline" className="block text-sm font-medium text-gray-700">{t('form.deadline')}</label>
-            <input id="civic-question-deadline" name="deadline" type="datetime-local" value={formData.deadline} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+            <input id="civic-question-deadline" name="deadline" type="datetime-local" min={formData.dateAsked || undefined} value={formData.deadline} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
+            <p className="mt-1 text-xs text-gray-500">{t('form.deadline_help')}</p>
           </div>
         </div>
 

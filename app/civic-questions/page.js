@@ -28,7 +28,7 @@ export default function CivicQuestionsPage() {
     prevPage,
     goToPage,
     updateFilter,
-  } = useFilters({ status: '', sourceType: '', search: '' });
+  } = useFilters({ status: '', sourceType: '', category: '', location: '', sortBy: 'newest', search: '' });
 
   const [filterBarOpen, setFilterBarOpen] = useState(false);
 
@@ -91,6 +91,28 @@ export default function CivicQuestionsPage() {
                   { value: 'municipal_council', label: t('source_types.municipal_council') },
                   { value: 'regional_council', label: t('source_types.regional_council') },
                   { value: 'other', label: t('source_types.other') },
+                ],
+              },
+              {
+                name: 'category',
+                label: t('form.category'),
+                type: 'text',
+                placeholder: t('list.category_placeholder'),
+              },
+              {
+                name: 'location',
+                label: t('form.location'),
+                type: 'text',
+                placeholder: t('list.location_placeholder'),
+              },
+              {
+                name: 'sortBy',
+                label: t('list.sort'),
+                type: 'select',
+                options: [
+                  { value: 'newest', label: t('list.sort_newest') },
+                  { value: 'closing_soon', label: t('list.sort_closing_soon') },
+                  { value: 'most_voted', label: t('list.sort_most_voted') },
                 ],
               },
             ]}
