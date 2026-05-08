@@ -153,7 +153,7 @@ Appofa/
 | Organization | Organizations | id, name, slug, type, description, logo, website, contactEmail, locationId, parentId, isPublic, isVerified, createdByUserId | belongsTo: User (`createdBy`), Location (`location`), Organization (`parent`); hasMany: Organization (`children`), OrganizationMember (`members`), OrganizationAnalytics (`analytics`) |
 | OrganizationMember | OrganizationMembers | id, organizationId, userId, role, status, inviteToken, invitedByUserId | belongsTo: Organization, User (`user`), User (`invitedBy`) |
 | OrganizationAnalytics | OrganizationAnalytics | id, organizationId, date, memberCount, activeMemberCount, pollCount, suggestionCount, officialPostCount | belongsTo: Organization (`organization`) |
-| CivicQuestion | CivicQuestions | id, title, originalLink, sourceType, sourceName, simplified, pros, cons, dateAsked, deadline, status, locationId, creatorId, visibility, voteRestriction, resultsVisibility, category, officialIdentifier, commentsEnabled, commentsLocked | belongsTo: User (`creator`), Location (`location`); hasMany: CivicQuestionVote |
+| CivicQuestion | CivicQuestions | id, title, originalLink, sourceType, sourceName, simplified, pros, cons, dateAsked, deadline, status, locationId, creatorId, visibility, voteRestriction, resultsVisibility, category, officialIdentifier, commissionRequirement, commentsEnabled, commentsLocked | belongsTo: User (`creator`), Location (`location`); hasMany: CivicQuestionVote |
 | CivicQuestionVote | CivicQuestionVotes | id, civicQuestionId, userId, choice (`agree|disagree|present`) | belongsTo: CivicQuestion, User; unique (civicQuestionId, userId) |
 
 ---
@@ -534,7 +534,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `follow/` | 1 | FollowButton |
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
-| `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm, CivicQuestionVoting, CivicQuestionResults, statusUtils |
+| `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 17 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 22+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar, LanguageSwitcher, LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |
@@ -744,6 +744,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260423000010-add-org-notification-types.js | Add Notification enum values `org_invite_received`, `org_join_approved`, `org_member_removed` on postgres |
 | — | 20260503000000-add-population-override-to-locations.js | Add nullable `Locations.population_override` INTEGER for moderator-set population override |
 | — | 20260507210000-create-civic-questions.js | Create CivicQuestions + CivicQuestionVotes tables with fixed vote choices (`agree|disagree|present`) and unique one-vote-per-user-per-question constraint |
+| — | 20260508000000-add-commission-requirement-to-civic-questions.js | Add nullable `CivicQuestions.commissionRequirement` STRING for EU/Commission requirement description |
 
 </details>
 

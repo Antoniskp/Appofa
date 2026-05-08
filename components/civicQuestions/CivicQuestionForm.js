@@ -39,6 +39,7 @@ export default function CivicQuestionForm({
     resultsVisibility: 'always',
     category: '',
     officialIdentifier: '',
+    commissionRequirement: '',
     commentsEnabled: true,
     commentsLocked: false,
   });
@@ -62,6 +63,7 @@ export default function CivicQuestionForm({
       resultsVisibility: civicQuestion.resultsVisibility || 'always',
       category: civicQuestion.category || '',
       officialIdentifier: civicQuestion.officialIdentifier || '',
+      commissionRequirement: civicQuestion.commissionRequirement || '',
       commentsEnabled: civicQuestion.commentsEnabled !== false,
       commentsLocked: civicQuestion.commentsLocked === true,
     });
@@ -107,6 +109,7 @@ export default function CivicQuestionForm({
       cons: formData.cons || null,
       category: formData.category || null,
       officialIdentifier: formData.officialIdentifier || null,
+      commissionRequirement: formData.commissionRequirement || null,
     });
   };
 
@@ -227,6 +230,12 @@ export default function CivicQuestionForm({
             <label htmlFor="civic-question-official-identifier" className="block text-sm font-medium text-gray-700">{t('form.official_identifier')}</label>
             <input id="civic-question-official-identifier" name="officialIdentifier" value={formData.officialIdentifier} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" />
           </div>
+        </div>
+
+        <div>
+          <label htmlFor="civic-question-commission-requirement" className="block text-sm font-medium text-gray-700">{t('form.commission_requirement')}</label>
+          <input id="civic-question-commission-requirement" name="commissionRequirement" value={formData.commissionRequirement} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2" placeholder={t('form.commission_requirement_placeholder')} />
+          <p className="mt-1 text-xs text-gray-500">{t('form.commission_requirement_help')}</p>
         </div>
 
         <div className="flex items-center gap-2 text-sm text-gray-700">

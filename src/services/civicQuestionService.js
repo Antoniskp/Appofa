@@ -232,6 +232,9 @@ const validateCreatePayload = async (payload) => {
   const officialIdentifierResult = normalizeOptionalText(payload.officialIdentifier, 'Official identifier', 2, 120);
   if (officialIdentifierResult.error) return officialIdentifierResult;
 
+  const commissionRequirementResult = normalizeOptionalText(payload.commissionRequirement, 'Commission requirement', 2, 300);
+  if (commissionRequirementResult.error) return commissionRequirementResult;
+
   const commentsEnabledResult = normalizeBoolean(payload.commentsEnabled, 'commentsEnabled');
   if (commentsEnabledResult.error) return commentsEnabledResult;
 
@@ -260,6 +263,7 @@ const validateCreatePayload = async (payload) => {
       resultsVisibility: resultsVisibilityResult.value,
       category: categoryResult.value,
       officialIdentifier: officialIdentifierResult.value,
+      commissionRequirement: commissionRequirementResult.value,
       commentsEnabled: commentsEnabledResult.value ?? true,
       commentsLocked: commentsLockedResult.value ?? false,
     },
@@ -363,6 +367,12 @@ const validateUpdatePayload = async (payload) => {
     const result = normalizeOptionalText(payload.officialIdentifier, 'Official identifier', 2, 120);
     if (result.error) return result;
     updates.officialIdentifier = result.value;
+  }
+
+  if (payload.commissionRequirement !== undefined) {
+    const result = normalizeOptionalText(payload.commissionRequirement, 'Commission requirement', 2, 300);
+    if (result.error) return result;
+    updates.commissionRequirement = result.value;
   }
 
   if (payload.commentsEnabled !== undefined) {
