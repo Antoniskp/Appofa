@@ -36,7 +36,6 @@ export default function TopNav() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
   const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
 
   const isActive = (path) => {
     // Check if current path starts with the given path
@@ -56,16 +55,6 @@ export default function TopNav() {
     setIsDesktopUserMenuOpen(false);
     setIsMobileUserMenuOpen(false);
   }, [pathname]);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 4);
-    };
-
-    handleScroll();
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const handleLogout = async () => {
     await logout();
@@ -250,9 +239,9 @@ export default function TopNav() {
   return (
     <nav
       className={[
-        'fixed top-0 left-0 right-0 z-50',
+        'relative z-20',
         'bg-sand border-b border-seafoam/70',
-        isScrolled ? 'shadow-md backdrop-blur-sm' : 'shadow-sm',
+        'shadow-sm',
       ].join(' ')}
     >
       <div className="app-container">
