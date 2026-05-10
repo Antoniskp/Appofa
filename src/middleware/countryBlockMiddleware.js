@@ -1,6 +1,12 @@
 const countryAccessService = require('../services/countryAccessService');
 
-const SKIP_PATH_PREFIXES = ['/api/health', '/_next', '/favicon'];
+const SKIP_PATH_PREFIXES = [
+  '/api/health',
+  '/_next',
+  '/favicon',
+  '/api/auth/forgot-password',
+  '/api/auth/reset-password',
+];
 
 const normalizeCountryCode = (value) => {
   if (!value) return null;
@@ -11,12 +17,28 @@ const normalizeCountryCode = (value) => {
   return code;
 };
 
+const sanitizeIp = (value) => (typeof value === 'string' && value.trim() ? value.trim() : '');
+
 const getClientIp = (req) => {
+  const trustedReqIp = sanitizeIp(req.ip);
+  if (trustedReqIp) return trustedReqIp;
+
+  const socketIp = sanitizeIp(req.socket?.remoteAddress || req.connection?.remoteAddress);
+  if (socketIp) return socketIp;
+
   const forwardedFor = req.headers['x-forwarded-for'];
-  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
-    return forwardedFor.split(',')[0].trim();
+  if (typeof forwardedFor === 'string') {
+    return sanitizeIp(forwardedFor.split(',')[0]);
   }
-  return req.ip || '';
+
+  if (Array.isArray(forwardedFor)) {
+    const firstForwarded = forwardedFor.find((value) => sanitizeIp(value));
+    if (firstForwarded) {
+      return sanitizeIp(firstForwarded.split(',')[0]);
+    }
+  }
+
+  return '';
 };
 
 const detectCountryCode = (req) => {
