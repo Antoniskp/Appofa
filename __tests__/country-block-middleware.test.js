@@ -74,6 +74,21 @@ describe('countryBlockMiddleware', () => {
     expect(res.status).not.toHaveBeenCalled();
   });
 
+  test('falls back to first non-empty x-forwarded-for array entry when req.ip is missing', async () => {
+    const req = {
+      path: '/api/auth/login',
+      headers: { 'x-forwarded-for': ['', '198.51.100.55, 10.0.0.1'] },
+      ip: '',
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await countryBlockMiddleware(req, res, next);
+
+    expect(next).toHaveBeenCalledTimes(1);
+    expect(res.status).not.toHaveBeenCalled();
+  });
+
   test('blocks when no country and no usable IP under noIpAction=block', async () => {
     const req = { path: '/api/auth/login', headers: {}, ip: '' };
     const res = createRes();

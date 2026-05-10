@@ -17,25 +17,24 @@ const normalizeCountryCode = (value) => {
   return code;
 };
 
-const getClientIp = (req) => {
-  if (typeof req.ip === 'string' && req.ip.trim()) {
-    return req.ip.trim();
-  }
+const sanitizeIp = (value) => (typeof value === 'string' && value.trim() ? value.trim() : '');
 
-  const socketIp = req.socket?.remoteAddress || req.connection?.remoteAddress;
-  if (typeof socketIp === 'string' && socketIp.trim()) {
-    return socketIp.trim();
-  }
+const getClientIp = (req) => {
+  const trustedReqIp = sanitizeIp(req.ip);
+  if (trustedReqIp) return trustedReqIp;
+
+  const socketIp = sanitizeIp(req.socket?.remoteAddress || req.connection?.remoteAddress);
+  if (socketIp) return socketIp;
 
   const forwardedFor = req.headers['x-forwarded-for'];
-  if (typeof forwardedFor === 'string' && forwardedFor.trim()) {
-    return forwardedFor.split(',')[0].trim();
+  if (typeof forwardedFor === 'string') {
+    return sanitizeIp(forwardedFor.split(',')[0]);
   }
 
   if (Array.isArray(forwardedFor)) {
-    const firstForwarded = forwardedFor.find((value) => typeof value === 'string' && value.trim());
+    const firstForwarded = forwardedFor.find((value) => sanitizeIp(value));
     if (firstForwarded) {
-      return firstForwarded.split(',')[0].trim();
+      return sanitizeIp(firstForwarded.split(',')[0]);
     }
   }
 
