@@ -109,7 +109,7 @@ describe('country redirect middleware', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  test.each(['/login', '/country/GR'])('skips redirect checks for %s', async (pathname) => {
+  test.each(['/login', '/forgot-password', '/reset-password', '/country/GR'])('skips redirect checks for %s', async (pathname) => {
     const response = await middleware(makeRequest({ pathname, countryHeader: 'GR' }));
 
     expect(response.type).toBe('next');

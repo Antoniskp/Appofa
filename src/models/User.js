@@ -29,6 +29,14 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true  // Allow null for OAuth-only accounts
   },
+  resetPasswordTokenHash: {
+    type: DataTypes.STRING(128),
+    allowNull: true
+  },
+  resetPasswordExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   role: {
     type: DataTypes.ENUM('admin', 'moderator', 'editor', 'viewer', 'candidate'),
     defaultValue: 'viewer',

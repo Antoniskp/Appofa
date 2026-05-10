@@ -12,11 +12,11 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-07
+> **Last updated**: 2026-05-10
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
-> Dependency update note: `package.json` now pins direct `axios` to `1.16.0` and no longer includes `overrides.axios`.
+> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` is added for SMTP password reset email delivery.
 
 ---
 
@@ -29,13 +29,13 @@ This instruction is permanent and must never be removed.
 - [Services (11)](#services-11)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (105)](#frontend-pages-105)
+- [Frontend Pages (107)](#frontend-pages-107)
 - [Components (120+)](#components-120)
 - [API Client Modules (28)](#api-client-modules-28)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (87)](#migrations-87)
-- [Tests (52 files)](#tests-52-files)
+- [Migrations (88)](#migrations-88)
+- [Tests (53 files)](#tests-53-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -54,7 +54,7 @@ Appofa/
 │   ├── models/             # Sequelize models (44 models)
 │   ├── routes/             # Express route definitions (28 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
-│   ├── migrations/         # DB migrations (85 files)
+│   ├── migrations/         # DB migrations (86 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
@@ -108,7 +108,7 @@ Appofa/
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
-| User | Users | id, username (nullable), email (nullable), password, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, githubAvatar, googleAvatar, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
+| User | Users | id, username (nullable), email (nullable), password, resetPasswordTokenHash, resetPasswordExpires, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, githubAvatar, googleAvatar, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
 | Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility, organizationId | belongsTo: User, Location, Organization; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
@@ -166,6 +166,8 @@ Appofa/
 | GET | /csrf | — | Get CSRF token |
 | POST | /register | — | Register |
 | POST | /login | — | Login |
+| POST | /forgot-password | — | Request password reset email (generic response, token hashed in DB) |
+| POST | /reset-password | — | Reset password with token |
 | GET | /profile | ✅ | Get profile |
 | PUT | /profile | ✅ | Update profile |
 | PUT | /avatar-source | ✅ | Switch active avatar source (GitHub/Google) |
@@ -433,13 +435,13 @@ Appofa/
 | csrfProtection.js | CSRF token validation |
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
-| rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `passwordResetRequestLimiter`, `passwordResetAttemptLimiter`, `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior |
 
 ---
 
-## Frontend Pages (105)
+## Frontend Pages (107)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -447,7 +449,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/` | Home page |
-| `/login`, `/register` | Authentication |
+| `/login`, `/register`, `/forgot-password`, `/reset-password` | Authentication (includes password reset request + token reset flow) |
 | `/profile` | User profile |
 | `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
@@ -631,7 +633,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (87)
+## Migrations (88)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -745,6 +747,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260503000000-add-population-override-to-locations.js | Add nullable `Locations.population_override` INTEGER for moderator-set population override |
 | — | 20260507210000-create-civic-questions.js | Create CivicQuestions + CivicQuestionVotes tables with fixed vote choices (`agree|disagree|present`) and unique one-vote-per-user-per-question constraint |
 | — | 20260508000000-add-commission-requirement-to-civic-questions.js | Add nullable `CivicQuestions.commissionRequirement` STRING for EU/Commission requirement description |
+| — | 20260510000000-add-password-reset-fields-to-users.js | Add nullable `Users.resetPasswordTokenHash` + `Users.resetPasswordExpires` for secure password reset tokens |
 
 </details>
 
@@ -756,7 +759,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
+api-client, civicQuestions, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

@@ -124,6 +124,27 @@ npm run seed
 > **Analytics setup** — see [doc/GOOGLE_ANALYTICS.md](doc/GOOGLE_ANALYTICS.md) for GA4 configuration.  
 > **SEO configuration** — see [doc/SEO.md](doc/SEO.md) for `SITE_URL`, sitemap, and JSON-LD details.
 
+### Password reset SMTP setup (local/dev/prod)
+
+Password reset email uses Nodemailer + your SMTP provider via environment variables.
+
+```env
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-smtp-username
+SMTP_PASS=your-smtp-password
+SMTP_FROM="Appofa <no-reply@appofasi.gr>"
+PASSWORD_RESET_TOKEN_TTL_MINUTES=60
+FRONTEND_URL=http://localhost:3001
+```
+
+- Use **port 587 + `SMTP_SECURE=false`** for STARTTLS
+- Use **port 465 + `SMTP_SECURE=true`** for implicit TLS
+- `SMTP_FROM` should match your authenticated SMTP domain
+- In production, set `FRONTEND_URL` to your public HTTPS frontend URL so reset links are valid
+- Ensure your server/deployment allows outbound SMTP traffic to your provider
+
 ### Docker
 
 ```bash

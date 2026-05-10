@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const SKIP_REDIRECT_PREFIXES = ['/_next/', '/api/', '/favicon', '/country', '/login', '/register', '/static', '/blocked', '/unknown-country', '/admin'];
+const SKIP_REDIRECT_PREFIXES = ['/_next/', '/api/', '/favicon', '/country', '/login', '/register', '/forgot-password', '/reset-password', '/static', '/blocked', '/unknown-country', '/admin'];
 const ASSET_EXTENSION_REGEX = /\.(ico|png|jpg|svg|js|css|woff2?)$/i;
 const RULES_CACHE_TTL = 60 * 1000;
 

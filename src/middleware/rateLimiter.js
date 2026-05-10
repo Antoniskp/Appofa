@@ -52,6 +52,30 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
+// Password reset request limiter - 5 requests per 15 minutes
+const passwordResetRequestLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  skip: skipForWhitelist,
+  handler: makeRateLimitHandler(
+    'Too many password reset requests from this IP, please try again later.'
+  ),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Password reset attempt limiter - 10 attempts per 15 minutes
+const passwordResetAttemptLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skip: skipForWhitelist,
+  handler: makeRateLimitHandler(
+    'Too many password reset attempts from this IP, please try again later.'
+  ),
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Create operation rate limiter - 20 requests per 15 minutes
 const createLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -121,6 +145,8 @@ const ipBlockMiddleware = async (req, res, next) => {
 module.exports = {
   apiLimiter,
   authLimiter,
+  passwordResetRequestLimiter,
+  passwordResetAttemptLimiter,
   createLimiter,
   uploadLimiter,
   anonVoteLimiter,
@@ -128,4 +154,3 @@ module.exports = {
   makeRateLimitHandler,
   ipBlockMiddleware,
 };
-

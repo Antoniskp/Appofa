@@ -1,4 +1,6 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { User } = require('../models');
 const {
@@ -13,6 +15,11 @@ const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
 const PASSWORD_MIN_LENGTH = 6;
 const NAME_MAX_LENGTH = 100;
+const PASSWORD_RESET_DEFAULT_TTL_MINUTES = 60;
+const PASSWORD_RESET_TOKEN_BYTES = 32;
+const PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE = 'If an account with that email exists, a password reset link has been sent.';
+
+let smtpTransporter = null;
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -37,6 +44,78 @@ function generateToken(user) {
     { expiresIn: '24h' }
   );
 }
+
+const toBoolean = (value, defaultValue = false) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return defaultValue;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') return true;
+  if (normalized === 'false') return false;
+  return defaultValue;
+};
+
+const getPasswordResetTtlMinutes = () => {
+  const raw = Number.parseInt(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || '', 10);
+  return Number.isInteger(raw) && raw > 0 ? raw : PASSWORD_RESET_DEFAULT_TTL_MINUTES;
+};
+
+const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, '');
+
+const getResetTokenHash = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+const getSmtpTransporter = () => {
+  if (smtpTransporter) return smtpTransporter;
+  const host = process.env.SMTP_HOST;
+  const port = Number.parseInt(process.env.SMTP_PORT || '', 10);
+  const secure = toBoolean(process.env.SMTP_SECURE, false);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !Number.isInteger(port) || !user || !pass) {
+    throw new Error('SMTP configuration is incomplete. Please configure SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS.');
+  }
+
+  smtpTransporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  });
+
+  return smtpTransporter;
+};
+
+const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
+  const frontendUrl = getFrontendUrl();
+  const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+  const from = process.env.SMTP_FROM || 'Appofa <no-reply@appofasi.gr>';
+
+  const transporter = getSmtpTransporter();
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject: 'Appofa password reset request',
+    text: [
+      'You requested a password reset for your Appofa account.',
+      '',
+      `Reset your password using this link (valid for ${expiresInMinutes} minutes):`,
+      resetUrl,
+      '',
+      'If you did not request this, you can safely ignore this email.',
+    ].join('\n'),
+    html: `
+      <p>You requested a password reset for your Appofa account.</p>
+      <p><strong>This link expires in ${expiresInMinutes} minutes.</strong></p>
+      <p>
+        Click here to reset your password:<br />
+        <a href="${resetUrl}">${resetUrl}</a>
+      </p>
+      <p>If the button/link does not work, copy and paste this URL in your browser:</p>
+      <p>${resetUrl}</p>
+      <p>If you did not request this, you can safely ignore this email.</p>
+    `,
+  });
+};
 
 async function registerUser({
   username,
@@ -144,11 +223,70 @@ async function setPassword(userId, newPassword) {
   await user.save();
 }
 
+async function requestPasswordReset(email) {
+  const emailResult = normalizeEmail(email);
+  if (emailResult.error) throw new ServiceError(400, emailResult.error);
+
+  const user = await User.findOne({ where: { email: emailResult.value } });
+  if (!user) {
+    return { message: PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE };
+  }
+
+  const expiresInMinutes = getPasswordResetTtlMinutes();
+  const rawToken = crypto.randomBytes(PASSWORD_RESET_TOKEN_BYTES).toString('hex');
+  const tokenHash = getResetTokenHash(rawToken);
+  const resetPasswordExpires = new Date(Date.now() + expiresInMinutes * 60 * 1000);
+
+  user.resetPasswordTokenHash = tokenHash;
+  user.resetPasswordExpires = resetPasswordExpires;
+  await user.save();
+
+  try {
+    await sendPasswordResetEmail(user.email, rawToken, expiresInMinutes);
+  } catch (error) {
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+    throw error;
+  }
+
+  return { message: PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE };
+}
+
+async function resetPasswordWithToken(token, newPassword) {
+  const tokenResult = normalizeRequiredText(token, 'Reset token', 1);
+  if (tokenResult.error) throw new ServiceError(400, tokenResult.error);
+
+  const newPasswordResult = normalizePassword(newPassword, 'New password', PASSWORD_MIN_LENGTH);
+  if (newPasswordResult.error) throw new ServiceError(400, newPasswordResult.error);
+
+  const tokenHash = getResetTokenHash(tokenResult.value);
+  const user = await User.findOne({ where: { resetPasswordTokenHash: tokenHash } });
+
+  if (!user) {
+    throw new ServiceError(400, 'Invalid password reset token.');
+  }
+
+  if (!user.resetPasswordExpires || user.resetPasswordExpires.getTime() <= Date.now()) {
+    user.resetPasswordTokenHash = null;
+    user.resetPasswordExpires = null;
+    await user.save();
+    throw new ServiceError(400, 'Password reset token has expired.');
+  }
+
+  user.password = newPasswordResult.value;
+  user.resetPasswordTokenHash = null;
+  user.resetPasswordExpires = null;
+  await user.save();
+}
+
 module.exports = {
   ServiceError,
   generateToken,
   registerUser,
   loginUser,
   changePassword,
-  setPassword
+  setPassword,
+  requestPasswordReset,
+  resetPasswordWithToken,
 };
