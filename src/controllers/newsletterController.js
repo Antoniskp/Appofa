@@ -28,6 +28,36 @@ const newsletterController = {
     }
   },
 
+  getMyPreference: async (req, res) => {
+    try {
+      const data = await newsletterService.getUserNewsletterPreference(req.user || {});
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter preference read error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching newsletter preference.' });
+    }
+  },
+
+  updateMyPreference: async (req, res) => {
+    try {
+      const data = await newsletterService.updateUserNewsletterPreference(req.user || {}, req.body || {});
+      return res.status(200).json({
+        success: true,
+        message: 'Newsletter preference updated successfully.',
+        data,
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter preference update error:', error);
+      return res.status(500).json({ success: false, message: 'Error updating newsletter preference.' });
+    }
+  },
+
   adminListSubscribers: async (req, res) => {
     try {
       const data = await newsletterService.listSubscribers(req.query || {});

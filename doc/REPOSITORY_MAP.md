@@ -37,7 +37,7 @@ This instruction is permanent and must never be removed.
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (91)](#migrations-91)
-- [Tests (54 files)](#tests-54-files)
+- [Tests (55 files)](#tests-55-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -96,7 +96,7 @@ Appofa/
 ├── hooks/                  # Custom React hooks (6 files)
 ├── config/                 # articleCategories.json, badges.json
 ├── __mocks__/              # Jest manual mocks for node_modules (e.g. next-intl, uuid)
-├── __tests__/              # Jest test suites (46 files)
+├── __tests__/              # Jest test suites (47 files)
 ├── doc/                    # Documentation (30+ files)
 ├── scripts/                # Deployment & setup scripts
 ├── public/                 # Static assets
@@ -202,6 +202,8 @@ Appofa/
 | POST | /subscribe | — | Public newsletter subscribe (duplicate-safe generic response) |
 | GET | /unsubscribe | — | Public unsubscribe via secure tokenized link (`?token=`) |
 | POST | /unsubscribe | — | Public unsubscribe via token payload |
+| GET | /me/preference | ✅ | Get logged-in user newsletter preference derived from subscriber status |
+| PUT | /me/preference | ✅ | Set logged-in user newsletter opt-in/out (creates or updates subscriber by user email) |
 | GET | /admin/subscribers | admin/mod | List subscribers (pagination/filter/search) |
 | GET | /admin/stats | admin/mod | Subscriber totals by status |
 | GET | /admin/subscribers/export | admin | Export subscribers CSV (supports admin filters) |
@@ -373,7 +375,7 @@ Appofa/
 | followRoutes.js | /api/users | POST /:id/follow, DELETE /:id/follow, GET /:id/follow/status, GET /:id/followers, GET /:id/following |
 | endorsementRoutes.js | /api/endorsements | GET /topics, GET /leaderboard, GET /status, POST /, DELETE / |
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
-| newsletterRoutes.js | /api/newsletter | POST /subscribe, GET/POST /unsubscribe, GET /admin/subscribers, GET /admin/stats, GET /admin/subscribers/export, POST /admin/subscribers, POST /admin/subscribers/bulk, POST /admin/subscribers/import-csv, PUT /admin/subscribers/:id, GET/POST /admin/campaigns, GET/PUT /admin/campaigns/:id, POST /admin/campaigns/:id/test-send, POST /admin/campaigns/:id/send, POST /admin/campaigns/:id/schedule, POST /admin/campaigns/process-due, GET /admin/campaigns/:id/logs |
+| newsletterRoutes.js | /api/newsletter | POST /subscribe, GET/POST /unsubscribe, GET/PUT /me/preference, GET /admin/subscribers, GET /admin/stats, GET /admin/subscribers/export, POST /admin/subscribers, POST /admin/subscribers/bulk, POST /admin/subscribers/import-csv, PUT /admin/subscribers/:id, GET/POST /admin/campaigns, GET/PUT /admin/campaigns/:id, POST /admin/campaigns/:id/test-send, POST /admin/campaigns/:id/send, POST /admin/campaigns/:id/schedule, POST /admin/campaigns/process-due, GET /admin/campaigns/:id/logs |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
 | organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions, GET /:id/official-posts, POST /:id/official-posts, GET /:id/verification, PATCH /:id/verify, GET /:id/children, PATCH /:id/parent, GET /:id/analytics |
@@ -412,7 +414,7 @@ Appofa/
 | locationSectionController.js | Location section management |
 | manifestController.js | Manifest CRUD & acceptance |
 | messageController.js | Contact messages |
-| newsletterController.js | Newsletter subscription + admin subscriber management (CSV import/export) + campaign CRUD/schedule/test-send/send/logs |
+| newsletterController.js | Newsletter subscription + authenticated self preference read/update + admin subscriber management (CSV import/export) + campaign CRUD/schedule/test-send/send/logs |
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
@@ -437,7 +439,7 @@ Appofa/
 | imageStorageService.js | Saves processed image buffers to `uploads/profiles/` and `uploads/locations/` using `__dirname`-relative paths |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
-| newsletterService.js | Newsletter subscriber lifecycle + CSV import/export + campaign drafting/templates-ready payloads, stronger audience filtering (status/locale/source/tags/date ranges), scheduling + due processing, test sends, batched delivery, and per-recipient send logging |
+| newsletterService.js | Newsletter subscriber lifecycle + authenticated user preference upsert by user email + CSV import/export + campaign drafting/templates-ready payloads, stronger audience filtering (status/locale/source/tags/date ranges), scheduling + due processing, test sends, batched delivery, and per-recipient send logging |
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
 | pollService.js | Poll operations & calculations (including org-membership access enforcement for org-scoped private polls/results/voting) |
@@ -483,7 +485,7 @@ Appofa/
 | `/` | Home page |
 | `/login`, `/register`, `/forgot-password`, `/reset-password` | Authentication (includes password reset request + token reset flow) |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
-| `/profile` | User profile |
+| `/profile` | User profile (includes newsletter opt-in/opt-out toggle under Preferences) |
 | `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
@@ -572,7 +574,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
-| `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging) |
+| `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging; rendered only for guests) |
 | `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
@@ -582,6 +584,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ### Layout resilience notes (mobile)
 - `components/layout/TopNav.js`: **plain in-flow header (no fixed/sticky or scroll behavior)** — nav now renders as a regular header (`relative z-20`) in normal document flow, with no scroll listeners/state and no hide/show/transform behavior. It scrolls away naturally with page content. Mobile menu (`#mobile-menu`) still keeps `max-h-[calc(100dvh-4rem)] overflow-y-auto` for independent scrolling on short viewports. Mobile auth dropdown keeps `menuClassName="w-full max-h-[55vh] overflow-y-auto"` so all menu items are reachable by scrolling within the panel. `mobileMenuItems` use `isMobileActive()` (not `isActive()`) so active items show `bg-blue-50 text-blue-600` instead of desktop `border-b-2`; mobile auth dropdown trigger has `min-w-0` + `truncate` on the text span and `flex-shrink-0` on the chevron to prevent long usernames from causing overflow; unauthenticated mobile login/register buttons are both full-width `flex w-full` blocks for consistent tap targets.
+- `components/layout/Footer.js`: footer newsletter signup card is now guest-only (`useAuth` + `!loading && !user`) and hidden for authenticated users; logged-in newsletter preference is managed from `/profile`.
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading. The `NAV_CARDS` array defines six participation-focused hero navigation boxes: Dream Team (`/dream-team`), Προτάσεις (`/suggestions`), Ψηφοφορίες (`/polls`), Περιοχές (`/locations`), Αποστολή (`/mission`), Συνεισφορά (`/contribute`).
 - `components/SuggestionCard.js`, `components/InlineSuggestionVote.js`, `app/suggestions/[id]/page.js`: vote rows use `flex-wrap` on the parent footer row so vote controls wrap below metadata on narrow viewports.
 - `app/layout.js` keeps `<main className="flex-grow">` without nav-height compensation because `TopNav` is in normal flow. It also mounts `GoogleAnalytics` and `GeoTracker`; `GeoTracker` posts pathname-based telemetry to `/api/admin/geo-stats/track` via `geoAdminAPI.trackVisit(...)`. Tracking fires unconditionally on every pathname change — no analytics consent required — because it is security/anti-tampering telemetry. Optional analytics (GoogleAnalytics) remains consent-gated.
@@ -614,7 +617,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI`, `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments) |
 | manifest.js | Manifests |
 | messages.js | Messages |
-| newsletter.js | Newsletter public subscribe/unsubscribe + admin subscriber management (CSV import/export) + campaign CRUD/schedule/due-processing/test-send/send/log endpoints |
+| newsletter.js | Newsletter public subscribe/unsubscribe + authenticated `/me/preference` read/update + admin subscriber management (CSV import/export) + campaign CRUD/schedule/due-processing/test-send/send/log endpoints |
 | organizations.js | Organizations CRUD + members |
 | personRemovalRequests.js | Removal requests |
 | persons.js | Person profiles |
@@ -796,10 +799,10 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (54 files)
+## Tests (55 files)
 
 ### Component Tests
-AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
+AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Footer newsletter visibility, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
 api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
