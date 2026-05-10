@@ -17,6 +17,7 @@ const navItems = [
   { href: '/admin/articles', label: 'Articles', icon: DocumentTextIcon },
   { href: '/admin/locations', label: 'Locations', icon: MapPinIcon },
   { href: '/admin/messages', label: 'Messages', icon: EnvelopeIcon },
+  { href: '/admin/newsletter', label: 'Newsletter', icon: EnvelopeIcon },
   { href: '/admin/persons', label: 'Persons', icon: UserGroupIcon },
   { href: '/admin/manifests', label: 'Manifests', icon: DocumentTextIcon },
   { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
