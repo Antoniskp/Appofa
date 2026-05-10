@@ -18,6 +18,7 @@ const NAME_MAX_LENGTH = 100;
 const PASSWORD_RESET_DEFAULT_TTL_MINUTES = 60;
 const PASSWORD_RESET_TOKEN_BYTES = 32;
 const PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE = 'If an account with that email exists, a password reset link has been sent.';
+const PASSWORD_RESET_EMAIL_SUBJECT = 'Appofa password reset request';
 
 let smtpTransporter = null;
 
@@ -62,6 +63,12 @@ const getPasswordResetTtlMinutes = () => {
 const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, '');
 
 const getResetTokenHash = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 
 const getSmtpTransporter = () => {
   if (smtpTransporter) return smtpTransporter;
@@ -71,8 +78,14 @@ const getSmtpTransporter = () => {
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
 
-  if (!host || !Number.isInteger(port) || !user || !pass) {
-    throw new Error('SMTP configuration is incomplete. Please configure SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS.');
+  const missingKeys = [];
+  if (!host) missingKeys.push('SMTP_HOST');
+  if (!Number.isInteger(port)) missingKeys.push('SMTP_PORT');
+  if (!user) missingKeys.push('SMTP_USER');
+  if (!pass) missingKeys.push('SMTP_PASS');
+
+  if (missingKeys.length > 0) {
+    throw new Error(`SMTP configuration is incomplete. Missing/invalid: ${missingKeys.join(', ')}`);
   }
 
   smtpTransporter = nodemailer.createTransport({
@@ -88,13 +101,14 @@ const getSmtpTransporter = () => {
 const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
   const frontendUrl = getFrontendUrl();
   const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
+  const safeResetUrl = escapeHtml(resetUrl);
   const from = process.env.SMTP_FROM || 'Appofa <no-reply@appofasi.gr>';
 
   const transporter = getSmtpTransporter();
   await transporter.sendMail({
     from,
     to: email,
-    subject: 'Appofa password reset request',
+    subject: PASSWORD_RESET_EMAIL_SUBJECT,
     text: [
       'You requested a password reset for your Appofa account.',
       '',
@@ -108,10 +122,10 @@ const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
       <p><strong>This link expires in ${expiresInMinutes} minutes.</strong></p>
       <p>
         Click here to reset your password:<br />
-        <a href="${resetUrl}">${resetUrl}</a>
+        <a href="${safeResetUrl}">${safeResetUrl}</a>
       </p>
       <p>If the button/link does not work, copy and paste this URL in your browser:</p>
-      <p>${resetUrl}</p>
+      <p>${safeResetUrl}</p>
       <p>If you did not request this, you can safely ignore this email.</p>
     `,
   });
@@ -264,14 +278,18 @@ async function resetPasswordWithToken(token, newPassword) {
   const user = await User.findOne({ where: { resetPasswordTokenHash: tokenHash } });
 
   if (!user) {
-    throw new ServiceError(400, 'Invalid password reset token.');
+    const error = new ServiceError(400, 'Invalid password reset token.');
+    error.code = 'RESET_TOKEN_INVALID';
+    throw error;
   }
 
   if (!user.resetPasswordExpires || user.resetPasswordExpires.getTime() <= Date.now()) {
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpires = null;
     await user.save();
-    throw new ServiceError(400, 'Password reset token has expired.');
+    const error = new ServiceError(400, 'Password reset token has expired.');
+    error.code = 'RESET_TOKEN_EXPIRED';
+    throw error;
   }
 
   user.password = newPasswordResult.value;

@@ -12,6 +12,9 @@ function ResetPasswordForm() {
   const t = useTranslations('auth');
   const searchParams = useSearchParams();
   const token = searchParams.get('token') || '';
+  const tokenPattern = /^[a-f0-9]{32,256}$/i;
+  const hasToken = Boolean(token);
+  const hasValidToken = tokenPattern.test(token);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,8 +26,12 @@ function ResetPasswordForm() {
     setSuccessMessage('');
     setErrorMessage('');
 
-    if (!token) {
+    if (!hasToken) {
       setErrorMessage(t('reset_password_missing_token'));
+      return;
+    }
+    if (!hasValidToken) {
+      setErrorMessage(t('reset_password_invalid_token'));
       return;
     }
 
@@ -40,13 +47,12 @@ function ResetPasswordForm() {
       setNewPassword('');
       setConfirmPassword('');
     } catch (error) {
-      const message = String(error?.message || '');
-      if (message.toLowerCase().includes('expired')) {
+      if (error?.code === 'RESET_TOKEN_EXPIRED') {
         setErrorMessage(t('reset_password_expired_token'));
-      } else if (message.toLowerCase().includes('invalid')) {
+      } else if (error?.code === 'RESET_TOKEN_INVALID') {
         setErrorMessage(t('reset_password_invalid_token'));
       } else {
-        setErrorMessage(message || t('reset_password_generic_error'));
+        setErrorMessage(String(error?.message || t('reset_password_generic_error')));
       }
     } finally {
       setLoading(false);
@@ -65,39 +71,49 @@ function ResetPasswordForm() {
           </p>
         </div>
 
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <FormInput
-            name="newPassword"
-            type="password"
-            label={t('new_password')}
-            value={newPassword}
-            onChange={(event) => setNewPassword(event.target.value)}
-            required
-            autoComplete="new-password"
-            placeholder={t('new_password')}
-          />
-          <FormInput
-            name="confirmPassword"
-            type="password"
-            label={t('confirm_password')}
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            required
-            autoComplete="new-password"
-            placeholder={t('confirm_password')}
-          />
+        {!hasToken ? (
+          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
+            {t('reset_password_missing_token')}
+          </p>
+        ) : !hasValidToken ? (
+          <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
+            {t('reset_password_invalid_token')}
+          </p>
+        ) : (
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            <FormInput
+              name="newPassword"
+              type="password"
+              label={t('new_password')}
+              value={newPassword}
+              onChange={(event) => setNewPassword(event.target.value)}
+              required
+              autoComplete="new-password"
+              placeholder={t('new_password')}
+            />
+            <FormInput
+              name="confirmPassword"
+              type="password"
+              label={t('confirm_password')}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              required
+              autoComplete="new-password"
+              placeholder={t('confirm_password')}
+            />
 
-          {successMessage ? (
-            <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">{successMessage}</p>
-          ) : null}
-          {errorMessage ? (
-            <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">{errorMessage}</p>
-          ) : null}
+            {successMessage ? (
+              <p className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-md p-3">{successMessage}</p>
+            ) : null}
+            {errorMessage ? (
+              <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">{errorMessage}</p>
+            ) : null}
 
-          <Button type="submit" loading={loading} size="md" className="w-full">
-            {t('submit_reset_password')}
-          </Button>
-        </form>
+            <Button type="submit" loading={loading} size="md" className="w-full">
+              {t('submit_reset_password')}
+            </Button>
+          </form>
+        )}
 
         <p className="text-center text-sm text-gray-600">
           <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">

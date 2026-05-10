@@ -53,8 +53,15 @@ describe('Password reset flow', () => {
     });
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     nodemailer.__sendMailMock.mockReset();
+    const user = await User.findOne({ where: { email: 'reset@test.com' } });
+    if (user) {
+      user.password = 'password123';
+      user.resetPasswordTokenHash = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+    }
   });
 
   afterAll(async () => {
@@ -122,9 +129,6 @@ describe('Password reset flow', () => {
       .post('/api/auth/login')
       .send({ email: 'reset@test.com', password: 'newPassword123' });
     expect(newLogin.status).toBe(200);
-
-    user.password = 'password123';
-    await user.save();
   });
 
   test('invalid token is rejected', async () => {
@@ -179,10 +183,6 @@ describe('Password reset flow', () => {
       .post('/api/auth/reset-password')
       .send({ token: secondToken, newPassword: 'newPassword123' });
     expect(secondTry.status).toBe(200);
-
-    const user = await User.findOne({ where: { email: 'reset@test.com' } });
-    user.password = 'password123';
-    await user.save();
   });
 
   test('forgot-password requests are rate limited', async () => {
@@ -200,6 +200,28 @@ describe('Password reset flow', () => {
       expect(response.status).toBe(429);
       expect(response.body.success).toBe(false);
       expect(response.body.message).toMatch(/too many password reset requests/i);
+      expect(typeof response.body.retryAfter).toBe('number');
+      expect(typeof response.body.resetTime).toBe('number');
+    } finally {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  });
+
+  test('reset-password attempts are rate limited', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      let response;
+      for (let i = 0; i < 11; i += 1) {
+        response = await request(app)
+          .post('/api/auth/reset-password')
+          .set('X-Forwarded-For', '88.88.88.88')
+          .send({ token: 'invalid-token', newPassword: 'newPassword123' });
+      }
+
+      expect(response.status).toBe(429);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toMatch(/too many password reset attempts/i);
       expect(typeof response.body.retryAfter).toBe('number');
       expect(typeof response.body.resetTime).toBe('number');
     } finally {
