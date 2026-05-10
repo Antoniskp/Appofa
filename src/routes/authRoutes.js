@@ -5,7 +5,13 @@ const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
-const { authLimiter, apiLimiter, uploadLimiter } = require('../middleware/rateLimiter');
+const {
+  authLimiter,
+  apiLimiter,
+  uploadLimiter,
+  passwordResetRequestLimiter,
+  passwordResetAttemptLimiter,
+} = require('../middleware/rateLimiter');
 const { avatarUpload } = require('../middleware/upload');
 
 // CSRF token refresh - allows authenticated users to get a fresh CSRF token
@@ -14,6 +20,8 @@ router.get('/csrf', apiLimiter, authMiddleware, authController.refreshCsrf);
 // Public routes with rate limiting
 router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
+router.post('/forgot-password', passwordResetRequestLimiter, authController.forgotPassword);
+router.post('/reset-password', passwordResetAttemptLimiter, authController.resetPassword);
 
 // OAuth routes
 router.get('/oauth/config', apiLimiter, authController.getOAuthConfig);

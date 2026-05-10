@@ -102,10 +102,48 @@ const authController = {
       });
     } catch (error) {
       if (error.status) {
-        return res.status(error.status).json({ success: false, message: error.message });
+        const safeCode = ['RESET_TOKEN_INVALID', 'RESET_TOKEN_EXPIRED'].includes(error.code)
+          ? error.code
+          : undefined;
+        return res.status(error.status).json({
+          success: false,
+          message: error.message,
+          ...(safeCode ? { code: safeCode } : {}),
+        });
       }
       console.error('Login error:', error);
       res.status(500).json({ success: false, message: 'Error logging in.' });
+    }
+  },
+
+  forgotPassword: async (req, res) => {
+    const genericMessage = 'If an account with that email exists, a password reset link has been sent.';
+    try {
+      await authService.requestPasswordReset(req.body?.email);
+      return res.status(200).json({ success: true, message: genericMessage });
+    } catch (error) {
+      if (error.status === 400) {
+        return res.status(400).json({ success: false, message: error.message });
+      }
+      console.error('Forgot password error:', error);
+      return res.status(200).json({ success: true, message: genericMessage });
+    }
+  },
+
+  resetPassword: async (req, res) => {
+    try {
+      const { token, newPassword } = req.body || {};
+      await authService.resetPasswordWithToken(token, newPassword);
+      return res.status(200).json({
+        success: true,
+        message: 'Password reset successful. Please log in again.',
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Reset password error:', error);
+      return res.status(500).json({ success: false, message: 'Error resetting password.' });
     }
   },
 

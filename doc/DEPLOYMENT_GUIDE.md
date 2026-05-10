@@ -28,6 +28,8 @@ The Appofa News Application uses a split architecture:
 
 Both components must be running for the application to function correctly.
 
+Password reset relies on SMTP credentials configured in the Node API environment (`SMTP_*`) and a correct public `FRONTEND_URL` so email reset links resolve correctly.
+
 ---
 
 ## Prerequisites
@@ -126,15 +128,32 @@ Both components must be running for the application to function correctly.
    DB_HOST=localhost
    DB_PORT=5432
    
-   # API Configuration
-   NEXT_PUBLIC_API_URL=http://localhost:3000
+    # API Configuration
+    NEXT_PUBLIC_API_URL=http://localhost:3000
    
    # JWT Secret (generate with: openssl rand -base64 32)
    JWT_SECRET=your_jwt_secret
    
-   # Environment
-   NODE_ENV=development
-   ```
+    # Environment
+    NODE_ENV=development
+
+    # SMTP / Password Reset
+    SMTP_HOST=smtp.example.com
+    SMTP_PORT=587
+    SMTP_SECURE=false
+    SMTP_USER=your-smtp-username
+    SMTP_PASS=your-smtp-password
+    SMTP_FROM="Appofa <no-reply@appofasi.gr>"
+    PASSWORD_RESET_TOKEN_TTL_MINUTES=60
+    FRONTEND_URL=http://localhost:3001
+    ```
+
+    SMTP provider notes:
+    - Port **587** with `SMTP_SECURE=false` → STARTTLS
+    - Port **465** with `SMTP_SECURE=true` → implicit TLS
+    - Use a sender address that belongs to the authenticated SMTP domain
+    - In production, set `FRONTEND_URL` to the real HTTPS public frontend URL
+    - Ensure the server/network allows outbound SMTP to your chosen provider
 
 6. **Run the application**
    ```bash
