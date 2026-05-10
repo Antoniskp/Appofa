@@ -10,6 +10,7 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { newsletterAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import { NEWSLETTER_TEMPLATES } from '@/lib/constants/newsletterTemplates';
 
 function formatDate(value) {
   if (!value) return '—';
@@ -29,10 +30,12 @@ function formatDate(value) {
 function CampaignStatusBadge({ status }) {
   const classes = status === 'sent'
     ? 'bg-emerald-100 text-emerald-700'
-    : status === 'sending'
-      ? 'bg-blue-100 text-blue-700'
-      : status === 'failed'
-        ? 'bg-red-100 text-red-700'
+      : status === 'sending'
+        ? 'bg-blue-100 text-blue-700'
+        : status === 'scheduled'
+          ? 'bg-violet-100 text-violet-700'
+        : status === 'failed'
+          ? 'bg-red-100 text-red-700'
         : 'bg-amber-100 text-amber-700';
 
   return (
@@ -50,6 +53,7 @@ function AdminNewsletterCampaignDetailContent() {
   const [saving, setSaving] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
   const [sendingCampaign, setSendingCampaign] = useState(false);
+  const [schedulingCampaign, setSchedulingCampaign] = useState(false);
   const [testEmail, setTestEmail] = useState('');
 
   const { data, loading, refetch } = useAsyncData(
@@ -74,7 +78,8 @@ function AdminNewsletterCampaignDetailContent() {
 
   const campaign = data?.campaign;
   const estimatedRecipients = data?.estimatedRecipients || 0;
-  const canEdit = campaign?.status === 'draft';
+  const audienceSummary = data?.audienceSummary || {};
+  const canEdit = campaign?.status === 'draft' || campaign?.status === 'scheduled';
   const logs = logsData?.logs || [];
 
   const formState = useMemo(() => ({
@@ -82,9 +87,15 @@ function AdminNewsletterCampaignDetailContent() {
     previewText: campaign?.previewText || '',
     htmlContent: campaign?.htmlContent || '',
     textContent: campaign?.textContent || '',
+    scheduledAt: campaign?.scheduledAt ? new Date(campaign.scheduledAt).toISOString().slice(0, 16) : '',
+    status: campaign?.audienceFilters?.status || 'subscribed',
     locale: campaign?.audienceFilters?.locale || '',
     source: campaign?.audienceFilters?.source || '',
-    tag: campaign?.audienceFilters?.tag || '',
+    tags: Array.isArray(campaign?.audienceFilters?.tags) ? campaign.audienceFilters.tags.join(', ') : '',
+    subscribedFrom: campaign?.audienceFilters?.subscribedFrom ? new Date(campaign.audienceFilters.subscribedFrom).toISOString().slice(0, 10) : '',
+    subscribedTo: campaign?.audienceFilters?.subscribedTo ? new Date(campaign.audienceFilters.subscribedTo).toISOString().slice(0, 10) : '',
+    createdFrom: campaign?.audienceFilters?.createdFrom ? new Date(campaign.audienceFilters.createdFrom).toISOString().slice(0, 10) : '',
+    createdTo: campaign?.audienceFilters?.createdTo ? new Date(campaign.audienceFilters.createdTo).toISOString().slice(0, 10) : '',
   }), [campaign]);
 
   const [form, setForm] = useState(formState);
@@ -103,10 +114,16 @@ function AdminNewsletterCampaignDetailContent() {
         ...(form.previewText ? { previewText: form.previewText } : {}),
         htmlContent: form.htmlContent,
         ...(form.textContent ? { textContent: form.textContent } : {}),
+        ...(form.scheduledAt ? { scheduledAt: form.scheduledAt } : { scheduledAt: null }),
         audienceFilters: {
+          ...(form.status ? { status: form.status } : {}),
           ...(form.locale ? { locale: form.locale } : {}),
           ...(form.source ? { source: form.source } : {}),
-          ...(form.tag ? { tag: form.tag } : {}),
+          ...(form.tags ? { tags: form.tags.split(',').map((item) => item.trim()).filter(Boolean) } : {}),
+          ...(form.subscribedFrom ? { subscribedFrom: form.subscribedFrom } : {}),
+          ...(form.subscribedTo ? { subscribedTo: form.subscribedTo } : {}),
+          ...(form.createdFrom ? { createdFrom: form.createdFrom } : {}),
+          ...(form.createdTo ? { createdTo: form.createdTo } : {}),
         },
       });
       addToast('Campaign updated.', { type: 'success' });
@@ -145,6 +162,32 @@ function AdminNewsletterCampaignDetailContent() {
     }
   };
 
+  const handleSchedule = async () => {
+    if (!form.scheduledAt || schedulingCampaign) return;
+    setSchedulingCampaign(true);
+    try {
+      await newsletterAPI.adminScheduleCampaign(campaignId, { scheduledAt: form.scheduledAt });
+      addToast('Campaign scheduled.', { type: 'success' });
+      await refetch();
+    } catch (error) {
+      addToast(error.message || 'Failed to schedule campaign.', { type: 'error' });
+    } finally {
+      setSchedulingCampaign(false);
+    }
+  };
+
+  const applyTemplate = (templateKey) => {
+    const template = NEWSLETTER_TEMPLATES.find((item) => item.key === templateKey);
+    if (!template) return;
+    setForm((prev) => ({
+      ...prev,
+      subject: template.subject,
+      previewText: template.previewText,
+      htmlContent: template.htmlContent,
+      textContent: template.textContent,
+    }));
+  };
+
   return (
     <AdminLayout>
       <div className="bg-gray-50 min-h-screen py-8">
@@ -166,6 +209,21 @@ function AdminNewsletterCampaignDetailContent() {
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div className="xl:col-span-2 space-y-6">
                 <form onSubmit={handleSave} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Template</label>
+                    <select
+                      disabled={!canEdit}
+                      onChange={(event) => applyTemplate(event.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      defaultValue=""
+                    >
+                      <option value="">Apply template</option>
+                      {NEWSLETTER_TEMPLATES.map((template) => (
+                        <option key={template.key} value={template.key}>{template.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                     <input
@@ -208,9 +266,31 @@ function AdminNewsletterCampaignDetailContent() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled at</label>
+                    <input
+                      type="datetime-local"
+                      value={form.scheduledAt}
+                      disabled={!canEdit}
+                      onChange={(event) => setForm((prev) => ({ ...prev, scheduledAt: event.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                    />
+                  </div>
+
                   <div className="rounded-lg border border-gray-200 p-4">
                     <h2 className="text-sm font-semibold text-gray-900 mb-3">Audience filters</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                      <select
+                        value={form.status}
+                        disabled={!canEdit}
+                        onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      >
+                        <option value="subscribed">subscribed</option>
+                        <option value="pending">pending</option>
+                        <option value="unsubscribed">unsubscribed</option>
+                      </select>
+
                       <select
                         value={form.locale}
                         disabled={!canEdit}
@@ -236,10 +316,38 @@ function AdminNewsletterCampaignDetailContent() {
 
                       <input
                         type="text"
-                        value={form.tag}
+                        value={form.tags}
                         disabled={!canEdit}
-                        onChange={(event) => setForm((prev) => ({ ...prev, tag: event.target.value }))}
-                        placeholder="Tag"
+                        onChange={(event) => setForm((prev) => ({ ...prev, tags: event.target.value }))}
+                        placeholder="Tags (comma separated)"
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      />
+                      <input
+                        type="date"
+                        value={form.subscribedFrom}
+                        disabled={!canEdit}
+                        onChange={(event) => setForm((prev) => ({ ...prev, subscribedFrom: event.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      />
+                      <input
+                        type="date"
+                        value={form.subscribedTo}
+                        disabled={!canEdit}
+                        onChange={(event) => setForm((prev) => ({ ...prev, subscribedTo: event.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      />
+                      <input
+                        type="date"
+                        value={form.createdFrom}
+                        disabled={!canEdit}
+                        onChange={(event) => setForm((prev) => ({ ...prev, createdFrom: event.target.value }))}
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
+                      />
+                      <input
+                        type="date"
+                        value={form.createdTo}
+                        disabled={!canEdit}
+                        onChange={(event) => setForm((prev) => ({ ...prev, createdTo: event.target.value }))}
                         className="border border-gray-300 rounded-lg px-3 py-2 text-sm disabled:bg-gray-100"
                       />
                     </div>
@@ -296,10 +404,16 @@ function AdminNewsletterCampaignDetailContent() {
                   <h2 className="text-sm font-semibold text-gray-900 mb-3">Delivery summary</h2>
                   <dl className="space-y-2 text-sm">
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Estimated recipients</dt><dd className="font-medium text-gray-900">{estimatedRecipients}</dd></div>
+                    <div className="flex items-center justify-between"><dt className="text-gray-500">Audience subscribed</dt><dd className="font-medium text-gray-900">{audienceSummary.subscribed || 0}</dd></div>
+                    <div className="flex items-center justify-between"><dt className="text-gray-500">Audience pending</dt><dd className="font-medium text-gray-900">{audienceSummary.pending || 0}</dd></div>
+                    <div className="flex items-center justify-between"><dt className="text-gray-500">Audience unsubscribed</dt><dd className="font-medium text-gray-900">{audienceSummary.unsubscribed || 0}</dd></div>
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Total recipients</dt><dd className="font-medium text-gray-900">{campaign.totalRecipients || 0}</dd></div>
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Sent</dt><dd className="font-medium text-emerald-700">{campaign.successCount || 0}</dd></div>
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Failed</dt><dd className="font-medium text-red-700">{campaign.failureCount || 0}</dd></div>
                     <div className="flex items-center justify-between"><dt className="text-gray-500">Sent at</dt><dd className="font-medium text-gray-900">{formatDate(campaign.sentAt)}</dd></div>
+                    <div className="flex items-center justify-between"><dt className="text-gray-500">Scheduled at</dt><dd className="font-medium text-gray-900">{formatDate(campaign.scheduledAt)}</dd></div>
+                    <div className="flex items-center justify-between"><dt className="text-gray-500">Created</dt><dd className="font-medium text-gray-900">{formatDate(campaign.createdAt)}</dd></div>
+                    <div className="flex items-center justify-between"><dt className="text-gray-500">Updated</dt><dd className="font-medium text-gray-900">{formatDate(campaign.updatedAt)}</dd></div>
                   </dl>
                 </div>
 
@@ -322,7 +436,20 @@ function AdminNewsletterCampaignDetailContent() {
                   </button>
                 </div>
 
-                {(campaign.status === 'draft' || campaign.status === 'failed') && (
+                {canEdit && (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <button
+                      type="button"
+                      onClick={handleSchedule}
+                      disabled={schedulingCampaign || !form.scheduledAt}
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
+                    >
+                      {schedulingCampaign ? 'Scheduling…' : 'Schedule campaign'}
+                    </button>
+                  </div>
+                )}
+
+                {(campaign.status === 'draft' || campaign.status === 'failed' || campaign.status === 'scheduled') && (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
                     <button
                       type="button"

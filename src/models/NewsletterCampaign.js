@@ -24,7 +24,7 @@ const NewsletterCampaign = sequelize.define('NewsletterCampaign', {
     allowNull: true,
   },
   status: {
-    type: DataTypes.ENUM('draft', 'sending', 'sent', 'failed'),
+    type: DataTypes.ENUM('draft', 'scheduled', 'sending', 'sent', 'failed'),
     allowNull: false,
     defaultValue: 'draft',
   },
@@ -62,6 +62,10 @@ const NewsletterCampaign = sequelize.define('NewsletterCampaign', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  scheduledAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  },
   totalRecipients: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -84,6 +88,7 @@ const NewsletterCampaign = sequelize.define('NewsletterCampaign', {
     { fields: ['status'] },
     { fields: ['createdByAdminId'] },
     { fields: ['sentAt'] },
+    { fields: ['scheduledAt'] },
   ],
 });
 

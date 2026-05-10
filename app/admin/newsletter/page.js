@@ -38,6 +38,10 @@ function AdminNewsletterContent() {
   const [searchInput, setSearchInput] = useState('');
   const [status, setStatus] = useState('');
   const [source, setSource] = useState('');
+  const [locale, setLocale] = useState('');
+  const [tag, setTag] = useState('');
+  const [createdFrom, setCreatedFrom] = useState('');
+  const [createdTo, setCreatedTo] = useState('');
   const [page, setPage] = useState(1);
 
   const [addForm, setAddForm] = useState({
@@ -50,6 +54,12 @@ function AdminNewsletterContent() {
   });
   const [bulkText, setBulkText] = useState('');
   const [bulkStatus, setBulkStatus] = useState('subscribed');
+  const [csvText, setCsvText] = useState('');
+  const [csvDefaultSource, setCsvDefaultSource] = useState('import');
+  const [csvDefaultStatus, setCsvDefaultStatus] = useState('subscribed');
+  const [csvFileName, setCsvFileName] = useState('');
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
 
   const queryParams = useMemo(() => ({
@@ -58,7 +68,11 @@ function AdminNewsletterContent() {
     ...(search ? { search } : {}),
     ...(status ? { status } : {}),
     ...(source ? { source } : {}),
-  }), [page, search, status, source]);
+    ...(locale ? { locale } : {}),
+    ...(tag ? { tag } : {}),
+    ...(createdFrom ? { createdFrom } : {}),
+    ...(createdTo ? { createdTo } : {}),
+  }), [page, search, status, source, locale, tag, createdFrom, createdTo]);
 
   const { data: statsData, loading: statsLoading, refetch: refetchStats } = useAsyncData(
     async () => {
@@ -129,6 +143,64 @@ function AdminNewsletterContent() {
       await refreshAll();
     } catch (error) {
       addToast(error.message || 'Bulk import failed.', { type: 'error' });
+    }
+  };
+
+  const handleCsvFileSelected = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setCsvText(text);
+      setCsvFileName(file.name);
+    } catch {
+      addToast('Failed to read CSV file.', { type: 'error' });
+    }
+  };
+
+  const handleCsvImport = async (event) => {
+    event.preventDefault();
+    if (!canWrite || importingCsv || !csvText.trim()) return;
+    setImportingCsv(true);
+    try {
+      const response = await newsletterAPI.adminImportSubscribersCsv({
+        csvText,
+        defaultSource: csvDefaultSource,
+        defaultStatus: csvDefaultStatus,
+      });
+      const summary = response?.data || {};
+      addToast(
+        `CSV import completed. Created: ${summary.created || 0}, Updated: ${summary.updated || 0}, Skipped: ${summary.skipped || 0}, Invalid: ${(summary.invalid || []).length}`,
+        { type: 'success' }
+      );
+      await refreshAll();
+    } catch (error) {
+      addToast(error.message || 'CSV import failed.', { type: 'error' });
+    } finally {
+      setImportingCsv(false);
+    }
+  };
+
+  const handleCsvExport = async () => {
+    if (!canWrite || exportingCsv) return;
+    setExportingCsv(true);
+    try {
+      const csv = await newsletterAPI.adminExportSubscribersCsv(queryParams);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      link.setAttribute('download', `newsletter-subscribers-${stamp}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      addToast('CSV export generated.', { type: 'success' });
+    } catch (error) {
+      addToast(error.message || 'CSV export failed.', { type: 'error' });
+    } finally {
+      setExportingCsv(false);
     }
   };
 
@@ -214,14 +286,64 @@ function AdminNewsletterContent() {
                   <option value="import">Import</option>
                 </select>
               </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1" htmlFor="newsletter-locale-filter">Locale</label>
+                <input
+                  id="newsletter-locale-filter"
+                  value={locale}
+                  onChange={(event) => { setLocale(event.target.value); setPage(1); }}
+                  placeholder="el / en"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1" htmlFor="newsletter-tag-filter">Tag</label>
+                <input
+                  id="newsletter-tag-filter"
+                  value={tag}
+                  onChange={(event) => { setTag(event.target.value); setPage(1); }}
+                  placeholder="e.g. news"
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1" htmlFor="newsletter-created-from">Created from</label>
+                <input
+                  id="newsletter-created-from"
+                  type="date"
+                  value={createdFrom}
+                  onChange={(event) => { setCreatedFrom(event.target.value); setPage(1); }}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1" htmlFor="newsletter-created-to">Created to</label>
+                <input
+                  id="newsletter-created-to"
+                  type="date"
+                  value={createdTo}
+                  onChange={(event) => { setCreatedTo(event.target.value); setPage(1); }}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
               <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
                 Search
               </button>
+              {canWrite && (
+                <button
+                  type="button"
+                  onClick={handleCsvExport}
+                  disabled={exportingCsv}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100 disabled:opacity-60"
+                >
+                  {exportingCsv ? 'Exporting…' : 'Export CSV'}
+                </button>
+              )}
             </form>
           </div>
 
           {canWrite && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Add subscriber</h2>
                 <form onSubmit={handleAddSubscriber} className="space-y-3">
@@ -298,6 +420,53 @@ function AdminNewsletterContent() {
                   </select>
                   <button type="submit" className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
                     Import emails
+                  </button>
+                </form>
+              </div>
+
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                <h2 className="text-lg font-semibold text-gray-900 mb-1">CSV import</h2>
+                <p className="text-xs text-gray-500 mb-3">Supported columns: email, name, locale, tags, source, notes, status</p>
+                <form onSubmit={handleCsvImport} className="space-y-3">
+                  <input
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={handleCsvFileSelected}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                  {csvFileName ? <p className="text-xs text-gray-500">Loaded: {csvFileName}</p> : null}
+                  <textarea
+                    value={csvText}
+                    onChange={(event) => setCsvText(event.target.value)}
+                    placeholder="Paste CSV content here if you prefer manual paste."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm min-h-[140px] font-mono"
+                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <select
+                      value={csvDefaultSource}
+                      onChange={(event) => setCsvDefaultSource(event.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="import">default source: import</option>
+                      <option value="admin_manual">default source: admin_manual</option>
+                      <option value="website">default source: website</option>
+                    </select>
+                    <select
+                      value={csvDefaultStatus}
+                      onChange={(event) => setCsvDefaultStatus(event.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="subscribed">default status: subscribed</option>
+                      <option value="pending">default status: pending</option>
+                      <option value="unsubscribed">default status: unsubscribed</option>
+                    </select>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={importingCsv || !csvText.trim()}
+                    className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60"
+                  >
+                    {importingCsv ? 'Importing…' : 'Import CSV'}
                   </button>
                 </form>
               </div>

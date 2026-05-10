@@ -85,6 +85,39 @@ const newsletterController = {
     }
   },
 
+  adminImportSubscribersCsv: async (req, res) => {
+    try {
+      const summary = await newsletterService.importSubscribersCsvByAdmin(req.body || {}, req.user.id);
+      return res.status(200).json({
+        success: true,
+        message: 'CSV import completed.',
+        data: summary,
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter CSV import error:', error);
+      return res.status(500).json({ success: false, message: 'Error importing subscribers CSV.' });
+    }
+  },
+
+  adminExportSubscribersCsv: async (req, res) => {
+    try {
+      const { csv } = await newsletterService.exportSubscribersCsv(req.query || {});
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="newsletter-subscribers-${timestamp}.csv"`);
+      return res.status(200).send(csv);
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter CSV export error:', error);
+      return res.status(500).json({ success: false, message: 'Error exporting subscribers CSV.' });
+    }
+  },
+
   adminUpdateSubscriber: async (req, res) => {
     try {
       const subscriber = await newsletterService.updateSubscriberByAdmin(req.params.id, req.body || {});
@@ -193,6 +226,40 @@ const newsletterController = {
       }
       console.error('Newsletter campaign send error:', error);
       return res.status(500).json({ success: false, message: 'Error sending campaign.' });
+    }
+  },
+
+  adminScheduleCampaign: async (req, res) => {
+    try {
+      const campaign = await newsletterService.scheduleCampaign(req.params.id, req.body || {});
+      return res.status(200).json({
+        success: true,
+        message: 'Campaign scheduled successfully.',
+        data: { campaign },
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign schedule error:', error);
+      return res.status(500).json({ success: false, message: 'Error scheduling campaign.' });
+    }
+  },
+
+  adminProcessDueCampaigns: async (_req, res) => {
+    try {
+      const summary = await newsletterService.processDueScheduledCampaigns();
+      return res.status(200).json({
+        success: true,
+        message: 'Due campaign processing completed.',
+        data: summary,
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter due campaign processing error:', error);
+      return res.status(500).json({ success: false, message: 'Error processing due campaigns.' });
     }
   },
 

@@ -14,10 +14,12 @@ router.post('/unsubscribe', createLimiter, newsletterController.unsubscribe);
 // Admin / moderator read routes
 router.get('/admin/subscribers', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), newsletterController.adminListSubscribers);
 router.get('/admin/stats', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), newsletterController.adminStats);
+router.get('/admin/subscribers/export', apiLimiter, authMiddleware, checkRole('admin'), newsletterController.adminExportSubscribersCsv);
 
 // Admin write routes
 router.post('/admin/subscribers', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminAddSubscriber);
 router.post('/admin/subscribers/bulk', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminBulkAddSubscribers);
+router.post('/admin/subscribers/import-csv', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminImportSubscribersCsv);
 router.put('/admin/subscribers/:id', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminUpdateSubscriber);
 
 // Campaign routes (admin-only)
@@ -27,6 +29,8 @@ router.get('/admin/campaigns/:id', apiLimiter, authMiddleware, checkRole('admin'
 router.put('/admin/campaigns/:id', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminUpdateCampaign);
 router.post('/admin/campaigns/:id/test-send', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminSendCampaignTest);
 router.post('/admin/campaigns/:id/send', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminSendCampaignNow);
+router.post('/admin/campaigns/:id/schedule', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminScheduleCampaign);
+router.post('/admin/campaigns/process-due', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminProcessDueCampaigns);
 router.get('/admin/campaigns/:id/logs', apiLimiter, authMiddleware, checkRole('admin'), newsletterController.adminCampaignLogs);
 
 module.exports = router;
