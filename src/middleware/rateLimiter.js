@@ -52,9 +52,11 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true, // Don't count successful requests
 });
 
-// Password reset request limiter - 5 requests per 15 minutes
+// Password reset request limiter - 5 requests per hour per IP.
+// Uses a longer 1-hour window (vs the stricter auth limiter) so legitimate users
+// who check their spam folder and retry don't get locked out within 15 minutes.
 const passwordResetRequestLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
+  windowMs: 60 * 60 * 1000,
   max: 5,
   skip: skipForWhitelist,
   handler: makeRateLimitHandler(

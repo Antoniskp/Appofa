@@ -124,6 +124,7 @@
     "submit_forgot_password": "Send reset link",
     "forgot_password_success_generic": "If an account with that email exists, a password reset link has been sent.",
     "forgot_password_generic_error": "Could not process your request right now. Please try again.",
+    "forgot_password_rate_limit_error": "Too many reset requests. Please wait an hour before trying again.",
     "back_to_login": "Back to sign in",
     "reset_password_title": "Set a new password",
     "reset_password_subtitle": "Choose a new password for your account.",
