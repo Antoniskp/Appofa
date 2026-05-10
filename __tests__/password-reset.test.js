@@ -185,7 +185,7 @@ describe('Password reset flow', () => {
     expect(secondTry.status).toBe(200);
   });
 
-  test('forgot-password requests are rate limited', async () => {
+  test('forgot-password requests are rate limited (5 per hour)', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     try {

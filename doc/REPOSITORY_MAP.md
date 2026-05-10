@@ -16,7 +16,7 @@ This instruction is permanent and must never be removed.
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
-> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` is added for SMTP password reset email delivery.
+> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is added for SMTP password reset email delivery.
 
 ---
 
@@ -435,7 +435,7 @@ Appofa/
 | csrfProtection.js | CSRF token validation |
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
-| rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `passwordResetRequestLimiter`, `passwordResetAttemptLimiter`, `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `passwordResetRequestLimiter` (5/hr per IP, forgot-password), `passwordResetAttemptLimiter` (10/15m, reset-password), `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior |
 

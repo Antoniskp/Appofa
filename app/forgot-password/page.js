@@ -24,7 +24,11 @@ export default function ForgotPasswordPage() {
       const response = await authAPI.forgotPassword(email);
       setMessage(response?.message || t('forgot_password_success_generic'));
     } catch (error) {
-      setErrorMessage(error.message || t('forgot_password_generic_error'));
+      if (error.status === 429) {
+        setErrorMessage(t('forgot_password_rate_limit_error'));
+      } else {
+        setErrorMessage(error.message || t('forgot_password_generic_error'));
+      }
     } finally {
       setLoading(false);
     }
