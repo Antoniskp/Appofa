@@ -223,6 +223,72 @@ describe('Newsletter API', () => {
     expect(bulkResponse.body.data.invalid).toHaveLength(1);
   });
 
+  test('admin can import subscribers from CSV with duplicate-safe summary', async () => {
+    await NewsletterSubscriber.create({
+      email: 'existing@test.com',
+      status: 'unsubscribed',
+      source: 'website',
+      unsubscribedAt: new Date(),
+    });
+
+    const csvCsrf = csrfHeadersFor('newsletter-admin-csv-import-csrf', adminUserId);
+    const response = await request(app)
+      .post('/api/newsletter/admin/subscribers/import-csv')
+      .set('Cookie', [`auth_token=${adminToken}`, ...csvCsrf.Cookie])
+      .set('x-csrf-token', csvCsrf['x-csrf-token'])
+      .send({
+        defaultSource: 'import',
+        defaultStatus: 'subscribed',
+        csvText: [
+          'email,name,locale,tags,notes',
+          'existing@test.com,Existing User,en,"news|events","Consent updated"',
+          'new-user@test.com,New User,el,"promo,ads","Booth signup"',
+          ',Missing Email,en,news,No email row',
+          'bad-email,Invalid,en,news,Invalid row',
+        ].join('\n'),
+      });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.data.created).toBe(1);
+    expect(response.body.data.updated).toBe(1);
+    expect(response.body.data.skipped).toBe(1);
+    expect(response.body.data.invalid).toHaveLength(1);
+
+    const existing = await NewsletterSubscriber.findOne({ where: { email: 'existing@test.com' } });
+    expect(existing.status).toBe('subscribed');
+    expect(existing.source).toBe('import');
+    expect(existing.locale).toBe('en');
+
+    const created = await NewsletterSubscriber.findOne({ where: { email: 'new-user@test.com' } });
+    expect(created).toBeTruthy();
+    expect(created.source).toBe('import');
+    expect(created.tags).toEqual(['promo', 'ads']);
+  });
+
+  test('admin can export subscribers to CSV', async () => {
+    await NewsletterSubscriber.create({
+      email: 'csv-export@test.com',
+      name: 'Csv Export',
+      status: 'subscribed',
+      source: 'import',
+      locale: 'en',
+      tags: ['news', 'promo'],
+      notes: 'Contains,comma and "quotes"',
+      subscribedAt: new Date(),
+    });
+
+    const response = await request(app)
+      .get('/api/newsletter/admin/subscribers/export?status=subscribed')
+      .set('Cookie', [`auth_token=${adminToken}`]);
+
+    expect(response.status).toBe(200);
+    expect(response.headers['content-type']).toContain('text/csv');
+    expect(response.text).toContain('email,name,status,source,locale,tags,subscribedAt,unsubscribedAt,notes,createdAt,updatedAt');
+    expect(response.text).toContain('csv-export@test.com');
+    expect(response.text).toContain('"Contains,comma and ""quotes"""');
+  });
+
   test('admin can create campaign draft and list/get it', async () => {
     const createCsrf = csrfHeadersFor('newsletter-campaign-create-csrf', adminUserId);
     const createResponse = await request(app)
@@ -256,6 +322,32 @@ describe('Newsletter API', () => {
     expect(getResponse.body.success).toBe(true);
     expect(getResponse.body.data.campaign.subject).toBe('Weekly update');
     expect(getResponse.body.data.estimatedRecipients).toBe(0);
+  });
+
+  test('campaign audience segmentation persists stronger filters', async () => {
+    const createCsrf = csrfHeadersFor('newsletter-campaign-segmentation-csrf', adminUserId);
+    const createResponse = await request(app)
+      .post('/api/newsletter/admin/campaigns')
+      .set('Cookie', [`auth_token=${adminToken}`, ...createCsrf.Cookie])
+      .set('x-csrf-token', createCsrf['x-csrf-token'])
+      .send({
+        subject: 'Segmented campaign',
+        htmlContent: '<p>Segmented body</p>',
+        audienceFilters: {
+          status: 'subscribed',
+          locale: 'en',
+          source: 'website',
+          tags: ['news', 'promo'],
+          createdFrom: '2026-01-01',
+          subscribedTo: '2026-12-31',
+        },
+      });
+
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.body.data.campaign.audienceFilters.status).toBe('subscribed');
+    expect(createResponse.body.data.campaign.audienceFilters.tags).toEqual(['news', 'promo']);
+    expect(createResponse.body.data.campaign.audienceFilters.createdFrom).toContain('2026-01-01');
+    expect(createResponse.body.data.campaign.audienceFilters.subscribedTo).toContain('2026-12-31');
   });
 
   test('send test email does not create campaign send logs', async () => {
@@ -381,5 +473,45 @@ describe('Newsletter API', () => {
     expect(logs[1].email).toBe('eligible-en@test.com');
     expect(logs[1].status).toBe('sent');
     expect(logs[1].providerMessageId).toBe('msg-eligible-en@test.com');
+  });
+
+  test('scheduled campaigns can be processed when due', async () => {
+    await NewsletterSubscriber.create({
+      email: 'scheduled-target@test.com',
+      status: 'subscribed',
+      source: 'website',
+      locale: 'en',
+      subscribedAt: new Date(),
+    });
+
+    const createCsrf = csrfHeadersFor('newsletter-campaign-scheduled-create-csrf', adminUserId);
+    const createResponse = await request(app)
+      .post('/api/newsletter/admin/campaigns')
+      .set('Cookie', [`auth_token=${adminToken}`, ...createCsrf.Cookie])
+      .set('x-csrf-token', createCsrf['x-csrf-token'])
+      .send({
+        subject: 'Scheduled campaign',
+        htmlContent: '<p>Scheduled body</p>',
+        scheduledAt: '2025-01-01T00:00:00.000Z',
+        audienceFilters: { locale: 'en', source: 'website' },
+      });
+
+    expect(createResponse.status).toBe(201);
+    const campaignId = createResponse.body.data.campaign.id;
+    expect(createResponse.body.data.campaign.status).toBe('scheduled');
+
+    const processCsrf = csrfHeadersFor('newsletter-campaign-scheduled-process-csrf', adminUserId);
+    const processResponse = await request(app)
+      .post('/api/newsletter/admin/campaigns/process-due')
+      .set('Cookie', [`auth_token=${adminToken}`, ...processCsrf.Cookie])
+      .set('x-csrf-token', processCsrf['x-csrf-token'])
+      .send({});
+
+    expect(processResponse.status).toBe(200);
+    expect(processResponse.body.data.processed).toBeGreaterThanOrEqual(1);
+
+    const campaign = await NewsletterCampaign.findByPk(campaignId);
+    expect(['sent', 'failed']).toContain(campaign.status);
+    expect(campaign.scheduledAt).toBeNull();
   });
 });

@@ -29,20 +29,24 @@ function formatDate(value) {
 }
 
 function audienceLabel(filters = {}) {
-  const parts = ['Subscribed'];
+  const parts = [filters.status ? `status: ${filters.status}` : 'status: subscribed'];
   if (filters.locale) parts.push(`locale: ${filters.locale}`);
   if (filters.source) parts.push(`source: ${filters.source}`);
-  if (filters.tag) parts.push(`tag: ${filters.tag}`);
+  if (Array.isArray(filters.tags) && filters.tags.length > 0) parts.push(`tags: ${filters.tags.join(', ')}`);
+  if (filters.subscribedFrom) parts.push(`subscribed from: ${new Date(filters.subscribedFrom).toLocaleDateString('el-GR')}`);
+  if (filters.subscribedTo) parts.push(`subscribed to: ${new Date(filters.subscribedTo).toLocaleDateString('el-GR')}`);
   return parts.join(' · ');
 }
 
 function CampaignStatusBadge({ status }) {
   const classes = status === 'sent'
     ? 'bg-emerald-100 text-emerald-700'
-    : status === 'sending'
-      ? 'bg-blue-100 text-blue-700'
-      : status === 'failed'
-        ? 'bg-red-100 text-red-700'
+      : status === 'sending'
+        ? 'bg-blue-100 text-blue-700'
+        : status === 'scheduled'
+          ? 'bg-violet-100 text-violet-700'
+        : status === 'failed'
+          ? 'bg-red-100 text-red-700'
         : 'bg-amber-100 text-amber-700';
 
   return (
@@ -78,13 +82,24 @@ function AdminNewsletterCampaignsContent() {
   const pagination = data?.pagination || { total: 0, page: 1, limit: PAGE_SIZE, totalPages: 1 };
 
   const handleSendNow = async (campaign) => {
-    if (campaign.status !== 'draft' && campaign.status !== 'failed') return;
+    if (!['draft', 'failed', 'scheduled'].includes(campaign.status)) return;
     try {
       await newsletterAPI.adminSendCampaignNow(campaign.id);
       addToast('Campaign sent successfully.', { type: 'success' });
       await refetch();
     } catch (error) {
       addToast(error.message || 'Failed to send campaign.', { type: 'error' });
+    }
+  };
+
+  const handleProcessDue = async () => {
+    try {
+      const response = await newsletterAPI.adminProcessDueCampaigns();
+      const data = response?.data || {};
+      addToast(`Processed due campaigns. Sent: ${data.processed || 0}, Failed: ${data.failed || 0}`, { type: 'success' });
+      await refetch();
+    } catch (error) {
+      addToast(error.message || 'Failed to process due campaigns.', { type: 'error' });
     }
   };
 
@@ -104,10 +119,11 @@ function AdminNewsletterCampaignsContent() {
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
               >
                 <option value="">All</option>
-                <option value="draft">Draft</option>
-                <option value="sending">Sending</option>
-                <option value="sent">Sent</option>
-                <option value="failed">Failed</option>
+                  <option value="draft">Draft</option>
+                  <option value="scheduled">Scheduled</option>
+                  <option value="sending">Sending</option>
+                  <option value="sent">Sent</option>
+                  <option value="failed">Failed</option>
               </select>
             </div>
 
@@ -124,6 +140,13 @@ function AdminNewsletterCampaignsContent() {
               >
                 New campaign
               </Link>
+              <button
+                type="button"
+                onClick={handleProcessDue}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium hover:bg-gray-100"
+              >
+                Process due
+              </button>
             </div>
           </div>
 
@@ -144,6 +167,7 @@ function AdminNewsletterCampaignsContent() {
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Audience</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Results</th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Sent at</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">Scheduled at</th>
                       <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</th>
                     </tr>
                   </thead>
@@ -162,6 +186,7 @@ function AdminNewsletterCampaignsContent() {
                           <div>Failed: {campaign.failureCount || 0}</div>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700">{formatDate(campaign.sentAt)}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{formatDate(campaign.scheduledAt)}</td>
                         <td className="px-4 py-3 text-right">
                           <div className="inline-flex gap-2">
                             <Link
@@ -170,7 +195,7 @@ function AdminNewsletterCampaignsContent() {
                             >
                               Open
                             </Link>
-                            {(campaign.status === 'draft' || campaign.status === 'failed') && (
+                            {['draft', 'failed', 'scheduled'].includes(campaign.status) && (
                               <button
                                 type="button"
                                 onClick={() => handleSendNow(campaign)}

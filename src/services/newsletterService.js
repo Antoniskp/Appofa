@@ -17,7 +17,7 @@ const {
 
 const SUBSCRIBER_STATUSES = ['pending', 'subscribed', 'unsubscribed'];
 const SUBSCRIBER_SOURCES = ['website', 'admin_manual', 'import'];
-const CAMPAIGN_STATUSES = ['draft', 'sending', 'sent', 'failed'];
+const CAMPAIGN_STATUSES = ['draft', 'scheduled', 'sending', 'sent', 'failed'];
 const SEND_LOG_STATUSES = ['queued', 'sent', 'failed'];
 const NEWSLETTER_GENERIC_SUBSCRIBE_MESSAGE = 'If this email can receive newsletter updates, it has been added or updated.';
 const NEWSLETTER_GENERIC_UNSUBSCRIBE_MESSAGE = 'If this unsubscribe link is valid, the email has been unsubscribed.';
@@ -50,6 +50,20 @@ const normalizeTags = (value) => {
     return normalizeStringArray(parsed, 'Tags');
   }
   return normalizeStringArray(value, 'Tags');
+};
+
+const normalizeDateInput = (value, fieldLabel) => {
+  if (value === undefined) return { value: undefined };
+  if (value === null || value === '') return { value: null };
+  if (value instanceof Date && !Number.isNaN(value.getTime())) return { value };
+  if (typeof value !== 'string') {
+    return { error: `${fieldLabel} must be a valid date string.` };
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return { error: `${fieldLabel} must be a valid date.` };
+  }
+  return { value: parsed };
 };
 
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
@@ -135,6 +149,10 @@ const normalizeAudienceFilters = (value) => {
 
   const normalized = {};
 
+  const statusResult = normalizeEnum(value.status, SUBSCRIBER_STATUSES, 'Audience status');
+  if (statusResult.error) return statusResult;
+  if (statusResult.value) normalized.status = statusResult.value;
+
   const localeResult = normalizeLocale(value.locale);
   if (localeResult.error) return localeResult;
   if (localeResult.value) normalized.locale = localeResult.value;
@@ -145,13 +163,42 @@ const normalizeAudienceFilters = (value) => {
 
   const tagResult = normalizeOptionalText(value.tag, 'Audience tag', 1, 100);
   if (tagResult.error) return tagResult;
-  if (tagResult.value) normalized.tag = tagResult.value;
+
+  const tagsResult = normalizeTags(value.tags);
+  if (tagsResult.error) return tagsResult;
+
+  const normalizedTags = Array.from(new Set([
+    ...(Array.isArray(tagsResult.value) ? tagsResult.value : []),
+    ...(tagResult.value ? [tagResult.value] : []),
+  ].map((tag) => String(tag).trim().toLowerCase()).filter(Boolean)));
+  if (normalizedTags.length > 0) normalized.tags = normalizedTags;
+
+  const subscribedFromResult = normalizeDateInput(value.subscribedFrom, 'Audience subscribedFrom');
+  if (subscribedFromResult.error) return subscribedFromResult;
+  if (subscribedFromResult.value) normalized.subscribedFrom = subscribedFromResult.value.toISOString();
+
+  const subscribedToResult = normalizeDateInput(value.subscribedTo, 'Audience subscribedTo');
+  if (subscribedToResult.error) return subscribedToResult;
+  if (subscribedToResult.value) normalized.subscribedTo = subscribedToResult.value.toISOString();
+
+  const createdFromResult = normalizeDateInput(value.createdFrom, 'Audience createdFrom');
+  if (createdFromResult.error) return createdFromResult;
+  if (createdFromResult.value) normalized.createdFrom = createdFromResult.value.toISOString();
+
+  const createdToResult = normalizeDateInput(value.createdTo, 'Audience createdTo');
+  if (createdToResult.error) return createdToResult;
+  if (createdToResult.value) normalized.createdTo = createdToResult.value.toISOString();
 
   return { value: normalized };
 };
 
-const buildAudienceWhere = (audienceFilters = {}) => {
-  const where = { status: 'subscribed' };
+const buildAudienceWhere = (audienceFilters = {}, { defaultStatus = 'subscribed' } = {}) => {
+  const where = {};
+  if (audienceFilters.status) {
+    where.status = audienceFilters.status;
+  } else if (defaultStatus) {
+    where.status = defaultStatus;
+  }
 
   if (audienceFilters.locale) {
     where.locale = audienceFilters.locale;
@@ -161,14 +208,41 @@ const buildAudienceWhere = (audienceFilters = {}) => {
     where.source = audienceFilters.source;
   }
 
+  const subscribedRange = {};
+  if (audienceFilters.subscribedFrom) {
+    const fromDate = new Date(audienceFilters.subscribedFrom);
+    if (!Number.isNaN(fromDate.getTime())) subscribedRange[Op.gte] = fromDate;
+  }
+  if (audienceFilters.subscribedTo) {
+    const toDate = new Date(audienceFilters.subscribedTo);
+    if (!Number.isNaN(toDate.getTime())) subscribedRange[Op.lte] = toDate;
+  }
+  if (Object.keys(subscribedRange).length > 0) where.subscribedAt = subscribedRange;
+
+  const createdRange = {};
+  if (audienceFilters.createdFrom) {
+    const fromDate = new Date(audienceFilters.createdFrom);
+    if (!Number.isNaN(fromDate.getTime())) createdRange[Op.gte] = fromDate;
+  }
+  if (audienceFilters.createdTo) {
+    const toDate = new Date(audienceFilters.createdTo);
+    if (!Number.isNaN(toDate.getTime())) createdRange[Op.lte] = toDate;
+  }
+  if (Object.keys(createdRange).length > 0) where.createdAt = createdRange;
+
   return where;
 };
 
-const isSubscriberEligibleByTag = (subscriber, requiredTag) => {
-  if (!requiredTag) return true;
-  const normalizedRequiredTag = requiredTag.trim().toLowerCase();
-  return Array.isArray(subscriber.tags)
-    && subscriber.tags.some((tag) => String(tag).trim().toLowerCase() === normalizedRequiredTag);
+const isSubscriberEligibleByTags = (subscriber, requiredTags) => {
+  if (!Array.isArray(requiredTags) || requiredTags.length === 0) return true;
+  const normalizedRequiredTags = requiredTags
+    .map((tag) => String(tag).trim().toLowerCase())
+    .filter(Boolean);
+  if (normalizedRequiredTags.length === 0) return true;
+  const subscriberTags = Array.isArray(subscriber.tags)
+    ? subscriber.tags.map((tag) => String(tag).trim().toLowerCase())
+    : [];
+  return normalizedRequiredTags.every((requiredTag) => subscriberTags.includes(requiredTag));
 };
 
 async function getEligibleSubscribers(audienceFilters = {}, attributes = undefined) {
@@ -178,8 +252,7 @@ async function getEligibleSubscribers(audienceFilters = {}, attributes = undefin
     ...(attributes ? { attributes } : {}),
   });
 
-  if (!audienceFilters.tag) return subscribers;
-  return subscribers.filter((subscriber) => isSubscriberEligibleByTag(subscriber, audienceFilters.tag));
+  return subscribers.filter((subscriber) => isSubscriberEligibleByTags(subscriber, audienceFilters.tags));
 }
 
 async function subscribePublic(payload = {}) {
@@ -286,6 +359,32 @@ async function listSubscribers(query = {}) {
   if (localeResult.error) throw new ServiceError(400, localeResult.error);
   if (localeResult.value) where.locale = localeResult.value;
 
+  const tagResult = normalizeOptionalText(query.tag, 'Tag', 1, 100);
+  if (tagResult.error) throw new ServiceError(400, tagResult.error);
+  if (tagResult.value) {
+    where.tags = { [Op.like]: `%${tagResult.value}%` };
+  }
+
+  const createdFromResult = normalizeDateInput(query.createdFrom, 'Created from');
+  if (createdFromResult.error) throw new ServiceError(400, createdFromResult.error);
+  const createdToResult = normalizeDateInput(query.createdTo, 'Created to');
+  if (createdToResult.error) throw new ServiceError(400, createdToResult.error);
+  if (createdFromResult.value || createdToResult.value) {
+    where.createdAt = {};
+    if (createdFromResult.value) where.createdAt[Op.gte] = createdFromResult.value;
+    if (createdToResult.value) where.createdAt[Op.lte] = createdToResult.value;
+  }
+
+  const subscribedFromResult = normalizeDateInput(query.subscribedFrom, 'Subscribed from');
+  if (subscribedFromResult.error) throw new ServiceError(400, subscribedFromResult.error);
+  const subscribedToResult = normalizeDateInput(query.subscribedTo, 'Subscribed to');
+  if (subscribedToResult.error) throw new ServiceError(400, subscribedToResult.error);
+  if (subscribedFromResult.value || subscribedToResult.value) {
+    where.subscribedAt = {};
+    if (subscribedFromResult.value) where.subscribedAt[Op.gte] = subscribedFromResult.value;
+    if (subscribedToResult.value) where.subscribedAt[Op.lte] = subscribedToResult.value;
+  }
+
   const searchResult = normalizeOptionalText(query.search, 'Search', 1, 100);
   if (searchResult.error) throw new ServiceError(400, searchResult.error);
   if (searchResult.value) {
@@ -384,6 +483,238 @@ function parseBulkEmails(input) {
       .map((item) => item.trim())
       .filter(Boolean)
   ));
+}
+
+function parseCsvRows(text) {
+  if (typeof text !== 'string' || !text.trim()) return [];
+  const rows = [];
+  let current = '';
+  let row = [];
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const next = text[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (char === ',' && !inQuotes) {
+      row.push(current);
+      current = '';
+      continue;
+    }
+
+    if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && next === '\n') i += 1;
+      row.push(current);
+      current = '';
+      if (row.some((cell) => String(cell).trim() !== '')) {
+        rows.push(row);
+      }
+      row = [];
+      continue;
+    }
+
+    current += char;
+  }
+
+  if (current.length > 0 || row.length > 0) {
+    row.push(current);
+    if (row.some((cell) => String(cell).trim() !== '')) {
+      rows.push(row);
+    }
+  }
+
+  return rows;
+}
+
+function resolveCsvColumnIndexMap(headerRow = []) {
+  const normalizeHeader = (value) => String(value || '').trim().toLowerCase().replace(/[\s_-]+/g, '');
+  const map = {};
+  const aliases = {
+    email: ['email', 'mail', 'e-mail'],
+    name: ['name', 'fullname', 'full_name'],
+    locale: ['locale', 'language'],
+    tags: ['tags', 'tag'],
+    source: ['source'],
+    notes: ['notes', 'note'],
+    status: ['status'],
+  };
+  const normalizedHeader = headerRow.map(normalizeHeader);
+  for (const [key, keys] of Object.entries(aliases)) {
+    const index = normalizedHeader.findIndex((headerValue) => keys.includes(headerValue));
+    if (index >= 0) map[key] = index;
+  }
+  return map;
+}
+
+const splitTagValue = (value) => {
+  if (value == null) return undefined;
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string') return undefined;
+  return value
+    .split(/[|,;]+/g)
+    .map((item) => item.trim())
+    .filter(Boolean);
+};
+
+const formatCsvValue = (value) => {
+  if (value === null || value === undefined) return '';
+  const stringValue = Array.isArray(value) ? value.join('|') : String(value);
+  const escaped = stringValue.replace(/"/g, '""');
+  if (/[",\r\n]/.test(escaped)) {
+    return `"${escaped}"`;
+  }
+  return escaped;
+};
+
+function toCsv(subscribers = []) {
+  const columns = [
+    'email',
+    'name',
+    'status',
+    'source',
+    'locale',
+    'tags',
+    'subscribedAt',
+    'unsubscribedAt',
+    'notes',
+    'createdAt',
+    'updatedAt',
+  ];
+  const lines = [columns.join(',')];
+  for (const subscriber of subscribers) {
+    const row = columns.map((column) => {
+      if (column === 'tags') return formatCsvValue(subscriber.tags || []);
+      return formatCsvValue(subscriber[column]);
+    });
+    lines.push(row.join(','));
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+async function exportSubscribersCsv(query = {}) {
+  const where = {};
+
+  const statusResult = normalizeEnum(query.status, SUBSCRIBER_STATUSES, 'Status');
+  if (statusResult.error) throw new ServiceError(400, statusResult.error);
+  if (statusResult.value) where.status = statusResult.value;
+
+  const sourceResult = normalizeEnum(query.source, SUBSCRIBER_SOURCES, 'Source');
+  if (sourceResult.error) throw new ServiceError(400, sourceResult.error);
+  if (sourceResult.value) where.source = sourceResult.value;
+
+  const localeResult = normalizeLocale(query.locale);
+  if (localeResult.error) throw new ServiceError(400, localeResult.error);
+  if (localeResult.value) where.locale = localeResult.value;
+
+  const searchResult = normalizeOptionalText(query.search, 'Search', 1, 100);
+  if (searchResult.error) throw new ServiceError(400, searchResult.error);
+  if (searchResult.value) {
+    where[Op.or] = [
+      { email: { [Op.like]: `%${searchResult.value.toLowerCase()}%` } },
+      { name: { [Op.like]: `%${searchResult.value}%` } },
+    ];
+  }
+
+  const subscribers = await NewsletterSubscriber.findAll({
+    where,
+    order: [['createdAt', 'DESC']],
+  });
+
+  const tagResult = normalizeOptionalText(query.tag, 'Tag', 1, 100);
+  if (tagResult.error) throw new ServiceError(400, tagResult.error);
+  const filtered = tagResult.value
+    ? subscribers.filter((subscriber) => isSubscriberEligibleByTags(subscriber, [tagResult.value]))
+    : subscribers;
+
+  return {
+    csv: toCsv(filtered),
+    total: filtered.length,
+  };
+}
+
+async function importSubscribersCsvByAdmin(payload = {}, createdByAdminId = null) {
+  const csvTextResult = normalizeRequiredText(payload.csvText, 'CSV content', 1);
+  if (csvTextResult.error) throw new ServiceError(400, csvTextResult.error);
+
+  const rows = parseCsvRows(csvTextResult.value);
+  if (rows.length < 1) {
+    throw new ServiceError(400, 'CSV must include a header row and at least one data row.');
+  }
+
+  const header = rows[0];
+  const dataRows = rows.slice(1);
+  const indexMap = resolveCsvColumnIndexMap(header);
+  if (indexMap.email === undefined) {
+    throw new ServiceError(400, 'CSV must include an email column.');
+  }
+
+  const defaultSourceResult = normalizeEnum(payload.defaultSource, SUBSCRIBER_SOURCES, 'Default source');
+  if (defaultSourceResult.error) throw new ServiceError(400, defaultSourceResult.error);
+  const defaultStatusResult = normalizeEnum(payload.defaultStatus, SUBSCRIBER_STATUSES, 'Default status');
+  if (defaultStatusResult.error) throw new ServiceError(400, defaultStatusResult.error);
+
+  const summary = {
+    totalRows: dataRows.length,
+    created: 0,
+    updated: 0,
+    skipped: 0,
+    invalid: [],
+  };
+
+  for (const row of dataRows) {
+    const read = (field) => {
+      const index = indexMap[field];
+      if (index === undefined) return undefined;
+      const value = row[index];
+      return typeof value === 'string' ? value.trim() : value;
+    };
+
+    const email = read('email');
+    if (!email) {
+      summary.skipped += 1;
+      continue;
+    }
+
+    try {
+      const { created } = await upsertSubscriber(
+        {
+          email,
+          name: read('name'),
+          locale: read('locale'),
+          tags: splitTagValue(read('tags')),
+          source: read('source') || defaultSourceResult.value || 'import',
+          notes: read('notes'),
+          status: read('status') || defaultStatusResult.value || 'subscribed',
+        },
+        createdByAdminId,
+        defaultSourceResult.value || 'import'
+      );
+
+      if (created) {
+        summary.created += 1;
+      } else {
+        summary.updated += 1;
+      }
+    } catch (error) {
+      if (error instanceof ServiceError) {
+        summary.invalid.push({ email, reason: error.message });
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  return summary;
 }
 
 async function bulkAddSubscribersByAdmin(payload = {}, createdByAdminId = null) {
@@ -539,6 +870,12 @@ function normalizeCampaignPayload(payload = {}, { isCreate = false } = {}) {
   if (textResult.error) return { error: textResult.error };
   if (textResult.value !== undefined) updates.textContent = textResult.value;
 
+  if (payload.scheduledAt !== undefined) {
+    const scheduledAtResult = normalizeDateInput(payload.scheduledAt, 'Scheduled at');
+    if (scheduledAtResult.error) return { error: scheduledAtResult.error };
+    updates.scheduledAt = scheduledAtResult.value;
+  }
+
   if (payload.audienceFilters !== undefined) {
     const audienceResult = normalizeAudienceFilters(payload.audienceFilters);
     if (audienceResult.error) return { error: audienceResult.error };
@@ -589,10 +926,12 @@ async function createCampaignDraft(payload = {}, createdByAdminId) {
   const normalized = normalizeCampaignPayload(payload, { isCreate: true });
   if (normalized.error) throw new ServiceError(400, normalized.error);
 
+  const shouldSchedule = normalized.value.scheduledAt instanceof Date;
+
   return NewsletterCampaign.create({
     ...normalized.value,
     createdByAdminId,
-    status: 'draft',
+    status: shouldSchedule ? 'scheduled' : 'draft',
   });
 }
 
@@ -614,11 +953,31 @@ async function getCampaignById(id) {
 
   if (!campaign) throw new ServiceError(404, 'Campaign not found.');
 
-  const estimatedRecipients = (await getEligibleSubscribers(campaign.audienceFilters || {}, ['id'])).length;
+  const [estimatedRecipients, recentLogs] = await Promise.all([
+    getEligibleSubscribers(campaign.audienceFilters || {}, ['id']),
+    NewsletterSendLog.findAll({
+      where: { campaignId: campaign.id },
+      order: [['createdAt', 'DESC']],
+      limit: 10,
+    }),
+  ]);
+
+  const allMatchingStatuses = await NewsletterSubscriber.findAll({
+    where: buildAudienceWhere(campaign.audienceFilters || {}, { defaultStatus: null }),
+    attributes: ['id', 'status', 'tags'],
+  });
+  const filteredStatuses = allMatchingStatuses.filter((subscriber) => isSubscriberEligibleByTags(subscriber, campaign.audienceFilters?.tags));
+  const audienceSummary = filteredStatuses.reduce((acc, subscriber) => {
+    const key = subscriber.status || 'unknown';
+    acc[key] = (acc[key] || 0) + 1;
+    return acc;
+  }, {});
 
   return {
     campaign,
-    estimatedRecipients,
+    estimatedRecipients: estimatedRecipients.length,
+    audienceSummary,
+    recentLogs,
   };
 }
 
@@ -630,8 +989,8 @@ async function updateCampaignDraft(id, payload = {}) {
 
   const campaign = await NewsletterCampaign.findByPk(campaignId);
   if (!campaign) throw new ServiceError(404, 'Campaign not found.');
-  if (campaign.status !== 'draft') {
-    throw new ServiceError(409, 'Only draft campaigns can be updated.');
+  if (!['draft', 'scheduled'].includes(campaign.status)) {
+    throw new ServiceError(409, 'Only draft or scheduled campaigns can be updated.');
   }
 
   const normalized = normalizeCampaignPayload(payload, { isCreate: false });
@@ -642,6 +1001,31 @@ async function updateCampaignDraft(id, payload = {}) {
   }
 
   Object.assign(campaign, normalized.value);
+  if (Object.prototype.hasOwnProperty.call(normalized.value, 'scheduledAt')) {
+    campaign.status = normalized.value.scheduledAt ? 'scheduled' : 'draft';
+  }
+  await campaign.save();
+  return campaign;
+}
+
+async function scheduleCampaign(id, payload = {}) {
+  const campaignId = Number.parseInt(id, 10);
+  if (!Number.isInteger(campaignId) || campaignId <= 0) {
+    throw new ServiceError(400, 'Campaign ID must be a positive integer.');
+  }
+
+  const campaign = await NewsletterCampaign.findByPk(campaignId);
+  if (!campaign) throw new ServiceError(404, 'Campaign not found.');
+  if (!['draft', 'failed', 'scheduled'].includes(campaign.status)) {
+    throw new ServiceError(409, 'Only draft, failed, or scheduled campaigns can be scheduled.');
+  }
+
+  const scheduledAtResult = normalizeDateInput(payload.scheduledAt, 'Scheduled at');
+  if (scheduledAtResult.error) throw new ServiceError(400, scheduledAtResult.error);
+  if (!scheduledAtResult.value) throw new ServiceError(400, 'Scheduled at is required.');
+
+  campaign.scheduledAt = scheduledAtResult.value;
+  campaign.status = 'scheduled';
   await campaign.save();
   return campaign;
 }
@@ -783,16 +1167,29 @@ async function sendCampaignNow(campaignId) {
     throw new ServiceError(400, 'Campaign requires subject and HTML content before sending.');
   }
 
-  if (!['draft', 'failed'].includes(campaign.status)) {
-    throw new ServiceError(409, 'Only draft or failed campaigns can be sent.');
+  if (!['draft', 'failed', 'scheduled'].includes(campaign.status)) {
+    throw new ServiceError(409, 'Only draft, scheduled, or failed campaigns can be sent.');
   }
 
-  campaign.status = 'sending';
-  campaign.sentAt = null;
-  campaign.totalRecipients = 0;
-  campaign.successCount = 0;
-  campaign.failureCount = 0;
-  await campaign.save();
+  const [claimed] = await NewsletterCampaign.update({
+    status: 'sending',
+    sentAt: null,
+    scheduledAt: null,
+    totalRecipients: 0,
+    successCount: 0,
+    failureCount: 0,
+  }, {
+    where: {
+      id: campaign.id,
+      status: { [Op.in]: ['draft', 'failed', 'scheduled'] },
+    },
+  });
+
+  if (claimed === 0) {
+    throw new ServiceError(409, 'Campaign state changed. Please refresh and retry.');
+  }
+
+  await campaign.reload();
 
   const recipients = await getEligibleSubscribers(campaign.audienceFilters || {}, ['id', 'email', 'tags']);
   campaign.totalRecipients = recipients.length;
@@ -883,6 +1280,40 @@ async function sendCampaignNow(campaignId) {
   };
 }
 
+async function processDueScheduledCampaigns({ limit = 5 } = {}) {
+  const safeLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 100) : 5;
+  const dueCampaigns = await NewsletterCampaign.findAll({
+    where: {
+      status: 'scheduled',
+      scheduledAt: {
+        [Op.lte]: new Date(),
+      },
+    },
+    order: [['scheduledAt', 'ASC'], ['id', 'ASC']],
+    limit: safeLimit,
+    attributes: ['id'],
+  });
+
+  let processed = 0;
+  let failed = 0;
+
+  for (const campaign of dueCampaigns) {
+    try {
+      await sendCampaignNow(campaign.id);
+      processed += 1;
+    } catch (error) {
+      failed += 1;
+      console.error('[newsletter] scheduled campaign processing failed:', error?.message || error);
+    }
+  }
+
+  return {
+    due: dueCampaigns.length,
+    processed,
+    failed,
+  };
+}
+
 async function listCampaignSendLogs(campaignId, query = {}) {
   const campaign = await NewsletterCampaign.findByPk(campaignId);
   if (!campaign) throw new ServiceError(404, 'Campaign not found.');
@@ -939,6 +1370,8 @@ module.exports = {
   listSubscribers,
   addSubscriberByAdmin,
   bulkAddSubscribersByAdmin,
+  importSubscribersCsvByAdmin,
+  exportSubscribersCsv,
   updateSubscriberByAdmin,
   createUnsubscribeLinkForSubscriberEmail,
   issueUnsubscribeToken,
@@ -946,8 +1379,10 @@ module.exports = {
   createCampaignDraft,
   getCampaignById,
   updateCampaignDraft,
+  scheduleCampaign,
   sendCampaignTestEmail,
   sendCampaignNow,
+  processDueScheduledCampaigns,
   listCampaignSendLogs,
   getEligibleSubscribers,
 };
