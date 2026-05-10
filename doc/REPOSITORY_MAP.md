@@ -437,7 +437,7 @@ Appofa/
 | csrfProtection.js | CSRF token validation |
 | errorHandler.js | Global error handling |
 | optionalAuth.js | Optional auth (doesn't fail if unauthenticated) |
-| rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `passwordResetRequestLimiter` (5/hr per IP, forgot-password), `passwordResetAttemptLimiter` (10/15m, reset-password), `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` blocks blacklisted IPs; whitelisted IPs bypass all limiters |
+| rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `passwordResetRequestLimiter` (5/hr per IP, forgot-password), `passwordResetAttemptLimiter` (10/15m, reset-password), `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` — whitelist takes precedence over blacklist (whitelisted IPs always allowed), then blacklisted IPs denied with 403; all rate limiters also skip whitelisted IPs |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior; skips auth recovery endpoints (`/api/auth/forgot-password`, `/api/auth/reset-password`) and resolves client IP in proxy-safe order (`req.ip` → socket remoteAddress → `x-forwarded-for`) |
 
