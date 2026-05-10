@@ -1,3 +1,8 @@
+// Load environment variables before any module reads process.env at import time.
+// securityHeaders.js (and other config modules) read process.env.FRONTEND_URL
+// as a module-level constant, so dotenv must run first.
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
@@ -5,7 +10,6 @@ const helmet = require('helmet');
 const { helmetConfig, corsOptions } = require('./config/securityHeaders');
 const { sequelize } = require('./models');
 const { errorHandler } = require('./middleware/errorHandler');
-require('dotenv').config();
 
 const registerRoutes = require('./routes');
 const { ipBlockMiddleware } = require('./middleware/rateLimiter');
