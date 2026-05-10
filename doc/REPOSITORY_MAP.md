@@ -16,7 +16,7 @@ This instruction is permanent and must never be removed.
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
-> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is added for SMTP password reset email delivery.
+> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is used for SMTP password reset email delivery. `next-intl` bumped to `^4.11.1` (fixes GHSA-4c35-wcg5-mm9h prototype pollution). `overrides.ip-address: ">=10.1.1"` added to patch XSS in transitive `ip-address` used by `express-rate-limit` and `geoip-lite` (GHSA-v2v4-37r5-5v8g). `overrides.nodemailer` removed — direct deps satisfy themselves and must not be in overrides.
 
 ---
 
