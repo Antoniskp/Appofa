@@ -20,4 +20,13 @@ router.post('/admin/subscribers', apiLimiter, authMiddleware, csrfProtection, ch
 router.post('/admin/subscribers/bulk', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminBulkAddSubscribers);
 router.put('/admin/subscribers/:id', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminUpdateSubscriber);
 
+// Campaign routes (admin-only)
+router.get('/admin/campaigns', apiLimiter, authMiddleware, checkRole('admin'), newsletterController.adminListCampaigns);
+router.post('/admin/campaigns', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminCreateCampaign);
+router.get('/admin/campaigns/:id', apiLimiter, authMiddleware, checkRole('admin'), newsletterController.adminGetCampaign);
+router.put('/admin/campaigns/:id', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminUpdateCampaign);
+router.post('/admin/campaigns/:id/test-send', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminSendCampaignTest);
+router.post('/admin/campaigns/:id/send', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), newsletterController.adminSendCampaignNow);
+router.get('/admin/campaigns/:id/logs', apiLimiter, authMiddleware, checkRole('admin'), newsletterController.adminCampaignLogs);
+
 module.exports = router;

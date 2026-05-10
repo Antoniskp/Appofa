@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import AdminLayout from '@/components/admin/AdminLayout';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -150,6 +151,17 @@ function AdminNewsletterContent() {
       <div className="bg-gray-50 min-h-screen py-8">
         <div className="app-container max-w-7xl">
           <AdminHeader title="Newsletter" subtitle={`${pagination.total || 0} subscribers`} />
+
+          {canWrite && (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <Link
+                href="/admin/newsletter/campaigns"
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+              >
+                Manage campaigns
+              </Link>
+            </div>
+          )}
 
           {statsLoading ? (
             <SkeletonLoader count={3} type="card" />

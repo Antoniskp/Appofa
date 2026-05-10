@@ -25,18 +25,18 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (46)](#models-46)
+- [Models (48)](#models-48)
 - [API Routes (29 files, 180+ endpoints)](#api-routes-29-files-180-endpoints)
 - [Controllers (23)](#controllers-23)
 - [Services (14)](#services-14)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (109)](#frontend-pages-109)
+- [Frontend Pages (112)](#frontend-pages-112)
 - [Components (121+)](#components-121)
 - [API Client Modules (29)](#api-client-modules-29)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (89)](#migrations-89)
+- [Migrations (91)](#migrations-91)
 - [Tests (54 files)](#tests-54-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
@@ -53,10 +53,10 @@ Appofa/
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (23 files)
 │   ├── services/           # Business logic (14 files)
-│   ├── models/             # Sequelize models (46 models)
+│   ├── models/             # Sequelize models (48 models)
 │   ├── routes/             # Express route definitions (29 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
-│   ├── migrations/         # DB migrations (86 files)
+│   ├── migrations/         # DB migrations (88 files)
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
@@ -65,7 +65,7 @@ Appofa/
 │
 ├── app/                    # Frontend (Next.js App Router, 105+ pages)
 │   ├── (statics)/          # Static content pages (47 pages)
-│   ├── admin/              # Admin dashboard (21 pages)
+│   ├── admin/              # Admin dashboard (24 pages)
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
 │   ├── suggestions/        # Suggestion pages
@@ -107,7 +107,7 @@ Appofa/
 
 ---
 
-## Models (46)
+## Models (48)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -129,6 +129,8 @@ Appofa/
 | Comment | Comments | id, entityType, entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
 | Message | Messages | id, type, userId, email, name, subject, message, locationId, status | belongsTo: User, Location |
 | NewsletterSubscriber | NewsletterSubscribers | id, email (unique lowercase), name, status (`pending\|subscribed\|unsubscribed`), source (`website\|admin_manual\|import`), locale, tags, notes, subscribedAt, unsubscribedAt, unsubscribeTokenHash, createdByAdminId | belongsTo: User (`createdByAdmin`) |
+| NewsletterCampaign | NewsletterCampaigns | id, subject, previewText, htmlContent, textContent, status (`draft\|sending\|sent\|failed`), audienceFilters (JSON), createdByAdminId, sentAt, totalRecipients, successCount, failureCount | belongsTo: User (`createdByAdmin`); hasMany: NewsletterSendLog |
+| NewsletterSendLog | NewsletterSendLogs | id, campaignId, subscriberId (nullable), email, status (`queued\|sent\|failed`), providerMessageId, errorMessage, sentAt | belongsTo: NewsletterCampaign (`campaign`), NewsletterSubscriber (`subscriber`) |
 | Follow | Follows | id, followerId, followingId | belongsTo: User (×2) |
 | Bookmark | Bookmarks | id, userId, entityType, entityId | belongsTo: User |
 | Endorsement | Endorsements | id, endorserId, endorsedId, topic | belongsTo: User (×2) |
@@ -205,6 +207,13 @@ Appofa/
 | POST | /admin/subscribers | admin | Add/update subscriber manually |
 | POST | /admin/subscribers/bulk | admin | Bulk add subscribers from pasted/listed emails |
 | PUT | /admin/subscribers/:id | admin | Update subscriber fields/status |
+| GET | /admin/campaigns | admin | List newsletter campaigns (pagination/status filter) |
+| POST | /admin/campaigns | admin | Create campaign draft |
+| GET | /admin/campaigns/:id | admin | Get campaign details + estimated recipient count |
+| PUT | /admin/campaigns/:id | admin | Update draft campaign |
+| POST | /admin/campaigns/:id/test-send | admin | Send test email (no send-log rows) |
+| POST | /admin/campaigns/:id/send | admin | Send campaign now with batched delivery + per-recipient logs |
+| GET | /admin/campaigns/:id/logs | admin | List campaign send logs + campaign delivery summary |
 
 ### Articles (`/api/articles`)
 | Method | Path | Auth | Description |
@@ -360,7 +369,7 @@ Appofa/
 | followRoutes.js | /api/users | POST /:id/follow, DELETE /:id/follow, GET /:id/follow/status, GET /:id/followers, GET /:id/following |
 | endorsementRoutes.js | /api/endorsements | GET /topics, GET /leaderboard, GET /status, POST /, DELETE / |
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
-| newsletterRoutes.js | /api/newsletter | POST /subscribe, GET/POST /unsubscribe, GET /admin/subscribers, GET /admin/stats, POST /admin/subscribers, POST /admin/subscribers/bulk, PUT /admin/subscribers/:id |
+| newsletterRoutes.js | /api/newsletter | POST /subscribe, GET/POST /unsubscribe, GET /admin/subscribers, GET /admin/stats, POST /admin/subscribers, POST /admin/subscribers/bulk, PUT /admin/subscribers/:id, GET/POST /admin/campaigns, GET/PUT /admin/campaigns/:id, POST /admin/campaigns/:id/test-send, POST /admin/campaigns/:id/send, GET /admin/campaigns/:id/logs |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
 | organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions, GET /:id/official-posts, POST /:id/official-posts, GET /:id/verification, PATCH /:id/verify, GET /:id/children, PATCH /:id/parent, GET /:id/analytics |
@@ -399,7 +408,7 @@ Appofa/
 | locationSectionController.js | Location section management |
 | manifestController.js | Manifest CRUD & acceptance |
 | messageController.js | Contact messages |
-| newsletterController.js | Newsletter subscription + admin subscriber management |
+| newsletterController.js | Newsletter subscription + admin subscriber management + campaign CRUD/test-send/send/logs |
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
@@ -424,7 +433,7 @@ Appofa/
 | imageStorageService.js | Saves processed image buffers to `uploads/profiles/` and `uploads/locations/` using `__dirname`-relative paths |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
-| newsletterService.js | Newsletter subscriber lifecycle (subscribe/unsubscribe token hashing, admin list/stats/add/bulk/update) |
+| newsletterService.js | Newsletter subscriber lifecycle + campaign drafting, audience filtering (locale/source/tag), test sends, batched delivery, and per-recipient send logging |
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
 | pollService.js | Poll operations & calculations (including org-membership access enforcement for org-scoped private polls/results/voting) |
@@ -460,7 +469,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (109)
+## Frontend Pages (112)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -516,7 +525,10 @@ Appofa/
 | `/admin/geo` | Geo traffic dashboard + country funding management + access rules tab (blocked countries + unknown/no-IP actions) |
 | `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
-| `/admin/newsletter` | Newsletter admin (stats, searchable list, manual add, bulk paste import, quick status updates) |
+| `/admin/newsletter` | Newsletter admin (stats, searchable list, manual add, bulk paste import, quick status updates; includes campaign management entrypoint for admins) |
+| `/admin/newsletter/campaigns` | Newsletter campaign list (status filter, delivery counters, quick send-now for draft/failed campaigns) |
+| `/admin/newsletter/campaigns/new` | Create newsletter campaign draft (subject/preview/content + audience filters) |
+| `/admin/newsletter/campaigns/[id]` | Campaign detail/edit page with test-send, send-now, delivery summary, and recent send logs |
 | `/admin/locations` | Location admin |
 | `/admin/organizations` | Organization admin — table with search/filter, parent-org dropdown, location/parent columns, highlighted editing row, direct public-profile links |
 | `/admin/manifests` | Manifest admin |
@@ -598,7 +610,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI`, `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments) |
 | manifest.js | Manifests |
 | messages.js | Messages |
-| newsletter.js | Newsletter public subscribe/unsubscribe + admin subscriber management |
+| newsletter.js | Newsletter public subscribe/unsubscribe + admin subscriber management + campaign CRUD/test-send/send/log endpoints |
 | organizations.js | Organizations CRUD + members |
 | personRemovalRequests.js | Removal requests |
 | persons.js | Person profiles |
@@ -656,7 +668,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (89)
+## Migrations (91)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -772,6 +784,8 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260508000000-add-commission-requirement-to-civic-questions.js | Add nullable `CivicQuestions.commissionRequirement` STRING for EU/Commission requirement description |
 | — | 20260510000000-add-password-reset-fields-to-users.js | Add nullable `Users.resetPasswordTokenHash` + `Users.resetPasswordExpires` for secure password reset tokens |
 | — | 20260510134600-create-newsletter-subscribers.js | Create `NewsletterSubscribers` table (email unique, status/source enums, locale/tags/notes, subscribe lifecycle timestamps, hashed unsubscribe token, optional createdByAdminId) |
+| — | 20260510150000-create-newsletter-campaigns.js | Create `NewsletterCampaigns` table (`subject`, `previewText`, `htmlContent`, `textContent`, status enum, audienceFilters JSON, counters, sentAt, createdByAdminId) |
+| — | 20260510150100-create-newsletter-send-logs.js | Create `NewsletterSendLogs` table for per-recipient campaign delivery status (`queued|sent|failed`), providerMessageId/errorMessage, sentAt, and campaign/subscriber FKs |
 
 </details>
 

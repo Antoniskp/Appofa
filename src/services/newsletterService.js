@@ -1,7 +1,14 @@
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
-const { NewsletterSubscriber } = require('../models');
 const {
+  NewsletterSubscriber,
+  NewsletterCampaign,
+  NewsletterSendLog,
+  User,
+} = require('../models');
+const {
+  normalizeRequiredText,
   normalizeEmail,
   normalizeOptionalText,
   normalizeEnum,
@@ -10,8 +17,13 @@ const {
 
 const SUBSCRIBER_STATUSES = ['pending', 'subscribed', 'unsubscribed'];
 const SUBSCRIBER_SOURCES = ['website', 'admin_manual', 'import'];
+const CAMPAIGN_STATUSES = ['draft', 'sending', 'sent', 'failed'];
+const SEND_LOG_STATUSES = ['queued', 'sent', 'failed'];
 const NEWSLETTER_GENERIC_SUBSCRIBE_MESSAGE = 'If this email can receive newsletter updates, it has been added or updated.';
 const NEWSLETTER_GENERIC_UNSUBSCRIBE_MESSAGE = 'If this unsubscribe link is valid, the email has been unsubscribed.';
+const NEWSLETTER_FROM_DEFAULT = 'Appofa <no-reply@appofasi.gr>';
+
+let smtpTransporter = null;
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -57,6 +69,118 @@ const applyStatusDates = (subscriber, status) => {
     subscriber.unsubscribedAt = new Date();
   }
 };
+
+const toBoolean = (value, defaultValue = false) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value !== 'string') return defaultValue;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true') return true;
+  if (normalized === 'false') return false;
+  return defaultValue;
+};
+
+const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, '');
+
+const escapeHtml = (value) => String(value)
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
+
+const stripHtml = (html) => String(html || '')
+  .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+  .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+  .replace(/<[^>]+>/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const getSmtpTransporter = () => {
+  if (smtpTransporter) return smtpTransporter;
+
+  const host = process.env.SMTP_HOST;
+  const port = Number.parseInt(process.env.SMTP_PORT || '', 10);
+  const secure = toBoolean(process.env.SMTP_SECURE, false);
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  const missingKeys = [];
+  if (!host) missingKeys.push('SMTP_HOST');
+  if (!Number.isInteger(port)) missingKeys.push('SMTP_PORT');
+  if (!user) missingKeys.push('SMTP_USER');
+  if (!pass) missingKeys.push('SMTP_PASS');
+
+  if (missingKeys.length > 0) {
+    throw new Error(`SMTP configuration is incomplete. Missing/invalid: ${missingKeys.join(', ')}`);
+  }
+
+  smtpTransporter = nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  });
+
+  return smtpTransporter;
+};
+
+const normalizeAudienceFilters = (value) => {
+  if (value === undefined || value === null || value === '') {
+    return { value: {} };
+  }
+
+  if (typeof value !== 'object' || Array.isArray(value)) {
+    return { error: 'Audience filters must be an object.' };
+  }
+
+  const normalized = {};
+
+  const localeResult = normalizeLocale(value.locale);
+  if (localeResult.error) return localeResult;
+  if (localeResult.value) normalized.locale = localeResult.value;
+
+  const sourceResult = normalizeEnum(value.source, SUBSCRIBER_SOURCES, 'Audience source');
+  if (sourceResult.error) return sourceResult;
+  if (sourceResult.value) normalized.source = sourceResult.value;
+
+  const tagResult = normalizeOptionalText(value.tag, 'Audience tag', 1, 100);
+  if (tagResult.error) return tagResult;
+  if (tagResult.value) normalized.tag = tagResult.value;
+
+  return { value: normalized };
+};
+
+const buildAudienceWhere = (audienceFilters = {}) => {
+  const where = { status: 'subscribed' };
+
+  if (audienceFilters.locale) {
+    where.locale = audienceFilters.locale;
+  }
+
+  if (audienceFilters.source) {
+    where.source = audienceFilters.source;
+  }
+
+  return where;
+};
+
+const isSubscriberEligibleByTag = (subscriber, requiredTag) => {
+  if (!requiredTag) return true;
+  const normalizedRequiredTag = requiredTag.trim().toLowerCase();
+  return Array.isArray(subscriber.tags)
+    && subscriber.tags.some((tag) => String(tag).trim().toLowerCase() === normalizedRequiredTag);
+};
+
+async function getEligibleSubscribers(audienceFilters = {}, attributes = undefined) {
+  const subscribers = await NewsletterSubscriber.findAll({
+    where: buildAudienceWhere(audienceFilters),
+    order: [['id', 'ASC']],
+    ...(attributes ? { attributes } : {}),
+  });
+
+  if (!audienceFilters.tag) return subscribers;
+  return subscribers.filter((subscriber) => isSubscriberEligibleByTag(subscriber, audienceFilters.tag));
+}
 
 async function subscribePublic(payload = {}) {
   const emailResult = normalizeEmail(payload.email);
@@ -363,14 +487,450 @@ async function createUnsubscribeLinkForSubscriberEmail(email) {
   if (!subscriber) throw new ServiceError(404, 'Subscriber not found.');
 
   const token = await issueUnsubscribeToken(subscriber);
-  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, '');
+  const baseUrl = getFrontendUrl();
   return `${baseUrl}/newsletter/unsubscribe?token=${encodeURIComponent(token)}`;
+}
+
+function getBatchSize() {
+  const parsed = Number.parseInt(process.env.NEWSLETTER_SEND_BATCH_SIZE || '', 10);
+  if (!Number.isInteger(parsed) || parsed <= 0) return 50;
+  return Math.min(parsed, 100);
+}
+
+function getBatchDelayMs() {
+  const parsed = Number.parseInt(process.env.NEWSLETTER_BATCH_DELAY_MS || '', 10);
+  if (!Number.isInteger(parsed) || parsed < 0) return 0;
+  return Math.min(parsed, 5000);
+}
+
+function normalizeCampaignPayload(payload = {}, { isCreate = false } = {}) {
+  const updates = {};
+
+  if (isCreate || payload.subject !== undefined) {
+    const subjectResult = isCreate
+      ? normalizeRequiredText(payload.subject, 'Subject', 1, 255)
+      : normalizeOptionalText(payload.subject, 'Subject', 1, 255);
+    if (subjectResult.error) return { error: subjectResult.error };
+    if (isCreate) {
+      updates.subject = subjectResult.value;
+    } else if (subjectResult.value !== undefined) {
+      updates.subject = subjectResult.value;
+    }
+  }
+
+  if (isCreate || payload.htmlContent !== undefined) {
+    const htmlResult = isCreate
+      ? normalizeRequiredText(payload.htmlContent, 'HTML content', 1)
+      : normalizeOptionalText(payload.htmlContent, 'HTML content', 1);
+    if (htmlResult.error) return { error: htmlResult.error };
+    if (isCreate) {
+      updates.htmlContent = htmlResult.value;
+    } else if (htmlResult.value !== undefined) {
+      if (!htmlResult.value) return { error: 'HTML content cannot be empty.' };
+      updates.htmlContent = htmlResult.value;
+    }
+  }
+
+  const previewResult = normalizeOptionalText(payload.previewText, 'Preview text', 1, 500);
+  if (previewResult.error) return { error: previewResult.error };
+  if (previewResult.value !== undefined) updates.previewText = previewResult.value;
+
+  const textResult = normalizeOptionalText(payload.textContent, 'Text content', 1, 20000);
+  if (textResult.error) return { error: textResult.error };
+  if (textResult.value !== undefined) updates.textContent = textResult.value;
+
+  if (payload.audienceFilters !== undefined) {
+    const audienceResult = normalizeAudienceFilters(payload.audienceFilters);
+    if (audienceResult.error) return { error: audienceResult.error };
+    updates.audienceFilters = audienceResult.value;
+  }
+
+  return { value: updates };
+}
+
+async function listCampaigns(query = {}) {
+  const rawPage = Number.parseInt(query.page, 10);
+  const rawLimit = Number.parseInt(query.limit, 10);
+  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+  const limit = Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 100) : 20;
+  const offset = (page - 1) * limit;
+
+  const where = {};
+  const statusResult = normalizeEnum(query.status, CAMPAIGN_STATUSES, 'Status');
+  if (statusResult.error) throw new ServiceError(400, statusResult.error);
+  if (statusResult.value) where.status = statusResult.value;
+
+  const { count, rows } = await NewsletterCampaign.findAndCountAll({
+    where,
+    include: [
+      {
+        model: User,
+        as: 'createdByAdmin',
+        attributes: ['id', 'username', 'email'],
+      },
+    ],
+    order: [['createdAt', 'DESC']],
+    limit,
+    offset,
+  });
+
+  return {
+    campaigns: rows,
+    pagination: {
+      total: count,
+      page,
+      limit,
+      totalPages: Math.ceil(count / limit),
+    },
+  };
+}
+
+async function createCampaignDraft(payload = {}, createdByAdminId) {
+  const normalized = normalizeCampaignPayload(payload, { isCreate: true });
+  if (normalized.error) throw new ServiceError(400, normalized.error);
+
+  return NewsletterCampaign.create({
+    ...normalized.value,
+    createdByAdminId,
+    status: 'draft',
+  });
+}
+
+async function getCampaignById(id) {
+  const campaignId = Number.parseInt(id, 10);
+  if (!Number.isInteger(campaignId) || campaignId <= 0) {
+    throw new ServiceError(400, 'Campaign ID must be a positive integer.');
+  }
+
+  const campaign = await NewsletterCampaign.findByPk(campaignId, {
+    include: [
+      {
+        model: User,
+        as: 'createdByAdmin',
+        attributes: ['id', 'username', 'email'],
+      },
+    ],
+  });
+
+  if (!campaign) throw new ServiceError(404, 'Campaign not found.');
+
+  const estimatedRecipients = (await getEligibleSubscribers(campaign.audienceFilters || {}, ['id'])).length;
+
+  return {
+    campaign,
+    estimatedRecipients,
+  };
+}
+
+async function updateCampaignDraft(id, payload = {}) {
+  const campaignId = Number.parseInt(id, 10);
+  if (!Number.isInteger(campaignId) || campaignId <= 0) {
+    throw new ServiceError(400, 'Campaign ID must be a positive integer.');
+  }
+
+  const campaign = await NewsletterCampaign.findByPk(campaignId);
+  if (!campaign) throw new ServiceError(404, 'Campaign not found.');
+  if (campaign.status !== 'draft') {
+    throw new ServiceError(409, 'Only draft campaigns can be updated.');
+  }
+
+  const normalized = normalizeCampaignPayload(payload, { isCreate: false });
+  if (normalized.error) throw new ServiceError(400, normalized.error);
+
+  if (Object.keys(normalized.value).length === 0) {
+    throw new ServiceError(400, 'No campaign fields were provided for update.');
+  }
+
+  Object.assign(campaign, normalized.value);
+  await campaign.save();
+  return campaign;
+}
+
+async function renderCampaignEmail(campaign, recipientEmail) {
+  const unsubscribeLink = await createUnsubscribeLinkForSubscriberEmail(recipientEmail);
+  return buildCampaignMessage({
+    campaign,
+    unsubscribeLink,
+    isTest: false,
+  });
+}
+
+async function renderCampaignTestEmail(campaign, testEmail) {
+  let unsubscribeLink = `${getFrontendUrl()}/newsletter/unsubscribe`;
+
+  try {
+    unsubscribeLink = await createUnsubscribeLinkForSubscriberEmail(testEmail);
+  } catch (error) {
+    if (!(error instanceof ServiceError) || error.status !== 404) {
+      throw error;
+    }
+  }
+
+  return buildCampaignMessage({
+    campaign,
+    unsubscribeLink,
+    isTest: true,
+  });
+}
+
+function buildCampaignMessage({ campaign, unsubscribeLink, isTest }) {
+  const safeUnsubscribeLink = escapeHtml(unsubscribeLink);
+  const safePreviewText = campaign.previewText ? escapeHtml(campaign.previewText) : '';
+  const htmlBody = campaign.htmlContent || '';
+  const textBody = campaign.textContent || stripHtml(htmlBody);
+  const title = isTest ? 'Appofa Newsletter (Test)' : 'Appofa Newsletter';
+  const footerIntro = isTest
+    ? 'This is a test send for an Appofa newsletter campaign.'
+    : 'You are receiving this email as an Appofa newsletter/update.';
+  const footerLinkLabel = isTest
+    ? 'Unsubscribe link preview'
+    : 'To stop receiving these emails, unsubscribe here';
+  const subject = isTest ? `[TEST] ${campaign.subject}` : campaign.subject;
+
+  const html = `
+    <html>
+      <body style="margin:0;padding:0;background:#f4f6f8;font-family:Arial,sans-serif;color:#111827;">
+        <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${safePreviewText}</div>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="padding:24px 12px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:680px;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">
+                <tr>
+                  <td style="padding:20px 24px;border-bottom:1px solid #e5e7eb;background:#f8fafc;">
+                    <p style="margin:0;font-size:20px;font-weight:700;color:#1f2937;">${title}</p>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:24px;">${htmlBody}</td>
+                </tr>
+                <tr>
+                  <td style="padding:16px 24px;border-top:1px solid #e5e7eb;background:#f8fafc;font-size:12px;line-height:1.6;color:#6b7280;">
+                    <p style="margin:0 0 8px;">${footerIntro}</p>
+                    <p style="margin:0;"><a href="${safeUnsubscribeLink}" style="color:#2563eb;">${footerLinkLabel}</a></p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  const text = [
+    ...(isTest ? ['[TEST SEND]'] : []),
+    textBody,
+    '',
+    '—',
+    footerIntro,
+    `${isTest ? 'Unsubscribe link preview' : 'Unsubscribe'}: ${unsubscribeLink}`,
+  ].join('\n');
+
+  return { subject, html, text };
+}
+
+async function sendMail({ to, subject, html, text }) {
+  const transporter = getSmtpTransporter();
+  const from = process.env.SMTP_FROM || NEWSLETTER_FROM_DEFAULT;
+
+  try {
+    return await transporter.sendMail({
+      from,
+      to,
+      subject,
+      html,
+      text,
+    });
+  } catch (error) {
+    const message = typeof error?.message === 'string' && error.message.trim()
+      ? error.message.trim()
+      : 'Unknown SMTP error.';
+    throw new Error(`Failed to send email via SMTP: ${message}`);
+  }
+}
+
+async function sendCampaignTestEmail(campaignId, payload = {}) {
+  const campaign = await NewsletterCampaign.findByPk(campaignId);
+  if (!campaign) throw new ServiceError(404, 'Campaign not found.');
+
+  const emailResult = normalizeEmail(payload.email);
+  if (emailResult.error) throw new ServiceError(400, emailResult.error);
+
+  if (!campaign.subject || !campaign.htmlContent) {
+    throw new ServiceError(400, 'Campaign requires subject and HTML content before test send.');
+  }
+
+  const rendered = await renderCampaignTestEmail(campaign, emailResult.value);
+  await sendMail({
+    to: emailResult.value,
+    subject: rendered.subject,
+    html: rendered.html,
+    text: rendered.text,
+  });
+
+  return { email: emailResult.value };
+}
+
+async function sendCampaignNow(campaignId) {
+  const campaign = await NewsletterCampaign.findByPk(campaignId);
+  if (!campaign) throw new ServiceError(404, 'Campaign not found.');
+
+  if (campaign.status === 'sending') {
+    throw new ServiceError(409, 'Campaign is already being sent.');
+  }
+
+  if (!campaign.subject || !campaign.htmlContent) {
+    throw new ServiceError(400, 'Campaign requires subject and HTML content before sending.');
+  }
+
+  if (!['draft', 'failed'].includes(campaign.status)) {
+    throw new ServiceError(409, 'Only draft or failed campaigns can be sent.');
+  }
+
+  campaign.status = 'sending';
+  campaign.sentAt = null;
+  campaign.totalRecipients = 0;
+  campaign.successCount = 0;
+  campaign.failureCount = 0;
+  await campaign.save();
+
+  const recipients = await getEligibleSubscribers(campaign.audienceFilters || {}, ['id', 'email', 'tags']);
+  campaign.totalRecipients = recipients.length;
+  await campaign.save();
+
+  const batchSize = getBatchSize();
+  const batchDelayMs = getBatchDelayMs();
+  let successCount = 0;
+  let failureCount = 0;
+
+  try {
+    for (let offset = 0; offset < recipients.length; offset += batchSize) {
+      const batch = recipients.slice(offset, offset + batchSize);
+      const batchResults = await Promise.all(batch.map(async (subscriber) => {
+        const log = await NewsletterSendLog.create({
+          campaignId: campaign.id,
+          subscriberId: subscriber.id,
+          email: subscriber.email,
+          status: 'queued',
+        });
+
+        try {
+          const rendered = await renderCampaignEmail(campaign, subscriber.email);
+          const info = await sendMail({
+            to: subscriber.email,
+            subject: rendered.subject,
+            html: rendered.html,
+            text: rendered.text,
+          });
+
+          log.status = 'sent';
+          log.providerMessageId = info?.messageId || null;
+          log.errorMessage = null;
+          log.sentAt = new Date();
+          await log.save();
+          return { success: 1, failure: 0 };
+        } catch (error) {
+          const rawErrorMessage = typeof error?.message === 'string' && error.message.trim()
+            ? error.message.trim()
+            : 'Unknown send error.';
+          log.status = 'failed';
+          log.errorMessage = rawErrorMessage.slice(0, 5000);
+          log.sentAt = null;
+          await log.save();
+          return { success: 0, failure: 1 };
+        }
+      }));
+
+      for (const result of batchResults) {
+        successCount += result.success;
+        failureCount += result.failure;
+      }
+
+      campaign.successCount = successCount;
+      campaign.failureCount = failureCount;
+      await campaign.save();
+
+      await new Promise((resolve) => {
+        if (batchDelayMs > 0) {
+          setTimeout(resolve, batchDelayMs);
+          return;
+        }
+        setImmediate(resolve);
+      });
+    }
+  } catch (error) {
+    campaign.status = 'failed';
+    campaign.sentAt = new Date();
+    campaign.successCount = successCount;
+    campaign.failureCount = failureCount;
+    await campaign.save();
+    throw error;
+  }
+
+  campaign.status = failureCount > 0 ? 'failed' : 'sent';
+  campaign.sentAt = new Date();
+  campaign.successCount = successCount;
+  campaign.failureCount = failureCount;
+  await campaign.save();
+
+  return {
+    campaign,
+    summary: {
+      totalRecipients: recipients.length,
+      successCount,
+      failureCount,
+    },
+  };
+}
+
+async function listCampaignSendLogs(campaignId, query = {}) {
+  const campaign = await NewsletterCampaign.findByPk(campaignId);
+  if (!campaign) throw new ServiceError(404, 'Campaign not found.');
+
+  const rawPage = Number.parseInt(query.page, 10);
+  const rawLimit = Number.parseInt(query.limit, 10);
+  const page = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+  const limit = Number.isInteger(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 200) : 50;
+  const offset = (page - 1) * limit;
+
+  const where = { campaignId: campaign.id };
+  const statusResult = normalizeEnum(query.status, SEND_LOG_STATUSES, 'Log status');
+  if (statusResult.error) throw new ServiceError(400, statusResult.error);
+  if (statusResult.value) where.status = statusResult.value;
+
+  const { count, rows } = await NewsletterSendLog.findAndCountAll({
+    where,
+    order: [['createdAt', 'DESC']],
+    limit,
+    offset,
+  });
+
+  return {
+    campaign: {
+      id: campaign.id,
+      subject: campaign.subject,
+      status: campaign.status,
+      totalRecipients: campaign.totalRecipients,
+      successCount: campaign.successCount,
+      failureCount: campaign.failureCount,
+      sentAt: campaign.sentAt,
+    },
+    logs: rows,
+    pagination: {
+      total: count,
+      page,
+      limit,
+      totalPages: Math.ceil(count / limit),
+    },
+  };
 }
 
 module.exports = {
   ServiceError,
   SUBSCRIBER_STATUSES,
   SUBSCRIBER_SOURCES,
+  CAMPAIGN_STATUSES,
+  SEND_LOG_STATUSES,
   NEWSLETTER_GENERIC_SUBSCRIBE_MESSAGE,
   NEWSLETTER_GENERIC_UNSUBSCRIBE_MESSAGE,
   subscribePublic,
@@ -382,4 +942,12 @@ module.exports = {
   updateSubscriberByAdmin,
   createUnsubscribeLinkForSubscriberEmail,
   issueUnsubscribeToken,
+  listCampaigns,
+  createCampaignDraft,
+  getCampaignById,
+  updateCampaignDraft,
+  sendCampaignTestEmail,
+  sendCampaignNow,
+  listCampaignSendLogs,
+  getEligibleSubscribers,
 };

@@ -1,10 +1,17 @@
 const request = require('supertest');
+const nodemailer = require('nodemailer');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { helmetConfig, corsOptions } = require('../src/config/securityHeaders');
 const { storeCsrfToken } = require('../src/utils/csrf');
-const { sequelize, User, NewsletterSubscriber } = require('../src/models');
+const {
+  sequelize,
+  User,
+  NewsletterSubscriber,
+  NewsletterCampaign,
+  NewsletterSendLog,
+} = require('../src/models');
 const { issueUnsubscribeToken } = require('../src/services/newsletterService');
 
 const authRoutes = require('../src/routes/authRoutes');
@@ -12,6 +19,13 @@ const newsletterRoutes = require('../src/routes/newsletterRoutes');
 
 process.env.JWT_SECRET = 'newsletter-test-secret';
 process.env.NODE_ENV = 'test';
+process.env.SMTP_HOST = 'localhost';
+process.env.SMTP_PORT = '2525';
+process.env.SMTP_SECURE = 'false';
+process.env.SMTP_USER = 'smtp-user';
+process.env.SMTP_PASS = 'smtp-pass';
+
+jest.mock('nodemailer');
 
 const app = express();
 app.use(helmet(helmetConfig));
@@ -54,8 +68,12 @@ describe('Newsletter API', () => {
   let adminUserId;
   let moderatorToken;
   let moderatorUserId;
+  let sendMailMock;
 
   beforeAll(async () => {
+    sendMailMock = jest.fn().mockResolvedValue({ messageId: 'mock-message-id' });
+    nodemailer.createTransport.mockReturnValue({ sendMail: sendMailMock });
+
     await sequelize.authenticate();
     await sequelize.sync({ force: true });
     ({ token: adminToken, userId: adminUserId } = await createAndLoginUser({
@@ -75,6 +93,10 @@ describe('Newsletter API', () => {
   });
 
   beforeEach(async () => {
+    sendMailMock.mockReset();
+    sendMailMock.mockResolvedValue({ messageId: 'mock-message-id' });
+    await NewsletterSendLog.destroy({ where: {} });
+    await NewsletterCampaign.destroy({ where: {} });
     await NewsletterSubscriber.destroy({ where: {} });
   });
 
@@ -199,5 +221,165 @@ describe('Newsletter API', () => {
     expect(bulkResponse.body.success).toBe(true);
     expect(bulkResponse.body.data.added).toBe(2);
     expect(bulkResponse.body.data.invalid).toHaveLength(1);
+  });
+
+  test('admin can create campaign draft and list/get it', async () => {
+    const createCsrf = csrfHeadersFor('newsletter-campaign-create-csrf', adminUserId);
+    const createResponse = await request(app)
+      .post('/api/newsletter/admin/campaigns')
+      .set('Cookie', [`auth_token=${adminToken}`, ...createCsrf.Cookie])
+      .set('x-csrf-token', createCsrf['x-csrf-token'])
+      .send({
+        subject: 'Weekly update',
+        previewText: 'What happened this week',
+        htmlContent: '<p>Hello subscribers</p>',
+        textContent: 'Hello subscribers',
+        audienceFilters: { locale: 'en', source: 'website', tag: 'news' },
+      });
+
+    expect(createResponse.status).toBe(201);
+    expect(createResponse.body.success).toBe(true);
+    expect(createResponse.body.data.campaign.status).toBe('draft');
+
+    const listResponse = await request(app)
+      .get('/api/newsletter/admin/campaigns')
+      .set('Cookie', [`auth_token=${adminToken}`]);
+    expect(listResponse.status).toBe(200);
+    expect(listResponse.body.success).toBe(true);
+    expect(listResponse.body.data.campaigns).toHaveLength(1);
+
+    const campaignId = createResponse.body.data.campaign.id;
+    const getResponse = await request(app)
+      .get(`/api/newsletter/admin/campaigns/${campaignId}`)
+      .set('Cookie', [`auth_token=${adminToken}`]);
+    expect(getResponse.status).toBe(200);
+    expect(getResponse.body.success).toBe(true);
+    expect(getResponse.body.data.campaign.subject).toBe('Weekly update');
+    expect(getResponse.body.data.estimatedRecipients).toBe(0);
+  });
+
+  test('send test email does not create campaign send logs', async () => {
+    const createCsrf = csrfHeadersFor('newsletter-campaign-test-create-csrf', adminUserId);
+    const createResponse = await request(app)
+      .post('/api/newsletter/admin/campaigns')
+      .set('Cookie', [`auth_token=${adminToken}`, ...createCsrf.Cookie])
+      .set('x-csrf-token', createCsrf['x-csrf-token'])
+      .send({
+        subject: 'Campaign test',
+        htmlContent: '<p>Body</p>',
+      });
+
+    const campaignId = createResponse.body.data.campaign.id;
+
+    const testCsrf = csrfHeadersFor('newsletter-campaign-test-send-csrf', adminUserId);
+    const testResponse = await request(app)
+      .post(`/api/newsletter/admin/campaigns/${campaignId}/test-send`)
+      .set('Cookie', [`auth_token=${adminToken}`, ...testCsrf.Cookie])
+      .set('x-csrf-token', testCsrf['x-csrf-token'])
+      .send({ email: 'test-recipient@test.com' });
+
+    expect(testResponse.status).toBe(200);
+    expect(testResponse.body.success).toBe(true);
+    expect(sendMailMock).toHaveBeenCalledTimes(1);
+
+    const logsCount = await NewsletterSendLog.count({ where: { campaignId } });
+    expect(logsCount).toBe(0);
+  });
+
+  test('send now applies audience filters, excludes unsubscribed, and writes logs', async () => {
+    await NewsletterSubscriber.bulkCreate([
+      {
+        email: 'eligible-en@test.com',
+        status: 'subscribed',
+        source: 'website',
+        locale: 'en',
+        tags: ['news', 'promo'],
+        subscribedAt: new Date(),
+      },
+      {
+        email: 'eligible-en-2@test.com',
+        status: 'subscribed',
+        source: 'website',
+        locale: 'en',
+        tags: ['news'],
+        subscribedAt: new Date(),
+      },
+      {
+        email: 'wrong-locale@test.com',
+        status: 'subscribed',
+        source: 'website',
+        locale: 'el',
+        tags: ['news'],
+        subscribedAt: new Date(),
+      },
+      {
+        email: 'unsubscribed@test.com',
+        status: 'unsubscribed',
+        source: 'website',
+        locale: 'en',
+        tags: ['news'],
+      },
+    ]);
+
+    const createCsrf = csrfHeadersFor('newsletter-campaign-send-create-csrf', adminUserId);
+    const createResponse = await request(app)
+      .post('/api/newsletter/admin/campaigns')
+      .set('Cookie', [`auth_token=${adminToken}`, ...createCsrf.Cookie])
+      .set('x-csrf-token', createCsrf['x-csrf-token'])
+      .send({
+        subject: 'Audience campaign',
+        htmlContent: '<p>Audience body</p>',
+        audienceFilters: { locale: 'en', source: 'website', tag: 'news' },
+      });
+
+    const campaignId = createResponse.body.data.campaign.id;
+
+    sendMailMock.mockImplementation(async ({ to }) => {
+      if (to === 'eligible-en-2@test.com') {
+        throw new Error('Simulated SMTP failure');
+      }
+      return { messageId: `msg-${to}` };
+    });
+
+    const sendCsrf = csrfHeadersFor('newsletter-campaign-send-now-csrf', adminUserId);
+    const sendResponse = await request(app)
+      .post(`/api/newsletter/admin/campaigns/${campaignId}/send`)
+      .set('Cookie', [`auth_token=${adminToken}`, ...sendCsrf.Cookie])
+      .set('x-csrf-token', sendCsrf['x-csrf-token'])
+      .send({});
+
+    expect(sendResponse.status).toBe(200);
+    expect(sendResponse.body.success).toBe(true);
+    expect(sendResponse.body.data.summary.totalRecipients).toBe(2);
+    expect(sendResponse.body.data.summary.successCount).toBe(1);
+    expect(sendResponse.body.data.summary.failureCount).toBe(1);
+
+    const campaign = await NewsletterCampaign.findByPk(campaignId);
+    expect(campaign.status).toBe('failed');
+    expect(campaign.totalRecipients).toBe(2);
+    expect(campaign.successCount).toBe(1);
+    expect(campaign.failureCount).toBe(1);
+    expect(campaign.sentAt).toBeTruthy();
+
+    const successfulEmailCall = sendMailMock.mock.calls.find((call) => call[0]?.to === 'eligible-en@test.com');
+    const failedEmailCall = sendMailMock.mock.calls.find((call) => call[0]?.to === 'eligible-en-2@test.com');
+    expect(successfulEmailCall).toBeTruthy();
+    expect(failedEmailCall).toBeTruthy();
+    expect(successfulEmailCall[0].subject).toBe('Audience campaign');
+    expect(successfulEmailCall[0].html).toContain('Appofa Newsletter');
+    expect(successfulEmailCall[0].html).toContain('unsubscribe');
+    expect(successfulEmailCall[0].text).toContain('Unsubscribe:');
+
+    const logs = await NewsletterSendLog.findAll({
+      where: { campaignId },
+      order: [['email', 'ASC']],
+    });
+    expect(logs).toHaveLength(2);
+    expect(logs[0].email).toBe('eligible-en-2@test.com');
+    expect(logs[0].status).toBe('failed');
+    expect(logs[0].errorMessage).toContain('Simulated SMTP failure');
+    expect(logs[1].email).toBe('eligible-en@test.com');
+    expect(logs[1].status).toBe('sent');
+    expect(logs[1].providerMessageId).toBe('msg-eligible-en@test.com');
   });
 });
