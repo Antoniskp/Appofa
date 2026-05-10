@@ -25,19 +25,19 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (45)](#models-45)
-- [API Routes (28 files, 173+ endpoints)](#api-routes-28-files-173-endpoints)
-- [Controllers (22)](#controllers-22)
-- [Services (11)](#services-11)
+- [Models (46)](#models-46)
+- [API Routes (29 files, 180+ endpoints)](#api-routes-29-files-180-endpoints)
+- [Controllers (23)](#controllers-23)
+- [Services (14)](#services-14)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (107)](#frontend-pages-107)
-- [Components (120+)](#components-120)
-- [API Client Modules (28)](#api-client-modules-28)
+- [Frontend Pages (109)](#frontend-pages-109)
+- [Components (121+)](#components-121)
+- [API Client Modules (29)](#api-client-modules-29)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
-- [Migrations (88)](#migrations-88)
-- [Tests (53 files)](#tests-53-files)
+- [Migrations (89)](#migrations-89)
+- [Tests (54 files)](#tests-54-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -51,10 +51,10 @@ Appofa/
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
 ├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages)
 ├── src/                    # Backend (Express + Sequelize)
-│   ├── controllers/        # Request handlers (22 files)
-│   ├── services/           # Business logic (11 files)
-│   ├── models/             # Sequelize models (44 models)
-│   ├── routes/             # Express route definitions (28 files)
+│   ├── controllers/        # Request handlers (23 files)
+│   ├── services/           # Business logic (14 files)
+│   ├── models/             # Sequelize models (46 models)
+│   ├── routes/             # Express route definitions (29 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
 │   ├── migrations/         # DB migrations (86 files)
 │   ├── config/             # database.js, securityHeaders.js
@@ -65,7 +65,7 @@ Appofa/
 │
 ├── app/                    # Frontend (Next.js App Router, 105+ pages)
 │   ├── (statics)/          # Static content pages (47 pages)
-│   ├── admin/              # Admin dashboard (20 pages)
+│   ├── admin/              # Admin dashboard (21 pages)
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
 │   ├── suggestions/        # Suggestion pages
@@ -81,13 +81,14 @@ Appofa/
 │   ├── dream-team/         # Dream team components (17 files)
 │   ├── follow/             # Follow button (1 file)
 │   ├── layout/             # Layout, nav, footer (8 files)
+│   ├── newsletter/         # Newsletter UI components (1 file)
 │   ├── locations/          # Location components (4 files)
 │   ├── polls/              # Poll components (5 files)
 │   ├── profile/            # Profile components (12 files)
 │   └── ui/                 # Shared UI primitives (20+ files)
 │
 ├── lib/                    # Shared frontend utilities
-│   ├── api/                # API client modules (28 files)
+│   ├── api/                # API client modules (29 files)
 │   ├── constants/          # Frontend constants (3 files)
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
@@ -106,7 +107,7 @@ Appofa/
 
 ---
 
-## Models (45)
+## Models (46)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -127,6 +128,7 @@ Appofa/
 | SuggestionVote | SuggestionVotes | id, suggestionId, userId, voteType | belongsTo: Suggestion, User |
 | Comment | Comments | id, entityType, entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
 | Message | Messages | id, type, userId, email, name, subject, message, locationId, status | belongsTo: User, Location |
+| NewsletterSubscriber | NewsletterSubscribers | id, email (unique lowercase), name, status (`pending\|subscribed\|unsubscribed`), source (`website\|admin_manual\|import`), locale, tags, notes, subscribedAt, unsubscribedAt, unsubscribeTokenHash, createdByAdminId | belongsTo: User (`createdByAdmin`) |
 | Follow | Follows | id, followerId, followingId | belongsTo: User (×2) |
 | Bookmark | Bookmarks | id, userId, entityType, entityId | belongsTo: User |
 | Endorsement | Endorsements | id, endorserId, endorsedId, topic | belongsTo: User (×2) |
@@ -160,7 +162,7 @@ Appofa/
 
 ---
 
-## API Routes (28 files, 173+ endpoints)
+## API Routes (29 files, 180+ endpoints)
 
 ### Auth (`/api/auth`)
 | Method | Path | Auth | Description |
@@ -191,6 +193,18 @@ Appofa/
 | GET | /users/search | ✅ | Search users (public) |
 | GET | /users/:id/public | ✅ | Public user profile |
 | GET | /users/public-stats | — | Public user stats |
+
+### Newsletter (`/api/newsletter`)
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | /subscribe | — | Public newsletter subscribe (duplicate-safe generic response) |
+| GET | /unsubscribe | — | Public unsubscribe via secure tokenized link (`?token=`) |
+| POST | /unsubscribe | — | Public unsubscribe via token payload |
+| GET | /admin/subscribers | admin/mod | List subscribers (pagination/filter/search) |
+| GET | /admin/stats | admin/mod | Subscriber totals by status |
+| POST | /admin/subscribers | admin | Add/update subscriber manually |
+| POST | /admin/subscribers/bulk | admin | Bulk add subscribers from pasted/listed emails |
+| PUT | /admin/subscribers/:id | admin | Update subscriber fields/status |
 
 ### Articles (`/api/articles`)
 | Method | Path | Auth | Description |
@@ -346,6 +360,7 @@ Appofa/
 | followRoutes.js | /api/users | POST /:id/follow, DELETE /:id/follow, GET /:id/follow/status, GET /:id/followers, GET /:id/following |
 | endorsementRoutes.js | /api/endorsements | GET /topics, GET /leaderboard, GET /status, POST /, DELETE / |
 | messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
+| newsletterRoutes.js | /api/newsletter | POST /subscribe, GET/POST /unsubscribe, GET /admin/subscribers, GET /admin/stats, POST /admin/subscribers, POST /admin/subscribers/bulk, PUT /admin/subscribers/:id |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
 | organizationRoutes.js | /api/organizations | GET /, GET /:slug, POST /, PUT /:id, DELETE /:id, GET /:id/members, POST /:id/join, DELETE /:id/leave, POST /:id/members/invite, PATCH /:id/members/:userId/approve, DELETE /:id/members/:userId, PATCH /:id/members/:userId/role, GET /:id/members/pending, GET /:id/polls, POST /:id/polls, GET /:id/suggestions, POST /:id/suggestions, GET /:id/official-posts, POST /:id/official-posts, GET /:id/verification, PATCH /:id/verify, GET /:id/children, PATCH /:id/parent, GET /:id/analytics |
@@ -365,7 +380,7 @@ Appofa/
 
 ---
 
-## Controllers (22)
+## Controllers (23)
 
 | Controller | Domain |
 |-----------|--------|
@@ -384,6 +399,7 @@ Appofa/
 | locationSectionController.js | Location section management |
 | manifestController.js | Manifest CRUD & acceptance |
 | messageController.js | Contact messages |
+| newsletterController.js | Newsletter subscription + admin subscriber management |
 | personController.js | Person profiles & claims |
 | personRemovalRequestController.js | Removal requests |
 | pollController.js | Poll CRUD, voting, results |
@@ -396,7 +412,7 @@ Appofa/
 
 ---
 
-## Services (13)
+## Services (14)
 
 | Service | Purpose |
 |---------|---------|
@@ -408,6 +424,7 @@ Appofa/
 | imageStorageService.js | Saves processed image buffers to `uploads/profiles/` and `uploads/locations/` using `__dirname`-relative paths |
 | ipAccessService.js | IP whitelist/blacklist with 60s in-memory TTL cache |
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
+| newsletterService.js | Newsletter subscriber lifecycle (subscribe/unsubscribe token hashing, admin list/stats/add/bulk/update) |
 | oauthService.js | OAuth integration (GitHub, Google) |
 | personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
 | pollService.js | Poll operations & calculations (including org-membership access enforcement for org-scoped private polls/results/voting) |
@@ -443,7 +460,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (107)
+## Frontend Pages (109)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -452,6 +469,7 @@ Appofa/
 |-------|-------------|
 | `/` | Home page |
 | `/login`, `/register`, `/forgot-password`, `/reset-password` | Authentication (includes password reset request + token reset flow) |
+| `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile |
 | `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
@@ -484,7 +502,7 @@ Appofa/
 | `/request-removal` | Profile removal request |
 | `/blocked`, `/unknown-country` | Public geo access status pages for blocked/unknown-country traffic |
 
-### Admin (20 pages)
+### Admin (21 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
@@ -498,6 +516,7 @@ Appofa/
 | `/admin/geo` | Geo traffic dashboard + country funding management + access rules tab (blocked countries + unknown/no-IP actions) |
 | `/admin/homepage` | Homepage settings |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
+| `/admin/newsletter` | Newsletter admin (stats, searchable list, manual add, bulk paste import, quick status updates) |
 | `/admin/locations` | Location admin |
 | `/admin/organizations` | Organization admin — table with search/filter, parent-org dropdown, location/parent columns, highlighted editing row, direct public-profile links |
 | `/admin/manifests` | Manifest admin |
@@ -527,7 +546,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## Components (120+)
+## Components (121+)
 
 | Directory | Count | Key Components |
 |-----------|-------|----------------|
@@ -537,6 +556,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
+| `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging) |
 | `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
@@ -552,7 +572,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (28)
+## API Client Modules (29)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -578,6 +598,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI`, `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments) |
 | manifest.js | Manifests |
 | messages.js | Messages |
+| newsletter.js | Newsletter public subscribe/unsubscribe + admin subscriber management |
 | organizations.js | Organizations CRUD + members |
 | personRemovalRequests.js | Removal requests |
 | persons.js | Person profiles |
@@ -635,7 +656,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (88)
+## Migrations (89)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -750,18 +771,19 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260507210000-create-civic-questions.js | Create CivicQuestions + CivicQuestionVotes tables with fixed vote choices (`agree|disagree|present`) and unique one-vote-per-user-per-question constraint |
 | — | 20260508000000-add-commission-requirement-to-civic-questions.js | Add nullable `CivicQuestions.commissionRequirement` STRING for EU/Commission requirement description |
 | — | 20260510000000-add-password-reset-fields-to-users.js | Add nullable `Users.resetPasswordTokenHash` + `Users.resetPasswordExpires` for secure password reset tokens |
+| — | 20260510134600-create-newsletter-subscribers.js | Create `NewsletterSubscribers` table (email unique, status/source enums, locale/tags/notes, subscribe lifecycle timestamps, hashed unsubscribe token, optional createdByAdminId) |
 
 </details>
 
 ---
 
-## Tests (53 files)
+## Tests (54 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
+api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
