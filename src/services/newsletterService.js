@@ -217,6 +217,7 @@ async function subscribePublic(payload = {}) {
     });
     await issueUnsubscribeToken(subscriber);
   } catch (error) {
+    // Duplicate-safe behavior for race conditions.
     if (error.name !== 'SequelizeUniqueConstraintError') {
       throw error;
     }
@@ -493,7 +494,13 @@ async function createUnsubscribeLinkForSubscriberEmail(email) {
 function getBatchSize() {
   const parsed = Number.parseInt(process.env.NEWSLETTER_SEND_BATCH_SIZE || '', 10);
   if (!Number.isInteger(parsed) || parsed <= 0) return 50;
-  return Math.min(parsed, 500);
+  return Math.min(parsed, 100);
+}
+
+function getBatchDelayMs() {
+  const parsed = Number.parseInt(process.env.NEWSLETTER_BATCH_DELAY_MS || '', 10);
+  if (!Number.isInteger(parsed) || parsed < 0) return 0;
+  return Math.min(parsed, 5000);
 }
 
 function normalizeCampaignPayload(payload = {}, { isCreate = false } = {}) {
@@ -726,13 +733,20 @@ async function sendMail({ to, subject, html, text }) {
   const transporter = getSmtpTransporter();
   const from = process.env.SMTP_FROM || NEWSLETTER_FROM_DEFAULT;
 
-  return transporter.sendMail({
-    from,
-    to,
-    subject,
-    html,
-    text,
-  });
+  try {
+    return await transporter.sendMail({
+      from,
+      to,
+      subject,
+      html,
+      text,
+    });
+  } catch (error) {
+    const message = typeof error?.message === 'string' && error.message.trim()
+      ? error.message.trim()
+      : 'Unknown SMTP error.';
+    throw new Error(`Failed to send email via SMTP: ${message}`);
+  }
 }
 
 async function sendCampaignTestEmail(campaignId, payload = {}) {
@@ -780,21 +794,19 @@ async function sendCampaignNow(campaignId) {
   campaign.failureCount = 0;
   await campaign.save();
 
-  await NewsletterSendLog.destroy({ where: { campaignId: campaign.id } });
-
   const recipients = await getEligibleSubscribers(campaign.audienceFilters || {}, ['id', 'email', 'tags']);
   campaign.totalRecipients = recipients.length;
   await campaign.save();
 
   const batchSize = getBatchSize();
+  const batchDelayMs = getBatchDelayMs();
   let successCount = 0;
   let failureCount = 0;
 
   try {
     for (let offset = 0; offset < recipients.length; offset += batchSize) {
       const batch = recipients.slice(offset, offset + batchSize);
-
-      for (const subscriber of batch) {
+      const batchResults = await Promise.all(batch.map(async (subscriber) => {
         const log = await NewsletterSendLog.create({
           campaignId: campaign.id,
           subscriberId: subscriber.id,
@@ -816,21 +828,35 @@ async function sendCampaignNow(campaignId) {
           log.errorMessage = null;
           log.sentAt = new Date();
           await log.save();
-          successCount += 1;
+          return { success: 1, failure: 0 };
         } catch (error) {
+          const rawErrorMessage = typeof error?.message === 'string' && error.message.trim()
+            ? error.message.trim()
+            : 'Unknown send error.';
           log.status = 'failed';
-          log.errorMessage = normalizeOptionalText(error?.message || 'Unknown send error.', 'Error', 1, 5000).value || 'Unknown send error.';
+          log.errorMessage = rawErrorMessage.slice(0, 5000);
           log.sentAt = null;
           await log.save();
-          failureCount += 1;
+          return { success: 0, failure: 1 };
         }
+      }));
+
+      for (const result of batchResults) {
+        successCount += result.success;
+        failureCount += result.failure;
       }
 
       campaign.successCount = successCount;
       campaign.failureCount = failureCount;
       await campaign.save();
 
-      await new Promise((resolve) => setImmediate(resolve));
+      await new Promise((resolve) => {
+        if (batchDelayMs > 0) {
+          setTimeout(resolve, batchDelayMs);
+          return;
+        }
+        setImmediate(resolve);
+      });
     }
   } catch (error) {
     campaign.status = 'failed';
@@ -841,7 +867,7 @@ async function sendCampaignNow(campaignId) {
     throw error;
   }
 
-  campaign.status = failureCount > 0 && successCount === 0 ? 'failed' : 'sent';
+  campaign.status = failureCount > 0 ? 'failed' : 'sent';
   campaign.sentAt = new Date();
   campaign.successCount = successCount;
   campaign.failureCount = failureCount;

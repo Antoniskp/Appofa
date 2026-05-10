@@ -100,9 +100,9 @@ function AdminNewsletterCampaignDetailContent() {
     try {
       await newsletterAPI.adminUpdateCampaign(campaignId, {
         subject: form.subject,
-        previewText: form.previewText || null,
+        ...(form.previewText ? { previewText: form.previewText } : {}),
         htmlContent: form.htmlContent,
-        textContent: form.textContent || null,
+        ...(form.textContent ? { textContent: form.textContent } : {}),
         audienceFilters: {
           ...(form.locale ? { locale: form.locale } : {}),
           ...(form.source ? { source: form.source } : {}),

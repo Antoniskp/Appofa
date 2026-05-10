@@ -355,11 +355,20 @@ describe('Newsletter API', () => {
     expect(sendResponse.body.data.summary.failureCount).toBe(1);
 
     const campaign = await NewsletterCampaign.findByPk(campaignId);
-    expect(campaign.status).toBe('sent');
+    expect(campaign.status).toBe('failed');
     expect(campaign.totalRecipients).toBe(2);
     expect(campaign.successCount).toBe(1);
     expect(campaign.failureCount).toBe(1);
     expect(campaign.sentAt).toBeTruthy();
+
+    const successfulEmailCall = sendMailMock.mock.calls.find((call) => call[0]?.to === 'eligible-en@test.com');
+    const failedEmailCall = sendMailMock.mock.calls.find((call) => call[0]?.to === 'eligible-en-2@test.com');
+    expect(successfulEmailCall).toBeTruthy();
+    expect(failedEmailCall).toBeTruthy();
+    expect(successfulEmailCall[0].subject).toBe('Audience campaign');
+    expect(successfulEmailCall[0].html).toContain('Appofa Newsletter');
+    expect(successfulEmailCall[0].html).toContain('unsubscribe');
+    expect(successfulEmailCall[0].text).toContain('Unsubscribe:');
 
     const logs = await NewsletterSendLog.findAll({
       where: { campaignId },
