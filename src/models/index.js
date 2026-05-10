@@ -48,6 +48,8 @@ const Organization = require('./Organization');
 const OrganizationMember = require('./OrganizationMember');
 const OrganizationAnalytics = require('./OrganizationAnalytics');
 const NewsletterSubscriber = require('./NewsletterSubscriber');
+const NewsletterCampaign = require('./NewsletterCampaign');
+const NewsletterSendLog = require('./NewsletterSendLog');
 
 // Define associations
 User.hasMany(Article, {
@@ -455,6 +457,12 @@ OrganizationAnalytics.belongsTo(Organization, { foreignKey: 'organizationId', as
 // Newsletter associations
 NewsletterSubscriber.belongsTo(User, { foreignKey: 'createdByAdminId', as: 'createdByAdmin' });
 User.hasMany(NewsletterSubscriber, { foreignKey: 'createdByAdminId', as: 'newsletterSubscribersCreated' });
+NewsletterCampaign.belongsTo(User, { foreignKey: 'createdByAdminId', as: 'createdByAdmin' });
+User.hasMany(NewsletterCampaign, { foreignKey: 'createdByAdminId', as: 'newsletterCampaignsCreated' });
+NewsletterSendLog.belongsTo(NewsletterCampaign, { foreignKey: 'campaignId', as: 'campaign' });
+NewsletterCampaign.hasMany(NewsletterSendLog, { foreignKey: 'campaignId', as: 'sendLogs' });
+NewsletterSendLog.belongsTo(NewsletterSubscriber, { foreignKey: 'subscriberId', as: 'subscriber' });
+NewsletterSubscriber.hasMany(NewsletterSendLog, { foreignKey: 'subscriberId', as: 'sendLogs' });
 
 module.exports = {
   sequelize,
@@ -507,4 +515,6 @@ module.exports = {
   OrganizationMember,
   OrganizationAnalytics,
   NewsletterSubscriber,
+  NewsletterCampaign,
+  NewsletterSendLog,
 };

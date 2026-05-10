@@ -101,6 +101,113 @@ const newsletterController = {
       return res.status(500).json({ success: false, message: 'Error updating subscriber.' });
     }
   },
+
+  adminListCampaigns: async (req, res) => {
+    try {
+      const data = await newsletterService.listCampaigns(req.query || {});
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign list error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching campaigns.' });
+    }
+  },
+
+  adminCreateCampaign: async (req, res) => {
+    try {
+      const campaign = await newsletterService.createCampaignDraft(req.body || {}, req.user.id);
+      return res.status(201).json({
+        success: true,
+        message: 'Campaign draft created successfully.',
+        data: { campaign },
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign create error:', error);
+      return res.status(500).json({ success: false, message: 'Error creating campaign.' });
+    }
+  },
+
+  adminGetCampaign: async (req, res) => {
+    try {
+      const data = await newsletterService.getCampaignById(req.params.id);
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign get error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching campaign.' });
+    }
+  },
+
+  adminUpdateCampaign: async (req, res) => {
+    try {
+      const campaign = await newsletterService.updateCampaignDraft(req.params.id, req.body || {});
+      return res.status(200).json({
+        success: true,
+        message: 'Campaign updated successfully.',
+        data: { campaign },
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign update error:', error);
+      return res.status(500).json({ success: false, message: 'Error updating campaign.' });
+    }
+  },
+
+  adminSendCampaignTest: async (req, res) => {
+    try {
+      const result = await newsletterService.sendCampaignTestEmail(req.params.id, req.body || {});
+      return res.status(200).json({
+        success: true,
+        message: 'Test email sent successfully.',
+        data: result,
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign test-send error:', error);
+      return res.status(500).json({ success: false, message: 'Error sending test email.' });
+    }
+  },
+
+  adminSendCampaignNow: async (req, res) => {
+    try {
+      const result = await newsletterService.sendCampaignNow(req.params.id);
+      return res.status(200).json({
+        success: true,
+        message: 'Campaign sent.',
+        data: result,
+      });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign send error:', error);
+      return res.status(500).json({ success: false, message: 'Error sending campaign.' });
+    }
+  },
+
+  adminCampaignLogs: async (req, res) => {
+    try {
+      const data = await newsletterService.listCampaignSendLogs(req.params.id, req.query || {});
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Newsletter campaign logs error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching campaign logs.' });
+    }
+  },
 };
 
 module.exports = newsletterController;
