@@ -11,6 +11,10 @@ router.post('/subscribe', createLimiter, newsletterController.subscribe);
 router.get('/unsubscribe', apiLimiter, newsletterController.unsubscribe);
 router.post('/unsubscribe', createLimiter, newsletterController.unsubscribe);
 
+// Authenticated user preference routes
+router.get('/me/preference', apiLimiter, authMiddleware, newsletterController.getMyPreference);
+router.put('/me/preference', apiLimiter, authMiddleware, csrfProtection, newsletterController.updateMyPreference);
+
 // Admin / moderator read routes
 router.get('/admin/subscribers', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), newsletterController.adminListSubscribers);
 router.get('/admin/stats', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), newsletterController.adminStats);

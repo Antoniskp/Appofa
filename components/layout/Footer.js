@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import NewsletterSignupForm from '@/components/newsletter/NewsletterSignupForm';
+import { useAuth } from '@/lib/auth-context';
 
 export default function Footer() {
   const t = useTranslations('footer');
+  const { user, loading } = useAuth();
   const currentYear = new Date().getFullYear();
   const footerColumns = [
     {
@@ -51,7 +53,7 @@ export default function Footer() {
   return (
     <footer className="bg-gray-800 text-white mt-auto" aria-label={t('menu_aria')}>
       <div className="app-container py-4">
-        <NewsletterSignupForm />
+        {!loading && !user ? <NewsletterSignupForm /> : null}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {footerColumns.map((column) => (
             <div key={column.title}>

@@ -299,6 +299,75 @@ async function subscribePublic(payload = {}) {
   return { message: NEWSLETTER_GENERIC_SUBSCRIBE_MESSAGE };
 }
 
+async function getUserNewsletterPreference(user = {}) {
+  const emailResult = normalizeEmail(user.email);
+  if (emailResult.error) throw new ServiceError(400, 'User email is required.');
+
+  const subscriber = await NewsletterSubscriber.findOne({
+    where: { email: emailResult.value },
+  });
+
+  return {
+    subscribed: subscriber?.status === 'subscribed',
+    status: subscriber?.status || 'unsubscribed',
+  };
+}
+
+async function updateUserNewsletterPreference(user = {}, payload = {}) {
+  const emailResult = normalizeEmail(user.email);
+  if (emailResult.error) throw new ServiceError(400, 'User email is required.');
+
+  if (typeof payload.subscribed !== 'boolean') {
+    throw new ServiceError(400, 'Subscribed must be a boolean.');
+  }
+
+  const email = emailResult.value;
+  let subscriber = await NewsletterSubscriber.findOne({ where: { email } });
+
+  if (payload.subscribed) {
+    if (!subscriber) {
+      try {
+        subscriber = await NewsletterSubscriber.create({
+          email,
+          name: user.username || null,
+          source: 'website',
+          status: 'subscribed',
+          subscribedAt: new Date(),
+          unsubscribedAt: null,
+        });
+      } catch (error) {
+        if (error.name !== 'SequelizeUniqueConstraintError') {
+          throw error;
+        }
+        subscriber = await NewsletterSubscriber.findOne({ where: { email } });
+      }
+    }
+
+    if (subscriber) {
+      subscriber.status = 'subscribed';
+      subscriber.source = subscriber.source || 'website';
+      applyStatusDates(subscriber, 'subscribed');
+      await issueUnsubscribeToken(subscriber);
+    }
+
+    return {
+      subscribed: true,
+      status: 'subscribed',
+    };
+  }
+
+  if (subscriber) {
+    subscriber.status = 'unsubscribed';
+    applyStatusDates(subscriber, 'unsubscribed');
+    await subscriber.save();
+  }
+
+  return {
+    subscribed: false,
+    status: 'unsubscribed',
+  };
+}
+
 async function unsubscribePublic(token) {
   const tokenResult = normalizeOptionalText(token, 'Unsubscribe token', 1, 500);
   if (tokenResult.error) throw new ServiceError(400, tokenResult.error);
@@ -1365,6 +1434,8 @@ module.exports = {
   NEWSLETTER_GENERIC_SUBSCRIBE_MESSAGE,
   NEWSLETTER_GENERIC_UNSUBSCRIBE_MESSAGE,
   subscribePublic,
+  getUserNewsletterPreference,
+  updateUserNewsletterPreference,
   unsubscribePublic,
   getAdminStats,
   listSubscribers,

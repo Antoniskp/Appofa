@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { authAPI, locationAPI, commentAPI, badgeAPI, manifestAPI } from '@/lib/api';
+import { authAPI, locationAPI, commentAPI, badgeAPI, manifestAPI, newsletterAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import Card from '@/components/ui/Card';
@@ -74,6 +74,11 @@ function ProfileContent() {
     searchable: true,
   });
   const [savingInteraction, setSavingInteraction] = useState(false);
+  const [newsletterPreference, setNewsletterPreference] = useState({
+    subscribed: false,
+    loaded: false,
+    saving: false,
+  });
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -170,6 +175,21 @@ function ProfileContent() {
         setGithubLinked(!!githubId);
         setGoogleLinked(!!googleId);
         setHasPassword(typeof userData.hasPassword === 'boolean' ? userData.hasPassword : !!userData.password);
+
+        try {
+          const newsletterResponse = await newsletterAPI.getMyPreference();
+          if (newsletterResponse?.success) {
+            setNewsletterPreference({
+              subscribed: !!newsletterResponse.data?.subscribed,
+              loaded: true,
+              saving: false,
+            });
+          } else {
+            setNewsletterPreference((prev) => ({ ...prev, loaded: true, saving: false }));
+          }
+        } catch (_newsletterError) {
+          setNewsletterPreference((prev) => ({ ...prev, loaded: true, saving: false }));
+        }
 
         if (homeLocationId) {
           try {
@@ -500,6 +520,28 @@ function ProfileContent() {
     }
   };
 
+  const handleNewsletterPreferenceToggle = async () => {
+    if (!newsletterPreference.loaded || newsletterPreference.saving) return;
+    const nextSubscribed = !newsletterPreference.subscribed;
+    setNewsletterPreference((prev) => ({ ...prev, saving: true }));
+    try {
+      const response = await newsletterAPI.updateMyPreference({ subscribed: nextSubscribed });
+      if (response?.success) {
+        setNewsletterPreference({
+          subscribed: !!response.data?.subscribed,
+          loaded: true,
+          saving: false,
+        });
+        success(tProfile('newsletter_settings_saved'));
+      } else {
+        throw new Error(tProfile('newsletter_settings_save_failed'));
+      }
+    } catch (err) {
+      setNewsletterPreference((prev) => ({ ...prev, saving: false }));
+      error(err.message || tProfile('newsletter_settings_save_failed'));
+    }
+  };
+
   const handleDeleteAccount = async ({ password, mode }) => {
     await deleteAccount({ password, mode });
     router.replace('/');
@@ -681,6 +723,37 @@ function ProfileContent() {
         {/* Απόρρητο & Αλληλεπίδραση */}
         <Card>
           <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('preferences')}</h2>
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700">{tProfile('newsletter_preference_title')}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{tProfile('newsletter_preference_description')}</p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={newsletterPreference.subscribed}
+              disabled={!newsletterPreference.loaded || newsletterPreference.saving}
+              onClick={handleNewsletterPreferenceToggle}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                newsletterPreference.subscribed ? 'bg-blue-600' : 'bg-gray-200'
+              }`}
+            >
+              <span
+                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                  newsletterPreference.subscribed ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            {!newsletterPreference.loaded
+              ? tProfile('newsletter_preference_loading')
+              : newsletterPreference.saving
+                ? tProfile('newsletter_preference_saving')
+                : newsletterPreference.subscribed
+                  ? tProfile('newsletter_opted_in')
+                  : tProfile('newsletter_opted_out')}
+          </p>
           <label className="block text-sm font-medium text-gray-700 mb-2">{tProfile('language')}</label>
           <LanguageSwitcher />
         </Card>

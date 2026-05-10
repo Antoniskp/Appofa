@@ -161,6 +161,84 @@ describe('Newsletter API', () => {
     expect(subscriber.unsubscribedAt).toBeTruthy();
   });
 
+  test('authenticated user preference opt-in creates subscriber and opt-out unsubscribes', async () => {
+    const email = `pref-user-${Date.now()}@test.com`;
+    const userAuth = await createAndLoginUser({
+      username: `pref_user_${Date.now()}`,
+      email,
+    });
+
+    const initialPreference = await request(app)
+      .get('/api/newsletter/me/preference')
+      .set('Cookie', [`auth_token=${userAuth.token}`]);
+
+    expect(initialPreference.status).toBe(200);
+    expect(initialPreference.body.success).toBe(true);
+    expect(initialPreference.body.data.subscribed).toBe(false);
+    expect(initialPreference.body.data.status).toBe('unsubscribed');
+
+    const enableCsrf = csrfHeadersFor(`newsletter-pref-enable-${Date.now()}`, userAuth.userId);
+    const enableResponse = await request(app)
+      .put('/api/newsletter/me/preference')
+      .set('Cookie', [`auth_token=${userAuth.token}`, ...enableCsrf.Cookie])
+      .set('x-csrf-token', enableCsrf['x-csrf-token'])
+      .send({ subscribed: true });
+
+    expect(enableResponse.status).toBe(200);
+    expect(enableResponse.body.success).toBe(true);
+    expect(enableResponse.body.data.subscribed).toBe(true);
+
+    const createdSubscriber = await NewsletterSubscriber.findOne({ where: { email } });
+    expect(createdSubscriber).toBeTruthy();
+    expect(createdSubscriber.status).toBe('subscribed');
+
+    const disableCsrf = csrfHeadersFor(`newsletter-pref-disable-${Date.now()}`, userAuth.userId);
+    const disableResponse = await request(app)
+      .put('/api/newsletter/me/preference')
+      .set('Cookie', [`auth_token=${userAuth.token}`, ...disableCsrf.Cookie])
+      .set('x-csrf-token', disableCsrf['x-csrf-token'])
+      .send({ subscribed: false });
+
+    expect(disableResponse.status).toBe(200);
+    expect(disableResponse.body.success).toBe(true);
+    expect(disableResponse.body.data.subscribed).toBe(false);
+
+    await createdSubscriber.reload();
+    expect(createdSubscriber.status).toBe('unsubscribed');
+    expect(createdSubscriber.unsubscribedAt).toBeTruthy();
+  });
+
+  test('authenticated preference opt-in re-activates existing unsubscribed subscriber', async () => {
+    const email = `pref-reactivate-${Date.now()}@test.com`;
+    const userAuth = await createAndLoginUser({
+      username: `pref_reactivate_${Date.now()}`,
+      email,
+    });
+
+    await NewsletterSubscriber.create({
+      email,
+      status: 'unsubscribed',
+      source: 'import',
+      unsubscribedAt: new Date(),
+    });
+
+    const enableCsrf = csrfHeadersFor(`newsletter-pref-reactivate-${Date.now()}`, userAuth.userId);
+    const enableResponse = await request(app)
+      .put('/api/newsletter/me/preference')
+      .set('Cookie', [`auth_token=${userAuth.token}`, ...enableCsrf.Cookie])
+      .set('x-csrf-token', enableCsrf['x-csrf-token'])
+      .send({ subscribed: true });
+
+    expect(enableResponse.status).toBe(200);
+    expect(enableResponse.body.success).toBe(true);
+    expect(enableResponse.body.data.status).toBe('subscribed');
+
+    const subscriber = await NewsletterSubscriber.findOne({ where: { email } });
+    expect(subscriber.status).toBe('subscribed');
+    expect(subscriber.unsubscribedAt).toBeNull();
+    expect(subscriber.subscribedAt).toBeTruthy();
+  });
+
   test('admin and moderator access rules are enforced', async () => {
     await NewsletterSubscriber.create({
       email: 'mod-visible@test.com',
