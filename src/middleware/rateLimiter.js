@@ -135,6 +135,9 @@ const ipBlockMiddleware = async (req, res, next) => {
     if (process.env.NODE_ENV === 'test') return next();
     const rules = await ipAccessService.getIpRulesCache();
     const clientIp = normalizeIp(req.ip) || req.ip;
+    // Whitelist takes precedence over blacklist so trusted admin/test IPs
+    // are never accidentally denied by auto-block rules.
+    if (rules.whitelist.has(clientIp)) return next();
     if (rules.blacklist.has(clientIp)) {
       return res.status(403).json({ success: false, message: 'Access denied.' });
     }

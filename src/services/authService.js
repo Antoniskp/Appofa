@@ -258,10 +258,15 @@ async function requestPasswordReset(email) {
   try {
     await sendPasswordResetEmail(user.email, rawToken, expiresInMinutes);
   } catch (error) {
+    // SMTP send failure: log for operator visibility but do not re-throw.
+    // The token is cleared so no orphaned reset entry lingers in the DB.
+    // The generic success message is returned regardless to avoid leaking
+    // whether the account exists or whether email delivery succeeded
+    // (enumeration protection).
+    console.error('[requestPasswordReset] SMTP send failed:', error);
     user.resetPasswordTokenHash = null;
     user.resetPasswordExpires = null;
     await user.save();
-    throw error;
   }
 
   return { message: PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE };

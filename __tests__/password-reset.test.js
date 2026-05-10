@@ -185,6 +185,23 @@ describe('Password reset flow', () => {
     expect(secondTry.status).toBe(200);
   });
 
+  test('forgot-password returns generic success even when SMTP send fails', async () => {
+    nodemailer.__sendMailMock.mockRejectedValue(new Error('EAUTH: authentication failed'));
+
+    const response = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'reset@test.com' });
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ success: true, message: genericMessage });
+    expect(nodemailer.__sendMailMock).toHaveBeenCalledTimes(1);
+
+    // Token must be cleared after SMTP failure so no orphaned reset entry lingers in the DB.
+    const user = await User.findOne({ where: { email: 'reset@test.com' } });
+    expect(user.resetPasswordTokenHash).toBeNull();
+    expect(user.resetPasswordExpires).toBeNull();
+  });
+
   test('forgot-password requests are rate limited (5 per hour)', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
