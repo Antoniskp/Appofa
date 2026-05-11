@@ -126,7 +126,7 @@ Appofa/
 | Suggestion | Suggestions | id, title, body, type, locationId, organizationId, authorId, status, visibility, voteRestriction, category | belongsTo: Location, Organization, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
 | Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
 | SuggestionVote | SuggestionVotes | id, suggestionId, userId, voteType | belongsTo: Suggestion, User |
-| Comment | Comments | id, entityType, entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
+| Comment | Comments | id, entityType (`article\|poll\|user_profile\|civic_question`), entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
 | Message | Messages | id, type, userId, email, name, subject, message, locationId, status | belongsTo: User, Location |
 | NewsletterSubscriber | NewsletterSubscribers | id, email (unique lowercase), name, status (`pending\|subscribed\|unsubscribed`), source (`website\|admin_manual\|import`), locale, tags, notes, subscribedAt, unsubscribedAt, unsubscribeTokenHash, createdByAdminId | belongsTo: User (`createdByAdmin`) |
 | NewsletterCampaign | NewsletterCampaigns | id, subject, previewText, htmlContent, textContent, status (`draft\|scheduled\|sending\|sent\|failed`), audienceFilters (JSON incl. status/locale/source/tags/date ranges), createdByAdminId, sentAt, scheduledAt, totalRecipients, successCount, failureCount | belongsTo: User (`createdByAdmin`); hasMany: NewsletterSendLog |

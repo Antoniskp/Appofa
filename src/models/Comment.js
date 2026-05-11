@@ -3,7 +3,7 @@ const sequelize = require('../config/database');
 
 const Comment = sequelize.define('Comment', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-  entityType: { type: DataTypes.ENUM('article', 'poll', 'user_profile'), allowNull: false },
+  entityType: { type: DataTypes.ENUM('article', 'poll', 'user_profile', 'civic_question'), allowNull: false },
   entityId: { type: DataTypes.INTEGER, allowNull: false },
   authorId: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'Users', key: 'id' } },
   parentId: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'Comments', key: 'id' } },
