@@ -33,9 +33,9 @@ const Card = forwardRef(function Card({
   className = ''
 }, ref) {
   const variants = {
-    default: 'bg-white rounded-lg shadow-md',
+    default: 'bg-white rounded-lg shadow-sm border border-gray-200',
     outlined: 'bg-white rounded-lg border border-gray-200',
-    elevated: 'bg-white rounded-lg shadow-lg'
+    elevated: 'bg-white rounded-lg shadow-md border border-gray-200'
   };
   
   const paddings = {
@@ -46,7 +46,7 @@ const Card = forwardRef(function Card({
   };
   
   const hoverClasses = hoverable || href || onClick 
-    ? variant === 'elevated' ? 'hover:shadow-xl transition-shadow cursor-pointer' : 'hover:shadow-lg transition-shadow cursor-pointer'
+    ? variant === 'elevated' ? 'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-150 cursor-pointer' : 'hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 cursor-pointer'
     : '';
   
   const baseClasses = `${variants[variant]} ${hoverClasses} ${className}`;

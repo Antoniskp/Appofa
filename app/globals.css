@@ -39,7 +39,16 @@ select:-webkit-autofill:focus {
 
   /* Card Styles */
   .card {
-    @apply bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition;
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-150;
+  }
+
+  /* Pros / Cons semantic card tints */
+  .pros-card {
+    @apply bg-green-50 border border-green-200 rounded-lg p-5;
+  }
+
+  .cons-card {
+    @apply bg-red-50 border border-red-200 rounded-lg p-5;
   }
 
   /* Typography */
@@ -160,4 +169,18 @@ select:-webkit-autofill:focus {
 
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* Vote micro-interaction — respects prefers-reduced-motion */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes vote-pop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.18); }
+    70%  { transform: scale(0.94); }
+    100% { transform: scale(1); }
+  }
+
+  .animate-vote-pop {
+    animation: vote-pop 0.22s ease-out;
+  }
 }

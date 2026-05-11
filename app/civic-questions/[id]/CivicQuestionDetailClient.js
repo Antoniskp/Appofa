@@ -184,12 +184,16 @@ export default function CivicQuestionDetailClient() {
         )}
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className={sectionCardClass}>
-            <h2 className="text-lg font-semibold text-green-700 mb-3">{t('detail.pros')}</h2>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-5">
+            <h2 className="text-lg font-semibold text-green-800 mb-3 flex items-center gap-1.5">
+              <span aria-hidden="true">✅</span> {t('detail.pros')}
+            </h2>
             <p className="text-gray-700 whitespace-pre-wrap">{civicQuestion.pros || t('detail.pros_empty')}</p>
           </div>
-          <div className={sectionCardClass}>
-            <h2 className="text-lg font-semibold text-red-700 mb-3">{t('detail.cons')}</h2>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-5">
+            <h2 className="text-lg font-semibold text-red-800 mb-3 flex items-center gap-1.5">
+              <span aria-hidden="true">❌</span> {t('detail.cons')}
+            </h2>
             <p className="text-gray-700 whitespace-pre-wrap">{civicQuestion.cons || t('detail.cons_empty')}</p>
           </div>
         </section>

@@ -442,6 +442,13 @@ function hexWithLowOpacity(hex) {
 function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, onSelect, useCustomColors }) {
   if (!options || options.length < 2) return null;
   const [yesOpt, noOpt] = [options[0], options[1]];
+  const [justVoted, setJustVoted] = useState(null); // option id that triggered pop animation
+
+  const handleSelect = (id) => {
+    setJustVoted(id);
+    setTimeout(() => setJustVoted(null), 280);
+    onSelect(id);
+  };
 
   const btnBase =
     'flex-1 flex flex-col items-center justify-center gap-2 py-6 px-4 rounded-xl border-2 text-lg font-bold transition focus:outline-none focus:ring-4 disabled:cursor-not-allowed';
@@ -454,14 +461,14 @@ function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, 
       <button
         type="button"
         disabled={isSubmitting}
-        onClick={() => onSelect(yesOpt.id)}
+        onClick={() => handleSelect(yesOpt.id)}
         className={`${btnBase} ${
           !yesColor
             ? selectedOptionId === yesOpt.id
               ? 'bg-green-500 border-green-500 text-white shadow-lg focus:ring-green-300'
               : 'bg-white border-green-500 text-green-600 hover:bg-green-50 focus:ring-green-300'
             : ''
-        }`}
+        }${justVoted === yesOpt.id ? ' animate-vote-pop' : ''}`}
         style={yesColor ? (
           selectedOptionId === yesOpt.id
             ? { backgroundColor: yesColor, borderColor: yesColor, color: '#fff' }
@@ -474,14 +481,14 @@ function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, 
       <button
         type="button"
         disabled={isSubmitting}
-        onClick={() => onSelect(noOpt.id)}
+        onClick={() => handleSelect(noOpt.id)}
         className={`${btnBase} ${
           !noColor
             ? selectedOptionId === noOpt.id
               ? 'bg-red-500 border-red-500 text-white shadow-lg focus:ring-red-300'
               : 'bg-white border-red-500 text-red-600 hover:bg-red-50 focus:ring-red-300'
             : ''
-        }`}
+        }${justVoted === noOpt.id ? ' animate-vote-pop' : ''}`}
         style={noColor ? (
           selectedOptionId === noOpt.id
             ? { backgroundColor: noColor, borderColor: noColor, color: '#fff' }

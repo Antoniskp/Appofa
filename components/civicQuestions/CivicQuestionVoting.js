@@ -14,11 +14,17 @@ export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
   const t = useTranslations('civicQuestions');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [justVoted, setJustVoted] = useState(null); // tracks the choice that triggered animation
 
   const handleVote = async (choice) => {
     if (submitting) return;
     setSubmitting(true);
     setError('');
+
+    // Fire animation immediately on click
+    setJustVoted(choice);
+    setTimeout(() => setJustVoted(null), 280);
+
     try {
       const response = await civicQuestionAPI.vote(civicQuestion.id, choice);
       if (response.success) {
@@ -42,7 +48,7 @@ export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
               type="button"
               disabled={submitting}
               onClick={() => handleVote(choice.value)}
-              className={`rounded-lg px-4 py-3 text-white font-medium transition ${choice.color} ${active ? 'ring-2 ring-offset-2 ring-blue-500' : ''} disabled:opacity-60`}
+              className={`rounded-lg px-4 py-3 text-white font-medium transition ${choice.color} ${active ? 'ring-2 ring-offset-2 ring-blue-500' : ''} disabled:opacity-60${justVoted === choice.value ? ' animate-vote-pop' : ''}`}
             >
               {t(`choices.${choice.value}`)}
             </button>

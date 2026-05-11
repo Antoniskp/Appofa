@@ -36,6 +36,7 @@ export default function InlineSuggestionVote({
   const [myVote, setMyVote]       = useState(initialMyVote);
   const [isVoting, setIsVoting]   = useState(false);
   const [rateLimit, setRateLimit] = useState(null); // { retryAfter, resetTime }
+  const [justVoted, setJustVoted] = useState(null); // 1 or -1 — triggers pop animation
 
   const labels = VOTE_LABELS[type] || VOTE_LABELS.idea;
 
@@ -64,6 +65,10 @@ export default function InlineSuggestionVote({
     setUpvotes(newUp);
     setDownvotes(newDown);
     setIsVoting(true);
+
+    // Trigger pop animation on the clicked button
+    setJustVoted(value);
+    setTimeout(() => setJustVoted(null), 280);
 
     try {
       const res = await suggestionAPI.voteSuggestion(suggestionId, value);
@@ -112,7 +117,7 @@ export default function InlineSuggestionVote({
           myVote === 1
             ? 'bg-green-100 text-green-700'
             : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-        }`}
+        }${justVoted === 1 ? ' animate-vote-pop' : ''}`}
       >
         {myVote === 1
           ? <HandThumbUpSolid className="h-4 w-4" />
@@ -130,7 +135,7 @@ export default function InlineSuggestionVote({
           myVote === -1
             ? 'bg-red-100 text-red-600'
             : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-        }`}
+        }${justVoted === -1 ? ' animate-vote-pop' : ''}`}
       >
         {myVote === -1
           ? <HandThumbDownSolid className="h-4 w-4" />
