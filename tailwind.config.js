@@ -19,11 +19,18 @@ module.exports = {
       },
       animation: {
         fadeIn: 'fadeIn 0.2s ease-in-out',
+        'vote-pop': 'vote-pop 0.22s ease-out',
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'vote-pop': {
+          '0%':   { transform: 'scale(1)' },
+          '40%':  { transform: 'scale(1.18)' },
+          '70%':  { transform: 'scale(0.94)' },
+          '100%': { transform: 'scale(1)' },
         },
       },
     },

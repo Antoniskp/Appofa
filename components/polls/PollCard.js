@@ -36,6 +36,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const [inlineVotedId, setInlineVotedId]       = useState(initialVotedId);
   const [inlineVoteCounts, setInlineVoteCounts] = useState(null); // populated after first inline vote
   const [isInlineSubmitting, setIsInlineSubmitting] = useState(false);
+  const [inlineJustVoted, setInlineJustVoted]   = useState(null); // optionId that triggered pop animation
 
   // ── Countdown timer state ─────────────────────────────────────────────────
   const deadlineDate = poll.deadline ? new Date(poll.deadline) : null;
@@ -80,6 +81,11 @@ export default function PollCard({ poll, variant = 'grid' }) {
     setIsInlineSubmitting(true);
     // Optimistic: mark the selection immediately
     setInlineVotedId(optionId);
+
+    // Trigger pop animation
+    setInlineJustVoted(optionId);
+    setTimeout(() => setInlineJustVoted(null), 280);
+
     try {
       const res = await pollAPI.vote(poll.id, optionId);
       if (res.success && res.data?.voteCounts) {
@@ -479,7 +485,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
               type="button"
               disabled={isInlineSubmitting}
               onClick={(e) => handleInlineVote(e, option.id)}
-              className={`${isBinary ? 'flex-1' : 'w-full text-left'} px-3 py-1.5 rounded-lg border text-sm font-medium transition focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${colorClass}`}
+              className={`${isBinary ? 'flex-1' : 'w-full text-left'} px-3 py-1.5 rounded-lg border text-sm font-medium transition focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed ${colorClass}${inlineJustVoted === option.id ? ' animate-vote-pop' : ''}`}
               style={customColor ? { borderColor: customColor, color: customColor } : undefined}
             >
               {isInlineSubmitting ? '…' : option.text}
