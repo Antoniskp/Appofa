@@ -426,8 +426,11 @@ export default function TopNav() {
       <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-4rem)] overflow-y-auto`} id="mobile-menu">
         <div className="border-t border-seafoam px-4 py-4 space-y-4">
           {navSections.map((section) => (
-            <div key={section.id} aria-label={section.label}>
-              <p className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+            <section key={section.id} aria-labelledby={`mobile-nav-section-${section.id}`}>
+              <p
+                id={`mobile-nav-section-${section.id}`}
+                className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-blue-700"
+              >
                 {section.label}
               </p>
               <div className="space-y-1">
@@ -442,7 +445,7 @@ export default function TopNav() {
                   </Link>
                 ))}
               </div>
-            </div>
+            </section>
           ))}
           <Link
             href="/pages"
