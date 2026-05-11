@@ -30,7 +30,11 @@
     "notifications": "Ειδοποιήσεις",
     "home_aria": "Αρχική Appofasi",
     "brand_alt": "Appofasi",
-    "civic_questions": "Πολιτικές Ερωτήσεις"
+    "civic_questions": "Πολιτικές Ερωτήσεις",
+    "civic_polls": "Civic Polls",
+    "information": "Ενημέρωση",
+    "participation": "Συμμετοχή",
+    "community": "Κοινότητα"
   },
   "governmentSnapshot": {
     "title": "Κυβερνητικές Θέσεις",

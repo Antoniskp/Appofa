@@ -8,16 +8,21 @@ import {
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
   BuildingOffice2Icon,
+  ChatBubbleLeftRightIcon,
   ChevronDownIcon,
   ClipboardDocumentListIcon,
+  DocumentTextIcon,
   LightBulbIcon,
   MapPinIcon,
   NewspaperIcon,
   PencilSquareIcon,
   ServerIcon,
   ShieldCheckIcon,
+  Squares2X2Icon,
   UserCircleIcon,
-  UserPlusIcon
+  UserPlusIcon,
+  UsersIcon,
+  VideoCameraIcon
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
@@ -37,17 +42,9 @@ export default function TopNav() {
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
   const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
 
-  const isActive = (path) => {
-    // Check if current path starts with the given path
-    const isCurrentPath = pathname === path || pathname.startsWith(path + '/');
-    return isCurrentPath ? 'text-blue-600 border-b-2 border-blue-600' : '';
-  };
-
-  const isMobileActive = (path) => {
-    // Check if current path starts with the given path for mobile menu
-    const isCurrentPath = pathname === path || pathname.startsWith(path + '/');
-    return isCurrentPath ? 'text-blue-600 bg-blue-50 font-semibold' : '';
-  };
+  const isPathActive = (path) => pathname === path || pathname.startsWith(path + '/');
+  const isActive = (path) => (isPathActive(path) ? 'text-blue-600 border-b-2 border-blue-600' : '');
+  const isMobileActive = (path) => (isPathActive(path) ? 'text-blue-700 bg-blue-50 font-semibold' : '');
 
   useEffect(() => {
     // Close all menus when pathname changes (navigation occurs)
@@ -64,6 +61,86 @@ export default function TopNav() {
   const myLocationHref = user?.homeLocation?.slug
     ? `/locations/${user.homeLocation.slug}`
     : '/profile';
+
+  const navSections = [
+    {
+      id: 'information',
+      label: tNav('information'),
+      menuId: 'desktop-nav-information-menu',
+      items: [
+        {
+          id: 'articles',
+          label: tNav('articles'),
+          href: '/articles',
+          icon: <DocumentTextIcon className="h-4 w-4" />,
+          mobileIcon: <DocumentTextIcon className="h-5 w-5" />
+        },
+        {
+          id: 'news',
+          label: tNav('news'),
+          href: '/news',
+          icon: <NewspaperIcon className="h-4 w-4" />,
+          mobileIcon: <NewspaperIcon className="h-5 w-5" />
+        },
+        {
+          id: 'videos',
+          label: tNav('videos'),
+          href: '/videos',
+          icon: <VideoCameraIcon className="h-4 w-4" />,
+          mobileIcon: <VideoCameraIcon className="h-5 w-5" />
+        }
+      ]
+    },
+    {
+      id: 'participation',
+      label: tNav('participation'),
+      menuId: 'desktop-nav-participation-menu',
+      items: [
+        {
+          id: 'polls',
+          label: tNav('polls'),
+          href: '/polls',
+          icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+          mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />
+        },
+        {
+          id: 'civic-questions',
+          label: tNav('civic_polls'),
+          href: '/civic-questions',
+          icon: <ChatBubbleLeftRightIcon className="h-4 w-4" />,
+          mobileIcon: <ChatBubbleLeftRightIcon className="h-5 w-5" />
+        },
+        {
+          id: 'suggestions',
+          label: tNav('suggestions'),
+          href: '/suggestions',
+          icon: <LightBulbIcon className="h-4 w-4" />,
+          mobileIcon: <LightBulbIcon className="h-5 w-5" />
+        }
+      ]
+    },
+    {
+      id: 'community',
+      label: tNav('community'),
+      menuId: 'desktop-nav-community-menu',
+      items: [
+        {
+          id: 'locations',
+          label: tNav('locations'),
+          href: '/locations',
+          icon: <MapPinIcon className="h-4 w-4" />,
+          mobileIcon: <MapPinIcon className="h-5 w-5" />
+        },
+        {
+          id: 'users',
+          label: tNav('users'),
+          href: '/users',
+          icon: <UsersIcon className="h-4 w-4" />,
+          mobileIcon: <UsersIcon className="h-5 w-5" />
+        }
+      ]
+    }
+  ];
 
   // Build user menu items for DropdownMenu (desktop - smaller icons)
   const userMenuItems = [
@@ -257,59 +334,33 @@ export default function TopNav() {
                 priority
               />
             </Link>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              <Link
-                href="/articles"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/articles')}`}
-              >
-                {tNav('articles')}
-              </Link>
-              <Link
-                href="/news"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/news')}`}
-              >
-                {tNav('news')}
-              </Link>
-              <Link
-                href="/videos"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/videos')}`}
-              >
-                {tNav('videos')}
-              </Link>
-              <Link
-                href="/polls"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/polls')}`}
-              >
-                {tNav('polls')}
-              </Link>
-              <Link
-                href="/civic-questions"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/civic-questions')}`}
-              >
-                {tNav('civic_questions')}
-              </Link>
-              <Link
-                href="/suggestions"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/suggestions')}`}
-              >
-                {tNav('suggestions')}
-              </Link>
-              <Link
-                href="/locations"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/locations')}`}
-              >
-                {tNav('locations')}
-              </Link>
-              <Link
-                href="/users"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/users')}`}
-              >
-                {tNav('users')}
-              </Link>
+            <div className="hidden sm:ml-6 sm:flex sm:items-center sm:gap-2">
+              {navSections.map((section) => {
+                const sectionActive = section.items.some((item) => isPathActive(item.href));
+
+                return (
+                  <DropdownMenu
+                    key={section.id}
+                    triggerText={section.label}
+                    triggerClassName={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                      sectionActive
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-blue-900 hover:bg-seafoam/40'
+                    }`}
+                    items={section.items.map((item) => ({
+                      ...item,
+                      className: isPathActive(item.href) ? 'bg-blue-50 text-blue-700 font-semibold' : '',
+                    }))}
+                    align="left"
+                    menuId={section.menuId}
+                  />
+                );
+              })}
               <Link
                 href="/pages"
-                className={`inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-900 ${isActive('/pages')}`}
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${isPathActive('/pages') ? 'bg-blue-50 text-blue-700' : ''}`}
               >
+                <Squares2X2Icon className="h-4 w-4" aria-hidden="true" />
                 {tNav('pages')}
               </Link>
             </div>
@@ -335,14 +386,14 @@ export default function TopNav() {
             ) : (
               <>
                 <LoginLink
-                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-900 hover:text-blue-700"
+                  className="inline-flex items-center gap-2 rounded-md border border-blue-300 px-3 py-2 text-sm font-medium text-blue-900 transition-colors hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
                   <ArrowLeftOnRectangleIcon className="h-4 w-4" aria-hidden="true" />
                   {tNav('login')}
                 </LoginLink>
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-2 text-sm font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
                 >
                   <UserPlusIcon className="h-4 w-4" aria-hidden="true" />
                   {tNav('register')}
@@ -353,7 +404,7 @@ export default function TopNav() {
           <Tooltip content={isMenuOpen ? tNav('close_menu') : tNav('open_menu')} position="bottom">
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 sm:hidden"
+              className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 sm:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               aria-controls="mobile-menu"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((open) => !open)}
@@ -373,59 +424,31 @@ export default function TopNav() {
         </div>
       </div>
       <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-4rem)] overflow-y-auto`} id="mobile-menu">
-        <div className="border-t border-seafoam px-4 py-3 space-y-2">
-          <Link
-            href="/articles"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/articles')}`}
-          >
-            {tNav('articles')}
-          </Link>
-          <Link
-            href="/news"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/news')}`}
-          >
-            {tNav('news')}
-          </Link>
-          <Link
-            href="/videos"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/videos')}`}
-          >
-            {tNav('videos')}
-          </Link>
-          <Link
-            href="/polls"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/polls')}`}
-          >
-            {tNav('polls')}
-          </Link>
-          <Link
-            href="/civic-questions"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/civic-questions')}`}
-          >
-            {tNav('civic_questions')}
-          </Link>
-          <Link
-            href="/suggestions"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/suggestions')}`}
-          >
-            {tNav('suggestions')}
-          </Link>
-          <Link
-            href="/locations"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/locations')}`}
-          >
-            {tNav('locations')}
-          </Link>
-          <Link
-            href="/users"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/users')}`}
-          >
-            {tNav('users')}
-          </Link>
+        <div className="border-t border-seafoam px-4 py-4 space-y-4">
+          {navSections.map((section) => (
+            <div key={section.id} aria-label={section.label}>
+              <p className="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
+                {section.label}
+              </p>
+              <div className="space-y-1">
+                {section.items.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={`flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${isMobileActive(item.href)}`}
+                  >
+                    <span aria-hidden="true">{item.mobileIcon}</span>
+                    {item.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
           <Link
             href="/pages"
-            className={`block px-3 py-2 rounded-md text-base font-medium text-blue-900 ${isMobileActive('/pages')}`}
+            className={`flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${isMobileActive('/pages')}`}
           >
+            <Squares2X2Icon className="h-5 w-5" aria-hidden="true" />
             {tNav('pages')}
           </Link>
         </div>
@@ -464,14 +487,14 @@ export default function TopNav() {
           ) : (
             <>
               <LoginLink
-                className="flex w-full items-center justify-center gap-2 text-base font-medium text-blue-900 hover:text-blue-700 border border-gray-300 rounded px-4 py-2"
+                className="flex w-full min-h-11 items-center justify-center gap-2 rounded-md border border-blue-300 px-4 py-2 text-base font-medium text-blue-900 transition-colors hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
                 {tNav('login')}
               </LoginLink>
               <Link
                 href="/register"
-                className="flex w-full items-center justify-center gap-2 text-base font-medium bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+                className="flex w-full min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
               >
                 <UserPlusIcon className="h-5 w-5" aria-hidden="true" />
                 {tNav('register')}

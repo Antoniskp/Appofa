@@ -30,7 +30,11 @@
     "notifications": "Notifications",
     "home_aria": "Appofasi home",
     "brand_alt": "Appofasi",
-    "civic_questions": "Civic Questions"
+    "civic_questions": "Civic Questions",
+    "civic_polls": "Civic Polls",
+    "information": "Information",
+    "participation": "Participation",
+    "community": "Community"
   },
   "governmentSnapshot": {
     "title": "Government Positions",
