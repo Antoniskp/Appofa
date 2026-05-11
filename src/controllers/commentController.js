@@ -1,4 +1,4 @@
-const { Comment, User, Article, Poll } = require('../models');
+const { Comment, User, Article, Poll, CivicQuestion } = require('../models');
 const badgeService = require('../services/badgeService');
 const notificationService = require('../services/notificationService');
 
@@ -21,6 +21,10 @@ async function getEntitySettings(entityType, entityId) {
     const entity = await User.findByPk(entityId);
     if (!entity) return null;
     return { entity, ownerId: entity.id, enabled: entity.profileCommentsEnabled, locked: entity.profileCommentsLocked };
+  } else if (entityType === 'civic_question') {
+    const entity = await CivicQuestion.findByPk(entityId);
+    if (!entity) return null;
+    return { entity, ownerId: entity.creatorId, enabled: entity.commentsEnabled, locked: entity.commentsLocked };
   }
   return null;
 }
@@ -62,7 +66,7 @@ const commentController = {
         return res.status(400).json({ success: false, message: 'entityType and entityId are required.' });
       }
 
-      const validEntityTypes = ['article', 'poll', 'user_profile'];
+      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question'];
       if (!validEntityTypes.includes(entityType)) {
         return res.status(400).json({ success: false, message: 'Invalid entityType.' });
       }
@@ -107,7 +111,7 @@ const commentController = {
     try {
       const { entityType, entityId, parentId, body } = req.body;
 
-      const validEntityTypes = ['article', 'poll', 'user_profile'];
+      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question'];
       if (!entityType || !validEntityTypes.includes(entityType)) {
         return res.status(400).json({ success: false, message: 'Invalid entityType.' });
       }

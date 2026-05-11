@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, Article, Poll, Comment, Location } = require('../src/models');
+const { sequelize, User, Article, Poll, Comment, Location, CivicQuestion } = require('../src/models');
 
 const express = require('express');
 const cors = require('cors');
@@ -29,6 +29,7 @@ describe('Comment System Tests', () => {
   let moderatorToken, moderatorUserId;
   let testArticleId;
   let testPollId;
+  let testCivicQuestionId;
   let locationId;
 
   const csrfToken = 'test-csrf-token-comments';
@@ -99,6 +100,16 @@ describe('Comment System Tests', () => {
         options: [{ text: 'Option A' }, { text: 'Option B' }]
       });
     testPollId = pollRes.body.data?.id || pollRes.body.id;
+
+    // Create a test civic question directly via model
+    const cq = await CivicQuestion.create({
+      title: 'Comment Test Civic Question',
+      sourceType: 'other',
+      creatorId: authorUserId,
+      commentsEnabled: true,
+      commentsLocked: false,
+    });
+    testCivicQuestionId = cq.id;
   });
 
   afterAll(async () => {
@@ -144,6 +155,14 @@ describe('Comment System Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.data.comments).toEqual([]);
+    });
+
+    it('should return 200 for civic_question entityType', async () => {
+      const res = await request(app)
+        .get(`/api/comments?entityType=civic_question&entityId=${testCivicQuestionId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.comments)).toBe(true);
     });
   });
 
@@ -277,6 +296,51 @@ describe('Comment System Tests', () => {
         .send({ entityType: 'user_profile', entityId: authorUserId, body: 'Nice profile!' });
       expect(res.status).toBe(201);
       expect(res.body.data.comment.entityType).toBe('user_profile');
+    });
+
+    it('should create a comment on a civic_question', async () => {
+      const res = await request(app)
+        .post('/api/comments')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ entityType: 'civic_question', entityId: testCivicQuestionId, body: 'Civic comment!' });
+      expect(res.status).toBe(201);
+      expect(res.body.data.comment.entityType).toBe('civic_question');
+    });
+
+    it('should return 404 when civic_question entity does not exist', async () => {
+      const res = await request(app)
+        .post('/api/comments')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ entityType: 'civic_question', entityId: 99999, body: 'Missing CQ' });
+      expect(res.status).toBe(404);
+    });
+
+    it('should block POST when civic_question commentsEnabled=false', async () => {
+      await CivicQuestion.update({ commentsEnabled: false }, { where: { id: testCivicQuestionId } });
+      const res = await request(app)
+        .post('/api/comments')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ entityType: 'civic_question', entityId: testCivicQuestionId, body: 'Should be blocked' });
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/disabled/i);
+      // Restore
+      await CivicQuestion.update({ commentsEnabled: true }, { where: { id: testCivicQuestionId } });
+    });
+
+    it('should block POST when civic_question commentsLocked=true', async () => {
+      await CivicQuestion.update({ commentsLocked: true }, { where: { id: testCivicQuestionId } });
+      const res = await request(app)
+        .post('/api/comments')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ entityType: 'civic_question', entityId: testCivicQuestionId, body: 'Should be locked' });
+      expect(res.status).toBe(403);
+      expect(res.body.message).toMatch(/locked/i);
+      // Restore
+      await CivicQuestion.update({ commentsLocked: false }, { where: { id: testCivicQuestionId } });
     });
   });
 
