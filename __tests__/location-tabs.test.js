@@ -1,6 +1,6 @@
 // Tests for Location page tab navigation logic
 
-const VALID_TABS = ['polls', 'news', 'articles', 'users', 'unclaimed', 'suggestions', 'persons', 'elections'];
+const VALID_TABS = ['polls', 'news', 'articles', 'users', 'unclaimed', 'suggestions', 'elections'];
 const DEFAULT_TAB = 'polls';
 
 /**
@@ -37,16 +37,12 @@ describe('Location page tab navigation', () => {
       expect(VALID_TABS[5]).toBe('suggestions');
     });
 
-    it('should have persons as the seventh tab', () => {
-      expect(VALID_TABS[6]).toBe('persons');
+    it('should have elections as the seventh tab', () => {
+      expect(VALID_TABS[6]).toBe('elections');
     });
 
-    it('should have elections as the eighth tab', () => {
-      expect(VALID_TABS[7]).toBe('elections');
-    });
-
-    it('should contain exactly eight tabs', () => {
-      expect(VALID_TABS).toHaveLength(8);
+    it('should contain exactly seven tabs', () => {
+      expect(VALID_TABS).toHaveLength(7);
     });
   });
 
@@ -81,8 +77,8 @@ describe('Location page tab navigation', () => {
       expect(resolveTab('suggestions')).toBe('suggestions');
     });
 
-    it('should resolve a valid "persons" param to "persons"', () => {
-      expect(resolveTab('persons')).toBe('persons');
+    it('should fall back to default for removed "persons" tab param', () => {
+      expect(resolveTab('persons')).toBe(DEFAULT_TAB);
     });
 
     it('should resolve a valid "elections" param to "elections"', () => {

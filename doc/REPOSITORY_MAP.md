@@ -658,7 +658,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 |------|----------|
 | expertiseAreas.js | Expertise tag IDs — re-exports from `src/data/expertiseTags.json` taxonomy (ESM mirror) |
 | i18n.js | Locale constants (`DEFAULT_LOCALE='el'`, `SUPPORTED_LOCALES=['el','en']`) |
-| locations.js | Location type definitions + location detail tab constants (`VALID_TABS`, includes `unclaimed`) |
+| locations.js | Location type definitions + location detail tab constants (`VALID_TABS`: `polls/news/articles/users/unclaimed/suggestions/elections`) |
 | profile.js | Profile field definitions |
 
 ### Config (`config/`)
