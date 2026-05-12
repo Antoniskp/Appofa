@@ -6,12 +6,6 @@ import LoginLink from '@/components/ui/LoginLink';
 import LocationElectionsTab from '@/components/locations/LocationElectionsTab';
 import { VALID_TABS } from '@/lib/constants/locations';
 
-const POSITION_LABELS = {
-  mayor: 'Δήμαρχος',
-  prefect: 'Περιφερειάρχης',
-  parliamentary: 'Βουλευτής',
-};
-
 const CLAIM_STATUS_BADGES = {
   unclaimed: { label: 'Αδιεκδίκητο', cls: 'bg-amber-100 text-amber-700' },
   pending: { label: 'Σε Αναμονή', cls: 'bg-blue-100 text-blue-700' },
@@ -26,7 +20,6 @@ export default function LocationTabs({
   regularArticles,
   entities,
   suggestions,
-  persons,
   isAuthenticated,
   TAB_LABELS,
   visibleTabs,
@@ -356,41 +349,6 @@ export default function LocationTabs({
                         <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
                       </>
                     )}
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Persons tab */}
-        <div
-          id="tabpanel-persons"
-          role="tabpanel"
-          aria-labelledby="tab-persons"
-          hidden={activeTab !== 'persons'}
-        >
-          {loading ? (
-            <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
-          ) : persons.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">Δεν υπάρχουν πρόσωπα για αυτή την περιφέρεια.</p>
-          ) : (
-            <div className="space-y-3">
-              {persons.map(person => (
-                <Link
-                  key={person.id}
-                  href={`/persons/${person.slug}`}
-                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-gray-900">{person.fullName}</h3>
-                      {person.position && (
-                        <p className="text-sm text-gray-500">
-                          {POSITION_LABELS[person.position] || person.position}
-                        </p>
-                      )}
-                    </div>
                   </div>
                 </Link>
               ))}

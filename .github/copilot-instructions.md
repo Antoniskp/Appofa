@@ -10,6 +10,8 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-05-12** — Removed deprecated `persons` location content tab to avoid overlap with `users`/`unclaimed` and the separate officials box: `lib/constants/locations.js` `VALID_TABS` no longer includes `persons`; `components/locations/LocationTabs.js` no longer renders a Persons trigger/panel; `app/locations/[slug]/page.js` no longer builds/passes persons tab label/count. URLs with `?tab=persons` now follow existing invalid-tab fallback to `DEFAULT_TAB`.
+
 - **2026-05-12** — Navigation/pages cleanup after submenu rollout: removed legacy `Όλες οι Σελίδες` (`/pages`) item from `TopNav` submenu (desktop+mobile), deprecated `app/(statics)/pages/page.js` into a safe server redirect to `/platform` (so old visits do not break and old in-page menu no longer renders), removed `/pages` from `app/sitemap.js`, and updated grouped-menu tests in `__tests__/top-nav-grouped-menu.test.js` to assert `/pages` is absent.
 
 - **2026-05-12** — Extended Location Officials for prefectures with repeatable linked parliamentarians: `config/locationRoles.json` adds repeatable `parliamentarian` role for `prefecture`; `locationRoleController` now supports repeatable assignments via `userIds` while remaining backward-compatible with single `userId` payloads; `LocationRoleManager` and `LocationRoles` now support add/edit/remove/display of multiple linked parliamentarians in the existing linked-entity flow; location elections ignore repeatable roles; added migration `20260512041000-allow-repeatable-location-roles.js` to replace unique index with unique `(locationId, roleKey, userId)` and tests in `__tests__/locations.test.js`.
@@ -186,7 +188,7 @@ Compact table of every model where wrong field names have caused bugs:
 - **i18n namespaces**: keep page/component strings in `messages/{el,en}.json` under `common`, `nav`, `footer`, `home`, `auth`, `articles`, `news`, `profile`, `admin`, `editor`, `polls`, `organiza[...]
 - **Loading**: show `<SkeletonLoader>` immediately; `<AlertMessage>` on error
 - **Homepage locations highlight**: use `LocationCard` inside `HomepageSection` with `sort=mostUsers`; do NOT use `LocationDiscoveryStrip` (removed)
-- **Location detail tabs**: keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
+- **Location detail tabs**: canonical tabs are `polls`, `news`, `articles`, `users`, `unclaimed`, `suggestions`, `elections` (no `persons` tab); keep `elections` always visible via `ALWAYS_VISIBLE_TABS`
 - **Location entity tabs**: keep regular users (`claimStatus = null`) under `users` and person profiles (`claimStatus != null`) under `unclaimed`
 - **Mobile flex stability**: for metadata + vote rows, use `flex-wrap` on the parent row so vote controls naturally wrap below metadata on narrow screens
 - **Vote micro-interactions**: apply `animate-vote-pop` briefly (280ms `setTimeout`) on the clicked vote button via a `justVoted`/`inlineJustVoted` local state in voting components (`InlineSuggestionVote`, `CivicQuestionVoting`, PollCard inline, `BinaryPollOptions`); the keyframe is defined in `app/globals.css` inside `@media (prefers-reduced-motion: no-preference)` so reduced-motion users see no animation

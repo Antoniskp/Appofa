@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI, locationSectionAPI, suggestionAPI, personAPI, geoAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI, suggestionAPI, geoAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -28,7 +28,6 @@ export default function LocationDetailPage() {
   const isAuthenticated = !authLoading && !!user;
   const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 });
   const [suggestions, setSuggestions] = useState([]);
-  const [persons, setPersons] = useState([]);
   const [children, setChildren] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [homeBreadcrumb, setHomeBreadcrumb] = useState([]);
@@ -65,7 +64,6 @@ export default function LocationDetailPage() {
         // Reset secondary state to prevent stale data from previous location
         setEntities({ articles: [], users: [], polls: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 });
         setSuggestions([]);
-        setPersons([]);
         setChildren([]);
         setSections([]);
         setImageError(false);
@@ -98,13 +96,12 @@ export default function LocationDetailPage() {
         const locId = loc.id;
 
         // Fetch all secondary data in parallel
-        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, personsRes] =
+        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes] =
           await Promise.allSettled([
             locationAPI.getLocationEntities(locId),
             locationAPI.getAll({ parent_id: locId }),
             locationSectionAPI.getSections(locId),
             suggestionAPI.getAll({ locationId: locId, limit: 50 }),
-            personAPI.getAll({ constituencyId: locId, limit: 50 }),
           ]);
 
         if (entitiesRes.status === 'fulfilled' && entitiesRes.value.success) {
@@ -136,12 +133,6 @@ export default function LocationDetailPage() {
           setSuggestions(suggestionsRes.value.data || []);
         } else if (suggestionsRes.status === 'rejected') {
           console.error('Failed to load suggestions:', suggestionsRes.reason);
-        }
-
-        if (personsRes.status === 'fulfilled' && personsRes.value.success) {
-          setPersons(personsRes.value.data?.profiles || []);
-        } else if (personsRes.status === 'rejected') {
-          console.error('Failed to load persons:', personsRes.reason);
         }
 
         setSecondaryLoading(false);
@@ -329,7 +320,6 @@ export default function LocationDetailPage() {
     users: `Χρήστες${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
     unclaimed: `Αδιεκδίκητα${entities.unclaimedCount ? ` (${entities.unclaimedCount})` : ''}`,
     suggestions: `Προτάσεις${suggestions.length ? ` (${suggestions.length})` : ''}`,
-    persons: `Πρόσωπα${persons.length ? ` (${persons.length})` : ''}`,
     elections: '🗳️ Εκλογές',
   };
 
@@ -341,7 +331,6 @@ export default function LocationDetailPage() {
     users: entities.usersCount,
     unclaimed: entities.unclaimedCount,
     suggestions: suggestions.length,
-    persons: persons.length,
     elections: 1,
   };
   const visibleTabs = secondaryLoading
@@ -453,7 +442,6 @@ export default function LocationDetailPage() {
             regularArticles={regularArticles}
             entities={entities}
             suggestions={suggestions}
-            persons={persons}
             isAuthenticated={isAuthenticated}
             TAB_LABELS={TAB_LABELS}
             visibleTabs={visibleTabs}
