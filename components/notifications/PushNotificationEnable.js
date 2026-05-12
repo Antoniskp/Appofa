@@ -15,11 +15,11 @@ import { pushAPI } from '@/lib/api';
  * After granting permission and completing push subscription, iOS will show the app in
  * Settings → Notifications, and the Home Screen icon will display badge counts.
  *
- * Backend setup needed to send push messages:
+ * Backend push delivery (implemented — see src/routes/pushRoutes.js + src/services/pushService.js):
  *   1. Generate VAPID keys: npx web-push generate-vapid-keys
  *   2. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY (frontend) + VAPID_PRIVATE_KEY (backend) in .env
- *   3. Implement POST /api/push/subscribe to store the PushSubscription
- *   4. Use the `web-push` npm package on the backend to deliver notifications
+ *   3. POST /api/push/subscribe stores the PushSubscription (pushController.js)
+ *   4. notificationService.createNotification() calls pushService.sendPushToUser() automatically
  */
 
 /** Convert a VAPID base64url public key to a Uint8Array for pushManager.subscribe(). */
@@ -138,8 +138,6 @@ export default function PushNotificationEnable() {
       }
 
       // ── Step 4: Send subscription to backend ──────────────────────────────
-      // TODO: Implement POST /api/push/subscribe on the backend to persist
-      //       the PushSubscription and associate it with the logged-in user.
       await pushAPI.subscribe(subscription);
 
       setStatusText('Οι ειδοποιήσεις ενεργοποιήθηκαν επιτυχώς!');
