@@ -141,6 +141,7 @@ function AdminDashboardContent() {
                   icon: GlobeEuropeAfricaIcon,
                 },
                 { href: '/admin/status', label: tAdmin('system_health'), icon: HeartIcon },
+                { href: '/admin/worker-status', label: 'Worker Status', icon: HeartIcon },
               ].map((action) => (
                 <Link
                   key={action.href}

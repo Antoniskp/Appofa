@@ -143,6 +143,14 @@ jest.mock('@/lib/api', () => ({
           totalVotes: 15
         }
       }
+    })),
+    getWorkerHealthStatus: jest.fn(() => Promise.resolve({
+      success: true,
+      data: { status: 200, latencyMs: 12, data: { ok: true } }
+    })),
+    sendWorkerTestSnapshot: jest.fn(() => Promise.resolve({
+      success: true,
+      data: { status: 202, latencyMs: 20, data: { accepted: true } }
     }))
   },
   tagAPI: {
@@ -328,6 +336,23 @@ describe('Frontend smoke tests', () => {
 
     expect(container.textContent).toContain('System Health');
     expect(container.textContent).toContain('Overall Status');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('renders admin worker status page for admin users', async () => {
+    mockSearchParams.get.mockReturnValue(null);
+    useAuth.mockReturnValue(buildAuthState({
+      user: { role: 'admin', username: 'AdminUser', email: 'admin@test.com' }
+    }));
+    const WorkerStatusPage = require('../app/admin/worker-status/page').default;
+    const { container, root } = await renderPage(WorkerStatusPage);
+
+    expect(container.textContent).toContain('Worker Status');
+    expect(container.textContent).toContain('Check health');
+    expect(container.textContent).toContain('Send test snapshot');
 
     await act(async () => {
       root.unmount();

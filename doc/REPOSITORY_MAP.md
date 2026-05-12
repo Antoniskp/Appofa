@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-10
+> **Last updated**: 2026-05-12
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -28,16 +28,16 @@ This instruction is permanent and must never be removed.
 - [Models (48)](#models-48)
 - [API Routes (29 files, 180+ endpoints)](#api-routes-29-files-180-endpoints)
 - [Controllers (23)](#controllers-23)
-- [Services (14)](#services-14)
+- [Services (15)](#services-15)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (112)](#frontend-pages-112)
+- [Frontend Pages (113)](#frontend-pages-113)
 - [Components (121+)](#components-121)
 - [API Client Modules (29)](#api-client-modules-29)
 - [Hooks (6)](#hooks-6)
 - [Constants](#constants)
 - [Migrations (91)](#migrations-91)
-- [Tests (55 files)](#tests-55-files)
+- [Tests (56 files)](#tests-56-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -52,7 +52,7 @@ Appofa/
 ├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (23 files)
-│   ├── services/           # Business logic (14 files)
+│   ├── services/           # Business logic (15 files)
 │   ├── models/             # Sequelize models (48 models)
 │   ├── routes/             # Express route definitions (29 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
@@ -388,7 +388,7 @@ Appofa/
 | solutionRoutes.js | /api/solutions | POST /:id/vote |
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
-| adminRoutes.js | /api/admin | GET /health, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
+| adminRoutes.js | /api/admin | GET /health, GET /worker-status/health, POST /worker-status/test-snapshot, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
 | geoStatsRoutes.js | /api/admin/geo-stats | POST /track (normalizes countryCode to ISO-2; rejects `XX`/`T1`), GET /country-funding/:locationId/public, GET /visits (includes `userId`/`username` when available), DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
 | geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules (blocked countries with optional redirectPath). Admin: GET/POST/DELETE /rules (POST accepts optional redirectPath), GET/PUT /settings |
@@ -427,7 +427,7 @@ Appofa/
 
 ---
 
-## Services (14)
+## Services (15)
 
 | Service | Purpose |
 |---------|---------|
@@ -446,6 +446,7 @@ Appofa/
 | civicQuestionService.js | Civic question business logic: visibility/location-scoped access, fixed-choice voting (`agree|disagree|present`), results visibility rules |
 | organizationService.js | Organization slug generation + organization search helpers |
 | userService.js | User management & utilities |
+| workerClientService.js | Appofasistis worker integration client (`GET /health`, `POST /internal/snapshots` with `x-worker-token`) using `WORKER_BASE_URL` + `WORKER_TOKEN` |
 
 ---
 
@@ -475,7 +476,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (112)
+## Frontend Pages (113)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -517,13 +518,14 @@ Appofa/
 | `/request-removal` | Profile removal request |
 | `/blocked`, `/unknown-country` | Public geo access status pages for blocked/unknown-country traffic |
 
-### Admin (21 pages)
+### Admin (22 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
 | `/admin/articles` | Article management (stats, filters, pagination, view/delete/approve news) |
 | `/admin/users` | User management (search, filter, role change, verify, delete) |
 | `/admin/status` | System status |
+| `/admin/worker-status` | Worker integration debug page (check worker health + send test snapshot with latency/status reporting) |
 | `/admin/persons/*` | Person management (list, detail, edit, create) |
 | `/admin/candidates/*` | Candidate management (backward-compat) |
 | `/admin/dream-team` | Dream team admin |
@@ -600,7 +602,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 | Module | Domain |
 |--------|--------|
-| admin.js | Admin endpoints |
+| admin.js | Admin endpoints (system health + worker-status health/test-snapshot helpers) |
 | articles.js | Article CRUD |
 | auth.js | Authentication |
 | badges.js | Badge system |
@@ -803,13 +805,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (55 files)
+## Tests (56 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Footer newsletter visibility, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher
+api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

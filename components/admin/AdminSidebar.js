@@ -26,6 +26,7 @@ const navItems = [
   { href: '/admin/geo', label: '🌍 Γεωγραφικά & Χώρες', icon: GlobeEuropeAfricaIcon },
   { href: '/admin/ip-rules', label: 'IP Rules', icon: ShieldExclamationIcon },
   { href: '/admin/status', label: 'System Health', icon: HeartIcon },
+  { href: '/admin/worker-status', label: 'Worker Status', icon: HeartIcon },
 ];
 
 export default function AdminSidebar() {
