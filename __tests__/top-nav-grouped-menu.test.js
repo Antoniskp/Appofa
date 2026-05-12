@@ -119,7 +119,7 @@ describe('TopNav grouped navigation redesign', () => {
     document.body.innerHTML = '';
   });
 
-  test('shows grouped desktop sections and participation includes Civic Polls', () => {
+  test('shows grouped desktop sections and participation includes Civic Polls and Dream Team', () => {
     expect(container.textContent).toContain('Ενημέρωση');
     expect(container.textContent).toContain('Συμμετοχή');
     expect(container.textContent).toContain('Κοινότητα');
@@ -129,6 +129,31 @@ describe('TopNav grouped navigation redesign', () => {
     expect(participationDropdown.querySelector('a[href="/polls"]')).toBeTruthy();
     expect(participationDropdown.querySelector('a[href="/civic-questions"]')).toBeTruthy();
     expect(participationDropdown.querySelector('a[href="/suggestions"]')).toBeTruthy();
+    expect(participationDropdown.querySelector('a[href="/dream-team"]')).toBeTruthy();
+  });
+
+  test('Σελίδες is a dropdown with sub-page links', () => {
+    const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
+    expect(pagesDropdown).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/platform"]')).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/elections"]')).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/citizen-help"]')).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/education"]')).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/pages"]')).toBeTruthy();
+  });
+
+  test('Σελίδες desktop dropdown and mobile section both contain sub-page links', () => {
+    // Desktop: Σελίδες is a DropdownMenu
+    const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
+    expect(pagesDropdown).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/pages"]')).toBeTruthy();
+
+    // Mobile: Σελίδες section renders items as direct links (including /pages)
+    const mobileMenu = container.querySelector('#mobile-menu');
+    expect(mobileMenu).toBeTruthy();
+    expect(mobileMenu.querySelector('a[href="/platform"]')).toBeTruthy();
+    expect(mobileMenu.querySelector('a[href="/elections"]')).toBeTruthy();
+    expect(mobileMenu.querySelector('a[href="/pages"]')).toBeTruthy();
   });
 
   test('marks participation section active when inside civic polls routes', async () => {

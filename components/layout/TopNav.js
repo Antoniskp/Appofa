@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
+  AcademicCapIcon,
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
   BuildingOffice2Icon,
@@ -12,6 +13,8 @@ import {
   ChevronDownIcon,
   ClipboardDocumentListIcon,
   DocumentTextIcon,
+  FlagIcon,
+  LifebuoyIcon,
   LightBulbIcon,
   MapPinIcon,
   NewspaperIcon,
@@ -19,10 +22,12 @@ import {
   ServerIcon,
   ShieldCheckIcon,
   Squares2X2Icon,
+  TrophyIcon,
   UserCircleIcon,
   UserPlusIcon,
   UsersIcon,
-  VideoCameraIcon
+  VideoCameraIcon,
+  WrenchScrewdriverIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
@@ -116,6 +121,13 @@ export default function TopNav() {
           href: '/suggestions',
           icon: <LightBulbIcon className="h-4 w-4" />,
           mobileIcon: <LightBulbIcon className="h-5 w-5" />
+        },
+        {
+          id: 'dream-team',
+          label: tNav('dream_team'),
+          href: '/dream-team',
+          icon: <TrophyIcon className="h-4 w-4" />,
+          mobileIcon: <TrophyIcon className="h-5 w-5" />
         }
       ]
     },
@@ -137,6 +149,48 @@ export default function TopNav() {
           href: '/users',
           icon: <UsersIcon className="h-4 w-4" />,
           mobileIcon: <UsersIcon className="h-5 w-5" />
+        }
+      ]
+    },
+    {
+      id: 'pages',
+      label: tNav('pages'),
+      menuId: 'desktop-nav-pages-menu',
+      items: [
+        {
+          id: 'platform',
+          label: tNav('platform'),
+          href: '/platform',
+          icon: <WrenchScrewdriverIcon className="h-4 w-4" />,
+          mobileIcon: <WrenchScrewdriverIcon className="h-5 w-5" />
+        },
+        {
+          id: 'government',
+          label: tNav('government'),
+          href: '/elections',
+          icon: <FlagIcon className="h-4 w-4" />,
+          mobileIcon: <FlagIcon className="h-5 w-5" />
+        },
+        {
+          id: 'citizen-help',
+          label: tNav('citizen_help'),
+          href: '/citizen-help',
+          icon: <LifebuoyIcon className="h-4 w-4" />,
+          mobileIcon: <LifebuoyIcon className="h-5 w-5" />
+        },
+        {
+          id: 'education',
+          label: tNav('education'),
+          href: '/education',
+          icon: <AcademicCapIcon className="h-4 w-4" />,
+          mobileIcon: <AcademicCapIcon className="h-5 w-5" />
+        },
+        {
+          id: 'all-pages',
+          label: tNav('all_pages'),
+          href: '/pages',
+          icon: <Squares2X2Icon className="h-4 w-4" />,
+          mobileIcon: <Squares2X2Icon className="h-5 w-5" />
         }
       ]
     }
@@ -356,13 +410,6 @@ export default function TopNav() {
                   />
                 );
               })}
-              <Link
-                href="/pages"
-                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${isPathActive('/pages') ? 'bg-blue-50 text-blue-700' : ''}`}
-              >
-                <Squares2X2Icon className="h-4 w-4" aria-hidden="true" />
-                {tNav('pages')}
-              </Link>
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-4 ml-auto">
@@ -447,13 +494,6 @@ export default function TopNav() {
               </div>
             </section>
           ))}
-          <Link
-            href="/pages"
-            className={`flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${isMobileActive('/pages')}`}
-          >
-            <Squares2X2Icon className="h-5 w-5" aria-hidden="true" />
-            {tNav('pages')}
-          </Link>
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
           {loading ? (
