@@ -7,6 +7,7 @@ const checkRole = require('../middleware/checkRole');
 const { apiLimiter } = require('../middleware/rateLimiter');
 const csrfProtection = require('../middleware/csrfProtection');
 const dreamTeamController = require('../controllers/dreamTeamController');
+const workerClientService = require('../services/workerClientService');
 
 const runCheck = async (checkFn) => {
   const start = Date.now();
@@ -290,6 +291,44 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
     infrastructureChecks,
     functionalChecks
   });
+});
+
+router.get('/worker-status/health', apiLimiter, authMiddleware, checkRole('admin'), async (req, res) => {
+  try {
+    const result = await workerClientService.checkHealth();
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    return res.status(error.status || 502).json({
+      success: false,
+      message: error.message || 'Failed to fetch worker health.',
+      data: error.details || null
+    });
+  }
+});
+
+router.post('/worker-status/test-snapshot', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res) => {
+  try {
+    const defaultSnapshot = {
+      type: 'appofa_mvp_test_snapshot',
+      createdAt: new Date().toISOString(),
+      source: 'appofa-admin-worker-status',
+      meta: {
+        triggeredByUserId: req.user.id
+      }
+    };
+    const snapshotPayload = (req.body && typeof req.body.snapshot === 'object' && req.body.snapshot !== null)
+      ? req.body.snapshot
+      : defaultSnapshot;
+
+    const result = await workerClientService.createSnapshot(snapshotPayload);
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    return res.status(error.status || 502).json({
+      success: false,
+      message: error.message || 'Failed to send worker snapshot.',
+      data: error.details || null
+    });
+  }
 });
 
 module.exports = router;

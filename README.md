@@ -146,6 +146,19 @@ FRONTEND_URL=http://localhost:3001
 - In production, set `FRONTEND_URL` to your public HTTPS frontend URL so reset links are valid
 - Ensure your server/deployment allows outbound SMTP traffic to your provider
 
+### Appofasistis worker integration (MVP)
+
+The admin debug page `/admin/worker-status` uses backend-only env variables to call the worker:
+
+```env
+WORKER_BASE_URL=http://localhost:4000
+WORKER_TOKEN=<shared-worker-secret>
+```
+
+- `WORKER_BASE_URL` is used for worker `GET /health` and `POST /internal/snapshots`
+- `WORKER_TOKEN` is sent only server-side as `x-worker-token` for snapshot calls
+- Never expose `WORKER_TOKEN` in frontend (`NEXT_PUBLIC_*`) variables
+
 ### PWA Push Notifications (Web Push / iOS)
 
 Push notifications use the [Web Push protocol](https://web.dev/push-notifications-overview/) with VAPID keys.  
