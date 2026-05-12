@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { notificationAPI } from '@/lib/api';
 import Pagination from '@/components/ui/Pagination';
 import NotificationPreferences from '@/components/notifications/NotificationPreferences';
+import PushNotificationEnable from '@/components/notifications/PushNotificationEnable';
 
 function relativeTime(dateString) {
   const diff = Date.now() - new Date(dateString).getTime();
@@ -214,7 +215,11 @@ export default function NotificationsPage() {
             Ρυθμίσεις ειδοποιήσεων
           </summary>
           <div className="mt-4">
-            <NotificationPreferences />
+            {/* Enable push / Home Screen badge (iOS PWA user-gesture flow) */}
+            <PushNotificationEnable />
+            <div className="mt-6">
+              <NotificationPreferences />
+            </div>
           </div>
         </details>
       </div>
