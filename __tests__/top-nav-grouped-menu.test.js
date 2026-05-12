@@ -132,28 +132,28 @@ describe('TopNav grouped navigation redesign', () => {
     expect(participationDropdown.querySelector('a[href="/dream-team"]')).toBeTruthy();
   });
 
-  test('Σελίδες is a dropdown with sub-page links', () => {
+  test('Σελίδες is a dropdown with sub-page links (without legacy all-pages item)', () => {
     const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(pagesDropdown).toBeTruthy();
     expect(pagesDropdown.querySelector('a[href="/platform"]')).toBeTruthy();
     expect(pagesDropdown.querySelector('a[href="/elections"]')).toBeTruthy();
     expect(pagesDropdown.querySelector('a[href="/citizen-help"]')).toBeTruthy();
     expect(pagesDropdown.querySelector('a[href="/education"]')).toBeTruthy();
-    expect(pagesDropdown.querySelector('a[href="/pages"]')).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/pages"]')).toBeFalsy();
   });
 
-  test('Σελίδες desktop dropdown and mobile section both contain sub-page links', () => {
+  test('Σελίδες desktop dropdown and mobile section both exclude legacy /pages link', () => {
     // Desktop: Σελίδες is a DropdownMenu
     const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(pagesDropdown).toBeTruthy();
-    expect(pagesDropdown.querySelector('a[href="/pages"]')).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/pages"]')).toBeFalsy();
 
-    // Mobile: Σελίδες section renders items as direct links (including /pages)
+    // Mobile: Σελίδες section renders items as direct links (excluding /pages)
     const mobileMenu = container.querySelector('#mobile-menu');
     expect(mobileMenu).toBeTruthy();
     expect(mobileMenu.querySelector('a[href="/platform"]')).toBeTruthy();
     expect(mobileMenu.querySelector('a[href="/elections"]')).toBeTruthy();
-    expect(mobileMenu.querySelector('a[href="/pages"]')).toBeTruthy();
+    expect(mobileMenu.querySelector('a[href="/pages"]')).toBeFalsy();
   });
 
   test('marks participation section active when inside civic polls routes', async () => {

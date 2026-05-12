@@ -21,7 +21,6 @@ import {
   PencilSquareIcon,
   ServerIcon,
   ShieldCheckIcon,
-  Squares2X2Icon,
   TrophyIcon,
   UserCircleIcon,
   UserPlusIcon,
@@ -184,13 +183,6 @@ export default function TopNav() {
           href: '/education',
           icon: <AcademicCapIcon className="h-4 w-4" />,
           mobileIcon: <AcademicCapIcon className="h-5 w-5" />
-        },
-        {
-          id: 'all-pages',
-          label: tNav('all_pages'),
-          href: '/pages',
-          icon: <Squares2X2Icon className="h-4 w-4" />,
-          mobileIcon: <Squares2X2Icon className="h-5 w-5" />
         }
       ]
     }

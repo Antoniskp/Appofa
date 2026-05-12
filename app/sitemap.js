@@ -9,7 +9,6 @@ const STATIC_ROUTES = [
   { url: '/articles', priority: 0.8, changeFrequency: 'daily' },
   { url: '/polls', priority: 0.7, changeFrequency: 'daily' },
   // Static info pages
-  { url: '/pages', priority: 0.6, changeFrequency: 'monthly' },
   { url: '/about', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/mission', priority: 0.5, changeFrequency: 'monthly' },
   { url: '/transparency', priority: 0.5, changeFrequency: 'monthly' },
