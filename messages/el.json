@@ -433,6 +433,8 @@
     "newsletter_preference_saving": "Ενημέρωση προτίμησης newsletter…",
     "newsletter_opted_in": "Έχετε εγγραφεί στο newsletter.",
     "newsletter_opted_out": "Δεν έχετε εγγραφεί στο newsletter.",
+    "push_notifications_title": "Ειδοποιήσεις push",
+    "push_notifications_description": "Ειδοποιήσεις συστήματος για τη συσκευή σας (ξεχωριστά από τις προτιμήσεις email).",
     "save_changes": "Αποθήκευση Αλλαγών",
     "current_password": "Τρέχων Κωδικός",
     "new_password": "Νέος Κωδικός",

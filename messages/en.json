@@ -433,6 +433,8 @@
     "newsletter_preference_saving": "Updating newsletter preference…",
     "newsletter_opted_in": "You are subscribed to the newsletter.",
     "newsletter_opted_out": "You are not subscribed to the newsletter.",
+    "push_notifications_title": "Push notifications",
+    "push_notifications_description": "System notifications for your device (separate from email preferences).",
     "save_changes": "Save Changes",
     "current_password": "Current Password",
     "new_password": "New Password",

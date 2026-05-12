@@ -25,6 +25,7 @@ import ProfileInterestsSection from '@/components/profile/ProfileInterestsSectio
 import ProfileExpertiseSection from '@/components/profile/ProfileExpertiseSection';
 import ProfileBadgesSection from '@/components/profile/ProfileBadgesSection';
 import ProfileTwitchSection from '@/components/profile/ProfileTwitchSection';
+import PushNotificationEnable from '@/components/notifications/PushNotificationEnable';
 import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 function ProfileContent() {
@@ -754,6 +755,13 @@ function ProfileContent() {
                   ? tProfile('newsletter_opted_in')
                   : tProfile('newsletter_opted_out')}
           </p>
+          <div className="mb-4 border-t border-gray-100 pt-4">
+            <p className="text-sm font-medium text-gray-700">{tProfile('push_notifications_title')}</p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {tProfile('push_notifications_description')}
+            </p>
+            <PushNotificationEnable />
+          </div>
           <label className="block text-sm font-medium text-gray-700 mb-2">{tProfile('language')}</label>
           <LanguageSwitcher />
         </Card>
