@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { locationRoleAPI } from '@/lib/api';
 import { apiRequest } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import { useTranslations } from 'next-intl';
 import {
   UserCircleIcon,
   MagnifyingGlassIcon,
@@ -126,7 +127,7 @@ function AssigneePicker({ onSelect, onClose }) {
 // ---------------------------------------------------------------------------
 // Role slot row
 // ---------------------------------------------------------------------------
-function RoleSlotRow({ definition, assignment, onChange }) {
+function RoleSlotRow({ definition, assignment, onChange, tCommon }) {
   const [picking, setPicking] = useState(false);
   const isRepeatable = !!definition.repeatable;
 
@@ -159,13 +160,13 @@ function RoleSlotRow({ definition, assignment, onChange }) {
             onClick={() => setPicking(true)}
             className="text-sm text-blue-600 hover:text-blue-800 underline flex-shrink-0"
           >
-            Add
+            {tCommon('add')}
           </button>
         </div>
 
         <div className="mt-3 space-y-2">
           {assignedUsers.length === 0 ? (
-            <p className="text-xs text-gray-500">Δεν έχουν οριστεί βουλευτές.</p>
+            <p className="text-xs text-gray-500">{tCommon('no_parliamentarians_assigned')}</p>
           ) : (
             assignedUsers.map((u) => (
               <div key={u.userId} className="flex items-center gap-2">
@@ -275,6 +276,7 @@ export default function LocationRoleManager({ locationId, locationType }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { error: toastError, success: toastSuccess } = useToast();
+  const tCommon = useTranslations('common');
 
   const load = useCallback(async () => {
     if (!locationId) return;
@@ -451,6 +453,7 @@ export default function LocationRoleManager({ locationId, locationType }) {
               })),
             }
             : role.assignment}
+          tCommon={tCommon}
           onChange={handleChange}
         />
       ))}
