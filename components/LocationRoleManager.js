@@ -128,6 +128,75 @@ function AssigneePicker({ onSelect, onClose }) {
 // ---------------------------------------------------------------------------
 function RoleSlotRow({ definition, assignment, onChange }) {
   const [picking, setPicking] = useState(false);
+  const isRepeatable = !!definition.repeatable;
+
+  if (isRepeatable) {
+    const assignedUsers = assignment?.users || [];
+
+    const handleSelectRepeatable = ({ id, name, photo }) => {
+      const next = assignedUsers.some((u) => u.userId === id)
+        ? assignedUsers
+        : [...assignedUsers, { userId: id, name, photo: photo || null }];
+      setPicking(false);
+      onChange(definition.key, { users: next });
+    };
+
+    const handleRemoveRepeatable = (userId) => {
+      onChange(definition.key, {
+        users: assignedUsers.filter((u) => u.userId !== userId),
+      });
+    };
+
+    return (
+      <div className="border border-gray-200 rounded-lg p-3 bg-white">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-800">{definition.title}</p>
+            <p className="text-xs text-gray-500">{definition.titleEn}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="text-sm text-blue-600 hover:text-blue-800 underline flex-shrink-0"
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="mt-3 space-y-2">
+          {assignedUsers.length === 0 ? (
+            <p className="text-xs text-gray-500">Δεν έχουν οριστεί βουλευτές.</p>
+          ) : (
+            assignedUsers.map((u) => (
+              <div key={u.userId} className="flex items-center gap-2">
+                {u.photo ? (
+                  <img src={u.photo} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                ) : (
+                  <UserCircleIcon className="w-8 h-8 text-gray-400 flex-shrink-0" />
+                )}
+                <span className="text-sm text-gray-700 truncate">{u.name || `User #${u.userId}`}</span>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveRepeatable(u.userId)}
+                  title="Clear assignment"
+                  className="ml-auto text-gray-400 hover:text-red-500"
+                >
+                  <XMarkIcon className="w-4 h-4" />
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {picking && (
+          <AssigneePicker
+            onSelect={handleSelectRepeatable}
+            onClose={() => setPicking(false)}
+          />
+        )}
+      </div>
+    );
+  }
 
   const user = assignment?.user || null;
   const displayName = user ? formatPersonName(user.firstNameNative, user.lastNameNative, user.username) : null;
@@ -217,10 +286,19 @@ export default function LocationRoleManager({ locationId, locationType }) {
         // Build local assignments map from fetched data
         const map = {};
         for (const role of res.roles) {
-          if (role.assignment) {
+          if (role.repeatable) {
+            const assignments = Array.isArray(role.assignments) ? role.assignments : [];
             map[role.key] = {
-              userId: role.assignment.userId || null,
+              users: assignments
+                .filter((a) => a?.userId)
+                .map((a) => ({
+                  userId: a.userId,
+                  name: formatPersonName(a.user?.firstNameNative, a.user?.lastNameNative, a.user?.username),
+                  photo: a.user?.avatar || a.user?.photo || null,
+                })),
             };
+          } else if (role.assignment) {
+            map[role.key] = { userId: role.assignment.userId || null };
           }
         }
         setLocalAssignments(map);
@@ -236,10 +314,10 @@ export default function LocationRoleManager({ locationId, locationType }) {
     load();
   }, [load]);
 
-  const handleChange = (roleKey, { userId }) => {
+  const handleChange = (roleKey, value) => {
     setLocalAssignments((prev) => ({
       ...prev,
-      [roleKey]: { userId },
+      [roleKey]: value,
     }));
   };
 
@@ -249,7 +327,15 @@ export default function LocationRoleManager({ locationId, locationType }) {
       // Build the roles array from all definitions + current local assignments
       const definitions = rolesData?.roles || [];
       const roles = definitions.map((def) => {
-        const a = localAssignments[def.key] || {};
+        const local = localAssignments[def.key] || {};
+        if (def.repeatable) {
+          return {
+            roleKey: def.key,
+            userIds: (local.users || []).map((u) => u.userId).filter(Boolean),
+          };
+        }
+
+        const a = local;
         return {
           roleKey: def.key,
           userId: a.userId || null,
@@ -263,10 +349,19 @@ export default function LocationRoleManager({ locationId, locationType }) {
         setRolesData(res);
         const map = {};
         for (const role of res.roles) {
-          if (role.assignment) {
+          if (role.repeatable) {
+            const assignments = Array.isArray(role.assignments) ? role.assignments : [];
             map[role.key] = {
-              userId: role.assignment.userId || null,
+              users: assignments
+                .filter((a) => a?.userId)
+                .map((a) => ({
+                  userId: a.userId,
+                  name: formatPersonName(a.user?.firstNameNative, a.user?.lastNameNative, a.user?.username),
+                  photo: a.user?.avatar || a.user?.photo || null,
+                })),
             };
+          } else if (role.assignment) {
+            map[role.key] = { userId: role.assignment.userId || null };
           }
         }
         setLocalAssignments(map);
@@ -298,6 +393,34 @@ export default function LocationRoleManager({ locationId, locationType }) {
   const displayRoles = rolesData.roles.map((def) => {
     if (!(def.key in localAssignments)) return def;
     const localA = localAssignments[def.key];
+    if (def.repeatable) {
+      const users = localA.users || [];
+      return {
+        ...def,
+        assignment: users[0]
+          ? {
+            userId: users[0].userId,
+            user: {
+              firstNameNative: users[0].name,
+              avatar: users[0].photo,
+            },
+          }
+          : null,
+        assignments: users.map((u, idx) => ({
+          id: `local-${def.key}-${u.userId}-${idx}`,
+          roleKey: def.key,
+          userId: u.userId,
+          sortOrder: idx,
+          user: {
+            id: u.userId,
+            firstNameNative: u.name,
+            username: u.name,
+            avatar: u.photo,
+            photo: u.photo,
+          },
+        })),
+      };
+    }
     // If local differs from server assignment, use local (for optimistic display)
     const serverA = def.assignment;
     const changed = (localA.userId !== (serverA?.userId || null));
@@ -319,7 +442,15 @@ export default function LocationRoleManager({ locationId, locationType }) {
         <RoleSlotRow
           key={role.key}
           definition={role}
-          assignment={role.assignment}
+          assignment={role.repeatable
+            ? {
+              users: (role.assignments || []).map((a) => ({
+                userId: a.userId,
+                name: formatPersonName(a.user?.firstNameNative, a.user?.lastNameNative, a.user?.username),
+                photo: a.user?.avatar || a.user?.photo || null,
+              })),
+            }
+            : role.assignment}
           onChange={handleChange}
         />
       ))}

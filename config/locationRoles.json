@@ -12,7 +12,8 @@
     "prefecture": [
       { "key": "regional_governor", "title": "Περιφερειάρχης", "titleEn": "Regional Governor", "order": 1 },
       { "key": "vice_governor", "title": "Αντιπεριφερειάρχης", "titleEn": "Vice Governor", "order": 2 },
-      { "key": "regional_council_president", "title": "Πρόεδρος Περιφερειακού Συμβουλίου", "titleEn": "Regional Council President", "order": 3 }
+      { "key": "regional_council_president", "title": "Πρόεδρος Περιφερειακού Συμβουλίου", "titleEn": "Regional Council President", "order": 3 },
+      { "key": "parliamentarian", "title": "Βουλευτής", "titleEn": "Member of Parliament", "order": 4, "repeatable": true }
     ],
     "municipality": [
       { "key": "mayor", "title": "Δήμαρχος", "titleEn": "Mayor", "order": 1 },

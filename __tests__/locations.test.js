@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, LocationLink, Article, UserLocationRole } = require('../src/models');
+const { sequelize, User, Location, LocationLink, Article, UserLocationRole, LocationRole } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Location API Tests', () => {
@@ -777,6 +777,100 @@ describe('Location API Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.message).toBe('Forbidden: location outside your scope.');
+    });
+  });
+
+  describe('Prefecture parliamentarian location roles', () => {
+    let prefecture;
+    let parliamentarianA;
+    let parliamentarianB;
+    let adminUserId;
+
+    const adminCsrfHeaders = () => {
+      const csrf = `csrf-location-roles-${Date.now()}-${Math.random()}`;
+      storeCsrfToken(csrf, adminUserId);
+      return {
+        Cookie: [`auth_token=${adminToken}`, `csrf_token=${csrf}`],
+        'x-csrf-token': csrf,
+      };
+    };
+
+    beforeAll(async () => {
+      const admin = await User.findOne({ where: { email: 'admin@test.com' } });
+      adminUserId = admin.id;
+
+      prefecture = await Location.create({
+        name: 'Parliamentarians Prefecture',
+        slug: 'parliamentarians-prefecture',
+        type: 'prefecture',
+      });
+
+      parliamentarianA = await User.create({
+        username: 'pref-parliamentarian-a',
+        email: 'pref-parliamentarian-a@test.com',
+        password: 'password123',
+      });
+
+      parliamentarianB = await User.create({
+        username: 'pref-parliamentarian-b',
+        email: 'pref-parliamentarian-b@test.com',
+        password: 'password123',
+      });
+    });
+
+    it('returns repeatable parliamentarian role in prefecture roles', async () => {
+      const response = await request(app)
+        .get(`/api/locations/${prefecture.id}/roles`)
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const parliamentarianRole = response.body.roles.find((role) => role.key === 'parliamentarian');
+      expect(parliamentarianRole).toBeDefined();
+      expect(parliamentarianRole.repeatable).toBe(true);
+      expect(Array.isArray(parliamentarianRole.assignments)).toBe(true);
+      expect(parliamentarianRole.assignments).toHaveLength(0);
+    });
+
+    it('stores multiple linked parliamentarians for a prefecture', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${prefecture.id}/roles`)
+        .set(adminCsrfHeaders())
+        .send({
+          roles: [
+            { roleKey: 'parliamentarian', userIds: [parliamentarianA.id, parliamentarianB.id] },
+            { roleKey: 'regional_governor', userId: null },
+          ],
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+
+      const parliamentarianRole = response.body.roles.find((role) => role.key === 'parliamentarian');
+      expect(parliamentarianRole).toBeDefined();
+      expect(parliamentarianRole.assignments.map((a) => a.userId).sort((a, b) => a - b)).toEqual(
+        [parliamentarianA.id, parliamentarianB.id].sort((a, b) => a - b)
+      );
+
+      const dbRows = await LocationRole.findAll({
+        where: { locationId: prefecture.id, roleKey: 'parliamentarian' },
+        order: [['id', 'ASC']],
+      });
+      expect(dbRows).toHaveLength(2);
+    });
+
+    it('accepts single userId payload for parliamentarian role for backward compatibility', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${prefecture.id}/roles`)
+        .set(adminCsrfHeaders())
+        .send({
+          roles: [{ roleKey: 'parliamentarian', userId: parliamentarianA.id }],
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      const parliamentarianRole = response.body.roles.find((role) => role.key === 'parliamentarian');
+      expect(parliamentarianRole.assignments).toHaveLength(1);
+      expect(parliamentarianRole.assignments[0].userId).toBe(parliamentarianA.id);
     });
   });
 
