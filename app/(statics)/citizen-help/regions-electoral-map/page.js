@@ -23,15 +23,20 @@ export const metadata = {
 };
 
 /* ── Data: 13 administrative regions → electoral constituencies ── */
+// Δεδομένα βάσει ΦΕΚ 16/Α/25.01.2023 (απογραφή 2021) και εκλογών Ιουνίου 2023
 const regionsData = [
   {
     region: 'Αττική',
     capital: 'Αθήνα',
     constituencies: [
-      { name: 'Α΄ Αθηνών', seats: 17 },
-      { name: 'Β΄ Αθηνών', seats: 9 },
+      { name: 'Α΄ Αθηνών', seats: 13 },
+      { name: 'Β1΄ Βόρειου Τομέα Αθηνών', seats: 16 },
+      { name: 'Β2΄ Δυτικού Τομέα Αθηνών', seats: 12 },
+      { name: 'Β3΄ Νότιου Τομέα Αθηνών', seats: 19 },
+      { name: 'Ανατολικής Αττικής', seats: 12 },
+      { name: 'Δυτικής Αττικής', seats: 4 },
       { name: 'Α΄ Πειραιώς', seats: 6 },
-      { name: 'Β΄ Πειραιώς', seats: 3 },
+      { name: 'Β΄ Πειραιώς', seats: 8 },
     ],
   },
   {
@@ -39,13 +44,13 @@ const regionsData = [
     capital: 'Θεσσαλονίκη',
     constituencies: [
       { name: 'Α΄ Θεσσαλονίκης', seats: 16 },
-      { name: 'Β΄ Θεσσαλονίκης', seats: 3 },
-      { name: 'Σερρών', seats: 4 },
-      { name: 'Ημαθίας', seats: 3 },
-      { name: 'Πέλλης', seats: 3 },
-      { name: 'Πιερίας', seats: 3 },
-      { name: 'Κιλκίς', seats: 2 },
-      { name: 'Χαλκιδικής', seats: 2 },
+      { name: 'Β΄ Θεσσαλονίκης', seats: 10 },
+      { name: 'Σερρών', seats: 5 },
+      { name: 'Ημαθίας', seats: 4 },
+      { name: 'Πέλλας', seats: 4 },
+      { name: 'Πιερίας', seats: 4 },
+      { name: 'Κιλκίς', seats: 3 },
+      { name: 'Χαλκιδικής', seats: 3 },
     ],
   },
   {
@@ -53,47 +58,47 @@ const regionsData = [
     capital: 'Κομοτηνή',
     constituencies: [
       { name: 'Έβρου', seats: 4 },
-      { name: 'Καβάλας', seats: 3 },
+      { name: 'Καβάλας', seats: 4 },
       { name: 'Ξάνθης', seats: 3 },
-      { name: 'Δράμας', seats: 2 },
-      { name: 'Ροδόπης', seats: 2 },
+      { name: 'Δράμας', seats: 3 },
+      { name: 'Ροδόπης', seats: 3 },
     ],
   },
   {
     region: 'Δυτική Μακεδονία',
     capital: 'Κοζάνη',
     constituencies: [
-      { name: 'Κοζάνης', seats: 3 },
+      { name: 'Κοζάνης', seats: 4 },
+      { name: 'Φλώρινας', seats: 2 },
       { name: 'Γρεβενών', seats: 1 },
       { name: 'Καστοριάς', seats: 1 },
-      { name: 'Φλώρινας', seats: 1 },
     ],
   },
   {
     region: 'Ήπειρος',
     capital: 'Ιωάννινα',
     constituencies: [
-      { name: 'Ιωαννίνων', seats: 4 },
+      { name: 'Ιωαννίνων', seats: 5 },
       { name: 'Άρτας', seats: 2 },
+      { name: 'Πρέβεζας', seats: 2 },
       { name: 'Θεσπρωτίας', seats: 1 },
-      { name: 'Πρέβεζας', seats: 1 },
     ],
   },
   {
     region: 'Θεσσαλία',
     capital: 'Λάρισα',
     constituencies: [
-      { name: 'Λαρίσης', seats: 5 },
-      { name: 'Μαγνησίας', seats: 4 },
-      { name: 'Καρδίτσας', seats: 3 },
-      { name: 'Τρικάλων', seats: 3 },
+      { name: 'Λαρίσης', seats: 8 },
+      { name: 'Μαγνησίας', seats: 5 },
+      { name: 'Καρδίτσας', seats: 4 },
+      { name: 'Τρικάλων', seats: 4 },
     ],
   },
   {
     region: 'Στερεά Ελλάδα',
     capital: 'Λαμία',
     constituencies: [
-      { name: 'Εύβοιας', seats: 4 },
+      { name: 'Εύβοιας', seats: 6 },
       { name: 'Φθιώτιδας', seats: 4 },
       { name: 'Βοιωτίας', seats: 3 },
       { name: 'Ευρυτανίας', seats: 1 },
@@ -104,27 +109,27 @@ const regionsData = [
     region: 'Δυτική Ελλάδα',
     capital: 'Πάτρα',
     constituencies: [
-      { name: 'Αχαΐας', seats: 7 },
-      { name: 'Αιτωλοακαρνανίας', seats: 5 },
-      { name: 'Ηλείας', seats: 4 },
+      { name: 'Αχαΐας', seats: 9 },
+      { name: 'Αιτωλοακαρνανίας', seats: 7 },
+      { name: 'Ηλείας', seats: 5 },
     ],
   },
   {
     region: 'Πελοπόννησος',
     capital: 'Τρίπολη',
     constituencies: [
-      { name: 'Μεσσηνίας', seats: 4 },
+      { name: 'Μεσσηνίας', seats: 5 },
+      { name: 'Κορινθίας', seats: 4 },
       { name: 'Αργολίδας', seats: 3 },
       { name: 'Αρκαδίας', seats: 3 },
-      { name: 'Κορινθίας', seats: 3 },
-      { name: 'Λακωνίας', seats: 2 },
+      { name: 'Λακωνίας', seats: 3 },
     ],
   },
   {
     region: 'Ιόνια Νησιά',
     capital: 'Κέρκυρα',
     constituencies: [
-      { name: 'Κέρκυρας', seats: 2 },
+      { name: 'Κέρκυρας', seats: 3 },
       { name: 'Ζακύνθου', seats: 1 },
       { name: 'Κεφαλληνίας', seats: 1 },
       { name: 'Λευκάδας', seats: 1 },
@@ -135,8 +140,8 @@ const regionsData = [
     capital: 'Μυτιλήνη',
     constituencies: [
       { name: 'Λέσβου', seats: 3 },
+      { name: 'Χίου', seats: 2 },
       { name: 'Σάμου', seats: 1 },
-      { name: 'Χίου', seats: 1 },
     ],
   },
   {
@@ -144,7 +149,7 @@ const regionsData = [
     capital: 'Ερμούπολη',
     constituencies: [
       { name: 'Δωδεκανήσου', seats: 5 },
-      { name: 'Κυκλάδων', seats: 2 },
+      { name: 'Κυκλάδων', seats: 4 },
     ],
   },
   {
@@ -190,13 +195,13 @@ export default function RegionsElectoralMapPage() {
         <p className="text-xl text-gray-700 leading-relaxed">
           Η Ελλάδα διαιρείται σε <strong>13 διοικητικές Περιφέρειες</strong> (Καλλικρατικές),
           οι οποίες αποτελούν τη δεύτερη βαθμίδα τοπικής αυτοδιοίκησης. Για τις βουλευτικές εκλογές,
-          η χώρα χωρίζεται σε <strong>56 εκλογικές περιφέρειες</strong> (βάσει των παλαιών νομών),
-          στις οποίες κατανέμονται <strong>299 βουλευτικές έδρες</strong> — συν 1 έδρα Επικρατείας.
+          η χώρα χωρίζεται σε <strong>59 εκλογικές περιφέρειες</strong>,
+          στις οποίες κατανέμονται <strong>288 βουλευτικές έδρες</strong> — συν 12 έδρες Επικρατείας.
         </p>
         <p className="text-gray-600 mt-3 text-sm">
           Η παρακάτω ανάλυση παρουσιάζει πώς οι εκλογικές περιφέρειες αντιστοιχούν
           σε κάθε μία από τις 13 Περιφέρειες, μαζί με τον αριθμό βουλευτικών εδρών
-          που εκλέγονται σε κάθε περιοχή.
+          που εκλέγονται σε κάθε περιοχή. Δεδομένα: ΦΕΚ 16/Α/25.01.2023, εκλογές Ιουνίου 2023.
         </p>
       </section>
 
@@ -216,8 +221,9 @@ export default function RegionsElectoralMapPage() {
             <h3 className="text-lg font-semibold mb-1">Εκλογική Περιφέρεια</h3>
             <p className="text-gray-700 text-sm">
               Η εκλογική περιφέρεια είναι η γεωγραφική μονάδα για τις βουλευτικές εκλογές.
-              Αντιστοιχεί κατά κανόνα στις παλαιές <strong>Περιφερειακές Ενότητες</strong> (πρώην Νομούς).
-              Υπάρχουν <strong>56 εκλογικές περιφέρειες</strong> + 1 Επικρατείας.
+              Αντιστοιχεί κατά κανόνα στις <strong>Περιφερειακές Ενότητες</strong> (πρώην Νομούς),
+              με εξαίρεση την Αττική που χωρίζεται σε περισσότερες περιφέρειες.
+              Υπάρχουν <strong>59 εκλογικές περιφέρειες</strong> + 12 έδρες Επικρατείας.
             </p>
           </div>
           <div className="border-l-4 border-indigo-500 pl-4">
@@ -278,7 +284,7 @@ export default function RegionsElectoralMapPage() {
           </table>
         </div>
         <p className="text-xs text-gray-500 mt-2">
-          * Δεν περιλαμβάνεται η 1 έδρα Επικρατείας, η οποία κατανέμεται βάσει εθνικού ποσοστού.
+          * Δεν περιλαμβάνονται οι 12 έδρες Επικρατείας, οι οποίες κατανέμονται βάσει εθνικού ποσοστού.
         </p>
       </section>
 
