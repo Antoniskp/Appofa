@@ -368,6 +368,8 @@
     "unknown": "Unknown",
     "anonymous": "Anonymous",
     "remove": "Remove",
+    "add": "Add",
+    "no_parliamentarians_assigned": "No parliamentarians have been assigned.",
     "status_active": "Active",
     "status_inactive": "Inactive",
     "status_pending": "Pending",

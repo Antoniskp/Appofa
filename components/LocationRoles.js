@@ -20,9 +20,12 @@ export default function LocationRoles({ locationId, compact = false }) {
     locationRoleAPI.getRoles(locationId)
       .then((res) => {
         if (res?.success) {
-          // Only keep roles that have an assignment with a person or user
+          // Only keep roles that have at least one assignment
           const assigned = (res.roles || []).filter(
-            (r) => r.assignment && (r.assignment.personId || r.assignment.userId)
+            (r) => {
+              if (r.repeatable) return Array.isArray(r.assignments) && r.assignments.some((a) => a?.userId);
+              return r.assignment && (r.assignment.personId || r.assignment.userId);
+            }
           );
           setRoles(assigned);
         }
@@ -33,12 +36,30 @@ export default function LocationRoles({ locationId, compact = false }) {
 
   if (loading || roles.length === 0) return null;
 
+  const flattenedRoles = roles.flatMap((role) => {
+    if (role.repeatable) {
+      return (role.assignments || [])
+        .filter((assignment) => assignment?.userId)
+        .map((assignment, idx) => ({
+          key: `${role.key}-${assignment.id || assignment.userId}-${idx}`,
+          title: role.title,
+          assignment,
+        }));
+    }
+
+    return [{
+      key: role.key,
+      title: role.title,
+      assignment: role.assignment,
+    }];
+  });
+
   if (compact) {
     return (
       <div className="text-sm text-gray-700">
         <p className="font-semibold text-gray-800 mb-1">Αξιωματούχοι</p>
         <ul className="space-y-0.5">
-          {roles.map((role) => {
+          {flattenedRoles.map((role) => {
             const { assignment } = role;
             const user = assignment?.user;
             const name = user?.firstNameNative
@@ -67,7 +88,7 @@ export default function LocationRoles({ locationId, compact = false }) {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
       <h3 className="text-base font-semibold text-gray-900 mb-3">Αξιωματούχοι Τοποθεσίας</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-        {roles.map((role) => {
+        {flattenedRoles.map((role) => {
           const { assignment } = role;
           const user = assignment?.user;
           const photo = user?.photo || user?.avatar;

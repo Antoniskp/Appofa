@@ -61,6 +61,15 @@ const getRoleDefinitions = (locationType) => {
   return (locationRolesConfig.roles[locationType] || []).slice().sort((a, b) => a.order - b.order);
 };
 
+const groupAssignmentsByRoleKey = (assignments) => {
+  const grouped = {};
+  for (const assignment of assignments) {
+    if (!grouped[assignment.roleKey]) grouped[assignment.roleKey] = [];
+    grouped[assignment.roleKey].push(assignment);
+  }
+  return grouped;
+};
+
 // ---------------------------------------------------------------------------
 // Controller functions
 // ---------------------------------------------------------------------------
@@ -94,17 +103,27 @@ exports.getRoles = async (req, res) => {
       ],
     });
 
-    // Build a map of roleKey → assignment for fast lookup
-    const assignmentMap = {};
-    for (const a of assignments) {
-      assignmentMap[a.roleKey] = a;
-    }
+    const assignmentsByRole = groupAssignmentsByRoleKey(assignments);
 
     // Merge definitions with assignments
-    const roles = definitions.map((def) => ({
-      ...def,
-      assignment: assignmentMap[def.key] || null,
-    }));
+    const roles = definitions.map((def) => {
+      const roleAssignments = (assignmentsByRole[def.key] || [])
+        .slice()
+        .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.id - b.id));
+
+      if (def.repeatable) {
+        return {
+          ...def,
+          assignment: roleAssignments[0] || null,
+          assignments: roleAssignments,
+        };
+      }
+
+      return {
+        ...def,
+        assignment: roleAssignments[0] || null,
+      };
+    });
 
     return res.status(200).json({
       success: true,
@@ -156,6 +175,9 @@ exports.upsertRoles = async (req, res) => {
 
     const definitions = getRoleDefinitions(location.type);
     const validKeys = new Set(definitions.map((d) => d.key));
+    const defByKey = Object.fromEntries(definitions.map((d) => [d.key, d]));
+
+    const normalizedEntries = [];
 
     // Validate each entry
     for (const entry of roles) {
@@ -168,23 +190,63 @@ exports.upsertRoles = async (req, res) => {
           message: `Invalid roleKey "${entry.roleKey}" for location type "${location.type}"`,
         });
       }
-      if (entry.userId != null) {
-        const user = await User.findByPk(entry.userId, { attributes: ['id'] });
-        if (!user) {
-          return res.status(400).json({ success: false, message: `User with id ${entry.userId} not found` });
+      const roleDef = defByKey[entry.roleKey];
+
+      if (roleDef?.repeatable) {
+        const rawUserIds = Array.isArray(entry.userIds)
+          ? entry.userIds
+          : (entry.userId != null ? [entry.userId] : []);
+        const userIds = [...new Set(rawUserIds)]
+          .map((id) => Number.parseInt(id, 10))
+          .filter((id) => Number.isInteger(id) && id > 0);
+
+        for (const userId of userIds) {
+          const user = await User.findByPk(userId, { attributes: ['id'] });
+          if (!user) {
+            return res.status(400).json({ success: false, message: `User with id ${userId} not found` });
+          }
         }
+
+        normalizedEntries.push({ roleKey: entry.roleKey, userIds });
+        continue;
+      }
+
+      if (entry.userId != null) {
+        const userId = Number.parseInt(entry.userId, 10);
+        if (!Number.isInteger(userId) || userId <= 0) {
+          return res.status(400).json({ success: false, message: `Invalid userId for role "${entry.roleKey}"` });
+        }
+        const user = await User.findByPk(userId, { attributes: ['id'] });
+        if (!user) {
+          return res.status(400).json({ success: false, message: `User with id ${userId} not found` });
+        }
+        normalizedEntries.push({ roleKey: entry.roleKey, userId });
+      } else {
+        normalizedEntries.push({ roleKey: entry.roleKey, userId: null });
       }
     }
 
-    // Build a quick lookup: roleKey → definition (for sortOrder)
-    const defByKey = Object.fromEntries(definitions.map((d) => [d.key, d]));
-
     // Upsert each role
-    const upserted = [];
-    for (const entry of roles) {
-      const { roleKey, userId = null } = entry;
+    for (const entry of normalizedEntries) {
+      const { roleKey } = entry;
+      const roleDef = defByKey[roleKey];
       const sortOrder = defByKey[roleKey]?.order ?? 0;
 
+      if (roleDef?.repeatable) {
+        await LocationRole.destroy({ where: { locationId, roleKey } });
+        for (let idx = 0; idx < entry.userIds.length; idx += 1) {
+          const userId = entry.userIds[idx];
+          await LocationRole.create({
+            locationId,
+            roleKey,
+            userId,
+            sortOrder: sortOrder * 100 + idx,
+          });
+        }
+        continue;
+      }
+
+      const { userId = null } = entry;
       const [record] = await LocationRole.findOrCreate({
         where: { locationId, roleKey },
         defaults: { locationId, roleKey, userId, sortOrder },
@@ -195,7 +257,6 @@ exports.upsertRoles = async (req, res) => {
         await record.save();
       }
 
-      upserted.push(record);
     }
 
     // Re-fetch with associations for the response
@@ -211,20 +272,31 @@ exports.upsertRoles = async (req, res) => {
       ],
     });
 
-    const assignmentMap = {};
-    for (const a of updated) {
-      assignmentMap[a.roleKey] = a;
-    }
+    const assignmentsByRole = groupAssignmentsByRoleKey(updated);
 
-    const mergedRoles = definitions.map((def) => ({
-      ...def,
-      assignment: assignmentMap[def.key] || null,
-    }));
+    const mergedRoles = definitions.map((def) => {
+      const roleAssignments = (assignmentsByRole[def.key] || [])
+        .slice()
+        .sort((a, b) => (a.sortOrder - b.sortOrder) || (a.id - b.id));
+
+      if (def.repeatable) {
+        return {
+          ...def,
+          assignment: roleAssignments[0] || null,
+          assignments: roleAssignments,
+        };
+      }
+
+      return {
+        ...def,
+        assignment: roleAssignments[0] || null,
+      };
+    });
 
     // Sync national roles to GovernmentCurrentHolder (fire-and-forget, country locations only)
     if (location.type === 'country') {
       const locationCountryCode = (location.code || 'GR').toUpperCase();
-      for (const entry of roles) {
+      for (const entry of normalizedEntries) {
         const { roleKey, userId } = entry;
         if (ROLE_KEY_TO_POSITION_TYPE[roleKey]) {
           syncLocationRoleToHolder(roleKey, userId || null, locationCountryCode)

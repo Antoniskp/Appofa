@@ -38,7 +38,7 @@ const LocationRole = sequelize.define('LocationRole', {
   tableName: 'LocationRoles',
   timestamps: true,
   indexes: [
-    { unique: true, fields: ['locationId', 'roleKey'], name: 'idx_location_roles_unique' },
+    { unique: true, fields: ['locationId', 'roleKey', 'userId'], name: 'idx_location_roles_unique_role_holder' },
     { fields: ['locationId'], name: 'idx_location_roles_location_id' },
     { fields: ['userId'], name: 'idx_location_roles_user_id' },
   ],

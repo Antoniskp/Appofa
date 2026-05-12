@@ -119,7 +119,7 @@ Appofa/
 | Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng, population (from Wikipedia), population_override (moderator-set; takes precedence over population for participation % calculations) | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote, UserLocationRole; belongsTo: parent |
 | LocationLink | LocationLinks | id, locationId, url, type, pollId | belongsTo: Location, Poll |
 | LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
-| LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User |
+| LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User. Supports repeatable linked officials (e.g. prefecture `parliamentarian`) as multiple rows with same `(locationId, roleKey)` and different `userId`; unique index is `(locationId, roleKey, userId)` |
 | UserLocationRole | UserLocationRoles | id, userId, locationId, roleKey, createdAt, updatedAt | Unique (userId, locationId, roleKey); belongsTo: User, Location. Platform role assignments (e.g. 'moderator'). Validated at service layer: moderator location must be ancestor/self of user's homeLocationId. |
 | LocationElectionVote | LocationElectionVotes | id, locationId, roleKey, voterId, candidateUserId | belongsTo: Location, User(voter), User(candidate) |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
@@ -290,7 +290,7 @@ Appofa/
 | PUT | /:locationId/sections/:id | mod | Update section |
 | DELETE | /:locationId/sections/:id | mod | Delete section |
 | GET | /:locationId/roles | — | Get roles |
-| PUT | /:locationId/roles | mod | Upsert roles |
+| PUT | /:locationId/roles | mod | Upsert roles (single-slot roles via `userId`; repeatable roles via `userIds[]`, backward-compatible with single `userId`) |
 | GET | /:locationId/platform-roles | admin | List platform-level role assignments (UserLocationRole) for a location |
 | POST | /:locationId/platform-roles | admin | Add a platform role assignment (userId + roleKey; validates ancestor-chain for moderator; auto-elevates global role) |
 | DELETE | /:locationId/platform-roles/:id | admin | Remove a platform role assignment (auto-demotes to viewer if last moderator assignment) |
@@ -410,7 +410,7 @@ Appofa/
 | linkPreviewController.js | Link preview caching |
 | locationController.js | Location CRUD, sections, roles |
 | locationPlatformRoleController.js | Platform-level location role assignment management (UserLocationRole): list/add/remove; admin-only; auto-elevates/demotes global role; ancestor-chain validation |
-| locationRoleController.js | Location role management |
+| locationRoleController.js | Location role management (single-slot + repeatable linked officials in `LocationRoles`) |
 | locationSectionController.js | Location section management |
 | manifestController.js | Manifest CRUD & acceptance |
 | messageController.js | Contact messages |
@@ -797,6 +797,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260510150000-create-newsletter-campaigns.js | Create `NewsletterCampaigns` table (`subject`, `previewText`, `htmlContent`, `textContent`, status enum, audienceFilters JSON, counters, sentAt, createdByAdminId) |
 | — | 20260510150100-create-newsletter-send-logs.js | Create `NewsletterSendLogs` table for per-recipient campaign delivery status (`queued|sent|failed`), providerMessageId/errorMessage, sentAt, and campaign/subscriber FKs |
 | — | 20260510153000-add-newsletter-campaign-scheduling.js | Add `NewsletterCampaigns.scheduledAt` (+ index) and extend campaign status enum with `scheduled` (postgres-safe enum migration) |
+| — | 20260512041000-allow-repeatable-location-roles.js | Replace unique index on `LocationRoles` from `(locationId, roleKey)` to `(locationId, roleKey, userId)` for repeatable linked officials (prefecture parliamentarians) |
 
 </details>
 

@@ -368,6 +368,8 @@
     "unknown": "Άγνωστο",
     "anonymous": "Ανώνυμος",
     "remove": "Αφαίρεση",
+    "add": "Προσθήκη",
+    "no_parliamentarians_assigned": "Δεν έχουν οριστεί βουλευτές.",
     "status_active": "Ενεργό",
     "status_inactive": "Ανενεργό",
     "status_pending": "Εκκρεμεί",

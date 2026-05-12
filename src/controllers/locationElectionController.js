@@ -32,7 +32,7 @@ function getElectionRolesForType(locationType) {
     return [MODERATOR_ROLE];
   }
 
-  const tierRoles = locationRolesConfig.roles[locationType] || [];
+  const tierRoles = (locationRolesConfig.roles[locationType] || []).filter((role) => !role.repeatable);
   return [MODERATOR_ROLE, ...tierRoles.map((r) => ({ key: r.key, title: r.title, titleEn: r.titleEn }))];
 }
 
