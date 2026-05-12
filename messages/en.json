@@ -34,7 +34,13 @@
     "civic_polls": "Civic Polls",
     "information": "Information",
     "participation": "Participation",
-    "community": "Community"
+    "community": "Community",
+    "dream_team": "Ideal Government",
+    "platform": "Platform",
+    "government": "Government",
+    "citizen_help": "Citizen Help",
+    "education": "Education",
+    "all_pages": "All Pages"
   },
   "governmentSnapshot": {
     "title": "Government Positions",

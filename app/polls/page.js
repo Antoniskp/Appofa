@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
-import { StarIcon } from '@heroicons/react/24/solid';
 import { useTranslations } from 'next-intl';
 import { pollAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -129,13 +128,6 @@ function PollsContent() {
                   },
                 ]}
               />
-              <Link
-                href="/dream-team"
-                className="inline-flex items-center gap-2 bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition-colors text-sm font-medium whitespace-nowrap"
-              >
-                <StarIcon className="h-5 w-5" />
-                 {tPolls('dream_team')}
-              </Link>
               {user && (
                 <Link
                   href="/polls/create"

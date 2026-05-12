@@ -34,7 +34,13 @@
     "civic_polls": "Πολιτικές Ψηφοφορίες",
     "information": "Ενημέρωση",
     "participation": "Συμμετοχή",
-    "community": "Κοινότητα"
+    "community": "Κοινότητα",
+    "dream_team": "Ιδανική Κυβέρνηση",
+    "platform": "Πλατφόρμα",
+    "government": "Κυβέρνηση",
+    "citizen_help": "Βοήθεια Πολίτη",
+    "education": "Εκπαίδευση",
+    "all_pages": "Όλες οι Σελίδες"
   },
   "governmentSnapshot": {
     "title": "Κυβερνητικές Θέσεις",
