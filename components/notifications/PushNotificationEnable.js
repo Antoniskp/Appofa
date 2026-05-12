@@ -122,8 +122,7 @@ export default function PushNotificationEnable() {
       const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       if (!vapidKey) {
         // Permission is granted and SW is ready; push subscription cannot proceed
-        // without a VAPID key. Notify the user and log for maintainers.
-        // TODO: Add NEXT_PUBLIC_VAPID_PUBLIC_KEY to .env and implement the backend endpoint.
+        // without a VAPID key. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY in .env (see README).
         setStatusText(
           'Η άδεια δόθηκε, αλλά οι push ειδοποιήσεις δεν είναι ακόμα ρυθμισμένες. Επικοινωνήστε με τον διαχειριστή για να ολοκληρωθεί η ρύθμιση.'
         );

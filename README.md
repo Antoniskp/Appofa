@@ -122,7 +122,8 @@ npm run seed
 
 > **OAuth setup** — see [doc/OAUTH.md](doc/OAUTH.md) for GitHub and Google OAuth configuration.  
 > **Analytics setup** — see [doc/GOOGLE_ANALYTICS.md](doc/GOOGLE_ANALYTICS.md) for GA4 configuration.  
-> **SEO configuration** — see [doc/SEO.md](doc/SEO.md) for `SITE_URL`, sitemap, and JSON-LD details.
+> **SEO configuration** — see [doc/SEO.md](doc/SEO.md) for `SITE_URL`, sitemap, and JSON-LD details.  
+> **Push notifications** — see the [PWA Push Notifications](#pwa-push-notifications-web-push--ios) section below for VAPID key setup.
 
 ### Password reset SMTP setup (local/dev/prod)
 
@@ -144,6 +145,54 @@ FRONTEND_URL=http://localhost:3001
 - `SMTP_FROM` should match your authenticated SMTP domain
 - In production, set `FRONTEND_URL` to your public HTTPS frontend URL so reset links are valid
 - Ensure your server/deployment allows outbound SMTP traffic to your provider
+
+### PWA Push Notifications (Web Push / iOS)
+
+Push notifications use the [Web Push protocol](https://web.dev/push-notifications-overview/) with VAPID keys.  
+On iOS the app **must** be installed to the Home Screen (Add to Home Screen) — push does not work from a Safari tab.
+
+**1. Generate a VAPID key pair** (run once on any machine):
+
+```bash
+npx web-push generate-vapid-keys
+```
+
+**2. Add to both your frontend and backend `.env`:**
+
+```env
+# Frontend — exposed to the browser (safe to share, public key only)
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=<your-public-key>
+
+# Backend — never exposed to clients
+VAPID_PRIVATE_KEY=<your-private-key>
+VAPID_MAILTO=mailto:admin@appofasi.gr
+```
+
+> ⚠️ Never put `VAPID_PRIVATE_KEY` in a `NEXT_PUBLIC_*` variable.
+
+**3. Rebuild & restart** the frontend after adding the env var so Next.js bakes it in:
+
+```bash
+npm run frontend:build
+npm run frontend:start   # or redeploy
+```
+
+**4. Local verification steps (iOS PWA flow):**
+
+1. Open the site in Safari on iOS.
+2. **Share → Add to Home Screen**.
+3. Launch the app from the Home Screen icon.
+4. Navigate to `/notifications` → expand **Ρυθμίσεις ειδοποιήσεων**.
+5. Tap **Ενεργοποίηση ειδοποιήσεων** and grant permission.
+6. Confirm a subscription row is created in your backend (`POST /api/push/subscribe`).
+7. Send a test push to verify end-to-end delivery.
+
+**Common pitfalls:**
+- Testing from a regular Safari tab instead of the installed Home Screen PWA.
+- Frontend built without the env var (the button shows a configuration error message).
+- `NEXT_PUBLIC_VAPID_PUBLIC_KEY` missing or mistyped — the button will show a clear error.
+
+---
 
 ### Docker
 
