@@ -149,6 +149,28 @@ describe('ListPageToolbar', () => {
     expect(searchParent.parentElement).toBe(actionParent.parentElement);
   });
 
+  test('uses md breakpoint row layout with wrap safeguards', async () => {
+    await act(async () => {
+      root.render(
+        React.createElement(ListPageToolbar, {
+          searchSlot: React.createElement('input', { 'data-testid': 'search' }),
+          filtersSlot: React.createElement('div', { 'data-testid': 'filter-slot' }),
+          actionsSlot: React.createElement('button', { 'data-testid': 'action-slot' }),
+        }),
+      );
+    });
+
+    const search = container.querySelector('[data-testid="search"]');
+    const row = search.parentElement.parentElement;
+    const controls = container.querySelector('[data-testid="filter-slot"]').parentElement;
+
+    expect(row.className).toContain('md:flex-row');
+    expect(row.className).toContain('md:flex-wrap');
+    expect(search.parentElement.className).toContain('md:min-w-[240px]');
+    expect(controls.className).toContain('flex-shrink-0');
+    expect(controls.className).toContain('md:flex-wrap');
+  });
+
   test('filtersSlot and actionsSlot share the same controls container', async () => {
     await act(async () => {
       root.render(
@@ -237,6 +259,8 @@ describe('FilterBar expanded-below layout', () => {
 
     const toggle = container.querySelector('button[aria-label="Φίλτρα"]');
     expect(toggle).toBeTruthy();
+    expect(toggle.className).toContain('h-10');
+    expect(toggle.className).toContain('min-w-10');
   });
 
   test('expanded filters are NOT rendered when closed', async () => {
@@ -267,8 +291,13 @@ describe('FilterBar expanded-below layout', () => {
       );
     });
 
-    expect(container.querySelector('select')).toBeTruthy();
-    expect(container.querySelector('input[type="text"]')).toBeTruthy();
+    const select = container.querySelector('select');
+    const input = container.querySelector('input[type="text"]');
+
+    expect(select).toBeTruthy();
+    expect(input).toBeTruthy();
+    expect(select.className).toContain('w-full');
+    expect(input.className).toContain('w-full');
   });
 
   test('expanded filters are siblings of the toggle, not children of the toggle', async () => {
