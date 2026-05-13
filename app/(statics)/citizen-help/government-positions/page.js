@@ -30,6 +30,7 @@ const MINISTER_CATEGORY_LABELS = {
   development: 'Ανάπτυξη & Υποδομές',
   governance: 'Διακυβέρνηση & Ασφάλεια',
   sectoral: 'Τομεακά Υπουργεία',
+  other: 'Λοιπά Υπουργεία',
 };
 
 // ── Metadata ────────────────────────────────────────────────────────────────
@@ -127,7 +128,7 @@ function HolderAvatar({ photo, name, avatarColor, size = 'md' }) {
     <div
       className={`${sizes} rounded-full flex items-center justify-center flex-shrink-0 font-semibold text-white border-2 border-white shadow-sm`}
       style={avatarColor ? { backgroundColor: avatarColor } : { backgroundColor: '#6b7280' }}
-      aria-label={name || ''}
+      aria-label={name || 'Αγνώστου ονόματος'}
     >
       {initial}
     </div>
