@@ -8,6 +8,7 @@ const {
   User,
   Location,
   GovernmentPosition,
+  GovernmentCurrentHolder,
   DreamTeamVote,
 } = require('../../models');
 const authRoutes = require('../../routes/authRoutes');
@@ -126,6 +127,13 @@ describe('Dream Team API Tests', () => {
       lastNameNative: 'Πολιτικός',
     });
     candidateUserId = candidateUser.id;
+
+    await GovernmentCurrentHolder.create({
+      positionId,
+      userId: candidateUserId,
+      since: '2025-01-01',
+      isActive: true,
+    });
   });
 
   afterAll(async () => {
@@ -168,6 +176,67 @@ describe('Dream Team API Tests', () => {
       const original = GovernmentPosition.findAll;
       GovernmentPosition.findAll = jest.fn().mockRejectedValue(new Error('DB error'));
       const res = await request(app).get('/api/dream-team/positions');
+      expect(res.status).toBe(500);
+      expect(res.body.success).toBe(false);
+      GovernmentPosition.findAll = original;
+    });
+  });
+
+  // ── GET /api/dream-team/current-holders ───────────────────────────────────
+
+  describe('GET /api/dream-team/current-holders', () => {
+    it('returns active GR positions with official current holders by default', async () => {
+      const res = await request(app).get('/api/dream-team/current-holders');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+
+      const grPosition = res.body.data.find((p) => p.id === positionId);
+      expect(grPosition).toBeDefined();
+      expect(grPosition.countryCode).toBe('GR');
+      expect(Array.isArray(grPosition.currentHolders)).toBe(true);
+      expect(grPosition.currentHolders.length).toBeGreaterThan(0);
+      expect(grPosition.currentHolders[0].user).toHaveProperty('id', candidateUserId);
+      expect(grPosition.currentHolders[0]).toHaveProperty('holderPhoto');
+      expect(grPosition.currentHolders[0]).toHaveProperty('holderAvatarColor');
+      expect(grPosition).not.toHaveProperty('votes');
+      expect(grPosition).not.toHaveProperty('myVote');
+    });
+
+    it('filters positions by countryCode', async () => {
+      const res = await request(app).get('/api/dream-team/current-holders?countryCode=CY');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+      expect(res.body.data.length).toBeGreaterThan(0);
+      res.body.data.forEach((pos) => {
+        expect(pos.countryCode).toBe('CY');
+      });
+    });
+
+    it('returns positions without holder entries when no holder is assigned', async () => {
+      const noHolderPos = await GovernmentPosition.create({
+        slug: 'minister_no_holder_test',
+        title: 'Υπουργός χωρίς κάτοχο',
+        titleEn: 'Minister without holder',
+        positionTypeKey: 'minister',
+        scope: 'national',
+        countryCode: 'GR',
+        order: 100,
+        isActive: true,
+      });
+
+      const res = await request(app).get('/api/dream-team/current-holders?countryCode=GR');
+      expect(res.status).toBe(200);
+      const item = res.body.data.find((r) => r.id === noHolderPos.id);
+      expect(item).toBeDefined();
+      expect(item.currentHolders).toEqual([]);
+    });
+
+    it('returns 500 on DB error (mocked)', async () => {
+      const original = GovernmentPosition.findAll;
+      GovernmentPosition.findAll = jest.fn().mockRejectedValue(new Error('DB error'));
+      const res = await request(app).get('/api/dream-team/current-holders');
       expect(res.status).toBe(500);
       expect(res.body.success).toBe(false);
       GovernmentPosition.findAll = original;

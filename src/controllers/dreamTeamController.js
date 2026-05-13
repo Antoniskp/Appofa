@@ -37,6 +37,48 @@ async function generateShareSlug() {
 }
 
 const dreamTeamController = {
+  // GET /api/dream-team/current-holders
+  getCurrentHolders: async (req, res) => {
+    try {
+      const countryCode = (req.query.countryCode || 'GR').toUpperCase();
+      const positions = await GovernmentPosition.findAll({
+        where: { isActive: true, countryCode },
+        order: [['order', 'ASC']],
+        include: [
+          {
+            model: GovernmentCurrentHolder,
+            as: 'currentHolders',
+            where: { isActive: true },
+            required: false,
+            include: [
+              {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'photo', 'avatarColor'],
+                required: false,
+              },
+            ],
+          },
+        ],
+      });
+
+      const data = positions.map((position) => {
+        const posJson = position.toJSON();
+        posJson.currentHolders = (posJson.currentHolders || []).map((holder) => ({
+          ...holder,
+          holderPhoto: holder.user ? (holder.user.photo || holder.user.avatar || null) : null,
+          holderAvatarColor: holder.user?.avatarColor || null,
+        }));
+        return posJson;
+      });
+
+      return res.status(200).json({ success: true, data });
+    } catch (error) {
+      console.error('dreamTeamController.getCurrentHolders error:', error);
+      return res.status(500).json({ success: false, message: 'Σφάλμα διακομιστή.' });
+    }
+  },
+
   // GET /api/dream-team/positions
   getPositionsWithData: async (req, res) => {
     try {

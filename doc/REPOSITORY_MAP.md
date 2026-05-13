@@ -334,6 +334,7 @@ Appofa/
 ### Dream Team (`/api/dream-team`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
+| GET | /current-holders | — | Official current holders by country (`GovernmentPositions` + active `GovernmentCurrentHolders`, no Dream Team vote/results payload) |
 | GET | /positions | — | List positions |
 | POST | /vote | ✅ | Cast vote (country-scoped: user can vote only in resolved own country; mismatch returns 403) |
 | DELETE | /vote/:positionId | ✅ | Remove vote |
@@ -546,6 +547,8 @@ Appofa/
 
 ### Static Pages (50 pages in `(statics)` layout)
 Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, github-files, etc.
+
+- `/citizen-help/government-positions` now renders server-fetched live GR official holder data from `GET /api/dream-team/current-holders?countryCode=GR` (source of truth: `GovernmentPositions` + `GovernmentCurrentHolders`) and shows graceful unavailable/empty states instead of hardcoded office-holder lists.
 
 #### Platform Documentation (`/platform/*`) — canonical source of truth for users and AI agents
 | Route | Description |

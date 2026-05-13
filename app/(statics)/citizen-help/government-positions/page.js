@@ -2,6 +2,7 @@ import Link from 'next/link';
 import StaticPageLayout from '@/components/StaticPageLayout';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
 export const metadata = {
   title: 'Κυβερνητικές Θέσεις & Αξιωματούχοι — Ελλάδα',
@@ -25,52 +26,42 @@ export const metadata = {
   },
 };
 
-const keyPositions = [
-  {
-    position: 'Πρόεδρος της Δημοκρατίας',
-    holder: 'Κατερίνα Σακελλαροπούλου',
-    since: 'Μάρτιος 2020',
-    emoji: '🏛️',
-    description: 'Αρχηγός Κράτους — εκλέγεται από τη Βουλή για πενταετή θητεία.',
-  },
-  {
-    position: 'Πρωθυπουργός',
-    holder: 'Κυριάκος Μητσοτάκης',
-    since: 'Ιούλιος 2023 (β΄ θητεία)',
-    emoji: '🏛️',
-    description: 'Αρχηγός Κυβέρνησης — επικεφαλής του εκτελεστικού.',
-  },
-  {
-    position: 'Πρόεδρος Βουλής',
-    holder: 'Κωνσταντίνος Τασούλας',
-    since: 'Ιούλιος 2023',
-    emoji: '🗳️',
-    description: 'Επικεφαλής του νομοθετικού σώματος.',
-  },
-];
+function getHolderDisplayName(holder) {
+  const user = holder?.user;
+  if (!user) return null;
+  const fullName = [user.firstNameNative, user.lastNameNative].filter(Boolean).join(' ').trim();
+  return fullName || user.username || null;
+}
 
-const cabinet = [
-  { ministry: 'Εξωτερικών', minister: 'Γιώργης Γεραπετρίτης', emoji: '🌍' },
-  { ministry: 'Εσωτερικών', minister: 'Νίκη Κεραμέως', emoji: '🏠' },
-  { ministry: 'Εθνικής Άμυνας', minister: 'Νικόλαος-Γεώργιος Δένδιας', emoji: '🛡️' },
-  { ministry: 'Οικονομικών', minister: 'Κωνσταντίνος Χατζηδάκης', emoji: '💰' },
-  { ministry: 'Ανάπτυξης', minister: 'Κώστας Σκρέκας', emoji: '📈' },
-  { ministry: 'Παιδείας & Θρησκευμάτων', minister: 'Κυριάκος Πιερρακάκης', emoji: '📚' },
-  { ministry: 'Υγείας', minister: 'Άδωνης Γεωργιάδης', emoji: '⚕️' },
-  { ministry: 'Εργασίας & Κοινωνικής Ασφάλισης', minister: 'Δόμνα Μιχαηλίδου', emoji: '👷' },
-  { ministry: 'Περιβάλλοντος & Ενέργειας', minister: 'Θεόδωρος Σκυλακάκης', emoji: '🌿' },
-  { ministry: 'Υποδομών & Μεταφορών', minister: 'Χρήστος Σταϊκούρας', emoji: '🚧' },
-  { ministry: 'Ψηφιακής Διακυβέρνησης', minister: 'Δημήτρης Παπαστεργίου', emoji: '💻' },
-  { ministry: 'Τουρισμού', minister: 'Όλγα Κεφαλογιάννη', emoji: '✈️' },
-  { ministry: 'Δικαιοσύνης', minister: 'Γεώργιος Φλωρίδης', emoji: '⚖️' },
-  { ministry: 'Προστασίας Πολίτη', minister: 'Μιχάλης Χρυσοχοΐδης', emoji: '🚔' },
-  { ministry: 'Ναυτιλίας & Νησιωτικής Πολιτικής', minister: 'Χρήστος Στυλιανίδης', emoji: '⚓' },
-  { ministry: 'Αγροτικής Ανάπτυξης & Τροφίμων', minister: 'Ελευθέριος Αυγενάκης', emoji: '🌾' },
-  { ministry: 'Κλιματικής Κρίσης & Πολιτικής Προστασίας', minister: 'Χρήστος Τριαντόπουλος', emoji: '🌊' },
-  { ministry: 'Μεταναστευτικής Πολιτικής & Ασύλου', minister: 'Δημήτρης Καιρίδης', emoji: '🤝' },
-  { ministry: 'Υπουργός Επικρατείας', minister: 'Σταύρος Παπασταύρου', emoji: '📋' },
-  { ministry: 'Κρατικός Υπουργός', minister: 'Θανάσης Κρεμαστινός', emoji: '📋' },
-];
+function formatSinceDate(since) {
+  if (!since) return null;
+  const date = new Date(since);
+  if (Number.isNaN(date.getTime())) return since;
+  return new Intl.DateTimeFormat('el-GR', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
+export async function getCurrentGovernmentPositions(countryCode = 'GR') {
+  try {
+    const res = await fetch(
+      `${API_URL}/api/dream-team/current-holders?countryCode=${encodeURIComponent(countryCode.toUpperCase())}`,
+      { next: { revalidate: 300 } },
+    );
+    if (!res.ok) {
+      return { positions: [], error: true };
+    }
+    const json = await res.json();
+    if (!json?.success || !Array.isArray(json.data)) {
+      return { positions: [], error: true };
+    }
+    return { positions: json.data, error: false };
+  } catch {
+    return { positions: [], error: true };
+  }
+}
 
 const sources = [
   {
@@ -99,7 +90,9 @@ const sources = [
   },
 ];
 
-export default function GovernmentPositionsPage() {
+export default async function GovernmentPositionsPage() {
+  const { positions, error } = await getCurrentGovernmentPositions('GR');
+
   return (
     <StaticPageLayout
       title="Κυβερνητικές Θέσεις & Αξιωματούχοι"
@@ -112,73 +105,61 @@ export default function GovernmentPositionsPage() {
     >
       <section>
         <p className="text-xl text-gray-700 leading-relaxed">
-          Κατάλογος των βασικών κυβερνητικών θέσεων της Ελληνικής Δημοκρατίας και των προσώπων που
-          τις κατέχουν σήμερα — Αρχηγός Κράτους, Αρχηγός Κυβέρνησης και μέλη του Υπουργικού
-          Συμβουλίου.
+          Κατάλογος των βασικών κυβερνητικών θέσεων της Ελληνικής Δημοκρατίας και των επίσημων
+          τωρινών κατόχων τους, όπως καταγράφονται στο μητρώο θέσεων της πλατφόρμας.
         </p>
-        <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-          ⚠️ Οι πληροφορίες αυτές αντικατοπτρίζουν τη σύνθεση της κυβέρνησης μετά τις εκλογές του
-          Ιουνίου 2023. Ενδέχεται να έχουν επέλθει αλλαγές. Για τα επίσημα και ενημερωμένα
-          στοιχεία ανατρέξτε στον ιστότοπο του{' '}
-          <a
-            href="https://primeminister.gr"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-amber-900"
-          >
-            Γραφείου Πρωθυπουργού
-          </a>
-          .
-        </p>
+        {error && (
+          <p className="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            ⚠️ Προσωρινά δεν ήταν δυνατή η φόρτωση των επίσημων στοιχείων από το μητρώο. Δείτε τις
+            επίσημες πηγές παρακάτω για επιβεβαίωση.
+          </p>
+        )}
       </section>
 
-      {/* Key Positions */}
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Ανώτατα Αξιώματα</h2>
-        <div className="grid sm:grid-cols-3 gap-4">
-          {keyPositions.map((item) => (
-            <div
-              key={item.position}
-              className="border border-gray-200 rounded-lg overflow-hidden bg-white"
-            >
-              <div className="bg-blue-50 px-5 py-3 flex items-center gap-2">
-                <span className="text-xl" aria-hidden="true">{item.emoji}</span>
-                <h3 className="text-base font-semibold text-blue-900">{item.position}</h3>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-lg font-bold text-gray-800">{item.holder}</p>
-                <p className="text-sm text-gray-500 mt-1">Από: {item.since}</p>
-                <p className="text-sm text-gray-600 mt-2 leading-relaxed">{item.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Cabinet */}
-      <section>
-        <h2 className="text-2xl font-semibold mb-4">Υπουργικό Συμβούλιο</h2>
-        <p className="text-sm text-gray-500 mb-4">
-          Σύνθεση Κυβέρνησης — Κυριάκος Μητσοτάκης (β΄ θητεία, Ιούλιος 2023)
-        </p>
+        <h2 className="text-2xl font-semibold mb-4">Επίσημοι Τωρινοί Κάτοχοι (Ελλάδα)</h2>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left border border-gray-200 rounded-lg overflow-hidden">
             <thead className="bg-gray-100">
               <tr>
-                <th className="px-4 py-3 font-semibold text-gray-700">Υπουργείο</th>
-                <th className="px-4 py-3 font-semibold text-gray-700">Υπουργός</th>
+                <th className="px-4 py-3 font-semibold text-gray-700">Θέση</th>
+                <th className="px-4 py-3 font-semibold text-gray-700">Κάτοχος</th>
               </tr>
             </thead>
             <tbody>
-              {cabinet.map((row, idx) => (
-                <tr key={row.ministry} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="px-4 py-3 font-medium text-gray-800">
-                    <span className="mr-2" aria-hidden="true">{row.emoji}</span>
-                    {row.ministry}
+              {positions.length > 0 ? positions.map((position, idx) => (
+                <tr key={position.id || position.slug} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                  <td className="px-4 py-3 font-medium text-gray-800">{position.title}</td>
+                  <td className="px-4 py-3 text-gray-700">
+                    {position.currentHolders?.length ? (
+                      <ul className="space-y-1">
+                        {position.currentHolders.map((holder, index) => {
+                          const holderName = getHolderDisplayName(holder);
+                          const sinceLabel = formatSinceDate(holder?.since);
+                          return (
+                            <li key={`${position.id || position.slug}-${holder.id || index}`}>
+                              <span className="font-medium text-gray-900">
+                                {holderName || 'Μη διαθέσιμο όνομα'}
+                              </span>
+                              {sinceLabel && (
+                                <span className="text-gray-500"> — Από: {sinceLabel}</span>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : (
+                      <span className="text-gray-500 italic">Δεν έχει καταχωρηθεί επίσημος κάτοχος</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-gray-700">{row.minister}</td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={2} className="px-4 py-5 text-center text-gray-500">
+                    Δεν βρέθηκαν διαθέσιμες θέσεις για την Ελλάδα αυτή τη στιγμή.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -210,10 +191,9 @@ export default function GovernmentPositionsPage() {
 
       <section>
         <p className="text-xs text-gray-400 leading-relaxed border-t border-gray-200 pt-4">
-          <strong>Σημείωση:</strong> Τα στοιχεία βασίζονται στη σύνθεση κυβέρνησης μετά τις
-          βουλευτικές εκλογές Ιουνίου 2023. Αλλαγές στη σύνθεση (αναδιανομές χαρτοφυλακίων,
-          παραιτήσεις, ανασχηματισμοί) ενδέχεται να μην αποτυπώνονται άμεσα. Για επίσημα και
-          ενημερωμένα στοιχεία απευθυνθείτε στο{' '}
+          <strong>Σημείωση:</strong> Η σελίδα αντλεί δεδομένα από το επίσημο μητρώο
+          GovernmentPositions/GovernmentCurrentHolders που χρησιμοποιεί και η διαχείριση Dream Team.
+          Για επιβεβαίωση σε πραγματικό χρόνο απευθυνθείτε και στο{' '}
           <a
             href="https://primeminister.gr"
             target="_blank"
