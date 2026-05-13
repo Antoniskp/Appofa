@@ -57,6 +57,17 @@ export default function TopNav() {
     setIsMobileUserMenuOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!isMenuOpen) return undefined;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+    };
+  }, [isMenuOpen]);
+
   const handleLogout = async () => {
     await logout();
     window.location.href = '/';
@@ -380,7 +391,7 @@ export default function TopNav() {
                 priority
               />
             </Link>
-            <div className="hidden sm:ml-6 sm:flex sm:items-center sm:gap-2">
+            <div className="hidden md:ml-6 md:flex md:items-center md:gap-2">
               {navSections.map((section) => {
                 const sectionActive = section.items.some((item) => isPathActive(item.href));
 
@@ -404,7 +415,7 @@ export default function TopNav() {
               })}
             </div>
           </div>
-          <div className="hidden sm:flex items-center gap-4 ml-auto">
+          <div className="hidden md:flex items-center gap-4 ml-auto">
             {loading ? (
               <div className="flex items-center gap-4">
                 <SkeletonLoader type="button" count={2} className="flex gap-4" />
@@ -443,12 +454,12 @@ export default function TopNav() {
           <Tooltip content={isMenuOpen ? tNav('close_menu') : tNav('open_menu')} position="bottom">
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 sm:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 md:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               aria-controls="mobile-menu"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((open) => !open)}
             >
-              <span className="sr-only">{tNav('open_menu')}</span>
+              <span className="sr-only">{isMenuOpen ? tNav('close_menu') : tNav('open_menu')}</span>
               {isMenuOpen ? (
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -462,7 +473,7 @@ export default function TopNav() {
           </Tooltip>
         </div>
       </div>
-      <div className={`sm:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-4rem)] overflow-y-auto`} id="mobile-menu">
+      <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-4rem)] overflow-y-auto`} id="mobile-menu">
         <div className="border-t border-seafoam px-4 py-4 space-y-4">
           {navSections.map((section) => (
             <section key={section.id} aria-labelledby={`mobile-nav-section-${section.id}`}>
@@ -477,6 +488,7 @@ export default function TopNav() {
                   <Link
                     key={item.id}
                     href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
                     className={`flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${isMobileActive(item.href)}`}
                   >
                     <span aria-hidden="true">{item.mobileIcon}</span>
@@ -522,6 +534,7 @@ export default function TopNav() {
           ) : (
             <>
               <LoginLink
+                onClick={() => setIsMenuOpen(false)}
                 className="flex w-full min-h-11 items-center justify-center gap-2 rounded-md border border-blue-300 px-4 py-2 text-base font-medium text-blue-900 transition-colors hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
               >
                 <ArrowLeftOnRectangleIcon className="h-5 w-5" aria-hidden="true" />
@@ -529,6 +542,7 @@ export default function TopNav() {
               </LoginLink>
               <Link
                 href="/register"
+                onClick={() => setIsMenuOpen(false)}
                 className="flex w-full min-h-11 items-center justify-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
               >
                 <UserPlusIcon className="h-5 w-5" aria-hidden="true" />
