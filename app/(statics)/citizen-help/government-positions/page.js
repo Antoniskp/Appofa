@@ -26,7 +26,7 @@ export const metadata = {
   },
 };
 
-function resolveHolderDisplayName(holder) {
+function getHolderDisplayName(holder) {
   const user = holder?.user;
   if (!user) return null;
   const fullName = [user.firstNameNative, user.lastNameNative].filter(Boolean).join(' ').trim();
@@ -133,11 +133,11 @@ export default async function GovernmentPositionsPage() {
                   <td className="px-4 py-3 text-gray-700">
                     {position.currentHolders?.length ? (
                       <ul className="space-y-1">
-                        {position.currentHolders.map((holder) => {
-                          const holderName = resolveHolderDisplayName(holder);
+                        {position.currentHolders.map((holder, index) => {
+                          const holderName = getHolderDisplayName(holder);
                           const sinceLabel = formatSinceDate(holder?.since);
                           return (
-                            <li key={holder.id}>
+                            <li key={`${position.id || position.slug}-${holder.id || index}`}>
                               <span className="font-medium text-gray-900">
                                 {holderName || 'Μη διαθέσιμο όνομα'}
                               </span>
