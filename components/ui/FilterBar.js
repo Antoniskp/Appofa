@@ -43,11 +43,11 @@ export default function FilterBar({
       <button
         type="button"
         onClick={handleToggle}
-        className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors self-start"
+        className="inline-flex h-10 min-w-10 items-center justify-center gap-1 px-3 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 transition-colors self-start shrink-0"
         aria-expanded={isOpen}
         aria-label="Φίλτρα"
       >
-        <FunnelIcon className="h-5 w-5 text-gray-600" />
+        <FunnelIcon className="h-5 w-5 text-gray-600 shrink-0" />
         {activeFilterCount > 0 && (
           <span className="inline-flex items-center justify-center px-2 py-0.5 text-xs font-semibold text-blue-600 bg-blue-100 rounded-full">
             {activeFilterCount}
@@ -57,7 +57,7 @@ export default function FilterBar({
 
       {/* Expanded filters — rendered in a wrapping row below the toggle */}
       {isOpen && (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
           {filterConfig.map((config) => {
             const { name, label, type = 'select', options = [], placeholder } = config;
 
@@ -80,7 +80,7 @@ export default function FilterBar({
                   value={filters[name] || ''}
                   onChange={onChange}
                   aria-label={label}
-                  className="h-10 min-w-[150px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                   className="w-full h-10 sm:w-auto sm:min-w-[150px] max-w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
                   <option value="">{resolvedPlaceholder}</option>
                   {filteredOptions.map((option) => {
@@ -104,7 +104,7 @@ export default function FilterBar({
                   onChange={onChange}
                   placeholder={placeholder || `Filter by ${label.toLowerCase()}...`}
                   aria-label={label}
-                  className="h-10 min-w-[150px] px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   className="w-full h-10 sm:w-auto sm:min-w-[150px] max-w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               );
             }
