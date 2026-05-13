@@ -7,6 +7,7 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 const csrfProtection = require('../middleware/csrfProtection');
 
 router.get('/countries', apiLimiter, dreamTeamController.getCountries);
+router.get('/current-holders', apiLimiter, dreamTeamController.getCurrentHolders);
 router.get('/positions', apiLimiter, optionalAuthMiddleware, dreamTeamController.getPositionsWithData);
 router.post('/vote', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.vote);
 router.delete('/vote/:positionId', apiLimiter, authMiddleware, csrfProtection, dreamTeamController.deleteVote);
