@@ -11,6 +11,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import FilterBar from '@/components/ui/FilterBar';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
+import ListPageToolbar from '@/components/ui/ListPageToolbar';
 import { useInfiniteData } from '@/hooks/useInfiniteData';
 import { useFilters } from '@/hooks/useFilters';
 import articleCategories from '@/config/articleCategories.json';
@@ -79,15 +80,17 @@ function SuggestionsContent() {
         />
 
         {/* Search, Filters, and action button */}
-        <div className="flex flex-col gap-4 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <ListPageToolbar
+          searchSlot={
             <SearchInput
               name="search"
               placeholder="Αναζήτηση προτάσεων..."
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="w-full sm:flex-grow sm:max-w-md min-w-0"
+              className="w-full"
             />
+          }
+          filtersSlot={
             <FilterBar
               filters={filters}
               onChange={handleFilterChange}
@@ -129,7 +132,9 @@ function SuggestionsContent() {
                 },
               ]}
             />
-            {user && (
+          }
+          actionsSlot={
+            user && (
               <Link
                 href="/suggestions/new"
                 className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
@@ -137,19 +142,21 @@ function SuggestionsContent() {
                 <PlusCircleIcon className="h-5 w-5" />
                 Νέα Πρόταση
               </Link>
-            )}
-          </div>
-          <CategoryPills
-            categories={suggestionCategoryOptions}
-            selected={filters.category}
-            onSelect={(cat) => updateFilter('category', cat)}
-            counts={categoryCounts}
-            countsLoaded={countsLoaded}
-            topTags={topTags}
-            selectedTag={filters.tag}
-            onTagSelect={(tag) => updateFilter('tag', tag)}
-          />
-        </div>
+            )
+          }
+          extraSlot={
+            <CategoryPills
+              categories={suggestionCategoryOptions}
+              selected={filters.category}
+              onSelect={(cat) => updateFilter('category', cat)}
+              counts={categoryCounts}
+              countsLoaded={countsLoaded}
+              topTags={topTags}
+              selectedTag={filters.tag}
+              onTagSelect={(tag) => updateFilter('tag', tag)}
+            />
+          }
+        />
 
         {/* Content */}
         {initialLoading ? (

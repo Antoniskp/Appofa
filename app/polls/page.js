@@ -16,6 +16,7 @@ import Pagination from '@/components/ui/Pagination';
 import SearchInput from '@/components/ui/SearchInput';
 import CategoryPills from '@/components/ui/CategoryPills';
 import FilterBar from '@/components/ui/FilterBar';
+import ListPageToolbar from '@/components/ui/ListPageToolbar';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import articleCategories from '@/config/articleCategories.json';
 
@@ -100,56 +101,60 @@ function PollsContent() {
         />
 
         {/* Search, Category Pills, and compact filters */}
-        <div className="flex flex-col gap-4 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <ListPageToolbar
+          searchSlot={
             <SearchInput
               name="search"
-               placeholder={tPolls('search_placeholder')}
+              placeholder={tPolls('search_placeholder')}
               value={filters.search}
               onChange={(e) => updateFilter('search', e.target.value)}
-              className="w-full sm:flex-grow sm:max-w-md min-w-0"
+              className="w-full"
             />
-            <div className="flex items-center gap-3 flex-wrap">
-              <FilterBar
-                filters={filters}
-                onChange={handleFilterChange}
-                isOpen={filterBarOpen}
-                onToggle={() => setFilterBarOpen((prev) => !prev)}
-                filterConfig={[
-                  {
-                    name: 'status',
-                     label: tPolls('status'),
-                    type: 'select',
-                    options: [
-                       { value: '', label: tPolls('all_statuses') },
-                       { value: 'active', label: tPolls('active') },
-                       { value: 'closed', label: tPolls('closed') },
-                    ],
-                  },
-                ]}
-              />
-              {user && (
-                <Link
-                  href="/polls/create"
-                  className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
-                >
-                  <PlusCircleIcon className="h-5 w-5" />
-                   {tPolls('new_poll')}
-                </Link>
-              )}
-            </div>
-          </div>
-          <CategoryPills
-            categories={(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat }))}
-            selected={filters.category}
-            onSelect={(cat) => updateFilter('category', cat)}
-            counts={categoryCounts}
-            countsLoaded={countsLoaded}
-            topTags={topTags}
-            selectedTag={filters.tag}
-            onTagSelect={(tag) => updateFilter('tag', tag)}
-          />
-        </div>
+          }
+          filtersSlot={
+            <FilterBar
+              filters={filters}
+              onChange={handleFilterChange}
+              isOpen={filterBarOpen}
+              onToggle={() => setFilterBarOpen((prev) => !prev)}
+              filterConfig={[
+                {
+                  name: 'status',
+                   label: tPolls('status'),
+                  type: 'select',
+                  options: [
+                     { value: '', label: tPolls('all_statuses') },
+                     { value: 'active', label: tPolls('active') },
+                     { value: 'closed', label: tPolls('closed') },
+                  ],
+                },
+              ]}
+            />
+          }
+          actionsSlot={
+            user && (
+              <Link
+                href="/polls/create"
+                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+              >
+                <PlusCircleIcon className="h-5 w-5" />
+                 {tPolls('new_poll')}
+              </Link>
+            )
+          }
+          extraSlot={
+            <CategoryPills
+              categories={(articleCategories.pollCategories || []).map(cat => ({ value: cat, label: cat }))}
+              selected={filters.category}
+              onSelect={(cat) => updateFilter('category', cat)}
+              counts={categoryCounts}
+              countsLoaded={countsLoaded}
+              topTags={topTags}
+              selectedTag={filters.tag}
+              onTagSelect={(tag) => updateFilter('tag', tag)}
+            />
+          }
+        />
 
         {/* Loading State */}
         {loading && (
