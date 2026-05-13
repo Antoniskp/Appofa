@@ -90,6 +90,7 @@ describe('TopNav plain header behavior', () => {
     await act(async () => {
       root.unmount();
     });
+    document.body.style.overflow = '';
     document.body.innerHTML = '';
   });
 
@@ -122,5 +123,39 @@ describe('TopNav plain header behavior', () => {
 
     nav = container.querySelector('nav');
     expect(nav.className).toBe(beforeClassName);
+  });
+
+  test('locks and restores body scroll while mobile menu is open', async () => {
+    const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
+    expect(document.body.style.overflow).toBe('');
+
+    await act(async () => {
+      mobileToggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(document.body.style.overflow).toBe('hidden');
+
+    await act(async () => {
+      mobileToggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  test('restores body scroll on unmount when menu is open', async () => {
+    const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
+
+    await act(async () => {
+      mobileToggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(document.body.style.overflow).toBe('hidden');
+
+    await act(async () => {
+      root.unmount();
+    });
+    expect(document.body.style.overflow).toBe('');
+
+    root = createRoot(container);
+    await act(async () => {
+      root.render(React.createElement(TopNav));
+    });
   });
 });
