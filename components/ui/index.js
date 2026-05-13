@@ -10,6 +10,7 @@ export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as DropdownMenu } from './DropdownMenu';
 export { default as EmptyState } from './EmptyState';
 export { default as FilterBar } from './FilterBar';
+export { default as ListPageToolbar } from './ListPageToolbar';
 export { default as FormInput } from './FormInput';
 export { default as FormSelect } from './FormSelect';
 export { default as LocationSelector } from './LocationSelector';

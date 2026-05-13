@@ -10,6 +10,8 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-05-13** — Standardized list-page header/filter/action layout and fixed civic-questions filter reflow: new shared `components/ui/ListPageToolbar.js` (search slot `flex-1`, filters+actions slot `flex-shrink-0 items-start`); `FilterBar.js` changed from `flex-wrap` inline to `flex-col` so expanded filter inputs always appear **below** the toggle button — not pushed inline; `app/civic-questions/page.js`, `app/polls/page.js`, and `app/suggestions/page.js` all migrated to `ListPageToolbar`; `ListPageToolbar` exported from `components/ui/index.js`; 18 new tests in `__tests__/list-page-toolbar.test.js` (ListPageToolbar slots, FilterBar expanded-below layout, smoke assertions for page adoption); docs updated.
+
 - **2026-05-12** — Added minimal Appofasistis worker integration MVP: new backend `src/services/workerClientService.js` (env-driven `WORKER_BASE_URL` + `WORKER_TOKEN`) with `checkHealth()` (`GET /health`) and `createSnapshot()` (`POST /internal/snapshots` with `x-worker-token`); new admin API endpoints `GET /api/admin/worker-status/health` and `POST /api/admin/worker-status/test-snapshot`; new admin debug page `/admin/worker-status` with health/snapshot actions and latency/status feedback; updated `lib/api/admin.js`, admin dashboard/sidebar links, `.env.example`, `README.md`, and added tests in `__tests__/worker-status-admin.test.js` + frontend render coverage in `__tests__/frontend.test.js`.
 
 - **2026-05-12** — Removed deprecated `persons` location content tab to avoid overlap with `users`/`unclaimed` and the separate officials box: `lib/constants/locations.js` `VALID_TABS` no longer includes `persons`; `components/locations/LocationTabs.js` no longer renders a Persons trigger/panel; `app/locations/[slug]/page.js` no longer builds/passes persons tab label/count. URLs with `?tab=persons` now follow existing invalid-tab fallback to `DEFAULT_TAB`.
@@ -184,6 +186,7 @@ Compact table of every model where wrong field names have caused bugs:
 
 ### Frontend (`app/`, `components/`, `lib/`)
 - **Data fetching**: use `useAsyncData` for replace-style fetches and `useInfiniteData` for accumulating feed pagination — never bare `useEffect` + `fetch`
+- **List page toolbar**: use `components/ui/ListPageToolbar` for pages with search + filters + action (see `app/civic-questions/page.js`, `app/polls/page.js`, `app/suggestions/page.js`); pass `searchSlot`, `filtersSlot` (FilterBar), `actionsSlot` (create button), and optional `extraSlot` (CategoryPills etc.); FilterBar renders expanded inputs **below** its toggle so action button is never displaced
 - **API calls**: always through `lib/api/` modules — never direct `fetch()`
 - **Dream Team country resolution**: use `resolveUserDreamTeamCountryCode` (`lib/utils/userCountryCode.js`) for redirect/read-only logic; resolution priority is `user.nationality` then `user.homeLocation` country ancestor (`type='country'`, `code`)
 - **i18n**: use `next-intl` with root `i18n.js`; locale comes from `NEXT_LOCALE` cookie (default `el`, supported `el`/`en`) and messages live in `/messages`
