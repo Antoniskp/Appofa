@@ -159,6 +159,27 @@ WORKER_TOKEN=<shared-worker-secret>
 - `WORKER_TOKEN` is sent only server-side as `x-worker-token` for snapshot calls
 - Never expose `WORKER_TOKEN` in frontend (`NEXT_PUBLIC_*`) variables
 
+### Worker token management (admin API)
+
+Appofa now supports database-backed worker API tokens (hashed at rest) managed by admins:
+
+- `POST /api/admin/worker-tokens` → create token (returns plaintext token **once**)
+- `GET /api/admin/worker-tokens` → list metadata only (`id`, `name`, `created_at`, `last_used_at`, `revoked_at`, `created_by`)
+- `POST /api/admin/worker-tokens/:id/revoke` → revoke token (`revoked_at`)
+
+All three endpoints require admin auth. `POST` endpoints also require CSRF headers/cookie.
+
+### Worker token migration guide (env → DB)
+
+1. Keep existing `WORKER_TOKEN` configured during rollout (backward compatibility fallback remains active).
+2. Create a DB token via `POST /api/admin/worker-tokens` and securely store the returned plaintext token.
+3. Update worker deployments to send the new token in `x-worker-token`.
+4. Verify usage via `GET /api/admin/worker-tokens` (`last_used_at` should update).
+5. Revoke old DB tokens with `/api/admin/worker-tokens/:id/revoke`.
+6. Remove `WORKER_TOKEN` env fallback once all workers are migrated.
+
+The worker auth middleware validates token format, rejects revoked tokens, checks DB hashes first, and falls back to `WORKER_TOKEN` only for transition compatibility.
+
 ### PWA Push Notifications (Web Push / iOS)
 
 Push notifications use the [Web Push protocol](https://web.dev/push-notifications-overview/) with VAPID keys.  

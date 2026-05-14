@@ -107,7 +107,7 @@ Appofa/
 
 ---
 
-## Models (48)
+## Models (49)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -131,6 +131,7 @@ Appofa/
 | NewsletterSubscriber | NewsletterSubscribers | id, email (unique lowercase), name, status (`pending\|subscribed\|unsubscribed`), source (`website\|admin_manual\|import`), locale, tags, notes, subscribedAt, unsubscribedAt, unsubscribeTokenHash, createdByAdminId | belongsTo: User (`createdByAdmin`) |
 | NewsletterCampaign | NewsletterCampaigns | id, subject, previewText, htmlContent, textContent, status (`draft\|scheduled\|sending\|sent\|failed`), audienceFilters (JSON incl. status/locale/source/tags/date ranges), createdByAdminId, sentAt, scheduledAt, totalRecipients, successCount, failureCount | belongsTo: User (`createdByAdmin`); hasMany: NewsletterSendLog |
 | NewsletterSendLog | NewsletterSendLogs | id, campaignId, subscriberId (nullable), email, status (`queued\|sent\|failed`), providerMessageId, errorMessage, sentAt | belongsTo: NewsletterCampaign (`campaign`), NewsletterSubscriber (`subscriber`) |
+| WorkerToken | WorkerTokens | id, name, token_hash (bcrypt hash), created_at, last_used_at, revoked_at, created_by | belongsTo: User (`createdByAdmin`) |
 | Follow | Follows | id, followerId, followingId | belongsTo: User (×2) |
 | Bookmark | Bookmarks | id, userId, entityType, entityId | belongsTo: User |
 | Endorsement | Endorsements | id, endorserId, endorsedId, topic | belongsTo: User (×2) |
@@ -389,7 +390,7 @@ Appofa/
 | solutionRoutes.js | /api/solutions | POST /:id/vote |
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
-| adminRoutes.js | /api/admin | GET /health, GET /worker-status/health, POST /worker-status/test-snapshot, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
+| adminRoutes.js | /api/admin | GET /health, GET /worker-status/health, POST /worker-status/test-snapshot, POST /worker-tokens, GET /worker-tokens, POST /worker-tokens/:id/revoke, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
 | geoStatsRoutes.js | /api/admin/geo-stats | POST /track (normalizes countryCode to ISO-2; rejects `XX`/`T1`), GET /country-funding/:locationId/public, GET /visits (includes `userId`/`username` when available), DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
 | geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules (blocked countries with optional redirectPath). Admin: GET/POST/DELETE /rules (POST accepts optional redirectPath), GET/PUT /settings |
@@ -428,7 +429,7 @@ Appofa/
 
 ---
 
-## Services (15)
+## Services (16)
 
 | Service | Purpose |
 |---------|---------|
@@ -448,6 +449,7 @@ Appofa/
 | organizationService.js | Organization slug generation + organization search helpers |
 | userService.js | User management & utilities |
 | workerClientService.js | Appofasistis worker integration client (`GET /health`, `POST /internal/snapshots` with `x-worker-token`) using `WORKER_BASE_URL` + `WORKER_TOKEN` |
+| workerTokenService.js | Worker token management: secure token generation, bcrypt hash storage, metadata listing/revoke, DB token validation with `last_used_at` update |
 
 ---
 
@@ -461,7 +463,7 @@ Appofa/
 
 ---
 
-## Middleware (9)
+## Middleware (10)
 
 | Middleware | Purpose |
 |-----------|---------|
@@ -474,6 +476,7 @@ Appofa/
 | rateLimiter.js | Rate limiting: `apiLimiter`, `authLimiter`, `passwordResetRequestLimiter` (5/hr per IP, forgot-password), `passwordResetAttemptLimiter` (10/15m, reset-password), `createLimiter`, `uploadLimiter`; `anonVoteLimiter` (10/hr, skips authenticated), `authVoteLimiter` (50/hr, skips unauthenticated); `makeRateLimitHandler(msg)` factory for structured 429 responses with `retryAfter`+`resetTime`; `ipBlockMiddleware` — whitelist takes precedence over blacklist (whitelisted IPs always allowed), then blacklisted IPs denied with 403; all rate limiters also skip whitelisted IPs |
 | suspiciousPathMiddleware.js | Blocks scanner probes on first suspicious path hit and auto-blacklists source IP via `ipAccessService.addRule(...)` |
 | countryBlockMiddleware.js | Backend country-level access block (`cf-ipcountry`/`x-detected-country`) + optional per-country redirect path + unknown/no-IP blocking behavior; skips auth recovery endpoints (`/api/auth/forgot-password`, `/api/auth/reset-password`) and resolves client IP in proxy-safe order (`req.ip` → socket remoteAddress → `x-forwarded-for`) |
+| workerAuth.js | Worker token auth middleware: validates `x-worker-token` format, checks active DB token hashes (updates `last_used_at`), supports transitional `WORKER_TOKEN` fallback, rejects revoked/invalid tokens |
 
 ---
 

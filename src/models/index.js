@@ -51,6 +51,7 @@ const NewsletterSubscriber = require('./NewsletterSubscriber');
 const NewsletterCampaign = require('./NewsletterCampaign');
 const NewsletterSendLog = require('./NewsletterSendLog');
 const PushSubscription = require('./PushSubscription');
+const WorkerToken = require('./WorkerToken');
 
 // Define associations
 User.hasMany(Article, {
@@ -469,6 +470,10 @@ NewsletterCampaign.hasMany(NewsletterSendLog, { foreignKey: 'campaignId', as: 's
 NewsletterSendLog.belongsTo(NewsletterSubscriber, { foreignKey: 'subscriberId', as: 'subscriber' });
 NewsletterSubscriber.hasMany(NewsletterSendLog, { foreignKey: 'subscriberId', as: 'sendLogs' });
 
+// Worker token associations
+WorkerToken.belongsTo(User, { foreignKey: 'created_by', as: 'createdByAdmin' });
+User.hasMany(WorkerToken, { foreignKey: 'created_by', as: 'workerTokensCreated' });
+
 module.exports = {
   sequelize,
   User,
@@ -523,4 +528,5 @@ module.exports = {
   NewsletterCampaign,
   NewsletterSendLog,
   PushSubscription,
+  WorkerToken,
 };
