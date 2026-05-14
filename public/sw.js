@@ -10,11 +10,11 @@
  * Push payload JSON format expected from backend:
  *   { title: string, body: string, unreadCount: number, url: string }
  *
- * TODO: Backend push delivery requires:
+ * Backend push delivery:
  *   1. Generate VAPID key pair: npx web-push generate-vapid-keys
  *   2. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY (frontend) and VAPID_PRIVATE_KEY (backend) to .env
- *   3. Implement POST /api/push/subscribe to persist PushSubscription objects
- *   4. Use the `web-push` npm package on the backend to send messages
+ *   3. POST /api/push/subscribe persists PushSubscription objects (pushRoutes.js)
+ *   4. notificationService.createNotification() fires pushService.sendPushToUser() automatically
  */
 
 self.addEventListener('install', () => {
@@ -32,10 +32,20 @@ self.addEventListener('activate', (event) => {
  * Shows a system notification and updates the Home Screen badge count.
  */
 self.addEventListener('push', (event) => {
-  const data = event.data?.json() ?? {};
+  let data = {};
+  try {
+    data = event.data?.json() ?? {};
+  } catch {
+    // Payload was not valid JSON — try to read as plain text for debugging,
+    // then fall back to defaults so the notification still shows.
+    const raw = event.data?.text() ?? '';
+    console.warn('[SW] Push payload is not valid JSON:', raw);
+  }
+
   const title = data.title || 'Νέα ειδοποίηση';
   const body = data.body || '';
-  const unreadCount = Number(data.unreadCount ?? 0);
+  // Accept numeric or numeric-string values; treat anything else as 0.
+  const unreadCount = Number.isFinite(Number(data.unreadCount)) ? Number(data.unreadCount) : 0;
   const url = data.url || '/notifications';
 
   event.waitUntil(

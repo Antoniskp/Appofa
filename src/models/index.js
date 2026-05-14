@@ -50,6 +50,7 @@ const OrganizationAnalytics = require('./OrganizationAnalytics');
 const NewsletterSubscriber = require('./NewsletterSubscriber');
 const NewsletterCampaign = require('./NewsletterCampaign');
 const NewsletterSendLog = require('./NewsletterSendLog');
+const PushSubscription = require('./PushSubscription');
 
 // Define associations
 User.hasMany(Article, {
@@ -454,6 +455,10 @@ OrganizationMember.belongsTo(User, { foreignKey: 'invitedByUserId', as: 'invited
 User.hasMany(OrganizationMember, { foreignKey: 'invitedByUserId', as: 'organizationInvitationsSent' });
 OrganizationAnalytics.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 
+// PushSubscription associations
+PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(PushSubscription, { foreignKey: 'userId', as: 'pushSubscriptions' });
+
 // Newsletter associations
 NewsletterSubscriber.belongsTo(User, { foreignKey: 'createdByAdminId', as: 'createdByAdmin' });
 User.hasMany(NewsletterSubscriber, { foreignKey: 'createdByAdminId', as: 'newsletterSubscribersCreated' });
@@ -517,4 +522,5 @@ module.exports = {
   NewsletterSubscriber,
   NewsletterCampaign,
   NewsletterSendLog,
+  PushSubscription,
 };

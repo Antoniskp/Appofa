@@ -30,6 +30,7 @@ const { geoAccessPublicRoutes, geoAccessAdminRoutes } = require('./geoAccessRout
 const organizationRoutes = require('./organizationRoutes');
 const officialPostsRoutes = require('./officialPostsRoutes');
 const newsletterRoutes = require('./newsletterRoutes');
+const pushRoutes = require('./pushRoutes');
 
 const geoRoutes = express.Router();
 geoRoutes.use(geoAccessPublicRoutes);
@@ -69,6 +70,7 @@ const routes = [
   { prefix: '/api/organizations', router: organizationRoutes },
   { prefix: '/api/official-posts', router: officialPostsRoutes },
   { prefix: '/api/newsletter', router: newsletterRoutes },
+  { prefix: '/api/push', router: pushRoutes },
 ];
 
 function registerRoutes(app) {

@@ -10,6 +10,8 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-05-14** — Fixed PR security-audit blocker by bumping direct `next` dependency from `^16.2.0` (resolved to 16.2.4) to `16.2.6` in `package.json` and regenerating `package-lock.json`, so `npm audit --omit=dev --audit-level=high` no longer reports the high-severity Next.js advisory range (`16.0.0 - 16.2.5`).
+
 - **2026-05-14** — Fixed static-page shell hover jitter: `components/layout/StaticPageLayout.js` no longer uses the generic `card` class on its outer wrapper; replaced with explicit non-hover container classes (`bg-white rounded-lg shadow-sm border border-gray-200 p-8`) so the static-page content box no longer shifts slightly when hovering over and out of the main section.
 
 - **2026-05-13** — Made public `/citizen-help/government-positions` data-driven from backend Dream Team government source-of-truth: added new public endpoint `GET /api/dream-team/current-holders?countryCode=GR` (returns active `GovernmentPositions` with active `GovernmentCurrentHolders` + holder user info, no vote/results payload), added `dreamTeamAPI.getCurrentHolders`, and replaced stale hardcoded holders/ministry list in `app/(statics)/citizen-help/government-positions/page.js` with server-side fetch/render + graceful unavailable/empty states. Added tests in `src/controllers/__tests__/dreamTeamController.test.js` and `__tests__/government-positions-page.test.js`.

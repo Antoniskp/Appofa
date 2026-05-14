@@ -1,5 +1,6 @@
 const { Notification, User } = require('../models');
 const { Op } = require('sequelize');
+const pushService = require('./pushService');
 
 // ── Core creation ──────────────────────────────────────────────────────────
 
@@ -26,10 +27,29 @@ async function createNotification({
     if (user?.notificationPreferences?.[type] === false) return null;
   } catch { /* fail-open: proceed with creation */ }
 
-  return Notification.create({
+  const notification = await Notification.create({
     userId, actorId, type, entityType, entityId,
     title, body, actionUrl, metadata
   });
+
+  // Fire-and-forget Web Push so the Home Screen badge updates immediately
+  // even when the app is not open.  Wrapped in setImmediate so it executes
+  // after the Notification row is fully committed.  Failures are logged but
+  // never surface to the caller to avoid breaking notification creation.
+  setImmediate(() => {
+    pushService.getUnreadCount(userId).then((unreadCount) => {
+      return pushService.sendPushToUser(userId, {
+        title,
+        body: body || '',
+        unreadCount,
+        url: actionUrl || '/notifications',
+      });
+    }).catch((err) => {
+      console.error('[notificationService] push delivery failed for user', userId, err.message);
+    });
+  });
+
+  return notification;
 }
 
 /**
