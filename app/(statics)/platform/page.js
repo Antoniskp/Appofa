@@ -22,6 +22,7 @@ import {
   CodeBracketIcon,
   ClipboardDocumentListIcon,
   WrenchScrewdriverIcon,
+  DevicePhoneMobileIcon,
 } from '@heroicons/react/24/outline';
 import { StaticPageLayout } from '@/components/layout';
 
@@ -42,6 +43,7 @@ const categories = [
       { href: '/platform/cost', label: 'Κόστος & Ώρες', description: 'Εκτιμώμενο κόστος ανάπτυξης και συντήρησης', Icon: CurrencyEuroIcon },
       { href: '/platform/badges', label: 'Badges & Επιτεύγματα', description: 'Σύστημα badges και τρόπος απόκτησης', Icon: TrophyIcon },
       { href: '/github-files', label: 'Αρχεία GitHub', description: 'Άμεσοι σύνδεσμοι σε αρχεία που αλλάζουν συχνά — κατηγορίες, χρώματα, μεταφράσεις', Icon: CodeBracketIcon },
+      { href: '/platform/install-app', label: 'Εγκατάσταση στο Κινητό', description: 'Πρόσθεσε το Appofa στην αρχική οθόνη σου σαν εφαρμογή', Icon: DevicePhoneMobileIcon },
     ],
   },
   {
