@@ -10,6 +10,8 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-05-14** — Expanded `/admin/worker-status` into a full worker management page: kept existing health + test-snapshot cards and added a new Worker Tokens card with token list table, active/revoked badges, create-token modal (one-time plaintext reveal + copy button + warning), revoke action with refresh/toast feedback, and new `adminAPI` helpers `listWorkerTokens/createWorkerToken/revokeWorkerToken`. Added frontend coverage in `__tests__/worker-status-page.test.js` and updated `__tests__/frontend.test.js` smoke expectations.
+
 - **2026-05-14** — Added DB-backed worker token management for backend worker auth: new `WorkerToken` model + migration `20260514052000-create-worker-tokens.js` (`id`, `name`, `token_hash`, `created_at`, `last_used_at`, `revoked_at`, `created_by`), new admin endpoints `POST /api/admin/worker-tokens`, `GET /api/admin/worker-tokens`, `POST /api/admin/worker-tokens/:id/revoke`, and new `workerTokenService` + `workerAuth` middleware (format validation, active DB-hash verification with `last_used_at` update, revoked-token rejection, transitional `WORKER_TOKEN` fallback). Added tests in `__tests__/worker-tokens-admin.test.js` and `__tests__/worker-auth-middleware.test.js`, plus README/.env docs migration guidance.
 
 - **2026-05-14** — Fixed PR security-audit blocker by bumping direct `next` dependency from `^16.2.0` (resolved to 16.2.4) to `16.2.6` in `package.json` and regenerating `package-lock.json`, so `npm audit --omit=dev --audit-level=high` no longer reports the high-severity Next.js advisory range (`16.0.0 - 16.2.5`).

@@ -529,7 +529,7 @@ Appofa/
 | `/admin/articles` | Article management (stats, filters, pagination, view/delete/approve news) |
 | `/admin/users` | User management (search, filter, role change, verify, delete) |
 | `/admin/status` | System status |
-| `/admin/worker-status` | Worker integration debug page (check worker health + send test snapshot with latency/status reporting) |
+| `/admin/worker-status` | Worker integration admin page (check worker health, send test snapshot, and manage worker tokens with create/list/revoke UI) |
 | `/admin/persons/*` | Person management (list, detail, edit, create) |
 | `/admin/candidates/*` | Candidate management (backward-compat) |
 | `/admin/dream-team` | Dream team admin |
@@ -609,7 +609,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 | Module | Domain |
 |--------|--------|
-| admin.js | Admin endpoints (system health + worker-status health/test-snapshot helpers) |
+| admin.js | Admin endpoints (system health, worker-status health/test-snapshot, and worker-token list/create/revoke helpers) |
 | articles.js | Article CRUD |
 | auth.js | Authentication |
 | badges.js | Badge system |
@@ -812,13 +812,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (56 files)
+## Tests (57 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin
+api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

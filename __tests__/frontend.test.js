@@ -151,6 +151,18 @@ jest.mock('@/lib/api', () => ({
     sendWorkerTestSnapshot: jest.fn(() => Promise.resolve({
       success: true,
       data: { status: 202, latencyMs: 20, data: { accepted: true } }
+    })),
+    listWorkerTokens: jest.fn(() => Promise.resolve({
+      success: true,
+      data: []
+    })),
+    createWorkerToken: jest.fn(() => Promise.resolve({
+      success: true,
+      data: { id: 1, name: 'Worker token', token: 'appofa_wt_example' }
+    })),
+    revokeWorkerToken: jest.fn(() => Promise.resolve({
+      success: true,
+      data: { id: 1, revoked_at: '2026-05-14T14:00:00.000Z' }
     }))
   },
   tagAPI: {
@@ -353,6 +365,8 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Worker Status');
     expect(container.textContent).toContain('Check health');
     expect(container.textContent).toContain('Send test snapshot');
+    expect(container.textContent).toContain('Worker Tokens');
+    expect(container.textContent).toContain('Create Token');
 
     await act(async () => {
       root.unmount();
