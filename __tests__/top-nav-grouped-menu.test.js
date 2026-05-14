@@ -180,4 +180,75 @@ describe('TopNav grouped navigation redesign', () => {
     expect(mobileCivicPollsLink.className).toContain('min-h-11');
     expect(mobileCivicPollsLink.className).toContain('focus-visible:outline');
   });
+
+  test('updates mobile menu toggle screen-reader text and expanded state', async () => {
+    const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
+    expect(mobileToggle).toBeTruthy();
+    expect(mobileToggle.getAttribute('aria-expanded')).toBe('false');
+    expect(mobileToggle.textContent).toContain('Άνοιγμα μενού');
+
+    await act(async () => {
+      mobileToggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(mobileToggle.getAttribute('aria-expanded')).toBe('true');
+    expect(mobileToggle.textContent).toContain('Κλείσιμο μενού');
+  });
+
+  test('closes mobile menu immediately when clicking a mobile section link', async () => {
+    const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
+    const mobileMenu = container.querySelector('#mobile-menu');
+    const civicQuestionsLink = container.querySelector('#mobile-menu a[href="/civic-questions"]');
+    civicQuestionsLink.addEventListener('click', (event) => event.preventDefault());
+
+    await act(async () => {
+      mobileToggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(mobileMenu.className).toContain('block');
+
+    await act(async () => {
+      civicQuestionsLink.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(mobileMenu.className).toContain('hidden');
+  });
+
+  test('closes mobile menu immediately when clicking a mobile auth link', async () => {
+    const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
+    const mobileMenu = container.querySelector('#mobile-menu');
+    const mobileLoginLink = container.querySelector('#mobile-menu a[href="/login"]');
+    mobileLoginLink.addEventListener('click', (event) => event.preventDefault());
+
+    await act(async () => {
+      mobileToggle.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(mobileMenu.className).toContain('block');
+
+    await act(async () => {
+      mobileLoginLink.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(mobileMenu.className).toContain('hidden');
+  });
+
+  test('uses md breakpoint classes for desktop/mobile nav switch', () => {
+    const desktopDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-information-menu"]');
+    const desktopNavContainer = desktopDropdown?.parentElement;
+    const desktopAuthContainer = container.querySelector('a[href="/login"].inline-flex')?.parentElement;
+    const mobileToggle = container.querySelector('button[aria-controls="mobile-menu"]');
+    const mobileMenu = container.querySelector('#mobile-menu');
+
+    expect(desktopNavContainer).toBeTruthy();
+    expect(desktopNavContainer.className).toContain('md:flex');
+    expect(desktopNavContainer.className).toContain('md:ml-6');
+    expect(desktopNavContainer.className).not.toContain('sm:flex');
+
+    expect(desktopAuthContainer).toBeTruthy();
+    expect(desktopAuthContainer.className).toContain('md:flex');
+    expect(desktopAuthContainer.className).not.toContain('sm:flex');
+
+    expect(mobileToggle.className).toContain('md:hidden');
+    expect(mobileToggle.className).not.toContain('sm:hidden');
+
+    expect(mobileMenu.className).toContain('md:hidden');
+    expect(mobileMenu.className).not.toContain('sm:hidden');
+  });
 });

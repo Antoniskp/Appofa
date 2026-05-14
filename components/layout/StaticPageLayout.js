@@ -38,7 +38,7 @@ export default function StaticPageLayout({
         {title && (
           <h1 className="text-4xl font-bold mb-8">{title}</h1>
         )}
-        <div className={`card p-8 ${className}`}>
+        <div className={`bg-white rounded-lg shadow-sm border border-gray-200 p-8 ${className}`}>
           <div className={`${maxWidth} space-y-12 mx-auto`}>
             {children}
 
