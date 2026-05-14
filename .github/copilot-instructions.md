@@ -10,6 +10,8 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-05-14** — Fixed PR security-audit blocker by bumping direct `next` dependency from `^16.2.0` (resolved to 16.2.4) to `16.2.6` in `package.json` and regenerating `package-lock.json`, so `npm audit --omit=dev --audit-level=high` no longer reports the high-severity Next.js advisory range (`16.0.0 - 16.2.5`).
+
 - **2026-05-12** — Added minimal Appofasistis worker integration MVP: new backend `src/services/workerClientService.js` (env-driven `WORKER_BASE_URL` + `WORKER_TOKEN`) with `checkHealth()` (`GET /health`) and `createSnapshot()` (`POST /internal/snapshots` with `x-worker-token`); new admin API endpoints `GET /api/admin/worker-status/health` and `POST /api/admin/worker-status/test-snapshot`; new admin debug page `/admin/worker-status` with health/snapshot actions and latency/status feedback; updated `lib/api/admin.js`, admin dashboard/sidebar links, `.env.example`, `README.md`, and added tests in `__tests__/worker-status-admin.test.js` + frontend render coverage in `__tests__/frontend.test.js`.
 
 - **2026-05-12** — Removed deprecated `persons` location content tab to avoid overlap with `users`/`unclaimed` and the separate officials box: `lib/constants/locations.js` `VALID_TABS` no longer includes `persons`; `components/locations/LocationTabs.js` no longer renders a Persons trigger/panel; `app/locations/[slug]/page.js` no longer builds/passes persons tab label/count. URLs with `?tab=persons` now follow existing invalid-tab fallback to `DEFAULT_TAB`.
