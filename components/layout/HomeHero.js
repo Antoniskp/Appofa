@@ -15,10 +15,6 @@ import {
   CheckBadgeIcon,
   ShieldCheckIcon,
   UserPlusIcon,
-  FlagIcon,
-  HandRaisedIcon,
-  TrophyIcon,
-  UserGroupIcon,
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
@@ -28,40 +24,22 @@ const SLIDE_INTERVAL_MS = 5000;
 
 const NAV_CARDS = [
   {
-    icon: TrophyIcon,
-    title: 'Dream Team',
-    description: 'Ψήφισε την κυβέρνηση που θέλεις',
-    href: '/dream-team',
-  },
-  {
-    icon: LightBulbIcon,
-    title: 'Προτάσεις',
-    description: 'Κάνε προτάσεις για τον τόπο σου',
-    href: '/suggestions',
-  },
-  {
     icon: ChartBarIcon,
-    title: 'Ψηφοφορίες',
-    description: 'Δημιούργησε ή ψήφισε σε θέματα της περιοχής σου',
+    title: 'Ψήφισε σε θέματά σου',
+    description: 'Συμμετείχε σε ψηφοφορίες ανοιχτές για όλους — χωρίς εγγραφή',
     href: '/polls',
   },
   {
+    icon: LightBulbIcon,
+    title: 'Κάνε πρόταση',
+    description: 'Υπόβαλε ιδέες και προτάσεις για τον τόπο σου',
+    href: '/suggestions',
+  },
+  {
     icon: MapPinIcon,
-    title: 'Περιοχές',
-    description: 'Βρες τον δήμο, την περιφέρεια ή τη χώρα σου',
+    title: 'Βρες την περιοχή σου',
+    description: 'Δες τι συμβαίνει στον δήμο, την περιφέρεια ή τη χώρα σου',
     href: '/locations',
-  },
-  {
-    icon: FlagIcon,
-    title: 'Αποστολή',
-    description: 'Δες τι προσπαθεί να πετύχει το project',
-    href: '/mission',
-  },
-  {
-    icon: UserGroupIcon,
-    title: 'Συνεισφορά',
-    description: 'Βοήθησε να χτιστεί η κοινότητα',
-    href: '/contribute',
   },
 ];
 
@@ -214,6 +192,10 @@ export default function HomeHero() {
                 </p>
               )}
 
+              <p className="text-xs uppercase tracking-[0.16em] text-white/70 mb-2 font-medium">
+                Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη
+              </p>
+
               {/* Slide title/subtitle – all slides stacked absolutely to prevent reflow */}
               <div className="relative min-h-[11rem] md:min-h-[7rem]">
                 {activeSlides.length > 0 ? (
@@ -303,51 +285,54 @@ export default function HomeHero() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Link 
-                  href={!authLoading && user?.homeLocation ? `/locations/${user.homeLocation.slug}` : '/locations'} 
-                  className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
-                >
-                  <MapPinIcon className="w-4 h-4" />
-                  {!authLoading && user?.homeLocation ? 'Δες την Περιοχή σου' : 'Βρες την Περιοχή σου'}
-                  <ArrowRightIcon className="w-4 h-4" />
-                </Link>
-
-                <Link 
-                  href="/polls" 
-                  className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                >
-                  <ChartBarIcon className="w-4 h-4" />
-                  Δες Ψηφοφορίες
-                </Link>
-
-                {!authLoading && user && (
-                  (user.role === 'admin' || user.role === 'moderator') ? (
+                {!authLoading && user ? (
+                  <>
                     <Link 
-                      href="/admin" 
+                      href={user?.homeLocation ? `/locations/${user.homeLocation.slug}` : '/locations'} 
+                      className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
+                    >
+                      <MapPinIcon className="w-4 h-4" />
+                      {user?.homeLocation ? 'Δες την Περιοχή σου' : 'Βρες την Περιοχή σου'}
+                      <ArrowRightIcon className="w-4 h-4" />
+                    </Link>
+
+                    <Link 
+                      href="/polls" 
                       className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
                     >
-                      <ShieldCheckIcon className="w-4 h-4" />
-                      Admin / Moderator
+                      <ChartBarIcon className="w-4 h-4" />
+                      Δες Ψηφοφορίες
                     </Link>
-                  ) : (
-                    <Link 
-                      href="/become-moderator" 
-                      className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                    >
-                      <ShieldCheckIcon className="w-4 h-4" />
-                      Γίνε Moderator
-                    </Link>
-                  )
-                )}
 
-                {!authLoading && !user && (
-                  <Link 
-                    href="/register" 
-                    className="inline-flex items-center gap-2 bg-white text-indigo-700 px-5 py-2.5 rounded-xl font-semibold hover:bg-cyan-50 focus:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
-                  >
-                    <UserPlusIcon className="w-4 h-4" />
-                    Εγγραφή
-                  </Link>
+                    {(user.role === 'admin' || user.role === 'moderator') && (
+                      <Link 
+                        href="/admin" 
+                        className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                      >
+                        <ShieldCheckIcon className="w-4 h-4" />
+                        Admin / Moderator
+                      </Link>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Link 
+                      href="/register" 
+                      className="inline-flex items-center gap-2 bg-white text-indigo-700 px-5 py-2.5 rounded-xl font-semibold hover:bg-cyan-50 focus:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
+                    >
+                      <UserPlusIcon className="w-4 h-4" />
+                      Εγγραφή
+                    </Link>
+
+                    <Link 
+                      href="/locations" 
+                      className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
+                    >
+                      <MapPinIcon className="w-4 h-4" />
+                      Βρες την Περιοχή σου
+                      <ArrowRightIcon className="w-4 h-4" />
+                    </Link>
+                  </>
                 )}
               </div>
             </div>
@@ -383,7 +368,7 @@ export default function HomeHero() {
               <Link
                 key={href}
                 href={href}
-                className="flex flex-col items-center gap-3 p-5 bg-white border border-gray-200 rounded-2xl text-center hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 group w-[calc(50%-0.5rem)] sm:w-[calc(33.333%-0.75rem)] lg:w-40"
+                className="flex flex-col items-center gap-3 p-5 bg-white border border-gray-200 rounded-2xl text-center hover:shadow-md hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-400 transition-all duration-200 group w-full sm:w-[calc(33.333%-0.75rem)]"
               >
                 <div className="w-14 h-14 flex items-center justify-center rounded-xl bg-indigo-50 group-hover:bg-indigo-100 transition-colors">
                   <Icon className="w-7 h-7 text-indigo-600" />

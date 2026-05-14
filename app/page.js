@@ -33,8 +33,6 @@ export default function HomePage() {
   const [polls, setPolls] = useState([]);
   const [pollsLoading, setPollsLoading] = useState(true);
   const [pollsError, setPollsError] = useState(null);
-  const [openPolls, setOpenPolls] = useState([]);
-  const [openPollsLoading, setOpenPollsLoading] = useState(true);
 
   const [latestNews, setLatestNews] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
@@ -104,29 +102,6 @@ export default function HomePage() {
         setPollsError(err.message);
       } finally {
         setPollsLoading(false);
-      }
-    };
-
-    const fetchOpenPolls = async () => {
-      if (user) {
-        setOpenPollsLoading(false);
-        return;
-      }
-      try {
-        const response = await pollAPI.getAll({
-          limit: 3,
-          voteRestriction: 'anyone',
-          status: 'active',
-        });
-        if (response.success && Array.isArray(response.data?.polls)) {
-          setOpenPolls(response.data.polls);
-        } else if (response.success && Array.isArray(response.data)) {
-          setOpenPolls(response.data);
-        }
-      } catch (err) {
-        // non-critical — fail silently
-      } finally {
-        setOpenPollsLoading(false);
       }
     };
 
@@ -213,7 +188,6 @@ export default function HomePage() {
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
-    fetchOpenPolls();
     fetchLatestNews();
     fetchVideos();
     fetchLocationDiscovery();
@@ -252,6 +226,20 @@ export default function HomePage() {
     fetchManifestSupporters();
   }, []);
 
+  const mergedLatestContent = [...latestNews, ...latestArticles]
+    .sort((a, b) => {
+      const dateA = new Date(a.newsApprovedAt || a.createdAt || 0).getTime();
+      const dateB = new Date(b.newsApprovedAt || b.createdAt || 0).getTime();
+      return dateB - dateA;
+    })
+    .slice(0, 6);
+
+  const latestContentLoading = articlesLoading || newsLoading;
+  const latestContentError = articlesError || newsError;
+  const pollsSubtitle = !user
+    ? `${tHome('top_polls_subtitle')} — Μερικές ψηφοφορίες είναι ανοιχτές για όλους!`
+    : tHome('top_polls_subtitle');
+
   return (
     <div className="bg-gray-50">
       <HomeHero />
@@ -259,84 +247,6 @@ export default function HomePage() {
       {homepageSettings?.infoSection?.enabled && isVisibleForAudience(homepageSettings?.infoSection?.audience) && (
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
-
-      {!user && (
-        <HomepageSection
-          title="Ψηφίστε χωρίς εγγραφή"
-          subtitle="Αυτές οι ψηφοφορίες είναι ανοικτές για όλους — ψηφίστε τώρα!"
-          linkHref="/polls?voteRestriction=anyone"
-          loading={openPollsLoading}
-          error={null}
-          items={openPolls}
-          emptyTitle=""
-          emptyDescription=""
-          skeletonCount={3}
-          bgColor="bg-indigo-50"
-          renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
-        />
-      )}
-
-      <HomepageSection
-        title={tHome('top_polls_title')}
-        subtitle={tHome('top_polls_subtitle')}
-        linkHref="/polls"
-        loading={pollsLoading}
-        error={pollsError}
-        items={polls}
-        emptyTitle={tHome('empty_polls_title')}
-        emptyDescription={tHome('empty_polls_description')}
-        skeletonCount={3}
-        bgColor="bg-white"
-        renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
-        topTags={pollTags}
-      />
-
-      <HomepageSection
-        title={tHome('top_suggestions_title')}
-        subtitle={tHome('top_suggestions_subtitle')}
-        linkHref="/suggestions"
-        loading={suggestionsLoading}
-        error={suggestionsError}
-        items={suggestions}
-        emptyTitle={tHome('empty_suggestions_title')}
-        emptyDescription={tHome('empty_suggestions_description')}
-        skeletonCount={3}
-        bgColor="bg-gray-50"
-        renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
-        topTags={suggestionTags}
-      />
-
-      {/* Featured Locations Section */}
-      {(locationDiscoveryLoading || locationDiscovery.length > 0) && (
-        <HomepageSection
-          title={tHome('explore_locations_title')}
-          subtitle={tHome('explore_locations_subtitle')}
-          linkHref="/locations"
-          loading={locationDiscoveryLoading}
-          error={null}
-          items={locationDiscovery}
-          emptyTitle=""
-          emptyDescription=""
-          skeletonCount={6}
-          bgColor="bg-white"
-          renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
-        />
-      )}
-
-      <HomepageSection
-        title={tHome('latest_articles_title')}
-        subtitle={tHome('latest_articles_subtitle')}
-        linkHref="/articles"
-        loading={articlesLoading}
-        error={articlesError}
-        items={latestArticles}
-        emptyTitle={tHome('empty_articles_title')}
-        emptyDescription={tHome('empty_articles_description')}
-        skeletonCount={3}
-        bgColor="bg-gray-50"
-        renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
-        topTags={articleTags}
-      />
 
       {/* CTA / Engagement Banner */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800">
@@ -383,6 +293,96 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      <HomepageSection
+        title={tHome('top_polls_title')}
+        subtitle={pollsSubtitle}
+        linkHref="/polls"
+        loading={pollsLoading}
+        error={pollsError}
+        items={polls}
+        emptyTitle={tHome('empty_polls_title')}
+        emptyDescription={tHome('empty_polls_description')}
+        skeletonCount={3}
+        bgColor="bg-white"
+        renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
+        topTags={pollTags}
+      />
+
+      <HomepageSection
+        title={tHome('top_suggestions_title')}
+        subtitle={tHome('top_suggestions_subtitle')}
+        linkHref="/suggestions"
+        loading={suggestionsLoading}
+        error={suggestionsError}
+        items={suggestions}
+        emptyTitle={tHome('empty_suggestions_title')}
+        emptyDescription={tHome('empty_suggestions_description')}
+        skeletonCount={3}
+        bgColor="bg-gray-50"
+        renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
+        topTags={suggestionTags}
+      />
+
+      {/* Featured Locations Section */}
+      {(locationDiscoveryLoading || locationDiscovery.length > 0) && (
+        <HomepageSection
+          title={tHome('explore_locations_title')}
+          subtitle={tHome('explore_locations_subtitle')}
+          linkHref="/locations"
+          loading={locationDiscoveryLoading}
+          error={null}
+          items={locationDiscovery}
+          emptyTitle=""
+          emptyDescription=""
+          skeletonCount={6}
+          bgColor="bg-white"
+          renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
+        />
+      )}
+
+      <HomepageSection
+        title="Νέα & Άρθρα"
+        subtitle="Οι πιο πρόσφατες ενημερώσεις και αναλύσεις από την κοινότητα"
+        linkHref="/news"
+        loading={latestContentLoading}
+        error={latestContentError}
+        items={mergedLatestContent}
+        emptyTitle={tHome('empty_news_title')}
+        emptyDescription={tHome('empty_news_description')}
+        skeletonCount={6}
+        bgColor="bg-white"
+        renderItem={(article) => (
+          <div key={article.id} className="relative">
+            <span className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-gray-700 shadow-sm border border-gray-200">
+              {article.type === 'news' ? 'Νέα' : 'Άρθρο'}
+            </span>
+            <ArticleCard
+              article={article}
+              variant="grid"
+              tagLinkPrefix={article.type === 'news' ? '/news' : '/articles'}
+            />
+          </div>
+        )}
+        topTags={articleTags}
+        tagLinkPrefix="/articles"
+      />
+
+      <HomepageSection
+        title={tHome('latest_videos_title')}
+        subtitle={tHome('latest_videos_subtitle')}
+        linkHref="/videos"
+        loading={videosLoading}
+        error={videosError}
+        items={videos}
+        emptyTitle={tHome('empty_videos_title')}
+        emptyDescription={tHome('empty_videos_description')}
+        skeletonCount={3}
+        bgColor="bg-gray-50"
+        renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
+        topTags={articleTags}
+        tagLinkPrefix="/videos"
+      />
 
       {/* Manifest Supporters Section */}
       {(homepageSettings?.manifestSection?.enabled ?? true) &&
@@ -459,38 +459,6 @@ export default function HomePage() {
           </div>
         </section>
         )}
-
-      <HomepageSection
-        title={tHome('latest_news_title')}
-        subtitle={tHome('latest_news_subtitle')}
-        linkHref="/news"
-        loading={newsLoading}
-        error={newsError}
-        items={latestNews}
-        emptyTitle={tHome('empty_news_title')}
-        emptyDescription={tHome('empty_news_description')}
-        skeletonCount={3}
-        bgColor="bg-white"
-        renderItem={(article) => <ArticleCard key={article.id} article={article} variant="grid" />}
-        topTags={articleTags}
-        tagLinkPrefix="/news"
-      />
-
-      <HomepageSection
-        title={tHome('latest_videos_title')}
-        subtitle={tHome('latest_videos_subtitle')}
-        linkHref="/videos"
-        loading={videosLoading}
-        error={videosError}
-        items={videos}
-        emptyTitle={tHome('empty_videos_title')}
-        emptyDescription={tHome('empty_videos_description')}
-        skeletonCount={3}
-        bgColor="bg-gray-50"
-        renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
-        topTags={articleTags}
-        tagLinkPrefix="/videos"
-      />
     </div>
   );
 }

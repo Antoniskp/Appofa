@@ -230,39 +230,30 @@ describe('Frontend smoke tests', () => {
     document.body.innerHTML = '';
   });
 
-  test('renders home page hero and latest news section', async () => {
+  test('renders home page hero and merged news/articles section', async () => {
     useAuth.mockReturnValue(buildAuthState());
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
     expect(container.textContent).toContain('Αποφάσεις που ξεκινούν από εσένα.');
-    expect(container.textContent).toContain('Τελευταίες Ειδήσεις');
+    expect(container.textContent).toContain('Νέα & Άρθρα');
 
     await act(async () => {
       root.unmount();
     });
   });
 
-  test('renders guest open-polls section and requests voteRestriction=anyone polls', async () => {
+  test('shows guest polls subtitle note and does not request dedicated open-polls feed', async () => {
     useAuth.mockReturnValue(buildAuthState({ user: null }));
-    pollAPI.getAll.mockImplementation(async (params = {}) => {
-      if (params.voteRestriction === 'anyone') {
-        return {
-          success: true,
-          data: [{ id: 999, title: 'Ανοικτή Ψηφοφορία', voteRestriction: 'anyone', type: 'simple', status: 'active', visibility: 'public', options: [{ id: 1, text: 'Ναι', voteCount: 1 }, { id: 2, text: 'Όχι', voteCount: 0 }] }]
-        };
-      }
-      return { success: true, data: [] };
-    });
+    pollAPI.getAll.mockResolvedValue({ success: true, data: [] });
 
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Ψηφίστε χωρίς εγγραφή');
-    expect(pollAPI.getAll).toHaveBeenCalledWith(expect.objectContaining({
-      limit: 3,
+    expect(container.textContent).toContain('Μερικές ψηφοφορίες είναι ανοιχτές για όλους!');
+    expect(container.textContent).not.toContain('Ψηφίστε χωρίς εγγραφή');
+    expect(pollAPI.getAll).not.toHaveBeenCalledWith(expect.objectContaining({
       voteRestriction: 'anyone',
-      status: 'active'
     }));
 
     await act(async () => {
