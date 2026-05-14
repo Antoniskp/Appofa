@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-13
+> **Last updated**: 2026-05-14
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -593,6 +593,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading. The `NAV_CARDS` array defines six participation-focused hero navigation boxes: Dream Team (`/dream-team`), Προτάσεις (`/suggestions`), Ψηφοφορίες (`/polls`), Περιοχές (`/locations`), Αποστολή (`/mission`), Συνεισφορά (`/contribute`).
 - `components/SuggestionCard.js`, `components/InlineSuggestionVote.js`, `app/suggestions/[id]/page.js`: vote rows use `flex-wrap` on the parent footer row so vote controls wrap below metadata on narrow viewports.
 - **Tactile depth**: `components/ui/Card.js` default variant uses `shadow-sm border border-gray-200`; elevated variant uses `shadow-md border border-gray-200`; hoverable cards add `hover:shadow-md hover:-translate-y-0.5 transition-all duration-150` for a subtle lift effect. The `.card` CSS utility class (in `app/globals.css`) also gains hover lift + `shadow-sm` border treatment.
+- **Static-page shell stability**: `components/layout/StaticPageLayout.js` outer wrapper now uses explicit non-hover container classes (`bg-white rounded-lg shadow-sm border border-gray-200 p-8`) instead of the generic `card` class. This ensures the static-page content box never shifts on hover in/out (the `.card` CSS utility includes hover lift/transform transitions that are intentional for interactive cards but incorrect for a static-page shell).
 - **Υπέρ/Κατά tints**: `app/civic-questions/[id]/CivicQuestionDetailClient.js` renders the pros section with `bg-green-50 border-green-200` and the cons section with `bg-red-50 border-red-200`; each heading includes a semantic icon (✅/❌) so the distinction is not color-only.
 - **Vote micro-interactions**: `components/InlineSuggestionVote.js`, `components/civicQuestions/CivicQuestionVoting.js`, `components/polls/PollCard.js` (inline voting), and `components/polls/PollVoting.js` (`BinaryPollOptions`) all apply `animate-vote-pop` briefly to the clicked button via a 280ms `setTimeout` state clear. The animation keyframe is defined in `app/globals.css` inside `@media (prefers-reduced-motion: no-preference)` so reduced-motion users see no animation.
 - `app/layout.js` keeps `<main className="flex-grow">` without nav-height compensation because `TopNav` is in normal flow. It also mounts `GoogleAnalytics` and `GeoTracker`; `GeoTracker` posts pathname-based telemetry to `/api/admin/geo-stats/track` via `geoAdminAPI.trackVisit(...)`. Tracking fires unconditionally on every pathname change — no analytics consent required — because it is security/anti-tampering telemetry. Optional analytics (GoogleAnalytics) remains consent-gated.
