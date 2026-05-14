@@ -9,9 +9,9 @@ const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 // Public routes with optional authentication and rate limiting
-router.get('/', apiLimiter, optionalAuthMiddleware, articleController.getAllArticles);
+router.get('/', optionalAuthMiddleware, apiLimiter, articleController.getAllArticles);
 router.get('/category-counts', apiLimiter, articleController.getCategoryCounts);
-router.get('/:id', apiLimiter, optionalAuthMiddleware, articleController.getArticleById);
+router.get('/:id', optionalAuthMiddleware, apiLimiter, articleController.getArticleById);
 
 // Protected routes - require authentication and rate limiting
 router.post('/', createLimiter, authMiddleware, csrfProtection, articleController.createArticle);

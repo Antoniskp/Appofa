@@ -23,7 +23,7 @@ router.put('/', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, 
  * @route GET /api/hero-settings/slides
  * @desc Get all slides (admin) or only active slides (public)
  */
-router.get('/slides', apiLimiter, optionalAuthMiddleware, heroSettingsController.getSlides);
+router.get('/slides', optionalAuthMiddleware, apiLimiter, heroSettingsController.getSlides);
 
 /**
  * @route POST /api/hero-settings/slides

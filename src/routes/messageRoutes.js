@@ -8,7 +8,7 @@ const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 // Public routes
-router.post('/', createLimiter, optionalAuthMiddleware, messageController.createMessage);
+router.post('/', optionalAuthMiddleware, createLimiter, messageController.createMessage);
 
 // Admin/Moderator routes
 router.get('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), messageController.getAllMessages);

@@ -7,6 +7,6 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 // POST /api/link-preview
 // Optional auth; rate-limited.
 // Body: { url: string }
-router.post('/', apiLimiter, optionalAuthMiddleware, getLinkPreview);
+router.post('/', optionalAuthMiddleware, apiLimiter, getLinkPreview);
 
 module.exports = router;

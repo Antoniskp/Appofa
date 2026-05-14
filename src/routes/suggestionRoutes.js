@@ -7,10 +7,10 @@ const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter, createLimiter, authVoteLimiter } = require('../middleware/rateLimiter');
 
 // Public routes – optional auth to expose myVote
-router.get('/', apiLimiter, optionalAuthMiddleware, suggestionController.getSuggestions);
+router.get('/', optionalAuthMiddleware, apiLimiter, suggestionController.getSuggestions);
 router.get('/category-counts', apiLimiter, suggestionController.getCategoryCounts);
-router.get('/:id', apiLimiter, optionalAuthMiddleware, suggestionController.getSuggestionById);
-router.get('/:id/solutions', apiLimiter, optionalAuthMiddleware, suggestionController.getSolutions);
+router.get('/:id', optionalAuthMiddleware, apiLimiter, suggestionController.getSuggestionById);
+router.get('/:id/solutions', optionalAuthMiddleware, apiLimiter, suggestionController.getSolutions);
 
 // Protected routes – auth required
 router.post('/', createLimiter, authMiddleware, csrfProtection, suggestionController.createSuggestion);

@@ -7,22 +7,22 @@ const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
-router.get('/', apiLimiter, optionalAuthMiddleware, organizationController.getOrganizations);
+router.get('/', optionalAuthMiddleware, apiLimiter, organizationController.getOrganizations);
 // Specific routes must be defined before parameterized routes to prevent path matching conflicts.
 router.get('/:id/members/pending', apiLimiter, authMiddleware, organizationController.getPendingMembers);
-router.get('/:id/members', apiLimiter, optionalAuthMiddleware, organizationController.getMembers);
-router.get('/:id/polls', apiLimiter, optionalAuthMiddleware, organizationController.getOrgPolls);
+router.get('/:id/members', optionalAuthMiddleware, apiLimiter, organizationController.getMembers);
+router.get('/:id/polls', optionalAuthMiddleware, apiLimiter, organizationController.getOrgPolls);
 router.post('/:id/polls', apiLimiter, authMiddleware, csrfProtection, organizationController.createOrgPoll);
-router.get('/:id/suggestions', apiLimiter, optionalAuthMiddleware, organizationController.getOrgSuggestions);
+router.get('/:id/suggestions', optionalAuthMiddleware, apiLimiter, organizationController.getOrgSuggestions);
 router.post('/:id/suggestions', apiLimiter, authMiddleware, csrfProtection, organizationController.createOrgSuggestion);
-router.get('/:id/official-posts', apiLimiter, optionalAuthMiddleware, organizationController.getOfficialPosts);
+router.get('/:id/official-posts', optionalAuthMiddleware, apiLimiter, organizationController.getOfficialPosts);
 router.post('/:id/official-posts', apiLimiter, authMiddleware, csrfProtection, organizationController.createOfficialPost);
-router.get('/:id/verification', apiLimiter, optionalAuthMiddleware, organizationController.getOrgVerificationStatus);
+router.get('/:id/verification', optionalAuthMiddleware, apiLimiter, organizationController.getOrgVerificationStatus);
 router.patch('/:id/verify', apiLimiter, authMiddleware, csrfProtection, organizationController.setVerified);
-router.get('/:id/children', apiLimiter, optionalAuthMiddleware, organizationController.getChildren);
+router.get('/:id/children', optionalAuthMiddleware, apiLimiter, organizationController.getChildren);
 router.patch('/:id/parent', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.setParent);
 router.get('/:id/analytics', apiLimiter, authMiddleware, organizationController.getAnalytics);
-router.get('/:slug', apiLimiter, optionalAuthMiddleware, organizationController.getOrganizationBySlug);
+router.get('/:slug', optionalAuthMiddleware, apiLimiter, organizationController.getOrganizationBySlug);
 
 router.post('/', apiLimiter, createLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.createOrganization);
 router.post('/:id/join', apiLimiter, authMiddleware, csrfProtection, organizationController.joinOrganization);
