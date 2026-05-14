@@ -10,14 +10,26 @@ const skipForWhitelist = async (req) => {
 };
 
 /**
+ * Returns true when a user should be exempt from rate limiting based on their
+ * verification status or elevated platform role.
+ * @param {object|undefined} user - The user object from req.user (populated by auth middleware).
+ * @returns {boolean}
+ */
+const isUserExemptFromLimits = (user) =>
+  !!user && (user.isVerified || ['admin', 'moderator', 'editor'].includes(user.role));
+
+/**
  * Skip function for general-purpose limiters (apiLimiter, createLimiter, uploadLimiter).
  * Bypasses rate limiting for:
  *  - Test environment
  *  - Whitelisted IPs
  *  - Verified users and users with elevated roles (admin, moderator, editor)
  *
- * NOTE: req.user must be populated (auth middleware must run before the limiter)
- * for the user-based exemption to take effect.
+ * NOTE: req.user must be populated (i.e., auth middleware must run before the limiter)
+ * for the user-based exemption to take effect. All routes using these limiters should
+ * place optionalAuthMiddleware or authMiddleware before the limiter in the chain.
+ * @param {import('express').Request} req
+ * @returns {Promise<boolean>}
  */
 const skipForVerifiedOrWhitelist = async (req) => {
   if (process.env.NODE_ENV === 'test') return true;
@@ -26,8 +38,7 @@ const skipForVerifiedOrWhitelist = async (req) => {
   const clientIp = normalizeIp(req.ip) || req.ip;
   if (rules.whitelist.has(clientIp)) return true;
   // Skip for verified users and admins/moderators/editors
-  if (req.user && (req.user.isVerified || ['admin', 'moderator', 'editor'].includes(req.user.role))) return true;
-  return false;
+  return isUserExemptFromLimits(req.user);
 };
 
 /**
@@ -150,7 +161,7 @@ const anonVoteLimiter = rateLimit({
 const authVoteLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 50,
-  skip: (req) => !req.user || req.user.isVerified || ['admin', 'moderator', 'editor'].includes(req.user.role) || process.env.NODE_ENV === 'test',
+  skip: (req) => !req.user || isUserExemptFromLimits(req.user) || process.env.NODE_ENV === 'test',
   handler: makeRateLimitHandler(
     'Too many votes from this account, please try again later.'
   ),
