@@ -7,7 +7,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', apiLimiter, authMiddleware, bookmarkController.list);
-router.get('/count', apiLimiter, optionalAuthMiddleware, bookmarkController.count);
+router.get('/count', optionalAuthMiddleware, apiLimiter, bookmarkController.count);
 router.get('/status', apiLimiter, authMiddleware, bookmarkController.getStatus);
 router.post('/toggle', apiLimiter, authMiddleware, csrfProtection, bookmarkController.toggle);
 

@@ -7,7 +7,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 
 // GET /api/comments?entityType=&entityId=
-router.get('/', apiLimiter, optionalAuthMiddleware, commentController.getComments);
+router.get('/', optionalAuthMiddleware, apiLimiter, commentController.getComments);
 
 // POST /api/comments
 router.post('/', createLimiter, authMiddleware, csrfProtection, commentController.createComment);

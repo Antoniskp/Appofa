@@ -10,6 +10,27 @@ const skipForWhitelist = async (req) => {
 };
 
 /**
+ * Skip function for general-purpose limiters (apiLimiter, createLimiter, uploadLimiter).
+ * Bypasses rate limiting for:
+ *  - Test environment
+ *  - Whitelisted IPs
+ *  - Verified users and users with elevated roles (admin, moderator, editor)
+ *
+ * NOTE: req.user must be populated (auth middleware must run before the limiter)
+ * for the user-based exemption to take effect.
+ */
+const skipForVerifiedOrWhitelist = async (req) => {
+  if (process.env.NODE_ENV === 'test') return true;
+  // Skip for whitelisted IPs
+  const rules = await ipAccessService.getIpRulesCache();
+  const clientIp = normalizeIp(req.ip) || req.ip;
+  if (rules.whitelist.has(clientIp)) return true;
+  // Skip for verified users and admins/moderators/editors
+  if (req.user && (req.user.isVerified || ['admin', 'moderator', 'editor'].includes(req.user.role))) return true;
+  return false;
+};
+
+/**
  * Creates a structured 429 handler for rate limiters.
  * Returns `retryAfter` (seconds) and `resetTime` (epoch ms) alongside the error message.
  * @param {string} message - Human-readable error message
@@ -25,11 +46,13 @@ const makeRateLimitHandler = (message) => (req, res) => {
   return res.status(429).json({ success: false, message, retryAfter, resetTime });
 };
 
-// General API rate limiter - 200 requests per 15 minutes
+// General API rate limiter - 200 requests per 15 minutes.
+// Verified users, admins, moderators, and editors are exempt.
+// Auth middleware must run before this limiter for the exemption to take effect.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 200, // Limit each IP to 200 requests per windowMs
-  skip: skipForWhitelist,
+  skip: skipForVerifiedOrWhitelist,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
@@ -78,11 +101,13 @@ const passwordResetAttemptLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Create operation rate limiter - 20 requests per 15 minutes
+// Create operation rate limiter - 20 requests per 15 minutes.
+// Verified users, admins, moderators, and editors are exempt.
+// Auth middleware must run before this limiter for the exemption to take effect.
 const createLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 20, // Limit each IP to 20 create operations per windowMs
-  skip: skipForWhitelist,
+  skip: skipForVerifiedOrWhitelist,
   message: {
     success: false,
     message: 'Too many create requests from this IP, please try again later.'
@@ -91,11 +116,13 @@ const createLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Upload rate limiter - 10 uploads per 15 minutes
+// Upload rate limiter - 10 uploads per 15 minutes.
+// Verified users, admins, moderators, and editors are exempt.
+// Auth middleware must run before this limiter for the exemption to take effect.
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
-  skip: skipForWhitelist,
+  skip: skipForVerifiedOrWhitelist,
   message: {
     success: false,
     message: 'Too many upload requests from this IP, please try again later.'
@@ -119,10 +146,11 @@ const anonVoteLimiter = rateLimit({
 
 // Vote rate limiter for authenticated users - 50 votes per hour.
 // Skipped for unauthenticated users (handled by anonVoteLimiter).
+// Also skipped for verified users and admins/moderators/editors.
 const authVoteLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 50,
-  skip: (req) => !req.user || process.env.NODE_ENV === 'test',
+  skip: (req) => !req.user || req.user.isVerified || ['admin', 'moderator', 'editor'].includes(req.user.role) || process.env.NODE_ENV === 'test',
   handler: makeRateLimitHandler(
     'Too many votes from this account, please try again later.'
   ),

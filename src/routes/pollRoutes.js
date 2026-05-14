@@ -53,16 +53,15 @@ const optionalCsrfProtection = (req, res, next) => {
 };
 
 // Public routes with optional authentication
-router.get('/', apiLimiter, optionalAuthMiddleware, pollController.getAllPolls);
+router.get('/', optionalAuthMiddleware, apiLimiter, pollController.getAllPolls);
 router.get('/category-counts', apiLimiter, pollController.getCategoryCounts);
 router.get('/my-voted', apiLimiter, authMiddleware, pollController.getMyVotedPolls);
-router.get('/:id', apiLimiter, optionalAuthMiddleware, pollController.getPollById);
-router.get('/:id/results', apiLimiter, optionalAuthMiddleware, pollController.getResults);
+router.get('/:id', optionalAuthMiddleware, apiLimiter, pollController.getPollById);
+router.get('/:id/results', optionalAuthMiddleware, apiLimiter, pollController.getResults);
 router.get('/:id/export', apiLimiter, authMiddleware, pollController.exportPoll);
 
-// Voting route - apiLimiter guards the route first; optionalAuth runs before the
-// per-role limiters so their skip() functions can check req.user correctly.
-router.post('/:id/vote', apiLimiter, optionalAuthMiddleware, anonVoteLimiter, authVoteLimiter, optionalCsrfProtection, pollController.votePoll);
+// Voting route - optionalAuth runs first so all per-request limiters can check req.user correctly.
+router.post('/:id/vote', optionalAuthMiddleware, apiLimiter, anonVoteLimiter, authVoteLimiter, optionalCsrfProtection, pollController.votePoll);
 
 // Protected routes - require authentication
 router.post('/', createLimiter, authMiddleware, csrfProtection, pollController.createPoll);

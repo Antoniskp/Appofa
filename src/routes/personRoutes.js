@@ -50,6 +50,6 @@ router.put('/:id', apiLimiter, authMiddleware, csrfProtection, personController.
 router.get('/profile/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), personController.getProfileById);
 
 // Public: get person by slug (last, catches all unmatched GET /:param)
-router.get('/:slug', apiLimiter, optionalAuthMiddleware, personController.getPersonBySlug);
+router.get('/:slug', optionalAuthMiddleware, apiLimiter, personController.getPersonBySlug);
 
 module.exports = router;

@@ -25,9 +25,9 @@ router.post('/reset-password', passwordResetAttemptLimiter, authController.reset
 
 // OAuth routes
 router.get('/oauth/config', apiLimiter, authController.getOAuthConfig);
-router.get('/github', apiLimiter, optionalAuthMiddleware, authController.initiateGithubOAuth);
+router.get('/github', optionalAuthMiddleware, apiLimiter, authController.initiateGithubOAuth);
 router.get('/github/callback', apiLimiter, authController.githubCallback);
-router.get('/google', apiLimiter, optionalAuthMiddleware, authController.initiateGoogleOAuth);
+router.get('/google', optionalAuthMiddleware, apiLimiter, authController.initiateGoogleOAuth);
 router.get('/google/callback', apiLimiter, authController.googleCallback);
 
 // Protected routes with rate limiting

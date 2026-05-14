@@ -7,9 +7,9 @@ const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const { apiLimiter, createLimiter, authVoteLimiter } = require('../middleware/rateLimiter');
 
-router.get('/', apiLimiter, optionalAuthMiddleware, civicQuestionController.listCivicQuestions);
-router.get('/:id', apiLimiter, optionalAuthMiddleware, civicQuestionController.getCivicQuestionById);
-router.get('/:id/results', apiLimiter, optionalAuthMiddleware, civicQuestionController.getCivicQuestionResults);
+router.get('/', optionalAuthMiddleware, apiLimiter, civicQuestionController.listCivicQuestions);
+router.get('/:id', optionalAuthMiddleware, apiLimiter, civicQuestionController.getCivicQuestionById);
+router.get('/:id/results', optionalAuthMiddleware, apiLimiter, civicQuestionController.getCivicQuestionResults);
 
 router.post('/', createLimiter, authMiddleware, csrfProtection, civicQuestionController.createCivicQuestion);
 router.put('/:id', apiLimiter, authMiddleware, csrfProtection, civicQuestionController.updateCivicQuestion);

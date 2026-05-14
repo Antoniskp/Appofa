@@ -31,7 +31,7 @@ function mapOfficialPostItem(item, contentType) {
   };
 }
 
-router.get('/', apiLimiter, optionalAuthMiddleware, async (req, res) => {
+router.get('/', optionalAuthMiddleware, apiLimiter, async (req, res) => {
   try {
     const where = {
       isOfficialPost: true,
