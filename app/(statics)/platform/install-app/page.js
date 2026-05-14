@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import {
   DevicePhoneMobileIcon,
@@ -87,10 +88,23 @@ export default function InstallAppPage() {
         </Link>
       }
     >
-      <p className="text-lg text-gray-700 -mt-6">
-        Το Appofa λειτουργεί σαν εφαρμογή απευθείας μέσα από τον browser σου. Δεν χρειάζεται να
-        κατεβάσεις τίποτα — απλώς πρόσθεσέ το στην αρχική οθόνη σου και είσαι έτοιμος/η.
-      </p>
+      {/* App icon + intro */}
+      <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 -mt-4 mb-2">
+        <div className="flex-shrink-0">
+          <Image
+            src="/images/branding/appofa-app-icon.png"
+            alt="Appofa app icon"
+            width={96}
+            height={96}
+            className="rounded-2xl shadow-md border border-gray-200"
+            priority
+          />
+        </div>
+        <p className="text-lg text-gray-700 leading-relaxed">
+          Το Appofa λειτουργεί σαν εφαρμογή απευθείας μέσα από τον browser σου. Δεν χρειάζεται
+          να κατεβάσεις τίποτα — απλώς πρόσθεσέ το στην αρχική οθόνη σου και είσαι έτοιμος/η.
+        </p>
+      </div>
 
       {/* Benefits */}
       <section>
@@ -141,7 +155,18 @@ export default function InstallAppPage() {
                 Δώσε ένα όνομα (π.χ. <em>Appofa</em>) και πάτησε <strong>Προσθήκη</strong>.
               </li>
             </ol>
-            <p className="mt-4 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            {/* Icon preview */}
+            <div className="mt-4 flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+              <Image
+                src="/images/branding/appofa-app-icon.png"
+                alt="Appofa icon preview"
+                width={40}
+                height={40}
+                className="rounded-xl shadow-sm"
+              />
+              <span className="text-xs text-gray-500">Έτσι θα φαίνεται στην αρχική οθόνη σου</span>
+            </div>
+            <p className="mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
               ⚠️ Λειτουργεί μόνο μέσω Safari. Άλλοι browsers στο iOS δεν υποστηρίζουν αυτή τη
               λειτουργία.
             </p>
@@ -170,7 +195,18 @@ export default function InstallAppPage() {
                 Επιβεβαίωσε πατώντας <strong>Προσθήκη</strong> ή <strong>Εγκατάσταση</strong>.
               </li>
             </ol>
-            <p className="mt-4 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+            {/* Icon preview */}
+            <div className="mt-4 flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
+              <Image
+                src="/images/branding/appofa-app-icon.png"
+                alt="Appofa icon preview"
+                width={40}
+                height={40}
+                className="rounded-xl shadow-sm"
+              />
+              <span className="text-xs text-gray-500">Έτσι θα φαίνεται στην αρχική οθόνη σου</span>
+            </div>
+            <p className="mt-3 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
               ℹ️ Σε ορισμένες συσκευές εμφανίζεται αυτόματα ένα banner στο κάτω μέρος της οθόνης
               για άμεση εγκατάσταση.
             </p>
