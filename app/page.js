@@ -237,7 +237,7 @@ export default function HomePage() {
   const latestContentLoading = articlesLoading || newsLoading;
   const latestContentError = articlesError || newsError;
   const pollsSubtitle = !user
-    ? `${tHome('top_polls_subtitle')} — Μερικές ψηφοφορίες είναι ανοιχτές για όλους!`
+    ? `${tHome('top_polls_subtitle')} — ${tHome('top_polls_guest_note')}`
     : tHome('top_polls_subtitle');
 
   return (
@@ -342,8 +342,8 @@ export default function HomePage() {
       )}
 
       <HomepageSection
-        title="Νέα & Άρθρα"
-        subtitle="Οι πιο πρόσφατες ενημερώσεις και αναλύσεις από την κοινότητα"
+        title={tHome('latest_content_title')}
+        subtitle={tHome('latest_content_subtitle')}
         linkHref="/news"
         loading={latestContentLoading}
         error={latestContentError}
@@ -355,7 +355,7 @@ export default function HomePage() {
         renderItem={(article) => (
           <div key={article.id} className="relative">
             <span className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-gray-700 shadow-sm border border-gray-200">
-              {article.type === 'news' ? 'Νέα' : 'Άρθρο'}
+              {article.type === 'news' ? tHome('content_badge_news') : tHome('content_badge_article')}
             </span>
             <ArticleCard
               article={article}
