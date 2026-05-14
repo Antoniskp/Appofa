@@ -68,7 +68,10 @@ export default function RegisterPage() {
           const countryCode = String(res.data.countryCode).trim().toUpperCase();
           setDetectedCountry({ countryCode, countryName: res.data.countryName });
           if (countryCode === 'GR') {
-            setFormData((prev) => (prev.nationality ? prev : { ...prev, nationality: 'GR' }));
+            setFormData((prev) => {
+              if (prev.nationality) return prev;
+              return { ...prev, nationality: 'GR' };
+            });
           }
           document.cookie = `appofa_detected_country=${countryCode}; path=/; max-age=3600; SameSite=Lax`;
         }
@@ -559,7 +562,7 @@ export default function RegisterPage() {
                     ← Πίσω
                   </Button>
                   <Button type="submit" loading={loading} size="md">
-                    Δημιουργία λογαριασμού
+                    {t('submit_register')}
                   </Button>
                 </div>
 
