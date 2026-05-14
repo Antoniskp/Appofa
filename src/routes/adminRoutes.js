@@ -8,6 +8,7 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 const csrfProtection = require('../middleware/csrfProtection');
 const dreamTeamController = require('../controllers/dreamTeamController');
 const workerClientService = require('../services/workerClientService');
+const workerTokenService = require('../services/workerTokenService');
 
 const runCheck = async (checkFn) => {
   const start = Date.now();
@@ -328,6 +329,54 @@ router.post('/worker-status/test-snapshot', apiLimiter, authMiddleware, checkRol
       message: error.message || 'Failed to send worker snapshot.',
       data: error.details || null
     });
+  }
+});
+
+router.post('/worker-tokens', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res) => {
+  try {
+    const { name } = req.body || {};
+    const created = await workerTokenService.createWorkerToken({
+      name,
+      createdBy: req.user.id,
+    });
+    return res.status(201).json({
+      success: true,
+      data: {
+        ...created.metadata,
+        token: created.token,
+      },
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to create worker token.',
+    });
+  }
+});
+
+router.get('/worker-tokens', apiLimiter, authMiddleware, checkRole('admin'), async (req, res) => {
+  try {
+    const tokens = await workerTokenService.listWorkerTokens();
+    return res.json({ success: true, data: tokens });
+  } catch {
+    return res.status(500).json({ success: false, message: 'Failed to list worker tokens.' });
+  }
+});
+
+router.post('/worker-tokens/:id/revoke', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res) => {
+  const tokenId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(tokenId) || tokenId <= 0) {
+    return res.status(400).json({ success: false, message: 'Invalid worker token id.' });
+  }
+
+  try {
+    const revoked = await workerTokenService.revokeWorkerToken(tokenId);
+    if (!revoked) {
+      return res.status(404).json({ success: false, message: 'Worker token not found.' });
+    }
+    return res.json({ success: true, data: revoked });
+  } catch {
+    return res.status(500).json({ success: false, message: 'Failed to revoke worker token.' });
   }
 });
 
