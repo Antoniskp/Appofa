@@ -33,6 +33,7 @@ jest.mock('@/hooks/useAsyncData', () => ({
 }));
 
 const { useAsyncData } = require('@/hooks/useAsyncData');
+const { useAuth } = require('@/lib/auth-context');
 const HomeHero = require('../components/layout/HomeHero').default;
 
 const baseStats = {
@@ -79,6 +80,8 @@ const renderHero = async (slide) => {
 describe('HomeHero CTA link behavior', () => {
   afterEach(async () => {
     useAsyncData.mockReset();
+    useAuth.mockReset();
+    useAuth.mockReturnValue({ user: null, loading: false });
     document.body.innerHTML = '';
   });
 
@@ -172,6 +175,42 @@ describe('HomeHero CTA link behavior', () => {
     expect(container.textContent).toContain('Ενεργοί');
     expect(container.textContent).toContain('5');
     expect(container.textContent).toContain('3');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('shows tagline and guest CTA set with register + location only', async () => {
+    useAuth.mockReturnValue({ user: null, loading: false });
+    const { container, root } = await renderHero(buildSlide('/polls'));
+
+    expect(container.textContent).toContain('Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη');
+    expect(container.querySelector('a[href="/register"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/polls"]')).toBeTruthy(); // slide CTA only
+    expect(container.textContent).not.toContain('Γίνε Moderator');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('shows logged-in CTA set with location, polls and admin link for admin', async () => {
+    useAuth.mockReturnValue({
+      user: {
+        role: 'admin',
+        username: 'admin-user',
+        homeLocation: { slug: 'athens' },
+      },
+      loading: false,
+    });
+    const { container, root } = await renderHero(buildSlide('/suggestions'));
+
+    expect(container.querySelector('a[href="/locations/athens"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/polls"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/admin"]')).toBeTruthy();
+    expect(container.textContent).toContain('Admin / Moderator');
 
     await act(async () => {
       root.unmount();
