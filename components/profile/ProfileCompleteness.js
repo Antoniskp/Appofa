@@ -2,53 +2,61 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { authAPI } from '@/lib/api';
 
 const STEPS = [
   {
     key: 'email',
-    label: 'Email verified',
+    labelKey: 'completeness_step_email_verified',
     points: 25,
     isDone: ({ user }) => user?.emailVerified === true,
+    missingLabelKey: 'completeness_verify_email_cta',
   },
   {
     key: 'nationality',
-    label: 'Nationality',
+    labelKey: 'completeness_step_nationality',
     points: 20,
     isDone: ({ profileData }) => Boolean(profileData?.nationality),
     href: '#profile-location-heading',
+    missingLabelKey: 'completeness_add_nationality',
   },
   {
     key: 'homeLocation',
-    label: 'Home location',
+    labelKey: 'completeness_step_home_location',
     points: 20,
     isDone: ({ profileData }) => Boolean(profileData?.homeLocationId),
     href: '#profile-location-heading',
+    missingLabelKey: 'completeness_add_home_location',
   },
   {
     key: 'fullName',
-    label: 'Full name',
+    labelKey: 'completeness_step_full_name',
     points: 15,
     isDone: ({ profileData }) => Boolean(profileData?.firstNameNative && profileData?.lastNameNative),
     href: '#profile-basic-info-heading',
+    missingLabelKey: 'completeness_add_full_name',
   },
   {
     key: 'bio',
-    label: 'Bio',
+    labelKey: 'completeness_step_bio',
     points: 10,
     isDone: ({ profileData }) => Boolean(profileData?.bio),
     href: '#profile-about-heading',
+    missingLabelKey: 'completeness_add_bio',
   },
   {
     key: 'avatar',
-    label: 'Avatar',
+    labelKey: 'completeness_step_avatar',
     points: 10,
     isDone: ({ profileData }) => Boolean(profileData?.avatar),
     href: '#profile-basic-info-heading',
+    missingLabelKey: 'completeness_add_avatar',
   },
 ];
 
 export default function ProfileCompleteness({ user, profileData }) {
+  const t = useTranslations('profile');
   const [resendStatus, setResendStatus] = useState(null);
   const [sendingResend, setSendingResend] = useState(false);
 
@@ -69,12 +77,12 @@ export default function ProfileCompleteness({ user, profileData }) {
     try {
       const response = await authAPI.resendVerification();
       if (response?.success) {
-        setResendStatus({ type: 'success', message: response.message || 'Verification email sent.' });
+        setResendStatus({ type: 'success', message: response.message || t('completeness_resend_success') });
       } else {
-        setResendStatus({ type: 'error', message: response?.message || 'Failed to resend verification email.' });
+        setResendStatus({ type: 'error', message: response?.message || t('completeness_resend_error') });
       }
     } catch (err) {
-      setResendStatus({ type: 'error', message: err?.message || 'Failed to resend verification email.' });
+      setResendStatus({ type: 'error', message: err?.message || t('completeness_resend_error') });
     } finally {
       setSendingResend(false);
     }
@@ -83,7 +91,7 @@ export default function ProfileCompleteness({ user, profileData }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-gray-900">Ολοκλήρωση Προφίλ</h2>
+        <h2 className="text-lg font-semibold text-gray-900">{t('completeness_title')}</h2>
         <span className="text-sm font-semibold text-blue-700">{score}%</span>
       </div>
 
@@ -95,7 +103,7 @@ export default function ProfileCompleteness({ user, profileData }) {
       </div>
 
       {score === 100 ? (
-        <p className="text-sm font-medium text-green-700">Το προφίλ σου είναι πλήρες! 🎉</p>
+        <p className="text-sm font-medium text-green-700">{t('completeness_full')}</p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {stepStates.map((step) => {
@@ -103,7 +111,7 @@ export default function ProfileCompleteness({ user, profileData }) {
               return (
                 <span key={step.key} className="inline-flex items-center gap-1 rounded-full bg-green-50 border border-green-200 px-2.5 py-1 text-xs text-green-700">
                   <span aria-hidden="true">✅</span>
-                  {step.label}
+                  {t(step.labelKey)}
                 </span>
               );
             }
@@ -118,7 +126,7 @@ export default function ProfileCompleteness({ user, profileData }) {
                   className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-1 text-xs text-amber-700 hover:bg-amber-100 disabled:opacity-60"
                 >
                   <span aria-hidden="true">•</span>
-                  Verify email
+                  {t(step.missingLabelKey)}
                 </button>
               );
             }
@@ -130,7 +138,7 @@ export default function ProfileCompleteness({ user, profileData }) {
                 className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100"
               >
                 <span aria-hidden="true">•</span>
-                Add {step.label.toLowerCase()}
+                {t(step.missingLabelKey)}
               </Link>
             );
           })}

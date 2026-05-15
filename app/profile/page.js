@@ -236,7 +236,7 @@ function ProfileContent() {
       success(tProfile('google_linked_success'));
       setGoogleLinked(true);
     } else if (verifiedParam === '1') {
-      success('Email verified successfully!');
+      success(tProfile('email_verified_success'));
     } else if (errorParam) {
       const errorMessages = {
         unauthorized: tProfile('link_unauthorized'),

@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { authAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
 export default function VerifyEmailPage() {
+  const t = useTranslations('auth');
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -29,14 +31,14 @@ export default function VerifyEmailPage() {
         if (!mounted) return;
         setResult({
           success: true,
-          message: response?.message || 'Email verified successfully!',
+          message: response?.message || t('verify_email_success_title'),
           code: null,
         });
       } catch (error) {
         if (!mounted) return;
         setResult({
           success: false,
-          message: error?.message || 'Failed to verify email.',
+          message: error?.message || t('verify_email_error_generic'),
           code: error?.code || null,
         });
       } finally {
@@ -48,16 +50,16 @@ export default function VerifyEmailPage() {
     return () => {
       mounted = false;
     };
-  }, [token, router]);
+  }, [token, router, t]);
 
   const handleResend = async () => {
     setResending(true);
     setResendMessage('');
     try {
       const response = await authAPI.resendVerification();
-      setResendMessage(response?.message || 'Verification email sent.');
+      setResendMessage(response?.message || t('verify_email_resend_fallback_success'));
     } catch (error) {
-      setResendMessage(error?.message || 'Failed to resend verification email.');
+      setResendMessage(error?.message || t('verify_email_resend_fallback_error'));
     } finally {
       setResending(false);
     }
@@ -70,17 +72,17 @@ export default function VerifyEmailPage() {
           {verifying ? (
             <div className="space-y-4">
               <div className="mx-auto h-10 w-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-              <p className="text-gray-700">Verifying your email...</p>
+              <p className="text-gray-700">{t('verify_email_loading')}</p>
             </div>
           ) : result.success ? (
             <div className="space-y-4">
               <div className="text-4xl">✅</div>
-              <h1 className="text-xl font-semibold text-green-700">Email verified successfully!</h1>
+              <h1 className="text-xl font-semibold text-green-700">{t('verify_email_success_title')}</h1>
               <Link
                 href="/profile?verified=1"
                 className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
               >
-                Go to profile
+                {t('verify_email_success_cta')}
               </Link>
             </div>
           ) : (
@@ -91,7 +93,7 @@ export default function VerifyEmailPage() {
               {result.code === 'EMAIL_VERIF_TOKEN_EXPIRED' && (
                 <div className="space-y-3">
                   <p className="text-sm text-gray-600">
-                    Your verification link expired. You can request a new one.
+                    {t('verify_email_expired_help')}
                   </p>
                   {!authLoading && user ? (
                     <button
@@ -100,14 +102,14 @@ export default function VerifyEmailPage() {
                       disabled={resending}
                       className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-60"
                     >
-                      {resending ? 'Sending...' : 'Resend verification email'}
+                      {resending ? t('verify_email_resend_loading') : t('verify_email_resend_cta')}
                     </button>
                   ) : (
                     <Link
                       href="/login?redirect=/profile"
                       className="inline-flex items-center rounded-md bg-gray-800 px-4 py-2 text-white hover:bg-gray-900"
                     >
-                      Login to resend email
+                      {t('verify_email_resend_login_cta')}
                     </Link>
                   )}
                   {resendMessage && (

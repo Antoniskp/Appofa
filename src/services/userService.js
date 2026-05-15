@@ -898,21 +898,27 @@ async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isV
   }
 
   if (isVerified) {
-    if (!target.emailVerified) {
-      const err = new ServiceError(400, 'User has not verified their email address.');
-      err.code = 'PREREQ_EMAIL_NOT_VERIFIED';
+    const ensurePrerequisite = (condition, message, code) => {
+      if (condition) return;
+      const err = new ServiceError(400, message);
+      err.code = code;
       throw err;
-    }
-    if (!target.nationality) {
-      const err = new ServiceError(400, 'User has not set their nationality.');
-      err.code = 'PREREQ_NATIONALITY_MISSING';
-      throw err;
-    }
-    if (!target.homeLocationId) {
-      const err = new ServiceError(400, 'User has not set their home location.');
-      err.code = 'PREREQ_LOCATION_MISSING';
-      throw err;
-    }
+    };
+    ensurePrerequisite(
+      target.emailVerified,
+      'User has not verified their email address.',
+      'PREREQ_EMAIL_NOT_VERIFIED'
+    );
+    ensurePrerequisite(
+      target.nationality,
+      'User has not set their nationality.',
+      'PREREQ_NATIONALITY_MISSING'
+    );
+    ensurePrerequisite(
+      target.homeLocationId,
+      'User has not set their home location.',
+      'PREREQ_LOCATION_MISSING'
+    );
 
     target.isVerified = true;
     target.verifiedAt = new Date();

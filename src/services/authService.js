@@ -140,6 +140,7 @@ const sendVerificationEmail = async (email, token) => {
   const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}`;
   const safeVerificationUrl = escapeHtml(verificationUrl);
   const from = process.env.SMTP_FROM || 'Appofa <no-reply@appofasi.gr>';
+  const verificationTtlText = `${EMAIL_VERIF_DEFAULT_TTL_HOURS} hours`;
 
   const transporter = getSmtpTransporter();
   await transporter.sendMail({
@@ -149,14 +150,14 @@ const sendVerificationEmail = async (email, token) => {
     text: [
       'Welcome to Appofa!',
       '',
-      'Please verify your email address using this link (valid for 24 hours):',
+      `Please verify your email address using this link (valid for ${verificationTtlText}):`,
       verificationUrl,
       '',
       'If you did not create this account, you can safely ignore this email.',
     ].join('\n'),
     html: `
       <p>Welcome to Appofa!</p>
-      <p><strong>Please verify your email address within 24 hours.</strong></p>
+      <p><strong>Please verify your email address within ${verificationTtlText}.</strong></p>
       <p>
         Click here to verify your email:<br />
         <a href="${safeVerificationUrl}">${safeVerificationUrl}</a>
