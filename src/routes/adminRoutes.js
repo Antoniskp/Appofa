@@ -9,6 +9,7 @@ const csrfProtection = require('../middleware/csrfProtection');
 const dreamTeamController = require('../controllers/dreamTeamController');
 const workerClientService = require('../services/workerClientService');
 const workerTokenService = require('../services/workerTokenService');
+const { sendRequest, getFirstConnectedWorkerId } = require('../websocket/workerWsServer');
 
 const runCheck = async (checkFn) => {
   const start = Date.now();
@@ -296,7 +297,12 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
 
 router.get('/worker-status/health', apiLimiter, authMiddleware, checkRole('admin'), async (req, res) => {
   try {
-    const result = await workerClientService.checkHealth();
+    const workerId = getFirstConnectedWorkerId();
+    if (!workerId) {
+      return res.status(503).json({ success: false, message: 'No worker connected.' });
+    }
+
+    const result = await sendRequest(workerId, { type: 'health_request' });
     return res.json({ success: true, data: result });
   } catch (error) {
     return res.status(error.status || 502).json({
@@ -321,7 +327,12 @@ router.post('/worker-status/test-snapshot', apiLimiter, authMiddleware, checkRol
       ? req.body.snapshot
       : defaultSnapshot;
 
-    const result = await workerClientService.createSnapshot(snapshotPayload);
+    const workerId = getFirstConnectedWorkerId();
+    if (!workerId) {
+      return res.status(503).json({ success: false, message: 'No worker connected.' });
+    }
+
+    const result = await sendRequest(workerId, { type: 'snapshot_request', snapshot: snapshotPayload });
     return res.json({ success: true, data: result });
   } catch (error) {
     return res.status(error.status || 502).json({

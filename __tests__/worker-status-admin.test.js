@@ -8,7 +8,13 @@ jest.mock('../src/services/workerClientService', () => ({
   createSnapshot: jest.fn()
 }));
 
+jest.mock('../src/websocket/workerWsServer', () => ({
+  sendRequest: jest.fn(),
+  getFirstConnectedWorkerId: jest.fn(),
+}));
+
 const workerClientService = require('../src/services/workerClientService');
+const { sendRequest, getFirstConnectedWorkerId } = require('../src/websocket/workerWsServer');
 const adminRoutes = require('../src/routes/adminRoutes');
 const authRoutes = require('../src/routes/authRoutes');
 
@@ -71,9 +77,10 @@ describe('Admin Worker Status routes', () => {
   });
 
   test('GET /api/admin/worker-status/health returns worker status for admin', async () => {
-    workerClientService.checkHealth.mockResolvedValue({
+    getFirstConnectedWorkerId.mockReturnValue('worker-1');
+    sendRequest.mockResolvedValue({
+      type: 'health_response',
       status: 200,
-      latencyMs: 15,
       data: { ok: true }
     });
 
@@ -84,13 +91,14 @@ describe('Admin Worker Status routes', () => {
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(response.body.data.status).toBe(200);
-    expect(workerClientService.checkHealth).toHaveBeenCalledTimes(1);
+    expect(sendRequest).toHaveBeenCalledWith('worker-1', { type: 'health_request' });
   });
 
   test('POST /api/admin/worker-status/test-snapshot sends snapshot for admin', async () => {
-    workerClientService.createSnapshot.mockResolvedValue({
+    getFirstConnectedWorkerId.mockReturnValue('worker-1');
+    sendRequest.mockResolvedValue({
+      type: 'snapshot_response',
       status: 202,
-      latencyMs: 22,
       data: { accepted: true }
     });
     const csrfToken = 'csrf-worker-snapshot-admin';
@@ -105,7 +113,32 @@ describe('Admin Worker Status routes', () => {
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
-    expect(workerClientService.createSnapshot).toHaveBeenCalledWith({ source: 'test-suite' });
+    expect(sendRequest).toHaveBeenCalledWith('worker-1', {
+      type: 'snapshot_request',
+      snapshot: { source: 'test-suite' }
+    });
+  });
+
+  test('worker status routes return 503 when no worker is connected', async () => {
+    getFirstConnectedWorkerId.mockReturnValue(null);
+
+    const healthResponse = await request(app)
+      .get('/api/admin/worker-status/health')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(healthResponse.status).toBe(503);
+    expect(healthResponse.body.message).toBe('No worker connected.');
+
+    const csrfToken = 'csrf-worker-snapshot-no-worker';
+    storeCsrfToken(csrfToken, adminUserId);
+
+    const snapshotResponse = await request(app)
+      .post('/api/admin/worker-status/test-snapshot')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Cookie', [`csrf_token=${csrfToken}`])
+      .set('x-csrf-token', csrfToken)
+      .send({ snapshot: { source: 'no-worker' } });
+    expect(snapshotResponse.status).toBe(503);
+    expect(snapshotResponse.body.message).toBe('No worker connected.');
   });
 
   test('viewer cannot access worker status routes', async () => {

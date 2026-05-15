@@ -391,7 +391,7 @@ Appofa/
 | solutionRoutes.js | /api/solutions | POST /:id/vote |
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
-| adminRoutes.js | /api/admin | GET /health, GET /worker-status/health, POST /worker-status/test-snapshot, POST /worker-tokens, GET /worker-tokens, POST /worker-tokens/:id/revoke, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
+| adminRoutes.js | /api/admin | GET /health, GET /worker-status/health (dispatches `health_request` over worker WS; 503 when no worker connected), POST /worker-status/test-snapshot (dispatches `snapshot_request` over worker WS; 503 when no worker connected), POST /worker-tokens, GET /worker-tokens, POST /worker-tokens/:id/revoke, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
 | geoStatsRoutes.js | /api/admin/geo-stats | POST /track (normalizes countryCode to ISO-2; rejects `XX`/`T1`), GET /country-funding/:locationId/public, GET /visits (includes `userId`/`username` when available), DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect |
 | geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules (blocked countries with optional redirectPath). Admin: GET/POST/DELETE /rules (POST accepts optional redirectPath), GET/PUT /settings |
@@ -461,7 +461,7 @@ Appofa/
 | organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
 | userCountryCode.js | Dream Team country resolution helper (`nationality` first, then `homeLocation` country ancestor via `Location.type='country'` + `code`) used by vote authorization |
 | professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeProfessions` (filter canonical entries only), `normalizeExpertiseTags` (filter valid tag IDs only), `normalizeExpertiseTagId`, `validateProfessionalIdentity`, `validateExpertiseTagIds`, `resolveProfessionLabel`, `scoreSpecialistMatch`, `VALID_EXPERTISE_TAG_IDS`; loaded by User model getters + userService + personService |
-| websocket/workerWsServer.js | Worker WebSocket server factory for `/ws/workers` with worker-token auth (`validateWorkerToken` + format check), in-memory connected-worker registry (`register`/`heartbeat`/`taskResult` handling), and diagnostics getter (`getConnectedWorkers`) |
+| websocket/workerWsServer.js | Worker WebSocket server factory for `/ws/workers` with worker-token auth (`validateWorkerToken` + format check), in-memory connected-worker registry storing active `ws` handles, `register`/`heartbeat`/`taskResult` handling, pending request/response map keyed by `requestId`, request helpers (`sendRequest`, `getFirstConnectedWorkerId`), and diagnostics getter (`getConnectedWorkers`) |
 
 ---
 
