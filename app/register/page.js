@@ -473,11 +473,13 @@ export default function RegisterPage() {
                   {detectedCountry.countryCode && detectedCountry.countryCode !== 'GR' && (
                     <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
                       <p className="text-sm font-semibold text-emerald-900">
-                        Βρίσκεσαι εκτός Ελλάδας; Δήλωσέ το εδώ
+                        {t('register_diaspora_title')}
                       </p>
                       <p className="mt-1 text-sm text-emerald-800">
-                        Εντοπίσαμε τρέχουσα χώρα: {detectedCountry.countryName || detectedCountry.countryCode}. Αν
-                        είσαι μέλος διασποράς, κράτα ενεργή την επιλογή και δήλωσε την εθνικότητά σου παραπάνω.
+                        {t('register_diaspora_detected_country', {
+                          country: detectedCountry.countryName || detectedCountry.countryCode,
+                        })}{' '}
+                        {t('register_diaspora_description')}
                       </p>
                       <label className="mt-3 flex items-start gap-3">
                         <input
@@ -487,7 +489,7 @@ export default function RegisterPage() {
                           className="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                         />
                         <span className="text-sm text-emerald-900">
-                          Είμαι μέλος διασποράς (κατοικία εκτός χώρας καταγωγής)
+                          {t('register_diaspora_checkbox')}
                         </span>
                       </label>
                     </div>
