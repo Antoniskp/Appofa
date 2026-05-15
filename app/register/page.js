@@ -17,7 +17,7 @@ import OAuthButtons from '@/components/ui/OAuthButtons';
 import AuthDivider from '@/components/ui/AuthDivider';
 import NationalitySelector from '@/components/ui/NationalitySelector';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
-import { authAPI, geoAPI } from '@/lib/api';
+import { authAPI, geoAPI, locationAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
 import DiasporaModal from '@/components/DiasporaModal';
@@ -54,6 +54,8 @@ export default function RegisterPage() {
   const [showDiasporaModal, setShowDiasporaModal] = useState(false);
   const [pendingRegisterData, setPendingRegisterData] = useState(null);
   const { config: oauthConfig } = useOAuthConfig();
+  // null = unknown (loading), true = has moderator, false = no moderator
+  const [locationHasModerator, setLocationHasModerator] = useState(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -78,6 +80,38 @@ export default function RegisterPage() {
       })
       .catch(() => {});
   }, []);
+
+  // Fetch hasModerator whenever the selected location changes
+  useEffect(() => {
+    if (!formData.homeLocationId) {
+      setLocationHasModerator(null);
+      setWantsModerator(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLocationHasModerator(null); // loading state
+
+    locationAPI.getById(formData.homeLocationId)
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.success && res.location) {
+          const hasMod = Boolean(res.location.hasModerator);
+          setLocationHasModerator(hasMod);
+          // If location now has a moderator, clear the wantsModerator flag
+          if (hasMod) {
+            setWantsModerator(false);
+          }
+        } else {
+          setLocationHasModerator(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLocationHasModerator(null);
+      });
+
+    return () => { cancelled = true; };
+  }, [formData.homeLocationId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -211,6 +245,9 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  // Show the moderator opt-in only when a location is selected AND it has no moderator yet
+  const showModeratorOption = formData.homeLocationId && locationHasModerator === false;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -444,7 +481,7 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {formData.homeLocationId && (
+                  {showModeratorOption && (
                     <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
                       <label className="flex items-start gap-3">
                         <input
