@@ -200,9 +200,28 @@ function WorkerStatusContent() {
               <p className="text-sm text-red-600" role="alert">{healthError}</p>
             ) : (
               <div className="text-sm text-gray-700 space-y-1">
-                <p>Status code: <span className="font-medium">{healthResult?.status ?? '-'}</span></p>
-                <p>Latency: <span className="font-medium">{healthResult?.latencyMs ?? '-'} ms</span></p>
-                <p>Result: <span className="font-medium">{healthResult?.data ? 'Success' : 'No data'}</span></p>
+                <p>
+                  Status:{' '}
+                  <span className={`font-medium ${
+                    healthResult?.ok === true ? 'text-green-700' : healthResult?.ok === false ? 'text-red-700' : ''
+                  }`}
+                  >
+                    {healthResult?.ok === true ? '✅ Healthy' : healthResult?.ok === false ? '❌ Unhealthy' : '-'}
+                  </span>
+                </p>
+                <p>Worker ID: <span className="font-medium">{healthResult?.workerId ?? '-'}</span></p>
+                <p>Service: <span className="font-medium">{healthResult?.service ?? '-'}</span></p>
+                <p>Time: <span className="font-medium">{healthResult?.time ? formatDateTime(healthResult.time) : '-'}</span></p>
+                <p>CPU Load: <span className="font-medium">{healthResult?.load ?? '-'} (1-min avg)</span></p>
+                <p>
+                  Memory:{' '}
+                  <span className="font-medium">
+                    {typeof healthResult?.memory?.usedMB === 'number' && typeof healthResult?.memory?.totalMB === 'number'
+                      ? `${healthResult.memory.usedMB} / ${healthResult.memory.totalMB} MB`
+                      : '-'}
+                  </span>
+                </p>
+                <p>Active Tasks: <span className="font-medium">{healthResult?.activeTasks ?? '-'}</span></p>
               </div>
             )}
           </div>
@@ -224,9 +243,22 @@ function WorkerStatusContent() {
               <p className="text-sm text-red-600" role="alert">{snapshotError}</p>
             ) : (
               <div className="text-sm text-gray-700 space-y-1">
-                <p>Status code: <span className="font-medium">{snapshotResult?.status ?? '-'}</span></p>
-                <p>Latency: <span className="font-medium">{snapshotResult?.latencyMs ?? '-'} ms</span></p>
-                <p>Result: <span className="font-medium">{snapshotResult?.data ? 'Success' : 'Not sent yet'}</span></p>
+                <p>
+                  Status:{' '}
+                  <span className={`font-medium ${
+                    snapshotResult?.ok === true ? 'text-green-700' : snapshotResult?.ok === false ? 'text-red-700' : ''
+                  }`}
+                  >
+                    {snapshotResult?.ok === true ? '✅ Received' : snapshotResult?.ok === false ? '❌ Failed' : '-'}
+                  </span>
+                </p>
+                <p>Worker ID: <span className="font-medium">{snapshotResult?.workerId ?? '-'}</span></p>
+                <p>
+                  Received At:{' '}
+                  <span className="font-medium">
+                    {snapshotResult?.receivedAt ? formatDateTime(snapshotResult.receivedAt) : '-'}
+                  </span>
+                </p>
               </div>
             )}
           </div>

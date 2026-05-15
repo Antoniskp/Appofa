@@ -79,11 +79,27 @@ describe('Admin worker status page', () => {
 
     adminAPI.getWorkerHealthStatus.mockResolvedValue({
       success: true,
-      data: { status: 200, latencyMs: 12, data: { ok: true } }
+      data: {
+        type: 'health_response',
+        requestId: 'health-1',
+        ok: true,
+        service: 'appofasistis',
+        time: '2026-05-15T13:50:53.418Z',
+        load: 0,
+        memory: { usedMB: 8370, totalMB: 16152 },
+        activeTasks: 0,
+        workerId: 'Iannis_Greece',
+      }
     });
     adminAPI.sendWorkerTestSnapshot.mockResolvedValue({
       success: true,
-      data: { status: 202, latencyMs: 20, data: { accepted: true } }
+      data: {
+        type: 'snapshot_response',
+        requestId: 'snap-1',
+        ok: true,
+        receivedAt: '2026-05-15T13:34:16.875Z',
+        workerId: 'Iannis_Greece',
+      }
     });
   });
 
@@ -105,6 +121,37 @@ describe('Admin worker status page', () => {
     expect(container.textContent).toContain('Manage API tokens for worker authentication');
     expect(container.textContent).toContain('No worker tokens created yet. Click \'Create Token\' to generate one.');
     expect(adminAPI.listWorkerTokens).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('renders worker health and snapshot response fields', async () => {
+    adminAPI.listWorkerTokens.mockResolvedValue({
+      success: true,
+      data: []
+    });
+
+    const { container, root } = await renderPage();
+
+    expect(container.textContent).toContain('Status: ✅ Healthy');
+    expect(container.textContent).toContain('Worker ID: Iannis_Greece');
+    expect(container.textContent).toContain('Service: appofasistis');
+    expect(container.textContent).toContain(`Time: ${new Date('2026-05-15T13:50:53.418Z').toLocaleString()}`);
+    expect(container.textContent).toContain('CPU Load: 0 (1-min avg)');
+    expect(container.textContent).toContain('Memory: 8370 / 16152 MB');
+    expect(container.textContent).toContain('Active Tasks: 0');
+
+    const snapshotButton = Array.from(document.querySelectorAll('button')).find((button) => button.textContent === 'Send test snapshot');
+    await act(async () => {
+      snapshotButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Status: ✅ Received');
+    expect(container.textContent).toContain('Worker ID: Iannis_Greece');
+    expect(container.textContent).toContain(`Received At: ${new Date('2026-05-15T13:34:16.875Z').toLocaleString()}`);
 
     await act(async () => {
       root.unmount();
