@@ -171,7 +171,7 @@ Appofa/
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /csrf | — | Get CSRF token |
-| POST | /register | — | Register |
+| POST | /register | — | Register (supports optional `nationality` and `homeLocationId`; frontend `/register` now uses a 3-step wizard and non-GR diaspora prompt before submit) |
 | POST | /login | — | Login |
 | POST | /forgot-password | — | Request password reset email (generic response, token hashed in DB) |
 | POST | /reset-password | — | Reset password with token |
@@ -488,7 +488,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/` | Home page (hero with tagline + simplified CTA pair + 3 value cards; sections ordered as Government Snapshot → optional Info → CTA banner → polls/suggestions/locations → merged `Νέα & Άρθρα` → videos → manifest supporters) |
-| `/login`, `/register`, `/forgot-password`, `/reset-password` | Authentication (includes password reset request + token reset flow) |
+| `/login`, `/register`, `/forgot-password`, `/reset-password` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics → optional nationality/location → GDPR/summary, GR quick-select onboarding, moderator-interest opt-in, and non-GR diaspora modal on submit) |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile (includes newsletter opt-in/opt-out toggle under Preferences) |
 | `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |

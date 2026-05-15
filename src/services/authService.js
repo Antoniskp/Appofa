@@ -137,6 +137,7 @@ async function registerUser({
   password,
   firstNameNative,
   lastNameNative,
+  nationality,
   searchable,
   isDiaspora,
   residenceCountryCode,
@@ -156,6 +157,14 @@ async function registerUser({
 
   const lastNameNativeResult = normalizeOptionalText(lastNameNative, 'Last name', undefined, NAME_MAX_LENGTH);
   if (lastNameNativeResult.error) throw new ServiceError(400, lastNameNativeResult.error);
+
+  const normalizedNationality = nationality == null || nationality === ''
+    ? null
+    : String(nationality).trim().toUpperCase();
+
+  if (normalizedNationality && normalizedNationality.length > 5) {
+    throw new ServiceError(400, 'Nationality code must be at most 5 characters.');
+  }
 
   const existingUser = await User.findOne({
     where: {
@@ -179,6 +188,7 @@ async function registerUser({
     role: 'viewer',
     firstNameNative: firstNameNativeResult.value,
     lastNameNative: lastNameNativeResult.value,
+    nationality: normalizedNationality,
     searchable: searchable !== undefined ? Boolean(searchable) : true,
     isDiaspora: Boolean(isDiaspora),
     residenceCountryCode: residenceCountryCode ? String(residenceCountryCode).trim().toUpperCase() : null,

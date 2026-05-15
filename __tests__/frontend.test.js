@@ -197,7 +197,7 @@ jest.mock('next/headers', () => ({
 }));
 
 const { useAuth } = require('@/lib/auth-context');
-const { pollAPI } = require('@/lib/api');
+const { geoAPI, locationAPI, pollAPI } = require('@/lib/api');
 
 const buildAuthState = (overrides = {}) => ({
   user: null,
@@ -237,6 +237,10 @@ describe('Frontend smoke tests', () => {
     useAuth.mockReset();
     pollAPI.getAll.mockReset();
     pollAPI.getAll.mockResolvedValue({ success: true, data: [] });
+    geoAPI.detect.mockReset();
+    geoAPI.detect.mockResolvedValue({ success: true, data: { countryCode: null, countryName: null } });
+    locationAPI.getAll.mockReset();
+    locationAPI.getAll.mockResolvedValue({ success: true, locations: [] });
     mockSearchParams.get.mockReset();
     mockRouter.push.mockReset();
     document.body.innerHTML = '';
@@ -323,6 +327,61 @@ describe('Frontend smoke tests', () => {
     expect(container.textContent).toContain('Εγγραφείτε άμεσα με Google ή GitHub — χωρίς φόρμα');
     expect(container.textContent).toContain('Ή εγγραφή με email');
     expect(container.textContent).toContain('Επιβεβαίωση κωδικού');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('register page wizard preselects Greece and shows step summary', async () => {
+    mockSearchParams.get.mockReturnValue(null);
+    geoAPI.detect.mockResolvedValue({
+      success: true,
+      data: { countryCode: 'GR', countryName: 'Greece' },
+    });
+    useAuth.mockReturnValue(buildAuthState());
+
+    const RegisterPage = require('../app/register/page').default;
+    const { container, root } = await renderPage(RegisterPage);
+
+    const passwordInput = container.querySelector('input[name="password"]');
+    const confirmPasswordInput = container.querySelector('input[name="confirmPassword"]');
+
+    await act(async () => {
+      passwordInput.value = 'secret123';
+      passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+      confirmPasswordInput.value = 'secret123';
+      confirmPasswordInput.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    const nextButtons = Array.from(container.querySelectorAll('button')).filter(
+      (button) => button.textContent.includes('Next')
+    );
+
+    await act(async () => {
+      nextButtons[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Η εθνικότητα μας βοηθάει να σου δείχνουμε σχετικά θέματα και στατιστικά.');
+    expect(container.textContent).toContain('Δεν βρίσκεις τον δήμο σου; Επίλεξε τον νομό σου');
+
+    const greekQuickSelectButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Είμαι Έλληνας / Ελληνίδα')
+    );
+    expect(greekQuickSelectButton.className).toContain('border-blue-500');
+
+    const stepTwoNextButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Επόμενο')
+    );
+
+    await act(async () => {
+      stepTwoNextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Σχεδόν έτοιμος/η! Ένα τελευταίο βήμα.');
+    expect(container.textContent).toContain('Εθνικότητα: GR');
 
     await act(async () => {
       root.unmount();
