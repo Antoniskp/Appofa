@@ -822,11 +822,13 @@ async function updateUserRole(actorId, actorRole, targetId, role, locationId) {
     }
 
     if (user.role === 'admin' && role !== 'admin') {
-      const adminCount = await User.count({
+      const adminUsers = await User.findAll({
         where: { role: 'admin' },
+        attributes: ['id'],
         transaction,
         lock: transaction.LOCK.UPDATE
       });
+      const adminCount = adminUsers.length;
       if (adminCount <= 1) {
         const err = new Error('At least one admin must remain.');
         err.status = 400;
