@@ -25,9 +25,9 @@ export default function CivicQuestionCard({ civicQuestion }) {
         {civicQuestion.visibility === 'locals_only' && <Badge variant="orange">{t('local_badge')}</Badge>}
         {civicQuestion.category && <Badge variant="purple">{civicQuestion.category}</Badge>}
       </div>
-      <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">{civicQuestion.title}</h3>
+      <h3 className="text-lg font-semibold text-gray-900 line-clamp-3">{civicQuestion.title}</h3>
       {civicQuestion.simplified && (
-        <p className="text-sm text-gray-600 mt-2 line-clamp-3">{civicQuestion.simplified}</p>
+        <p className="text-sm text-gray-600 mt-2 line-clamp-2">{civicQuestion.simplified}</p>
       )}
       <div className="mt-4 text-sm text-gray-500 flex flex-wrap gap-3">
         <span>{civicQuestion.totalVotes || 0} {t('votes_label')}</span>
