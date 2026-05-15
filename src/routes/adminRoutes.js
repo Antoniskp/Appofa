@@ -296,24 +296,23 @@ router.get('/health', apiLimiter, authMiddleware, checkRole('admin'), async (req
 });
 
 router.get('/worker-status/health', apiLimiter, authMiddleware, checkRole('admin'), async (req, res) => {
+  const workerId = getFirstConnectedWorkerId();
+  if (!workerId) {
+    return res.status(503).json({ success: false, message: 'No worker connected.' });
+  }
   try {
-    const workerId = getFirstConnectedWorkerId();
-    if (!workerId) {
-      return res.status(503).json({ success: false, message: 'No worker connected.' });
-    }
-
     const result = await sendRequest(workerId, { type: 'health_request' });
     return res.json({ success: true, data: result });
   } catch (error) {
-    return res.status(error.status || 502).json({
-      success: false,
-      message: error.message || 'Failed to fetch worker health.',
-      data: error.details || null
-    });
+    return res.status(502).json({ success: false, message: error.message || 'Worker health check failed.' });
   }
 });
 
 router.post('/worker-status/test-snapshot', apiLimiter, authMiddleware, checkRole('admin'), csrfProtection, async (req, res) => {
+  const workerId = getFirstConnectedWorkerId();
+  if (!workerId) {
+    return res.status(503).json({ success: false, message: 'No worker connected.' });
+  }
   try {
     const defaultSnapshot = {
       type: 'appofa_mvp_test_snapshot',
@@ -327,19 +326,10 @@ router.post('/worker-status/test-snapshot', apiLimiter, authMiddleware, checkRol
       ? req.body.snapshot
       : defaultSnapshot;
 
-    const workerId = getFirstConnectedWorkerId();
-    if (!workerId) {
-      return res.status(503).json({ success: false, message: 'No worker connected.' });
-    }
-
     const result = await sendRequest(workerId, { type: 'snapshot_request', snapshot: snapshotPayload });
     return res.json({ success: true, data: result });
   } catch (error) {
-    return res.status(error.status || 502).json({
-      success: false,
-      message: error.message || 'Failed to send worker snapshot.',
-      data: error.details || null
-    });
+    return res.status(502).json({ success: false, message: error.message || 'Worker snapshot failed.' });
   }
 });
 

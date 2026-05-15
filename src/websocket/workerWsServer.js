@@ -80,7 +80,7 @@ const rejectPendingRequestsForWorker = (workerId, reasonMessage) => {
 const sendRequest = (workerId, message, timeoutMs = 10000) => {
   const worker = connectedWorkers.get(workerId);
   if (!worker || !worker.ws || worker.ws.readyState !== WebSocket.OPEN) {
-    return Promise.reject(buildRequestError(`Worker not connected: ${workerId}`, 503));
+    return Promise.reject(new Error('Worker not connected'));
   }
 
   const requestId = crypto.randomUUID();
@@ -92,7 +92,7 @@ const sendRequest = (workerId, message, timeoutMs = 10000) => {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       pendingRequests.delete(requestId);
-      reject(buildRequestError(`Worker request timed out: ${requestId}`, 504));
+      reject(new Error('Worker request timed out'));
     }, timeoutMs);
 
     pendingRequests.set(requestId, {

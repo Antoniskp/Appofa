@@ -184,7 +184,7 @@ describe('worker websocket server', () => {
   test('sendRequest rejects when worker is not connected', async () => {
     await expect(sendRequest('missing-worker', { type: 'health_request' }))
       .rejects
-      .toThrow('Worker not connected: missing-worker');
+      .toThrow('Worker not connected');
   });
 
   test('sendRequest rejects on timeout without response', async () => {

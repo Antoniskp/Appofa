@@ -141,6 +141,29 @@ describe('Admin Worker Status routes', () => {
     expect(snapshotResponse.body.message).toBe('No worker connected.');
   });
 
+  test('worker status routes return 502 when worker request fails', async () => {
+    getFirstConnectedWorkerId.mockReturnValue('worker-1');
+    sendRequest.mockRejectedValue(new Error('Worker request timed out'));
+
+    const healthResponse = await request(app)
+      .get('/api/admin/worker-status/health')
+      .set('Authorization', `Bearer ${adminToken}`);
+    expect(healthResponse.status).toBe(502);
+    expect(healthResponse.body.message).toBe('Worker request timed out');
+
+    const csrfToken = 'csrf-worker-snapshot-failed-worker-request';
+    storeCsrfToken(csrfToken, adminUserId);
+
+    const snapshotResponse = await request(app)
+      .post('/api/admin/worker-status/test-snapshot')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Cookie', [`csrf_token=${csrfToken}`])
+      .set('x-csrf-token', csrfToken)
+      .send({ snapshot: { source: 'failed-worker-request' } });
+    expect(snapshotResponse.status).toBe(502);
+    expect(snapshotResponse.body.message).toBe('Worker request timed out');
+  });
+
   test('viewer cannot access worker status routes', async () => {
     const csrfToken = 'csrf-worker-snapshot-viewer';
     storeCsrfToken(csrfToken, viewerUserId);
