@@ -34,7 +34,7 @@ This instruction is permanent and must never be removed.
 - [Frontend Pages (113)](#frontend-pages-113)
 - [Components (121+)](#components-121)
 - [API Client Modules (29)](#api-client-modules-29)
-- [Hooks (6)](#hooks-6)
+- [Hooks (7)](#hooks-7)
 - [Constants](#constants)
 - [Migrations (91)](#migrations-91)
 - [Tests (56 files)](#tests-56-files)
@@ -494,7 +494,7 @@ Appofa/
 | `/` | Home page (hero with tagline + simplified CTA pair + 3 value cards; sections ordered as Government Snapshot → optional Info → CTA banner → polls/suggestions/locations → merged `Νέα & Άρθρα` → videos → manifest supporters) |
 | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics → optional nationality/location → GDPR/summary, GR quick-select onboarding, moderator-interest opt-in, and non-GR diaspora modal on submit; `/verify-email` handles token confirm + expired-token resend flow) |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
-| `/profile` | User profile (includes profile-completeness progress card + newsletter opt-in/opt-out toggle under Preferences; handles `?verified=1` success toast after email verification) |
+| `/profile` | User profile with sticky 4-tab layout (`Profile`, `Location & Politics`, `Skills & Interests`, `Settings`); tab content is split into `app/profile/tabs/*` while form state/effects/handlers are centralized in `hooks/useProfileForm.js`; includes profile-completeness card, newsletter preference toggle, and `?verified=1` success toast handling |
 | `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
@@ -645,7 +645,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Hooks (6)
+## Hooks (7)
 
 | Hook | Purpose |
 |------|---------|
@@ -654,6 +654,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | useFetchArticle.js | Fetch single article with metadata |
 | useFilters.js | Filter + pagination state management |
 | useOAuthConfig.js | OAuth configuration & provider detection |
+| useProfileForm.js | Profile page form state/effects/handlers (profile load, dirty tracking, OAuth callback parsing, badges/manifests/follow-count loading, and all profile/settings actions) |
 | usePermissions.js | User permissions/role checking |
 
 ---

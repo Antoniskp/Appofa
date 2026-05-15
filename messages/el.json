@@ -437,6 +437,10 @@
   },
   "profile": {
     "title": "Προφίλ",
+    "tab_profile": "Προφίλ",
+    "tab_location_politics": "Τοποθεσία & Πολιτική",
+    "tab_skills_interests": "Δεξιότητες & Ενδιαφέροντα",
+    "tab_settings": "Ρυθμίσεις",
     "personal_info": "Προσωπικά Στοιχεία",
     "change_password": "Αλλαγή Κωδικού",
     "connected_accounts": "Συνδεδεμένοι Λογαριασμοί",
