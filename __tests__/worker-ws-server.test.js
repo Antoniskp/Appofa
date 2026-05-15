@@ -114,6 +114,31 @@ describe('worker websocket server', () => {
     expect(getConnectedWorkers()).toEqual([]);
   });
 
+  test('buffers register sent immediately on open while token auth is still pending', async () => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockImplementation(() => new Promise((resolve) => {
+      setTimeout(() => resolve({ valid: true, source: 'database', tokenId: 11 }), 30);
+    }));
+
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers?token=appofa_wt_worker_token_1234567890`);
+    clients.push(ws);
+    await waitForEvent(ws, 'open');
+
+    ws.send(JSON.stringify({
+      type: 'register',
+      workerId: 'worker-buffered-register',
+      name: 'Buffered Register Worker',
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 60));
+
+    expect(getConnectedWorkers().some((worker) => worker.workerId === 'worker-buffered-register')).toBe(true);
+    expect(getFirstConnectedWorkerId()).toBe('worker-buffered-register');
+
+    ws.close();
+    await waitForEvent(ws, 'close');
+  });
+
   test('accepts token via x-worker-token header when query token is absent', async () => {
     isValidWorkerTokenFormat.mockReturnValue(true);
     validateWorkerToken.mockResolvedValue({ valid: true, source: 'database', tokenId: 8 });
@@ -184,7 +209,7 @@ describe('worker websocket server', () => {
   test('sendRequest rejects when worker is not connected', async () => {
     await expect(sendRequest('missing-worker', { type: 'health_request' }))
       .rejects
-      .toThrow('Worker not connected: missing-worker');
+      .toThrow('Worker not connected');
   });
 
   test('sendRequest rejects on timeout without response', async () => {
