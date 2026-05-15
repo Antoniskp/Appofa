@@ -118,7 +118,7 @@
     "register_subtitle": "Εγγραφείτε άμεσα με Google ή GitHub — χωρίς φόρμα",
     "or_register_with_email": "Ή εγγραφή με email",
     "passwords_no_match": "Οι κωδικοί δεν ταιριάζουν",
-    "password_min_length_register": "Ο κωδικός πρέπει να έχει τουλάχιστον {min} χαρακτήρες.",
+    "password_min_length_register": "Ο κωδικός πρέπει να έχει τουλάχιστον {min} χαρακτήρες",
     "register_success": "Ο λογαριασμός δημιουργήθηκε! Καλώς ήρθατε!",
     "register_fail": "Αποτυχία εγγραφής. Παρακαλώ δοκιμάστε ξανά.",
     "github_fail": "Αποτυχία εκκίνησης εγγραφής με GitHub",

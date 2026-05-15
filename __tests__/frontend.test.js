@@ -417,7 +417,7 @@ describe('Frontend smoke tests', () => {
       await flushPromises();
     });
 
-    expect(container.textContent).toContain('Ο κωδικός πρέπει να έχει τουλάχιστον {min} χαρακτήρες.');
+    expect(container.textContent).toContain('Ο κωδικός πρέπει να έχει τουλάχιστον {min} χαρακτήρες');
 
     const nextButton = Array.from(container.querySelectorAll('button')).find(
       (button) => button.textContent.includes('Next')
