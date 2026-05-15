@@ -4,6 +4,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const http = require('http');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -16,6 +17,7 @@ const { ipBlockMiddleware } = require('./middleware/rateLimiter');
 const { suspiciousPathMiddleware } = require('./middleware/suspiciousPathMiddleware');
 const countryBlockMiddleware = require('./middleware/countryBlockMiddleware');
 const { deduplicateHeroSettings } = require('./controllers/heroSettingsController');
+const { createWorkerWsServer } = require('./websocket/workerWsServer');
 
 const app = express();
 
@@ -115,7 +117,10 @@ const startServer = async () => {
     }
 
     // Start server
-    app.listen(PORT, () => {
+    const server = http.createServer(app);
+    createWorkerWsServer(server);
+
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     });
