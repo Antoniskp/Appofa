@@ -8,7 +8,12 @@ jest.mock('../src/services/workerTokenService', () => ({
 }));
 
 const { validateWorkerToken, isValidWorkerTokenFormat } = require('../src/services/workerTokenService');
-const { createWorkerWsServer, getConnectedWorkers } = require('../src/websocket/workerWsServer');
+const {
+  createWorkerWsServer,
+  getConnectedWorkers,
+  getFirstConnectedWorkerId,
+  sendRequest,
+} = require('../src/websocket/workerWsServer');
 
 const waitForEvent = (emitter, eventName) => new Promise((resolve) => {
   emitter.once(eventName, (...args) => {
@@ -101,6 +106,7 @@ describe('worker websocket server', () => {
     expect(workers[0].maxConcurrentTasks).toBe(3);
     expect(workers[0].connectedAt).toBeTruthy();
     expect(workers[0].lastHeartbeat).toBeTruthy();
+    expect(getFirstConnectedWorkerId()).toBe('worker-1');
 
     ws.close();
     await waitForEvent(ws, 'close');
@@ -132,6 +138,74 @@ describe('worker websocket server', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
 
     expect(getConnectedWorkers().some((worker) => worker.workerId === 'worker-header')).toBe(true);
+
+    ws.close();
+    await waitForEvent(ws, 'close');
+  });
+
+  test('sendRequest resolves matching worker response by requestId', async () => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockResolvedValue({ valid: true, source: 'database', tokenId: 9 });
+
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers?token=appofa_wt_worker_token_1234567890`);
+    clients.push(ws);
+    await waitForEvent(ws, 'open');
+
+    ws.send(JSON.stringify({
+      type: 'register',
+      workerId: 'worker-send-request',
+      name: 'Worker Send Request',
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    const requestPromise = sendRequest('worker-send-request', { type: 'health_request' });
+    const [messageData] = await waitForEvent(ws, 'message');
+    const requestMessage = JSON.parse(messageData.toString());
+    expect(requestMessage.type).toBe('health_request');
+    expect(typeof requestMessage.requestId).toBe('string');
+
+    ws.send(JSON.stringify({
+      type: 'health_response',
+      requestId: requestMessage.requestId,
+      status: 200,
+      data: { ok: true },
+    }));
+
+    const response = await requestPromise;
+    expect(response.type).toBe('health_response');
+    expect(response.status).toBe(200);
+    expect(response.data).toEqual({ ok: true });
+
+    ws.close();
+    await waitForEvent(ws, 'close');
+  });
+
+  test('sendRequest rejects when worker is not connected', async () => {
+    await expect(sendRequest('missing-worker', { type: 'health_request' }))
+      .rejects
+      .toThrow('Worker not connected: missing-worker');
+  });
+
+  test('sendRequest rejects on timeout without response', async () => {
+    isValidWorkerTokenFormat.mockReturnValue(true);
+    validateWorkerToken.mockResolvedValue({ valid: true, source: 'database', tokenId: 10 });
+
+    const ws = new WebSocket(`ws://127.0.0.1:${port}/ws/workers?token=appofa_wt_worker_token_1234567890`);
+    clients.push(ws);
+    await waitForEvent(ws, 'open');
+
+    ws.send(JSON.stringify({
+      type: 'register',
+      workerId: 'worker-timeout',
+      name: 'Worker Timeout',
+    }));
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    await expect(sendRequest('worker-timeout', { type: 'snapshot_request' }, 20))
+      .rejects
+      .toThrow(/Worker request timed out/);
 
     ws.close();
     await waitForEvent(ws, 'close');
