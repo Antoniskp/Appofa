@@ -15,7 +15,7 @@ const {
 const { avatarUpload } = require('../middleware/upload');
 
 // CSRF token refresh - allows authenticated users to get a fresh CSRF token
-router.get('/csrf', apiLimiter, authMiddleware, authController.refreshCsrf);
+router.get('/csrf', optionalAuthMiddleware, apiLimiter, authMiddleware, authController.refreshCsrf);
 
 // Public routes with rate limiting
 router.post('/register', authLimiter, authController.register);
