@@ -8,6 +8,14 @@ const { validateWorkerToken, isValidWorkerTokenFormat } = require('../services/w
 const connectedWorkers = new Map();
 const pendingRequests = new Map();
 
+const buildRequestError = (message, status) => {
+  const error = new Error(message);
+  if (status) {
+    error.status = status;
+  }
+  return error;
+};
+
 const getTokenFromRequest = (req) => {
   const requestUrl = new URL(req.url, 'http://localhost');
   const queryToken = requestUrl.searchParams.get('token');
@@ -65,14 +73,14 @@ const rejectPendingRequestsForWorker = (workerId, reasonMessage) => {
 
     clearTimeout(pending.timeout);
     pendingRequests.delete(requestId);
-    pending.reject(new Error(reasonMessage || 'Worker disconnected before responding.'));
+    pending.reject(buildRequestError(reasonMessage || 'Worker disconnected before responding.', 503));
   }
 };
 
 const sendRequest = (workerId, message, timeoutMs = 10000) => {
   const worker = connectedWorkers.get(workerId);
   if (!worker || !worker.ws || worker.ws.readyState !== WebSocket.OPEN) {
-    return Promise.reject(new Error(`Worker not connected: ${workerId}`));
+    return Promise.reject(buildRequestError(`Worker not connected: ${workerId}`, 503));
   }
 
   const requestId = crypto.randomUUID();
@@ -84,7 +92,7 @@ const sendRequest = (workerId, message, timeoutMs = 10000) => {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       pendingRequests.delete(requestId);
-      reject(new Error(`Worker request timed out: ${requestId}`));
+      reject(buildRequestError(`Worker request timed out: ${requestId}`, 504));
     }, timeoutMs);
 
     pendingRequests.set(requestId, {
