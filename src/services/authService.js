@@ -19,6 +19,9 @@ const PASSWORD_RESET_DEFAULT_TTL_MINUTES = 60;
 const PASSWORD_RESET_TOKEN_BYTES = 32;
 const PASSWORD_RESET_GENERIC_SUCCESS_MESSAGE = 'If an account with that email exists, a password reset link has been sent.';
 const PASSWORD_RESET_EMAIL_SUBJECT = 'Appofa password reset request';
+const EMAIL_VERIF_DEFAULT_TTL_HOURS = 24;
+const EMAIL_VERIF_TOKEN_BYTES = 32;
+const EMAIL_VERIF_SUBJECT = 'Please verify your Appofa email address';
 
 let smtpTransporter = null;
 
@@ -63,6 +66,7 @@ const getPasswordResetTtlMinutes = () => {
 const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, '');
 
 const getResetTokenHash = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const getEmailVerifTokenHash = (token) => crypto.createHash('sha256').update(token).digest('hex');
 const escapeHtml = (value) => String(value)
   .replace(/&/g, '&amp;')
   .replace(/</g, '&lt;')
@@ -131,6 +135,40 @@ const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
   });
 };
 
+const sendVerificationEmail = async (email, token) => {
+  const frontendUrl = getFrontendUrl();
+  const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}`;
+  const safeVerificationUrl = escapeHtml(verificationUrl);
+  const from = process.env.SMTP_FROM || 'Appofa <no-reply@appofasi.gr>';
+  const verificationTtlText = `${EMAIL_VERIF_DEFAULT_TTL_HOURS} hours`;
+
+  const transporter = getSmtpTransporter();
+  await transporter.sendMail({
+    from,
+    to: email,
+    subject: EMAIL_VERIF_SUBJECT,
+    text: [
+      'Welcome to Appofa!',
+      '',
+      `Please verify your email address using this link (valid for ${verificationTtlText}):`,
+      verificationUrl,
+      '',
+      'If you did not create this account, you can safely ignore this email.',
+    ].join('\n'),
+    html: `
+      <p>Welcome to Appofa!</p>
+      <p><strong>Please verify your email address within ${verificationTtlText}.</strong></p>
+      <p>
+        Click here to verify your email:<br />
+        <a href="${safeVerificationUrl}">${safeVerificationUrl}</a>
+      </p>
+      <p>If the button/link does not work, copy and paste this URL in your browser:</p>
+      <p>${safeVerificationUrl}</p>
+      <p>If you did not create this account, you can safely ignore this email.</p>
+    `,
+  });
+};
+
 async function registerUser({
   username,
   email,
@@ -194,6 +232,19 @@ async function registerUser({
     residenceCountryCode: residenceCountryCode ? String(residenceCountryCode).trim().toUpperCase() : null,
     homeLocationId: normalizedHomeLocationId,
   });
+
+  if (user.email) {
+    const rawToken = crypto.randomBytes(EMAIL_VERIF_TOKEN_BYTES).toString('hex');
+    user.emailVerifToken = getEmailVerifTokenHash(rawToken);
+    user.emailVerifExpires = new Date(Date.now() + EMAIL_VERIF_DEFAULT_TTL_HOURS * 60 * 60 * 1000);
+    await user.save();
+
+    try {
+      await sendVerificationEmail(user.email, rawToken);
+    } catch (error) {
+      console.error('[registerUser] SMTP send failed:', error);
+    }
+  }
 
   const token = generateToken(user);
   return { user, token };
@@ -313,6 +364,56 @@ async function resetPasswordWithToken(token, newPassword) {
   await user.save();
 }
 
+async function verifyEmailWithToken(token) {
+  const tokenResult = normalizeRequiredText(token, 'Email verification token', 1);
+  if (tokenResult.error) throw new ServiceError(400, tokenResult.error);
+
+  const tokenHash = getEmailVerifTokenHash(tokenResult.value);
+  const user = await User.findOne({ where: { emailVerifToken: tokenHash } });
+
+  if (!user) {
+    const error = new ServiceError(400, 'Invalid email verification token.');
+    error.code = 'EMAIL_VERIF_TOKEN_INVALID';
+    throw error;
+  }
+
+  if (!user.emailVerifExpires || user.emailVerifExpires.getTime() <= Date.now()) {
+    user.emailVerifToken = null;
+    user.emailVerifExpires = null;
+    await user.save();
+    const error = new ServiceError(400, 'Email verification token has expired.');
+    error.code = 'EMAIL_VERIF_TOKEN_EXPIRED';
+    throw error;
+  }
+
+  user.emailVerified = true;
+  user.emailVerifToken = null;
+  user.emailVerifExpires = null;
+  await user.save();
+
+  return { user };
+}
+
+async function resendVerificationEmail(userId) {
+  const user = await User.findByPk(userId);
+  if (!user) throw new ServiceError(404, 'User not found.');
+  if (user.emailVerified) throw new ServiceError(400, 'Email is already verified.');
+  if (!user.email) throw new ServiceError(400, 'No email address on this account.');
+
+  const rawToken = crypto.randomBytes(EMAIL_VERIF_TOKEN_BYTES).toString('hex');
+  user.emailVerifToken = getEmailVerifTokenHash(rawToken);
+  user.emailVerifExpires = new Date(Date.now() + EMAIL_VERIF_DEFAULT_TTL_HOURS * 60 * 60 * 1000);
+  await user.save();
+
+  try {
+    await sendVerificationEmail(user.email, rawToken);
+  } catch (error) {
+    console.error('[resendVerificationEmail] SMTP send failed:', error);
+  }
+
+  return { message: 'Verification email sent.' };
+}
+
 module.exports = {
   ServiceError,
   generateToken,
@@ -322,4 +423,6 @@ module.exports = {
   setPassword,
   requestPasswordReset,
   resetPasswordWithToken,
+  verifyEmailWithToken,
+  resendVerificationEmail,
 };

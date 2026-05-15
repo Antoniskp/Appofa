@@ -78,7 +78,15 @@ describe('Enhanced User Profiles and Verification', () => {
     moderatorToken = modCookie.split(';')[0].replace('auth_token=', '');
 
     // Viewer inside moderator scope (homeLocationId = childLoc.id)
-    await User.create({ username: 'viewerscope', email: 'viewer@verify.test', password: 'pass123', role: 'viewer', homeLocationId: childLoc.id });
+    await User.create({
+      username: 'viewerscope',
+      email: 'viewer@verify.test',
+      password: 'pass123',
+      role: 'viewer',
+      homeLocationId: childLoc.id,
+      nationality: 'GR',
+      emailVerified: true
+    });
     const viewerUser = await User.findOne({ where: { email: 'viewer@verify.test' } });
     viewerUserId = viewerUser.id;
     const viewerLogin = await request(app).post('/api/auth/login').send({ email: 'viewer@verify.test', password: 'pass123' });
@@ -90,13 +98,23 @@ describe('Enhanced User Profiles and Verification', () => {
       email: 'viewersame@verify.test',
       password: 'pass123',
       role: 'viewer',
-      homeLocationId: scopeLocationId
+      homeLocationId: scopeLocationId,
+      nationality: 'GR',
+      emailVerified: true
     });
     const sameLocationViewer = await User.findOne({ where: { email: 'viewersame@verify.test' } });
     sameLocationViewerId = sameLocationViewer.id;
 
     // Outsider user (no homeLocation - outside moderator scope)
-    await User.create({ username: 'outsider', email: 'outsider@verify.test', password: 'pass123', role: 'viewer', homeLocationId: null });
+    await User.create({
+      username: 'outsider',
+      email: 'outsider@verify.test',
+      password: 'pass123',
+      role: 'viewer',
+      homeLocationId: null,
+      nationality: 'GR',
+      emailVerified: true
+    });
     const outsiderUser = await User.findOne({ where: { email: 'outsider@verify.test' } });
     outsiderUserId = outsiderUser.id;
     const outsiderLogin = await request(app).post('/api/auth/login').send({ email: 'outsider@verify.test', password: 'pass123' });
@@ -217,7 +235,7 @@ describe('Enhanced User Profiles and Verification', () => {
       const csrf = 'csrf-verify-admin';
       setCsrfToken(csrf, adminUserId);
       const res = await request(app)
-        .put(`/api/auth/users/${outsiderUserId}/verify`)
+        .put(`/api/auth/users/${viewerUserId}/verify`)
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeaderFor(csrf))
         .send({ isVerified: true });
@@ -232,7 +250,7 @@ describe('Enhanced User Profiles and Verification', () => {
       const csrf = 'csrf-unverify-admin';
       setCsrfToken(csrf, adminUserId);
       const res = await request(app)
-        .put(`/api/auth/users/${outsiderUserId}/verify`)
+        .put(`/api/auth/users/${viewerUserId}/verify`)
         .set('Authorization', `Bearer ${adminToken}`)
         .set(csrfHeaderFor(csrf))
         .send({ isVerified: false });
@@ -323,6 +341,30 @@ describe('Enhanced User Profiles and Verification', () => {
         .send({ isVerified: true });
       expect(res.status).toBe(404);
       expect(res.body.success).toBe(false);
+    });
+
+    test('verify endpoint rejects users without verified email prerequisite', async () => {
+      const target = await User.create({
+        username: 'needs-email',
+        email: 'needs-email@verify.test',
+        password: 'pass123',
+        role: 'viewer',
+        homeLocationId: scopeLocationId,
+        nationality: 'GR',
+        emailVerified: false,
+      });
+
+      const csrf = 'csrf-verify-prereq-email';
+      setCsrfToken(csrf, adminUserId);
+      const res = await request(app)
+        .put(`/api/auth/users/${target.id}/verify`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set(csrfHeaderFor(csrf))
+        .send({ isVerified: true });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/verified their email/i);
     });
   });
 

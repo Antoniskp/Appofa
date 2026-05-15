@@ -133,7 +133,8 @@ async function handleGithubCallback(code, state) {
           firstNameNative: nameParts[0] || githubUser.login,
           lastNameNative: nameParts.slice(1).join(' ') || '',
           avatar: githubUser.avatar_url,
-          role: 'viewer'
+          role: 'viewer',
+          emailVerified: true
         });
       }
     }
@@ -284,7 +285,8 @@ async function handleGoogleCallback(code, state) {
           firstNameNative: googleUser.given_name || nameParts[0] || '',
           lastNameNative: googleUser.family_name || nameParts.slice(1).join(' ') || '',
           avatar: googleUser.picture,
-          role: 'viewer'
+          role: 'viewer',
+          emailVerified: true
         });
       }
     }

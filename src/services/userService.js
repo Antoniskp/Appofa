@@ -898,6 +898,28 @@ async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isV
   }
 
   if (isVerified) {
+    const ensurePrerequisite = (condition, message, code) => {
+      if (condition) return;
+      const err = new ServiceError(400, message);
+      err.code = code;
+      throw err;
+    };
+    ensurePrerequisite(
+      target.emailVerified,
+      'User has not verified their email address.',
+      'PREREQ_EMAIL_NOT_VERIFIED'
+    );
+    ensurePrerequisite(
+      target.nationality,
+      'User has not set their nationality.',
+      'PREREQ_NATIONALITY_MISSING'
+    );
+    ensurePrerequisite(
+      target.homeLocationId,
+      'User has not set their home location.',
+      'PREREQ_LOCATION_MISSING'
+    );
+
     target.isVerified = true;
     target.verifiedAt = new Date();
     target.verifiedByUserId = actor.id;

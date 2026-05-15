@@ -176,6 +176,8 @@ Appofa/
 | POST | /login | — | Login |
 | POST | /forgot-password | — | Request password reset email (generic response, token hashed in DB) |
 | POST | /reset-password | — | Reset password with token |
+| GET | /verify-email | — | Verify email with token (`EMAIL_VERIF_TOKEN_INVALID` / `EMAIL_VERIF_TOKEN_EXPIRED`) |
+| POST | /resend-verification | ✅ | Resend account verification email (authenticated user) |
 | GET | /profile | ✅ | Get profile |
 | PUT | /profile | ✅ | Update profile |
 | PUT | /avatar-source | ✅ | Switch active avatar source (GitHub/Google) |
@@ -490,9 +492,9 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/` | Home page (hero with tagline + simplified CTA pair + 3 value cards; sections ordered as Government Snapshot → optional Info → CTA banner → polls/suggestions/locations → merged `Νέα & Άρθρα` → videos → manifest supporters) |
-| `/login`, `/register`, `/forgot-password`, `/reset-password` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics → optional nationality/location → GDPR/summary, GR quick-select onboarding, moderator-interest opt-in, and non-GR diaspora modal on submit) |
+| `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics → optional nationality/location → GDPR/summary, GR quick-select onboarding, moderator-interest opt-in, and non-GR diaspora modal on submit; `/verify-email` handles token confirm + expired-token resend flow) |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
-| `/profile` | User profile (includes newsletter opt-in/opt-out toggle under Preferences) |
+| `/profile` | User profile (includes profile-completeness progress card + newsletter opt-in/opt-out toggle under Preferences; handles `?verified=1` success toast after email verification) |
 | `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
@@ -588,7 +590,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader, LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
-| `profile/` | 17 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
+| `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 23+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar (toggle has explicit visible sizing `h-10 min-w-10`; expanded inputs render below toggle and switch to `w-full` on mobile to avoid overflow), **ListPageToolbar** (shared search+filter+action row for list pages: `searchSlot`/`filtersSlot`/`actionsSlot`/`extraSlot`; primary row switches at `md` with wrap safeguards and search `md:min-w-[240px]` to prevent collapse/overlap), LanguageSwitcher, LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
@@ -809,6 +811,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260510150100-create-newsletter-send-logs.js | Create `NewsletterSendLogs` table for per-recipient campaign delivery status (`queued|sent|failed`), providerMessageId/errorMessage, sentAt, and campaign/subscriber FKs |
 | — | 20260510153000-add-newsletter-campaign-scheduling.js | Add `NewsletterCampaigns.scheduledAt` (+ index) and extend campaign status enum with `scheduled` (postgres-safe enum migration) |
 | — | 20260512041000-allow-repeatable-location-roles.js | Replace unique index on `LocationRoles` from `(locationId, roleKey)` to `(locationId, roleKey, userId)` for repeatable linked officials (prefecture parliamentarians) |
+| — | 20260515000000-add-email-verification-fields.js | Add `Users.emailVerified` (default false), `Users.emailVerifToken` (SHA-256 hash), and `Users.emailVerifExpires` |
 
 </details>
 

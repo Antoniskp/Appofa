@@ -22,6 +22,8 @@ router.post('/register', authLimiter, authController.register);
 router.post('/login', authLimiter, authController.login);
 router.post('/forgot-password', passwordResetRequestLimiter, authController.forgotPassword);
 router.post('/reset-password', passwordResetAttemptLimiter, authController.resetPassword);
+router.get('/verify-email', apiLimiter, authController.verifyEmail);
+router.post('/resend-verification', apiLimiter, authMiddleware, csrfProtection, authController.resendVerification);
 
 // OAuth routes
 router.get('/oauth/config', apiLimiter, authController.getOAuthConfig);
