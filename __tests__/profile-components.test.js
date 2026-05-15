@@ -1,6 +1,7 @@
 // Basic tests for profile components
 
 const ProfileHeader = require('../components/profile/ProfileHeader');
+const ProfileCompleteness = require('../components/profile/ProfileCompleteness');
 const ProfileBasicInfoForm = require('../components/profile/ProfileBasicInfoForm');
 const ProfileHomeLocationSection = require('../components/profile/ProfileHomeLocationSection');
 const ProfilePrivacySection = require('../components/profile/ProfilePrivacySection');
@@ -14,6 +15,15 @@ describe('Profile components', () => {
 
   it('ProfileHeader should export a function or object (React component)', () => {
     const type = typeof ProfileHeader.default || typeof ProfileHeader;
+    expect(['function', 'object']).toContain(type);
+  });
+
+  it('ProfileCompleteness should be defined', () => {
+    expect(ProfileCompleteness).toBeDefined();
+  });
+
+  it('ProfileCompleteness should export a function or object (React component)', () => {
+    const type = typeof ProfileCompleteness.default || typeof ProfileCompleteness;
     expect(['function', 'object']).toContain(type);
   });
 

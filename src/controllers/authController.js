@@ -62,6 +62,7 @@ const authController = {
             username: user.username,
             email: user.email,
             role: user.role,
+            emailVerified: user.emailVerified,
             firstNameNative: user.firstNameNative,
             lastNameNative: user.lastNameNative,
             avatar: user.avatar,
@@ -144,6 +145,33 @@ const authController = {
       }
       console.error('Reset password error:', error);
       return res.status(500).json({ success: false, message: 'Error resetting password.' });
+    }
+  },
+
+  verifyEmail: async (req, res) => {
+    const { token } = req.query;
+    try {
+      await authService.verifyEmailWithToken(token);
+      return res.status(200).json({ success: true, message: 'Email verified successfully.' });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message, code: error.code });
+      }
+      console.error('Verify email error:', error);
+      return res.status(500).json({ success: false, message: 'Error verifying email.' });
+    }
+  },
+
+  resendVerification: async (req, res) => {
+    try {
+      const result = await authService.resendVerificationEmail(req.user.id);
+      return res.status(200).json({ success: true, message: result.message });
+    } catch (error) {
+      if (error.status) {
+        return res.status(error.status).json({ success: false, message: error.message });
+      }
+      console.error('Resend verification error:', error);
+      return res.status(500).json({ success: false, message: 'Error resending verification email.' });
     }
   },
 

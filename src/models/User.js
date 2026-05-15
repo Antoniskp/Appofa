@@ -37,6 +37,19 @@ const User = sequelize.define('User', {
     type: DataTypes.DATE,
     allowNull: true
   },
+  emailVerified: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  emailVerifToken: {
+    type: DataTypes.STRING(128),
+    allowNull: true
+  },
+  emailVerifExpires: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   role: {
     type: DataTypes.ENUM('admin', 'moderator', 'editor', 'viewer', 'candidate'),
     defaultValue: 'viewer',

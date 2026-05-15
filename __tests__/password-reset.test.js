@@ -27,6 +27,18 @@ const extractTokenFromText = (text) => {
   const match = String(text || '').match(/reset-password\?token=([a-f0-9]+)/i);
   return match?.[1] || null;
 };
+const extractVerificationTokenFromText = (text) => {
+  const match = String(text || '').match(/verify-email\?token=([a-f0-9]+)/i);
+  return match?.[1] || null;
+};
+const csrfHeaderFor = (token) => ({
+  Cookie: [`csrf_token=${token}`],
+  'x-csrf-token': token,
+});
+const setCsrfToken = (token, userId) => {
+  const { storeCsrfToken } = require('../src/utils/csrf');
+  storeCsrfToken(token, userId);
+};
 
 describe('Password reset flow', () => {
   const genericMessage = 'If an account with that email exists, a password reset link has been sent.';
@@ -60,6 +72,9 @@ describe('Password reset flow', () => {
       user.password = 'password123';
       user.resetPasswordTokenHash = null;
       user.resetPasswordExpires = null;
+      user.emailVerified = false;
+      user.emailVerifToken = null;
+      user.emailVerifExpires = null;
       await user.save();
     }
   });
@@ -244,5 +259,73 @@ describe('Password reset flow', () => {
     } finally {
       process.env.NODE_ENV = originalNodeEnv;
     }
+  });
+
+  test('verify-email succeeds with valid token', async () => {
+    const user = await User.findOne({ where: { email: 'reset@test.com' } });
+    user.emailVerifToken = crypto.createHash('sha256').update('valid-verify-token').digest('hex');
+    user.emailVerifExpires = new Date(Date.now() + 60 * 60 * 1000);
+    await user.save();
+
+    const response = await request(app)
+      .get('/api/auth/verify-email')
+      .query({ token: 'valid-verify-token' });
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+
+    await user.reload();
+    expect(user.emailVerified).toBe(true);
+    expect(user.emailVerifToken).toBeNull();
+    expect(user.emailVerifExpires).toBeNull();
+  });
+
+  test('verify-email returns expiry code for expired token', async () => {
+    const user = await User.findOne({ where: { email: 'reset@test.com' } });
+    user.emailVerifToken = crypto.createHash('sha256').update('expired-verify-token').digest('hex');
+    user.emailVerifExpires = new Date(Date.now() - 60 * 1000);
+    await user.save();
+
+    const response = await request(app)
+      .get('/api/auth/verify-email')
+      .query({ token: 'expired-verify-token' });
+
+    expect(response.status).toBe(400);
+    expect(response.body.success).toBe(false);
+    expect(response.body.code).toBe('EMAIL_VERIF_TOKEN_EXPIRED');
+  });
+
+  test('resend-verification sends a fresh email for authenticated unverified users', async () => {
+    nodemailer.__sendMailMock.mockResolvedValue({ messageId: 'verify-resend' });
+    const loginResponse = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'reset@test.com', password: 'password123' });
+    const authCookie = loginResponse.headers['set-cookie'].find((cookie) => cookie.startsWith('auth_token='));
+    const authToken = authCookie.split(';')[0].replace('auth_token=', '');
+    const user = await User.findOne({ where: { email: 'reset@test.com' } });
+
+    const csrf = `csrf-resend-${Date.now()}`;
+    setCsrfToken(csrf, user.id);
+
+    const response = await request(app)
+      .post('/api/auth/resend-verification')
+      .set('Authorization', `Bearer ${authToken}`)
+      .set(csrfHeaderFor(csrf))
+      .send({});
+
+    expect(response.status).toBe(200);
+    expect(response.body.success).toBe(true);
+    expect(response.body.message).toBe('Verification email sent.');
+    expect(nodemailer.__sendMailMock).toHaveBeenCalledTimes(1);
+
+    const sent = nodemailer.__sendMailMock.mock.calls[0][0];
+    const rawToken = extractVerificationTokenFromText(sent.text);
+    expect(rawToken).toBeTruthy();
+
+    await user.reload();
+    expect(user.emailVerifToken).toBe(
+      crypto.createHash('sha256').update(rawToken).digest('hex')
+    );
+    expect(user.emailVerifExpires).toBeTruthy();
   });
 });

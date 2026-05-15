@@ -12,6 +12,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import ProfileHeader from '@/components/profile/ProfileHeader';
+import ProfileCompleteness from '@/components/profile/ProfileCompleteness';
 import ProfileBasicInfoForm from '@/components/profile/ProfileBasicInfoForm';
 import ProfilePrivacySection from '@/components/profile/ProfilePrivacySection';
 import ProfileSecuritySection from '@/components/profile/ProfileSecuritySection';
@@ -226,6 +227,7 @@ function ProfileContent() {
   useEffect(() => {
     const successParam = searchParams.get('success');
     const errorParam = searchParams.get('error');
+    const verifiedParam = searchParams.get('verified');
 
     if (successParam === 'github_linked') {
       success(tProfile('github_linked_success'));
@@ -233,6 +235,8 @@ function ProfileContent() {
     } else if (successParam === 'google_linked') {
       success(tProfile('google_linked_success'));
       setGoogleLinked(true);
+    } else if (verifiedParam === '1') {
+      success('Email verified successfully!');
     } else if (errorParam) {
       const errorMessages = {
         unauthorized: tProfile('link_unauthorized'),
@@ -242,10 +246,11 @@ function ProfileContent() {
       };
       error(errorMessages[errorParam] || tProfile('link_failed'));
     }
-    if (successParam || errorParam) {
+    if (successParam || errorParam || verifiedParam) {
       const nextParams = new URLSearchParams(searchParams.toString());
       nextParams.delete('success');
       nextParams.delete('error');
+      nextParams.delete('verified');
       const nextUrl = nextParams.toString() ? `${pathname}?${nextParams}` : pathname;
       router.replace(nextUrl, { scroll: false });
     }
@@ -595,9 +600,14 @@ function ProfileContent() {
           />
         </Card>
 
+        {/* Profile Completeness */}
+        <Card>
+          <ProfileCompleteness user={user} profileData={profileData} />
+        </Card>
+
         {/* Στοιχεία Χρήστη */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('personal_info')}</h2>
+          <h2 id="profile-basic-info-heading" className="text-lg font-semibold text-gray-900 mb-4">{tProfile('personal_info')}</h2>
           <ProfileBasicInfoForm
             profileData={profileData}
             onChange={handleProfileChange}
@@ -608,7 +618,7 @@ function ProfileContent() {
 
         {/* Τοποθεσία & Εθνικότητα */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('location_nationality')}</h2>
+          <h2 id="profile-location-heading" className="text-lg font-semibold text-gray-900 mb-4">{tProfile('location_nationality')}</h2>
           <ProfileLocationSection
             profileData={profileData}
             onChange={handleProfileChange}
@@ -638,7 +648,7 @@ function ProfileContent() {
 
         {/* Σχετικά με εμένα & Επικοινωνία */}
         <Card>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">{tProfile('about_contact')}</h2>
+          <h2 id="profile-about-heading" className="text-lg font-semibold text-gray-900 mb-4">{tProfile('about_contact')}</h2>
           <ProfileBioSection
             profileData={profileData}
             onChange={handleProfileChange}
