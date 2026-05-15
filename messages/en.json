@@ -437,6 +437,10 @@
   },
   "profile": {
     "title": "Profile",
+    "tab_profile": "Profile",
+    "tab_location_politics": "Location & Politics",
+    "tab_skills_interests": "Skills & Interests",
+    "tab_settings": "Settings",
     "personal_info": "Personal Information",
     "change_password": "Change Password",
     "connected_accounts": "Connected Accounts",

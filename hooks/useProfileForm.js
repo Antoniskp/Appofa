@@ -288,12 +288,13 @@ export function useProfileForm() {
     fetchManifests();
   }, []);
 
-  const manifests = useMemo(() => (
-    manifestList.map((manifest) => {
+  const manifests = useMemo(() => {
+    if (!manifestList.length) return [];
+    return manifestList.map((manifest) => {
       const acceptance = manifestAcceptances.find((item) => item.slug === manifest.slug);
       return { ...manifest, acceptedAt: acceptance ? acceptance.acceptedAt : null };
-    })
-  ), [manifestList, manifestAcceptances]);
+    });
+  }, [manifestList, manifestAcceptances]);
 
   const handleEvaluateBadges = async () => {
     setBadgeEvaluating(true);

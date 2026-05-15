@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Card from '@/components/ui/Card';
@@ -10,6 +10,13 @@ import ProfileTab from '@/app/profile/tabs/ProfileTab';
 import LocationPoliticsTab from '@/app/profile/tabs/LocationPoliticsTab';
 import SkillsTab from '@/app/profile/tabs/SkillsTab';
 import SettingsTab from '@/app/profile/tabs/SettingsTab';
+
+const PROFILE_TABS = [
+  { id: 'profile', labelKey: 'tab_profile' },
+  { id: 'location-politics', labelKey: 'tab_location_politics' },
+  { id: 'skills', labelKey: 'tab_skills_interests' },
+  { id: 'settings', labelKey: 'tab_settings' },
+];
 
 function ProfileContent() {
   const tProfile = useTranslations('profile');
@@ -78,13 +85,6 @@ function ProfileContent() {
     handleRemoveInterest,
   } = useProfileForm();
 
-  const tabs = useMemo(() => ([
-    { id: 'profile', label: 'Profile' },
-    { id: 'location-politics', label: 'Location & Politics' },
-    { id: 'skills', label: 'Skills & Interests' },
-    { id: 'settings', label: 'Settings' },
-  ]), []);
-
   if (loading) {
     return (
       <div className="bg-gray-50 min-h-screen py-10">
@@ -106,7 +106,7 @@ function ProfileContent() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="sticky top-0 z-40 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-gray-50/95 backdrop-blur border-b border-gray-200 mb-8">
           <div className="flex items-center gap-2 overflow-x-auto">
-            {tabs.map((tab) => {
+            {PROFILE_TABS.map((tab) => {
               const isActive = activeTab === tab.id;
               return (
                 <button
@@ -119,7 +119,7 @@ function ProfileContent() {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  {tab.label}
+                  {tProfile(tab.labelKey)}
                 </button>
               );
             })}
