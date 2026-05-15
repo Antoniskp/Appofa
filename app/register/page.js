@@ -538,7 +538,26 @@ export default function RegisterPage() {
                       className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
                     <label htmlFor="gdpr_consent" className="ml-2 block text-sm text-gray-900">
-                      {t('gdpr_consent_required')}
+                      Συμφωνώ με τους{' '}
+                      <Link
+                        href="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue-600 underline hover:text-blue-800"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Όρους Χρήσης
+                      </Link>
+                      {' '}και την{' '}
+                      <Link
+                        href="/privacy"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-blue-600 underline hover:text-blue-800"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Πολιτική Απορρήτου
+                      </Link>
                     </label>
                   </div>
 
