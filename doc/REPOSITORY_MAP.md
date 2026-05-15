@@ -12,11 +12,11 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-14
+> **Last updated**: 2026-05-15
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
-> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is used for SMTP password reset email delivery. Direct `next` is now pinned to `16.2.6` to resolve high-severity advisories affecting `16.0.0 - 16.2.5` in CI security-audit workflow. `next-intl` bumped to `^4.11.1` (fixes GHSA-4c35-wcg5-mm9h prototype pollution). `overrides.ip-address: ">=10.1.1"` added to patch XSS in transitive `ip-address` used by `express-rate-limit` and `geoip-lite` (GHSA-v2v4-37r5-5v8g). `overrides.nodemailer` removed — direct deps satisfy themselves and must not be in overrides.
+> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is used for SMTP password reset email delivery. Direct `next` is now pinned to `16.2.6` to resolve high-severity advisories affecting `16.0.0 - 16.2.5` in CI security-audit workflow. `next-intl` bumped to `^4.11.1` (fixes GHSA-4c35-wcg5-mm9h prototype pollution). `overrides.ip-address: ">=10.1.1"` added to patch XSS in transitive `ip-address` used by `express-rate-limit` and `geoip-lite` (GHSA-v2v4-37r5-5v8g). `overrides.nodemailer` removed — direct deps satisfy themselves and must not be in overrides. Direct `ws` dependency is now included for backend worker WebSocket support at `/ws/workers`.
 >
 > Backend startup convention: `require('dotenv').config()` is the very first statement in `src/index.js` so that all subsequent module-level `process.env` reads (e.g. `FRONTEND_URL` in `src/config/securityHeaders.js`) get the correct production values.
 
@@ -60,6 +60,7 @@ Appofa/
 │   ├── config/             # database.js, securityHeaders.js
 │   ├── constants/          # articleTypes.js, expertiseAreas.js
 │   ├── scripts/            # run-migrations.js, seed scripts
+│   ├── websocket/          # Worker WebSocket server modules (`/ws/workers`)
 │   ├── utils/              # Utility helpers
 │   └── index.js            # Express app entry point
 │
@@ -460,6 +461,7 @@ Appofa/
 | organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
 | userCountryCode.js | Dream Team country resolution helper (`nationality` first, then `homeLocation` country ancestor via `Location.type='country'` + `code`) used by vote authorization |
 | professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeProfessions` (filter canonical entries only), `normalizeExpertiseTags` (filter valid tag IDs only), `normalizeExpertiseTagId`, `validateProfessionalIdentity`, `validateExpertiseTagIds`, `resolveProfessionLabel`, `scoreSpecialistMatch`, `VALID_EXPERTISE_TAG_IDS`; loaded by User model getters + userService + personService |
+| websocket/workerWsServer.js | Worker WebSocket server factory for `/ws/workers` with worker-token auth (`validateWorkerToken` + format check), in-memory connected-worker registry (`register`/`heartbeat`/`taskResult` handling), and diagnostics getter (`getConnectedWorkers`) |
 
 ---
 
@@ -812,13 +814,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (57 files)
+## Tests (58 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page
+api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions
