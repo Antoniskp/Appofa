@@ -9,6 +9,15 @@
     ]
   },
   {
+    "slug": "founding-member",
+    "name": "Ιδρυτικό Μέλος",
+    "description": "Ένας από τους πρώτους 100 χρήστες της πλατφόρμας",
+    "category": "special",
+    "tiers": [
+      { "tier": "gold", "label": "Ιδρυτικό Μέλος", "criteria": "Εγγραφή μεταξύ των πρώτων 100 χρηστών", "threshold": 1 }
+    ]
+  },
+  {
     "slug": "article-writer",
     "name": "Αρθρογράφος",
     "description": "Δημοσιεύστε άρθρα στην πλατφόρμα",

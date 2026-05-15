@@ -2,6 +2,8 @@ const badges = require('../../config/badges.json');
 const { UserBadge, User, Article, Poll, Comment, PollVote, SuggestionVote, Follow, Formation, ManifestAcceptance } = require('../models');
 const notificationService = require('./notificationService');
 
+const FOUNDING_MEMBER_MAX_USER_ID = 100;
+
 const badgeService = {
   /**
    * Evaluate all badges for a user and award any newly earned ones.
@@ -29,6 +31,20 @@ const badgeService = {
       }
     }
 
+    // Evaluate founding-member badge before the verification gateway
+    const foundingBadgeDef = badges.find(b => b.slug === 'founding-member');
+    if (foundingBadgeDef) {
+      const value = this.getMetricValue('founding-member', stats);
+      for (const tierDef of foundingBadgeDef.tiers) {
+        const key = `founding-member:${tierDef.tier}`;
+        if (!existingSet.has(key) && value >= tierDef.threshold) {
+          toCreate.push({ userId, badgeSlug: 'founding-member', tier: tierDef.tier, earnedAt: new Date() });
+          newBadges.push({ slug: 'founding-member', tier: tierDef.tier, name: foundingBadgeDef.name, label: tierDef.label });
+          existingSet.add(key);
+        }
+      }
+    }
+
     // Gateway: if user is not verified, skip all other badge evaluations
     const isVerifiedEarned = verifiedBadgeDef
       ? verifiedBadgeDef.tiers.some(t => existingSet.has(`verified:${t.tier}`))
@@ -45,7 +61,7 @@ const badgeService = {
     }
 
     for (const badge of badges) {
-      if (badge.slug === 'verified') continue;
+      if (badge.slug === 'verified' || badge.slug === 'founding-member') continue;
 
       const value = this.getMetricValue(badge.slug, stats);
 
@@ -135,6 +151,7 @@ const badgeService = {
       profileScore,
       totalViews,
       isVerified: user ? !!user.isVerified : false,
+      isFoundingMember: user ? user.id <= FOUNDING_MEMBER_MAX_USER_ID : false,
     };
   },
 
@@ -144,6 +161,7 @@ const badgeService = {
   getMetricValue(slug, stats) {
     const mapping = {
       'verified': stats.isVerified ? 1 : 0,
+      'founding-member': stats.isFoundingMember ? 1 : 0,
       'article-writer': stats.articleCount,
       'pollster': stats.pollCount,
       'profile-complete': stats.profileScore,
