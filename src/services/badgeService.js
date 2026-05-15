@@ -2,6 +2,8 @@ const badges = require('../../config/badges.json');
 const { UserBadge, User, Article, Poll, Comment, PollVote, SuggestionVote, Follow, Formation, ManifestAcceptance } = require('../models');
 const notificationService = require('./notificationService');
 
+const FOUNDING_MEMBER_MAX_USER_ID = 100;
+
 const badgeService = {
   /**
    * Evaluate all badges for a user and award any newly earned ones.
@@ -149,7 +151,7 @@ const badgeService = {
       profileScore,
       totalViews,
       isVerified: user ? !!user.isVerified : false,
-      isFoundingMember: user ? user.id <= 100 : false,
+      isFoundingMember: user ? user.id <= FOUNDING_MEMBER_MAX_USER_ID : false,
     };
   },
 

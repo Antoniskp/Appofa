@@ -27,7 +27,6 @@ describe('badgeService founding-member badge', () => {
       id: 50,
       username: 'founder50',
       email: 'founder50@test.com',
-      password: 'pass123',
       isVerified: false,
     });
 
@@ -42,10 +41,9 @@ describe('badgeService founding-member badge', () => {
 
   test('does not award founding-member when id is greater than 100', async () => {
     const user = await User.create({
-      id: 150,
-      username: 'member150',
-      email: 'member150@test.com',
-      password: 'pass123',
+      id: 101,
+      username: 'member101',
+      email: 'member101@test.com',
       isVerified: false,
     });
 
@@ -56,12 +54,26 @@ describe('badgeService founding-member badge', () => {
     expect(earned).toHaveLength(0);
   });
 
+  test('awards founding-member at the boundary id of 100', async () => {
+    const user = await User.create({
+      id: 100,
+      username: 'founder100',
+      email: 'founder100@test.com',
+      isVerified: false,
+    });
+
+    const newBadges = await badgeService.evaluate(user.id);
+
+    expect(newBadges).toEqual(expect.arrayContaining([
+      expect.objectContaining({ slug: 'founding-member', tier: 'gold' }),
+    ]));
+  });
+
   test('awards founding-member only once', async () => {
     const user = await User.create({
       id: 75,
       username: 'founder75',
       email: 'founder75@test.com',
-      password: 'pass123',
       isVerified: false,
     });
 
