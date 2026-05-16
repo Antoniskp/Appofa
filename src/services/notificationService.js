@@ -56,10 +56,40 @@ async function createNotification({
  * Bulk-create notifications for multiple recipients (e.g. broadcast to followers).
  * Automatically excludes the actor from the recipient list.
  */
+/**
+ * Fire-and-forget Web Push fan-out to a list of recipients.
+ * Called after bulk DB inserts so the DB write is not delayed.
+ * Failures per-user are logged but never surface to the caller.
+ *
+ * @param {number[]} userIds
+ * @param {{ title: string, body?: string, actionUrl?: string }} payload
+ */
+function _fanOutPush(userIds, payload) {
+  setImmediate(() => {
+    for (const userId of userIds) {
+      pushService.getUnreadCount(userId).then((unreadCount) => {
+        return pushService.sendPushToUser(userId, {
+          title: payload.title,
+          body: payload.body || '',
+          unreadCount,
+          url: payload.actionUrl || '/notifications',
+        });
+      }).catch((err) => {
+        console.error('[notificationService] push delivery failed for user', userId, err.message);
+      });
+    }
+  });
+}
+
 async function notifyMany(userIds, payload) {
   const unique = [...new Set(userIds)].filter(id => id !== payload.actorId);
   if (!unique.length) return [];
-  return Notification.bulkCreate(unique.map(userId => ({ ...payload, userId })));
+  const results = await Notification.bulkCreate(unique.map(userId => ({ ...payload, userId })));
+
+  // Fire-and-forget Web Push to each recipient so closed-app badges update.
+  _fanOutPush(unique, payload);
+
+  return results;
 }
 
 // ── Convenience helpers ────────────────────────────────────────────────────
@@ -335,6 +365,10 @@ async function broadcastNotification(payload, targetRole = null) {
 
   await Notification.bulkCreate(notifications, { ignoreDuplicates: true });
   console.log(`[notificationService] broadcastNotification: sent to ${userIds.length} users`);
+
+  // Fire-and-forget Web Push to each recipient so closed-app badges update.
+  _fanOutPush(userIds, payload);
+
   return userIds.length;
 }
 

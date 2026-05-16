@@ -29,6 +29,7 @@ function ensureVapidConfigured() {
   const mailto = process.env.VAPID_MAILTO;
 
   if (!publicKey || !privateKey || !mailto) {
+    console.warn('[pushService] Push notifications are disabled — VAPID keys not configured. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_MAILTO in the environment.');
     return false;
   }
 
