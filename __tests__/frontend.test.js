@@ -217,6 +217,19 @@ const flushPromises = async () => {
   }
 };
 
+const setInputValue = (input, value) => {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+  setter.call(input, value);
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+};
+
+const setCheckboxValue = (input, checked) => {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'checked').set;
+  setter.call(input, checked);
+  input.dispatchEvent(new Event('click', { bubbles: true }));
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+};
+
 const renderPage = async (Component) => {
   const container = document.createElement('div');
   document.body.appendChild(container);
@@ -348,10 +361,9 @@ describe('Frontend smoke tests', () => {
     const confirmPasswordInput = container.querySelector('input[name="confirmPassword"]');
 
     await act(async () => {
-      passwordInput.value = 'secret123';
-      passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
-      confirmPasswordInput.value = 'secret123';
-      confirmPasswordInput.dispatchEvent(new Event('input', { bubbles: true }));
+      setInputValue(passwordInput, 'secret123');
+      setInputValue(confirmPasswordInput, 'secret123');
+      await flushPromises();
     });
 
     const nextButtons = Array.from(container.querySelectorAll('button')).filter(
@@ -382,6 +394,121 @@ describe('Frontend smoke tests', () => {
 
     expect(container.textContent).toContain('Σχεδόν έτοιμος/η! Ένα τελευταίο βήμα.');
     expect(container.textContent).toContain('Εθνικότητα: GR');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('register page shows password validation before advancing from step 1', async () => {
+    mockSearchParams.get.mockReturnValue(null);
+    useAuth.mockReturnValue(buildAuthState());
+    const RegisterPage = require('../app/register/page').default;
+    const { container, root } = await renderPage(RegisterPage);
+
+    const passwordInput = container.querySelector('input[name="password"]');
+    const confirmPasswordInput = container.querySelector('input[name="confirmPassword"]');
+
+    await act(async () => {
+      setInputValue(passwordInput, '12345');
+      passwordInput.dispatchEvent(new Event('blur', { bubbles: true }));
+      setInputValue(confirmPasswordInput, '12345');
+      confirmPasswordInput.dispatchEvent(new Event('blur', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Ο κωδικός πρέπει να έχει τουλάχιστον {min} χαρακτήρες');
+
+    const nextButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Next')
+    );
+
+    await act(async () => {
+      nextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(container.textContent).not.toContain('Η εθνικότητα μας βοηθάει να σου δείχνουμε σχετικά θέματα και στατιστικά.');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('register page handles diaspora choices in step 2 instead of a submit modal', async () => {
+    mockSearchParams.get.mockReturnValue(null);
+    geoAPI.detect.mockResolvedValue({
+      success: true,
+      data: { countryCode: 'DE', countryName: 'Germany' },
+    });
+    const registerMock = jest.fn(() => Promise.resolve({ success: true }));
+    useAuth.mockReturnValue(buildAuthState({ register: registerMock }));
+
+    const RegisterPage = require('../app/register/page').default;
+    const { container, root } = await renderPage(RegisterPage);
+
+    const usernameInput = container.querySelector('input[name="username"]');
+    const emailInput = container.querySelector('input[name="email"]');
+    const passwordInput = container.querySelector('input[name="password"]');
+    const confirmPasswordInput = container.querySelector('input[name="confirmPassword"]');
+
+    await act(async () => {
+      setInputValue(usernameInput, 'diasporatest');
+      setInputValue(emailInput, 'diaspora@test.com');
+      setInputValue(passwordInput, 'secret123');
+      setInputValue(confirmPasswordInput, 'secret123');
+      await flushPromises();
+    });
+
+    const accountNextButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Next')
+    );
+
+    await act(async () => {
+      accountNextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Βρίσκεσαι εκτός Ελλάδας; Δήλωσέ το εδώ');
+    expect(container.textContent).not.toContain('Είστε μέλος της Διασποράς;');
+
+    const diasporaCheckbox = Array.from(container.querySelectorAll('input')).find(
+      (input) => input.type === 'checkbox' && container.textContent.includes('Είμαι μέλος διασποράς')
+    );
+
+    await act(async () => {
+      setCheckboxValue(diasporaCheckbox, true);
+      await flushPromises();
+    });
+
+    const stepTwoNextButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Επόμενο')
+    );
+
+    await act(async () => {
+      stepTwoNextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    const gdprConsent = container.querySelector('input[name="gdpr_consent"]');
+    await act(async () => {
+      setCheckboxValue(gdprConsent, true);
+      await flushPromises();
+    });
+
+    const submitButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Δημιουργία λογαριασμού')
+    );
+
+    await act(async () => {
+      submitButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({
+      isDiaspora: true,
+      residenceCountryCode: 'DE',
+    }));
 
     await act(async () => {
       root.unmount();

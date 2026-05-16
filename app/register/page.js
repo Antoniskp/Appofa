@@ -20,8 +20,9 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import { authAPI, geoAPI, locationAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
-import DiasporaModal from '@/components/DiasporaModal';
 import { useTranslations } from 'next-intl';
+
+const PASSWORD_MIN_LENGTH = 6;
 
 const STEPS = [
   { id: 1, label: 'Λογαριασμός' },
@@ -43,6 +44,8 @@ export default function RegisterPage() {
     lastNameNative: '',
     nationality: '',
     homeLocationId: null,
+    isDiaspora: false,
+    residenceCountryCode: null,
     searchable: true,
     gdprConsent: false,
     gdprMarketing: false,
@@ -51,8 +54,8 @@ export default function RegisterPage() {
   const [wantsModerator, setWantsModerator] = useState(false);
   const [loading, setLoading] = useState(false);
   const [detectedCountry, setDetectedCountry] = useState({ countryCode: null, countryName: null });
-  const [showDiasporaModal, setShowDiasporaModal] = useState(false);
-  const [pendingRegisterData, setPendingRegisterData] = useState(null);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const { config: oauthConfig } = useOAuthConfig();
   // null = unknown (loading), true = has moderator, false = no moderator
   const [locationHasModerator, setLocationHasModerator] = useState(null);
@@ -72,8 +75,13 @@ export default function RegisterPage() {
           if (countryCode === 'GR') {
             setFormData((prev) => {
               if (prev.nationality) return prev;
-              return { ...prev, nationality: 'GR' };
+              return { ...prev, nationality: 'GR', isDiaspora: false, residenceCountryCode: null };
             });
+          } else {
+            setFormData((prev) => ({
+              ...prev,
+              residenceCountryCode: countryCode,
+            }));
           }
           document.cookie = `appofa_detected_country=${countryCode}; path=/; max-age=3600; SameSite=Lax`;
         }
@@ -123,8 +131,11 @@ export default function RegisterPage() {
 
   const prepareRegistrationData = (data = {}) => {
     const { confirmPassword, ...registerData } = data;
+    const isDiaspora = Boolean(registerData.isDiaspora);
     return {
       ...registerData,
+      isDiaspora,
+      residenceCountryCode: isDiaspora ? (registerData.residenceCountryCode || null) : null,
       nationality: registerData.nationality || null,
       homeLocationId: registerData.homeLocationId ?? null,
     };
@@ -174,9 +185,41 @@ export default function RegisterPage() {
     }
   };
 
+  const passwordMinLengthError = formData.password.length < PASSWORD_MIN_LENGTH
+    ? t('password_min_length_register', { min: PASSWORD_MIN_LENGTH })
+    : '';
+
+  const passwordMismatchError = formData.password !== formData.confirmPassword
+    ? t('passwords_no_match')
+    : '';
+
+  const validateAccountStep = () => {
+    setPasswordTouched(true);
+    setConfirmPasswordTouched(true);
+
+    if (passwordMinLengthError) {
+      error(passwordMinLengthError);
+      return false;
+    }
+
+    if (passwordMismatchError) {
+      error(passwordMismatchError);
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleDiasporaChange = (isDiaspora) => {
+    setFormData((prev) => ({
+      ...prev,
+      isDiaspora,
+      residenceCountryCode: isDiaspora ? detectedCountry.countryCode : null,
+    }));
+  };
+
   const goToNextStepFromAccount = () => {
-    if (formData.password !== formData.confirmPassword) {
-      error(t('passwords_no_match'));
+    if (!validateAccountStep()) {
       return;
     }
     setCurrentStep(2);
@@ -190,34 +233,11 @@ export default function RegisterPage() {
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      error(t('passwords_no_match'));
+    if (!validateAccountStep()) {
       return;
     }
 
-    if (detectedCountry.countryCode && detectedCountry.countryCode !== 'GR') {
-      setPendingRegisterData(prepareRegistrationData(formData));
-      setShowDiasporaModal(true);
-      return;
-    }
     await doRegister(formData);
-  };
-
-  const handleDiasporaConfirm = async (homeLocationId) => {
-    setShowDiasporaModal(false);
-    setPendingRegisterData(null);
-    await doRegister({
-      ...pendingRegisterData,
-      isDiaspora: true,
-      residenceCountryCode: detectedCountry.countryCode,
-      homeLocationId,
-    });
-  };
-
-  const handleDiasporaDecline = async () => {
-    setShowDiasporaModal(false);
-    setPendingRegisterData(null);
-    await doRegister(pendingRegisterData);
   };
 
   const handleGithubSignup = async () => {
@@ -371,9 +391,12 @@ export default function RegisterPage() {
                     label={t('password')}
                     value={formData.password}
                     onChange={handleChange}
+                    onBlur={() => setPasswordTouched(true)}
+                    error={passwordTouched ? passwordMinLengthError : ''}
                     required
                     autoComplete="new-password"
                     placeholder={t('password')}
+                    helpText={t('password_min_length_register', { min: PASSWORD_MIN_LENGTH })}
                   />
 
                   <FormInput
@@ -382,6 +405,8 @@ export default function RegisterPage() {
                     label={t('confirm_password')}
                     value={formData.confirmPassword}
                     onChange={handleChange}
+                    onBlur={() => setConfirmPasswordTouched(true)}
+                    error={confirmPasswordTouched ? passwordMismatchError : ''}
                     required
                     autoComplete="new-password"
                     placeholder={t('confirm_password')}
@@ -444,6 +469,31 @@ export default function RegisterPage() {
                       onChange={handleNationalityChange}
                     />
                   </div>
+
+                  {detectedCountry.countryCode && detectedCountry.countryCode !== 'GR' && (
+                    <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                      <p className="text-sm font-semibold text-emerald-900">
+                        {t('register_diaspora_title')}
+                      </p>
+                      <p className="mt-1 text-sm text-emerald-800">
+                        {t('register_diaspora_detected_country', {
+                          country: detectedCountry.countryName || detectedCountry.countryCode,
+                        })}{' '}
+                        {t('register_diaspora_description')}
+                      </p>
+                      <label className="mt-3 flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={formData.isDiaspora}
+                          onChange={(e) => handleDiasporaChange(e.target.checked)}
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                        />
+                        <span className="text-sm text-emerald-900">
+                          {t('register_diaspora_checkbox')}
+                        </span>
+                      </label>
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
@@ -633,13 +683,6 @@ export default function RegisterPage() {
           </form>
         </div>
       </div>
-      <DiasporaModal
-        isOpen={showDiasporaModal}
-        detectedCountryName={detectedCountry.countryName}
-        onConfirmDiaspora={handleDiasporaConfirm}
-        onDecline={handleDiasporaDecline}
-        onSkip={handleDiasporaDecline}
-      />
     </div>
   );
 }

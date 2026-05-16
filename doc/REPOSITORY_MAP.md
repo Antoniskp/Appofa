@@ -172,7 +172,7 @@ Appofa/
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /csrf | — | Get CSRF token |
-| POST | /register | — | Register (supports optional `nationality` and `homeLocationId`; frontend `/register` now uses a 3-step wizard and non-GR diaspora prompt before submit) |
+| POST | /register | — | Register (supports optional `nationality`, `homeLocationId`, and diaspora payload fields; frontend `/register` uses a 3-step wizard with inline step-1 password validation and in-step non-GR diaspora handling in step 2) |
 | POST | /login | — | Login |
 | POST | /forgot-password | — | Request password reset email (generic response, token hashed in DB) |
 | POST | /reset-password | — | Reset password with token |
@@ -492,7 +492,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/` | Home page (hero with tagline + simplified CTA pair + 3 value cards; sections ordered as Government Snapshot → optional Info → CTA banner → polls/suggestions/locations → merged `Νέα & Άρθρα` → videos → manifest supporters) |
-| `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics → optional nationality/location → GDPR/summary, GR quick-select onboarding, moderator-interest opt-in, and non-GR diaspora modal on submit; `/verify-email` handles token confirm + expired-token resend flow) |
+| `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics (inline password validation before advancing) → optional nationality/location with inline non-GR diaspora toggle/residence handling → GDPR/summary, plus GR quick-select onboarding and moderator-interest opt-in; `/verify-email` handles token confirm + expired-token resend flow) |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile with sticky 4-tab layout (`Profile`, `Location & Politics`, `Skills & Interests`, `Settings`); tab content is split into `app/profile/tabs/*` while form state/effects/handlers are centralized in `hooks/useProfileForm.js`; includes profile-completeness card, newsletter preference toggle, and `?verified=1` success toast handling |
 | `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |
