@@ -1,6 +1,6 @@
 'use strict';
 
-const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest } = require('../models');
+const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll, LocationRequest, MunicipalityDistrictMap } = require('../models');
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
@@ -41,7 +41,7 @@ const createLocation = async (locationData) => {
       return { success: false, status: 400, message: 'Name and type are required' };
     }
 
-    const validTypes = ['international', 'country', 'prefecture', 'municipality'];
+    const validTypes = ['international', 'country', 'prefecture', 'electoral_district', 'municipality'];
     if (!validTypes.includes(type)) {
       return { success: false, status: 400, message: 'Invalid location type' };
     }
@@ -1034,6 +1034,148 @@ const updateLocationRequest = async (id, updateData, userId) => {
   }
 };
 
+// ---------------------------------------------------------------------------
+// Electoral District mapping service functions
+// ---------------------------------------------------------------------------
+
+/**
+ * Get all electoral districts mapped to a given location (typically a municipality).
+ * @param {string|number} locationId
+ * @returns {Promise<{success: boolean, districts?: object[]}>}
+ */
+const getMunicipalityDistricts = async (locationId) => {
+  try {
+    const location = await Location.findByPk(locationId, { attributes: ['id', 'type'] });
+    if (!location) {
+      return { success: false, status: 404, message: 'Location not found' };
+    }
+
+    const mappings = await MunicipalityDistrictMap.findAll({
+      where: { municipalityId: locationId },
+      include: [
+        {
+          model: Location,
+          as: 'electoralDistrict',
+          attributes: ['id', 'name', 'name_local', 'slug', 'code', 'parent_id']
+        }
+      ],
+      order: [['createdAt', 'ASC']]
+    });
+
+    const districts = mappings.map((m) => ({ mappingId: m.id, ...m.electoralDistrict.toJSON() }));
+    return { success: true, districts };
+  } catch (error) {
+    console.error('Error fetching municipality districts:', error);
+    return {
+      success: false, status: 500,
+      message: 'Failed to fetch electoral districts for location',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    };
+  }
+};
+
+/**
+ * Get all municipalities (locations) mapped to a given electoral district.
+ * @param {string|number} districtId - ID of an electoral_district Location
+ * @returns {Promise<{success: boolean, municipalities?: object[]}>}
+ */
+const getDistrictMunicipalities = async (districtId) => {
+  try {
+    const district = await Location.findByPk(districtId, { attributes: ['id', 'type'] });
+    if (!district) {
+      return { success: false, status: 404, message: 'Electoral district not found' };
+    }
+    if (district.type !== 'electoral_district') {
+      return { success: false, status: 400, message: 'Location is not an electoral district' };
+    }
+
+    const mappings = await MunicipalityDistrictMap.findAll({
+      where: { electoralDistrictId: districtId },
+      include: [
+        {
+          model: Location,
+          as: 'municipality',
+          attributes: ['id', 'name', 'name_local', 'slug', 'type', 'parent_id']
+        }
+      ],
+      order: [['createdAt', 'ASC']]
+    });
+
+    const municipalities = mappings.map((m) => ({ mappingId: m.id, ...m.municipality.toJSON() }));
+    return { success: true, municipalities };
+  } catch (error) {
+    console.error('Error fetching district municipalities:', error);
+    return {
+      success: false, status: 500,
+      message: 'Failed to fetch municipalities for electoral district',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    };
+  }
+};
+
+/**
+ * Add a mapping between a location and an electoral district.
+ * @param {number} municipalityId - location ID (typically a municipality)
+ * @param {number} electoralDistrictId - ID of an electoral_district Location
+ * @returns {Promise<{success: boolean, mapping?: object}>}
+ */
+const addMunicipalityDistrictMapping = async (municipalityId, electoralDistrictId) => {
+  try {
+    const location = await Location.findByPk(municipalityId, { attributes: ['id', 'type'] });
+    if (!location) {
+      return { success: false, status: 404, message: 'Location not found' };
+    }
+
+    const district = await Location.findByPk(electoralDistrictId, { attributes: ['id', 'type'] });
+    if (!district) {
+      return { success: false, status: 404, message: 'Electoral district not found' };
+    }
+    if (district.type !== 'electoral_district') {
+      return { success: false, status: 400, message: 'Target location is not an electoral district' };
+    }
+
+    const existing = await MunicipalityDistrictMap.findOne({
+      where: { municipalityId, electoralDistrictId }
+    });
+    if (existing) {
+      return { success: false, status: 409, message: 'Mapping already exists' };
+    }
+
+    const mapping = await MunicipalityDistrictMap.create({ municipalityId, electoralDistrictId });
+    return { success: true, mapping };
+  } catch (error) {
+    console.error('Error adding municipality-district mapping:', error);
+    return {
+      success: false, status: 500,
+      message: 'Failed to add mapping',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    };
+  }
+};
+
+/**
+ * Remove a mapping between a location and an electoral district by mapping ID.
+ * @param {number} mappingId - primary key of the MunicipalityDistrictMap row
+ * @returns {Promise<{success: boolean}>}
+ */
+const removeMunicipalityDistrictMapping = async (mappingId) => {
+  try {
+    const mapping = await MunicipalityDistrictMap.findByPk(mappingId);
+    if (!mapping) {
+      return { success: false, status: 404, message: 'Mapping not found' };
+    }
+    await mapping.destroy();
+    return { success: true };
+  } catch (error) {
+    console.error('Error removing municipality-district mapping:', error);
+    return {
+      success: false, status: 500,
+      message: 'Failed to remove mapping',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    };
+  }
+};
+
 module.exports = {
   createLocation,
   getLocations,
@@ -1046,5 +1188,9 @@ module.exports = {
   getLocationEntities,
   createLocationRequest,
   getLocationRequests,
-  updateLocationRequest
+  updateLocationRequest,
+  getMunicipalityDistricts,
+  getDistrictMunicipalities,
+  addMunicipalityDistrictMapping,
+  removeMunicipalityDistrictMapping
 };

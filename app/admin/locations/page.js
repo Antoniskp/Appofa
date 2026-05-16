@@ -15,12 +15,13 @@ import Pagination from '@/components/ui/Pagination';
 import AdminLayout from '@/components/admin/AdminLayout';
 import LocationSelector from '@/components/ui/LocationSelector';
 
-const LOCATION_TYPES = ['international', 'country', 'prefecture', 'municipality'];
+const LOCATION_TYPES = ['international', 'country', 'prefecture', 'electoral_district', 'municipality'];
 const PAGE_SIZE = 25;
 
 const PARENT_TYPE_MAP = {
   country: 'international',
   prefecture: 'country',
+  electoral_district: 'prefecture',
   municipality: 'prefecture',
   international: null,
 };
@@ -28,6 +29,7 @@ const PARENT_TYPE_MAP = {
 const PARENT_HINT_MAP = {
   country: 'Select the international region this country belongs to',
   prefecture: 'Select the country this prefecture belongs to',
+  electoral_district: 'Select the prefecture this electoral district belongs to',
   municipality: 'Select the prefecture this municipality belongs to',
 };
 

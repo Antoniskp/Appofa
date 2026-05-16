@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-15
+> **Last updated**: 2026-05-16
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -25,19 +25,19 @@ This instruction is permanent and must never be removed.
 ## Table of Contents
 
 - [Directory Structure](#directory-structure)
-- [Models (48)](#models-48)
+- [Models (50)](#models-50)
 - [API Routes (29 files, 180+ endpoints)](#api-routes-29-files-180-endpoints)
-- [Controllers (23)](#controllers-23)
+- [Controllers (24)](#controllers-24)
 - [Services (15)](#services-15)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
 - [Frontend Pages (113)](#frontend-pages-113)
 - [Components (121+)](#components-121)
-- [API Client Modules (29)](#api-client-modules-29)
+- [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
 - [Constants](#constants)
-- [Migrations (91)](#migrations-91)
-- [Tests (56 files)](#tests-56-files)
+- [Migrations (93)](#migrations-93)
+- [Tests (59 files)](#tests-59-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -108,7 +108,7 @@ Appofa/
 
 ---
 
-## Models (49)
+## Models (50)
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
@@ -117,7 +117,7 @@ Appofa/
 | Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility, organizationId | belongsTo: User, Location, Organization; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
 | PollVote | PollVotes | id, pollId, pollOptionId, userId, isAnonymous, userAgent | belongsTo: Poll, PollOption, User |
-| Location | Locations | id, name, name_local, type, parent_id, code, slug, lat, lng, population (from Wikipedia), population_override (moderator-set; takes precedence over population for participation % calculations) | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote, UserLocationRole; belongsTo: parent |
+| Location | Locations | id, name, name_local, type (`international`\|`country`\|`prefecture`\|`electoral_district`\|`municipality`), parent_id, code, slug, lat, lng, population (from Wikipedia), population_override (moderator-set; takes precedence over population for participation % calculations) | hasMany: children, LocationLink, LocationSection, LocationRole, LocationElectionVote, UserLocationRole, MunicipalityDistrictMap (`districtMappings`), MunicipalityDistrictMap (`municipalityMappings`); belongsTo: parent; belongsToMany: Location (as `electoralDistricts`), Location (as `districtMunicipalities`) via MunicipalityDistrictMap |
 | LocationLink | LocationLinks | id, locationId, url, type, pollId | belongsTo: Location, Poll |
 | LocationSection | LocationSections | id, locationId, sectionType, title, content, createdByUserId | belongsTo: Location, User |
 | LocationRole | LocationRoles | id, locationId, roleKey, userId, sortOrder, isActive | belongsTo: Location, User. Supports repeatable linked officials (e.g. prefecture `parliamentarian`) as multiple rows with same `(locationId, roleKey)` and different `userId`; unique index is `(locationId, roleKey, userId)` |
@@ -133,6 +133,7 @@ Appofa/
 | NewsletterCampaign | NewsletterCampaigns | id, subject, previewText, htmlContent, textContent, status (`draft\|scheduled\|sending\|sent\|failed`), audienceFilters (JSON incl. status/locale/source/tags/date ranges), createdByAdminId, sentAt, scheduledAt, totalRecipients, successCount, failureCount | belongsTo: User (`createdByAdmin`); hasMany: NewsletterSendLog |
 | NewsletterSendLog | NewsletterSendLogs | id, campaignId, subscriberId (nullable), email, status (`queued\|sent\|failed`), providerMessageId, errorMessage, sentAt | belongsTo: NewsletterCampaign (`campaign`), NewsletterSubscriber (`subscriber`) |
 | WorkerToken | WorkerTokens | id, name, token_hash (bcrypt hash), created_at, last_used_at, revoked_at, created_by | belongsTo: User (`createdByAdmin`) |
+| MunicipalityDistrictMap | MunicipalityDistrictMaps | id, municipalityId, electoralDistrictId | Join table for many-to-many between any Location and electoral_district Locations; unique (municipalityId, electoralDistrictId); belongsTo: Location (`municipality`), Location (`electoralDistrict`) |
 | Follow | Follows | id, followerId, followingId | belongsTo: User (×2) |
 | Bookmark | Bookmarks | id, userId, entityType, entityId | belongsTo: User |
 | Endorsement | Endorsements | id, endorserId, endorsedId, topic | belongsTo: User (×2) |
@@ -400,7 +401,7 @@ Appofa/
 
 ---
 
-## Controllers (23)
+## Controllers (24)
 
 | Controller | Domain |
 |-----------|--------|
@@ -409,6 +410,7 @@ Appofa/
 | bookmarkController.js | Bookmark management |
 | commentController.js | Comment CRUD & moderation |
 | dreamTeamController.js | Dream team formations, votes |
+| electoralDistrictController.js | Electoral district mapping CRUD: GET districts for a municipality, GET municipalities for a district, POST add mapping, DELETE remove mapping (admin/moderator) |
 | endorsementController.js | Endorsements |
 | followController.js | Follow/unfollow |
 | heroSettingsController.js | Hero section config |
@@ -607,7 +609,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## API Client Modules (29)
+## API Client Modules (30)
 
 All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest` helper with automatic CSRF.
 
@@ -630,7 +632,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | homepageSettings.js | Homepage settings |
 | ipRules.js | IP whitelist/blacklist management |
 | linkPreview.js | Link previews |
-| locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI`, `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments) |
+| locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI`, `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments), `electoralDistrictAPI` (municipality↔district mapping: getMunicipalityDistricts, getDistrictMunicipalities, addMapping, removeMapping) |
 | manifest.js | Manifests |
 | messages.js | Messages |
 | newsletter.js | Newsletter public subscribe/unsubscribe + authenticated `/me/preference` read/update + admin subscriber management (CSV import/export) + campaign CRUD/schedule/due-processing/test-send/send/log endpoints |
@@ -692,7 +694,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (91)
+## Migrations (93)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -813,18 +815,20 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260510153000-add-newsletter-campaign-scheduling.js | Add `NewsletterCampaigns.scheduledAt` (+ index) and extend campaign status enum with `scheduled` (postgres-safe enum migration) |
 | — | 20260512041000-allow-repeatable-location-roles.js | Replace unique index on `LocationRoles` from `(locationId, roleKey)` to `(locationId, roleKey, userId)` for repeatable linked officials (prefecture parliamentarians) |
 | — | 20260515000000-add-email-verification-fields.js | Add `Users.emailVerified` (default false), `Users.emailVerifToken` (SHA-256 hash), and `Users.emailVerifExpires` |
+| — | 20260516000000-add-electoral-district-location-type.js | Add `electoral_district` to the `Locations.type` enum (PostgreSQL `ALTER TYPE … ADD VALUE`; no-op on SQLite) |
+| — | 20260516000001-create-municipality-district-maps.js | Create `MunicipalityDistrictMaps` join table for many-to-many municipality↔electoral district mappings; unique index on (municipalityId, electoralDistrictId) |
 
 </details>
 
 ---
 
-## Tests (58 files)
+## Tests (59 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
+api-client, civicQuestions, electoral-districts, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

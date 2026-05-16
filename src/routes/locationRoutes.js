@@ -5,6 +5,7 @@ const locationSectionController = require('../controllers/locationSectionControl
 const locationRoleController = require('../controllers/locationRoleController');
 const locationPlatformRoleController = require('../controllers/locationPlatformRoleController');
 const locationElectionController = require('../controllers/locationElectionController');
+const electoralDistrictController = require('../controllers/electoralDistrictController');
 const authMiddleware = require('../middleware/auth');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const checkRole = require('../middleware/checkRole');
@@ -48,6 +49,14 @@ router.delete('/:locationId/platform-roles/:assignmentId', apiLimiter, authMiddl
 router.get('/:locationId/elections', optionalAuthMiddleware, apiLimiter, locationElectionController.getElections);
 router.post('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.castVote);
 router.delete('/:locationId/elections/:roleKey/vote', apiLimiter, authMiddleware, csrfProtection, locationElectionController.removeVote);
+
+// Electoral district mapping routes
+// Public: read mappings
+router.get('/:id/electoral-districts', apiLimiter, electoralDistrictController.getMunicipalityDistricts);
+router.get('/:id/municipalities', apiLimiter, electoralDistrictController.getDistrictMunicipalities);
+// Admin/Moderator: manage mappings
+router.post('/:id/electoral-districts', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, electoralDistrictController.addMapping);
+router.delete('/:id/electoral-districts/:mappingId', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, electoralDistrictController.removeMapping);
 
 // Admin/Moderator only routes
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), locationController.createLocation);
