@@ -15,6 +15,9 @@
       { "key": "regional_council_president", "title": "Πρόεδρος Περιφερειακού Συμβουλίου", "titleEn": "Regional Council President", "order": 3 },
       { "key": "parliamentarian", "title": "Βουλευτής", "titleEn": "Member of Parliament", "order": 4, "repeatable": true }
     ],
+    "electoral_district": [
+      { "key": "parliamentary_candidate", "title": "Υποψήφιος Βουλευτής", "titleEn": "Parliamentary Candidate", "order": 1, "repeatable": true }
+    ],
     "municipality": [
       { "key": "mayor", "title": "Δήμαρχος", "titleEn": "Mayor", "order": 1 },
       { "key": "deputy_mayor", "title": "Αντιδήμαρχος", "titleEn": "Deputy Mayor", "order": 2 },

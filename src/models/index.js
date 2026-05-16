@@ -52,6 +52,7 @@ const NewsletterCampaign = require('./NewsletterCampaign');
 const NewsletterSendLog = require('./NewsletterSendLog');
 const PushSubscription = require('./PushSubscription');
 const WorkerToken = require('./WorkerToken');
+const MunicipalityDistrictMap = require('./MunicipalityDistrictMap');
 
 // Define associations
 User.hasMany(Article, {
@@ -474,6 +475,27 @@ NewsletterSubscriber.hasMany(NewsletterSendLog, { foreignKey: 'subscriberId', as
 WorkerToken.belongsTo(User, { foreignKey: 'created_by', as: 'createdByAdmin' });
 User.hasMany(WorkerToken, { foreignKey: 'created_by', as: 'workerTokensCreated' });
 
+// MunicipalityDistrictMap associations (many-to-many: municipalities ↔ electoral districts)
+MunicipalityDistrictMap.belongsTo(Location, { foreignKey: 'municipalityId', as: 'municipality' });
+MunicipalityDistrictMap.belongsTo(Location, { foreignKey: 'electoralDistrictId', as: 'electoralDistrict' });
+
+Location.belongsToMany(Location, {
+  through: MunicipalityDistrictMap,
+  foreignKey: 'municipalityId',
+  otherKey: 'electoralDistrictId',
+  as: 'electoralDistricts'
+});
+
+Location.belongsToMany(Location, {
+  through: MunicipalityDistrictMap,
+  foreignKey: 'electoralDistrictId',
+  otherKey: 'municipalityId',
+  as: 'districtMunicipalities'
+});
+
+Location.hasMany(MunicipalityDistrictMap, { foreignKey: 'municipalityId', as: 'districtMappings' });
+Location.hasMany(MunicipalityDistrictMap, { foreignKey: 'electoralDistrictId', as: 'municipalityMappings' });
+
 module.exports = {
   sequelize,
   User,
@@ -529,4 +551,5 @@ module.exports = {
   NewsletterSendLog,
   PushSubscription,
   WorkerToken,
+  MunicipalityDistrictMap,
 };

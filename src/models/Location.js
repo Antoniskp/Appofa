@@ -18,7 +18,7 @@ const Location = sequelize.define('Location', {
     comment: 'Local language name of the location'
   },
   type: {
-    type: DataTypes.ENUM('international', 'country', 'prefecture', 'municipality'),
+    type: DataTypes.ENUM('international', 'country', 'prefecture', 'electoral_district', 'municipality'),
     allowNull: false
     // Comment moved to post-sync hook to avoid Sequelize bug #17894
   },
