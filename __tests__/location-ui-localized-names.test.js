@@ -86,6 +86,52 @@ describe('Location UI localized names', () => {
     });
   });
 
+  test('shows limited sub-location chips by default and expands on demand', async () => {
+    const manyChildren = Array.from({ length: 10 }, (_, i) => ({
+      id: i + 1,
+      slug: `child-${i + 1}`,
+      name: `Child ${i + 1}`,
+      name_local: `Περιοχή ${i + 1}`,
+    }));
+    const props = {
+      location: {
+        name: 'Athens',
+        name_local: 'Αθήνα',
+        type: 'municipality',
+        hasModerator: false,
+      },
+      sections: [],
+      children: manyChildren,
+      activePolls: [],
+      newsArticles: [],
+      regularArticles: [],
+      entities: { usersCount: 0 },
+      imageError: false,
+      setImageError: jest.fn(),
+      canManageLocations: () => false,
+      onEdit: jest.fn(),
+    };
+
+    const { container, root } = await renderComponent(LocationHeader, props);
+
+    expect(container.textContent).toContain('Περιοχή 8');
+    expect(container.textContent).not.toContain('Περιοχή 9');
+    expect(container.textContent).toContain('+2 ακόμα υποπεριοχές');
+
+    const toggleButton = container.querySelector('button');
+    await act(async () => {
+      toggleButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(container.textContent).toContain('Περιοχή 9');
+    expect(container.textContent).toContain('Περιοχή 10');
+    expect(container.textContent).not.toContain('+2 ακόμα υποπεριοχές');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('renders breadcrumbs with local-name preference and fallback to name', async () => {
     const { container, root } = await renderComponent(LocationBreadcrumb, {
       homeBreadcrumb: [

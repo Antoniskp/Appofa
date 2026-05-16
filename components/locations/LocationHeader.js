@@ -1,8 +1,26 @@
+import { useState } from 'react';
 import Link from 'next/link';
 import Badge from '@/components/ui/Badge';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import LocationSections from '@/components/LocationSections';
 import { HEADER_SECTION_TYPES } from '@/lib/constants/locations';
+
+const CHILDREN_PREVIEW_COUNT = 8;
+
+function getFlagEmoji(code) {
+  if (!code || code.length !== 2) return null;
+  const upper = code.toUpperCase();
+  if (!/^[A-Z]{2}$/.test(upper)) return null;
+  return String.fromCodePoint(...[...upper].map(c => 127397 + c.charCodeAt(0)));
+}
+
+function getTypeIcon(type, code) {
+  if (type === 'country') return getFlagEmoji(code) || '🌍';
+  if (type === 'prefecture') return '🗺️';
+  if (type === 'municipality') return '🏙️';
+  if (type === 'electoral_district') return '🗳️';
+  return '📍';
+}
 
 export default function LocationHeader({
   location,
@@ -11,14 +29,20 @@ export default function LocationHeader({
   activePolls,
   newsArticles,
   regularArticles,
+  suggestionsCount = 0,
   entities,
   imageError,
   setImageError,
   canManageLocations,
   onEdit,
 }) {
+  const [showAllChildren, setShowAllChildren] = useState(false);
+
   const publishedSections = sections.filter(s => s.isPublished);
   const headerSections = publishedSections.filter(s => HEADER_SECTION_TYPES.includes(s.type));
+  const visibleChildren = showAllChildren ? children : children.slice(0, CHILDREN_PREVIEW_COUNT);
+  const hiddenChildrenCount = Math.max(children.length - visibleChildren.length, 0);
+  const populationValue = location.population_override ?? location.population;
 
   const locationNeedsModerator = !location.hasModerator;
   const moderatorDisplayName = [location?.moderatorPreview?.firstNameNative, location?.moderatorPreview?.lastNameNative]
@@ -33,11 +57,9 @@ export default function LocationHeader({
 
   return (
     <>
-      <div className="md:grid md:grid-cols-3 md:gap-6">
-        {/* ── Left / main column ── */}
+      <div className="md:grid md:grid-cols-3 md:gap-8">
         <div className="md:col-span-2">
           <div className="flex items-start gap-4">
-            {/* Location image: uploaded image takes priority, falls back to Wikipedia */}
             {(() => {
               const uploadedSrc = location.imageUrl
                 ? (location.imageUpdatedAt
@@ -59,19 +81,23 @@ export default function LocationHeader({
             })()}
 
             <div className="flex-1 min-w-0">
-              {/* Title row */}
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-2xl" aria-hidden="true">{getTypeIcon(location.type, location.code)}</span>
                     <h1 className="text-2xl font-bold text-gray-900 truncate">{location.name}</h1>
                     <Badge variant="primary" size="sm">{location.type}</Badge>
                   </div>
                   {location.name_local && (
                     <p className="text-base text-gray-500 mt-0.5">{location.name_local}</p>
                   )}
+                  {location.parent && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      Ανήκει στην τοποθεσία: <span className="font-medium text-gray-800">{location.parent.name_local || location.parent.name}</span>
+                    </p>
+                  )}
                 </div>
 
-                {/* Single edit entry point */}
                 {canManageLocations() && (
                   <button
                     onClick={onEdit}
@@ -84,30 +110,6 @@ export default function LocationHeader({
                 )}
               </div>
 
-              {/* Compact metadata row */}
-              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-gray-600">
-                {location.code && (
-                  <span><span className="font-medium text-gray-700">Code:</span> {location.code}</span>
-                )}
-                {location.lat && location.lng && (
-                  <span><span className="font-medium text-gray-700">Coords:</span> {location.lat}, {location.lng}</span>
-                )}
-                {location.population && (
-                  <span><span className="font-medium text-gray-700">Pop:</span> {formatPopulation(location.population)}</span>
-                )}
-                {location.wikipedia_url && (
-                  <a
-                    href={location.wikipedia_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline font-medium"
-                  >
-                    Wikipedia ↗
-                  </a>
-                )}
-              </div>
-
-              {/* Moderator row */}
               <div className="flex items-center gap-2 mt-2 text-sm">
                 <span className="font-medium text-gray-700">Συντονιστής:</span>
                 {locationNeedsModerator ? (
@@ -140,93 +142,104 @@ export default function LocationHeader({
                 ) : null}
               </div>
 
-              {/* Stats chips — only show non-zero counts */}
-              {(activePolls.length > 0 || newsArticles.length > 0 || regularArticles.length > 0 || entities.usersCount > 0) ? (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {activePolls.length > 0 && (
-                    <span className="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-medium">
-                      Ψηφοφορίες: {activePolls.length}
-                    </span>
+              {(populationValue || activePolls.length > 0 || suggestionsCount > 0 || entities.usersCount > 0 || newsArticles.length > 0 || regularArticles.length > 0) ? (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                  {populationValue && (
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                      <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Πληθυσμός</div>
+                      <div className="text-sm font-semibold text-gray-900">{formatPopulation(populationValue)}</div>
+                    </div>
                   )}
-                  {newsArticles.length > 0 && (
-                    <span className="px-2.5 py-0.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-xs font-medium">
-                      Ειδήσεις: {newsArticles.length}
-                    </span>
-                  )}
-                  {regularArticles.length > 0 && (
-                    <span className="px-2.5 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
-                      Άρθρα: {regularArticles.length}
-                    </span>
-                  )}
-                  {entities.usersCount > 0 && (
-                    <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 border border-gray-200 rounded-full text-xs font-medium">
-                      Χρήστες: {entities.usersCount}
-                    </span>
+                  <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-blue-600">Ψηφοφορίες</div>
+                    <div className="text-sm font-semibold text-blue-900">{activePolls.length}</div>
+                  </div>
+                  <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-indigo-600">Προτάσεις</div>
+                    <div className="text-sm font-semibold text-indigo-900">{suggestionsCount}</div>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
+                    <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Χρήστες</div>
+                    <div className="text-sm font-semibold text-gray-900">{entities.usersCount || 0}</div>
+                  </div>
+                  {(newsArticles.length > 0 || regularArticles.length > 0) && (
+                    <div className="col-span-2 sm:col-span-4 text-xs text-gray-500 pt-1">
+                      Περιεχόμενο: Ειδήσεις {newsArticles.length} • Άρθρα {regularArticles.length}
+                    </div>
                   )}
                 </div>
               ) : (
-                <p className="mt-3 text-xs text-gray-400 italic">Δεν υπάρχει περιεχόμενο ακόμα</p>
+                <p className="mt-4 text-xs text-gray-400 italic">Δεν υπάρχει περιεχόμενο ακόμα</p>
+              )}
+
+              {(location.code || (location.lat && location.lng) || location.wikipedia_url || location.wikipedia_data_updated_at || headerSections.length > 0) && (
+                <details className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                  <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
+                    Περισσότερες πληροφορίες
+                  </summary>
+                  <div className="mt-3 space-y-2 text-sm text-gray-600">
+                    {location.code && (
+                      <p><span className="font-medium text-gray-700">Code:</span> {location.code}</p>
+                    )}
+                    {location.lat && location.lng && (
+                      <p><span className="font-medium text-gray-700">Συντεταγμένες:</span> {location.lat}, {location.lng}</p>
+                    )}
+                    {location.wikipedia_url && (
+                      <a
+                        href={location.wikipedia_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block text-blue-600 hover:text-blue-800 underline font-medium"
+                      >
+                        Wikipedia ↗
+                      </a>
+                    )}
+                    {location.wikipedia_data_updated_at && (
+                      <p className="text-xs text-gray-500">
+                        Ενημερώθηκε: {new Date(location.wikipedia_data_updated_at).toLocaleDateString('el-GR')}
+                      </p>
+                    )}
+                    {headerSections.length > 0 && (
+                      <div className="pt-2 space-y-3">
+                        {headerSections.map(section => (
+                          <div key={section.id}>
+                            <LocationSections sections={[section]} compact />
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </details>
               )}
             </div>
           </div>
 
-          {/* Sub-locations chips */}
           {children.length > 0 && (
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="text-xs font-medium text-gray-500 mb-2">Υποπεριοχές ({children.length})</p>
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <p className="text-sm font-semibold text-gray-700 mb-2">Υποπεριοχές ({children.length})</p>
               <div className="flex flex-wrap gap-2">
-                {children.map(child => (
+                {visibleChildren.map(child => (
                   <Link
                     key={child.id}
                     href={`/locations/${child.slug}`}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 border border-blue-200 transition-colors text-sm"
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-gray-50 text-gray-700 rounded-full hover:bg-blue-50 hover:text-blue-700 border border-gray-200 hover:border-blue-200 transition-colors text-sm"
                   >
                     <span className="font-medium">{child.name_local || child.name}</span>
                   </Link>
                 ))}
               </div>
+              {hiddenChildrenCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllChildren(v => !v)}
+                  className="mt-3 inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  {showAllChildren ? 'Εμφάνιση λιγότερων' : `+${hiddenChildrenCount} ακόμα υποπεριοχές`}
+                </button>
+              )}
             </div>
           )}
         </div>
-
-        {/* ── Right column — Info panel ── */}
-        {(location.wikipedia_url || headerSections.length > 0) && (
-          <div className="mt-6 md:mt-0 md:col-span-1">
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 h-full">
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">Πληροφορίες</h3>
-
-              {/* Wikipedia link + last-updated */}
-              {location.wikipedia_url && (
-                <div className="text-sm mb-3">
-                  <a
-                    href={location.wikipedia_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 underline font-medium"
-                  >
-                    Wikipedia ↗
-                  </a>
-                  {location.wikipedia_data_updated_at && (
-                    <div className="text-xs text-gray-500 mt-1">
-                      Ενημερώθηκε: {new Date(location.wikipedia_data_updated_at).toLocaleDateString('el-GR')}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Official links + contacts sections */}
-              {headerSections.length > 0 && (
-                <div className="space-y-4">
-                  {headerSections.map(section => (
-                    <div key={section.id}>
-                      <LocationSections sections={[section]} compact />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </>
   );

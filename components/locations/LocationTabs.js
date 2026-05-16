@@ -12,6 +12,67 @@ const CLAIM_STATUS_BADGES = {
   claimed: { label: 'Επαληθευμένο', cls: 'bg-green-100 text-green-700' },
 };
 
+const SUGGESTION_TYPE_BADGES = {
+  improvement: 'bg-blue-50 text-blue-700 border-blue-200',
+  complaint: 'bg-rose-50 text-rose-700 border-rose-200',
+  issue: 'bg-amber-50 text-amber-700 border-amber-200',
+  request: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+};
+
+const SUGGESTION_STATUS_BADGES = {
+  open: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  accepted: 'bg-green-50 text-green-700 border-green-200',
+  in_review: 'bg-blue-50 text-blue-700 border-blue-200',
+  rejected: 'bg-red-50 text-red-700 border-red-200',
+  closed: 'bg-gray-100 text-gray-700 border-gray-200',
+};
+
+const POLL_STATUS_BADGES = {
+  open: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  active: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  draft: 'bg-amber-50 text-amber-700 border-amber-200',
+  closed: 'bg-gray-100 text-gray-700 border-gray-200',
+  completed: 'bg-gray-100 text-gray-700 border-gray-200',
+};
+
+function formatMetaDate(date) {
+  if (!date) return null;
+  return new Date(date).toLocaleDateString('el-GR');
+}
+
+function FeedItem({ href, title, excerpt, badges = [], metadata = [] }) {
+  return (
+    <Link
+      href={href}
+      className="group block rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-300 hover:bg-blue-50/40 transition-all"
+    >
+      {badges.length > 0 && (
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          {badges.map((badge) => (
+            <span
+              key={`${badge.label}-${badge.className}`}
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${badge.className}`}
+            >
+              {badge.label}
+            </span>
+          ))}
+        </div>
+      )}
+      <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{title}</h3>
+      {excerpt && (
+        <p className="mt-1.5 text-sm leading-6 text-gray-600 line-clamp-2">{excerpt}</p>
+      )}
+      {metadata.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+          {metadata.map((item) => (
+            <span key={item}>{item}</span>
+          ))}
+        </div>
+      )}
+    </Link>
+  );
+}
+
 export default function LocationTabs({
   activeTab,
   onTabChange,
@@ -95,33 +156,24 @@ export default function LocationTabs({
           ) : activePolls.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No polls linked to this location yet.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {activePolls.map(poll => (
-                <Link
+                <FeedItem
                   key={poll.id}
                   href={`/polls/${idSlug(poll.id, poll.title)}`}
-                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <h3 className="font-medium text-gray-900 mb-1">{poll.title}</h3>
-                  {poll.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{poll.description}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    <span className="capitalize">{poll.status}</span>
-                    {(poll.hideCreator || poll.creator?.username) && (
-                      <>
-                        <span>•</span>
-                        <span>by {poll.hideCreator ? 'Anonymous' : poll.creator?.username}</span>
-                      </>
-                    )}
-                    {poll.createdAt && (
-                      <>
-                        <span>•</span>
-                        <span>{new Date(poll.createdAt).toLocaleDateString('el-GR')}</span>
-                      </>
-                    )}
-                  </div>
-                </Link>
+                  title={poll.title}
+                  excerpt={poll.description}
+                  badges={[
+                    { label: 'Poll', className: 'bg-sky-50 text-sky-700 border-sky-200' },
+                    { label: poll.status || 'open', className: POLL_STATUS_BADGES[poll.status] || 'bg-gray-100 text-gray-700 border-gray-200' },
+                  ]}
+                  metadata={[
+                    poll.hideCreator || poll.creator?.username
+                      ? `by ${poll.hideCreator ? 'Anonymous' : poll.creator?.username}`
+                      : null,
+                    formatMetaDate(poll.createdAt),
+                  ].filter(Boolean)}
+                />
               ))}
             </div>
           )}
@@ -139,29 +191,23 @@ export default function LocationTabs({
           ) : newsArticles.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No news linked to this location yet.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {newsArticles.map(article => (
-                <Link
+                <FeedItem
                   key={article.id}
                   href={`/news/${idSlug(article.id, article.title)}`}
-                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
-                  {article.summary && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    {(article.hideAuthor || article.author?.username) && (
-                      <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
-                    )}
-                    {article.createdAt && (
-                      <>
-                        <span>•</span>
-                        <span>{new Date(article.createdAt).toLocaleDateString('el-GR')}</span>
-                      </>
-                    )}
-                  </div>
-                </Link>
+                  title={article.title}
+                  excerpt={article.summary}
+                  badges={[
+                    { label: 'News', className: 'bg-purple-50 text-purple-700 border-purple-200' },
+                  ]}
+                  metadata={[
+                    article.hideAuthor || article.author?.username
+                      ? `by ${article.hideAuthor ? 'Anonymous' : article.author?.username}`
+                      : null,
+                    formatMetaDate(article.createdAt),
+                  ].filter(Boolean)}
+                />
               ))}
             </div>
           )}
@@ -179,27 +225,23 @@ export default function LocationTabs({
           ) : regularArticles.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No articles linked to this location yet.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {regularArticles.map(article => (
-                <Link
+                <FeedItem
                   key={article.id}
                   href={`/articles/${idSlug(article.id, article.title)}`}
-                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <h3 className="font-medium text-gray-900 mb-1">{article.title}</h3>
-                  {article.summary && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{article.summary}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    <span>{article.type}</span>
-                    {(article.hideAuthor || article.author?.username) && (
-                      <>
-                        <span>•</span>
-                        <span>by {article.hideAuthor ? 'Anonymous' : article.author?.username}</span>
-                      </>
-                    )}
-                  </div>
-                </Link>
+                  title={article.title}
+                  excerpt={article.summary}
+                  badges={[
+                    { label: article.type || 'article', className: 'bg-green-50 text-green-700 border-green-200' },
+                  ]}
+                  metadata={[
+                    article.hideAuthor || article.author?.username
+                      ? `by ${article.hideAuthor ? 'Anonymous' : article.author?.username}`
+                      : null,
+                    formatMetaDate(article.createdAt),
+                  ].filter(Boolean)}
+                />
               ))}
             </div>
           )}
@@ -322,35 +364,28 @@ export default function LocationTabs({
           ) : suggestions.length === 0 ? (
             <p className="text-center text-gray-500 py-8">No suggestions linked to this location yet.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {suggestions.map(suggestion => (
-                <Link
+                <FeedItem
                   key={suggestion.id}
                   href={`/suggestions/${suggestion.id}`}
-                  className="block p-3 border border-gray-200 rounded-md hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                >
-                  <h3 className="font-medium text-gray-900 mb-1">{suggestion.title}</h3>
-                  {suggestion.body && (
-                    <p className="text-sm text-gray-600 line-clamp-2">{suggestion.body}</p>
-                  )}
-                  <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
-                    <span className="capitalize">{suggestion.type?.replace('_', ' ')}</span>
-                    <span>•</span>
-                    <span className="capitalize">{suggestion.status?.replace('_', ' ')}</span>
-                    {suggestion.author?.username && (
-                      <>
-                        <span>•</span>
-                        <span>by {suggestion.author.username}</span>
-                      </>
-                    )}
-                    {suggestion.createdAt && (
-                      <>
-                        <span>•</span>
-                        <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
-                      </>
-                    )}
-                  </div>
-                </Link>
+                  title={suggestion.title}
+                  excerpt={suggestion.body}
+                  badges={[
+                    {
+                      label: suggestion.type?.replace('_', ' ') || 'suggestion',
+                      className: SUGGESTION_TYPE_BADGES[suggestion.type] || 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                    },
+                    {
+                      label: suggestion.status?.replace('_', ' ') || 'open',
+                      className: SUGGESTION_STATUS_BADGES[suggestion.status] || 'bg-gray-100 text-gray-700 border-gray-200'
+                    },
+                  ]}
+                  metadata={[
+                    suggestion.author?.username ? `by ${suggestion.author.username}` : null,
+                    formatMetaDate(suggestion.createdAt),
+                  ].filter(Boolean)}
+                />
               ))}
             </div>
           )}
