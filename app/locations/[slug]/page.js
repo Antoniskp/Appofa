@@ -373,7 +373,7 @@ export default function LocationDetailPage() {
         <LocationBreadcrumb breadcrumb={breadcrumb} homeBreadcrumb={homeBreadcrumb} />
 
         {/* Compact Location Header */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-8">
           {isEditing ? (
             <LocationEditForm
               location={location}
@@ -395,6 +395,7 @@ export default function LocationDetailPage() {
               activePolls={activePolls}
               newsArticles={newsArticles}
               regularArticles={regularArticles}
+              suggestionsCount={suggestions.length}
               entities={entities}
               imageError={imageError}
               setImageError={setImageError}
@@ -406,7 +407,10 @@ export default function LocationDetailPage() {
 
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
-          <div className="mb-6">
+          <div className="mb-8 space-y-3">
+            {mergedBodySections.length > 0 && (
+              <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
+            )}
             {secondaryLoading ? (
               <SkeletonLoader type="card" count={2} />
             ) : mergedBodySections.length > 0 ? (
@@ -417,7 +421,8 @@ export default function LocationDetailPage() {
 
         {/* Location Roles — assigned officials for this location */}
         {!isEditing && location && (
-          <div className="mb-6">
+          <div className="mb-8 space-y-3">
+            <h2 className="text-lg font-semibold text-gray-900">Ρόλοι τοποθεσίας</h2>
             <LocationRoles locationId={location.id} />
           </div>
         )}
@@ -434,6 +439,8 @@ export default function LocationDetailPage() {
                 />
               </div>
             )}
+          <div className="space-y-3">
+            <h2 className="text-lg font-semibold text-gray-900">Περιεχόμενο και δραστηριότητα</h2>
           <LocationTabs
             activeTab={resolvedActiveTab}
             onTabChange={handleTabChange}
@@ -453,6 +460,7 @@ export default function LocationDetailPage() {
               currentUserId: user?.id ?? null,
             }}
           />
+          </div>
           </>
         )}
       </div>
