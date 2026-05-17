@@ -52,4 +52,29 @@ describe('20260517211000-add-profile-visibility-to-users migration', () => {
     expect(rows[0].searchable).toBe(1);
     expect(rows[1].searchable).toBe(0);
   });
+
+  test('up uses PostgreSQL-safe boolean SQL for searchable backfill', async () => {
+    const query = jest.fn();
+    const addColumn = jest.fn();
+    const removeColumn = jest.fn();
+    const describeTable = jest.fn()
+      .mockResolvedValueOnce({ searchable: { type: 'BOOLEAN' } })
+      .mockResolvedValueOnce({
+        searchable: { type: 'BOOLEAN' },
+        profileVisibility: { type: 'ENUM' },
+      });
+
+    await migration.up({
+      describeTable,
+      addColumn,
+      removeColumn,
+      sequelize: {
+        getDialect: () => 'postgres',
+        query,
+      },
+    }, Sequelize);
+
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('"searchable" IS FALSE'));
+    expect(query).not.toHaveBeenCalledWith(expect.stringContaining('"searchable" = 0'));
+  });
 });
