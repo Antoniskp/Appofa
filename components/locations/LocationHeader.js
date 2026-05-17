@@ -65,6 +65,7 @@ export default function LocationHeader({
     || location.wikipedia_data_updated_at
     || headerSections.length > 0
   );
+  const tabHref = (tab) => `/locations/${locationPathId}?tab=${tab}#location-content`;
 
   const shareLocation = async () => {
     const path = `/locations/${locationPathId}`;
@@ -84,7 +85,8 @@ export default function LocationHeader({
       } else {
         throw new Error('share_not_supported');
       }
-    } catch {
+    } catch (error) {
+      console.warn('Location share failed:', error);
       setShareState('error');
       setTimeout(() => setShareState('idle'), 1800);
     }
@@ -270,13 +272,13 @@ export default function LocationHeader({
               <h3 className="text-sm font-semibold text-gray-800">Γρήγορες ενέργειες</h3>
               <div className="mt-3 grid gap-2">
                 <Link
-                  href={`/locations/${locationPathId}?tab=suggestions#location-content`}
+                  href={tabHref('suggestions')}
                   className="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
                 >
                   Προτάσεις περιοχής
                 </Link>
                 <Link
-                  href={`/locations/${locationPathId}?tab=polls#location-content`}
+                  href={tabHref('polls')}
                   className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                 >
                   Ψηφοφορίες περιοχής

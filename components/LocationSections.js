@@ -22,6 +22,10 @@ const SECTION_ICONS = {
   news_sources: NewspaperIcon,
 };
 
+/**
+ * Map announcement priority to UI severity tone.
+ * Priority >= 5: urgent (red), priority 3-4: warning (amber), priority < 3: informational (blue).
+ */
 function getAnnouncementTone(priority) {
   if (priority >= 5) {
     return {
