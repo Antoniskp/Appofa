@@ -19,7 +19,7 @@ module.exports = {
       await queryInterface.sequelize.query(`
         UPDATE "Users"
         SET "profileVisibility" = CASE
-          WHEN "searchable" = FALSE OR "searchable" = 0 THEN 'hidden'
+          WHEN "searchable" IS FALSE THEN 'hidden'
           ELSE 'registered'
         END
       `);
