@@ -56,7 +56,7 @@ export default function LocationHeader({
     return new Intl.NumberFormat('en-US').format(pop);
   };
 
-  const locationPathId = location.slug || location.id;
+  const locationSlugOrId = location.slug || location.id;
 
   const hasExtendedInfo = Boolean(
     location.code
@@ -65,10 +65,10 @@ export default function LocationHeader({
     || location.wikipedia_data_updated_at
     || headerSections.length > 0
   );
-  const tabHref = (tab) => `/locations/${locationPathId}?tab=${tab}#location-content`;
+  const tabHref = (tab) => `/locations/${locationSlugOrId}?tab=${tab}#location-content`;
 
   const shareLocation = async () => {
-    const path = `/locations/${locationPathId}`;
+    const path = `/locations/${locationSlugOrId}`;
     const url = typeof window !== 'undefined'
       ? `${window.location.origin}${path}`
       : path;
@@ -138,7 +138,7 @@ export default function LocationHeader({
                 <span className="font-medium text-gray-700">Συντονιστής:</span>
                 {locationNeedsModerator ? (
                   <Link
-                    href={`/locations/${locationPathId}?apply=moderator`}
+                    href={`/locations/${locationSlugOrId}?apply=moderator`}
                     className="inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-semibold hover:bg-amber-200 transition-colors"
                     title="Γίνε συντονιστής αυτής της τοποθεσίας"
                   >
@@ -256,7 +256,7 @@ export default function LocationHeader({
                 <button
                   type="button"
                   onClick={() => setShowAllChildren(v => !v)}
-                  aria-label="toggle-sublocations"
+                  aria-label="Εναλλαγή προβολής υποπεριοχών"
                   className="mt-3 inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                 >
                   {showAllChildren ? 'Εμφάνιση λιγότερων' : `+${hiddenChildrenCount} ακόμα υποπεριοχές`}

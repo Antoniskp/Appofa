@@ -88,7 +88,9 @@ export default function LocationRoles({ locationId, compact = false }) {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h3 className="text-base font-semibold text-gray-900">Αξιωματούχοι Τοποθεσίας</h3>
-        <span className="text-xs font-medium text-gray-500">{flattenedRoles.length} αναθέσεις</span>
+        <span className="text-xs font-medium text-gray-500">
+          {flattenedRoles.length} {flattenedRoles.length === 1 ? 'ανάθεση' : 'αναθέσεις'}
+        </span>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {flattenedRoles.map((role) => {
@@ -104,7 +106,7 @@ export default function LocationRoles({ locationId, compact = false }) {
           return (
             <div key={role.key} className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
               <div className="mb-2">
-                <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-blue-700">
+                <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-blue-700">
                   {role.title}
                 </span>
               </div>

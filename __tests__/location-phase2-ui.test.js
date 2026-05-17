@@ -96,7 +96,7 @@ describe('Location phase-2 UI', () => {
     });
 
     expect(container.textContent).toContain('Αξιωματούχοι Τοποθεσίας');
-    expect(container.textContent).toContain('1 αναθέσεις');
+    expect(container.textContent).toContain('1 ανάθεση');
     expect(container.textContent).toContain('Δήμαρχος');
     expect(container.textContent).toContain('Προβολή προφίλ');
     expect(container.querySelector('a[href="/persons/maria-papadopoulou"]')).toBeTruthy();

@@ -211,7 +211,7 @@ function AnnouncementsSection({ content }) {
         return (
           <div key={i} className={`rounded-xl border p-4 ${tone.card}`}>
             <div className="mb-2 flex flex-wrap items-center gap-2">
-              <span className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${tone.badge}`}>
+              <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${tone.badge}`}>
                 {tone.label}
               </span>
               {ann.startsAt && (
