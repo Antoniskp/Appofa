@@ -122,8 +122,7 @@ describe('Location UI localized names', () => {
     expect(container.textContent).not.toContain('Περιοχή 9');
     expect(container.textContent).toContain('+2 ακόμα υποπεριοχές');
 
-    const toggleButton = Array.from(container.querySelectorAll('button'))
-      .find((button) => button.textContent.includes('+2 ακόμα υποπεριοχές'));
+    const toggleButton = container.querySelector('button[aria-label="toggle-sublocations"]');
     expect(toggleButton).toBeTruthy();
     await act(async () => {
       toggleButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));

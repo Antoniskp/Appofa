@@ -72,11 +72,12 @@ export default function LocationHeader({
       ? `${window.location.origin}${path}`
       : path;
     const text = `${location.name_local || location.name} — Appofa`;
+    const hasNavigator = typeof navigator !== 'undefined';
 
     try {
-      if (typeof navigator !== 'undefined' && navigator.share) {
+      if (hasNavigator && navigator.share) {
         await navigator.share({ title: text, url });
-      } else if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      } else if (hasNavigator && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
         setShareState('copied');
         setTimeout(() => setShareState('idle'), 1800);
@@ -253,6 +254,7 @@ export default function LocationHeader({
                 <button
                   type="button"
                   onClick={() => setShowAllChildren(v => !v)}
+                  aria-label="toggle-sublocations"
                   className="mt-3 inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                 >
                   {showAllChildren ? 'Εμφάνιση λιγότερων' : `+${hiddenChildrenCount} ακόμα υποπεριοχές`}
