@@ -74,6 +74,12 @@ function FeedItem({ href, title, excerpt, badges = [], metadata = [] }) {
 }
 
 function TabEmptyState({ title, description, actions = [] }) {
+  const getActionButtonClassName = (variant) => (
+    variant === 'secondary'
+      ? 'inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors'
+      : 'inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors'
+  );
+
   return (
     <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 px-5 py-8 text-center">
       <h3 className="text-base font-semibold text-gray-900">{title}</h3>
@@ -81,12 +87,12 @@ function TabEmptyState({ title, description, actions = [] }) {
       {actions.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
           {actions.map((action) => {
-            const className = action.variant === 'secondary'
-              ? 'inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors'
-              : 'inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors';
-
             return (
-              <Link key={`${action.href}-${action.label}`} href={action.href} className={className}>
+              <Link
+                key={`${action.href}-${action.label}`}
+                href={action.href}
+                className={getActionButtonClassName(action.variant)}
+              >
                 {action.label}
               </Link>
             );

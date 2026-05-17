@@ -8,7 +8,7 @@ const TYPE_LABELS = {
   electoral_district: 'Εκλογική περιφέρεια',
 };
 
-function RelatedLocationLink({ location, tone = 'gray' }) {
+function RelatedLocationLink({ location, colorTone = 'gray' }) {
   const toneClasses = {
     blue: 'border-blue-200 bg-blue-50 text-blue-800',
     emerald: 'border-emerald-200 bg-emerald-50 text-emerald-800',
@@ -18,7 +18,7 @@ function RelatedLocationLink({ location, tone = 'gray' }) {
   return (
     <Link
       href={`/locations/${location.slug || location.id}`}
-      className={`block rounded-xl border p-3 transition-colors hover:border-blue-300 hover:bg-blue-50/70 ${toneClasses[tone] || toneClasses.gray}`}
+      className={`block rounded-xl border p-3 transition-colors hover:border-blue-300 hover:bg-blue-50/70 ${toneClasses[colorTone] || toneClasses.gray}`}
     >
       <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
         {TYPE_LABELS[location.type] || location.type}
@@ -68,7 +68,7 @@ export default function LocationRelatedLocations({
           </p>
           <div className="mt-3">
             {parent ? (
-              <RelatedLocationLink location={parent} tone="blue" />
+              <RelatedLocationLink location={parent} colorTone="blue" />
             ) : (
               <p className="rounded-xl border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-500">
                 Αυτή η τοποθεσία βρίσκεται ήδη στο ανώτερο διαθέσιμο επίπεδο.
@@ -111,7 +111,7 @@ export default function LocationRelatedLocations({
             {visibleChildren.length > 0 ? (
               <>
                 {visibleChildren.map((child) => (
-                  <RelatedLocationLink key={child.id} location={child} tone="emerald" />
+                  <RelatedLocationLink key={child.id} location={child} colorTone="emerald" />
                 ))}
                 {children.length > visibleChildren.length && (
                   <p className="text-xs text-gray-500">

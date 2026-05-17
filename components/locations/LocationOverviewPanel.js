@@ -1,6 +1,6 @@
 import Link from 'next/link';
 
-function OverviewCard({ label, value, href, accentClassName, description, emptyHint }) {
+function OverviewCard({ label, value, href, valueClassName, description, emptyHint }) {
   const hasValue = value > 0;
 
   return (
@@ -12,7 +12,7 @@ function OverviewCard({ label, value, href, accentClassName, description, emptyH
             {hasValue ? description : emptyHint}
           </p>
         </div>
-        <span className={`inline-flex min-w-12 justify-center rounded-full border px-3 py-1 text-sm font-semibold ${accentClassName}`}>
+        <span className={`inline-flex min-w-12 justify-center rounded-full border px-3 py-1 text-sm font-semibold ${valueClassName}`}>
           {value}
         </span>
       </div>
@@ -39,7 +39,7 @@ export default function LocationOverviewPanel({
       label: 'Προτάσεις',
       value: summaryCounts.suggestions,
       href: `/locations/${locationIdentifier}?tab=suggestions#location-content`,
-      accentClassName: 'border-indigo-200 bg-indigo-50 text-indigo-700',
+      valueClassName: 'border-indigo-200 bg-indigo-50 text-indigo-700',
       description: 'Υπάρχουν ήδη προτάσεις και αιτήματα συνδεδεμένα με αυτή την περιοχή.',
       emptyHint: 'Δεν υπάρχει ακόμα κάποια πρόταση. Ξεκίνα από την καρτέλα περιεχομένου όταν θελήσεις να ανοίξεις συζήτηση.',
     },
@@ -48,7 +48,7 @@ export default function LocationOverviewPanel({
       label: 'Εκπρόσωποι',
       value: summaryCounts.representatives,
       href: '#location-roles',
-      accentClassName: 'border-sky-200 bg-sky-50 text-sky-700',
+      valueClassName: 'border-sky-200 bg-sky-50 text-sky-700',
       description: 'Υπάρχουν καταγεγραμμένοι εκπρόσωποι ή ρόλοι για τη συγκεκριμένη τοποθεσία.',
       emptyHint: canManageLocations
         ? 'Δεν έχουν οριστεί ακόμη ρόλοι. Χρησιμοποίησε το Edit στην κορυφή για να προσθέσεις υπεύθυνους και εκπροσώπους.'
@@ -59,7 +59,7 @@ export default function LocationOverviewPanel({
       label: 'Ανακοινώσεις',
       value: summaryCounts.announcements,
       href: '#location-local-info',
-      accentClassName: 'border-amber-200 bg-amber-50 text-amber-800',
+      valueClassName: 'border-amber-200 bg-amber-50 text-amber-800',
       description: 'Υπάρχουν ενεργές ανακοινώσεις ή ειδοποιήσεις που αξίζει να δεις πρώτα.',
       emptyHint: canManageLocations
         ? 'Δεν υπάρχει ενεργή ανακοίνωση. Μπορείς να προσθέσεις μία από την επεξεργασία της τοποθεσίας.'
@@ -70,7 +70,7 @@ export default function LocationOverviewPanel({
       label: 'Τοπικά μέσα',
       value: summaryCounts.media,
       href: '#location-local-info',
-      accentClassName: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+      valueClassName: 'border-emerald-200 bg-emerald-50 text-emerald-700',
       description: 'Έχουν ήδη δηλωθεί τοπικές πηγές ενημέρωσης για να παρακολουθείς την περιοχή.',
       emptyHint: canManageLocations
         ? 'Δεν έχουν προστεθεί ακόμη τοπικά μέσα. Συμπλήρωσέ τα από την επεξεργασία όταν είναι διαθέσιμα.'
@@ -81,7 +81,7 @@ export default function LocationOverviewPanel({
       label: 'Κοινότητα',
       value: summaryCounts.community,
       href: `/locations/${locationIdentifier}?tab=users#location-content`,
-      accentClassName: 'border-violet-200 bg-violet-50 text-violet-700',
+      valueClassName: 'border-violet-200 bg-violet-50 text-violet-700',
       description: 'Η τοποθεσία έχει ήδη συνδεδεμένα μέλη και δημόσια προφίλ στην κοινότητα.',
       emptyHint: 'Δεν έχουν συνδεθεί ακόμη δημόσια προφίλ με αυτή την περιοχή.',
     },
@@ -90,7 +90,7 @@ export default function LocationOverviewPanel({
       label: 'Υποπεριοχές',
       value: summaryCounts.children,
       href: '#location-related',
-      accentClassName: 'border-gray-200 bg-gray-50 text-gray-700',
+      valueClassName: 'border-gray-200 bg-gray-50 text-gray-700',
       description: 'Υπάρχουν διαθέσιμες υποπεριοχές για γρήγορη πλοήγηση στη διοικητική ιεραρχία.',
       emptyHint: 'Δεν υπάρχουν καταγεγραμμένες υποπεριοχές κάτω από αυτή την τοποθεσία.',
     },

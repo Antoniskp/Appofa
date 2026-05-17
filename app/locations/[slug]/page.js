@@ -20,6 +20,15 @@ import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
+function countAssignedRepresentatives(roles = []) {
+  return roles.reduce((count, role) => {
+    if (role.repeatable) {
+      return count + (role.assignments || []).filter((assignment) => assignment?.userId).length;
+    }
+    return count + ((role.assignment?.personId || role.assignment?.userId) ? 1 : 0);
+  }, 0);
+}
+
 export default function LocationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -106,11 +115,17 @@ export default function LocationDetailPage() {
         // Fetch all secondary data in parallel
         const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, rolesRes, siblingsRes] =
           await Promise.allSettled([
+            // 0: linked entities/content
             locationAPI.getLocationEntities(locId),
+            // 1: direct children
             locationAPI.getAll({ parent_id: locId }),
+            // 2: published location sections
             locationSectionAPI.getSections(locId),
+            // 3: suggestions feed
             suggestionAPI.getAll({ locationId: locId, limit: 50 }),
+            // 4: assigned representatives/roles
             locationRoleAPI.getRoles(locId),
+            // 5: sibling locations (same parent)
             loc.parent?.id ? locationAPI.getAll({ parent_id: loc.parent.id }) : Promise.resolve({ success: true, locations: [] }),
           ]);
 
@@ -146,13 +161,7 @@ export default function LocationDetailPage() {
         }
 
         if (rolesRes.status === 'fulfilled' && rolesRes.value.success) {
-          const assignedCount = (rolesRes.value.roles || []).reduce((count, role) => {
-            if (role.repeatable) {
-              return count + (role.assignments || []).filter((assignment) => assignment?.userId).length;
-            }
-            return count + ((role.assignment?.personId || role.assignment?.userId) ? 1 : 0);
-          }, 0);
-          setRepresentativesCount(assignedCount);
+          setRepresentativesCount(countAssignedRepresentatives(rolesRes.value.roles || []));
         } else if (rolesRes.status === 'rejected') {
           console.error('Failed to load location roles:', rolesRes.reason);
         }
