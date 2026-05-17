@@ -16,13 +16,23 @@ module.exports = {
     }
 
     if (tableDescription.searchable) {
-      await queryInterface.sequelize.query(`
-        UPDATE "Users"
-        SET "profileVisibility" = CASE
-          WHEN "searchable" IS FALSE THEN 'hidden'
-          ELSE 'registered'
-        END
-      `);
+      const profileVisibilityBackfillSql = dialect === 'postgres'
+        ? `
+          UPDATE "Users"
+          SET "profileVisibility" = CASE
+            WHEN "searchable" IS FALSE THEN 'hidden'::"enum_Users_profileVisibility"
+            ELSE 'registered'::"enum_Users_profileVisibility"
+          END
+        `
+        : `
+          UPDATE "Users"
+          SET "profileVisibility" = CASE
+            WHEN "searchable" IS FALSE THEN 'hidden'
+            ELSE 'registered'
+          END
+        `;
+
+      await queryInterface.sequelize.query(profileVisibilityBackfillSql);
     }
 
     const refreshedTable = await queryInterface.describeTable('Users');
@@ -44,13 +54,23 @@ module.exports = {
     }
 
     if (tableDescription.profileVisibility) {
-      await queryInterface.sequelize.query(`
-        UPDATE "Users"
-        SET "searchable" = CASE
-          WHEN "profileVisibility" = 'hidden' THEN FALSE
-          ELSE TRUE
-        END
-      `);
+      const searchableBackfillSql = dialect === 'postgres'
+        ? `
+          UPDATE "Users"
+          SET "searchable" = CASE
+            WHEN "profileVisibility" = 'hidden'::"enum_Users_profileVisibility" THEN FALSE
+            ELSE TRUE
+          END
+        `
+        : `
+          UPDATE "Users"
+          SET "searchable" = CASE
+            WHEN "profileVisibility" = 'hidden' THEN FALSE
+            ELSE TRUE
+          END
+        `;
+
+      await queryInterface.sequelize.query(searchableBackfillSql);
 
       await queryInterface.removeColumn('Users', 'profileVisibility');
 
