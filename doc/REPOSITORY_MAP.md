@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-16
+> **Last updated**: 2026-05-17
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -32,12 +32,12 @@ This instruction is permanent and must never be removed.
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
 - [Frontend Pages (113)](#frontend-pages-113)
-- [Components (121+)](#components-121)
+- [Components (123+)](#components-123)
 - [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
 - [Constants](#constants)
 - [Migrations (93)](#migrations-93)
-- [Tests (59 files)](#tests-59-files)
+- [Tests (60 files)](#tests-60-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -75,7 +75,7 @@ Appofa/
 │   ├── locations/          # Location pages
 │   └── ...                 # Auth, profile, bookmarks, etc.
 │
-├── components/             # Reusable React components (120+ files)
+├── components/             # Reusable React components (123+ files)
 │   ├── admin/              # Admin UI (5 files)
 │   ├── articles/           # Article components (9 files)
 │   ├── comments/           # Comment components (2 files)
@@ -97,7 +97,7 @@ Appofa/
 ├── hooks/                  # Custom React hooks (6 files)
 ├── config/                 # articleCategories.json, badges.json
 ├── __mocks__/              # Jest manual mocks for node_modules (e.g. next-intl, uuid)
-├── __tests__/              # Jest test suites (47 files)
+├── __tests__/              # Jest test suites (60 files)
 ├── doc/                    # Documentation (30+ files)
 ├── scripts/                # Deployment & setup scripts
 ├── public/                 # Static assets
@@ -578,7 +578,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## Components (121+)
+## Components (123+)
 
 | Directory | Count | Key Components |
 |-----------|-------|----------------|
@@ -589,7 +589,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `follow/` | 1 | FollowButton |
 | `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging; rendered only for guests) |
-| `locations/` | 8 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (Phase 2: balanced two-column top box on desktop with sticky quick actions/info panel, mobile collapsible details, sublocation preview+reveal), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationTabs (Phase 1: scanable feed cards with consistent type/status badges) |
+| `locations/` | 10 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (Phase 2: balanced two-column top box on desktop with sticky quick actions/info panel, mobile collapsible details, sublocation preview+reveal), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (Phase 3: summary cards + guided empty-state copy for proposals/representatives/announcements/media/community/children), LocationRelatedLocations (Phase 3: explicit parent/sibling/child navigation blocks), LocationTabs (Phase 3: scanable feed cards plus richer tab-specific empty states) |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
@@ -601,8 +601,9 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 - `components/layout/Footer.js`: footer newsletter signup card is now guest-only (`useAuth` + `!loading && !user`) and hidden for authenticated users; logged-in newsletter preference is managed from `/profile`.
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading. A fixed uppercase tagline (`Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη`) now appears above slide titles. CTA logic is simplified: guests get two primary actions (`Εγγραφή`, `Βρες την Περιοχή σου`), logged-in users get location + polls, and only `admin`/`moderator` roles see the admin link. `NAV_CARDS` now has three value-proposition cards linking to `/polls`, `/suggestions`, and `/locations`.
 - `app/locations/[slug]/page.js`, `components/locations/LocationHeader.js`, `components/locations/LocationTabs.js`: location detail Phase 2 refinement — top info box alignment is corrected via a balanced desktop split (identity/stats left, sticky quick actions + info panel right), tab section is anchor-targeted with `#location-content` for action links, mobile keeps collapsible secondary metadata, sublocation chips still default to first 8 with `+N ακόμα υποπεριοχές`, and tab feed cards preserve the Phase 1 stronger title/spacing hierarchy with consistent type+status badges.
+- `app/locations/[slug]/page.js`, `components/locations/LocationOverviewPanel.js`, `components/locations/LocationRelatedLocations.js`, `components/LocationRoles.js`, `components/locations/LocationTabs.js`: location detail Phase 3 refinement — the page now inserts a dedicated overview summary block immediately after the header, computes representative counts from `locationRoleAPI`, fetches sibling locations for hierarchy discovery, and uses anchored sections (`#location-overview`, `#location-related`, `#location-local-info`, `#location-roles`, `#location-content`) so summary cards and empty states can guide users to the next useful area. Phase 3 explicitly excludes any map component or placeholder; map support is deferred to Phase 4.
 - `components/LocationSections.js`: announcements now render lighter severity cards with explicit labels (`Ενημέρωση`, `Προειδοποίηση`, `Επείγον`) mapped from priority, reducing visual heaviness while preserving prominence.
-- `components/LocationRoles.js`: representatives list now uses clearer hierarchy/actionability (assignment count, role badges, emphasized names, and direct “Προβολή προφίλ” CTA per card).
+- `components/LocationRoles.js`: representatives list now uses clearer hierarchy/actionability (assignment count, role badges, emphasized names, and direct “Προβολή προφίλ” CTA per card) and can render a public actionable empty state when no assignments exist.
 - `components/SuggestionCard.js`, `components/InlineSuggestionVote.js`, `app/suggestions/[id]/page.js`: vote rows use `flex-wrap` on the parent footer row so vote controls wrap below metadata on narrow viewports.
 - **Tactile depth**: `components/ui/Card.js` default variant uses `shadow-sm border border-gray-200`; elevated variant uses `shadow-md border border-gray-200`; hoverable cards add `hover:shadow-md hover:-translate-y-0.5 transition-all duration-150` for a subtle lift effect. The `.card` CSS utility class (in `app/globals.css`) also gains hover lift + `shadow-sm` border treatment.
 - **Static-page shell stability**: `components/layout/StaticPageLayout.js` outer wrapper now uses explicit non-hover container classes (`bg-white rounded-lg shadow-sm border border-gray-200 p-8`) instead of the generic `card` class. This ensures the static-page content box never shifts on hover in/out (the `.card` CSS utility includes hover lift/transform transitions that are intentional for interactive cards but incorrect for a static-page shell).
@@ -825,13 +826,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (59 files)
+## Tests (60 files)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, electoral-districts, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
+api-client, civicQuestions, electoral-districts, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-phase2-ui, location-phase3-ui, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

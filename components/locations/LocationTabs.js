@@ -73,6 +73,30 @@ function FeedItem({ href, title, excerpt, badges = [], metadata = [] }) {
   );
 }
 
+function TabEmptyState({ title, description, actions = [] }) {
+  return (
+    <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 px-5 py-8 text-center">
+      <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+      <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600">{description}</p>
+      {actions.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+          {actions.map((action) => {
+            const className = action.variant === 'secondary'
+              ? 'inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors'
+              : 'inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors';
+
+            return (
+              <Link key={`${action.href}-${action.label}`} href={action.href} className={className}>
+                {action.label}
+              </Link>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function LocationTabs({
   activeTab,
   onTabChange,
@@ -82,6 +106,8 @@ export default function LocationTabs({
   entities,
   suggestions,
   isAuthenticated,
+  locationIdentifier,
+  canManageLocations = false,
   TAB_LABELS,
   visibleTabs,
   loading,
@@ -154,7 +180,18 @@ export default function LocationTabs({
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
           ) : activePolls.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No polls linked to this location yet.</p>
+            <TabEmptyState
+              title="Δεν υπάρχουν ακόμη ψηφοφορίες"
+              description={
+                canManageLocations
+                  ? 'Δεν έχει συνδεθεί ακόμη κάποια τοπική ψηφοφορία. Μπορείς να δημιουργήσεις μία νέα ή να επιστρέψεις αργότερα όταν δημοσιευτεί σχετικό περιεχόμενο.'
+                  : 'Δεν έχει συνδεθεί ακόμη κάποια τοπική ψηφοφορία για αυτή την περιοχή.'
+              }
+              actions={[
+                { href: '/polls/create', label: 'Δημιούργησε ψηφοφορία' },
+                { href: `/locations/${locationIdentifier}?tab=suggestions#location-content`, label: 'Δες προτάσεις', variant: 'secondary' },
+              ]}
+            />
           ) : (
             <div className="space-y-4">
               {activePolls.map(poll => (
@@ -189,7 +226,13 @@ export default function LocationTabs({
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
           ) : newsArticles.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No news linked to this location yet.</p>
+            <TabEmptyState
+              title="Δεν υπάρχουν ακόμη τοπικές ειδήσεις"
+              description="Δεν έχει συνδεθεί ακόμη ειδησεογραφικό περιεχόμενο με αυτή την τοποθεσία. Δες τις τοπικές πληροφορίες και τα μέσα ενημέρωσης για περισσότερα σημεία αναφοράς."
+              actions={[
+                { href: '#location-local-info', label: 'Τοπικές πληροφορίες', variant: 'secondary' },
+              ]}
+            />
           ) : (
             <div className="space-y-4">
               {newsArticles.map(article => (
@@ -223,7 +266,13 @@ export default function LocationTabs({
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
           ) : regularArticles.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No articles linked to this location yet.</p>
+            <TabEmptyState
+              title="Δεν υπάρχουν ακόμη άρθρα"
+              description="Δεν έχουν συνδεθεί ακόμη άρθρα ανάλυσης ή γνώμης για αυτή την τοποθεσία."
+              actions={[
+                { href: '#location-overview', label: 'Επιστροφή στη σύνοψη', variant: 'secondary' },
+              ]}
+            />
           ) : (
             <div className="space-y-4">
               {regularArticles.map(article => (
@@ -362,7 +411,18 @@ export default function LocationTabs({
           {loading ? (
             <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>
           ) : suggestions.length === 0 ? (
-            <p className="text-center text-gray-500 py-8">No suggestions linked to this location yet.</p>
+            <TabEmptyState
+              title="Δεν υπάρχουν ακόμη προτάσεις"
+              description={
+                canManageLocations
+                  ? 'Δεν έχει ανοίξει ακόμη κάποια οργανωμένη πρόταση για αυτή την περιοχή. Μπορείς να ξεκινήσεις τη συζήτηση με μια νέα πρόταση.'
+                  : 'Δεν έχει ανοίξει ακόμη κάποια οργανωμένη πρόταση για αυτή την περιοχή.'
+              }
+              actions={[
+                { href: '/suggestions/new', label: 'Δημιούργησε πρόταση' },
+                { href: '#location-related', label: 'Δες σχετικές τοποθεσίες', variant: 'secondary' },
+              ]}
+            />
           ) : (
             <div className="space-y-4">
               {suggestions.map(suggestion => (

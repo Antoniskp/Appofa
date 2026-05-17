@@ -105,4 +105,37 @@ describe('Location phase-2 UI', () => {
       root.unmount();
     });
   });
+
+  test('location roles show actionable empty state when no assignments exist', async () => {
+    locationRoleAPI.getRoles.mockResolvedValue({
+      success: true,
+      roles: [],
+    });
+
+    const onEdit = jest.fn();
+    const { container, root } = await renderComponent(LocationRoles, {
+      locationId: 1,
+      showEmptyState: true,
+      canManageLocations: true,
+      onEdit,
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(container.textContent).toContain('Δεν έχουν οριστεί ακόμη ρόλοι');
+    expect(container.textContent).toContain('Προσθήκη ρόλων');
+
+    const button = container.querySelector('button');
+    expect(button).toBeTruthy();
+    await act(async () => {
+      button.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    expect(onEdit).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });
