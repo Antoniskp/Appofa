@@ -15,7 +15,13 @@ function getAssignmentsLabel(count) {
  * Only shows roles that have an assignee (person or user).
  * Unassigned slots are not rendered on the public page.
  */
-export default function LocationRoles({ locationId, compact = false }) {
+export default function LocationRoles({
+  locationId,
+  compact = false,
+  showEmptyState = false,
+  canManageLocations = false,
+  onEdit,
+}) {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,7 +44,7 @@ export default function LocationRoles({ locationId, compact = false }) {
       .finally(() => setLoading(false));
   }, [locationId]);
 
-  if (loading || roles.length === 0) return null;
+  if (loading) return null;
 
   const flattenedRoles = roles.flatMap((role) => {
     if (role.repeatable) {
@@ -57,6 +63,32 @@ export default function LocationRoles({ locationId, compact = false }) {
       assignment: role.assignment,
     }];
   });
+
+  if (flattenedRoles.length === 0) {
+    if (!showEmptyState || compact) return null;
+
+    return (
+      <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center">
+        <h3 className="text-base font-semibold text-gray-900">Δεν έχουν οριστεί ακόμη ρόλοι</h3>
+        <p className="mt-2 text-sm leading-6 text-gray-600">
+          Δεν υπάρχει ακόμη καταγεγραμμένος εκπρόσωπος ή αξιωματούχος για αυτή την τοποθεσία.
+        </p>
+        {canManageLocations && typeof onEdit === 'function' ? (
+          <button
+            type="button"
+            onClick={onEdit}
+            className="mt-4 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+          >
+            Προσθήκη ρόλων
+          </button>
+        ) : (
+          <p className="mt-3 text-sm text-gray-500">
+            Όταν προστεθούν ρόλοι ή εκπρόσωποι, θα εμφανιστούν εδώ.
+          </p>
+        )}
+      </div>
+    );
+  }
 
   if (compact) {
     return (
