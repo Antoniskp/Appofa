@@ -198,13 +198,14 @@ async function createTestUser(overrides = {}) {
     username: `testuser_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     email: `test_${Date.now()}_${Math.random().toString(36).slice(2)}@example.com`,
     role: 'viewer',
-    searchable: true,
+    profileVisibility: 'registered',
     claimStatus: null,
     ...overrides,
   });
 }
 
 describe('userService.searchUsers — taxonomy filtering', () => {
+  const authenticatedViewer = { id: 1, role: 'viewer' };
   let techUser;
   let healthUser;
   let genericUser;
@@ -238,7 +239,7 @@ describe('userService.searchUsers — taxonomy filtering', () => {
   });
 
   test('returns all searchable users when no filters', async () => {
-    const result = await userService.searchUsers('', 1, 100, null, null, null);
+    const result = await userService.searchUsers('', 1, 100, null, null, null, authenticatedViewer);
     const usernames = result.users.map((u) => u.username);
     expect(usernames).toContain('tech_specialist');
     expect(usernames).toContain('health_specialist');
@@ -248,7 +249,7 @@ describe('userService.searchUsers — taxonomy filtering', () => {
   test('filters by domain — returns only tech users', async () => {
     const result = await userService.searchUsers('', 1, 100, null, null, {
       domainId: 'technology-it',
-    });
+    }, authenticatedViewer);
     const usernames = result.users.map((u) => u.username);
     expect(usernames).toContain('tech_specialist');
     expect(usernames).not.toContain('health_specialist');
@@ -258,7 +259,7 @@ describe('userService.searchUsers — taxonomy filtering', () => {
   test('filters by domain — returns only health users', async () => {
     const result = await userService.searchUsers('', 1, 100, null, null, {
       domainId: 'health-medicine',
-    });
+    }, authenticatedViewer);
     const usernames = result.users.map((u) => u.username);
     expect(usernames).toContain('health_specialist');
     expect(usernames).not.toContain('tech_specialist');
@@ -267,7 +268,7 @@ describe('userService.searchUsers — taxonomy filtering', () => {
   test('returns _relevanceScore on users when taxonomy filter is active', async () => {
     const result = await userService.searchUsers('', 1, 100, null, null, {
       domainId: 'technology-it',
-    });
+    }, authenticatedViewer);
     for (const u of result.users) {
       expect(typeof u._relevanceScore).toBe('number');
     }
@@ -296,7 +297,7 @@ describe('userService.searchUsers — taxonomy filtering', () => {
       domainId: 'technology-it',
       professionId: 'software-engineer',
       specializationId: 'frontend-developer',
-    });
+    }, authenticatedViewer);
 
     const narrowEntry = result.users.find((u) => u.username === 'narrow_tech');
     const broadEntry = result.users.find((u) => u.username === 'broad_tech');
@@ -314,14 +315,14 @@ describe('userService.searchUsers — taxonomy filtering', () => {
   test('pagination works with taxonomy filter', async () => {
     const page1 = await userService.searchUsers('', 1, 1, null, null, {
       domainId: 'technology-it',
-    });
+    }, authenticatedViewer);
     expect(page1.users.length).toBe(1);
     expect(page1.pagination.totalPages).toBeGreaterThanOrEqual(1);
     expect(page1.pagination.itemsPerPage).toBe(1);
   });
 
   test('no taxonomy filter returns users without _relevanceScore', async () => {
-    const result = await userService.searchUsers('generic_user', 1, 100, null, null, null);
+    const result = await userService.searchUsers('generic_user', 1, 100, null, null, null, authenticatedViewer);
     // Plain Sequelize model instances don't have _relevanceScore
     for (const u of result.users) {
       expect(u._relevanceScore).toBeUndefined();

@@ -46,7 +46,7 @@ export default function RegisterPage() {
     homeLocationId: null,
     isDiaspora: false,
     residenceCountryCode: null,
-    searchable: true,
+    profileVisibility: 'registered',
     gdprConsent: false,
     gdprMarketing: false,
   });
@@ -600,18 +600,46 @@ export default function RegisterPage() {
                 )}
 
                 <div className="space-y-4">
-                  <div className="flex items-center">
-                    <input
-                      id="searchable"
-                      name="searchable"
-                      type="checkbox"
-                      checked={formData.searchable}
-                      onChange={(e) => updateCheckboxField('searchable', e.target.checked)}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <label htmlFor="searchable" className="ml-2 block text-sm text-gray-900">
-                      {t('searchable')}
-                    </label>
+                  <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900">{t('profile_visibility_label')}</p>
+                      <p className="mt-1 text-xs text-gray-600">{t('profile_visibility_help_register')}</p>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="flex items-start gap-2 text-sm text-gray-800">
+                        <input
+                          type="radio"
+                          name="profileVisibility"
+                          value="hidden"
+                          checked={formData.profileVisibility === 'hidden'}
+                          onChange={handleChange}
+                          className="mt-0.5 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{t('profile_visibility_option_hidden')}</span>
+                      </label>
+                      <label className="flex items-start gap-2 text-sm text-gray-800">
+                        <input
+                          type="radio"
+                          name="profileVisibility"
+                          value="registered"
+                          checked={formData.profileVisibility === 'registered'}
+                          onChange={handleChange}
+                          className="mt-0.5 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{t('profile_visibility_option_registered')}</span>
+                      </label>
+                      <label className="flex items-start gap-2 text-sm text-gray-800">
+                        <input
+                          type="radio"
+                          name="profileVisibility"
+                          value="public"
+                          checked={formData.profileVisibility === 'public'}
+                          onChange={handleChange}
+                          className="mt-0.5 h-4 w-4 border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span>{t('profile_visibility_option_public')}</span>
+                      </label>
+                    </div>
                   </div>
 
                   <div className="flex items-start">

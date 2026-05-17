@@ -457,11 +457,11 @@ const authController = {
     }
   },
 
-  // Get public user profile (basic data, only if searchable)
+  // Get public user profile with visibility enforcement
   getPublicUserProfile: async (req, res) => {
     try {
       const userId = parseInt(req.params.id, 10);
-      const user = await userService.getPublicUserProfile(userId);
+      const user = await userService.getPublicUserProfile(userId, req.user || null);
       res.status(200).json({ success: true, data: { user } });
     } catch (error) {
       if (error.status) {
@@ -472,11 +472,11 @@ const authController = {
     }
   },
 
-  // Get public user profile by username (basic data, only if searchable)
+  // Get public user profile by username with visibility enforcement
   getPublicUserProfileByUsername: async (req, res) => {
     try {
       const { username } = req.params;
-      const user = await userService.getPublicUserProfileByUsername(username);
+      const user = await userService.getPublicUserProfileByUsername(username, req.user || null);
       res.status(200).json({ success: true, data: { user } });
     } catch (error) {
       if (error.status) {
@@ -487,7 +487,7 @@ const authController = {
     }
   },
 
-  // Search users (public, returns only searchable users)
+  // Search users with visibility enforcement
   searchUsers: async (req, res) => {
     try {
       const {
@@ -524,7 +524,7 @@ const authController = {
         }
       }
 
-      const result = await userService.searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery);
+      const result = await userService.searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery, req.user || null);
       res.status(200).json({ success: true, data: result });
     } catch (error) {
       if (error.status) {

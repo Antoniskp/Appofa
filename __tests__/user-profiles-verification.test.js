@@ -202,7 +202,7 @@ describe('Enhanced User Profiles and Verification', () => {
       adminUser.bio = 'My bio';
       adminUser.socialLinks = { github: 'https://github.com/admin' };
       adminUser.mobileTel = '+30 211 9999999';
-      adminUser.searchable = true;
+      adminUser.profileVisibility = 'registered';
       await adminUser.save();
     });
 
@@ -227,6 +227,85 @@ describe('Enhanced User Profiles and Verification', () => {
       expect(res.body.data.user.socialLinks).toMatchObject({ github: 'https://github.com/admin' });
       expect(res.body.data.user).toHaveProperty('isVerified');
       expect(res.body.data.user.mobileTel).toBeUndefined();
+    });
+  });
+
+  describe('Profile visibility access rules', () => {
+    test('guest can view only public profiles', async () => {
+      const adminUser = await User.findByPk(adminUserId);
+      adminUser.profileVisibility = 'public';
+      await adminUser.save();
+
+      const publicRes = await request(app)
+        .get(`/api/auth/users/username/${adminUser.username}/public`);
+      expect(publicRes.status).toBe(200);
+
+      adminUser.profileVisibility = 'registered';
+      await adminUser.save();
+
+      const registeredRes = await request(app)
+        .get(`/api/auth/users/username/${adminUser.username}/public`);
+      expect(registeredRes.status).toBe(404);
+    });
+
+    test('authenticated users can view registered profiles but not hidden profiles', async () => {
+      const adminUser = await User.findByPk(adminUserId);
+      adminUser.profileVisibility = 'registered';
+      await adminUser.save();
+
+      const registeredRes = await request(app)
+        .get(`/api/auth/users/username/${adminUser.username}/public`)
+        .set('Authorization', `Bearer ${viewerToken}`);
+      expect(registeredRes.status).toBe(200);
+
+      adminUser.profileVisibility = 'hidden';
+      await adminUser.save();
+
+      const hiddenRes = await request(app)
+        .get(`/api/auth/users/username/${adminUser.username}/public`)
+        .set('Authorization', `Bearer ${viewerToken}`);
+      expect(hiddenRes.status).toBe(404);
+    });
+
+    test('owner can still access own hidden profile', async () => {
+      const viewerUser = await User.findByPk(viewerUserId);
+      viewerUser.profileVisibility = 'hidden';
+      await viewerUser.save();
+
+      const ownHiddenRes = await request(app)
+        .get(`/api/auth/users/username/${viewerUser.username}/public`)
+        .set('Authorization', `Bearer ${viewerToken}`);
+      expect(ownHiddenRes.status).toBe(200);
+    });
+
+    test('search endpoint enforces guest/auth visibility rules', async () => {
+      const adminUser = await User.findByPk(adminUserId);
+      adminUser.profileVisibility = 'public';
+      await adminUser.save();
+
+      const viewerUser = await User.findByPk(viewerUserId);
+      viewerUser.profileVisibility = 'registered';
+      await viewerUser.save();
+
+      const outsiderUser = await User.findByPk(outsiderUserId);
+      outsiderUser.profileVisibility = 'hidden';
+      await outsiderUser.save();
+
+      const guestSearch = await request(app).get('/api/auth/users/search');
+      expect(guestSearch.status).toBe(200);
+      const guestIds = (guestSearch.body.data?.users || []).map((u) => u.id);
+      expect(guestIds).toContain(adminUserId);
+      expect(guestIds).not.toContain(viewerUserId);
+      expect(guestIds).not.toContain(outsiderUserId);
+
+      const authSearch = await request(app)
+        .get('/api/auth/users/search')
+        .set('Authorization', `Bearer ${viewerToken}`);
+      expect(authSearch.status).toBe(200);
+      const authIds = (authSearch.body.data?.users || []).map((u) => u.id);
+      expect(authIds).toContain(adminUserId);
+      expect(authIds).toContain(viewerUserId);
+      expect(authIds).not.toContain(outsiderUserId);
     });
   });
 

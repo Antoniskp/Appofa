@@ -112,7 +112,7 @@ Appofa/
 
 | Model | Table | Key Fields | Key Associations |
 |-------|-------|-----------|------------------|
-| User | Users | id, username (nullable), email (nullable), password, resetPasswordTokenHash, resetPasswordExpires, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, githubAvatar, googleAvatar, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, searchable, expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
+| User | Users | id, username (nullable), email (nullable), password, resetPasswordTokenHash, resetPasswordExpires, role, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, githubAvatar, googleAvatar, slug (nullable, unique), photo, claimStatus (null=regular user, unclaimed/pending/claimed=person profile), claimedByUserId, createdByUserId, profileVisibility (`hidden\|registered\|public`), expertiseArea, displayBadge | hasMany: Article, Poll, PollVote, Message, Bookmark, Comment, Formation, UserBadge; belongsToMany: User (follows); self-referential: claimedBy, claimVerifiedBy, createdByModerator |
 | Article | Articles | id, title, content, summary, bannerImageUrl, authorId, status, type, category, publishedAt | belongsTo: User; hasMany: Comment; belongsToMany: Tag (via TaggableItems) |
 | Poll | Polls | id, title, description, category, type, visibility, voteRestriction, resultsVisibility, organizationId | belongsTo: User, Location, Organization; hasMany: PollOption, PollVote; belongsToMany: Tag (via TaggableItems) |
 | PollOption | PollOptions | id, title, description, mediaUrl, pollId, userId | belongsTo: Poll, User; hasMany: PollVote |
@@ -173,7 +173,7 @@ Appofa/
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | GET | /csrf | — | Get CSRF token |
-| POST | /register | — | Register (supports optional `nationality`, `homeLocationId`, and diaspora payload fields; frontend `/register` uses a 3-step wizard with inline step-1 password validation and in-step non-GR diaspora handling in step 2) |
+| POST | /register | — | Register (supports optional `nationality`, `homeLocationId`, diaspora payload fields, and `profileVisibility`=`hidden\|registered\|public`; frontend `/register` uses a 3-step wizard with inline step-1 password validation, in-step non-GR diaspora handling in step 2, and explicit profile-visibility selection in step 3) |
 | POST | /login | — | Login |
 | POST | /forgot-password | — | Request password reset email (generic response, token hashed in DB) |
 | POST | /reset-password | — | Reset password with token |
@@ -497,7 +497,7 @@ Appofa/
 | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics (inline password validation before advancing) → optional nationality/location with inline non-GR diaspora toggle/residence handling → GDPR/summary, plus GR quick-select onboarding and moderator-interest opt-in; `/verify-email` handles token confirm + expired-token resend flow) |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile with sticky 4-tab layout (`Profile`, `Location & Politics`, `Skills & Interests`, `Settings`); tab content is split into `app/profile/tabs/*` while form state/effects/handlers are centralized in `hooks/useProfileForm.js`; includes profile-completeness card, newsletter preference toggle, and `?verified=1` success toast handling |
-| `/users`, `/users/[username]` | Unified people directory — three-tab segmented control (Όλοι / Εγγεγραμμένοι / Πρόσωπα, default: Όλοι); one shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) across all tabs; *All* mode shows registered-user cards (auth-required, first page) + person-profile cards (infinite scroll) in one grid with section headers; *Πρόσωπα* tab shows unclaimed/claimed person profiles with infinite scroll; *Εγγεγραμμένοι* tab shows paginated registered users (auth-gated); person cards are fully clickable (no separate button); badges distinguish registered users from unclaimed/pending profiles; compact 🏆 worthy-citizens button in the tab-bar row; `/discover-people` and `/persons` list pages are **retired** (404 — not redirects); person detail (`/persons/[slug]`) and claim pages are preserved |
+| `/users`, `/users/[username]` | Unified people directory with visibility enforcement (`profileVisibility`): guests see only `public` profiles, authenticated users see `registered+public`, and `hidden` profiles are excluded from discovery. Profile page access is now optional-auth and enforces the same model (owner/admin/moderator can still access hidden directly). Shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) remains across tabs; person cards are fully clickable; `/discover-people` and `/persons` list pages are retired (404). |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
 | `/my-votes`, `/my-polls`, `/my-news` | User content |
@@ -698,7 +698,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 
 ---
 
-## Migrations (93)
+## Migrations (94)
 
 Listed chronologically. Core schema → feature additions → dated refactors.
 
@@ -712,6 +712,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | 002 | 002-create-location-links-table.js | LocationLinks table |
 | 003 | 003-add-user-columns.js | Additional user columns |
 | 004 | 004-add-user-searchable.js | User searchable flag |
+| 20260517211000 | 20260517211000-add-profile-visibility-to-users.js | Adds `Users.profileVisibility` (`hidden/registered/public`), backfills from legacy `searchable` (`false->hidden`, `true->registered`), then removes runtime `searchable` column |
 | 005 | 005-add-location-wikipedia-url.js | Location Wikipedia URL |
 | 006 | 006-create-poll-tables.js | Polls, PollOptions, PollVotes |
 | 007 | 007-add-poll-to-location-links.js | Poll-location links |

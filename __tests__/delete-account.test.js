@@ -123,7 +123,7 @@ describe('Delete Account endpoint', () => {
     expect(scrubbed).not.toBeNull();
     expect(scrubbed.email).toBe(`deleted-user-${fresh.id}@deleted.invalid`);
     expect(scrubbed.password).toBeNull();
-    expect(scrubbed.searchable).toBe(false);
+    expect(scrubbed.profileVisibility).toBe('hidden');
   });
 
   test('should purge account successfully', async () => {

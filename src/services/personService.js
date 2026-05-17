@@ -11,6 +11,7 @@ const {
   DOMAIN_MAP,
 } = require('../utils/professionTaxonomy');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
 const politicalParties = require('../../config/politicalParties.json');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -215,7 +216,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
     email: null,
     password: null,
     role: 'viewer',
-    searchable: true,
+    profileVisibility: PROFILE_VISIBILITY.PUBLIC,
     claimStatus: 'unclaimed',
     createdByUserId: moderatorUserId,
     claimedByUserId: null,
@@ -355,7 +356,11 @@ async function approveClaim(moderatorUserId, moderatorRole, profileId) {
     );
 
     // Sync name fields to claiming user if not already set
-    const nameUpdates = { searchable: true };
+    const nameUpdates = {
+      profileVisibility: claimingUser.profileVisibility === PROFILE_VISIBILITY.HIDDEN
+        ? PROFILE_VISIBILITY.REGISTERED
+        : claimingUser.profileVisibility,
+    };
     if (!claimingUser.firstNameNative && unclaimedProfile.firstNameNative) nameUpdates.firstNameNative = unclaimedProfile.firstNameNative;
     if (!claimingUser.lastNameNative && unclaimedProfile.lastNameNative) nameUpdates.lastNameNative = unclaimedProfile.lastNameNative;
     if (!claimingUser.firstNameEn && unclaimedProfile.firstNameEn) nameUpdates.firstNameEn = unclaimedProfile.firstNameEn;
@@ -536,7 +541,7 @@ async function searchPersons(search, limit = 8) {
   return users;
 }
 
-async function unifiedSearch(search, limit = 8, nationality = null) {
+async function unifiedSearch(search, limit = 8, nationality = null, viewer = null) {
   const lim = Math.min(50, parseInt(limit, 10) || 8);
 
   // Validate and normalize nationality filter (must be a 2-letter ISO code)
@@ -546,7 +551,10 @@ async function unifiedSearch(search, limit = 8, nationality = null) {
 
   // 1. Search real users (claimStatus IS NULL)
   let realUsers = [];
-  const realUserBaseWhere = { searchable: true, claimStatus: null };
+  const realUserBaseWhere = {
+    claimStatus: null,
+    profileVisibility: { [Op.in]: getDiscoverableVisibilities(!!viewer) },
+  };
   if (nationalityFilter) realUserBaseWhere.nationality = nationalityFilter;
 
   if (search && search.trim()) {

@@ -765,22 +765,22 @@ describe('Comment System Tests', () => {
         .set(csrfHeaders(viewerUserId))
         .send({ profileCommentsEnabled: true, profileCommentsLocked: false });
     });
-    it('should allow user to update searchable via profile settings', async () => {
+    it('should allow user to update profileVisibility via profile settings', async () => {
       const res = await request(app)
         .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .set(csrfHeaders(viewerUserId))
-        .send({ searchable: false });
+        .send({ profileVisibility: 'hidden' });
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.searchable).toBe(false);
+      expect(res.body.data.profileVisibility).toBe('hidden');
 
-      // Restore searchable
+      // Restore visibility
       await request(app)
         .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .set(csrfHeaders(viewerUserId))
-        .send({ searchable: true });
+        .send({ profileVisibility: 'registered' });
     });
 
     it('should update all three profile settings at once', async () => {
@@ -788,20 +788,20 @@ describe('Comment System Tests', () => {
         .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .set(csrfHeaders(viewerUserId))
-        .send({ profileCommentsEnabled: true, profileCommentsLocked: false, searchable: true });
+        .send({ profileCommentsEnabled: true, profileCommentsLocked: false, profileVisibility: 'registered' });
       expect(res.status).toBe(200);
       expect(res.body.data.profileCommentsEnabled).toBe(true);
       expect(res.body.data.profileCommentsLocked).toBe(false);
-      expect(res.body.data.searchable).toBe(true);
+      expect(res.body.data.profileVisibility).toBe('registered');
     });
 
-    it('should exclude non-searchable users from search results', async () => {
-      // Set viewer as non-searchable
+    it('should exclude hidden users from search results', async () => {
+      // Set viewer as hidden
       await request(app)
         .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .set(csrfHeaders(viewerUserId))
-        .send({ searchable: false });
+        .send({ profileVisibility: 'hidden' });
 
       const res = await request(app)
         .get('/api/auth/users/search')
@@ -811,12 +811,12 @@ describe('Comment System Tests', () => {
       const ids = (res.body.data?.users || []).map((u) => u.id);
       expect(ids).not.toContain(viewerUserId);
 
-      // Restore searchable
+      // Restore visibility
       await request(app)
         .patch(`/api/users/${viewerUserId}/profile-comment-settings`)
         .set('Authorization', `Bearer ${viewerToken}`)
         .set(csrfHeaders(viewerUserId))
-        .send({ searchable: true });
+        .send({ profileVisibility: 'registered' });
     });
   });
 

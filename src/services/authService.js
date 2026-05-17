@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { User } = require('../models');
+const { PROFILE_VISIBILITY, isValidProfileVisibility } = require('../utils/profileVisibility');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -176,7 +177,7 @@ async function registerUser({
   firstNameNative,
   lastNameNative,
   nationality,
-  searchable,
+  profileVisibility,
   isDiaspora,
   residenceCountryCode,
   homeLocationId
@@ -204,6 +205,16 @@ async function registerUser({
     throw new ServiceError(400, 'Nationality code must be at most 5 characters.');
   }
 
+  const normalizedProfileVisibility = profileVisibility == null || profileVisibility === ''
+    ? PROFILE_VISIBILITY.REGISTERED
+    : String(profileVisibility).trim().toLowerCase();
+  if (!isValidProfileVisibility(normalizedProfileVisibility)) {
+    throw new ServiceError(
+      400,
+      `profileVisibility must be one of: ${PROFILE_VISIBILITY.HIDDEN}, ${PROFILE_VISIBILITY.REGISTERED}, ${PROFILE_VISIBILITY.PUBLIC}.`
+    );
+  }
+
   const existingUser = await User.findOne({
     where: {
       [Op.or]: [{ email: emailResult.value }, { username: usernameResult.value }]
@@ -227,7 +238,7 @@ async function registerUser({
     firstNameNative: firstNameNativeResult.value,
     lastNameNative: lastNameNativeResult.value,
     nationality: normalizedNationality,
-    searchable: searchable !== undefined ? Boolean(searchable) : true,
+    profileVisibility: normalizedProfileVisibility,
     isDiaspora: Boolean(isDiaspora),
     residenceCountryCode: residenceCountryCode ? String(residenceCountryCode).trim().toUpperCase() : null,
     homeLocationId: normalizedHomeLocationId,

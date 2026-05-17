@@ -41,5 +41,20 @@ describe('authService.registerUser diaspora fields', () => {
     expect(persisted.isDiaspora).toBe(true);
     expect(persisted.residenceCountryCode).toBe('DE');
     expect(persisted.homeLocationId).toBe(homeCountry.id);
+    expect(persisted.profileVisibility).toBe('registered');
+  });
+
+  it('accepts explicit profileVisibility during registration', async () => {
+    const { user } = await authService.registerUser({
+      username: 'publicprofiletest',
+      email: 'public-profile-register@test.com',
+      password: 'Public123!',
+      firstNameNative: 'Public',
+      lastNameNative: 'Profile',
+      profileVisibility: 'public',
+    });
+
+    const persisted = await User.findByPk(user.id);
+    expect(persisted.profileVisibility).toBe('public');
   });
 });

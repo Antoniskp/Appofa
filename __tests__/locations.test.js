@@ -119,7 +119,7 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: alpha.id,
-          searchable: true
+          profileVisibility: 'registered'
         }),
         User.create({
           username: 'mostusersunion_home_only',
@@ -127,7 +127,7 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: alpha.id,
-          searchable: true
+          profileVisibility: 'registered'
         }),
         User.create({
           username: 'mostusersunion_hidden_home',
@@ -135,14 +135,14 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: alpha.id,
-          searchable: false
+          profileVisibility: 'hidden'
         }),
         User.create({
           username: 'mostusersunion_beta_linked',
           email: 'mostusersunion_beta_linked@test.com',
           password: 'password123',
           role: 'viewer',
-          searchable: true
+          profileVisibility: 'registered'
         })
       ]);
 
@@ -190,7 +190,7 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: municipality.id,
-          searchable: true
+          profileVisibility: 'registered'
         }),
         User.create({
           username: 'mostusers_tree_home_unclaimed',
@@ -198,7 +198,7 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: municipality.id,
-          searchable: true,
+          profileVisibility: 'registered',
           claimStatus: 'unclaimed'
         })
       ]);
@@ -355,7 +355,7 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: child.id,
-          searchable: true
+          profileVisibility: 'registered'
         }),
         User.create({
           username: 'locstats_linked_only_real',
@@ -369,7 +369,7 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: child.id,
-          searchable: true
+          profileVisibility: 'registered'
         }),
         User.create({
           username: 'locstats_linked_unclaimed',
@@ -384,7 +384,7 @@ describe('Location API Tests', () => {
           password: 'password123',
           role: 'viewer',
           homeLocationId: child.id,
-          searchable: true,
+          profileVisibility: 'registered',
           claimStatus: 'unclaimed'
         })
       ]);
@@ -896,7 +896,7 @@ describe('Location API Tests', () => {
         password: 'password123',
         role: 'moderator',
         homeLocationId: moderatorLocation.id,
-        searchable: true
+        profileVisibility: 'registered'
       });
 
       unclaimedProfile = await User.create({
@@ -907,7 +907,7 @@ describe('Location API Tests', () => {
         lastNameNative: 'Πρόσωπο',
         claimStatus: 'unclaimed',
         slug: 'adiekdikito-prosopo',
-        searchable: true
+        profileVisibility: 'registered'
       });
 
       await LocationLink.create({
@@ -973,7 +973,7 @@ describe('Location API Tests', () => {
     });
 
     it('should not show moderator with searchable=false in users tab', async () => {
-      await moderatorUser.update({ searchable: false });
+      await moderatorUser.update({ profileVisibility: 'hidden' });
 
       const response = await request(app)
         .get(`/api/locations/${moderatorLocation.id}/entities`)
@@ -985,7 +985,7 @@ describe('Location API Tests', () => {
       expect(mod).toBeUndefined();
 
       // Restore
-      await moderatorUser.update({ searchable: true });
+      await moderatorUser.update({ profileVisibility: 'registered' });
     });
 
     it('should split regular users and unclaimed person profiles in entities payload', async () => {
@@ -1029,7 +1029,7 @@ describe('Location API Tests', () => {
         lastNameNative: 'Πρόσωπο',
         claimStatus: 'unclaimed',
         slug: 'koinovouleftiko-prosopo',
-        searchable: true,
+        profileVisibility: 'registered',
         constituencyId: prefectureRes.body.location.id
       });
 
@@ -1086,7 +1086,7 @@ describe('Location API Tests', () => {
         .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id,
-          searchable: true
+          profileVisibility: 'registered'
         })
         .expect(200);
 
@@ -1219,7 +1219,7 @@ describe('Location API Tests', () => {
         .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id,
-          searchable: true
+          profileVisibility: 'registered'
         })
         .expect(200);
 
@@ -1230,7 +1230,7 @@ describe('Location API Tests', () => {
         .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id,
-          searchable: true
+          profileVisibility: 'registered'
         })
         .expect(200);
 
@@ -1285,7 +1285,7 @@ describe('Location API Tests', () => {
         .set('x-csrf-token', viewerCsrfToken)
         .send({
           homeLocationId: testLocationForSync.id,
-          searchable: true
+          profileVisibility: 'registered'
         })
         .expect(200);
 

@@ -51,12 +51,12 @@ router.delete('/users/:id', apiLimiter, authMiddleware, csrfProtection, checkRol
 // Registered users only: check if a username is available
 router.get('/check-username', apiLimiter, authMiddleware, authController.checkUsernameAvailability);
 
-// Registered users only: search visible users
-router.get('/users/search', apiLimiter, authMiddleware, authController.searchUsers);
+// Public search endpoint (guests see public profiles only; authenticated users see registered+public)
+router.get('/users/search', optionalAuthMiddleware, apiLimiter, authController.searchUsers);
 
-// Registered users only: public profile data for searchable users
-router.get('/users/:id/public', apiLimiter, authMiddleware, authController.getPublicUserProfile);
-router.get('/users/username/:username/public', apiLimiter, authMiddleware, authController.getPublicUserProfileByUsername);
+// Public profile endpoints with visibility enforcement
+router.get('/users/:id/public', optionalAuthMiddleware, apiLimiter, authController.getPublicUserProfile);
+router.get('/users/username/:username/public', optionalAuthMiddleware, apiLimiter, authController.getPublicUserProfileByUsername);
 
 // Public stats route
 router.get('/users/public-stats', apiLimiter, authController.getPublicUserStats);

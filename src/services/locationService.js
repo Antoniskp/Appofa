@@ -4,6 +4,7 @@ const { sequelize, Location, LocationLink, Article, User, UserLocationRole, Poll
 const { Op, fn, col, where, QueryTypes } = require('sequelize');
 const { fetchWikipediaData } = require('../utils/wikipediaFetcher');
 const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
+const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -208,7 +209,7 @@ const getLocations = async (queryParams) => {
           SELECT lt.ancestor_id AS location_id, u.id AS user_id
           FROM location_tree lt
           JOIN "Users" u ON u."homeLocationId" = lt.descendant_id
-          WHERE u.searchable = true
+          WHERE u."profileVisibility" != 'hidden'
             AND u."claimStatus" IS NULL
         ),
         user_counts AS (
@@ -405,7 +406,7 @@ const getLocation = async (id) => {
     const homeOnlyCount = await User.count({
       where: {
         homeLocationId: { [Op.in]: allLocationIds },
-        searchable: true,
+        profileVisibility: { [Op.ne]: PROFILE_VISIBILITY.HIDDEN },
         claimStatus: null,
         ...(linkedUserIds.length > 0 ? { id: { [Op.notIn]: linkedUserIds } } : {})
       }
@@ -831,7 +832,9 @@ const getLocationEntities = async (locationId, queryParams, user) => {
       const homeLocationUsers = await User.findAll({
         where: {
           homeLocationId: { [Op.in]: [locationId, ...descendantIds] },
-          searchable: true
+          profileVisibility: {
+            [Op.in]: getDiscoverableVisibilities(!!user),
+          }
         },
         attributes: ['id']
       });
@@ -864,7 +867,9 @@ const getLocationEntities = async (locationId, queryParams, user) => {
     const userEntities = combinedUserIds.length > 0 ? await User.findAll({
       where: {
         id: combinedUserIds,
-        searchable: true
+        profileVisibility: {
+          [Op.in]: getDiscoverableVisibilities(!!user),
+        }
       },
       attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'claimStatus', 'photo', 'slug']
     }) : [];

@@ -1,7 +1,9 @@
+const { Op } = require('sequelize');
 const { Follow, User } = require('../models');
 const { normalizeInteger } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
 const notificationService = require('../services/notificationService');
+const { PROFILE_VISIBILITY } = require('../utils/profileVisibility');
 
 const FOLLOW_LIST_LIMIT = 20;
 
@@ -12,7 +14,7 @@ const resolveTargetUser = async (req, res) => {
     return null;
   }
   const targetId = idResult.value;
-  const target = await User.findByPk(targetId, { attributes: ['id', 'searchable'] });
+  const target = await User.findByPk(targetId, { attributes: ['id', 'profileVisibility'] });
   if (!target) {
     res.status(404).json({ success: false, message: 'User not found.' });
     return null;
@@ -20,11 +22,21 @@ const resolveTargetUser = async (req, res) => {
   return target;
 };
 
+const canAccessTargetProfile = (target, requester) => {
+  if (!target || !requester) return false;
+  if (requester.id === target.id) return true;
+  if (['admin', 'moderator'].includes(requester.role)) return true;
+  return target.profileVisibility !== PROFILE_VISIBILITY.HIDDEN;
+};
+
 const followController = {
   follow: async (req, res) => {
     try {
       const target = await resolveTargetUser(req, res);
       if (!target) return;
+      if (!canAccessTargetProfile(target, req.user)) {
+        return res.status(403).json({ success: false, message: 'This profile is private.' });
+      }
 
       if (target.id === req.user.id) {
         return res.status(400).json({ success: false, message: 'You cannot follow yourself.' });
@@ -55,6 +67,9 @@ const followController = {
     try {
       const target = await resolveTargetUser(req, res);
       if (!target) return;
+      if (!canAccessTargetProfile(target, req.user)) {
+        return res.status(403).json({ success: false, message: 'This profile is private.' });
+      }
 
       if (target.id === req.user.id) {
         return res.status(400).json({ success: false, message: 'You cannot unfollow yourself.' });
@@ -78,6 +93,9 @@ const followController = {
     try {
       const target = await resolveTargetUser(req, res);
       if (!target) return;
+      if (!canAccessTargetProfile(target, req.user)) {
+        return res.status(403).json({ success: false, message: 'This profile is private.' });
+      }
 
       const existing = await Follow.findOne({
         where: { followerId: req.user.id, followingId: target.id }
@@ -97,6 +115,9 @@ const followController = {
     try {
       const target = await resolveTargetUser(req, res);
       if (!target) return;
+      if (!canAccessTargetProfile(target, req.user)) {
+        return res.status(403).json({ success: false, message: 'This profile is private.' });
+      }
 
       const [followersCount, followingCount] = await Promise.all([
         Follow.count({ where: { followingId: target.id } }),
@@ -118,8 +139,8 @@ const followController = {
       const target = await resolveTargetUser(req, res);
       if (!target) return;
 
-      // Non-searchable user's lists are only visible to themselves
-      if (!target.searchable && req.user.id !== target.id) {
+      // Hidden user's lists are only visible to self/admin/moderator
+      if (!canAccessTargetProfile(target, req.user)) {
         return res.status(403).json({ success: false, message: 'This profile is private.' });
       }
 
@@ -132,8 +153,8 @@ const followController = {
         include: [{
           model: User,
           as: 'follower',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role', 'searchable'],
-          where: { searchable: true }
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role', 'profileVisibility'],
+          where: { profileVisibility: { [Op.ne]: PROFILE_VISIBILITY.HIDDEN } }
         }],
         order: [['createdAt', 'DESC']],
         limit,
@@ -168,8 +189,8 @@ const followController = {
       const target = await resolveTargetUser(req, res);
       if (!target) return;
 
-      // Non-searchable user's lists are only visible to themselves
-      if (!target.searchable && req.user.id !== target.id) {
+      // Hidden user's lists are only visible to self/admin/moderator
+      if (!canAccessTargetProfile(target, req.user)) {
         return res.status(403).json({ success: false, message: 'This profile is private.' });
       }
 
@@ -182,8 +203,8 @@ const followController = {
         include: [{
           model: User,
           as: 'followingUser',
-          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role', 'searchable'],
-          where: { searchable: true }
+          attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role', 'profileVisibility'],
+          where: { profileVisibility: { [Op.ne]: PROFILE_VISIBILITY.HIDDEN } }
         }],
         order: [['createdAt', 'DESC']],
         limit,

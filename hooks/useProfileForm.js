@@ -55,7 +55,7 @@ export function useProfileForm() {
   const [interactionSettings, setInteractionSettings] = useState({
     profileCommentsEnabled: true,
     profileCommentsLocked: false,
-    searchable: true,
+    profileVisibility: 'registered',
   });
   const [savingInteraction, setSavingInteraction] = useState(false);
   const [newsletterPreference, setNewsletterPreference] = useState({
@@ -127,7 +127,7 @@ export function useProfileForm() {
           homeLocationId,
           profileCommentsEnabled,
           profileCommentsLocked,
-          searchable,
+          profileVisibility,
           mobileTel,
           bio,
           socialLinks,
@@ -178,7 +178,7 @@ export function useProfileForm() {
         setInteractionSettings({
           profileCommentsEnabled: profileCommentsEnabled !== undefined ? profileCommentsEnabled : true,
           profileCommentsLocked: profileCommentsLocked !== undefined ? profileCommentsLocked : false,
-          searchable: searchable !== undefined ? searchable : true,
+          profileVisibility: profileVisibility || 'registered',
         });
         setShowHomeLocation(false);
         setGithubLinked(!!githubId);

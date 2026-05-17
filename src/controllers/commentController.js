@@ -1,6 +1,7 @@
 const { Comment, User, Article, Poll, CivicQuestion } = require('../models');
 const badgeService = require('../services/badgeService');
 const notificationService = require('../services/notificationService');
+const { isValidProfileVisibility, VALID_PROFILE_VISIBILITY } = require('../utils/profileVisibility');
 
 const MAX_DEPTH = 5;
 
@@ -360,7 +361,16 @@ const commentController = {
       const updates = {};
       if (typeof req.body.profileCommentsEnabled === 'boolean') updates.profileCommentsEnabled = req.body.profileCommentsEnabled;
       if (typeof req.body.profileCommentsLocked === 'boolean') updates.profileCommentsLocked = req.body.profileCommentsLocked;
-      if (typeof req.body.searchable === 'boolean') updates.searchable = req.body.searchable;
+      if (req.body.profileVisibility !== undefined) {
+        const normalizedVisibility = String(req.body.profileVisibility || '').trim().toLowerCase();
+        if (!isValidProfileVisibility(normalizedVisibility)) {
+          return res.status(400).json({
+            success: false,
+            message: `profileVisibility must be one of: ${VALID_PROFILE_VISIBILITY.join(', ')}.`,
+          });
+        }
+        updates.profileVisibility = normalizedVisibility;
+      }
 
       await user.update(updates);
       return res.json({
@@ -369,7 +379,7 @@ const commentController = {
         data: {
           profileCommentsEnabled: user.profileCommentsEnabled,
           profileCommentsLocked: user.profileCommentsLocked,
-          searchable: user.searchable
+          profileVisibility: user.profileVisibility
         }
       });
     } catch (error) {

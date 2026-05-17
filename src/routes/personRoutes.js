@@ -13,7 +13,7 @@ router.get('/', apiLimiter, personController.getPersons);
 
 // ─── Search endpoints (before /:slug catch-all) ───────────────────────────────
 router.get('/search', apiLimiter, personController.searchPersons);
-router.get('/unified-search', apiLimiter, personController.unifiedSearch);
+router.get('/unified-search', optionalAuthMiddleware, apiLimiter, personController.unifiedSearch);
 
 // ─── Authenticated — specific routes BEFORE parameterized routes ─────────────
 
