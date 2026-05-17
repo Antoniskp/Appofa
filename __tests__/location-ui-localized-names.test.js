@@ -53,6 +53,8 @@ describe('Location UI localized names', () => {
   test('renders sub-location chips with local names and fallback name, plus Greek section label', async () => {
     const props = {
       location: {
+        id: 101,
+        slug: 'athens',
         name: 'Athens',
         name_local: 'Αθήνα',
         type: 'municipality',
@@ -95,6 +97,8 @@ describe('Location UI localized names', () => {
     }));
     const props = {
       location: {
+        id: 101,
+        slug: 'athens',
         name: 'Athens',
         name_local: 'Αθήνα',
         type: 'municipality',
@@ -118,7 +122,8 @@ describe('Location UI localized names', () => {
     expect(container.textContent).not.toContain('Περιοχή 9');
     expect(container.textContent).toContain('+2 ακόμα υποπεριοχές');
 
-    const toggleButton = container.querySelector('button');
+    const toggleButton = container.querySelector('button[aria-label="Εναλλαγή προβολής υποπεριοχών"]');
+    expect(toggleButton).toBeTruthy();
     await act(async () => {
       toggleButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
@@ -126,6 +131,44 @@ describe('Location UI localized names', () => {
     expect(container.textContent).toContain('Περιοχή 9');
     expect(container.textContent).toContain('Περιοχή 10');
     expect(container.textContent).not.toContain('+2 ακόμα υποπεριοχές');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('shows phase-2 quick actions and aligned side panel affordances', async () => {
+    const props = {
+      location: {
+        id: 77,
+        slug: 'attica',
+        name: 'Attica',
+        name_local: 'Αττική',
+        type: 'prefecture',
+        hasModerator: true,
+        code: 'AT',
+      },
+      sections: [],
+      children: [],
+      activePolls: [],
+      newsArticles: [],
+      regularArticles: [],
+      entities: { usersCount: 0 },
+      imageError: false,
+      setImageError: jest.fn(),
+      canManageLocations: () => true,
+      onEdit: jest.fn(),
+    };
+
+    const { container, root } = await renderComponent(LocationHeader, props);
+
+    expect(container.textContent).toContain('Γρήγορες ενέργειες');
+    expect(container.textContent).toContain('Προτάσεις περιοχής');
+    expect(container.textContent).toContain('Ψηφοφορίες περιοχής');
+    expect(container.textContent).toContain('Κοινοποίηση');
+    expect(container.textContent).toContain('Edit');
+    expect(container.textContent).toContain('Περισσότερες πληροφορίες');
+    expect(container.querySelector('a[href="/locations/attica?tab=suggestions#location-content"]')).toBeTruthy();
 
     await act(async () => {
       root.unmount();

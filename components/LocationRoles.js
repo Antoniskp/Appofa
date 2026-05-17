@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { locationRoleAPI } from '@/lib/api';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 
+function getAssignmentsLabel(count) {
+  return `${count} ${count === 1 ? 'ανάθεση' : 'αναθέσεις'}`;
+}
+
 /**
  * LocationRoles — public display of assigned role holders for a location.
  *
@@ -85,9 +89,12 @@ export default function LocationRoles({ locationId, compact = false }) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-      <h3 className="text-base font-semibold text-gray-900 mb-3">Αξιωματούχοι Τοποθεσίας</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h3 className="text-base font-semibold text-gray-900">Αξιωματούχοι Τοποθεσίας</h3>
+        <span className="text-xs font-medium text-gray-500">{getAssignmentsLabel(flattenedRoles.length)}</span>
+      </div>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {flattenedRoles.map((role) => {
           const { assignment } = role;
           const user = assignment?.user;
@@ -99,26 +106,41 @@ export default function LocationRoles({ locationId, compact = false }) {
           const profileHref = profileSlug ? `/persons/${profileSlug}` : null;
 
           return (
-            <div key={role.key} className="flex items-center gap-3 p-2 rounded-lg bg-gray-50">
-              {photo ? (
-                <img
-                  src={photo}
-                  alt={name}
-                  className="w-10 h-10 rounded-full object-cover flex-shrink-0"
-                />
-              ) : (
-                <UserCircleIcon className="w-10 h-10 text-gray-400 flex-shrink-0" />
-              )}
-              <div className="min-w-0">
-                {profileHref ? (
-                  <Link href={profileHref} className="text-sm font-medium text-blue-600 hover:underline truncate block">
-                    {name}
-                  </Link>
-                ) : (
-                  <p className="text-sm font-medium text-gray-800 truncate">{name}</p>
-                )}
-                <p className="text-xs text-gray-500 truncate">{role.title}</p>
+            <div key={role.key} className="rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+              <div className="mb-2">
+                <span className="inline-flex rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-blue-700">
+                  {role.title}
+                </span>
               </div>
+              <div className="flex items-center gap-3">
+                {photo ? (
+                  <img
+                    src={photo}
+                    alt={name}
+                    className="w-11 h-11 rounded-full object-cover flex-shrink-0"
+                  />
+                ) : (
+                  <UserCircleIcon className="w-11 h-11 text-gray-400 flex-shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  {profileHref ? (
+                    <Link href={profileHref} className="text-sm font-semibold text-blue-700 hover:underline truncate block">
+                      {name}
+                    </Link>
+                  ) : (
+                    <p className="text-sm font-semibold text-gray-800 truncate">{name}</p>
+                  )}
+                  <p className="text-xs text-gray-500 truncate">@{user?.username || 'unknown'}</p>
+                </div>
+              </div>
+              {profileHref && (
+                <Link
+                  href={profileHref}
+                  className="mt-3 inline-flex items-center rounded-md border border-blue-200 bg-white px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+                >
+                  Προβολή προφίλ
+                </Link>
+              )}
             </div>
           );
         })}

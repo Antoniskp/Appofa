@@ -22,6 +22,36 @@ const SECTION_ICONS = {
   news_sources: NewspaperIcon,
 };
 
+/**
+ * Map announcement priority to UI severity tone.
+ * Priorities are expected to be non-negative integers (typically 0-5 in current admin usage).
+ * Priority >= 5: urgent (red), priority 3-4: warning (amber), priority < 3: informational (blue).
+ * Values above 5 are treated as urgent to keep behavior stable for future higher severities.
+ */
+function getAnnouncementTone(priority) {
+  if (priority >= 5) {
+    return {
+      label: 'Επείγον',
+      badge: 'bg-red-100 text-red-700 border-red-200',
+      card: 'border-red-200 bg-red-50/70',
+    };
+  }
+
+  if (priority >= 3) {
+    return {
+      label: 'Προειδοποίηση',
+      badge: 'bg-amber-100 text-amber-800 border-amber-200',
+      card: 'border-amber-200 bg-amber-50/70',
+    };
+  }
+
+  return {
+    label: 'Ενημέρωση',
+    badge: 'bg-blue-100 text-blue-700 border-blue-200',
+    card: 'border-blue-200 bg-blue-50/70',
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Section type renderers
 // ---------------------------------------------------------------------------
@@ -178,18 +208,20 @@ function AnnouncementsSection({ content }) {
 
   return (
     <div className="space-y-3">
-      {sorted.map((ann, i) => (
-        <div
-          key={i}
-          className={`p-4 rounded-lg border-l-4 ${
-            (ann.priority || 0) >= 5
-              ? 'border-red-400 bg-red-50'
-              : (ann.priority || 0) >= 3
-              ? 'border-yellow-400 bg-yellow-50'
-              : 'border-blue-400 bg-blue-50'
-          }`}
-        >
-          <div className="flex items-start justify-between gap-2">
+      {sorted.map((ann, i) => {
+        const tone = getAnnouncementTone(ann.priority || 0);
+        return (
+          <div key={i} className={`rounded-xl border p-4 ${tone.card}`}>
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${tone.badge}`}>
+                {tone.label}
+              </span>
+              {ann.startsAt && (
+                <span className="text-xs text-gray-500">
+                  {new Date(ann.startsAt).toLocaleDateString('el-GR')}
+                </span>
+              )}
+            </div>
             <h4 className="text-sm font-semibold text-gray-900">
               {ann.linkUrl ? (
                 <a
@@ -204,22 +236,17 @@ function AnnouncementsSection({ content }) {
                 ann.title
               )}
             </h4>
-            {ann.startsAt && (
-              <span className="text-xs text-gray-500 flex-shrink-0">
-                {new Date(ann.startsAt).toLocaleDateString('el-GR')}
-              </span>
+            {ann.body && (
+              <p className="mt-1.5 text-sm leading-6 text-gray-700 whitespace-pre-line">{ann.body}</p>
+            )}
+            {ann.endsAt && (
+              <p className="mt-2 text-xs text-gray-500">
+                Until: {new Date(ann.endsAt).toLocaleDateString('el-GR')}
+              </p>
             )}
           </div>
-          {ann.body && (
-            <p className="text-sm text-gray-700 mt-1 whitespace-pre-line">{ann.body}</p>
-          )}
-          {ann.endsAt && (
-            <p className="text-xs text-gray-400 mt-2">
-              Until: {new Date(ann.endsAt).toLocaleDateString('el-GR')}
-            </p>
-          )}
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

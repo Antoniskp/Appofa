@@ -37,6 +37,7 @@ export default function LocationHeader({
   onEdit,
 }) {
   const [showAllChildren, setShowAllChildren] = useState(false);
+  const [shareState, setShareState] = useState('idle');
 
   const publishedSections = sections.filter(s => s.isPublished);
   const headerSections = publishedSections.filter(s => HEADER_SECTION_TYPES.includes(s.type));
@@ -55,10 +56,48 @@ export default function LocationHeader({
     return new Intl.NumberFormat('en-US').format(pop);
   };
 
+  const locationIdentifier = location.slug || location.id;
+
+  const hasExtendedInfo = Boolean(
+    location.code
+    || (location.lat && location.lng)
+    || location.wikipedia_url
+    || location.wikipedia_data_updated_at
+    || headerSections.length > 0
+  );
+  const tabHref = (tab) => `/locations/${locationIdentifier}?tab=${tab}#location-content`;
+
+  const shareLocation = async () => {
+    const path = `/locations/${locationIdentifier}`;
+    const url = typeof window !== 'undefined'
+      ? `${window.location.origin}${path}`
+      : path;
+    const text = `${location.name_local || location.name} — Appofa`;
+    const hasNavigator = typeof navigator !== 'undefined';
+
+    try {
+      if (hasNavigator && navigator.share) {
+        await navigator.share({ title: text, url });
+      } else if (hasNavigator && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setShareState('copied');
+        setTimeout(() => setShareState('idle'), 1800);
+      } else {
+        setShareState('unsupported');
+        setTimeout(() => setShareState('idle'), 1800);
+        return;
+      }
+    } catch (error) {
+      console.warn('Location share failed:', error);
+      setShareState('error');
+      setTimeout(() => setShareState('idle'), 1800);
+    }
+  };
+
   return (
     <>
-      <div className="md:grid md:grid-cols-3 md:gap-8">
-        <div className="md:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-8">
           <div className="flex items-start gap-4">
             {(() => {
               const uploadedSrc = location.imageUrl
@@ -81,8 +120,7 @@ export default function LocationHeader({
             })()}
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+              <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-2xl" aria-hidden="true">{getTypeIcon(location.type, location.code)}</span>
                     <h1 className="text-2xl font-bold text-gray-900 truncate">{location.name}</h1>
@@ -96,25 +134,13 @@ export default function LocationHeader({
                       Ανήκει στην τοποθεσία: <span className="font-medium text-gray-800">{location.parent.name_local || location.parent.name}</span>
                     </p>
                   )}
-                </div>
-
-                {canManageLocations() && (
-                  <button
-                    onClick={onEdit}
-                    className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                    title="Edit location"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                    Edit
-                  </button>
-                )}
               </div>
 
               <div className="flex items-center gap-2 mt-2 text-sm">
                 <span className="font-medium text-gray-700">Συντονιστής:</span>
                 {locationNeedsModerator ? (
                   <Link
-                    href={`/locations/${location.slug}?apply=moderator`}
+                    href={`/locations/${locationIdentifier}?apply=moderator`}
                     className="inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-semibold hover:bg-amber-200 transition-colors"
                     title="Γίνε συντονιστής αυτής της τοποθεσίας"
                   >
@@ -172,8 +198,8 @@ export default function LocationHeader({
                 <p className="mt-4 text-xs text-gray-400 italic">Δεν υπάρχει περιεχόμενο ακόμα</p>
               )}
 
-              {(location.code || (location.lat && location.lng) || location.wikipedia_url || location.wikipedia_data_updated_at || headerSections.length > 0) && (
-                <details className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              {hasExtendedInfo && (
+                <details className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 lg:hidden">
                   <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
                     Περισσότερες πληροφορίες
                   </summary>
@@ -232,6 +258,7 @@ export default function LocationHeader({
                 <button
                   type="button"
                   onClick={() => setShowAllChildren(v => !v)}
+                  aria-label="Εναλλαγή προβολής υποπεριοχών"
                   className="mt-3 inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                 >
                   {showAllChildren ? 'Εμφάνιση λιγότερων' : `+${hiddenChildrenCount} ακόμα υποπεριοχές`}
@@ -240,6 +267,89 @@ export default function LocationHeader({
             </div>
           )}
         </div>
+
+        <aside className="lg:col-span-4">
+          <div className="space-y-4 lg:sticky lg:top-24">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+              <h3 className="text-sm font-semibold text-gray-800">Γρήγορες ενέργειες</h3>
+              <div className="mt-3 grid gap-2">
+                <Link
+                  href={tabHref('suggestions')}
+                  className="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                >
+                  Προτάσεις περιοχής
+                </Link>
+                <Link
+                  href={tabHref('polls')}
+                  className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  Ψηφοφορίες περιοχής
+                </Link>
+                <button
+                  type="button"
+                  onClick={shareLocation}
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  {shareState === 'copied'
+                    ? 'Σύνδεσμος αντιγράφηκε'
+                    : shareState === 'unsupported'
+                      ? 'Η κοινοποίηση δεν υποστηρίζεται'
+                      : shareState === 'error'
+                        ? 'Αδυναμία κοινοποίησης'
+                        : 'Κοινοποίηση'}
+                </button>
+                {canManageLocations() && (
+                  <button
+                    onClick={onEdit}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+                    title="Edit location"
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                    Edit
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {hasExtendedInfo && (
+              <div className="hidden lg:block rounded-xl border border-gray-200 bg-white p-4">
+                <h3 className="text-sm font-semibold text-gray-800">Περισσότερες πληροφορίες</h3>
+                <div className="mt-3 space-y-2 text-sm text-gray-600">
+                  {location.code && (
+                    <p><span className="font-medium text-gray-700">Code:</span> {location.code}</p>
+                  )}
+                  {location.lat && location.lng && (
+                    <p><span className="font-medium text-gray-700">Συντεταγμένες:</span> {location.lat}, {location.lng}</p>
+                  )}
+                  {location.wikipedia_url && (
+                    <a
+                      href={location.wikipedia_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block text-blue-600 hover:text-blue-800 underline font-medium"
+                    >
+                      Wikipedia ↗
+                    </a>
+                  )}
+                  {location.wikipedia_data_updated_at && (
+                    <p className="text-xs text-gray-500">
+                      Ενημερώθηκε: {new Date(location.wikipedia_data_updated_at).toLocaleDateString('el-GR')}
+                    </p>
+                  )}
+                  {headerSections.length > 0 && (
+                    <div className="pt-2 space-y-3">
+                      {headerSections.map(section => (
+                        <div key={section.id}>
+                          <LocationSections sections={[section]} compact />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
       </div>
     </>
   );
