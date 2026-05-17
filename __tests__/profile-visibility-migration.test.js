@@ -75,6 +75,29 @@ describe('20260517211000-add-profile-visibility-to-users migration', () => {
     }, Sequelize);
 
     expect(query).toHaveBeenCalledWith(expect.stringContaining('"searchable" IS FALSE'));
+    expect(query).toHaveBeenCalledWith(expect.stringContaining(`'hidden'::"enum_Users_profileVisibility"`));
+    expect(query).toHaveBeenCalledWith(expect.stringContaining(`'registered'::"enum_Users_profileVisibility"`));
     expect(query).not.toHaveBeenCalledWith(expect.stringContaining('"searchable" = 0'));
+  });
+
+  test('down uses PostgreSQL-safe enum comparison SQL when restoring searchable', async () => {
+    const query = jest.fn();
+    const addColumn = jest.fn();
+    const removeColumn = jest.fn();
+    const describeTable = jest.fn()
+      .mockResolvedValueOnce({ profileVisibility: { type: 'ENUM' } });
+
+    await migration.down({
+      describeTable,
+      addColumn,
+      removeColumn,
+      sequelize: {
+        getDialect: () => 'postgres',
+        query,
+      },
+    }, Sequelize);
+
+    expect(query).toHaveBeenCalledWith(expect.stringContaining(`'hidden'::"enum_Users_profileVisibility"`));
+    expect(query).toHaveBeenCalledWith('DROP TYPE IF EXISTS "enum_Users_profileVisibility";');
   });
 });
