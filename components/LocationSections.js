@@ -24,7 +24,9 @@ const SECTION_ICONS = {
 
 /**
  * Map announcement priority to UI severity tone.
+ * Priorities are expected to be non-negative integers (typically 0-5 in current admin usage).
  * Priority >= 5: urgent (red), priority 3-4: warning (amber), priority < 3: informational (blue).
+ * Values above 5 are treated as urgent to keep behavior stable for future higher severities.
  */
 function getAnnouncementTone(priority) {
   if (priority >= 5) {

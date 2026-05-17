@@ -5,6 +5,10 @@ import Link from 'next/link';
 import { locationRoleAPI } from '@/lib/api';
 import { UserCircleIcon } from '@heroicons/react/24/outline';
 
+function getAssignmentsLabel(count) {
+  return `${count} ${count === 1 ? 'ανάθεση' : 'αναθέσεις'}`;
+}
+
 /**
  * LocationRoles — public display of assigned role holders for a location.
  *
@@ -88,9 +92,7 @@ export default function LocationRoles({ locationId, compact = false }) {
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-5">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h3 className="text-base font-semibold text-gray-900">Αξιωματούχοι Τοποθεσίας</h3>
-        <span className="text-xs font-medium text-gray-500">
-          {flattenedRoles.length} {flattenedRoles.length === 1 ? 'ανάθεση' : 'αναθέσεις'}
-        </span>
+        <span className="text-xs font-medium text-gray-500">{getAssignmentsLabel(flattenedRoles.length)}</span>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {flattenedRoles.map((role) => {

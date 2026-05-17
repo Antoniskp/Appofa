@@ -56,7 +56,7 @@ export default function LocationHeader({
     return new Intl.NumberFormat('en-US').format(pop);
   };
 
-  const locationSlugOrId = location.slug || location.id;
+  const locationIdentifier = location.slug || location.id;
 
   const hasExtendedInfo = Boolean(
     location.code
@@ -65,10 +65,10 @@ export default function LocationHeader({
     || location.wikipedia_data_updated_at
     || headerSections.length > 0
   );
-  const tabHref = (tab) => `/locations/${locationSlugOrId}?tab=${tab}#location-content`;
+  const tabHref = (tab) => `/locations/${locationIdentifier}?tab=${tab}#location-content`;
 
   const shareLocation = async () => {
-    const path = `/locations/${locationSlugOrId}`;
+    const path = `/locations/${locationIdentifier}`;
     const url = typeof window !== 'undefined'
       ? `${window.location.origin}${path}`
       : path;
@@ -83,7 +83,9 @@ export default function LocationHeader({
         setShareState('copied');
         setTimeout(() => setShareState('idle'), 1800);
       } else {
-        throw new Error('share_not_supported');
+        setShareState('unsupported');
+        setTimeout(() => setShareState('idle'), 1800);
+        return;
       }
     } catch (error) {
       console.warn('Location share failed:', error);
@@ -138,7 +140,7 @@ export default function LocationHeader({
                 <span className="font-medium text-gray-700">Συντονιστής:</span>
                 {locationNeedsModerator ? (
                   <Link
-                    href={`/locations/${locationSlugOrId}?apply=moderator`}
+                    href={`/locations/${locationIdentifier}?apply=moderator`}
                     className="inline-flex items-center px-2 py-0.5 bg-amber-100 text-amber-800 border border-amber-300 rounded text-xs font-semibold hover:bg-amber-200 transition-colors"
                     title="Γίνε συντονιστής αυτής της τοποθεσίας"
                   >
@@ -288,7 +290,13 @@ export default function LocationHeader({
                   onClick={shareLocation}
                   className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  {shareState === 'copied' ? 'Σύνδεσμος αντιγράφηκε' : shareState === 'error' ? 'Αδυναμία κοινοποίησης' : 'Κοινοποίηση'}
+                  {shareState === 'copied'
+                    ? 'Σύνδεσμος αντιγράφηκε'
+                    : shareState === 'unsupported'
+                      ? 'Η κοινοποίηση δεν υποστηρίζεται'
+                      : shareState === 'error'
+                        ? 'Αδυναμία κοινοποίησης'
+                        : 'Κοινοποίηση'}
                 </button>
                 {canManageLocations() && (
                   <button
