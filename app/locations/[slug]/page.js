@@ -422,7 +422,7 @@ export default function LocationDetailPage() {
         {/* Location Roles — assigned officials for this location */}
         {!isEditing && location && (
           <div className="mb-8 space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900">Ρόλοι τοποθεσίας</h2>
+            <h2 className="text-lg font-semibold text-gray-900">Εκπρόσωποι και ρόλοι</h2>
             <LocationRoles locationId={location.id} />
           </div>
         )}
@@ -439,7 +439,7 @@ export default function LocationDetailPage() {
                 />
               </div>
             )}
-          <div className="space-y-3">
+          <div id="location-content" className="space-y-3">
             <h2 className="text-lg font-semibold text-gray-900">Περιεχόμενο και δραστηριότητα</h2>
           <LocationTabs
             activeTab={resolvedActiveTab}
