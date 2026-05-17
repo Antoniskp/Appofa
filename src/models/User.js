@@ -128,10 +128,10 @@ const User = sequelize.define('User', {
     },
     onDelete: 'SET NULL'
   },
-  searchable: {
-    type: DataTypes.BOOLEAN,
+  profileVisibility: {
+    type: DataTypes.ENUM('hidden', 'registered', 'public'),
     allowNull: false,
-    defaultValue: true
+    defaultValue: 'registered'
   },
   profileCommentsEnabled: {
     type: DataTypes.BOOLEAN,

@@ -2,6 +2,7 @@ const { Endorsement, User } = require('../models');
 const { ENDORSEMENT_TOPICS } = require('../models/Endorsement');
 const { normalizeInteger } = require('../utils/validators');
 const notificationService = require('../services/notificationService');
+const { PROFILE_VISIBILITY } = require('../utils/profileVisibility');
 
 const PAGE_SIZE = 20;
 
@@ -125,7 +126,7 @@ const endorsementController = {
           model: User,
           as: 'endorsed',
           attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar', 'avatarColor', 'role'],
-          where: { searchable: true }
+          where: { profileVisibility: PROFILE_VISIBILITY.PUBLIC }
         }],
         group: ['endorsedId', 'endorsed.id'],
         order: [[sequelize.fn('COUNT', sequelize.col('Endorsement.id')), 'DESC']],
@@ -142,7 +143,7 @@ const endorsementController = {
         include: [{
           model: User,
           as: 'endorsed',
-          where: { searchable: true }
+          where: { profileVisibility: PROFILE_VISIBILITY.PUBLIC }
         }]
       });
 

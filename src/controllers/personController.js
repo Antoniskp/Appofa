@@ -44,7 +44,7 @@ const personController = {
   unifiedSearch: async (req, res) => {
     try {
       const { search, limit, nationality } = req.query;
-      const results = await personService.unifiedSearch(search, limit, nationality);
+      const results = await personService.unifiedSearch(search, limit, nationality, req.user || null);
       return res.status(200).json({ success: true, data: { results } });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });

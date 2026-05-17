@@ -20,7 +20,6 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { useInfiniteData } from '@/hooks/useInfiniteData';
 import Pagination from '@/components/ui/Pagination';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
-import LoginLink from '@/components/ui/LoginLink';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import {
   DOMAINS,
@@ -460,7 +459,6 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
   const { data: usersData, loading: usersLoading, error: usersError } = useAsyncData(
     async () => {
       if (!showUsers || authLoading) return null;
-      if (!isAuthenticated) return { users: [], totalPages: 1 };
       const params = { page: usersPage, limit: usersLimit };
       if (filters.search) params.search = filters.search;
       if (filters.locationId) params.locationId = filters.locationId;
@@ -486,36 +484,18 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
     !personsError &&
     !usersError &&
     (!showPersons || (!personsInitialLoading && persons.length === 0)) &&
-    (!showUsers || !isAuthenticated || (!usersLoading && users.length === 0));
+    (!showUsers || (!usersLoading && users.length === 0));
 
   return (
     <>
       {/* ── Registered users block ──────────────────────────────────────── */}
       {showUsers && (
         <div className={viewMode === 'all' && users.length > 0 ? 'mb-10' : undefined}>
-          {/* Auth gate */}
-          {!authLoading && !isAuthenticated && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6 text-center mb-6">
-              <p className="text-gray-700 mb-4">{t('login_prompt')}</p>
-              <div className="flex justify-center gap-3">
-                <LoginLink className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                  {t('login')}
-                </LoginLink>
-                <Link
-                  href="/register"
-                  className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                >
-                  {t('register')}
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {isAuthenticated && usersError && (
+          {usersError && (
             <EmptyState type="error" title={t('error_title')} description={t('error_description')} />
           )}
 
-          {isAuthenticated && !usersLoading && users.length > 0 && (
+          {!usersLoading && users.length > 0 && (
             <>
               {viewMode === 'all' && (
                 <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
@@ -550,7 +530,7 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
             </>
           )}
 
-          {isAuthenticated && !usersLoading && !usersError && users.length === 0 && viewMode === 'registered' && (
+          {!usersLoading && !usersError && users.length === 0 && viewMode === 'registered' && (
             <EmptyState
               type="empty"
               title={t('no_users_title')}
@@ -671,8 +651,12 @@ export default function UsersPage() {
               <span className="text-lg font-bold text-blue-600">{userStats.totalUsers}</span>
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="text-xs text-gray-500">{t('stats_visible')}</span>
-              <span className="text-lg font-bold text-green-600">{userStats.searchableUsers}</span>
+              <span className="text-xs text-gray-500">{t('stats_registered_only')}</span>
+              <span className="text-lg font-bold text-blue-600">{userStats.registeredUsers}</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="text-xs text-gray-500">{t('stats_public')}</span>
+              <span className="text-lg font-bold text-green-600">{userStats.publicUsers}</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="text-xs text-gray-500">{t('stats_hidden')}</span>

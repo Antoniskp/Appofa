@@ -502,14 +502,17 @@ describe('Dream Team API Tests', () => {
   // ── GET /api/auth/users/search (used by dream-team search bar) ───────────
 
   describe('GET /api/auth/users/search', () => {
-    it('returns 401 when not authenticated', async () => {
+    it('returns only public users for guests', async () => {
+      await User.update({ profileVisibility: 'registered' }, { where: { id: userId } });
       const res = await request(app).get('/api/auth/users/search?search=dtuser');
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      const found = res.body.data.users.find((u) => u.id === userId);
+      expect(found).toBeUndefined();
     });
 
-    it('returns searchable users for authenticated user', async () => {
-      // Both users are searchable by default; search without query returns all
-      await User.update({ searchable: true }, { where: { id: userId } });
+    it('returns registered-visible users for authenticated user', async () => {
+      await User.update({ profileVisibility: 'registered' }, { where: { id: userId } });
       const res = await request(app)
         .get('/api/auth/users/search')
         .set(withToken(secondUserToken));
@@ -520,8 +523,8 @@ describe('Dream Team API Tests', () => {
       expect(found).toBeDefined();
     });
 
-    it('does not return non-searchable users', async () => {
-      await User.update({ searchable: false }, { where: { id: userId } });
+    it('does not return hidden users', async () => {
+      await User.update({ profileVisibility: 'hidden' }, { where: { id: userId } });
       const res = await request(app)
         .get('/api/auth/users/search')
         .set(withToken(secondUserToken));
@@ -540,7 +543,7 @@ describe('Dream Team API Tests', () => {
     });
 
     it('returns results without search param (default listing)', async () => {
-      await User.update({ searchable: true }, { where: { id: secondUserId } });
+      await User.update({ profileVisibility: 'registered' }, { where: { id: secondUserId } });
       const res = await request(app)
         .get('/api/auth/users/search')
         .set(withToken(userToken));
@@ -563,7 +566,7 @@ describe('Dream Team API Tests', () => {
         role: 'viewer',
         firstNameNative: 'Κυπριακός',
         lastNameNative: 'Χρήστης',
-        searchable: true,
+        profileVisibility: 'public',
         nationality: 'CY',
       });
       grUser = await User.create({
@@ -573,7 +576,7 @@ describe('Dream Team API Tests', () => {
         role: 'viewer',
         firstNameNative: 'Ελληνικός',
         lastNameNative: 'Χρήστης',
-        searchable: true,
+        profileVisibility: 'public',
         nationality: 'GR',
       });
     });

@@ -515,6 +515,62 @@ describe('Frontend smoke tests', () => {
     });
   });
 
+  test('register page allows selecting explicit profile visibility', async () => {
+    mockSearchParams.get.mockReturnValue(null);
+    const registerMock = jest.fn(() => Promise.resolve({ success: true }));
+    useAuth.mockReturnValue(buildAuthState({ register: registerMock }));
+    const RegisterPage = require('../app/register/page').default;
+    const { container, root } = await renderPage(RegisterPage);
+
+    await act(async () => {
+      setInputValue(container.querySelector('input[name="username"]'), 'visibilityuser');
+      setInputValue(container.querySelector('input[name="email"]'), 'visibility@test.com');
+      setInputValue(container.querySelector('input[name="password"]'), 'secret123');
+      setInputValue(container.querySelector('input[name="confirmPassword"]'), 'secret123');
+      await flushPromises();
+    });
+
+    await act(async () => {
+      const firstNext = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Next'));
+      firstNext.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    await act(async () => {
+      const secondNext = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Επόμενο'));
+      secondNext.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    const publicVisibilityRadio = container.querySelector('input[name="profileVisibility"][value="public"]');
+    await act(async () => {
+      setCheckboxValue(publicVisibilityRadio, true);
+      await flushPromises();
+    });
+
+    const gdprConsent = container.querySelector('input[name="gdpr_consent"]');
+    await act(async () => {
+      setCheckboxValue(gdprConsent, true);
+      await flushPromises();
+    });
+
+    await act(async () => {
+      const submitButton = Array.from(container.querySelectorAll('button')).find(
+        (button) => button.textContent.includes('Δημιουργία λογαριασμού')
+      );
+      submitButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(registerMock).toHaveBeenCalledWith(expect.objectContaining({
+      profileVisibility: 'public',
+    }));
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('renders admin status page for admin users', async () => {
     mockSearchParams.get.mockReturnValue(null);
     useAuth.mockReturnValue(buildAuthState({

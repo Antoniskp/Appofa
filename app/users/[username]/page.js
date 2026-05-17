@@ -19,7 +19,6 @@ import FollowButton from '@/components/follow/FollowButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
 import { getPartyById } from '@/lib/utils/politicalParties';
 import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
-import LoginLink from '@/components/ui/LoginLink';
 import TwitchEmbed from '@/components/profile/TwitchEmbed';
 
 const TABS = [
@@ -218,13 +217,12 @@ export default function PublicUserProfilePage() {
   const params = useParams();
   const username = params?.username;
   const { user: authUser, loading: authLoading } = useAuth();
-  const isAuthenticated = !authLoading && !!authUser;
 
   const [activeTab, setActiveTab] = useState('overview');
 
   const { data: user, loading, error } = useAsyncData(
     async () => {
-      if (!username || !isAuthenticated) {
+      if (!username) {
         return { data: { user: null } };
       }
       const response = await authAPI.getPublicUserProfileByUsername(username);
@@ -233,7 +231,7 @@ export default function PublicUserProfilePage() {
       }
       return { data: { user: null } };
     },
-    [username, isAuthenticated],
+    [username, authUser?.id],
     {
       initialData: null,
       transform: (response) => response.data.user || null
@@ -268,33 +266,11 @@ export default function PublicUserProfilePage() {
 
         {authLoading && <SkeletonLoader type="list" count={1} />}
 
-        {!authLoading && !isAuthenticated && (
-          <div className="bg-white rounded-lg shadow-md p-6 text-center">
-            <h1 className="text-lg font-semibold text-gray-900 mb-2">Please sign in</h1>
-            <p className="text-gray-600 mb-6">
-              Only registered users can view profiles. Log in or create an account to continue.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <LoginLink
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Log In
-              </LoginLink>
-              <Link
-                href="/register"
-                className="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
-              >
-                Register
-              </Link>
-            </div>
-          </div>
-        )}
-
-        {!authLoading && isAuthenticated && loading && (
+        {!authLoading && loading && (
           <SkeletonLoader type="list" count={1} />
         )}
 
-        {!authLoading && isAuthenticated && !loading && error && (
+        {!authLoading && !loading && error && (
           <EmptyState
             type="error"
             title="User Not Found"
@@ -303,7 +279,7 @@ export default function PublicUserProfilePage() {
           />
         )}
 
-        {!authLoading && isAuthenticated && !loading && !error && !user && (
+        {!authLoading && !loading && !error && !user && (
           <EmptyState
             type="empty"
             title="Profile Not Available"
@@ -312,7 +288,7 @@ export default function PublicUserProfilePage() {
           />
         )}
 
-        {!authLoading && isAuthenticated && !loading && !error && user && (
+        {!authLoading && !loading && !error && user && (
           <div className="max-w-4xl mx-auto space-y-6">
             <Card>
               <div className="flex flex-col gap-6 sm:flex-row sm:items-center">

@@ -15,6 +15,7 @@ const {
   FormationPick,
   FormationLike,
 } = require('../models');
+const { PROFILE_VISIBILITY } = require('../utils/profileVisibility');
 const badgeService = require('../services/badgeService');
 const { allCountries } = require(path.join(__dirname, '../../config/countries/index.js'));
 const { resolveUserDreamTeamCountryCode } = require('../utils/userCountryCode');
@@ -543,12 +544,12 @@ const dreamTeamController = {
       if (!position) {
         return res.status(404).json({ success: false, message: 'Η θέση δεν βρέθηκε.' });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'profileVisibility', 'claimStatus'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
-        return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+      if ((!user.isVerified && user.claimStatus === null) || user.profileVisibility === PROFILE_VISIBILITY.HIDDEN) {
+        return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με ορατό προφίλ μπορούν να προστεθούν.' });
       }
       const suggestion = await GovernmentPositionSuggestion.create({
         positionId,
@@ -578,12 +579,12 @@ const dreamTeamController = {
       }
       const { userId, reason, order: ord, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'profileVisibility', 'claimStatus'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
-          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+        if ((!user.isVerified && user.claimStatus === null) || user.profileVisibility === PROFILE_VISIBILITY.HIDDEN) {
+          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με ορατό προφίλ μπορούν να προστεθούν.' });
         }
       }
       await suggestion.update({
@@ -641,12 +642,12 @@ const dreamTeamController = {
           message: 'Οι εθνικές θέσεις διαχειρίζονται από τη σελίδα Τοποθεσίας (Ελλάδα).',
         });
       }
-      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
+      const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'profileVisibility', 'claimStatus'] });
       if (!user) {
         return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
       }
-      if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
-        return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+      if ((!user.isVerified && user.claimStatus === null) || user.profileVisibility === PROFILE_VISIBILITY.HIDDEN) {
+        return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με ορατό προφίλ μπορούν να προστεθούν.' });
       }
 
       // Delete any existing holders for this position (stale data should not be kept)
@@ -689,12 +690,12 @@ const dreamTeamController = {
       }
       const { userId, since, notes, isActive } = req.body;
       if (userId !== undefined && userId !== null) {
-        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'searchable', 'claimStatus'] });
+        const user = await User.findByPk(userId, { attributes: ['id', 'isVerified', 'profileVisibility', 'claimStatus'] });
         if (!user) {
           return res.status(404).json({ success: false, message: 'Ο χρήστης δεν βρέθηκε.' });
         }
-        if ((!user.isVerified && user.claimStatus === null) || !user.searchable) {
-          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με δημόσιο προφίλ μπορούν να προστεθούν.' });
+        if ((!user.isVerified && user.claimStatus === null) || user.profileVisibility === PROFILE_VISIBILITY.HIDDEN) {
+          return res.status(400).json({ success: false, message: 'Μόνο επαληθευμένοι χρήστες με ορατό προφίλ μπορούν να προστεθούν.' });
         }
       }
       await holder.update({

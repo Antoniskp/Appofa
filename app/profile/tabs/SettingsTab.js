@@ -84,7 +84,7 @@ export default function SettingsTab({
 
       <Card>
         <ProfilePrivacySection
-          searchable={interactionSettings.searchable}
+          profileVisibility={interactionSettings.profileVisibility}
           profileCommentsEnabled={interactionSettings.profileCommentsEnabled}
           profileCommentsLocked={interactionSettings.profileCommentsLocked}
           onChange={handleInteractionSettingsChange}

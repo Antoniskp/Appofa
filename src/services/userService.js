@@ -14,6 +14,13 @@ const {
   validateExpertiseTagIds,
   scoreSpecialistMatch,
 } = require('../utils/professionTaxonomy');
+const {
+  PROFILE_VISIBILITY,
+  VALID_PROFILE_VISIBILITY,
+  isValidProfileVisibility,
+  getDiscoverableVisibilities,
+  canViewProfile,
+} = require('../utils/profileVisibility');
 const politicalParties = require('../../config/politicalParties.json');
 
 const USERNAME_MIN_LENGTH = 3;
@@ -143,7 +150,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, searchable, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, nationality, twitchChannel } = data;
+  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, profileVisibility, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, nationality, twitchChannel } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -258,9 +265,12 @@ async function updateUserProfile(userId, data) {
     }
   }
 
-  if (searchable !== undefined) {
-    if (typeof searchable !== 'boolean') throw new ServiceError(400, 'Searchable must be a boolean.');
-    user.searchable = searchable;
+  if (profileVisibility !== undefined) {
+    const normalizedProfileVisibility = String(profileVisibility || '').trim().toLowerCase();
+    if (!isValidProfileVisibility(normalizedProfileVisibility)) {
+      throw new ServiceError(400, `profileVisibility must be one of: ${VALID_PROFILE_VISIBILITY.join(', ')}.`);
+    }
+    user.profileVisibility = normalizedProfileVisibility;
   }
 
   if (mobileTel !== undefined) {
@@ -490,7 +500,7 @@ async function deleteUserAccount(userId, password, mode) {
       avatar: null,
       avatarColor: null,
       homeLocationId: null,
-      searchable: false,
+      profileVisibility: PROFILE_VISIBILITY.HIDDEN,
       githubId: null,
       githubAccessToken: null,
       googleId: null,
@@ -947,38 +957,63 @@ async function verifyUser(actorId, actorRole, actorHomeLocationId, targetId, isV
   return updatedUser;
 }
 
-async function getPublicUserProfile(userId) {
+async function getPublicUserProfile(userId, viewer = null) {
   if (!userId) throw new ServiceError(400, 'Invalid user id.');
 
   const user = await User.findOne({
-    where: { id: userId, searchable: true },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
+    where: { id: userId },
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
+  const isPrivileged = viewer && ['admin', 'moderator'].includes(viewer.role);
+  const isOwner = viewer && Number(viewer.id) === Number(user.id);
+  const isAuthenticated = !!viewer;
+  if (!canViewProfile({
+    profileVisibility: user.profileVisibility,
+    isAuthenticated,
+    isOwner,
+    isPrivileged,
+  })) {
+    throw new ServiceError(404, 'User not found or not visible.');
+  }
   return user;
 }
 
-async function getPublicUserProfileByUsername(username) {
+async function getPublicUserProfileByUsername(username, viewer = null) {
   if (!username || typeof username !== 'string' || username.trim() === '') {
     throw new ServiceError(400, 'Invalid username.');
   }
 
   const user = await User.findOne({
-    where: { username: username.trim(), searchable: true },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel']
+    where: { username: username.trim() },
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility']
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
+  const isPrivileged = viewer && ['admin', 'moderator'].includes(viewer.role);
+  const isOwner = viewer && Number(viewer.id) === Number(user.id);
+  const isAuthenticated = !!viewer;
+  if (!canViewProfile({
+    profileVisibility: user.profileVisibility,
+    isAuthenticated,
+    isOwner,
+    isPrivileged,
+  })) {
+    throw new ServiceError(404, 'User not found or not visible.');
+  }
   return user;
 }
 
-async function searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery = null) {
+async function searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery = null, viewer = null) {
   const pageNum = Math.max(1, parseInt(page) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit) || 20));
   const offset = (pageNum - 1) * limitNum;
 
-  const whereClause = { searchable: true, claimStatus: null };
+  const whereClause = {
+    claimStatus: null,
+    profileVisibility: { [Op.in]: getDiscoverableVisibilities(!!viewer) },
+  };
 
   if (search && typeof search === 'string') {
     const isPostgres = dbConfig.getDialect() === 'postgres';
@@ -1097,27 +1132,37 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
 async function getPublicUserStats() {
   const stats = await User.findAll({
     attributes: [
-      'searchable',
-      [sequelize.fn('COUNT', sequelize.col('searchable')), 'count']
+      'profileVisibility',
+      [sequelize.fn('COUNT', sequelize.col('profileVisibility')), 'count']
     ],
-    group: ['searchable']
+    group: ['profileVisibility']
   });
 
   let totalUsers = 0;
-  let searchableUsers = 0;
-  let nonSearchableUsers = 0;
+  let hiddenUsers = 0;
+  let registeredUsers = 0;
+  let publicUsers = 0;
 
   stats.forEach((item) => {
     const count = parseInt(item.get('count'), 10);
     totalUsers += count;
-    if (item.get('searchable')) {
-      searchableUsers = count;
+    if (item.get('profileVisibility') === PROFILE_VISIBILITY.HIDDEN) {
+      hiddenUsers = count;
+    } else if (item.get('profileVisibility') === PROFILE_VISIBILITY.PUBLIC) {
+      publicUsers = count;
     } else {
-      nonSearchableUsers = count;
+      registeredUsers = count;
     }
   });
 
-  return { totalUsers, searchableUsers, nonSearchableUsers };
+  return {
+    totalUsers,
+    hiddenUsers,
+    registeredUsers,
+    publicUsers,
+    searchableUsers: registeredUsers + publicUsers,
+    nonSearchableUsers: hiddenUsers,
+  };
 }
 
 async function isUsernameAvailable(username, excludeUserId) {
