@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-17
+> **Last updated**: 2026-05-18
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -31,13 +31,13 @@ This instruction is permanent and must never be removed.
 - [Services (15)](#services-15)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (113)](#frontend-pages-113)
-- [Components (123+)](#components-123)
+- [Frontend Pages (139)](#frontend-pages-139)
+- [Components (149)](#components-149)
 - [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
 - [Constants](#constants)
 - [Migrations (93)](#migrations-93)
-- [Tests (60 files)](#tests-60-files)
+- [Tests (103 files)](#tests-103-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -70,6 +70,7 @@ Appofa/
 │   ├── articles/           # Article CRUD pages
 │   ├── polls/              # Poll pages
 │   ├── suggestions/        # Suggestion pages
+│   ├── embed/              # Public embeddable poll/suggestion/civic-question pages
 │   ├── dream-team/         # Dream team feature
 │   ├── persons/            # Person profile pages
 │   ├── locations/          # Location pages
@@ -81,7 +82,8 @@ Appofa/
 │   ├── comments/           # Comment components (2 files)
 │   ├── dream-team/         # Dream team components (17 files)
 │   ├── follow/             # Follow button (1 file)
-│   ├── layout/             # Layout, nav, footer (8 files)
+│   ├── layout/             # Layout, nav, footer, chrome shell
+│   ├── embed/              # Embeddable content cards
 │   ├── newsletter/         # Newsletter UI components (1 file)
 │   ├── locations/          # Location components (4 files)
 │   ├── polls/              # Poll components (5 files)
@@ -486,7 +488,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (113)
+## Frontend Pages (139)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -512,6 +514,7 @@ Appofa/
 | `/polls`, `/polls/[id]`, `/polls/create`, `/polls/[id]/edit` | Polls |
 | `/civic-questions`, `/civic-questions/[id]`, `/civic-questions/create`, `/civic-questions/[id]/edit` | Civic Questions (Phase 2: list filters/sorting, official-style detail sections, enhanced results UI; detail page now includes metadata via server wrapper + client detail component split) |
 | `/suggestions`, `/suggestions/[id]`, `/suggestions/new`, `/suggestions/[id]/edit` | Suggestions |
+| `/embed/[entityType]/[id]` | Public iframe-friendly embed route for `polls`, `suggestions`, and `civic-questions`; renders responsive read-only cards with a strong CTA back to the full Appofasi page, hides global chrome via `AppShell`, and returns safe unavailable states for non-public / missing content |
 
 ### Features
 | Route | Description |
@@ -578,7 +581,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## Components (123+)
+## Components (149)
 
 | Directory | Count | Key Components |
 |-----------|-------|----------------|
@@ -587,18 +590,20 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `comments/` | 2 | CommentForm, CommentsThread |
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
-| `layout/` | 9 | TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
+| `layout/` | 10 | AppShell (hides TopNav/Footer/CookieBanner on `/embed/*` while keeping normal chrome elsewhere), TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
+| `embed/` | 1 | EntityEmbedView (shared embed card renderer for polls, suggestions, and civic questions) |
 | `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging; rendered only for guests) |
 | `locations/` | 10 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (Phase 2: balanced two-column top box on desktop with sticky quick actions/info panel, mobile collapsible details, sublocation preview+reveal), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (Phase 3: summary cards + guided empty-state copy for proposals/representatives/announcements/media/community/children), LocationRelatedLocations (Phase 3: explicit parent/sibling/child navigation blocks), LocationTabs (Phase 3: scanable feed cards plus richer tab-specific empty states) |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
-| `ui/` | 23+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar (toggle has explicit visible sizing `h-10 min-w-10`; expanded inputs render below toggle and switch to `w-full` on mobile to avoid overflow), **ListPageToolbar** (shared search+filter+action row for list pages: `searchSlot`/`filtersSlot`/`actionsSlot`/`extraSlot`; primary row switches at `md` with wrap safeguards and search `md:min-w-[240px]` to prevent collapse/overlap), LanguageSwitcher, LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), SkeletonLoader, TagInput, Tooltip |
+| `ui/` | 23+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar (toggle has explicit visible sizing `h-10 min-w-10`; expanded inputs render below toggle and switch to `w-full` on mobile to avoid overflow), **ListPageToolbar** (shared search+filter+action row for list pages: `searchSlot`/`filtersSlot`/`actionsSlot`/`extraSlot`; primary row switches at `md` with wrap safeguards and search `md:min-w-[240px]` to prevent collapse/overlap), LanguageSwitcher, LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), ShareModal (supports regular share link + optional embed URL + iframe code copy flow), SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
 - `components/layout/TopNav.js`: **plain in-flow header (no fixed/sticky or scroll behavior)** with grouped IA redesign — desktop top-level nav now uses 3 `DropdownMenu` sections: **Ενημέρωση** (`/articles`, `/news`, `/videos`), **Συμμετοχή** (`/polls`, `/civic-questions` labeled `Civic Polls`, `/suggestions`), **Κοινότητα** (`/locations`, `/users`), and **Σελίδες** (`/platform`, `/elections`, `/citizen-help`, `/education`) without the legacy `/pages` item. Desktop/nav-auth switch now happens at `md` (`hidden md:flex`) while hamburger + mobile panel stay active below `md` (`md:hidden`). Section triggers and dropdown items highlight active routes, default `DropdownMenu` triggers provide keyboard/ARIA behavior, and the mobile toggle SR label now flips correctly between open/close states. Unauthenticated CTAs are hierarchical (`/register` primary solid, `/login` secondary outline). Mobile menu (`#mobile-menu`) remains independently scrollable (`max-h-[calc(100dvh-4rem)] overflow-y-auto`), mirrors grouped sections with icons + `min-h-11` touch targets/focus-visible styles, closes immediately on mobile section/auth link taps, and locks body scroll while open (restored on close/unmount). Mobile auth dropdown still uses `menuClassName="w-full max-h-[55vh] overflow-y-auto"` for internal scrolling.
 - `components/layout/Footer.js`: footer newsletter signup card is now guest-only (`useAuth` + `!loading && !user`) and hidden for authenticated users; logged-in newsletter preference is managed from `/profile`.
+- `components/layout/AppShell.js`: `/embed/*` routes intentionally hide `TopNav`, `Footer`, and `CookieBanner` so iframe embeds render as standalone cards without site chrome, while all non-embed routes preserve the standard shell.
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading. A fixed uppercase tagline (`Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη`) now appears above slide titles. CTA logic is simplified: guests get two primary actions (`Εγγραφή`, `Βρες την Περιοχή σου`), logged-in users get location + polls, and only `admin`/`moderator` roles see the admin link. `NAV_CARDS` now has three value-proposition cards linking to `/polls`, `/suggestions`, and `/locations`.
 - `app/locations/[slug]/page.js`, `components/locations/LocationHeader.js`, `components/locations/LocationTabs.js`: location detail Phase 2 refinement — top info box alignment is corrected via a balanced desktop split (identity/stats left, sticky quick actions + info panel right), tab section is anchor-targeted with `#location-content` for action links, mobile keeps collapsible secondary metadata, sublocation chips still default to first 8 with `+N ακόμα υποπεριοχές`, and tab feed cards preserve the Phase 1 stronger title/spacing hierarchy with consistent type+status badges.
 - `app/locations/[slug]/page.js`, `components/locations/LocationOverviewPanel.js`, `components/locations/LocationRelatedLocations.js`, `components/LocationRoles.js`, `components/locations/LocationTabs.js`: location detail Phase 3 refinement — the page now inserts a dedicated overview summary block immediately after the header, computes representative counts from `locationRoleAPI`, fetches sibling locations for hierarchy discovery, and uses anchored sections (`#location-overview`, `#location-related`, `#location-local-info`, `#location-roles`, `#location-content`) so summary cards and empty states can guide users to the next useful area. Phase 3 explicitly excludes any map component or placeholder; map support is deferred to Phase 4.
@@ -827,13 +832,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (60 files)
+## Tests (103 files)
 
 ### Component Tests
-AdminHeader, AdminTable, AdminTableActions, ArticleCard, ConfirmDialog, DropdownMenu, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, SkeletonLoader, TagInput, Tooltip, ReportButton
+AdminHeader, AdminTable, AdminTableActions, ArticleCard, AppShell embed routing, ConfirmDialog, DropdownMenu, EntityEmbedView, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, ShareModal embed flow, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, electoral-districts, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-phase2-ui, location-phase3-ui, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
+api-client, civicQuestions, electoral-districts, embed-utils, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-phase2-ui, location-phase3-ui, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

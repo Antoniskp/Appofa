@@ -1,10 +1,8 @@
 import { AuthProvider } from '@/lib/auth-context';
-import TopNav from '@/components/TopNav';
-import Footer from '@/components/Footer';
 import { ToastProvider } from '@/components/ToastProvider';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
 import GeoTracker from '@/components/GeoTracker';
-import CookieBanner from '@/components/layout/CookieBanner';
+import AppShell from '@/components/layout/AppShell';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
@@ -68,12 +66,7 @@ export default async function RootLayout({ children }) {
         <NextIntlClientProvider locale={locale} messages={messages}>
           <AuthProvider>
             <ToastProvider>
-              <TopNav />
-              <main className="flex-grow">
-                {children}
-              </main>
-              <Footer />
-              <CookieBanner />
+              <AppShell>{children}</AppShell>
             </ToastProvider>
           </AuthProvider>
         </NextIntlClientProvider>

@@ -26,6 +26,7 @@ import Badge from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
+import { getEmbedPath } from '@/lib/utils/embed';
 import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 
@@ -369,6 +370,8 @@ export default function PollDetailPage() {
           url={typeof window !== 'undefined' ? window.location.href : ''}
           title={poll.title}
           shareText="Δείτε αυτή τη δημοσκόπηση στο Appofa! 📊"
+          embedPath={getEmbedPath('polls', poll.id, poll.title)}
+          embedHeight={620}
           onClose={() => setShowShareModal(false)}
         />
       )}
