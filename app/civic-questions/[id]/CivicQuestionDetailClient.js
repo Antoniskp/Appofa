@@ -87,7 +87,9 @@ export default function CivicQuestionDetailClient() {
   const isCreator = user && civicQuestion.creatorId === user.id;
   const canEdit = isCreator || user?.role === 'admin';
   const lifecycleStatus = getCivicQuestionLifecycleStatus(civicQuestion);
-  const canVote = user && lifecycleStatus === 'open';
+  const allowAnonymousVoting = civicQuestion.voteRestriction === 'anyone';
+  // Show voting section when: question is open AND (user is logged in OR anonymous voting is allowed)
+  const canVote = lifecycleStatus === 'open' && (!!user || allowAnonymousVoting);
 
   const sectionCardClass = 'bg-white border border-gray-200 rounded-lg p-5';
 

@@ -63,6 +63,7 @@ export default function SuggestionCard({ suggestion }) {
           initialUpvotes={suggestion.upvotes ?? 0}
           initialDownvotes={suggestion.downvotes ?? 0}
           initialMyVote={suggestion.myVote ?? null}
+          voteRestriction={suggestion.voteRestriction ?? 'authenticated'}
         />
       </div>
     </div>

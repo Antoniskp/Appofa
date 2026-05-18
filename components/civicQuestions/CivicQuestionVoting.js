@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { civicQuestionAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useTranslations } from 'next-intl';
+import LoginLink from '@/components/ui/LoginLink';
 
 const CHOICES = [
   { value: 'agree', color: 'bg-green-600 hover:bg-green-700' },
@@ -12,9 +14,24 @@ const CHOICES = [
 
 export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
   const t = useTranslations('civicQuestions');
+  const { user } = useAuth();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [justVoted, setJustVoted] = useState(null); // tracks the choice that triggered animation
+
+  const allowAnonymous = civicQuestion.voteRestriction === 'anyone';
+  const canVote = !!user || allowAnonymous;
+
+  if (!canVote) {
+    return (
+      <p className="text-sm text-gray-500">
+        <LoginLink className="text-blue-500 hover:underline font-medium">
+          {t('login_to_vote', { defaultMessage: 'Συνδεθείτε' })}
+        </LoginLink>{' '}
+        {t('login_to_vote_suffix', { defaultMessage: 'για να ψηφίσετε.' })}
+      </p>
+    );
+  }
 
   const handleVote = async (choice) => {
     if (submitting) return;
@@ -55,6 +72,15 @@ export default function CivicQuestionVoting({ civicQuestion, onVoteSuccess }) {
           );
         })}
       </div>
+      {!user && allowAnonymous && (
+        <p className="text-xs text-gray-400 text-right">
+          {t('voting_anonymously', { defaultMessage: 'Ψηφίζετε ανώνυμα.' })}{' '}
+          <LoginLink className="text-blue-400 hover:underline">
+            {t('sign_in_for_account', { defaultMessage: 'Συνδεθείτε' })}
+          </LoginLink>{' '}
+          {t('sign_in_for_account_suffix', { defaultMessage: 'για καλύτερη παρακολούθηση.' })}
+        </p>
+      )}
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );

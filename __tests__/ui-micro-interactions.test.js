@@ -189,7 +189,8 @@ describe('CivicQuestionVoting micro-interaction', () => {
   });
 
   test('clicked vote button receives animate-vote-pop class immediately', async () => {
-    const civicQuestion = { id: 42, myVote: null };
+    // Use voteRestriction: 'anyone' so the component renders vote buttons without requiring auth
+    const civicQuestion = { id: 42, myVote: null, voteRestriction: 'anyone' };
 
     await act(async () => {
       root.render(
@@ -214,7 +215,8 @@ describe('CivicQuestionVoting micro-interaction', () => {
   });
 
   test('animate-vote-pop class is removed after 280ms timeout', async () => {
-    const civicQuestion = { id: 42, myVote: null };
+    // Use voteRestriction: 'anyone' so the component renders vote buttons without requiring auth
+    const civicQuestion = { id: 42, myVote: null, voteRestriction: 'anyone' };
 
     await act(async () => {
       root.render(

@@ -29,6 +29,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import ShareModal from '@/components/ui/ShareModal';
 import LoginLink from '@/components/ui/LoginLink';
+import UserAvatar from '@/components/user/UserAvatar';
 import { getEmbedPath } from '@/lib/utils/embed';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -158,7 +159,12 @@ function SolutionCard({ solution, user, onVote, votingId }) {
       <p className="text-sm text-gray-800 whitespace-pre-wrap">{solution.body}</p>
       <div className="flex flex-wrap items-center justify-between mt-3 gap-3">
         <div className="flex items-center gap-3 text-xs text-gray-500">
-          {solution.author && <span>@{solution.author.username}</span>}
+          {solution.author && (
+            <span className="inline-flex items-center gap-1.5">
+              <UserAvatar user={solution.author} size="h-5 w-5" textSize="text-[10px]" showBadges={false} />
+              <span className="font-medium text-gray-700">{solution.author.username}</span>
+            </span>
+          )}
           <span>{new Date(solution.createdAt).toLocaleDateString('el-GR')}</span>
         </div>
         <VoteButtons
@@ -205,7 +211,8 @@ export default function SuggestionDetailPage() {
 
   // ── Vote on suggestion ─────────────────────────────────────────────────────
   const handleSuggestionVote = async (value) => {
-    if (!user) {
+    const allowAnonymous = suggestion?.voteRestriction === 'anyone';
+    if (!user && !allowAnonymous) {
       addToast('Πρέπει να συνδεθείτε για να ψηφίσετε.', { type: 'info' });
       return;
     }
@@ -380,7 +387,10 @@ export default function SuggestionDetailPage() {
           <div className="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-3">
             <div className="flex items-center gap-4 text-xs text-gray-500">
               {suggestion.author && (
-                <span className="font-medium">@{suggestion.author.username}</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                  <span className="font-medium text-gray-700">{suggestion.author.username}</span>
+                </span>
               )}
               <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
               {(isOwner || isPrivileged) && (
@@ -413,17 +423,26 @@ export default function SuggestionDetailPage() {
               downvotes={suggestion.downvotes ?? 0}
               myVote={suggestion.myVote}
               onVote={handleSuggestionVote}
-              disabled={!user || votingId === 'suggestion'}
+              disabled={(!user && suggestion.voteRestriction !== 'anyone') || votingId === 'suggestion'}
               type={suggestion.type}
             />
           </div>
 
-          {!user && (
+          {!user && suggestion.voteRestriction !== 'anyone' && (
             <p className="text-xs text-gray-400 mt-3 text-right">
               <LoginLink className="text-blue-500 hover:underline">
                 Συνδεθείτε
               </LoginLink>{' '}
               για να ψηφίσετε.
+            </p>
+          )}
+          {!user && suggestion.voteRestriction === 'anyone' && (
+            <p className="text-xs text-gray-400 mt-3 text-right">
+              Ψηφίζετε ανώνυμα.{' '}
+              <LoginLink className="text-blue-400 hover:underline">
+                Συνδεθείτε
+              </LoginLink>{' '}
+              για καλύτερη παρακολούθηση.
             </p>
           )}
 

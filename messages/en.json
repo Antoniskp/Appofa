@@ -1455,6 +1455,11 @@
     "local_badge": "Local",
     "votes_label": "votes",
     "vote_error": "Failed to submit vote.",
+    "login_to_vote": "Sign in",
+    "login_to_vote_suffix": "to vote.",
+    "voting_anonymously": "You are voting anonymously.",
+    "sign_in_for_account": "Sign in",
+    "sign_in_for_account_suffix": "for better tracking.",
     "results_unavailable": "Results are not available yet.",
     "total_votes": "Total votes",
     "card": {
@@ -1506,6 +1511,7 @@
       "locals_only": "Locals only"
     },
     "vote_restrictions": {
+      "anyone": "Everyone (anonymous voting)",
       "authenticated": "Authenticated",
       "locals_only": "Locals only"
     },

@@ -70,7 +70,7 @@ const Suggestion = sequelize.define('Suggestion', {
     allowNull: false
   },
   voteRestriction: {
-    type: DataTypes.ENUM('authenticated', 'locals_only'),
+    type: DataTypes.ENUM('anyone', 'authenticated', 'locals_only'),
     defaultValue: 'authenticated',
     allowNull: false
   },

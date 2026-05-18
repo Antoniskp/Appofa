@@ -261,6 +261,7 @@ export default function NewSuggestionPage() {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
+                <option value="anyone">Οποιοσδήποτε (ανώνυμη ψηφοφορία)</option>
                 <option value="authenticated">Μόνο συνδεδεμένοι χρήστες</option>
                 <option value="locals_only">Μόνο τοπικοί χρήστες</option>
               </select>

@@ -8,7 +8,7 @@ const { syncTags, attachTags } = require('../utils/tagUtils');
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
 const SUGGESTION_STATUSES = ['open', 'under_review', 'implemented', 'rejected'];
 const SUGGESTION_VISIBILITIES = ['public', 'private', 'locals_only'];
-const SUGGESTION_VOTE_RESTRICTIONS = ['authenticated', 'locals_only'];
+const SUGGESTION_VOTE_RESTRICTIONS = ['anyone', 'authenticated', 'locals_only'];
 const VOTE_VALUES = [-1, 1];
 
 /**
@@ -24,22 +24,33 @@ async function computeCounts(targetType, targetId) {
 
 /**
  * Get the caller's current vote value for a target (null if no vote).
+ * For authenticated users, look up by userId.
+ * For anonymous users, look up by device fingerprint (IP + User-Agent).
  */
-async function getMyVote(userId, targetType, targetId) {
-  if (!userId) return null;
-  const vote = await SuggestionVote.findOne({
-    where: { userId, targetType, targetId },
-    attributes: ['value']
-  });
-  return vote ? vote.value : null;
+async function getMyVote(userId, targetType, targetId, clientIp = null, userAgent = null) {
+  if (userId) {
+    const vote = await SuggestionVote.findOne({
+      where: { userId, targetType, targetId },
+      attributes: ['value']
+    });
+    return vote ? vote.value : null;
+  }
+  if (clientIp && userAgent) {
+    const vote = await SuggestionVote.findOne({
+      where: { userId: null, targetType, targetId, ipAddress: clientIp, userAgent },
+      attributes: ['value']
+    });
+    return vote ? vote.value : null;
+  }
+  return null;
 }
 
 /**
  * Attach upvotes, downvotes, score, and myVote to a plain suggestion/solution object.
  */
-async function attachVoteInfo(obj, targetType, userId) {
+async function attachVoteInfo(obj, targetType, userId, clientIp = null, userAgent = null) {
   const { upvotes, downvotes } = await computeCounts(targetType, obj.id);
-  const myVote = await getMyVote(userId, targetType, obj.id);
+  const myVote = await getMyVote(userId, targetType, obj.id, clientIp, userAgent);
   return { ...obj, upvotes, downvotes, score: upvotes - downvotes, myVote };
 }
 
@@ -142,10 +153,12 @@ const suggestionController = {
       });
 
       const userId = req.user?.id;
+      const clientIp = req.ip || req.socket?.remoteAddress;
+      const userAgent = req.headers['user-agent'] || 'unknown';
       let suggestions = await Promise.all(
         rows.map(async (s) => {
           const plain = s.toJSON();
-          return attachVoteInfo(plain, 'suggestion', userId);
+          return attachVoteInfo(plain, 'suggestion', userId, clientIp, userAgent);
         })
       );
 
@@ -221,10 +234,12 @@ const suggestionController = {
       }
 
       const userId = req.user?.id;
+      const clientIp = req.ip || req.socket?.remoteAddress;
+      const userAgent = req.headers['user-agent'] || 'unknown';
       const plain = suggestion.toJSON();
-      const withVotes = await attachVoteInfo(plain, 'suggestion', userId);
+      const withVotes = await attachVoteInfo(plain, 'suggestion', userId, clientIp, userAgent);
 
-      // Attach score and myVote to each solution and sort by score desc
+      // Attach score and myVote to each solution (solutions stay auth-only for myVote)
       const solutionsWithVotes = await Promise.all(
         (plain.solutions || []).map((sol) => attachVoteInfo(sol, 'solution', userId))
       );
@@ -491,7 +506,8 @@ const suggestionController = {
 
   /**
    * POST /api/suggestions/:id/vote
-   * Upvote or downvote a suggestion (auth required).
+   * Upvote or downvote a suggestion.
+   * Anonymous voting is allowed when voteRestriction === 'anyone'.
    * Upsert behavior: if same vote exists → remove it (toggle off).
    * If different vote exists → update it.
    * If no vote exists → create it.
@@ -503,6 +519,11 @@ const suggestionController = {
 
       const suggestion = await Suggestion.findByPk(targetId);
       if (!suggestion) return res.status(404).json({ success: false, message: 'Suggestion not found.' });
+
+      // Enforce authentication requirement
+      if (suggestion.voteRestriction === 'authenticated' && !req.user) {
+        return res.status(401).json({ success: false, message: 'Authentication required to vote on this suggestion.' });
+      }
 
       if (suggestion.voteRestriction === 'locals_only' && suggestion.locationId) {
         if (!req.user) {
@@ -611,6 +632,8 @@ const suggestionController = {
 
 /**
  * Shared vote upsert/toggle logic.
+ * Supports both authenticated (userId) and anonymous (IP + User-Agent) voters.
+ * Solution votes always require authentication (targetType === 'solution').
  */
 async function handleVote(req, res, targetType, targetId) {
   const value = parseInt(req.body.value, 10);
@@ -618,30 +641,58 @@ async function handleVote(req, res, targetType, targetId) {
     return res.status(400).json({ success: false, message: 'Vote value must be 1 or -1.' });
   }
 
-  const userId = req.user.id;
+  if (req.user?.id) {
+    // ── Authenticated vote ───────────────────────────────────────────────────
+    const userId = req.user.id;
 
-  const existing = await SuggestionVote.findOne({
-    where: { userId, targetType, targetId }
-  });
+    const existing = await SuggestionVote.findOne({
+      where: { userId, targetType, targetId }
+    });
 
-  if (existing) {
-    if (existing.value === value) {
-      // Same vote → remove (toggle off)
-      await existing.destroy();
-      const { upvotes, downvotes } = await computeCounts(targetType, targetId);
-      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: null }, message: 'Vote removed.' });
+    if (existing) {
+      if (existing.value === value) {
+        await existing.destroy();
+        const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+        return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: null }, message: 'Vote removed.' });
+      } else {
+        await existing.update({ value });
+        const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+        return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote updated.' });
+      }
     } else {
-      // Different vote → update
-      await existing.update({ value });
+      await SuggestionVote.create({ userId, targetType, targetId, value, isAuthenticated: true });
       const { upvotes, downvotes } = await computeCounts(targetType, targetId);
-      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote updated.' });
+      badgeService.evaluate(userId).catch(err => console.error('Badge evaluation error:', err));
+      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote recorded.' });
     }
   } else {
-    // No existing vote → create
-    await SuggestionVote.create({ userId, targetType, targetId, value });
-    const { upvotes, downvotes } = await computeCounts(targetType, targetId);
-    badgeService.evaluate(userId).catch(err => console.error('Badge evaluation error:', err));
-    return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote recorded.' });
+    // ── Anonymous vote — track by IP + User-Agent fingerprint ────────────────
+    const clientIp = req.ip || req.socket?.remoteAddress;
+    const userAgent = req.headers['user-agent'] || 'unknown';
+
+    if (!clientIp || !userAgent) {
+      return res.status(400).json({ success: false, message: 'Cannot record anonymous vote without request metadata.' });
+    }
+
+    const existing = await SuggestionVote.findOne({
+      where: { userId: null, targetType, targetId, ipAddress: clientIp, userAgent }
+    });
+
+    if (existing) {
+      if (existing.value === value) {
+        await existing.destroy();
+        const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+        return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: null }, message: 'Vote removed.' });
+      } else {
+        await existing.update({ value });
+        const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+        return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote updated.' });
+      }
+    } else {
+      await SuggestionVote.create({ userId: null, targetType, targetId, value, ipAddress: clientIp, userAgent, isAuthenticated: false });
+      const { upvotes, downvotes } = await computeCounts(targetType, targetId);
+      return res.json({ success: true, data: { upvotes, downvotes, score: upvotes - downvotes, myVote: value }, message: 'Vote recorded.' });
+    }
   }
 }
 
