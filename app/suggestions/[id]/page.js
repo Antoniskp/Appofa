@@ -29,6 +29,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import ShareModal from '@/components/ui/ShareModal';
 import LoginLink from '@/components/ui/LoginLink';
+import { getEmbedPath } from '@/lib/utils/embed';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -537,6 +538,8 @@ export default function SuggestionDetailPage() {
         url={typeof window !== 'undefined' ? window.location.href : ''}
         title={suggestion.title}
         shareText="Δείτε αυτή την πρόταση στο Appofa! 💡"
+        embedPath={getEmbedPath('suggestions', suggestion.id)}
+        embedHeight={540}
         onClose={() => setShowShareModal(false)}
       />
     )}

@@ -400,6 +400,7 @@
     "status_pending": "Pending",
     "app_name": "Appofasi",
     "information": "Information",
+    "open_in_app": "Open in Appofasi",
     "rate_limit": {
       "title": "Rate limit reached",
       "try_again_in": "Try again in {time}.",
@@ -1538,6 +1539,8 @@
       "pros_empty": "No pros were provided.",
       "cons_empty": "No cons were provided.",
       "edit": "Edit Civic Question",
+      "share": "Share civic question",
+      "share_text": "View this civic question on Appofa! 🗳️",
       "vote": "Vote",
       "results": "Results",
       "commission_requirement": "EU Requirement"

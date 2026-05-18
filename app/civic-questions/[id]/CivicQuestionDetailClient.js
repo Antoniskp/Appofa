@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
+import { ShareIcon } from '@heroicons/react/24/outline';
 import { civicQuestionAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -16,6 +17,8 @@ import {
   getCivicQuestionStatusBadgeVariant,
 } from '@/components/civicQuestions/statusUtils';
 import { useLocale, useTranslations } from 'next-intl';
+import ShareModal from '@/components/ui/ShareModal';
+import { getEmbedPath } from '@/lib/utils/embed';
 
 const toDisplayDate = (value, locale, withTime = false) => {
   if (!value) return null;
@@ -33,6 +36,7 @@ export default function CivicQuestionDetailClient() {
   const [civicQuestion, setCivicQuestion] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const questionId = parseInt(params.id, 10);
 
@@ -105,19 +109,30 @@ export default function CivicQuestionDetailClient() {
           </div>
           <div className="flex items-start justify-between gap-3">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{civicQuestion.title}</h1>
-            {canEdit && (
+            <div className="flex items-center gap-1">
               <button
                 type="button"
-                aria-label={t('detail.edit')}
-                title={t('detail.edit')}
-                onClick={() => router.push(`/civic-questions/${civicQuestion.id}/edit`)}
+                aria-label={t('detail.share')}
+                title={t('detail.share')}
+                onClick={() => setShowShareModal(true)}
                 className="flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
-                  <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
-                </svg>
+                <ShareIcon className="w-4 h-4" />
               </button>
-            )}
+              {canEdit && (
+                <button
+                  type="button"
+                  aria-label={t('detail.edit')}
+                  title={t('detail.edit')}
+                  onClick={() => router.push(`/civic-questions/${civicQuestion.id}/edit`)}
+                  className="flex-shrink-0 p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                    <path d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -223,6 +238,16 @@ export default function CivicQuestionDetailClient() {
           ← {t('detail.back_list')}
         </Link>
       </div>
+      {showShareModal && (
+        <ShareModal
+          url={typeof window !== 'undefined' ? window.location.href : ''}
+          title={civicQuestion.title}
+          shareText={t('detail.share_text')}
+          embedPath={getEmbedPath('civic-questions', civicQuestion.id)}
+          embedHeight={620}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
     </div>
   );
 }
