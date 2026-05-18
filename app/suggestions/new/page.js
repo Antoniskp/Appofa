@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI, tagAPI } from '@/lib/api';
@@ -32,6 +33,7 @@ export default function NewSuggestionPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const tCommon = useTranslations('common');
 
   const [form, setForm] = useState({
     title: '',
@@ -289,7 +291,7 @@ export default function NewSuggestionPage() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <span className="ml-2 text-sm text-gray-700">
-                Απόκρυψη δημιουργού
+                {tCommon('hide_creator')}
               </span>
             </label>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import Badge from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import InlineSuggestionVote from '@/components/InlineSuggestionVote';
@@ -21,6 +22,8 @@ const TYPE_VARIANTS = {
 };
 
 export default function SuggestionCard({ suggestion }) {
+  const tCommon = useTranslations('common');
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
       <Link href={`/suggestions/${suggestion.id}`} className="block flex-1">
@@ -52,7 +55,7 @@ export default function SuggestionCard({ suggestion }) {
             </>
           )}
           {!suggestion.author && (
-            <span>{suggestion.hideCreator ? 'Ανώνυμος' : 'Άγνωστος'}</span>
+            <span>{suggestion.hideCreator ? tCommon('anonymous') : tCommon('unknown')}</span>
           )}
           {suggestion.createdAt && (
             <span className="text-xs text-gray-400">

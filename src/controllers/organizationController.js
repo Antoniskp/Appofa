@@ -15,6 +15,7 @@ const organizationService = require('../services/organizationService');
 const { notifyOrgInvite, notifyOrgJoinApproved, notifyOrgMemberRemoved } = require('../services/notificationService');
 const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
+const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const { randomUUID } = require('crypto');
 const organizationContentConfig = require('../../config/organizationContent.json');
 
@@ -128,13 +129,7 @@ function serializeOrgPoll(poll) {
 
 function serializeOrgSuggestion(suggestion, viewer = null) {
   const data = suggestion.toJSON ? suggestion.toJSON() : suggestion;
-  if (
-    data.hideCreator
-    && (!viewer || (
-      viewer.id !== data.authorId
-      && !['admin', 'moderator'].includes(viewer.role)
-    ))
-  ) {
+  if (shouldHideSuggestionAuthor(data, viewer)) {
     data.author = null;
   }
   return {
@@ -146,14 +141,7 @@ function serializeOrgSuggestion(suggestion, viewer = null) {
 function mapOfficialPostItem(item, contentType, viewer = null) {
   const data = item.toJSON ? item.toJSON() : item;
   let author = contentType === 'poll' ? data.creator : data.author;
-  if (
-    contentType === 'suggestion'
-    && data.hideCreator
-    && (!viewer || (
-      viewer.id !== data.authorId
-      && !['admin', 'moderator'].includes(viewer.role)
-    ))
-  ) {
+  if (contentType === 'suggestion' && shouldHideSuggestionAuthor(data, viewer)) {
     author = null;
   }
   return {

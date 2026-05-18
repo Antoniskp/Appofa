@@ -3,6 +3,7 @@ const { Suggestion, Solution, SuggestionVote, User, Location, Tag, TaggableItem,
 const { normalizeRequiredText, normalizeEnum, normalizeBoolean } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
 const { getAncestorLocationIds } = require('../utils/locationUtils');
+const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const { syncTags, attachTags } = require('../utils/tagUtils');
 
 const SUGGESTION_TYPES = ['idea', 'problem', 'problem_request', 'location_suggestion'];
@@ -41,14 +42,6 @@ async function attachVoteInfo(obj, targetType, userId) {
   const { upvotes, downvotes } = await computeCounts(targetType, obj.id);
   const myVote = await getMyVote(userId, targetType, obj.id);
   return { ...obj, upvotes, downvotes, score: upvotes - downvotes, myVote };
-}
-
-function shouldHideSuggestionAuthor(suggestion, user) {
-  if (!suggestion?.hideCreator) return false;
-  if (!user) return true;
-  if (['admin', 'moderator'].includes(user.role)) return false;
-  if (user.id === suggestion.authorId) return false;
-  return true;
 }
 
 function sanitizeSuggestionAuthor(suggestion, user) {

@@ -1,6 +1,7 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { Poll, Suggestion, Organization, User } = require('../models');
+const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
@@ -9,14 +10,7 @@ const router = express.Router();
 function mapOfficialPostItem(item, contentType, viewer = null) {
   const data = item.toJSON ? item.toJSON() : item;
   let author = contentType === 'poll' ? data.creator : data.author;
-  if (
-    contentType === 'suggestion'
-    && data.hideCreator
-    && (!viewer || (
-      viewer.id !== data.authorId
-      && !['admin', 'moderator'].includes(viewer.role)
-    ))
-  ) {
+  if (contentType === 'suggestion' && shouldHideSuggestionAuthor(data, viewer)) {
     author = null;
   }
   return {
