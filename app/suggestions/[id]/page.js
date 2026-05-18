@@ -29,6 +29,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import ShareModal from '@/components/ui/ShareModal';
 import LoginLink from '@/components/ui/LoginLink';
+import UserAvatar from '@/components/user/UserAvatar';
 import { getEmbedPath } from '@/lib/utils/embed';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -158,7 +159,12 @@ function SolutionCard({ solution, user, onVote, votingId }) {
       <p className="text-sm text-gray-800 whitespace-pre-wrap">{solution.body}</p>
       <div className="flex flex-wrap items-center justify-between mt-3 gap-3">
         <div className="flex items-center gap-3 text-xs text-gray-500">
-          {solution.author && <span>@{solution.author.username}</span>}
+          {solution.author && (
+            <span className="inline-flex items-center gap-1.5 text-gray-600">
+              <UserAvatar user={solution.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+              <span>{solution.author.username}</span>
+            </span>
+          )}
           <span>{new Date(solution.createdAt).toLocaleDateString('el-GR')}</span>
         </div>
         <VoteButtons
@@ -380,7 +386,10 @@ export default function SuggestionDetailPage() {
           <div className="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-3">
             <div className="flex items-center gap-4 text-xs text-gray-500">
               {suggestion.author && (
-                <span className="font-medium">@{suggestion.author.username}</span>
+                <span className="inline-flex items-center gap-1.5 font-medium text-gray-700">
+                  <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                  <span>{suggestion.author.username}</span>
+                </span>
               )}
               <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
               {(isOwner || isPrivileged) && (
