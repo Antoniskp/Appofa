@@ -70,4 +70,34 @@ describe('SuggestionCard layout', () => {
       root.unmount();
     });
   });
+
+  test('renders anonymous creator label when hidden author is omitted', async () => {
+    const suggestion = {
+      id: 2,
+      type: 'idea',
+      title: 'Κρυφή πρόταση',
+      tags: [],
+      upvotes: 0,
+      downvotes: 0,
+      myVote: null,
+      hideCreator: true,
+      author: null,
+      createdAt: '2026-05-18T00:00:00.000Z',
+    };
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(React.createElement(SuggestionCard, { suggestion }));
+    });
+
+    expect(container.textContent).toContain('Ανώνυμος');
+    expect(container.querySelector('[data-testid="user-avatar"]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });

@@ -124,4 +124,29 @@ describe('Suggestion detail author avatars', () => {
     expect(container.textContent).not.toContain('@creatorUser');
     expect(container.textContent).not.toContain('@solverUser');
   });
+
+  test('renders anonymous creator label when hidden creator is omitted from API response', async () => {
+    const hiddenSuggestion = {
+      ...mockSuggestion,
+      hideCreator: true,
+      author: null,
+    };
+    let delivered = false;
+    useAsyncDataMock.mockImplementation((_, __, options = {}) => {
+      if (!delivered) {
+        delivered = true;
+        options.onSuccess?.(hiddenSuggestion);
+      }
+      return { loading: false, error: '' };
+    });
+
+    await act(async () => {
+      root.render(React.createElement(SuggestionDetailPage));
+    });
+
+    const avatars = container.querySelectorAll('[data-testid="user-avatar"]');
+    expect(avatars).toHaveLength(1);
+    expect(container.textContent).toContain('Ανώνυμος');
+    expect(container.textContent).toContain('solverUser');
+  });
 });

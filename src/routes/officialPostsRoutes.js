@@ -1,14 +1,18 @@
 const express = require('express');
 const { Op } = require('sequelize');
 const { Poll, Suggestion, Organization, User } = require('../models');
+const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const { apiLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
-function mapOfficialPostItem(item, contentType) {
+function mapOfficialPostItem(item, contentType, viewer = null) {
   const data = item.toJSON ? item.toJSON() : item;
-  const author = contentType === 'poll' ? data.creator : data.author;
+  let author = contentType === 'poll' ? data.creator : data.author;
+  if (contentType === 'suggestion' && shouldHideSuggestionAuthor(data, viewer)) {
+    author = null;
+  }
   return {
     id: data.id,
     contentType,
@@ -89,8 +93,8 @@ router.get('/', optionalAuthMiddleware, apiLimiter, async (req, res) => {
     ]);
 
     const officialPosts = [
-      ...polls.map((poll) => mapOfficialPostItem(poll, 'poll')),
-      ...suggestions.map((suggestion) => mapOfficialPostItem(suggestion, 'suggestion')),
+      ...polls.map((poll) => mapOfficialPostItem(poll, 'poll', req.user || null)),
+      ...suggestions.map((suggestion) => mapOfficialPostItem(suggestion, 'suggestion', req.user || null)),
     ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return res.status(200).json({

@@ -126,7 +126,7 @@ Appofa/
 | UserLocationRole | UserLocationRoles | id, userId, locationId, roleKey, createdAt, updatedAt | Unique (userId, locationId, roleKey); belongsTo: User, Location. Platform role assignments (e.g. 'moderator'). Validated at service layer: moderator location must be ancestor/self of user's homeLocationId. |
 | LocationElectionVote | LocationElectionVotes | id, locationId, roleKey, voterId, candidateUserId | belongsTo: Location, User(voter), User(candidate) |
 | LocationRequest | LocationRequests | id, countryName, countryNameLocal, note, requestedByUserId, status | belongsTo: User |
-| Suggestion | Suggestions | id, title, body, type, locationId, organizationId, authorId, status, visibility, voteRestriction, category | belongsTo: Location, Organization, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
+| Suggestion | Suggestions | id, title, body, type, locationId, organizationId, authorId, status, hideCreator, visibility, voteRestriction, category | belongsTo: Location, Organization, User; hasMany: Solution, SuggestionVote, Comment; belongsToMany: Tag (via TaggableItems) |
 | Solution | Solutions | id, suggestionId, authorId, content, status | belongsTo: Suggestion, User |
 | SuggestionVote | SuggestionVotes | id, suggestionId, userId, voteType | belongsTo: Suggestion, User |
 | Comment | Comments | id, entityType (`article`\|`poll`\|`user_profile`\|`civic_question`), entityId, authorId, parentId, body, status | belongsTo: User, Comment (parent); hasMany: Comment (replies) |
@@ -270,9 +270,9 @@ Appofa/
 ### Suggestions (`/api/suggestions`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | / | opt | List suggestions |
+| GET | / | opt | List suggestions (author omitted when `hideCreator=true` for guests/non-owner/non-admin/non-moderator viewers) |
 | GET | /category-counts | — | Category counts |
-| GET | /:id | opt | Get suggestion |
+| GET | /:id | opt | Get suggestion (author omitted when `hideCreator=true` for guests/non-owner/non-admin/non-moderator viewers) |
 | GET | /:id/solutions | — | Get solutions |
 | POST | / | ✅ | Create suggestion |
 | PATCH | /:id | ✅ | Update suggestion |
@@ -718,6 +718,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | 003 | 003-add-user-columns.js | Additional user columns |
 | 004 | 004-add-user-searchable.js | User searchable flag |
 | 20260517211000 | 20260517211000-add-profile-visibility-to-users.js | Adds `Users.profileVisibility` (`hidden/registered/public`), backfills from legacy `searchable` (`false->hidden`, `true->registered`), then removes runtime `searchable` column |
+| 20260518162000 | 20260518162000-add-hide-creator-to-suggestions.js | Adds `Suggestions.hideCreator` boolean (default `false`) for suggestion-level creator anonymity |
 | 005 | 005-add-location-wikipedia-url.js | Location Wikipedia URL |
 | 006 | 006-create-poll-tables.js | Polls, PollOptions, PollVotes |
 | 007 | 007-add-poll-to-location-links.js | Poll-location links |

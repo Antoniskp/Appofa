@@ -64,6 +64,11 @@ const Suggestion = sequelize.define('Suggestion', {
     defaultValue: 'open',
     allowNull: false
   },
+  hideCreator: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
   visibility: {
     type: DataTypes.ENUM('public', 'private', 'locals_only'),
     defaultValue: 'public',

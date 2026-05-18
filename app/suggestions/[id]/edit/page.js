@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { suggestionAPI, tagAPI } from '@/lib/api';
@@ -34,6 +35,7 @@ export default function EditSuggestionPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const tCommon = useTranslations('common');
 
   const suggestionId = parseInt(params.id, 10);
 
@@ -57,6 +59,7 @@ export default function EditSuggestionPage() {
         status: data.status,
         locationId: data.locationId || null,
         voteRestriction: data.voteRestriction || 'authenticated',
+        hideCreator: Boolean(data.hideCreator),
         category: data.category || '',
         tags: Array.isArray(data.tags) ? data.tags : [],
       });
@@ -134,7 +137,8 @@ export default function EditSuggestionPage() {
   };
 
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setForm((prev) => ({ ...prev, [e.target.name]: value }));
     if (errors[e.target.name]) {
       setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
     }
@@ -163,6 +167,7 @@ export default function EditSuggestionPage() {
         type: form.type,
         locationId: form.locationId,
         voteRestriction: form.voteRestriction,
+        hideCreator: form.hideCreator,
         category: form.category || null,
         tags: form.tags,
       };
@@ -308,6 +313,19 @@ export default function EditSuggestionPage() {
                 <p className="text-amber-600 text-xs mt-1">⚠️ Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία</p>
               )}
             </div>
+
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="hideCreator"
+                checked={form.hideCreator}
+                onChange={handleChange}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                {tCommon('hide_creator')}
+              </span>
+            </label>
 
             {/* Tags (optional) */}
             <div>

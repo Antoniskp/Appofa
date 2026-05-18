@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   ArrowLeftIcon,
@@ -190,6 +191,7 @@ export default function SuggestionDetailPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { addToast } = useToast();
+  const tCommon = useTranslations('common');
 
   const suggestionId = parseInt(params.id, 10);
 
@@ -395,6 +397,11 @@ export default function SuggestionDetailPage() {
                 >
                   <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
                   <span>{suggestion.author.username}</span>
+                </span>
+              )}
+              {!suggestion.author && (
+                <span className="font-medium text-gray-700">
+                  {suggestion.hideCreator ? tCommon('anonymous') : tCommon('unknown')}
                 </span>
               )}
               <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>

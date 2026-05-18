@@ -448,7 +448,9 @@ export default function LocationTabs({
                     },
                   ]}
                   metadata={[
-                    suggestion.author?.username ? `by ${suggestion.author.username}` : null,
+                    (suggestion.hideCreator && !suggestion.author)
+                      ? 'by Anonymous'
+                      : (suggestion.author?.username ? `by ${suggestion.author.username}` : null),
                     formatMetaDate(suggestion.createdAt),
                   ].filter(Boolean)}
                 />

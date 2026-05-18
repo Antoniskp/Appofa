@@ -27,6 +27,7 @@ Users can post ideas, problems, or location suggestions. Admins and moderators c
 | `locationId` | INTEGER FK → Locations | optional |
 | `authorId` | INTEGER FK → Users | cascade delete |
 | `status` | ENUM | `open`, `under_review`, `implemented`, `rejected` |
+| `hideCreator` | BOOLEAN | hides author from guests/non-owner/non-admin/non-moderator viewers (default `false`) |
 | `visibility` | ENUM | `public`, `private`, `locals_only` (default `public`) |
 | `voteRestriction` | ENUM | `authenticated`, `locals_only` (default `authenticated`) |
 
@@ -61,8 +62,8 @@ All endpoints are mounted under `/api/suggestions` and `/api/solutions`.
 |---|---|---|---|
 | `GET` | `/api/suggestions` | optional | List suggestions (filters + pagination) |
 | `GET` | `/api/suggestions/:id` | optional | Get suggestion detail with solutions sorted by score |
-| `POST` | `/api/suggestions` | ✅ required | Create a new suggestion (`problem_request` requires admin/moderator role) |
-| `PATCH` | `/api/suggestions/:id` | ✅ owner/admin | Update title, body, type, locationId, or status |
+| `POST` | `/api/suggestions` | ✅ required | Create a new suggestion (`problem_request` requires admin/moderator role; accepts `hideCreator`) |
+| `PATCH` | `/api/suggestions/:id` | ✅ owner/admin | Update title, body, type, locationId, status, and `hideCreator` |
 | `DELETE` | `/api/suggestions/:id` | ✅ owner/admin | Delete a suggestion and its solutions |
 | `GET` | `/api/suggestions/:id/solutions` | optional | List solutions sorted by score desc |
 | `POST` | `/api/suggestions/:id/solutions` | ✅ required | Add a response under a suggestion |
@@ -127,7 +128,7 @@ Solutions in the suggestion detail response (`GET /api/suggestions/:id`) are sor
 
 ## Response Example
 
-`GET /api/suggestions/42`:
+`GET /api/suggestions/42` (owner/admin/moderator view):
 
 ```json
 {
@@ -140,6 +141,7 @@ Solutions in the suggestion detail response (`GET /api/suggestions/:id`) are sor
     "status": "open",
     "score": 12,
     "myVote": 1,
+    "hideCreator": true,
     "author": { "id": 7, "username": "alice", "avatar": null },
     "location": { "id": 3, "name": "Central Municipality", "slug": "central" },
     "solutions": [
@@ -154,6 +156,8 @@ Solutions in the suggestion detail response (`GET /api/suggestions/:id`) are sor
   }
 }
 ```
+
+When `hideCreator=true`, non-owner/non-admin/non-moderator viewers receive `"author": null`.
 
 ---
 

@@ -196,6 +196,30 @@ describe('Suggestions & Solutions API Tests', () => {
       const suggestion = await Suggestion.findByPk(testSuggestionId);
       expect(suggestion.status).toBe('open');
     });
+
+    it('should default hideCreator to false', async () => {
+      const suggestion = await Suggestion.findByPk(testSuggestionId);
+      expect(suggestion.hideCreator).toBe(false);
+    });
+
+    it('should persist hideCreator when provided', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Anonymous infrastructure suggestion',
+          body: 'Let us discuss this without exposing my profile publicly.',
+          type: 'idea',
+          hideCreator: true
+        });
+      expect(res.status).toBe(201);
+      expect(res.body.data.hideCreator).toBe(true);
+      expect(res.body.data.author?.id).toBe(user1Id);
+
+      const suggestion = await Suggestion.findByPk(res.body.data.id);
+      expect(suggestion.hideCreator).toBe(true);
+    });
   });
 
   // ─── GET /api/suggestions/:id ────────────────────────────────────────────────
@@ -525,6 +549,104 @@ describe('Suggestions & Solutions API Tests', () => {
         .send({ status: 'implemented' });
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('implemented');
+    });
+
+    it('should allow owner to toggle hideCreator', async () => {
+      const res = await request(app)
+        .patch(`/api/suggestions/${testSuggestionId}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({ hideCreator: true });
+      expect(res.status).toBe(200);
+      expect(res.body.data.hideCreator).toBe(true);
+
+      const suggestion = await Suggestion.findByPk(testSuggestionId);
+      expect(suggestion.hideCreator).toBe(true);
+    });
+  });
+
+  describe('Suggestion creator anonymity', () => {
+    let hiddenSuggestionId;
+
+    beforeAll(async () => {
+      const createRes = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Hidden creator suggestion',
+          body: 'The creator should be hidden from guests and other authenticated users.',
+          type: 'idea',
+          hideCreator: true
+        });
+      hiddenSuggestionId = createRes.body.data.id;
+    });
+
+    it('hides author in detail for guests when hideCreator is true', async () => {
+      const res = await request(app).get(`/api/suggestions/${hiddenSuggestionId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.data.hideCreator).toBe(true);
+      expect(res.body.data.author).toBeNull();
+    });
+
+    it('hides author in detail for non-owner authenticated users when hideCreator is true', async () => {
+      const res = await request(app)
+        .get(`/api/suggestions/${hiddenSuggestionId}`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', [`auth_token=${user2Token}`]);
+      expect(res.status).toBe(200);
+      expect(res.body.data.author).toBeNull();
+    });
+
+    it('shows author in detail for owner when hideCreator is true', async () => {
+      const res = await request(app)
+        .get(`/api/suggestions/${hiddenSuggestionId}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', [`auth_token=${user1Token}`]);
+      expect(res.status).toBe(200);
+      expect(res.body.data.author?.id).toBe(user1Id);
+    });
+
+    it('shows author in detail for admins and moderators when hideCreator is true', async () => {
+      const adminRes = await request(app)
+        .get(`/api/suggestions/${hiddenSuggestionId}`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Cookie', [`auth_token=${adminToken}`]);
+      expect(adminRes.status).toBe(200);
+      expect(adminRes.body.data.author?.id).toBe(user1Id);
+
+      const modRes = await request(app)
+        .get(`/api/suggestions/${hiddenSuggestionId}`)
+        .set('Authorization', `Bearer ${moderatorToken}`)
+        .set('Cookie', [`auth_token=${moderatorToken}`]);
+      expect(modRes.status).toBe(200);
+      expect(modRes.body.data.author?.id).toBe(user1Id);
+    });
+
+    it('hides author in list for guests and non-owner users but not for owner', async () => {
+      const guestRes = await request(app).get(`/api/suggestions?authorId=${user1Id}`);
+      expect(guestRes.status).toBe(200);
+      const guestHidden = guestRes.body.data.find((item) => item.id === hiddenSuggestionId);
+      expect(guestHidden).toBeTruthy();
+      expect(guestHidden.author).toBeNull();
+
+      const regularRes = await request(app)
+        .get(`/api/suggestions?authorId=${user1Id}`)
+        .set('Authorization', `Bearer ${user2Token}`)
+        .set('Cookie', [`auth_token=${user2Token}`]);
+      expect(regularRes.status).toBe(200);
+      const regularHidden = regularRes.body.data.find((item) => item.id === hiddenSuggestionId);
+      expect(regularHidden).toBeTruthy();
+      expect(regularHidden.author).toBeNull();
+
+      const ownerRes = await request(app)
+        .get(`/api/suggestions?authorId=${user1Id}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set('Cookie', [`auth_token=${user1Token}`]);
+      expect(ownerRes.status).toBe(200);
+      const ownerHidden = ownerRes.body.data.find((item) => item.id === hiddenSuggestionId);
+      expect(ownerHidden).toBeTruthy();
+      expect(ownerHidden.author?.id).toBe(user1Id);
     });
   });
 

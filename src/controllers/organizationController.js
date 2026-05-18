@@ -15,6 +15,7 @@ const organizationService = require('../services/organizationService');
 const { notifyOrgInvite, notifyOrgJoinApproved, notifyOrgMemberRemoved } = require('../services/notificationService');
 const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
 const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
+const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const { randomUUID } = require('crypto');
 const organizationContentConfig = require('../../config/organizationContent.json');
 
@@ -126,17 +127,23 @@ function serializeOrgPoll(poll) {
   };
 }
 
-function serializeOrgSuggestion(suggestion) {
+function serializeOrgSuggestion(suggestion, viewer = null) {
   const data = suggestion.toJSON ? suggestion.toJSON() : suggestion;
+  if (shouldHideSuggestionAuthor(data, viewer)) {
+    data.author = null;
+  }
   return {
     ...data,
     visibility: mapDbVisibilityToOrg(data.visibility),
   };
 }
 
-function mapOfficialPostItem(item, contentType) {
+function mapOfficialPostItem(item, contentType, viewer = null) {
   const data = item.toJSON ? item.toJSON() : item;
-  const author = contentType === 'poll' ? data.creator : data.author;
+  let author = contentType === 'poll' ? data.creator : data.author;
+  if (contentType === 'suggestion' && shouldHideSuggestionAuthor(data, viewer)) {
+    author = null;
+  }
   return {
     id: data.id,
     contentType,
@@ -950,7 +957,7 @@ const organizationController = {
       return res.status(200).json({
         success: true,
         data: {
-          suggestions: suggestions.map(serializeOrgSuggestion),
+          suggestions: suggestions.map((item) => serializeOrgSuggestion(item, req.user || null)),
         },
       });
     } catch (error) {
@@ -1012,7 +1019,7 @@ const organizationController = {
 
       return res.status(201).json({
         success: true,
-        data: { suggestion: serializeOrgSuggestion(suggestion) },
+        data: { suggestion: serializeOrgSuggestion(suggestion, req.user || null) },
       });
     } catch (error) {
       console.error('organizationController.createOrgSuggestion error:', error);
@@ -1083,7 +1090,7 @@ const organizationController = {
 
       const officialPosts = [
         ...polls.map((poll) => mapOfficialPostItem(poll, 'poll')),
-        ...suggestions.map((suggestion) => mapOfficialPostItem(suggestion, 'suggestion')),
+        ...suggestions.map((suggestion) => mapOfficialPostItem(suggestion, 'suggestion', req.user || null)),
       ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
       return res.status(200).json({
@@ -1216,7 +1223,7 @@ const organizationController = {
 
       return res.status(201).json({
         success: true,
-        data: { officialPost: mapOfficialPostItem(createdSuggestion, 'suggestion') },
+        data: { officialPost: mapOfficialPostItem(createdSuggestion, 'suggestion', req.user || null) },
       });
     } catch (error) {
       console.error('organizationController.createOfficialPost error:', error);
