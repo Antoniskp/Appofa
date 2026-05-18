@@ -21,6 +21,10 @@ const TYPE_VARIANTS = {
 };
 
 export default function SuggestionCard({ suggestion }) {
+  const creatorLabel = (suggestion.hideCreator && !suggestion.author)
+    ? 'Ανώνυμος'
+    : (suggestion.author?.username || 'Άγνωστος');
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow duration-200 flex flex-col h-full">
       <Link href={`/suggestions/${suggestion.id}`} className="block flex-1">
@@ -48,9 +52,9 @@ export default function SuggestionCard({ suggestion }) {
           {suggestion.author && (
             <>
               <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-              <span>{suggestion.author.username}</span>
             </>
           )}
+          <span>{creatorLabel}</span>
           {suggestion.createdAt && (
             <span className="text-xs text-gray-400">
               {new Date(suggestion.createdAt).toLocaleDateString('el-GR')}

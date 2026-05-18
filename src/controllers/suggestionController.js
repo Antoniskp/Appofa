@@ -1,6 +1,6 @@
 const { Op } = require('sequelize');
 const { Suggestion, Solution, SuggestionVote, User, Location, Tag, TaggableItem, sequelize } = require('../models');
-const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
+const { normalizeRequiredText, normalizeEnum, normalizeBoolean } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
 const { getAncestorLocationIds } = require('../utils/locationUtils');
 const { syncTags, attachTags } = require('../utils/tagUtils');
@@ -41,6 +41,22 @@ async function attachVoteInfo(obj, targetType, userId) {
   const { upvotes, downvotes } = await computeCounts(targetType, obj.id);
   const myVote = await getMyVote(userId, targetType, obj.id);
   return { ...obj, upvotes, downvotes, score: upvotes - downvotes, myVote };
+}
+
+function shouldHideSuggestionAuthor(suggestion, user) {
+  if (!suggestion?.hideCreator) return false;
+  if (!user) return true;
+  if (['admin', 'moderator'].includes(user.role)) return false;
+  if (user.id === suggestion.authorId) return false;
+  return true;
+}
+
+function sanitizeSuggestionAuthor(suggestion, user) {
+  const data = suggestion?.toJSON ? suggestion.toJSON() : { ...suggestion };
+  if (shouldHideSuggestionAuthor(data, user)) {
+    data.author = null;
+  }
+  return data;
 }
 
 const suggestionController = {
@@ -142,9 +158,10 @@ const suggestionController = {
       });
 
       const userId = req.user?.id;
+      const viewer = req.user || null;
       let suggestions = await Promise.all(
         rows.map(async (s) => {
-          const plain = s.toJSON();
+          const plain = sanitizeSuggestionAuthor(s, viewer);
           return attachVoteInfo(plain, 'suggestion', userId);
         })
       );
@@ -221,7 +238,8 @@ const suggestionController = {
       }
 
       const userId = req.user?.id;
-      const plain = suggestion.toJSON();
+      const viewer = req.user || null;
+      const plain = sanitizeSuggestionAuthor(suggestion, viewer);
       const withVotes = await attachVoteInfo(plain, 'suggestion', userId);
 
       // Attach score and myVote to each solution and sort by score desc
@@ -248,7 +266,7 @@ const suggestionController = {
    */
   createSuggestion: async (req, res) => {
     try {
-      const { title, body, type, locationId, category, tags, visibility, voteRestriction } = req.body;
+      const { title, body, type, locationId, category, tags, visibility, voteRestriction, hideCreator } = req.body;
 
       const titleResult = normalizeRequiredText(title, 'Title', 5, 200);
       if (titleResult.error) return res.status(400).json({ success: false, message: titleResult.error });
@@ -264,6 +282,9 @@ const suggestionController = {
 
       const voteRestrictionResult = normalizeEnum(voteRestriction, SUGGESTION_VOTE_RESTRICTIONS, 'Vote restriction');
       if (voteRestrictionResult.error) return res.status(400).json({ success: false, message: voteRestrictionResult.error });
+
+      const hideCreatorResult = normalizeBoolean(hideCreator, 'hideCreator');
+      if (hideCreatorResult.error) return res.status(400).json({ success: false, message: hideCreatorResult.error });
 
       let parsedLocationId = null;
       if (locationId !== undefined && locationId !== null && locationId !== '') {
@@ -284,6 +305,7 @@ const suggestionController = {
         locationId: parsedLocationId,
         authorId: req.user.id,
         status: 'open',
+        hideCreator: hideCreatorResult.value !== undefined ? hideCreatorResult.value : false,
         visibility: visibilityResult.value || 'public',
         voteRestriction: voteRestrictionResult.value || 'authenticated',
         ...(category ? { category } : {})
@@ -301,7 +323,13 @@ const suggestionController = {
         ]
       });
 
-      const createdData = await attachTags('suggestion', { ...created.toJSON(), upvotes: 0, downvotes: 0, score: 0, myVote: null });
+      const createdData = await attachTags('suggestion', {
+        ...sanitizeSuggestionAuthor(created, req.user || null),
+        upvotes: 0,
+        downvotes: 0,
+        score: 0,
+        myVote: null
+      });
 
       return res.status(201).json({
         success: true,
@@ -371,6 +399,12 @@ const suggestionController = {
         updates.voteRestriction = r.value;
       }
 
+      if (req.body.hideCreator !== undefined) {
+        const r = normalizeBoolean(req.body.hideCreator, 'hideCreator');
+        if (r.error) return res.status(400).json({ success: false, message: r.error });
+        updates.hideCreator = r.value;
+      }
+
       if (req.body.locationId !== undefined) {
         const locId = req.body.locationId;
         if (locId === null || locId === '') {
@@ -406,7 +440,7 @@ const suggestionController = {
         ]
       });
 
-      const updatedData = await attachTags('suggestion', updated.toJSON());
+      const updatedData = await attachTags('suggestion', sanitizeSuggestionAuthor(updated, req.user || null));
       return res.json({ success: true, data: updatedData, message: 'Suggestion updated.' });
     } catch (error) {
       console.error('Update suggestion error:', error);

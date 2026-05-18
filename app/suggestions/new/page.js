@@ -33,7 +33,16 @@ export default function NewSuggestionPage() {
   const { user } = useAuth();
   const { addToast } = useToast();
 
-  const [form, setForm] = useState({ title: '', body: '', type: 'idea', locationId: null, voteRestriction: 'authenticated', category: '', tags: [] });
+  const [form, setForm] = useState({
+    title: '',
+    body: '',
+    type: 'idea',
+    locationId: null,
+    voteRestriction: 'authenticated',
+    hideCreator: false,
+    category: '',
+    tags: []
+  });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -95,7 +104,8 @@ export default function NewSuggestionPage() {
   };
 
   const handleChange = (e) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+    setForm((prev) => ({ ...prev, [e.target.name]: value }));
     if (errors[e.target.name]) {
       setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
     }
@@ -124,6 +134,7 @@ export default function NewSuggestionPage() {
         type: form.type,
         ...(form.locationId ? { locationId: form.locationId } : { locationId: null }),
         voteRestriction: form.voteRestriction,
+        hideCreator: form.hideCreator,
         ...(form.category ? { category: form.category } : {}),
         tags: form.tags,
       };
@@ -268,6 +279,19 @@ export default function NewSuggestionPage() {
                 <p className="text-amber-600 text-xs mt-1">⚠️ Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία</p>
               )}
             </div>
+
+            <label className="flex items-center">
+              <input
+                type="checkbox"
+                name="hideCreator"
+                checked={form.hideCreator}
+                onChange={handleChange}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <span className="ml-2 text-sm text-gray-700">
+                Απόκρυψη δημιουργού
+              </span>
+            </label>
 
             {/* Tags (optional) */}
             <div>
