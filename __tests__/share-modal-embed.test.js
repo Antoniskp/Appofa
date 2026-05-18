@@ -6,6 +6,10 @@ const { createRoot } = require('react-dom/client');
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+jest.mock('next-intl', () => ({
+  useTranslations: () => (key) => key,
+}));
+
 const ShareModal = require('../components/ui/ShareModal').default;
 
 describe('ShareModal embed support', () => {

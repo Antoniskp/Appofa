@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import EntityEmbedView from '@/components/embed/EntityEmbedView';
 import {
   EMBED_ENTITY_CONFIG,
@@ -44,12 +45,12 @@ async function fetchEmbeddedEntity(entityType, rawId) {
   return { status: 200, data: payload.data };
 }
 
-function EmbeddedState({ title, description, href = '/' }) {
+function EmbeddedState({ title, description, href = '/', openLabel }) {
   return (
     <div className="min-h-screen bg-transparent p-4">
       <div className="mx-auto flex max-w-xl flex-col items-center gap-3 rounded-[24px] border border-gray-200 bg-white px-6 py-10 text-center shadow-lg shadow-gray-200/80">
         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-          Appofasi embed
+          Appofa embed
         </span>
         <h1 className="text-xl font-bold text-gray-900">{title}</h1>
         <p className="max-w-md text-sm leading-6 text-gray-600">{description}</p>
@@ -59,7 +60,7 @@ function EmbeddedState({ title, description, href = '/' }) {
           rel="noopener noreferrer"
           className="inline-flex rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-800"
         >
-          Άνοιγμα στο Appofasi
+          {openLabel}
         </Link>
       </div>
     </div>
@@ -67,6 +68,7 @@ function EmbeddedState({ title, description, href = '/' }) {
 }
 
 export default async function EmbeddedEntityPage({ params }) {
+  const tCommon = await getTranslations('common');
   const { entityType, id } = await params;
 
   if (!EMBED_ENTITY_CONFIG[entityType]) {
@@ -80,6 +82,7 @@ export default async function EmbeddedEntityPage({ params }) {
       <EmbeddedState
         title="Το περιεχόμενο δεν βρέθηκε"
         description="Το ενσωματωμένο περιεχόμενο που ζητήσατε δεν είναι διαθέσιμο."
+        openLabel={tCommon('open_in_app')}
       />
     );
   }
@@ -88,7 +91,8 @@ export default async function EmbeddedEntityPage({ params }) {
     return (
       <EmbeddedState
         title="Η ενσωμάτωση δεν είναι διαθέσιμη"
-        description="Μόνο δημόσιο περιεχόμενο μπορεί να εμφανιστεί εκτός Appofasi. Ανοίξτε το πλήρες αντικείμενο για να ελέγξετε τα δικαιώματα πρόσβασης."
+        description="Μόνο δημόσιο περιεχόμενο μπορεί να εμφανιστεί εκτός Appofa. Ανοίξτε το πλήρες αντικείμενο για να ελέγξετε τα δικαιώματα πρόσβασης."
+        openLabel={tCommon('open_in_app')}
       />
     );
   }

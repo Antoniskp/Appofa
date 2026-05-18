@@ -202,7 +202,7 @@ export default function EntityEmbedView({ entityType, entity }) {
               <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.accentClass}`}>
                 {meta.badge}
               </span>
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Appofasi embed</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Appofa embed</span>
             </div>
             <Link
               href={openPath}

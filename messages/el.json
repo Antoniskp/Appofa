@@ -400,7 +400,26 @@
     "status_pending": "Εκκρεμεί",
     "app_name": "Απόφαση",
     "information": "Πληροφορία",
-    "open_in_app": "Άνοιγμα στο Appofasi",
+    "open_in_app": "Άνοιγμα στο Appofa",
+    "share": {
+      "title": "Κοινοποίηση",
+      "close": "Κλείσιμο",
+      "copy": "Αντιγραφή",
+      "copied": "Αντιγράφηκε!",
+      "copy_failed": "Αδυναμία αντιγραφής",
+      "link_copied": "Ο σύνδεσμος αντιγράφηκε!",
+      "share_to": "Κοινοποίηση σε",
+      "qr_code": "QR Code",
+      "scan_hint": "Σκανάρετε για γρήγορη πρόσβαση",
+      "embed": {
+        "title": "Ενσωμάτωση",
+        "url_short": "URL",
+        "iframe_short": "iframe",
+        "url_copied": "Το embed URL αντιγράφηκε!",
+        "code_copied": "Ο iframe κώδικας αντιγράφηκε!",
+        "help": "Χρησιμοποιήστε το iframe σε άρθρα, email ή εξωτερικές ιστοσελίδες."
+      }
+    },
     "rate_limit": {
       "title": "Προσωρινό όριο",
       "try_again_in": "Δοκιμάστε ξανά σε {time}.",

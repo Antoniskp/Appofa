@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { XMarkIcon, ClipboardDocumentIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { QRCodeSVG } from 'qrcode.react';
+import { useTranslations } from 'next-intl';
 import {
   buildIframeEmbedCode,
   EMBED_ENTITY_CONFIG,
@@ -30,6 +31,7 @@ export default function ShareModal({
   embedPath,
   embedHeight,
 }) {
+  const t = useTranslations('common.share');
   const overlayRef = useRef(null);
   const firstFocusRef = useRef(null);
   const [copiedTarget, setCopiedTarget] = useState('');
@@ -72,13 +74,13 @@ export default function ShareModal({
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  const handleCopy = (value, target, successMessage = 'Ο σύνδεσμος αντιγράφηκε!') => {
+  const handleCopy = (value, target, successMessage = t('link_copied')) => {
     navigator.clipboard.writeText(value).then(() => {
       setCopiedTarget(target);
       if (showToast) showToast(successMessage);
       setTimeout(() => setCopiedTarget(''), 2500);
     }).catch(() => {
-      if (showToast) showToast('Αδυναμία αντιγραφής', 'error');
+      if (showToast) showToast(t('copy_failed'), 'error');
     });
   };
 
@@ -93,7 +95,7 @@ export default function ShareModal({
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
-      aria-label="Κοινοποίηση"
+      aria-label={t('title')}
     >
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 relative">
         {/* Close button */}
@@ -101,13 +103,13 @@ export default function ShareModal({
           ref={firstFocusRef}
           onClick={onClose}
           className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-          aria-label="Κλείσιμο"
+          aria-label={t('close')}
         >
           <XMarkIcon className="h-5 w-5" />
         </button>
 
         {/* Header */}
-        <h2 className="text-lg font-bold text-gray-900 mb-1">Κοινοποίηση</h2>
+        <h2 className="text-lg font-bold text-gray-900 mb-1">{t('title')}</h2>
         {title && <p className="text-sm text-gray-500 mb-5 truncate">{title}</p>}
 
         {/* Copy link */}
@@ -129,19 +131,19 @@ export default function ShareModal({
             {copiedTarget === 'link' ? (
               <>
                 <CheckIcon className="h-4 w-4" />
-                Αντιγράφηκε!
+                {t('copied')}
               </>
             ) : (
               <>
                 <ClipboardDocumentIcon className="h-4 w-4" />
-                Αντιγραφή
+                {t('copy')}
               </>
             )}
           </button>
         </div>
 
         {/* Social share buttons */}
-        <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-3">Κοινοποίηση σε</p>
+        <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-3">{t('share_to')}</p>
         <div className="flex gap-2 mb-6">
           {/* WhatsApp */}
           <a
@@ -187,7 +189,7 @@ export default function ShareModal({
 
         {embedUrl && (
           <div className="border-t border-gray-100 pt-5 mb-6">
-            <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-3">Ενσωμάτωση</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-3">{t('embed.title')}</p>
 
             <div className="flex gap-2 mb-3">
               <input
@@ -197,7 +199,7 @@ export default function ShareModal({
                 onClick={(e) => e.target.select()}
               />
               <button
-                onClick={() => handleCopy(embedUrl, 'embed-url', 'Το embed URL αντιγράφηκε!')}
+                onClick={() => handleCopy(embedUrl, 'embed-url', t('embed.url_copied'))}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors flex-shrink-0 ${
                   copiedTarget === 'embed-url'
                     ? 'bg-green-500 text-white'
@@ -205,7 +207,7 @@ export default function ShareModal({
                 }`}
               >
                 {copiedTarget === 'embed-url' ? <CheckIcon className="h-4 w-4" /> : <ClipboardDocumentIcon className="h-4 w-4" />}
-                URL
+                {t('embed.url_short')}
               </button>
             </div>
 
@@ -218,10 +220,10 @@ export default function ShareModal({
             />
             <div className="flex items-center justify-between gap-3 mt-2">
               <p className="text-xs text-gray-500">
-                Χρησιμοποιήστε το iframe σε άρθρα, email ή εξωτερικές ιστοσελίδες.
+                {t('embed.help')}
               </p>
               <button
-                onClick={() => handleCopy(embedCode, 'embed-code', 'Ο iframe κώδικας αντιγράφηκε!')}
+                onClick={() => handleCopy(embedCode, 'embed-code', t('embed.code_copied'))}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors ${
                   copiedTarget === 'embed-code'
                     ? 'bg-green-500 text-white'
@@ -229,7 +231,7 @@ export default function ShareModal({
                 }`}
               >
                 {copiedTarget === 'embed-code' ? <CheckIcon className="h-4 w-4" /> : <ClipboardDocumentIcon className="h-4 w-4" />}
-                iframe
+                {t('embed.iframe_short')}
               </button>
             </div>
           </div>
@@ -237,11 +239,11 @@ export default function ShareModal({
 
         {/* QR Code */}
         <div className="flex flex-col items-center gap-2">
-          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">QR Code</p>
+          <p className="text-xs text-gray-400 uppercase tracking-wide font-semibold">{t('qr_code')}</p>
           <div className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
             <QRCodeSVG value={shareUrl} size={140} level="M" />
           </div>
-          <p className="text-xs text-gray-400">Σκανάρετε για γρήγορη πρόσβαση</p>
+          <p className="text-xs text-gray-400">{t('scan_hint')}</p>
         </div>
       </div>
     </div>

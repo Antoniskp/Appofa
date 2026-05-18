@@ -45,7 +45,7 @@ describe('EntityEmbedView', () => {
       root.render(React.createElement(EntityEmbedView, { entityType: 'polls', entity }));
     });
 
-    expect(container.textContent).toContain('Appofasi embed');
+    expect(container.textContent).toContain('Appofa embed');
     expect(container.textContent).toContain('Δοκιμαστική δημοσκόπηση');
     expect(container.textContent).toContain('Αποτελέσματα');
     expect(container.textContent).toContain('Άνοιγμα δημοσκόπησης');
