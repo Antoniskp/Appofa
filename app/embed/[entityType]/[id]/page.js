@@ -16,6 +16,7 @@ const ENTITY_API_PATHS = {
 };
 
 export const metadata = {
+  // Embed routes are duplicate, iframe-oriented representations and should not be indexed.
   robots: {
     index: false,
     follow: false,
@@ -50,7 +51,7 @@ function EmbeddedState({ title, description, href = '/', openLabel }) {
     <div className="min-h-screen bg-transparent p-4">
       <div className="mx-auto flex max-w-xl flex-col items-center gap-3 rounded-[24px] border border-gray-200 bg-white px-6 py-10 text-center shadow-lg shadow-gray-200/80">
         <span className="inline-flex rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500">
-          Appofa embed
+          Appofasi embed
         </span>
         <h1 className="text-xl font-bold text-gray-900">{title}</h1>
         <p className="max-w-md text-sm leading-6 text-gray-600">{description}</p>

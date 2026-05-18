@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { getEmbedOpenPath } from '@/lib/utils/embed';
 
+const MAX_EMBED_DESCRIPTION_LENGTH = 260;
+
 const TYPE_META = {
   polls: {
     badge: 'Δημοσκόπηση',
@@ -41,7 +43,7 @@ function formatDate(value) {
   return date.toLocaleDateString('el-GR');
 }
 
-function truncate(value, max = 260) {
+function truncate(value, max = MAX_EMBED_DESCRIPTION_LENGTH) {
   if (!value) return '';
   if (value.length <= max) return value;
   return `${value.slice(0, max).trim()}…`;
@@ -202,7 +204,7 @@ export default function EntityEmbedView({ entityType, entity }) {
               <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.accentClass}`}>
                 {meta.badge}
               </span>
-              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Appofa embed</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400">Appofasi embed</span>
             </div>
             <Link
               href={openPath}
