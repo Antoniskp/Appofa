@@ -13,9 +13,9 @@ const TYPE_META = {
     actionLabel: 'Άνοιγμα πρότασης',
   },
   'civic-questions': {
-    badge: 'Civic Question',
+    badge: 'Πολιτική Ερώτηση',
     accentClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-    actionLabel: 'Άνοιγμα civic question',
+    actionLabel: 'Άνοιγμα πολιτικής ερώτησης',
   },
 };
 
