@@ -160,7 +160,10 @@ function SolutionCard({ solution, user, onVote, votingId }) {
       <div className="flex flex-wrap items-center justify-between mt-3 gap-3">
         <div className="flex items-center gap-3 text-xs text-gray-500">
           {solution.author && (
-            <span className="inline-flex items-center gap-1.5 text-gray-600">
+            <span
+              className="inline-flex items-center gap-1.5 text-gray-600"
+              aria-label={`Συντάκτης απάντησης: ${solution.author.username}`}
+            >
               <UserAvatar user={solution.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
               <span>{solution.author.username}</span>
             </span>
@@ -386,7 +389,10 @@ export default function SuggestionDetailPage() {
           <div className="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-3">
             <div className="flex items-center gap-4 text-xs text-gray-500">
               {suggestion.author && (
-                <span className="inline-flex items-center gap-1.5 font-medium text-gray-700">
+                <span
+                  className="inline-flex items-center gap-1.5 font-medium text-gray-700"
+                  aria-label={`Δημιουργός πρότασης: ${suggestion.author.username}`}
+                >
                   <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
                   <span>{suggestion.author.username}</span>
                 </span>
