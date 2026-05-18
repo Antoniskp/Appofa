@@ -1456,6 +1456,11 @@
     "local_badge": "Τοπική",
     "votes_label": "ψήφοι",
     "vote_error": "Αποτυχία καταχώρησης ψήφου.",
+    "login_to_vote": "Συνδεθείτε",
+    "login_to_vote_suffix": "για να ψηφίσετε.",
+    "voting_anonymously": "Ψηφίζετε ανώνυμα.",
+    "sign_in_for_account": "Συνδεθείτε",
+    "sign_in_for_account_suffix": "για καλύτερη παρακολούθηση.",
     "results_unavailable": "Τα αποτελέσματα δεν είναι διαθέσιμα ακόμη.",
     "total_votes": "Σύνολο ψήφων",
     "card": {
@@ -1507,6 +1512,7 @@
       "locals_only": "Μόνο τοπικοί"
     },
     "vote_restrictions": {
+      "anyone": "Όλοι (ανώνυμη ψηφοφορία)",
       "authenticated": "Συνδεδεμένοι χρήστες",
       "locals_only": "Μόνο τοπικοί"
     },

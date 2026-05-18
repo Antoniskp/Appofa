@@ -20,7 +20,7 @@ const { getAncestorLocationIds } = require('../utils/locationUtils');
 const SOURCE_TYPES = ['parliament', 'european_commission', 'municipal_council', 'regional_council', 'other'];
 const CIVIC_QUESTION_STATUSES = ['open', 'closed', 'archived'];
 const CIVIC_QUESTION_VISIBILITIES = ['public', 'private', 'locals_only'];
-const CIVIC_QUESTION_VOTE_RESTRICTIONS = ['authenticated', 'locals_only'];
+const CIVIC_QUESTION_VOTE_RESTRICTIONS = ['anyone', 'authenticated', 'locals_only'];
 const CIVIC_QUESTION_RESULTS_VISIBILITIES = ['always', 'after_vote', 'after_deadline'];
 const CIVIC_QUESTION_CHOICES = ['agree', 'disagree', 'present'];
 const CIVIC_QUESTION_SORT_OPTIONS = ['newest', 'closing_soon', 'most_voted'];
@@ -114,7 +114,7 @@ const parseLocation = async (locationId) => {
   return { value: parsedLocationId };
 };
 
-const attachVoteData = async (question, userId = null) => {
+const attachVoteData = async (question, userId = null, clientIp = null, userAgent = null) => {
   const questionId = question.id;
 
   const voteRows = await CivicQuestionVote.findAll({
@@ -149,6 +149,13 @@ const attachVoteData = async (question, userId = null) => {
       attributes: ['choice'],
     });
     myVote = existing?.choice || null;
+  } else if (clientIp && userAgent) {
+    // Anonymous: look up by device fingerprint
+    const anonVote = await CivicQuestionVote.findOne({
+      where: { civicQuestionId: questionId, userId: null, ipAddress: clientIp, userAgent },
+      attributes: ['choice'],
+    });
+    myVote = anonVote?.choice || null;
   }
 
   return {
@@ -160,7 +167,7 @@ const attachVoteData = async (question, userId = null) => {
   };
 };
 
-const canViewResults = async (question, user) => {
+const canViewResults = async (question, user, clientIp = null, userAgent = null) => {
   if (!question) return false;
   if (user && (user.role === 'admin' || question.creatorId === user.id)) return true;
 
@@ -172,12 +179,22 @@ const canViewResults = async (question, user) => {
   }
 
   if (question.resultsVisibility === 'after_vote') {
-    if (!user?.id) return false;
-    const existing = await CivicQuestionVote.findOne({
-      where: { civicQuestionId: question.id, userId: user.id },
-      attributes: ['id'],
-    });
-    return Boolean(existing);
+    if (user?.id) {
+      const existing = await CivicQuestionVote.findOne({
+        where: { civicQuestionId: question.id, userId: user.id },
+        attributes: ['id'],
+      });
+      return Boolean(existing);
+    }
+    // Anonymous: check by device fingerprint
+    if (clientIp && userAgent) {
+      const existing = await CivicQuestionVote.findOne({
+        where: { civicQuestionId: question.id, userId: null, ipAddress: clientIp, userAgent },
+        attributes: ['id'],
+      });
+      return Boolean(existing);
+    }
+    return false;
   }
 
   return false;
@@ -525,7 +542,7 @@ const listCivicQuestions = async (query, user) => {
   }
 };
 
-const getCivicQuestionById = async (id, user) => {
+const getCivicQuestionById = async (id, user, clientData = {}) => {
   try {
     const questionId = parsePositiveInteger(id);
     if (!questionId) {
@@ -549,8 +566,9 @@ const getCivicQuestionById = async (id, user) => {
       return { success: false, status: 403, message: 'Access denied.' };
     }
 
-    const withVoteData = await attachVoteData(plain, user?.id || null);
-    const resultsAllowed = await canViewResults(plain, user);
+    const { clientIp, userAgent } = clientData;
+    const withVoteData = await attachVoteData(plain, user?.id || null, clientIp, userAgent);
+    const resultsAllowed = await canViewResults(plain, user, clientIp, userAgent);
 
     if (!resultsAllowed) {
       withVoteData.voteCounts = null;
@@ -672,7 +690,7 @@ const deleteCivicQuestion = async (id, userId, userRole) => {
   }
 };
 
-const voteCivicQuestion = async (id, user, payload) => {
+const voteCivicQuestion = async (id, user, payload, clientData = {}) => {
   try {
     const questionId = parsePositiveInteger(id);
     if (!questionId) {
@@ -704,6 +722,11 @@ const voteCivicQuestion = async (id, user, payload) => {
       return { success: false, status: 400, message: 'Voting deadline has passed for this civic question.' };
     }
 
+    // Check authentication requirement
+    if (question.voteRestriction === 'authenticated' && !user) {
+      return { success: false, status: 401, message: 'Authentication required to vote on this civic question.' };
+    }
+
     if (question.voteRestriction === 'locals_only') {
       const allowed = await hasLocalAccess(user, question.locationId);
       if (!allowed) {
@@ -711,18 +734,48 @@ const voteCivicQuestion = async (id, user, payload) => {
       }
     }
 
-    const existing = await CivicQuestionVote.findOne({
-      where: { civicQuestionId: questionId, userId: user.id },
-    });
+    const { clientIp, userAgent } = clientData;
 
-    if (existing) {
-      await existing.update({ choice: choiceResult.value });
-    } else {
-      await CivicQuestionVote.create({
-        civicQuestionId: questionId,
-        userId: user.id,
-        choice: choiceResult.value,
+    if (user?.id) {
+      // Authenticated vote
+      const existing = await CivicQuestionVote.findOne({
+        where: { civicQuestionId: questionId, userId: user.id },
       });
+
+      if (existing) {
+        await existing.update({ choice: choiceResult.value, isAuthenticated: true });
+      } else {
+        await CivicQuestionVote.create({
+          civicQuestionId: questionId,
+          userId: user.id,
+          choice: choiceResult.value,
+          ipAddress: clientIp || null,
+          userAgent: userAgent || null,
+          isAuthenticated: true,
+        });
+      }
+    } else {
+      // Anonymous vote — track by IP + User-Agent device fingerprint
+      if (!clientIp || !userAgent) {
+        return { success: false, status: 400, message: 'Cannot track anonymous vote without request metadata.' };
+      }
+
+      const existing = await CivicQuestionVote.findOne({
+        where: { civicQuestionId: questionId, userId: null, ipAddress: clientIp, userAgent },
+      });
+
+      if (existing) {
+        await existing.update({ choice: choiceResult.value });
+      } else {
+        await CivicQuestionVote.create({
+          civicQuestionId: questionId,
+          userId: null,
+          choice: choiceResult.value,
+          ipAddress: clientIp,
+          userAgent,
+          isAuthenticated: false,
+        });
+      }
     }
 
     const refreshed = await CivicQuestion.findByPk(question.id, {
@@ -735,7 +788,7 @@ const voteCivicQuestion = async (id, user, payload) => {
     return {
       success: true,
       status: 200,
-      data: await attachVoteData(refreshed.toJSON(), user.id),
+      data: await attachVoteData(refreshed.toJSON(), user?.id || null, clientIp, userAgent),
     };
   } catch (error) {
     console.error('Vote civic question error:', error);
@@ -743,7 +796,7 @@ const voteCivicQuestion = async (id, user, payload) => {
   }
 };
 
-const getCivicQuestionResults = async (id, user) => {
+const getCivicQuestionResults = async (id, user, clientData = {}) => {
   try {
     const questionId = parsePositiveInteger(id);
     if (!questionId) {
@@ -767,7 +820,8 @@ const getCivicQuestionResults = async (id, user) => {
       return { success: false, status: 403, message: 'Access denied.' };
     }
 
-    const canView = await canViewResults(plain, user);
+    const { clientIp, userAgent } = clientData;
+    const canView = await canViewResults(plain, user, clientIp, userAgent);
     if (!canView) {
       return { success: false, status: 403, message: 'Results are not available yet.' };
     }
@@ -775,7 +829,7 @@ const getCivicQuestionResults = async (id, user) => {
     return {
       success: true,
       status: 200,
-      data: await attachVoteData(plain, user?.id || null),
+      data: await attachVoteData(plain, user?.id || null, clientIp, userAgent),
     };
   } catch (error) {
     console.error('Get civic question results error:', error);

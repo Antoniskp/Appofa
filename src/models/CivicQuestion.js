@@ -76,7 +76,7 @@ const CivicQuestion = sequelize.define('CivicQuestion', {
     defaultValue: 'public',
   },
   voteRestriction: {
-    type: DataTypes.ENUM('authenticated', 'locals_only'),
+    type: DataTypes.ENUM('anyone', 'authenticated', 'locals_only'),
     allowNull: false,
     defaultValue: 'authenticated',
   },

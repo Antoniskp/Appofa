@@ -198,6 +198,7 @@ export default function CivicQuestionForm({
           <div>
             <label htmlFor="civic-question-vote-restriction" className="block text-sm font-medium text-gray-700">{t('form.vote_restriction')}</label>
             <select id="civic-question-vote-restriction" name="voteRestriction" value={formData.voteRestriction} onChange={handleInputChange} className="w-full border rounded-lg px-3 py-2">
+              <option value="anyone">{t('vote_restrictions.anyone')}</option>
               <option value="authenticated">{t('vote_restrictions.authenticated')}</option>
               <option value="locals_only">{t('vote_restrictions.locals_only')}</option>
             </select>

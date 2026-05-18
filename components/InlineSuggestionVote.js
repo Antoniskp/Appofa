@@ -22,6 +22,7 @@ const VOTE_LABELS = {
  * @param {number}   initialUpvotes - Initial upvote count from the API
  * @param {number}   initialDownvotes - Initial downvote count from the API
  * @param {number|null} initialMyVote - Current user's existing vote (1, -1, or null)
+ * @param {string}   voteRestriction - 'anyone' | 'authenticated' | 'locals_only'
  */
 export default function InlineSuggestionVote({
   suggestionId,
@@ -29,6 +30,7 @@ export default function InlineSuggestionVote({
   initialUpvotes = 0,
   initialDownvotes = 0,
   initialMyVote = null,
+  voteRestriction = 'authenticated',
 }) {
   const { user } = useAuth();
   const [upvotes, setUpvotes]     = useState(initialUpvotes);
@@ -39,12 +41,14 @@ export default function InlineSuggestionVote({
   const [justVoted, setJustVoted] = useState(null); // 1 or -1 — triggers pop animation
 
   const labels = VOTE_LABELS[type] || VOTE_LABELS.idea;
+  const allowAnonymous = voteRestriction === 'anyone';
+  const canVote = !!user || allowAnonymous;
 
   const handleVote = async (e, value) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!user || isVoting) return;
+    if (!canVote || isVoting) return;
 
     const prevUpvotes   = upvotes;
     const prevDownvotes = downvotes;
@@ -111,8 +115,8 @@ export default function InlineSuggestionVote({
       <button
         type="button"
         onClick={(e) => handleVote(e, 1)}
-        disabled={!user || isVoting || !!rateLimit}
-        title={user ? labels.up : 'Συνδεθείτε για να ψηφίσετε'}
+        disabled={!canVote || isVoting || !!rateLimit}
+        title={canVote ? labels.up : 'Συνδεθείτε για να ψηφίσετε'}
         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           myVote === 1
             ? 'bg-green-100 text-green-700'
@@ -129,8 +133,8 @@ export default function InlineSuggestionVote({
       <button
         type="button"
         onClick={(e) => handleVote(e, -1)}
-        disabled={!user || isVoting || !!rateLimit}
-        title={user ? labels.down : 'Συνδεθείτε για να ψηφίσετε'}
+        disabled={!canVote || isVoting || !!rateLimit}
+        title={canVote ? labels.down : 'Συνδεθείτε για να ψηφίσετε'}
         className={`flex items-center gap-1 px-2 py-1 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
           myVote === -1
             ? 'bg-red-100 text-red-600'

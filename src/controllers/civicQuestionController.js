@@ -4,6 +4,13 @@ const civicQuestionService = require('../services/civicQuestionService');
 
 const toUserObj = (reqUser) => (reqUser ? { id: reqUser.id, role: reqUser.role } : null);
 
+/** Extract the client IP from the request object. */
+const getClientIp = (req) =>
+  req.ip || (req.ips && req.ips[0]) || req.socket?.remoteAddress;
+
+/** Extract the User-Agent header from the request object. */
+const getUserAgent = (req) => req.headers['user-agent'] || 'unknown';
+
 const civicQuestionController = {
   listCivicQuestions: async (req, res) => {
     const result = await civicQuestionService.listCivicQuestions(req.query, toUserObj(req.user));
@@ -19,7 +26,8 @@ const civicQuestionController = {
   },
 
   getCivicQuestionById: async (req, res) => {
-    const result = await civicQuestionService.getCivicQuestionById(req.params.id, toUserObj(req.user));
+    const clientData = { clientIp: getClientIp(req), userAgent: getUserAgent(req) };
+    const result = await civicQuestionService.getCivicQuestionById(req.params.id, toUserObj(req.user), clientData);
     if (!result.success) {
       return res.status(result.status).json({ success: false, message: result.message });
     }
@@ -63,7 +71,8 @@ const civicQuestionController = {
   },
 
   voteCivicQuestion: async (req, res) => {
-    const result = await civicQuestionService.voteCivicQuestion(req.params.id, toUserObj(req.user), req.body);
+    const clientData = { clientIp: getClientIp(req), userAgent: getUserAgent(req) };
+    const result = await civicQuestionService.voteCivicQuestion(req.params.id, toUserObj(req.user), req.body, clientData);
     if (!result.success) {
       return res.status(result.status).json({ success: false, message: result.message });
     }
@@ -76,7 +85,8 @@ const civicQuestionController = {
   },
 
   getCivicQuestionResults: async (req, res) => {
-    const result = await civicQuestionService.getCivicQuestionResults(req.params.id, toUserObj(req.user));
+    const clientData = { clientIp: getClientIp(req), userAgent: getUserAgent(req) };
+    const result = await civicQuestionService.getCivicQuestionResults(req.params.id, toUserObj(req.user), clientData);
     if (!result.success) {
       return res.status(result.status).json({ success: false, message: result.message });
     }
