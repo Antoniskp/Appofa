@@ -348,9 +348,6 @@ export default function SuggestionDetailPage() {
     user &&
     suggestion.status !== 'implemented' &&
     suggestion.status !== 'rejected';
-  const suggestionCreatorLabel = (suggestion.hideCreator && !suggestion.author)
-    ? 'Ανώνυμος'
-    : (suggestion.author?.username || 'Άγνωστος');
 
   const responseConfig = RESPONSE_CONFIG[suggestion.type] || RESPONSE_CONFIG.idea;
 
@@ -397,9 +394,14 @@ export default function SuggestionDetailPage() {
                   aria-label={`Δημιουργός πρότασης: ${suggestion.author.username}`}
                 >
                   <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
+                  <span>{suggestion.author.username}</span>
                 </span>
               )}
-              <span className="font-medium text-gray-700">{suggestionCreatorLabel}</span>
+              {!suggestion.author && (
+                <span className="font-medium text-gray-700">
+                  {suggestion.hideCreator ? 'Ανώνυμος' : 'Άγνωστος'}
+                </span>
+              )}
               <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
               {(isOwner || isPrivileged) && (
                 <Link
