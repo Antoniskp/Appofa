@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { lookupCountryCodeByIp } from './lib/geo/proxyCountryDetection';
 
 const SKIP_REDIRECT_PREFIXES = ['/_next/', '/api/', '/favicon', '/country', '/login', '/register', '/forgot-password', '/reset-password', '/static', '/blocked', '/unknown-country', '/admin'];
 const ASSET_EXTENSION_REGEX = /\.(ico|png|jpg|svg|js|css|woff2?)$/i;
@@ -110,12 +111,21 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
-  const countryCode = headerCountry || cookieCountry;
   const shouldSkipRedirect = isSkippableForRedirect(pathname);
+  const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  const ipAddress = getClientIp(request);
+  let fallbackCountry = null;
+  let countryCode = headerCountry || cookieCountry;
+
+  if (!shouldSkipRedirect && !countryCode && ipAddress) {
+    fallbackCountry = await lookupCountryCodeByIp({ apiBase, ipAddress });
+    countryCode = fallbackCountry;
+  }
 
   const withDetectedCountryCookie = (response) => {
-    if (headerCountry) {
-      response.cookies.set('appofa_detected_country', headerCountry, { path: '/', maxAge: 86400, sameSite: 'Lax' });
+    const detectedCountry = headerCountry || fallbackCountry;
+    if (detectedCountry) {
+      response.cookies.set('appofa_detected_country', detectedCountry, { path: '/', maxAge: 86400, sameSite: 'Lax' });
     }
     return response;
   };
@@ -128,9 +138,6 @@ export async function proxy(request) {
     }
     return withDetectedCountryCookie(NextResponse.next());
   };
-
-  const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  const ipAddress = getClientIp(request);
 
   if (shouldSkipRedirect) {
     return nextResponse();
