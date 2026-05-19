@@ -46,6 +46,9 @@ export default function LocationHeader({
   const populationValue = location.population_override ?? location.population;
 
   const locationNeedsModerator = !location.hasModerator;
+  const hasActivePolls = activePolls.length > 0;
+  const hasSuggestions = suggestionsCount > 0;
+  const canEditLocation = canManageLocations();
   const moderatorDisplayName = [location?.moderatorPreview?.firstNameNative, location?.moderatorPreview?.lastNameNative]
     .filter(Boolean)
     .join(' ')
@@ -66,6 +69,12 @@ export default function LocationHeader({
     || headerSections.length > 0
   );
   const tabHref = (tab) => `/locations/${locationIdentifier}?tab=${tab}#location-content`;
+  const primaryAction = hasActivePolls
+    ? { href: tabHref('polls'), label: 'Ψήφισε τώρα' }
+    : { href: '/suggestions/new', label: 'Κάνε πρόταση' };
+  const secondaryAction = hasActivePolls
+    ? { href: '/suggestions/new', label: 'Κάνε πρόταση' }
+    : { href: tabHref('polls'), label: 'Δες ψηφοφορίες' };
 
   const shareLocation = async () => {
     const path = `/locations/${locationIdentifier}`;
@@ -125,6 +134,17 @@ export default function LocationHeader({
                     <span className="text-2xl" aria-hidden="true">{getTypeIcon(location.type, location.code)}</span>
                     <h1 className="text-2xl font-bold text-gray-900 truncate">{location.name}</h1>
                     <Badge variant="primary" size="sm">{location.type}</Badge>
+                    {canEditLocation && (
+                      <button
+                        type="button"
+                        onClick={onEdit}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                        title="Επεξεργασία τοποθεσίας"
+                        aria-label="Επεξεργασία τοποθεσίας"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
+                    )}
                   </div>
                   {location.name_local && (
                     <p className="text-base text-gray-500 mt-0.5">{location.name_local}</p>
@@ -176,17 +196,17 @@ export default function LocationHeader({
                       <div className="text-sm font-semibold text-gray-900">{formatPopulation(populationValue)}</div>
                     </div>
                   )}
-                  <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2">
-                    <div className="text-[11px] font-medium uppercase tracking-wide text-blue-600">Ψηφοφορίες</div>
-                    <div className="text-sm font-semibold text-blue-900">{activePolls.length}</div>
+                  <div className={`rounded-lg border px-3 py-2 ${hasActivePolls ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className={`text-[11px] font-medium uppercase tracking-wide ${hasActivePolls ? 'text-blue-600' : 'text-gray-500'}`}>Ψηφοφορίες</div>
+                    <div className={`text-sm font-semibold ${hasActivePolls ? 'text-blue-900' : 'text-gray-700'}`}>{activePolls.length}</div>
                   </div>
-                  <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2">
-                    <div className="text-[11px] font-medium uppercase tracking-wide text-indigo-600">Προτάσεις</div>
-                    <div className="text-sm font-semibold text-indigo-900">{suggestionsCount}</div>
+                  <div className={`rounded-lg border px-3 py-2 ${hasSuggestions ? 'border-indigo-200 bg-indigo-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className={`text-[11px] font-medium uppercase tracking-wide ${hasSuggestions ? 'text-indigo-600' : 'text-gray-500'}`}>Προτάσεις</div>
+                    <div className={`text-sm font-semibold ${hasSuggestions ? 'text-indigo-900' : 'text-gray-700'}`}>{suggestionsCount}</div>
                   </div>
-                  <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
-                    <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Χρήστες</div>
-                    <div className="text-sm font-semibold text-gray-900">{entities.usersCount || 0}</div>
+                  <div className={`rounded-lg border px-3 py-2 ${(entities.usersCount || 0) > 0 ? 'border-violet-200 bg-violet-50' : 'border-gray-200 bg-gray-50'}`}>
+                    <div className={`text-[11px] font-medium uppercase tracking-wide ${(entities.usersCount || 0) > 0 ? 'text-violet-600' : 'text-gray-500'}`}>Χρήστες</div>
+                    <div className={`text-sm font-semibold ${(entities.usersCount || 0) > 0 ? 'text-violet-900' : 'text-gray-700'}`}>{entities.usersCount || 0}</div>
                   </div>
                   {(newsArticles.length > 0 || regularArticles.length > 0) && (
                     <div className="col-span-2 sm:col-span-4 text-xs text-gray-500 pt-1">
@@ -271,19 +291,25 @@ export default function LocationHeader({
         <aside className="lg:col-span-4">
           <div className="space-y-4 lg:sticky lg:top-24">
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-              <h3 className="text-sm font-semibold text-gray-800">Γρήγορες ενέργειες</h3>
+              <h3 className="text-sm font-semibold text-gray-800">Συμμετοχή τώρα</h3>
               <div className="mt-3 grid gap-2">
                 <Link
-                  href={tabHref('suggestions')}
-                  className="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                  href={primaryAction.href}
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
                 >
-                  Προτάσεις περιοχής
+                  {primaryAction.label}
                 </Link>
                 <Link
-                  href={tabHref('polls')}
-                  className="inline-flex items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
+                  href={secondaryAction.href}
+                  className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition-colors"
                 >
-                  Ψηφοφορίες περιοχής
+                  {secondaryAction.label}
+                </Link>
+                <Link
+                  href={tabHref('suggestions')}
+                  className="inline-flex items-center justify-center rounded-lg border border-indigo-200 bg-indigo-50/50 px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-100 transition-colors"
+                >
+                  Προτάσεις περιοχής
                 </Link>
                 <button
                   type="button"
@@ -298,16 +324,6 @@ export default function LocationHeader({
                         ? 'Αδυναμία κοινοποίησης'
                         : 'Κοινοποίηση'}
                 </button>
-                {canManageLocations() && (
-                  <button
-                    onClick={onEdit}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
-                    title="Edit location"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                    Edit
-                  </button>
-                )}
               </div>
             </div>
 

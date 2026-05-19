@@ -162,11 +162,12 @@ describe('Location UI localized names', () => {
 
     const { container, root } = await renderComponent(LocationHeader, props);
 
-    expect(container.textContent).toContain('Γρήγορες ενέργειες');
+    expect(container.textContent).toContain('Συμμετοχή τώρα');
+    expect(container.textContent).toContain('Κάνε πρόταση');
+    expect(container.textContent).toContain('Δες ψηφοφορίες');
     expect(container.textContent).toContain('Προτάσεις περιοχής');
-    expect(container.textContent).toContain('Ψηφοφορίες περιοχής');
     expect(container.textContent).toContain('Κοινοποίηση');
-    expect(container.textContent).toContain('Edit');
+    expect(container.querySelector('button[aria-label="Επεξεργασία τοποθεσίας"]')).toBeTruthy();
     expect(container.textContent).toContain('Περισσότερες πληροφορίες');
     expect(container.querySelector('a[href="/locations/attica?tab=suggestions#location-content"]')).toBeTruthy();
 

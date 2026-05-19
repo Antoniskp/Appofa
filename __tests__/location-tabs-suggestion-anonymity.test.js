@@ -72,4 +72,83 @@ describe('LocationTabs suggestion anonymity', () => {
       root.unmount();
     });
   });
+
+  test('renders polls in compact grid layout and explicit empty CTA copy', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(React.createElement(LocationTabs, {
+        activeTab: 'polls',
+        onTabChange: () => {},
+        activePolls: [
+          {
+            id: 21,
+            title: 'Τοπική ψηφοφορία 1',
+            description: 'Περιγραφή',
+            status: 'open',
+            createdAt: '2026-05-18T00:00:00.000Z',
+          },
+          {
+            id: 22,
+            title: 'Τοπική ψηφοφορία 2',
+            description: 'Περιγραφή',
+            status: 'open',
+            createdAt: '2026-05-19T00:00:00.000Z',
+          },
+        ],
+        newsArticles: [],
+        regularArticles: [],
+        entities: { usersCount: 0, users: [], unclaimedCount: 0, unclaimed: [] },
+        suggestions: [],
+        isAuthenticated: false,
+        locationIdentifier: 'attica',
+        TAB_LABELS: {
+          polls: 'Polls',
+          news: 'News',
+          articles: 'Articles',
+          users: 'Users',
+          unclaimed: 'Unclaimed',
+          suggestions: 'Suggestions',
+          elections: 'Elections',
+        },
+        visibleTabs: ['polls'],
+        loading: false,
+      }));
+    });
+
+    expect(container.querySelector('.grid.gap-3.md\\:grid-cols-2')).toBeTruthy();
+
+    await act(async () => {
+      root.render(React.createElement(LocationTabs, {
+        activeTab: 'polls',
+        onTabChange: () => {},
+        activePolls: [],
+        newsArticles: [],
+        regularArticles: [],
+        entities: { usersCount: 0, users: [], unclaimedCount: 0, unclaimed: [] },
+        suggestions: [],
+        isAuthenticated: false,
+        locationIdentifier: 'attica',
+        TAB_LABELS: {
+          polls: 'Polls',
+          news: 'News',
+          articles: 'Articles',
+          users: 'Users',
+          unclaimed: 'Unclaimed',
+          suggestions: 'Suggestions',
+          elections: 'Elections',
+        },
+        visibleTabs: ['polls'],
+        loading: false,
+      }));
+    });
+
+    expect(container.textContent).toContain('+ Ξεκίνησε ψηφοφορία');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });

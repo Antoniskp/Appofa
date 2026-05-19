@@ -40,11 +40,11 @@ function formatMetaDate(date) {
   return new Date(date).toLocaleDateString('el-GR');
 }
 
-function FeedItem({ href, title, excerpt, badges = [], metadata = [] }) {
+function FeedItem({ href, title, excerpt, badges = [], metadata = [], compact = false }) {
   return (
     <Link
       href={href}
-      className="group block rounded-xl border border-gray-200 bg-white p-4 hover:border-blue-300 hover:bg-blue-50/40 transition-all"
+      className={`group block rounded-xl border border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50/40 transition-all ${compact ? 'h-full p-3' : 'p-4'}`}
     >
       {badges.length > 0 && (
         <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -58,9 +58,9 @@ function FeedItem({ href, title, excerpt, badges = [], metadata = [] }) {
           ))}
         </div>
       )}
-      <h3 className="text-base font-semibold text-gray-900 group-hover:text-blue-700 transition-colors">{title}</h3>
+      <h3 className={`${compact ? 'text-sm' : 'text-base'} font-semibold text-gray-900 group-hover:text-blue-700 transition-colors`}>{title}</h3>
       {excerpt && (
-        <p className="mt-1.5 text-sm leading-6 text-gray-600 line-clamp-2">{excerpt}</p>
+        <p className={`mt-1.5 ${compact ? 'text-xs leading-5' : 'text-sm leading-6'} text-gray-600 line-clamp-2`}>{excerpt}</p>
       )}
       {metadata.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
@@ -194,12 +194,12 @@ export default function LocationTabs({
                   : 'Δεν έχει συνδεθεί ακόμη κάποια τοπική ψηφοφορία για αυτή την περιοχή.'
               }
               actions={[
-                { href: '/polls/create', label: 'Δημιούργησε ψηφοφορία' },
+                { href: '/polls/create', label: '+ Ξεκίνησε ψηφοφορία' },
                 { href: `/locations/${locationIdentifier}?tab=suggestions#location-content`, label: 'Δες προτάσεις', variant: 'secondary' },
               ]}
             />
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-2">
               {activePolls.map(poll => (
                 <FeedItem
                   key={poll.id}
@@ -216,6 +216,7 @@ export default function LocationTabs({
                       : null,
                     formatMetaDate(poll.createdAt),
                   ].filter(Boolean)}
+                  compact
                 />
               ))}
             </div>
@@ -425,8 +426,8 @@ export default function LocationTabs({
                   : 'Δεν έχει ανοίξει ακόμη κάποια οργανωμένη πρόταση για αυτή την περιοχή.'
               }
               actions={[
-                { href: '/suggestions/new', label: 'Δημιούργησε πρόταση' },
-                { href: '#location-related', label: 'Δες σχετικές τοποθεσίες', variant: 'secondary' },
+                { href: '/suggestions/new', label: '+ Ξεκίνησε πρόταση' },
+                { href: `/locations/${locationIdentifier}?tab=polls#location-content`, label: 'Δες ψηφοφορίες', variant: 'secondary' },
               ]}
             />
           ) : (

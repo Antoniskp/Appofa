@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI, locationRoleAPI, locationSectionAPI, suggestionAPI, geoAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI, suggestionAPI, geoAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -12,22 +12,12 @@ import LocationSections from '@/components/LocationSections';
 import LocationRoles from '@/components/LocationRoles';
 import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
-import LocationOverviewPanel from '@/components/locations/LocationOverviewPanel';
 import LocationRelatedLocations from '@/components/locations/LocationRelatedLocations';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
-
-function countAssignedRepresentatives(roles = []) {
-  return roles.reduce((count, role) => {
-    if (role.repeatable) {
-      return count + (role.assignments || []).filter((assignment) => assignment?.userId).length;
-    }
-    return count + ((role.assignment?.personId || role.assignment?.userId) ? 1 : 0);
-  }, 0);
-}
 
 export default function LocationDetailPage() {
   const params = useParams();
@@ -48,8 +38,6 @@ export default function LocationDetailPage() {
   const [editedData, setEditedData] = useState({});
   const [imageError, setImageError] = useState(false);
   const [sections, setSections] = useState([]);
-  const [locationStats, setLocationStats] = useState({ articleCount: 0, userCount: 0, pollCount: 0, childrenCount: 0 });
-  const [representativesCount, setRepresentativesCount] = useState(0);
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [fundingData, setFundingData] = useState(null);
   const [fundingLoaded, setFundingLoaded] = useState(false);
@@ -70,7 +58,6 @@ export default function LocationDetailPage() {
       if (!locationResponse.success) {
         throw new Error('Location not found');
       }
-      setLocationStats(locationResponse.stats || { articleCount: 0, userCount: 0, pollCount: 0, childrenCount: 0 });
       return locationResponse.location;
     },
     [params.slug],
@@ -82,7 +69,6 @@ export default function LocationDetailPage() {
         setChildren([]);
         setSiblings([]);
         setSections([]);
-        setRepresentativesCount(0);
         setImageError(false);
         setIsEditing(false);
         setFundingData(null);
@@ -113,7 +99,7 @@ export default function LocationDetailPage() {
         const locId = loc.id;
 
         // Fetch all secondary data in parallel
-        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, rolesRes, siblingsRes] =
+        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes] =
           await Promise.allSettled([
             // 0: linked entities/content
             locationAPI.getLocationEntities(locId),
@@ -123,9 +109,7 @@ export default function LocationDetailPage() {
             locationSectionAPI.getSections(locId),
             // 3: suggestions feed
             suggestionAPI.getAll({ locationId: locId, limit: 50 }),
-            // 4: assigned representatives/roles
-            locationRoleAPI.getRoles(locId),
-            // 5: sibling locations (same parent)
+            // 4: sibling locations (same parent)
             loc.parent?.id ? locationAPI.getAll({ parent_id: loc.parent.id }) : Promise.resolve({ success: true, locations: [] }),
           ]);
 
@@ -158,12 +142,6 @@ export default function LocationDetailPage() {
           setSuggestions(suggestionsRes.value.data || []);
         } else if (suggestionsRes.status === 'rejected') {
           console.error('Failed to load suggestions:', suggestionsRes.reason);
-        }
-
-        if (rolesRes.status === 'fulfilled' && rolesRes.value.success) {
-          setRepresentativesCount(countAssignedRepresentatives(rolesRes.value.roles || []));
-        } else if (rolesRes.status === 'rejected') {
-          console.error('Failed to load location roles:', rolesRes.reason);
         }
 
         if (siblingsRes.status === 'fulfilled' && siblingsRes.value.success) {
@@ -370,11 +348,12 @@ export default function LocationDetailPage() {
     suggestions: suggestions.length,
     elections: 1,
   };
+  const preferredAlwaysVisibleTabs = ['polls', 'suggestions', ...ALWAYS_VISIBLE_TABS];
   const visibleTabs = secondaryLoading
     ? VALID_TABS
     : [
-      ...VALID_TABS.filter(tab => !ALWAYS_VISIBLE_TABS.includes(tab) && TAB_COUNTS[tab] > 0),
-      ...ALWAYS_VISIBLE_TABS,
+      ...VALID_TABS.filter(tab => !preferredAlwaysVisibleTabs.includes(tab) && TAB_COUNTS[tab] > 0),
+      ...preferredAlwaysVisibleTabs,
     ].sort((a, b) => VALID_TABS.indexOf(a) - VALID_TABS.indexOf(b));
   // If current active tab is hidden, fall back to first visible tab
   const resolvedActiveTab = visibleTabs.includes(activeTab)
@@ -455,20 +434,55 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
-            <div className="mb-8">
-              <LocationOverviewPanel
+            {/* Tabbed content — participation-first placement */}
+            <div id="location-content" className="mb-8 space-y-3">
+              <h2 className="text-lg font-semibold text-gray-900">Συμμετοχή και δραστηριότητα</h2>
+              <LocationTabs
+                activeTab={resolvedActiveTab}
+                onTabChange={handleTabChange}
+                activePolls={activePolls}
+                newsArticles={newsArticles}
+                regularArticles={regularArticles}
+                entities={entities}
+                suggestions={suggestions}
+                isAuthenticated={isAuthenticated}
                 locationIdentifier={location.slug || location.id}
-                summaryCounts={{
-                  suggestions: suggestions.length,
-                  representatives: representativesCount,
-                  announcements: summaryCounts.announcements,
-                  media: summaryCounts.media,
-                  community: locationStats.userCount || entities.usersCount || 0,
-                  children: locationStats.childrenCount || children.length,
-                }}
                 canManageLocations={canManageLocations()}
+                TAB_LABELS={TAB_LABELS}
+                visibleTabs={visibleTabs}
+                loading={secondaryLoading}
+                electionData={{
+                  locationId: location.id,
+                  locationType: location.type,
+                  isAuthenticated,
+                  currentUserId: user?.id ?? null,
+                }}
               />
             </div>
+
+            {/* Location Roles — assigned officials for this location */}
+            {location && (
+              <div id="location-roles" className="mb-8 space-y-3">
+                <h2 className="text-lg font-semibold text-gray-900">Εκπρόσωποι και ρόλοι</h2>
+                <LocationRoles
+                  locationId={location.id}
+                  showEmptyState
+                  canManageLocations={canManageLocations()}
+                  onEdit={handleEdit}
+                />
+              </div>
+            )}
+
+            {(secondaryLoading || mergedBodySections.length > 0) && (
+              <div id="location-local-info" className="mb-8 space-y-3">
+                <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
+                {secondaryLoading ? (
+                  <SkeletonLoader type="card" count={2} />
+                ) : (
+                  <LocationSections sections={mergedBodySections} />
+                )}
+              </div>
+            )}
 
             {(location.parent || siblings.length > 0 || children.length > 0) && (
               <div className="mb-8">
@@ -481,45 +495,6 @@ export default function LocationDetailPage() {
               </div>
             )}
 
-            <div id="location-local-info" className="mb-8 space-y-3">
-              <h2 className="text-lg font-semibold text-gray-900">Τοπικές πληροφορίες</h2>
-              {secondaryLoading ? (
-                <SkeletonLoader type="card" count={2} />
-              ) : mergedBodySections.length > 0 ? (
-                <LocationSections sections={mergedBodySections} />
-              ) : (
-                <div className="rounded-xl border border-dashed border-gray-300 bg-white p-6 text-center">
-                  <h3 className="text-base font-semibold text-gray-900">Δεν υπάρχουν ακόμη τοπικές πληροφορίες</h3>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">
-                    Δεν έχουν προστεθεί ακόμη ανακοινώσεις, τοπικά μέσα ή άλλες χρήσιμες πληροφορίες για αυτή την τοποθεσία.
-                  </p>
-                  <p className="mt-3 text-sm text-gray-500">
-                    {canManageLocations()
-                      ? 'Χρησιμοποίησε το Edit στην κορυφή για να προσθέσεις ανακοινώσεις, επίσημους συνδέσμους ή τοπικές πηγές ενημέρωσης.'
-                      : 'Όταν προστεθούν τοπικές πληροφορίες από τους διαχειριστές, θα εμφανιστούν εδώ.'}
-                  </p>
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Location Roles — assigned officials for this location */}
-        {!isEditing && location && (
-          <div id="location-roles" className="mb-8 space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900">Εκπρόσωποι και ρόλοι</h2>
-            <LocationRoles
-              locationId={location.id}
-              showEmptyState
-              canManageLocations={canManageLocations()}
-              onEdit={handleEdit}
-            />
-          </div>
-        )}
-
-        {/* Tabbed content — only shown when not editing */}
-        {!isEditing && (
-          <>
             {location?.type === 'country' && fundingLoaded && (
               <div className="mb-6">
                 <CountryFundingBanner
@@ -529,30 +504,6 @@ export default function LocationDetailPage() {
                 />
               </div>
             )}
-          <div id="location-content" className="space-y-3">
-            <h2 className="text-lg font-semibold text-gray-900">Περιεχόμενο και δραστηριότητα</h2>
-          <LocationTabs
-            activeTab={resolvedActiveTab}
-            onTabChange={handleTabChange}
-            activePolls={activePolls}
-            newsArticles={newsArticles}
-            regularArticles={regularArticles}
-            entities={entities}
-            suggestions={suggestions}
-            isAuthenticated={isAuthenticated}
-            locationIdentifier={location.slug || location.id}
-            canManageLocations={canManageLocations()}
-            TAB_LABELS={TAB_LABELS}
-            visibleTabs={visibleTabs}
-            loading={secondaryLoading}
-            electionData={{
-              locationId: location.id,
-              locationType: location.type,
-              isAuthenticated,
-              currentUserId: user?.id ?? null,
-            }}
-          />
-          </div>
           </>
         )}
       </div>

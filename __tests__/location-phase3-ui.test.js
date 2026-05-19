@@ -61,8 +61,8 @@ describe('Location phase-3 UI', () => {
     });
   });
 
-  test('related locations groups parent siblings and children with limited previews', async () => {
-    const children = Array.from({ length: 7 }, (_, index) => ({
+  test('related locations renders compact chips with limited previews', async () => {
+    const children = Array.from({ length: 9 }, (_, index) => ({
       id: index + 10,
       slug: `child-${index + 1}`,
       type: 'municipality',
@@ -79,12 +79,12 @@ describe('Location phase-3 UI', () => {
       children,
     });
 
-    expect(container.textContent).toContain('Πλοήγηση στην ιεραρχία');
+    expect(container.textContent).toContain('Κοντινές και σχετικές τοποθεσίες');
     expect(container.textContent).toContain('Ελλάδα');
     expect(container.textContent).toContain('Κρήτη');
-    expect(container.textContent).toContain('Παιδί 6');
-    expect(container.textContent).not.toContain('Παιδί 7');
-    expect(container.textContent).toContain('Εμφανίζονται οι πρώτες 6 από 7 υποπεριοχές.');
+    expect(container.textContent).toContain('Παιδί 8');
+    expect(container.textContent).not.toContain('Παιδί 9');
+    expect(container.textContent).toContain('+1 ακόμη υποπεριοχές');
 
     await act(async () => {
       root.unmount();
