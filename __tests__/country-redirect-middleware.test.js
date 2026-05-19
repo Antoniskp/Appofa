@@ -66,6 +66,18 @@ describe('country redirect middleware', () => {
           }),
         });
       }
+      if (String(url).endsWith('/api/geo/detect')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              countryCode: null,
+              countryName: null,
+            },
+          }),
+        });
+      }
       return Promise.resolve({ ok: true });
     });
     mockNext.mockImplementation(() => createNextResponse());
@@ -180,6 +192,53 @@ describe('country redirect middleware', () => {
     );
   });
 
+  test('falls back to backend geo detection when header and cookie are unavailable', async () => {
+    mockFetch.mockImplementation((url, options) => {
+      if (String(url).endsWith('/api/geo/detect')) {
+        expect(options.headers.get('x-forwarded-for')).toBe('8.8.8.8');
+        expect(options.headers.get('x-real-ip')).toBe('8.8.8.8');
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              countryCode: 'de',
+              countryName: 'Germany',
+            },
+          }),
+        });
+      }
+
+      if (String(url).endsWith('/api/geo/access-rules')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              blockedCountries: [],
+              unknownCountryAction: 'allow',
+              unknownCountryRedirectPath: '/unknown-country',
+              noIpAction: 'allow',
+              noIpRedirectPath: '/unknown-country',
+            },
+          }),
+        });
+      }
+
+      return Promise.resolve({ ok: true });
+    });
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
+
+    expect(response.type).toBe('redirect');
+    expect(response.url).toBe('https://appofasi.gr/country/DE');
+    expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'DE', {
+      path: '/',
+      maxAge: 86400,
+      sameSite: 'Lax',
+    });
+  });
+
   test('forwards cookie-based country via x-detected-country when header is unavailable', async () => {
     const response = await middleware(makeRequest({
       pathname: '/api/geo/detect',
@@ -203,14 +262,13 @@ describe('country redirect middleware', () => {
     );
   });
 
-  test('does not redirect when no valid country is found', async () => {
+  test('falls through safely when geo detection fallback returns no country', async () => {
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
     expect(response.type).toBe('next');
     expect(mockNext).toHaveBeenCalledWith();
     expect(mockRedirect).not.toHaveBeenCalled();
-    expect(mockFetch).toHaveBeenCalledWith(
-      'http://localhost:3000/api/geo/access-rules'
-    );
+    expect(mockFetch).toHaveBeenCalledWith('http://localhost:3000/api/geo/detect', expect.any(Object));
+    expect(mockFetch).toHaveBeenCalledWith('http://localhost:3000/api/geo/access-rules');
   });
 
   test('redirects blocked countries to /blocked', async () => {

@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-18
+> **Last updated**: 2026-05-19
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -47,7 +47,7 @@ This instruction is permanent and must never be removed.
 
 ```
 Appofa/
-├── proxy.js                 # Next.js edge proxy (country redirect)
+├── proxy.js                 # Next.js edge proxy (country redirect + non-Cloudflare backend geo fallback)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
 ├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages)
 ├── src/                    # Backend (Express + Sequelize)
@@ -92,6 +92,7 @@ Appofa/
 │
 ├── lib/                    # Shared frontend utilities
 │   ├── api/                # API client modules (29 files)
+│   ├── geo/                # Shared geo helpers (proxy country fallback)
 │   ├── constants/          # Frontend constants (3 files)
 │   ├── utils/              # Utility helpers
 │   └── auth-context.js     # Auth context provider
@@ -464,6 +465,7 @@ Appofa/
 
 | Utility | Purpose |
 |---------|---------|
+| proxyCountryDetection.js | Proxy-only helper that calls backend `/api/geo/detect` with client IP headers, applies a short timeout, and normalizes fallback country codes for non-Cloudflare deployments |
 | organizationUtils.js | Shared membership checks for organizations (`isActiveMember`, `isOrgAdmin`) |
 | userCountryCode.js | Dream Team country resolution helper (`nationality` first, then `homeLocation` country ancestor via `Location.type='country'` + `code`) used by vote authorization |
 | professionTaxonomy.js | **Profession taxonomy helpers** — `normalizeProfessions` (filter canonical entries only), `normalizeExpertiseTags` (filter valid tag IDs only), `normalizeExpertiseTagId`, `validateProfessionalIdentity`, `validateExpertiseTagIds`, `resolveProfessionLabel`, `scoreSpecialistMatch`, `VALID_EXPERTISE_TAG_IDS`; loaded by User model getters + userService + personService |
@@ -475,7 +477,7 @@ Appofa/
 
 | Middleware | Purpose |
 |-----------|---------|
-| proxy.js (root) | Next.js edge proxy for country detection + cached country access-rules checks (including per-country redirect paths) + first-visit redirect to `/country/[code]` |
+| proxy.js (root) | Next.js edge proxy for country detection + cached country access-rules checks (including per-country redirect paths) + first-visit redirect to `/country/[code]`; keeps `CF-IPCountry` first and falls back to backend `/api/geo/detect` by client IP for non-Cloudflare page requests |
 | auth.js | JWT authentication (`authMiddleware`) |
 | checkRole.js | Role-based access (`checkRole([...])`) |
 | csrfProtection.js | CSRF token validation |
