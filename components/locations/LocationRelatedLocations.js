@@ -1,36 +1,18 @@
 import Link from 'next/link';
 
-const TYPE_LABELS = {
-  international: 'Διεθνής περιοχή',
-  country: 'Χώρα',
-  prefecture: 'Νομός / Περιφέρεια',
-  municipality: 'Δήμος',
-  electoral_district: 'Εκλογική περιφέρεια',
-};
-
-function RelatedLocationLink({ location, colorTone = 'gray' }) {
+function LocationChip({ location, tone = 'gray' }) {
   const toneClasses = {
-    blue: 'border-blue-200 bg-blue-50 text-blue-800',
-    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-800',
-    gray: 'border-gray-200 bg-gray-50 text-gray-800',
+    blue: 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100',
+    emerald: 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100',
+    gray: 'border-gray-200 bg-gray-50 text-gray-800 hover:bg-gray-100',
   };
 
   return (
     <Link
       href={`/locations/${location.slug || location.id}`}
-      className={`block rounded-xl border p-3 transition-colors hover:border-blue-300 hover:bg-blue-50/70 ${toneClasses[colorTone] || toneClasses.gray}`}
+      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${toneClasses[tone] || toneClasses.gray}`}
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-        {TYPE_LABELS[location.type] || location.type}
-      </p>
-      <p className="mt-1 text-sm font-semibold">
-        {location.name_local || location.name}
-      </p>
-      {location.parent?.name && (
-        <p className="mt-1 text-xs text-gray-500">
-          Ανήκει σε {location.parent.name_local || location.parent.name}
-        </p>
-      )}
+      {location.name_local || location.name}
     </Link>
   );
 }
@@ -45,87 +27,68 @@ export default function LocationRelatedLocations({
     return null;
   }
 
-  const visibleSiblings = siblings.slice(0, 6);
-  const visibleChildren = children.slice(0, 6);
+  const visibleSiblings = siblings.slice(0, 8);
+  const visibleChildren = children.slice(0, 8);
 
   return (
     <section
       id="location-related"
-      className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm"
+      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
     >
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Πλοήγηση στην ιεραρχία</h2>
+      <div className="mb-3">
+        <h2 className="text-base font-semibold text-gray-900">Κοντινές και σχετικές τοποθεσίες</h2>
         <p className="text-sm text-gray-600">
-          Ανακάλυψε γρήγορα τη γονική περιοχή, τις συγγενικές τοποθεσίες και τις υποπεριοχές.
+          Ανακάλυψε σχετικές επιλογές χωρίς εκτεταμένη πλοήγηση στην ιεραρχία.
         </p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <h3 className="text-sm font-semibold text-gray-900">Γονική περιοχή</h3>
-          <p className="mt-1 text-sm text-gray-600">
-            Ανέβα ένα επίπεδο για ευρύτερο διοικητικό ή γεωγραφικό πλαίσιο.
-          </p>
-          <div className="mt-3">
-            {parent ? (
-              <RelatedLocationLink location={parent} colorTone="blue" />
-            ) : (
-              <p className="rounded-xl border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-500">
-                Αυτή η τοποθεσία βρίσκεται ήδη στο ανώτερο διαθέσιμο επίπεδο.
-              </p>
-            )}
+      <div className="space-y-3">
+        {parent && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Ανήκει σε</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <LocationChip location={parent} tone="blue" />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <h3 className="text-sm font-semibold text-gray-900">Σχετικές γειτονικές τοποθεσίες</h3>
-          <p className="mt-1 text-sm text-gray-600">
-            Άλλες τοποθεσίες στο ίδιο επίπεδο της ιεραρχίας.
-          </p>
-          <div className="mt-3 space-y-2">
-            {visibleSiblings.length > 0 ? (
-              <>
-                {visibleSiblings.map((sibling) => (
-                  <RelatedLocationLink key={sibling.id} location={sibling} />
-                ))}
-                {siblings.length > visibleSiblings.length && (
-                  <p className="text-xs text-gray-500">
-                    +{siblings.length - visibleSiblings.length} ακόμη σχετικές τοποθεσίες διαθέσιμες από τη λίστα τοποθεσιών.
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="rounded-xl border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-500">
-                Δεν υπάρχουν άλλες αδερφικές τοποθεσίες καταγεγραμμένες σε αυτό το επίπεδο.
+        {visibleSiblings.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Σχετικές τοποθεσίες</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {visibleSiblings.map((sibling) => (
+                <LocationChip key={sibling.id} location={sibling} />
+              ))}
+            </div>
+            {siblings.length > visibleSiblings.length && (
+              <p className="mt-2 text-xs text-gray-500">
+                +{siblings.length - visibleSiblings.length} ακόμη σχετικές τοποθεσίες
               </p>
             )}
           </div>
-        </div>
+        )}
 
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <h3 className="text-sm font-semibold text-gray-900">Υποπεριοχές</h3>
-          <p className="mt-1 text-sm text-gray-600">
-            Συνέχισε πιο βαθιά στην ιεραρχία με τις πιο σχετικές υποπεριοχές.
-          </p>
-          <div className="mt-3 space-y-2">
-            {visibleChildren.length > 0 ? (
-              <>
-                {visibleChildren.map((child) => (
-                  <RelatedLocationLink key={child.id} location={child} colorTone="emerald" />
-                ))}
-                {children.length > visibleChildren.length && (
-                  <p className="text-xs text-gray-500">
-                    Εμφανίζονται οι πρώτες 6 από {children.length} υποπεριοχές.
-                  </p>
-                )}
-              </>
-            ) : (
-              <p className="rounded-xl border border-dashed border-gray-300 bg-white px-3 py-4 text-sm text-gray-500">
-                Δεν έχουν προστεθεί ακόμη υποπεριοχές κάτω από το {location.name_local || location.name}.
+        {visibleChildren.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Υποπεριοχές</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {visibleChildren.map((child) => (
+                <LocationChip key={child.id} location={child} tone="emerald" />
+              ))}
+            </div>
+            {children.length > visibleChildren.length && (
+              <p className="mt-2 text-xs text-gray-500">
+                +{children.length - visibleChildren.length} ακόμη υποπεριοχές
               </p>
             )}
           </div>
-        </div>
+        )}
+
+        {!parent && visibleSiblings.length === 0 && visibleChildren.length === 0 && (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-500">
+            Δεν υπάρχουν ακόμη σχετικές τοποθεσίες για το {location.name_local || location.name}.
+          </div>
+        )}
       </div>
     </section>
   );
