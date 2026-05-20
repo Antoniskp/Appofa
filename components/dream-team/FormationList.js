@@ -9,14 +9,9 @@ import SkeletonPositionCard from './SkeletonPositionCard';
 import UserStatsDashboard from './UserStatsDashboard';
 import AchievementBadges from './AchievementBadges';
 
-/** Identifies a formation as the Primary Formation.
- * Checks `isPrimary` flag first (requires backend support).
- * Falls back to name+category match as a temporary compatibility measure
- * until the backend persists the `isPrimary` field.
- * TODO: Remove the name/category fallback once backend migration is deployed.
- */
+/** Identifies a formation as the Primary Formation. */
 function isPrimaryFormation(f) {
-  return f?.isPrimary === true || (f?.name === 'Η Κυβέρνησή μου' && f?.category === 'serious');
+  return f?.isPrimary === true;
 }
 
 /**
@@ -55,10 +50,7 @@ export default function FormationList({ user, communityResults = [], showToast, 
               isPrimary: true,
             });
             if (created?.success && created.data) {
-              // Merge `isPrimary: true` client-side since the backend may not
-              // return it yet. Once the backend migration is deployed this
-              // merge can be removed and `created.data` used directly.
-              setFormations([{ ...created.data, isPrimary: true }, ...list]);
+              setFormations([created.data, ...list]);
             } else {
               setFormations(list);
             }

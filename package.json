@@ -77,6 +77,7 @@
     "esbuild": "0.25.3",
     "micromatch": "4.0.8",
     "ip-address": ">=10.1.1",
+    "brace-expansion": ">=2.1.0 <3.0.0 || >=5.0.6",
     "next": {
       "postcss": ">=8.5.10"
     },

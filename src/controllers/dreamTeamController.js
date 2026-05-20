@@ -782,6 +782,7 @@ const dreamTeamController = {
       category: formation.category,
       isPublic: formation.isPublic,
       shareSlug,
+      isPrimary: formation.isPrimary,
       likeCount: formation.likeCount,
       likedByMe,
       authorName: formation.author
@@ -821,7 +822,7 @@ const dreamTeamController = {
   createFormation: async (req, res) => {
     try {
       const userId = req.user.id;
-      const { name, description, category, isPublic } = req.body;
+      const { name, description, category, isPublic, isPrimary } = req.body;
 
       if (!name || !name.trim()) {
         return res.status(400).json({ success: false, message: 'Το όνομα είναι υποχρεωτικό.' });
@@ -838,6 +839,7 @@ const dreamTeamController = {
         description: description?.trim() || null,
         category: category || 'serious',
         isPublic: !!isPublic,
+        isPrimary: !!isPrimary,
         shareSlug,
         likeCount: 0,
       });
@@ -897,7 +899,7 @@ const dreamTeamController = {
         return res.status(403).json({ success: false, message: 'Δεν έχετε δικαίωμα επεξεργασίας.' });
       }
 
-      const { name, description, category, isPublic } = req.body;
+      const { name, description, category, isPublic, isPrimary } = req.body;
 
       if (name !== undefined && !name.trim()) {
         return res.status(400).json({ success: false, message: 'Το όνομα δεν μπορεί να είναι κενό.' });
@@ -911,6 +913,7 @@ const dreamTeamController = {
         ...(description !== undefined && { description: description?.trim() || null }),
         ...(category !== undefined && { category }),
         ...(isPublic !== undefined && { isPublic: !!isPublic }),
+        ...(isPrimary !== undefined && { isPrimary: !!isPrimary }),
       });
 
       const full = await Formation.findByPk(formation.id, {
