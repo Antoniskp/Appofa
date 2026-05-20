@@ -99,11 +99,21 @@ export default function CountryLandingPage() {
   }
 
   if (!data.location) {
+    let fallbackName = code;
+    try {
+      fallbackName = new Intl.DisplayNames(['el', 'en'], { type: 'region' }).of(code) || code;
+    } catch {
+      // keep raw code if Intl.DisplayNames is unavailable
+    }
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="app-container bg-white rounded-xl border border-gray-200 p-6 text-center">
-          <p className="text-gray-700 mb-3">{tCountry('not_found')}</p>
-          <Link href="/" className="text-blue-700 hover:underline">{tCommon('back')}</Link>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="app-container space-y-6">
+          <CountryFundingBanner
+            funding={null}
+            locationName={fallbackName}
+            countryCode={code}
+            hasContent={false}
+          />
         </div>
       </div>
     );

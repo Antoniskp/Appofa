@@ -95,4 +95,35 @@ describe('CountryFundingBanner', () => {
 
     expect(container.textContent).toBe('');
   });
+
+  test('no-location path: renders polished banner when only country code is available (GB regression)', async () => {
+    // Simulates the !data.location path where we derive a name from Intl.DisplayNames
+    // and render CountryFundingBanner directly with no funding record.
+    await act(async () => {
+      root.render(
+        React.createElement(CountryFundingBanner, {
+          funding: null,
+          locationName: 'United Kingdom',
+          countryCode: 'GB',
+          hasContent: false,
+        })
+      );
+    });
+
+    // Should show the flag and country label
+    expect(container.textContent).toContain('🇬🇧');
+    expect(container.textContent).toContain('United Kingdom');
+
+    // Should NOT contain the old dead-end plain message
+    expect(container.textContent).not.toContain('Δεν βρέθηκε περιεχόμενο');
+
+    // Should have both support and diaspora CTAs
+    const hrefs = Array.from(container.querySelectorAll('a')).map((node) => node.getAttribute('href'));
+    expect(hrefs).toContain('/contribute');
+    expect(hrefs).toContain('/country/GR');
+
+    // Should NOT show donation link when funding is null
+    const donationLink = hrefs.find((h) => h && h.startsWith('https://'));
+    expect(donationLink).toBeFalsy();
+  });
 });
