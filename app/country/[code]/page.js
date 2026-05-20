@@ -123,13 +123,12 @@ export default function CountryLandingPage() {
           </p>
         </section>
 
-        {data.funding && (
-          <CountryFundingBanner
-            funding={data.funding}
-            locationName={countryName}
-            hasContent={false}
-          />
-        )}
+        <CountryFundingBanner
+          funding={data.funding}
+          locationName={countryName}
+          countryCode={code}
+          hasContent={data.news.length > 0 || data.articles.length > 0}
+        />
 
         <section className="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>

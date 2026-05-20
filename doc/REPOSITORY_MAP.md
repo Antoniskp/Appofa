@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-19
+> **Last updated**: 2026-05-20
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -524,7 +524,7 @@ Appofa/
 | `/locations`, `/locations/[slug]` | Locations |
 | `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile with improved poll/suggestion tabs: collapsible create forms, richer cards with deadline/type/author metadata, styled empty states |
 | `/official-posts` | Public discovery feed for platform-wide official organization posts |
-| `/country/[code]` | Country landing page after first-visit geo redirect |
+| `/country/[code]` | Country landing page after first-visit geo redirect; when no local content is available it shows a richer `CountryFundingBanner` empty state with detected-country flag + network/IP-region label, support CTA (`/contribute`), optional donation CTA, and diaspora shortcut to `/country/GR` |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations (`/dream-team` auto-redirects logged-in users to their resolved own country when available; `/dream-team/[countryCode]` keeps other countries browseable in read-only mode for voting) |
 | `/persons/[slug]`, `/persons/[slug]/claim` | Person profiles (individual deep-links preserved) |
 | `/candidates/*` | Backward-compat alias for persons |
@@ -595,7 +595,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `layout/` | 10 | AppShell (hides TopNav/Footer/CookieBanner on `/embed/*` while keeping normal chrome elsewhere), TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `embed/` | 1 | EntityEmbedView (shared embed card renderer for polls, suggestions, and civic questions) |
 | `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging; rendered only for guests) |
-| `locations/` | 10 | CountryFundingBanner, LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (balanced desktop two-column top box with participation-first CTA hierarchy: one primary action + compact edit icon, muted zero stat tiles), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (legacy summary cards component, no longer rendered in default location detail flow), LocationRelatedLocations (compact related/nearby chip layout replacing large hierarchy blocks), LocationTabs (polls/suggestions-first tab UX with compact poll-card grid and explicit `+ Ξεκίνησε ...` empty-state actions) |
+| `locations/` | 10 | CountryFundingBanner (country no-content card: detected-country flag + network/IP-region label, support CTA, optional donation CTA, diaspora shortcut to Greece), LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (balanced desktop two-column top box with participation-first CTA hierarchy: one primary action + compact edit icon, muted zero stat tiles), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (legacy summary cards component, no longer rendered in default location detail flow), LocationRelatedLocations (compact related/nearby chip layout replacing large hierarchy blocks), LocationTabs (polls/suggestions-first tab UX with compact poll-card grid and explicit `+ Ξεκίνησε ...` empty-state actions) |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
