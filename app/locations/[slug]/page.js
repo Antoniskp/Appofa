@@ -16,6 +16,7 @@ import LocationRelatedLocations from '@/components/locations/LocationRelatedLoca
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
+import LocationMap from '@/components/locations/LocationMap';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
@@ -434,6 +435,16 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
+            {/* Map — shown when the location has valid coordinates */}
+            {location?.lat && location?.lng && (
+              <div id="location-map" className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <LocationMap location={location} className="h-72 w-full" />
+                </div>
+              </div>
+            )}
+
             {/* Tabbed content — participation-first placement */}
             <div id="location-content" className="mb-8 space-y-3">
               <h2 className="text-lg font-semibold text-gray-900">Συμμετοχή και δραστηριότητα</h2>
