@@ -4,17 +4,7 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import {
-  articleAPI,
-  pollAPI,
-  suggestionAPI,
-  manifestAPI,
-  locationAPI,
-  tagAPI,
-  homepageSettingsAPI,
-  civicQuestionAPI,
-  personAPI,
-} from '@/lib/api';
+import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI, homepageSettingsAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import GovernmentSnapshotSection from '@/components/GovernmentSnapshotSection';
@@ -24,25 +14,8 @@ import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
 import LocationCard from '@/components/locations/LocationCard';
-import CivicQuestionCard from '@/components/civicQuestions/CivicQuestionCard';
-import PersonCard from '@/components/user/PersonCard';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
-
-function HomeArticleCard({ article, tHome }) {
-  return (
-    <div className="relative">
-      <span className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-gray-700 shadow-sm border border-gray-200">
-        {article.type === 'news' ? tHome('content_badge_news') : tHome('content_badge_article')}
-      </span>
-      <ArticleCard
-        article={article}
-        variant="grid"
-        tagLinkPrefix={article.type === 'news' ? '/news' : '/articles'}
-      />
-    </div>
-  );
-}
 
 export default function HomePage() {
   const tHome = useTranslations('home');
@@ -68,16 +41,6 @@ export default function HomePage() {
   const [videos, setVideos] = useState([]);
   const [videosLoading, setVideosLoading] = useState(true);
   const [videosError, setVideosError] = useState(null);
-
-  const [civicQuestions, setCivicQuestions] = useState([]);
-  const [civicQuestionsLoading, setCivicQuestionsLoading] = useState(true);
-  const [civicQuestionsError, setCivicQuestionsError] = useState(null);
-
-  const [localContent, setLocalContent] = useState([]);
-  const [localContentLoading, setLocalContentLoading] = useState(false);
-
-  const [discoveryItems, setDiscoveryItems] = useState([]);
-  const [discoveryLoading, setDiscoveryLoading] = useState(true);
 
   const [manifestData, setManifestData] = useState([]);
   const [manifestLoading, setManifestLoading] = useState(true);
@@ -222,31 +185,6 @@ export default function HomePage() {
       }
     };
 
-    const fetchCivicQuestions = async () => {
-      try {
-        const res = await civicQuestionAPI.getAll({ limit: 3, page: 1 });
-        if (res?.success) {
-          setCivicQuestions(res.data || []);
-        }
-      } catch (err) {
-        setCivicQuestionsError(err.message);
-      } finally {
-        setCivicQuestionsLoading(false);
-      }
-    };
-
-    const fetchDiscovery = async () => {
-      try {
-        const response = await personAPI.getAll({ limit: 6 });
-        const items = (response?.data?.profiles || []).map(p => ({ ...p, __home_type: 'person' }));
-        setDiscoveryItems(items);
-      } catch {
-        // non-critical
-      } finally {
-        setDiscoveryLoading(false);
-      }
-    };
-
     fetchLatestArticles();
     fetchSuggestions();
     fetchPolls();
@@ -257,8 +195,6 @@ export default function HomePage() {
     fetchTagsForType('suggestion', setSuggestionTags);
     fetchTagsForType('poll', setPollTags);
     fetchHomepageSettings();
-    fetchCivicQuestions();
-    fetchDiscovery();
 
     // Fetch manifest supporters for homepage
     const fetchManifestSupporters = async () => {
@@ -290,32 +226,6 @@ export default function HomePage() {
     fetchManifestSupporters();
   }, []);
 
-  useEffect(() => {
-    const fetchLocalContent = async () => {
-      if (!user?.homeLocation?.id) return;
-      setLocalContentLoading(true);
-      try {
-        const [articlesRes, pollsRes] = await Promise.all([
-          articleAPI.getAll({ locationId: user.homeLocation.id, limit: 2, status: 'published' }),
-          pollAPI.getAll({ locationId: user.homeLocation.id, limit: 2 }),
-        ]);
-
-        const items = [
-          ...(articlesRes?.success ? (articlesRes.data.articles || []) : []).map(a => ({ ...a, __home_type: 'article' })),
-          ...(pollsRes?.success ? (pollsRes.data || []) : []).map(p => ({ ...p, __home_type: 'poll' })),
-        ].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 3);
-
-        setLocalContent(items);
-      } catch {
-        // non-critical
-      } finally {
-        setLocalContentLoading(false);
-      }
-    };
-
-    fetchLocalContent();
-  }, [user?.homeLocation?.id]);
-
   const mergedLatestContent = [...latestNews, ...latestArticles]
     .sort((a, b) => {
       const dateA = new Date(a.newsApprovedAt || a.createdAt || 0).getTime();
@@ -330,14 +240,6 @@ export default function HomePage() {
     ? `${tHome('top_polls_subtitle')} — ${tHome('top_polls_guest_note')}`
     : tHome('top_polls_subtitle');
 
-  // Logic to handle alternating background colors for sections
-  let sectionIndex = 0;
-  const getNextBgColor = () => (sectionIndex++ % 2 === 0 ? 'bg-white' : 'bg-gray-50');
-
-  const myCommunityVisible = user && user.homeLocation && (localContentLoading || localContent.length > 0);
-  const locationsVisible = locationDiscoveryLoading || locationDiscovery.length > 0;
-  const discoveryVisible = discoveryLoading || discoveryItems.length > 0;
-
   return (
     <div className="bg-gray-50">
       <HomeHero />
@@ -346,103 +248,51 @@ export default function HomePage() {
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
 
-      {/* CTA / Engagement Banner - Solid colored section, doesn't break white/gray alternating flow */}
+      {/* CTA / Engagement Banner */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800">
-        <div className="app-container py-12">
-          <div className="text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl font-bold text-white mb-2">{tHome('cta_title')}</h2>
-            <p className="text-blue-100 mb-6">
-              {tHome('cta_description')}
-            </p>
-
-            {!user && (
-              <div className="mb-8 bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 text-left">
-                <h3 className="text-white font-bold mb-3">{tHome('cta_why_join')}</h3>
-                <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-blue-50">
-                  <li>{tHome('cta_benefit_1')}</li>
-                  <li>{tHome('cta_benefit_2')}</li>
-                  <li>{tHome('cta_benefit_3')}</li>
-                </ul>
-              </div>
-            )}
-
-            {user ? (
-              <div className="flex justify-center gap-4 flex-wrap">
+        <div className="app-container py-12 text-center">
+          <h2 className="text-3xl font-bold text-white mb-2">{tHome('cta_title')}</h2>
+          <p className="text-blue-100 mb-6">
+            {tHome('cta_description')}
+          </p>
+          {user ? (
+            <div className="flex justify-center gap-4 flex-wrap">
+              <Link
+                href="/articles/new"
+                className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+              >
+                {tHome('cta_write_article')}
+              </Link>
+              <Link
+                href="/suggestions/new"
+                className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
+              >
+                {tHome('cta_submit_suggestion')}
+              </Link>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-4">
+              <p className="text-blue-100 text-sm">
+                {tHome('cta_guest_description')}
+              </p>
+              <div className="flex justify-center gap-3 flex-wrap">
                 <Link
-                  href="/articles/new"
-                  className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
-                >
-                  {tHome('cta_write_article')}
-                </Link>
-                <Link
-                  href="/suggestions/new"
+                  href="/locations"
                   className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
                 >
-                  {tHome('cta_submit_suggestion')}
+                  {tHome('cta_view_locations')}
+                </Link>
+                <Link
+                  href="/register"
+                  className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
+                >
+                  {tCommon('register')}
                 </Link>
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-4">
-                <p className="text-blue-100 text-sm">
-                  {tHome('cta_guest_description')}
-                </p>
-                <div className="flex justify-center gap-3 flex-wrap">
-                  <Link
-                    href="/locations"
-                    className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
-                  >
-                    {tHome('cta_view_locations')}
-                  </Link>
-                  <Link
-                    href="/register"
-                    className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
-                  >
-                    {tCommon('register')}
-                  </Link>
-                </div>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
-
-      {myCommunityVisible && (
-        <HomepageSection
-          title={tHome('my_community_title', { location: user.homeLocation.name })}
-          subtitle={tHome('my_community_subtitle')}
-          linkHref={`/locations/${user.homeLocation.slug}`}
-          loading={localContentLoading}
-          error={null}
-          items={localContent}
-          emptyTitle=""
-          emptyDescription=""
-          skeletonCount={3}
-          bgColor={getNextBgColor()}
-          renderItem={(item) => {
-            if (item.__home_type === 'article') {
-              return <HomeArticleCard key={`local-art-${item.id}`} article={item} tHome={tHome} />;
-            }
-            if (item.__home_type === 'poll') {
-              return <PollCard key={`local-poll-${item.id}`} poll={item} variant="grid" />;
-            }
-            return null;
-          }}
-        />
-      )}
-
-      <HomepageSection
-        title={tHome('latest_civic_questions_title')}
-        subtitle={tHome('latest_civic_questions_subtitle')}
-        linkHref="/civic-questions"
-        loading={civicQuestionsLoading}
-        error={civicQuestionsError}
-        items={civicQuestions}
-        emptyTitle={tHome('empty_polls_title')}
-        emptyDescription={tHome('empty_polls_description')}
-        skeletonCount={3}
-        bgColor={getNextBgColor()}
-        renderItem={(q) => <CivicQuestionCard key={q.id} civicQuestion={q} />}
-      />
 
       <HomepageSection
         title={tHome('top_polls_title')}
@@ -454,7 +304,7 @@ export default function HomePage() {
         emptyTitle={tHome('empty_polls_title')}
         emptyDescription={tHome('empty_polls_description')}
         skeletonCount={3}
-        bgColor={getNextBgColor()}
+        bgColor="bg-white"
         renderItem={(poll) => <PollCard key={poll.id} poll={poll} variant="grid" />}
         topTags={pollTags}
       />
@@ -469,13 +319,13 @@ export default function HomePage() {
         emptyTitle={tHome('empty_suggestions_title')}
         emptyDescription={tHome('empty_suggestions_description')}
         skeletonCount={3}
-        bgColor={getNextBgColor()}
+        bgColor="bg-gray-50"
         renderItem={(suggestion) => <SuggestionCard key={suggestion.id} suggestion={suggestion} />}
         topTags={suggestionTags}
       />
 
       {/* Featured Locations Section */}
-      {locationsVisible && (
+      {(locationDiscoveryLoading || locationDiscovery.length > 0) && (
         <HomepageSection
           title={tHome('explore_locations_title')}
           subtitle={tHome('explore_locations_subtitle')}
@@ -486,7 +336,7 @@ export default function HomePage() {
           emptyTitle=""
           emptyDescription=""
           skeletonCount={6}
-          bgColor={getNextBgColor()}
+          bgColor="bg-white"
           renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
         />
       )}
@@ -501,32 +351,22 @@ export default function HomePage() {
         emptyTitle={tHome('empty_news_title')}
         emptyDescription={tHome('empty_news_description')}
         skeletonCount={6}
-        bgColor={getNextBgColor()}
-        renderItem={(article) => <HomeArticleCard key={article.id} article={article} tHome={tHome} />}
+        bgColor="bg-white"
+        renderItem={(article) => (
+          <div key={article.id} className="relative">
+            <span className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-white/95 px-2 py-0.5 text-[11px] font-semibold text-gray-700 shadow-sm border border-gray-200">
+              {article.type === 'news' ? tHome('content_badge_news') : tHome('content_badge_article')}
+            </span>
+            <ArticleCard
+              article={article}
+              variant="grid"
+              tagLinkPrefix={article.type === 'news' ? '/news' : '/articles'}
+            />
+          </div>
+        )}
         topTags={articleTags}
         tagLinkPrefix="/articles"
       />
-
-      {discoveryVisible && (
-        <HomepageSection
-          title={tHome('discovery_title')}
-          subtitle={tHome('discovery_subtitle')}
-          linkHref="/users"
-          loading={discoveryLoading}
-          error={null}
-          items={discoveryItems}
-          emptyTitle=""
-          emptyDescription=""
-          skeletonCount={3}
-          bgColor={getNextBgColor()}
-          renderItem={(item) => {
-            if (item.__home_type === 'person') {
-              return <PersonCard key={`disc-per-${item.id}`} profile={item} />;
-            }
-            return null;
-          }}
-        />
-      )}
 
       <HomepageSection
         title={tHome('latest_videos_title')}
@@ -538,7 +378,7 @@ export default function HomePage() {
         emptyTitle={tHome('empty_videos_title')}
         emptyDescription={tHome('empty_videos_description')}
         skeletonCount={3}
-        bgColor={getNextBgColor()}
+        bgColor="bg-gray-50"
         renderItem={(video) => <VideoThumbnailCard key={video.id} article={video} />}
         topTags={articleTags}
         tagLinkPrefix="/videos"
