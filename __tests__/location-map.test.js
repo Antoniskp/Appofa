@@ -7,23 +7,23 @@ const { createRoot } = require('react-dom/client');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 // Mock next/dynamic so LocationMap renders BaseMap synchronously in tests
-jest.mock('next/dynamic', () => (fn) => {
-  // next/dynamic(loader, options) – just call the loader synchronously and return the default export
-  let Component = null;
-  fn().then((mod) => { Component = mod.default || mod; });
-  // Return a wrapper that renders nothing until the module resolves (jsdom env: it resolves sync)
-  const DynamicWrapper = (props) => Component ? React.createElement(Component, props) : null;
+jest.mock('next/dynamic', () => (_fn, _options) => {
+  // Resolve the loader synchronously via require so tests don't have to deal with async.
+  const ResolvedComponent = require('../components/map/BaseMap').default;
+  const DynamicWrapper = (props) => React.createElement(ResolvedComponent, props);
   DynamicWrapper.displayName = 'DynamicWrapper';
   return DynamicWrapper;
 });
 
 // Leaflet needs a DOM environment; mock just enough for BaseMap to not crash in jsdom.
 jest.mock('leaflet', () => {
-  const popup = { bindPopup: jest.fn() };
-  const marker = jest.fn(() => ({ addTo: jest.fn(() => popup), bindPopup: jest.fn() }));
+  const markerObj = { addTo: jest.fn().mockReturnThis(), bindPopup: jest.fn() };
+  const marker = jest.fn(() => markerObj);
   const tileLayer = jest.fn(() => ({ addTo: jest.fn() }));
   const geoJSON = jest.fn(() => ({ addTo: jest.fn() }));
-  const latLngBounds = jest.fn((sw, ne) => ({ isValid: () => true }));
+  const latLngBounds = jest.fn(() => ({ isValid: () => true }));
+  const layerGroupObj = { addTo: jest.fn().mockReturnThis(), clearLayers: jest.fn() };
+  const layerGroup = jest.fn(() => layerGroupObj);
   const map = jest.fn(() => ({
     setView: jest.fn(),
     fitBounds: jest.fn(),
@@ -32,12 +32,13 @@ jest.mock('leaflet', () => {
   }));
   return {
     __esModule: true,
-    default: { map, tileLayer, marker, geoJSON, latLngBounds, icon: jest.fn(() => ({})) },
+    default: { map, tileLayer, marker, geoJSON, latLngBounds, layerGroup, icon: jest.fn(() => ({})) },
     map,
     tileLayer,
     marker,
     geoJSON,
     latLngBounds,
+    layerGroup,
     icon: jest.fn(() => ({})),
   };
 });

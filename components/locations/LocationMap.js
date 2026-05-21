@@ -9,9 +9,11 @@
  * Fails gracefully — renders nothing when coordinates are missing or invalid.
  *
  * Props:
- *   location  {object}  – a location record with at least: name, name_local, lat, lng, bounding_box
- *   className {string}  – override the map container height/styling
- *   overlays  {Array}   – forwarded to BaseMap for GeoJSON overlays (e.g. prefecture boundaries)
+ *   location        {object}  – a location record with at least: name, name_local, lat, lng, bounding_box
+ *   className       {string}  – override the map container height/styling
+ *   overlays        {Array}   – forwarded to BaseMap for GeoJSON overlays (e.g. prefecture boundaries)
+ *   scrollWheelZoom {boolean} – forwarded to BaseMap; defaults to false (safe for page embeds)
+ *   interactive     {boolean} – forwarded to BaseMap; defaults to true (allows pan/zoom)
  *
  * Designed to be:
  *   - dropped into any location detail or preview card
@@ -36,7 +38,13 @@ function isValidCoord(value, min, max) {
   return isFinite(n) && n >= min && n <= max;
 }
 
-export default function LocationMap({ location, className, overlays = [] }) {
+export default function LocationMap({
+  location,
+  className,
+  overlays = [],
+  scrollWheelZoom = false,
+  interactive = true,
+}) {
   if (!location) return null;
 
   const { lat, lng, bounding_box, name, name_local } = location;
@@ -57,8 +65,8 @@ export default function LocationMap({ location, className, overlays = [] }) {
       markers={[{ lat: Number(lat), lng: Number(lng), popup: displayName }]}
       overlays={overlays}
       className={className || 'h-64 w-full rounded-lg overflow-hidden'}
-      scrollWheelZoom={false}
-      interactive
+      scrollWheelZoom={scrollWheelZoom}
+      interactive={interactive}
     />
   );
 }

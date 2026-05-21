@@ -63,13 +63,14 @@ export default function BaseMap({
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
+  // Layer groups for dynamic updates
+  const markersLayerRef = useRef(null);
+  const overlaysLayerRef = useRef(null);
 
+  // Initialise the map once on mount
   useEffect(() => {
     if (!mapContainerRef.current) return;
-    // Avoid double-initialisation in strict-mode / hot-reload
     if (mapInstanceRef.current) return;
-
-    const leafletBounds = boundingBoxToLeaflet(bounds);
 
     const map = L.map(mapContainerRef.current, {
       scrollWheelZoom,
@@ -89,43 +90,19 @@ export default function BaseMap({
       maxZoom: 19,
     }).addTo(map);
 
-    // Set view: prefer bounds, fall back to center+zoom
-    if (leafletBounds) {
-      map.fitBounds(leafletBounds, { padding: [20, 20] });
-    } else if (center) {
-      map.setView(center, zoom);
-    }
-
-    // Markers
-    markers.forEach(({ lat, lng, popup }) => {
-      const marker = L.marker([lat, lng], { icon: DEFAULT_ICON }).addTo(map);
-      if (popup) {
-        marker.bindPopup(popup);
-      }
-    });
-
-    // GeoJSON overlays (extension point for prefecture boundaries etc.)
-    overlays.forEach((geojson) => {
-      if (geojson) {
-        L.geoJSON(geojson, {
-          style: {
-            color: '#3b82f6',
-            weight: 2,
-            opacity: 0.7,
-            fillOpacity: 0.1,
-          },
-        }).addTo(map);
-      }
-    });
+    // Layer groups allow clean updates without re-creating the whole map
+    markersLayerRef.current = L.layerGroup().addTo(map);
+    overlaysLayerRef.current = L.layerGroup().addTo(map);
 
     return () => {
       map.remove();
       mapInstanceRef.current = null;
+      markersLayerRef.current = null;
+      overlaysLayerRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []);  // Empty deps: map is initialised once; scrollWheelZoom/interactive aren't reactive
 
-  // Sync bounds/center/zoom changes without full reinitialisation
+  // Sync bounds / center / zoom whenever they change
   useEffect(() => {
     const map = mapInstanceRef.current;
     if (!map) return;
@@ -137,5 +114,38 @@ export default function BaseMap({
     }
   }, [bounds, center, zoom]);
 
+  // Sync markers whenever the markers array changes
+  useEffect(() => {
+    const layer = markersLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    markers.forEach(({ lat, lng, popup }) => {
+      const marker = L.marker([lat, lng], { icon: DEFAULT_ICON }).addTo(layer);
+      if (popup) {
+        marker.bindPopup(popup);
+      }
+    });
+  }, [markers]);
+
+  // Sync GeoJSON overlays (extension point for prefecture boundaries etc.)
+  useEffect(() => {
+    const layer = overlaysLayerRef.current;
+    if (!layer) return;
+    layer.clearLayers();
+    overlays.forEach((geojson) => {
+      if (geojson) {
+        L.geoJSON(geojson, {
+          style: {
+            color: '#3b82f6',
+            weight: 2,
+            opacity: 0.7,
+            fillOpacity: 0.1,
+          },
+        }).addTo(layer);
+      }
+    });
+  }, [overlays]);
+
   return <div ref={mapContainerRef} className={className} />;
 }
+
