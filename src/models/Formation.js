@@ -44,6 +44,11 @@ const Formation = sequelize.define('Formation', {
     allowNull: false,
     defaultValue: 0,
   },
+  isPrimary: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+  },
 }, {
   tableName: 'Formations',
   timestamps: true,

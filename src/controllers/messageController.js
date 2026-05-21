@@ -6,6 +6,8 @@ const {
   normalizeEnum,
   normalizeInteger
 } = require('../utils/validators');
+const notificationService = require('../services/notificationService');
+const newsletterService = require('../services/newsletterService');
 
 // Allowed values for message type
 const MESSAGE_TYPES = ['contact', 'moderator_application', 'general', 'bug_report', 'feature_request'];
@@ -427,7 +429,52 @@ const messageController = {
         data: { message: updatedMessage }
       });
 
-      // TODO: Optional - send email notification to user
+      // Notify the user via the platform if they are registered
+      if (updatedMessage.userId) {
+        notificationService.createNotification({
+          userId: updatedMessage.userId,
+          type: 'report_resolved', // Appropriate existing type
+          title: 'Λάβατε μια απάντηση στο μήνυμά σας',
+          body: `Θέμα: ${updatedMessage.subject}`,
+          actionUrl: '/profile', // User can see their messages there (if implemented) or just a general notification
+          metadata: { messageId: updatedMessage.id }
+        }).catch(err => console.error('Error creating message response notification:', err));
+      }
+
+      // Send email notification to user
+      const userEmail = updatedMessage.user ? updatedMessage.user.email : updatedMessage.email;
+      if (userEmail) {
+        const emailSubject = `Re: ${updatedMessage.subject}`;
+        const emailBody = `
+          <p>Γεια σας,</p>
+          <p>Λάβατε μια απάντηση στο μήνυμα που στείλατε στο Appofa με θέμα "<strong>${updatedMessage.subject}</strong>".</p>
+          <hr />
+          <div style="background: #f9f9f9; padding: 15px; border-left: 4px solid #2563eb;">
+            <p style="white-space: pre-wrap;">${updatedMessage.response}</p>
+          </div>
+          <hr />
+          <p>Σας ευχαριστούμε για τη συμμετοχή σας,</p>
+          <p>Η ομάδα του Appofa</p>
+        `;
+        const emailText = `
+          Γεια σας,
+          Λάβατε μια απάντηση στο μήνυμα που στείλατε στο Appofa με θέμα "${updatedMessage.subject}".
+
+          ---
+          ${updatedMessage.response}
+          ---
+
+          Σας ευχαριστούμε για τη συμμετοχή σας,
+          Η ομάδα του Appofa
+        `;
+
+        newsletterService.sendMail({
+          to: userEmail,
+          subject: emailSubject,
+          html: emailBody,
+          text: emailText
+        }).catch(err => console.error('Error sending message response email:', err));
+      }
     } catch (error) {
       console.error('Respond to message error:', error);
       res.status(500).json({

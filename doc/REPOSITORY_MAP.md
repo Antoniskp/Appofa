@@ -16,7 +16,7 @@ This instruction is permanent and must never be removed.
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
-> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is used for SMTP password reset email delivery. Direct `next` is now pinned to `16.2.6` to resolve high-severity advisories affecting `16.0.0 - 16.2.5` in CI security-audit workflow. `next-intl` bumped to `^4.11.1` (fixes GHSA-4c35-wcg5-mm9h prototype pollution). `overrides.ip-address: ">=10.1.1"` added to patch XSS in transitive `ip-address` used by `express-rate-limit` and `geoip-lite` (GHSA-v2v4-37r5-5v8g). `overrides.nodemailer` removed — direct deps satisfy themselves and must not be in overrides. Direct `ws` dependency is now included for backend worker WebSocket support at `/ws/workers`.
+> Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is used for SMTP password reset email delivery. Direct `next` is now pinned to `16.2.6` to resolve high-severity advisories affecting `16.0.0 - 16.2.5` in CI security-audit workflow. `next-intl` bumped to `^4.11.1` (fixes GHSA-4c35-wcg5-mm9h prototype pollution). `overrides.ip-address: ">=10.1.1"` added to patch XSS in transitive `ip-address` used by `express-rate-limit` and `geoip-lite` (GHSA-v2v4-37r5-5v8g). `overrides.brace-expansion: ">=2.1.0 <3.0.0 || >=5.0.6"` added to resolve DoS vulnerability (GHSA-4gwj-5jf2). `overrides.nodemailer` removed — direct deps satisfy themselves and must not be in overrides. Direct `ws` dependency is now included for backend worker WebSocket support at `/ws/workers`.
 >
 > Backend startup convention: `require('dotenv').config()` is the very first statement in `src/index.js` so that all subsequent module-level `process.env` reads (e.g. `FRONTEND_URL` in `src/config/securityHeaders.js`) get the correct production values.
 
@@ -141,7 +141,7 @@ Appofa/
 | Bookmark | Bookmarks | id, userId, entityType, entityId | belongsTo: User |
 | Endorsement | Endorsements | id, endorserId, endorsedId, topic | belongsTo: User (×2) |
 | Report | Reports | id, contentType, contentId, category, message, reporterEmail, status | — |
-| Formation | Formations | id, userId, name, description, slug, totalVotes, isPublished | belongsTo: User; hasMany: FormationPick, FormationLike, DreamTeamVote |
+| Formation | Formations | id, userId, name, description, slug, totalVotes, isPublished, isPrimary | belongsTo: User; hasMany: FormationPick, FormationLike, DreamTeamVote |
 | FormationPick | FormationPicks | id, formationId, positionId, candidateId, pickOrder | belongsTo: Formation, GovernmentPosition |
 | FormationLike | FormationLikes | id, formationId, userId | belongsTo: Formation, User |
 | DreamTeamVote | DreamTeamVotes | id, candidateUserId, positionId, voteCount | belongsTo: GovernmentPosition |
@@ -829,6 +829,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 | — | 20260515000000-add-email-verification-fields.js | Add `Users.emailVerified` (default false), `Users.emailVerifToken` (SHA-256 hash), and `Users.emailVerifExpires` |
 | — | 20260516000000-add-electoral-district-location-type.js | Add `electoral_district` to the `Locations.type` enum (PostgreSQL `ALTER TYPE … ADD VALUE`; no-op on SQLite) |
 | — | 20260516000001-create-municipality-district-maps.js | Create `MunicipalityDistrictMaps` join table for many-to-many municipality↔electoral district mappings; unique index on (municipalityId, electoralDistrictId) |
+| — | 20260520000000-add-is-primary-to-formations.js | Add `Formations.isPrimary` BOOLEAN and index on (userId, isPrimary) for efficient identification of serious government compositions |
 
 </details>
 
