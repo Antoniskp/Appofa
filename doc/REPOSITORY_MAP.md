@@ -88,8 +88,6 @@ Appofa/
 │   ├── locations/          # Location components (4 files)
 │   ├── polls/              # Poll components (5 files)
 │   ├── profile/            # Profile components (12 files)
-│   ├── user/               # User/Person components (1 file: PersonCard)
-│   ├── organizations/      # Organization components (1 file: OrganizationCard)
 │   └── ui/                 # Shared UI primitives (20+ files)
 │
 ├── lib/                    # Shared frontend utilities
@@ -499,7 +497,7 @@ Appofa/
 ### Main Pages
 | Route | Description |
 |-------|-------------|
-| `/` | Home page (hero with tagline + simplified CTA pair + 3 value cards; sections ordered as Government Snapshot → optional Info → CTA banner → civic questions → my community → polls/suggestions/locations → discovery → merged `Νέα & Άρθρα` → videos → manifest supporters) |
+| `/` | Home page (hero with tagline + simplified CTA pair + 3 value cards; sections ordered as Government Snapshot → optional Info → CTA banner → polls/suggestions/locations → merged `Νέα & Άρθρα` → videos → manifest supporters) |
 | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics (inline password validation before advancing) → optional nationality/location with inline non-GR diaspora toggle/residence handling → GDPR/summary, plus GR quick-select onboarding and moderator-interest opt-in; `/verify-email` handles token confirm + expired-token resend flow) |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile with sticky 4-tab layout (`Profile`, `Location & Politics`, `Skills & Interests`, `Settings`); tab content is split into `app/profile/tabs/*` while form state/effects/handlers are centralized in `hooks/useProfileForm.js`; includes profile-completeness card, newsletter preference toggle, and `?verified=1` success toast handling |
@@ -601,8 +599,6 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
-| `user/` | 1 | PersonCard |
-| `organizations/` | 1 | OrganizationCard |
 | `ui/` | 23+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar (toggle has explicit visible sizing `h-10 min-w-10`; expanded inputs render below toggle and switch to `w-full` on mobile to avoid overflow), **ListPageToolbar** (shared search+filter+action row for list pages: `searchSlot`/`filtersSlot`/`actionsSlot`/`extraSlot`; primary row switches at `md` with wrap safeguards and search `md:min-w-[240px]` to prevent collapse/overlap), LanguageSwitcher, LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), ShareModal (supports regular share link + optional embed URL + iframe code copy flow), SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
