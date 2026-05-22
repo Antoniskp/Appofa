@@ -156,6 +156,11 @@ The `code` property in the GeoJSON is the join key — map your backend data to 
 | File | Purpose |
 |------|---------|
 | `public/data/greece-regions.geojson` | Starter simplified polygon data (13 peripheries) |
+| `config/map-data/regions.metadata.json` | Political region metadata (stable `id`, `capital`, `totalSeats`, district joins, location link hints) |
+| `config/map-data/electoral-districts.metadata.json` | Electoral district metadata (`id`, `regionId`, `seats`, location link hints) |
+| `config/map-data/regions.geojson` | Region polygon FeatureCollection for political explorer (join key `id`) |
+| `config/map-data/electoral-districts.geojson` | Electoral district placeholder polygon FeatureCollection (join keys `id` + `regionId`) |
 | `components/map/BaseMap.js` | Core Leaflet wrapper; `polygonLayers` prop drives interactivity |
 | `components/map/GreeceBoundaryMap.js` | Homepage boundary map — loads GeoJSON, builds layers, renders info card |
 | `components/locations/ExploreLocationsMap.js` | Thin wrapper used by `app/page.js`; delegates to `GreeceBoundaryMap` |
+| `components/political/AnalyticalMappingExplorer.js` | Reusable map+detail political explorer used by `/citizen-help/regions-electoral-map` |

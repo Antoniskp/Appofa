@@ -1,0 +1,478 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-22",
+  "electoralDistricts": [
+    {
+      "id": "district-athens-a",
+      "regionId": "region-attica",
+      "name": "Α΄ Αθηνών",
+      "seats": 13,
+      "locationSearch": "Α΄ Αθηνών",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-athens-b1-north-sector",
+      "regionId": "region-attica",
+      "name": "Β1΄ Βόρειου Τομέα Αθηνών",
+      "seats": 16,
+      "locationSearch": "Β1΄ Βόρειου Τομέα Αθηνών",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-athens-b2-west-sector",
+      "regionId": "region-attica",
+      "name": "Β2΄ Δυτικού Τομέα Αθηνών",
+      "seats": 12,
+      "locationSearch": "Β2΄ Δυτικού Τομέα Αθηνών",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-athens-b3-south-sector",
+      "regionId": "region-attica",
+      "name": "Β3΄ Νότιου Τομέα Αθηνών",
+      "seats": 19,
+      "locationSearch": "Β3΄ Νότιου Τομέα Αθηνών",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-east-attica",
+      "regionId": "region-attica",
+      "name": "Ανατολικής Αττικής",
+      "seats": 12,
+      "locationSearch": "Ανατολικής Αττικής",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-west-attica",
+      "regionId": "region-attica",
+      "name": "Δυτικής Αττικής",
+      "seats": 4,
+      "locationSearch": "Δυτικής Αττικής",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-piraeus-a",
+      "regionId": "region-attica",
+      "name": "Α΄ Πειραιώς",
+      "seats": 6,
+      "locationSearch": "Α΄ Πειραιώς",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-piraeus-b",
+      "regionId": "region-attica",
+      "name": "Β΄ Πειραιώς",
+      "seats": 8,
+      "locationSearch": "Β΄ Πειραιώς",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-thessaloniki-a",
+      "regionId": "region-central-macedonia",
+      "name": "Α΄ Θεσσαλονίκης",
+      "seats": 16,
+      "locationSearch": "Α΄ Θεσσαλονίκης",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-thessaloniki-b",
+      "regionId": "region-central-macedonia",
+      "name": "Β΄ Θεσσαλονίκης",
+      "seats": 10,
+      "locationSearch": "Β΄ Θεσσαλονίκης",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-serres",
+      "regionId": "region-central-macedonia",
+      "name": "Σερρών",
+      "seats": 5,
+      "locationSearch": "Σερρών",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-imathia",
+      "regionId": "region-central-macedonia",
+      "name": "Ημαθίας",
+      "seats": 4,
+      "locationSearch": "Ημαθίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-pella",
+      "regionId": "region-central-macedonia",
+      "name": "Πέλλας",
+      "seats": 4,
+      "locationSearch": "Πέλλας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-pieria",
+      "regionId": "region-central-macedonia",
+      "name": "Πιερίας",
+      "seats": 4,
+      "locationSearch": "Πιερίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-kilkis",
+      "regionId": "region-central-macedonia",
+      "name": "Κιλκίς",
+      "seats": 3,
+      "locationSearch": "Κιλκίς",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-chalkidiki",
+      "regionId": "region-central-macedonia",
+      "name": "Χαλκιδικής",
+      "seats": 3,
+      "locationSearch": "Χαλκιδικής",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-larisa",
+      "regionId": "region-thessaly",
+      "name": "Λαρίσης",
+      "seats": 8,
+      "locationSearch": "Λαρίσης",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-magnesia",
+      "regionId": "region-thessaly",
+      "name": "Μαγνησίας",
+      "seats": 5,
+      "locationSearch": "Μαγνησίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-karditsa",
+      "regionId": "region-thessaly",
+      "name": "Καρδίτσας",
+      "seats": 4,
+      "locationSearch": "Καρδίτσας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-trikala",
+      "regionId": "region-thessaly",
+      "name": "Τρικάλων",
+      "seats": 4,
+      "locationSearch": "Τρικάλων",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-achaia",
+      "regionId": "region-west-greece",
+      "name": "Αχαΐας",
+      "seats": 9,
+      "locationSearch": "Αχαΐας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-aitoloakarnania",
+      "regionId": "region-west-greece",
+      "name": "Αιτωλοακαρνανίας",
+      "seats": 7,
+      "locationSearch": "Αιτωλοακαρνανίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-ilia",
+      "regionId": "region-west-greece",
+      "name": "Ηλείας",
+      "seats": 5,
+      "locationSearch": "Ηλείας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-messinia",
+      "regionId": "region-peloponnese",
+      "name": "Μεσσηνίας",
+      "seats": 5,
+      "locationSearch": "Μεσσηνίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-corinthia",
+      "regionId": "region-peloponnese",
+      "name": "Κορινθίας",
+      "seats": 4,
+      "locationSearch": "Κορινθίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-argolida",
+      "regionId": "region-peloponnese",
+      "name": "Αργολίδας",
+      "seats": 3,
+      "locationSearch": "Αργολίδας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-arcadia",
+      "regionId": "region-peloponnese",
+      "name": "Αρκαδίας",
+      "seats": 3,
+      "locationSearch": "Αρκαδίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-laconia",
+      "regionId": "region-peloponnese",
+      "name": "Λακωνίας",
+      "seats": 3,
+      "locationSearch": "Λακωνίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-evros",
+      "regionId": "region-east-macedonia-thrace",
+      "name": "Έβρου",
+      "seats": 4,
+      "locationSearch": "Έβρου",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-kavala",
+      "regionId": "region-east-macedonia-thrace",
+      "name": "Καβάλας",
+      "seats": 4,
+      "locationSearch": "Καβάλας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-xanthi",
+      "regionId": "region-east-macedonia-thrace",
+      "name": "Ξάνθης",
+      "seats": 3,
+      "locationSearch": "Ξάνθης",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-drama",
+      "regionId": "region-east-macedonia-thrace",
+      "name": "Δράμας",
+      "seats": 3,
+      "locationSearch": "Δράμας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-rodopi",
+      "regionId": "region-east-macedonia-thrace",
+      "name": "Ροδόπης",
+      "seats": 3,
+      "locationSearch": "Ροδόπης",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-heraklion",
+      "regionId": "region-crete",
+      "name": "Ηρακλείου",
+      "seats": 8,
+      "locationSearch": "Ηρακλείου",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-chania",
+      "regionId": "region-crete",
+      "name": "Χανίων",
+      "seats": 4,
+      "locationSearch": "Χανίων",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-lasithi",
+      "regionId": "region-crete",
+      "name": "Λασιθίου",
+      "seats": 2,
+      "locationSearch": "Λασιθίου",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-rethymno",
+      "regionId": "region-crete",
+      "name": "Ρεθύμνης",
+      "seats": 2,
+      "locationSearch": "Ρεθύμνης",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-evia",
+      "regionId": "region-central-greece",
+      "name": "Εύβοιας",
+      "seats": 6,
+      "locationSearch": "Εύβοιας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-fthiotida",
+      "regionId": "region-central-greece",
+      "name": "Φθιώτιδας",
+      "seats": 4,
+      "locationSearch": "Φθιώτιδας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-viotia",
+      "regionId": "region-central-greece",
+      "name": "Βοιωτίας",
+      "seats": 3,
+      "locationSearch": "Βοιωτίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-evrytania",
+      "regionId": "region-central-greece",
+      "name": "Ευρυτανίας",
+      "seats": 1,
+      "locationSearch": "Ευρυτανίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-fokida",
+      "regionId": "region-central-greece",
+      "name": "Φωκίδας",
+      "seats": 1,
+      "locationSearch": "Φωκίδας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-ioannina",
+      "regionId": "region-epirus",
+      "name": "Ιωαννίνων",
+      "seats": 5,
+      "locationSearch": "Ιωαννίνων",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-arta",
+      "regionId": "region-epirus",
+      "name": "Άρτας",
+      "seats": 2,
+      "locationSearch": "Άρτας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-preveza",
+      "regionId": "region-epirus",
+      "name": "Πρέβεζας",
+      "seats": 2,
+      "locationSearch": "Πρέβεζας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-thesprotia",
+      "regionId": "region-epirus",
+      "name": "Θεσπρωτίας",
+      "seats": 1,
+      "locationSearch": "Θεσπρωτίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-dodecanese",
+      "regionId": "region-south-aegean",
+      "name": "Δωδεκανήσου",
+      "seats": 5,
+      "locationSearch": "Δωδεκανήσου",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-cyclades",
+      "regionId": "region-south-aegean",
+      "name": "Κυκλάδων",
+      "seats": 4,
+      "locationSearch": "Κυκλάδων",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-kozani",
+      "regionId": "region-west-macedonia",
+      "name": "Κοζάνης",
+      "seats": 4,
+      "locationSearch": "Κοζάνης",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-florina",
+      "regionId": "region-west-macedonia",
+      "name": "Φλώρινας",
+      "seats": 2,
+      "locationSearch": "Φλώρινας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-grevena",
+      "regionId": "region-west-macedonia",
+      "name": "Γρεβενών",
+      "seats": 1,
+      "locationSearch": "Γρεβενών",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-kastoria",
+      "regionId": "region-west-macedonia",
+      "name": "Καστοριάς",
+      "seats": 1,
+      "locationSearch": "Καστοριάς",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-corfu",
+      "regionId": "region-ionian-islands",
+      "name": "Κέρκυρας",
+      "seats": 3,
+      "locationSearch": "Κέρκυρας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-zakynthos",
+      "regionId": "region-ionian-islands",
+      "name": "Ζακύνθου",
+      "seats": 1,
+      "locationSearch": "Ζακύνθου",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-kefalonia",
+      "regionId": "region-ionian-islands",
+      "name": "Κεφαλληνίας",
+      "seats": 1,
+      "locationSearch": "Κεφαλληνίας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-lefkada",
+      "regionId": "region-ionian-islands",
+      "name": "Λευκάδας",
+      "seats": 1,
+      "locationSearch": "Λευκάδας",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-lesvos",
+      "regionId": "region-north-aegean",
+      "name": "Λέσβου",
+      "seats": 3,
+      "locationSearch": "Λέσβου",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-chios",
+      "regionId": "region-north-aegean",
+      "name": "Χίου",
+      "seats": 2,
+      "locationSearch": "Χίου",
+      "locationType": "electoral_district"
+    },
+    {
+      "id": "district-samos",
+      "regionId": "region-north-aegean",
+      "name": "Σάμου",
+      "seats": 1,
+      "locationSearch": "Σάμου",
+      "locationType": "electoral_district"
+    }
+  ]
+}

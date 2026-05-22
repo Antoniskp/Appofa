@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-20
+> **Last updated**: 2026-05-22
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -32,7 +32,7 @@ This instruction is permanent and must never be removed.
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
 - [Frontend Pages (139)](#frontend-pages-139)
-- [Components (149)](#components-149)
+- [Components (151)](#components-151)
 - [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
 - [Constants](#constants)
@@ -49,6 +49,7 @@ This instruction is permanent and must never be removed.
 Appofa/
 ├── proxy.js                 # Next.js edge proxy (country redirect + non-Cloudflare backend geo fallback)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
+├── config/map-data/         # Political mapping datasets (region/district metadata + GeoJSON geometry)
 ├── messages/                # next-intl locale messages (el.json, en.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (23 files)
@@ -86,6 +87,7 @@ Appofa/
 │   ├── embed/              # Embeddable content cards
 │   ├── newsletter/         # Newsletter UI components (1 file)
 │   ├── locations/          # Location components (4 files)
+│   ├── political/          # Analytical political mapping UI (1 file)
 │   ├── polls/              # Poll components (5 files)
 │   ├── profile/            # Profile components (12 files)
 │   └── ui/                 # Shared UI primitives (20+ files)
@@ -562,6 +564,7 @@ Appofa/
 ### Static Pages (50 pages in `(statics)` layout)
 Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, github-files, etc.
 
+- `/citizen-help/regions-electoral-map` now renders reusable **Αναλυτική Χαρτογράφηση** UI: map + selected-region detail panel with district seats, fed by external JSON/GeoJSON datasets in `config/map-data/` (`regions.metadata.json`, `electoral-districts.metadata.json`, `regions.geojson`, `electoral-districts.geojson`) joined by stable IDs (`id`, `regionId`); region/district labels link into Appofa locations via search/type query links when metadata includes location hints.
 - `/citizen-help/government-positions` now renders server-fetched live GR official holder data from `GET /api/dream-team/current-holders?countryCode=GR` (source of truth: `GovernmentPositions` + `GovernmentCurrentHolders`) and shows graceful unavailable/empty states instead of hardcoded office-holder lists.
 
 #### Platform Documentation (`/platform/*`) — canonical source of truth for users and AI agents
@@ -583,7 +586,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## Components (150)
+## Components (151)
 
 | Directory | Count | Key Components |
 |-----------|-------|----------------|
@@ -597,6 +600,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging; rendered only for guests) |
 | `locations/` | 11 | CountryFundingBanner (country no-content card: detected-country flag + network/IP-region label, support CTA, optional donation CTA, diaspora shortcut to Greece), ExploreLocationsMap (homepage `Εξερεύνησε Περιοχές` map wrapper), LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (balanced desktop two-column top box with participation-first CTA hierarchy: one primary action + compact edit icon, muted zero stat tiles), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (legacy summary cards component, no longer rendered in default location detail flow), LocationRelatedLocations (compact related/nearby chip layout replacing large hierarchy blocks), LocationTabs (polls/suggestions-first tab UX with compact poll-card grid and explicit `+ Ξεκίνησε ...` empty-state actions) |
 | `map/` | 3 | BaseMap (shared Leaflet map with marker + overlay + polygonLayers support and compliant attribution), GreeceBoundaryMap (13 Greek periphery polygon layer map using `public/data/greece-regions.geojson`), LocationPickerMap (interactive click/drag coordinate picker reused by location create/edit flows) |
+| `political/` | 1 | AnalyticalMappingExplorer (reusable political map + detail panel powered by external metadata/GeoJSON in `config/map-data/*`, with region/district joins via stable IDs and location-search links) |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
