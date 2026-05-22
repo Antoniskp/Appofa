@@ -37,6 +37,7 @@ export default function LocationDetailPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [editedData, setEditedData] = useState({});
+  const [boundaryValidation, setBoundaryValidation] = useState({ isValid: true });
   const [imageError, setImageError] = useState(false);
   const [sections, setSections] = useState([]);
   const [secondaryLoading, setSecondaryLoading] = useState(false);
@@ -94,7 +95,9 @@ export default function LocationDetailPage() {
           lng: loc.lng || '',
           wikipedia_url: loc.wikipedia_url || '',
           population_override: loc.population_override != null ? String(loc.population_override) : '',
+          boundary_geojson: loc.boundary_geojson || null,
         });
+        setBoundaryValidation({ isValid: true });
 
         // Use the resolved numeric ID for subsequent queries
         const locId = loc.id;
@@ -211,7 +214,9 @@ export default function LocationDetailPage() {
         lng: location.lng || '',
         wikipedia_url: location.wikipedia_url || '',
         population_override: location.population_override != null ? String(location.population_override) : '',
+        boundary_geojson: location.boundary_geojson || null,
       });
+      setBoundaryValidation({ isValid: true });
     }
   };
 
@@ -245,6 +250,11 @@ export default function LocationDetailPage() {
       return;
     }
 
+    if (!boundaryValidation.isValid) {
+      toastError('Please fix Boundary / GeoJSON validation errors before saving.');
+      return;
+    }
+
     // Validate Wikipedia URL if provided
     if (editedData.wikipedia_url && editedData.wikipedia_url.trim()) {
       try {
@@ -268,6 +278,7 @@ export default function LocationDetailPage() {
         lat,
         lng,
         wikipedia_url: editedData.wikipedia_url.trim() || null,
+        boundary_geojson: editedData.boundary_geojson || null,
         population_override: (() => {
           if (editedData.population_override === '') return null;
           const v = parseInt(editedData.population_override, 10);
@@ -409,6 +420,7 @@ export default function LocationDetailPage() {
               onSave={handleSave}
               onCancel={handleCancelEdit}
               onInputChange={handleInputChange}
+              onBoundaryValidationChange={setBoundaryValidation}
               onImageUploaded={() => {
                 setImageError(false);
                 refetch();

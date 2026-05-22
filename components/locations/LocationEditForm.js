@@ -6,6 +6,7 @@ import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import LocationSectionManager from '@/components/LocationSectionManager';
 import LocationRoleManager from '@/components/LocationRoleManager';
 import LocationModeratorManager from '@/components/locations/LocationModeratorManager';
+import LocationBoundaryGeoJsonField from '@/components/locations/LocationBoundaryGeoJsonField';
 import { locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
@@ -16,7 +17,16 @@ const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerM
 /** Accepted MIME types / extensions for location image upload (must match backend allowlist). */
 const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence', '.heic', '.heif'];
 
-export default function LocationEditForm({ location, editedData, isSaving, onSave, onCancel, onInputChange, onImageUploaded }) {
+export default function LocationEditForm({
+  location,
+  editedData,
+  isSaving,
+  onSave,
+  onCancel,
+  onInputChange,
+  onImageUploaded,
+  onBoundaryValidationChange
+}) {
   const { success: toastSuccess, error: toastError } = useToast();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadStep, setUploadStep] = useState(''); // '' | 'converting' | 'uploading'
@@ -205,6 +215,17 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
             />
           </div>
         </div>
+        <LocationBoundaryGeoJsonField
+          value={editedData.boundary_geojson}
+          onChange={(nextBoundary) => onInputChange('boundary_geojson', nextBoundary)}
+          onValidationChange={onBoundaryValidationChange}
+          locationMeta={{
+            id: location.id,
+            slug: location.slug,
+            name: editedData.name || location.name,
+            nameLocal: editedData.name_local || location.name_local,
+          }}
+        />
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Wikipedia URL</label>
           <input
