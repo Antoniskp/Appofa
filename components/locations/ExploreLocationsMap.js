@@ -64,11 +64,8 @@ export default function ExploreLocationsMap({ locations = [], className, loading
 
   if (loading) return <Skeleton />;
 
-  // If none of the locations have coordinates, render nothing
-  if (markers.length === 0 && locations.length > 0) return null;
-
-  // If there are no locations at all yet (still fetching?), show skeleton
-  if (locations.length === 0) return <Skeleton />;
+  // If none of the fetched locations have coordinates, there is nothing to plot
+  if (markers.length === 0) return null;
 
   return (
     <BaseMap

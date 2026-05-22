@@ -56,7 +56,12 @@ export default function LocationPickerMap({ lat, lng, onChange, className }) {
   const hasCoords =
     isValidCoord(lat, -90, 90) && isValidCoord(lng, -180, 180);
 
-  // Initialise the map once on mount
+  // Initialise the Leaflet map exactly once on mount.
+  // `lat`/`lng` are intentionally NOT in the dependency array: this effect must run only
+  // once so the map is not torn down and re-created on every coordinate change.
+  // The second useEffect below is responsible for syncing the marker after mount.
+  // `hasCoords`/`lat`/`lng` captured here are only used to set the *initial* view and
+  // place the *initial* marker — subsequent changes are handled by the sync effect.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -73,7 +78,7 @@ export default function LocationPickerMap({ lat, lng, onChange, className }) {
       maxZoom: 20,
     }).addTo(map);
 
-    map.attributionControl.setPrefix(false);
+    map.attributionControl?.setPrefix(false);
 
     // Set initial view
     if (hasCoords) {
@@ -127,6 +132,8 @@ export default function LocationPickerMap({ lat, lng, onChange, className }) {
       mapRef.current = null;
       markerRef.current = null;
     };
+    // Intentionally empty deps: Leaflet map must only be initialised once.
+    // Coordinate prop changes are handled by the sync useEffect below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
