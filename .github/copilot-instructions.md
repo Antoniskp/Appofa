@@ -101,7 +101,7 @@ Compact table of every model where wrong field names have caused bugs:
 | OrganizationMember | `role` (`owner\|admin\|moderator\|member`), `status` (`active\|invited\|pending`), `inviteToken` | — |
 | LocationElectionVote | `locationId`, `roleKey`, `voterId`, `candidateUserId` | — |
 | UserLocationRole | `userId`, `locationId`, `roleKey` | `homeLocationId` (do NOT use for mod scope) |
-| Location | `name`, `name_local`, `type`, `parent_id`, `code`, `slug`, `lat`, `lng`, `bounding_box`, `boundary_geojson`, `wikipedia_url`, `population_override` | Inline lat/lng array fields as boundary storage (use `boundary_geojson`) |
+| Location | `name`, `name_local`, `type`, `parent_id`, `code`, `slug`, `lat`, `lng`, `bounding_box`, `boundary_geojson`, `wikipedia_url`, `population_override` | Do not store boundaries as inline lat/lng arrays; use `boundary_geojson` |
 | GeoVisit | `countryCode`, `sessionHash`, `ipAddress`, `userId` | — |
 | Formation | `userId`, `name`, `description`, `slug`, `totalVotes`, `isPublished`, `isPrimary` | — |
 

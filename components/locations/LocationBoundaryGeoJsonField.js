@@ -56,10 +56,10 @@ function isCoordinatePair(value) {
     && Number.isFinite(value[1]);
 }
 
-function containsCoordinatePair(value) {
+function hasCoordinatePair(value) {
   if (!Array.isArray(value) || value.length === 0) return false;
   if (isCoordinatePair(value)) return true;
-  return value.some((entry) => containsCoordinatePair(entry));
+  return value.some((entry) => hasCoordinatePair(entry));
 }
 
 function validateGeometry(geometry) {
@@ -72,7 +72,7 @@ function validateGeometry(geometry) {
       message: 'Unsupported geometry type. Use Polygon or MultiPolygon.'
     };
   }
-  if (!containsCoordinatePair(geometry.coordinates)) {
+  if (!hasCoordinatePair(geometry.coordinates)) {
     return { isValid: false, message: 'Geometry coordinates are empty or invalid.' };
   }
   return { isValid: true };
