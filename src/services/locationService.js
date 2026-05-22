@@ -24,6 +24,72 @@ const isValidWikipediaUrl = (url) => {
   }
 };
 
+const SUPPORTED_BOUNDARY_GEOMETRY_TYPES = new Set(['Polygon', 'MultiPolygon']);
+
+const hasNestedCoordinates = (value) => {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  if (
+    value.length >= 2
+    && Number.isFinite(Number(value[0]))
+    && Number.isFinite(Number(value[1]))
+  ) {
+    return true;
+  }
+  return value.some((entry) => hasNestedCoordinates(entry));
+};
+
+const validateBoundaryGeometry = (geometry) => {
+  if (!geometry || typeof geometry !== 'object') return false;
+  if (!SUPPORTED_BOUNDARY_GEOMETRY_TYPES.has(geometry.type)) return false;
+  return hasNestedCoordinates(geometry.coordinates);
+};
+
+const normalizeBoundaryGeoJson = (input) => {
+  if (input === undefined) return { success: true, value: undefined };
+  if (input === null || input === '') return { success: true, value: null };
+
+  const parsed = typeof input === 'string'
+    ? (() => {
+      try {
+        return JSON.parse(input);
+      } catch {
+        return null;
+      }
+    })()
+    : input;
+
+  if (!parsed || typeof parsed !== 'object') {
+    return { success: false, message: 'Invalid boundary GeoJSON: expected a JSON object.' };
+  }
+
+  if (parsed.type === 'FeatureCollection') {
+    if (!Array.isArray(parsed.features) || parsed.features.length === 0) {
+      return { success: false, message: 'Invalid boundary GeoJSON: FeatureCollection must include at least one Feature.' };
+    }
+    const hasInvalidFeature = parsed.features.some((feature) => feature?.type !== 'Feature' || !validateBoundaryGeometry(feature.geometry));
+    if (hasInvalidFeature) {
+      return { success: false, message: 'Invalid boundary GeoJSON: only Polygon and MultiPolygon Features are supported.' };
+    }
+    return { success: true, value: parsed };
+  }
+
+  if (parsed.type === 'Feature') {
+    if (!validateBoundaryGeometry(parsed.geometry)) {
+      return { success: false, message: 'Invalid boundary GeoJSON: only Polygon and MultiPolygon geometries are supported.' };
+    }
+    return { success: true, value: parsed };
+  }
+
+  if (validateBoundaryGeometry(parsed)) {
+    return { success: true, value: parsed };
+  }
+
+  return {
+    success: false,
+    message: 'Invalid boundary GeoJSON: root must be FeatureCollection, Feature, Polygon, or MultiPolygon.'
+  };
+};
+
 // ---------------------------------------------------------------------------
 // Service functions
 // ---------------------------------------------------------------------------
@@ -35,7 +101,18 @@ const isValidWikipediaUrl = (url) => {
  */
 const createLocation = async (locationData) => {
   try {
-    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url } = locationData;
+    const {
+      name,
+      name_local,
+      type,
+      parent_id,
+      code,
+      lat,
+      lng,
+      bounding_box,
+      boundary_geojson,
+      wikipedia_url
+    } = locationData;
     const normalizedName = typeof name === 'string' ? name.trim() : '';
 
     if (!normalizedName || !type) {
@@ -52,6 +129,11 @@ const createLocation = async (locationData) => {
         success: false, status: 400,
         message: 'Invalid Wikipedia URL. Must be a valid Wikipedia domain URL (e.g., https://en.wikipedia.org/wiki/...)'
       };
+    }
+
+    const normalizedBoundary = normalizeBoundaryGeoJson(boundary_geojson);
+    if (!normalizedBoundary.success) {
+      return { success: false, status: 400, message: normalizedBoundary.message };
     }
 
     const baseSlug = generateSlug(normalizedName, type);
@@ -105,6 +187,7 @@ const createLocation = async (locationData) => {
       lat,
       lng,
       bounding_box,
+      boundary_geojson: normalizedBoundary.value,
       wikipedia_url,
       wikipedia_image_url,
       population,
@@ -463,7 +546,19 @@ const getLocation = async (id) => {
  */
 const updateLocation = async (id, updateData, actorRole = null, actorUserId = null) => {
   try {
-    const { name, name_local, type, parent_id, code, lat, lng, bounding_box, wikipedia_url, population_override } = updateData;
+    const {
+      name,
+      name_local,
+      type,
+      parent_id,
+      code,
+      lat,
+      lng,
+      bounding_box,
+      boundary_geojson,
+      wikipedia_url,
+      population_override
+    } = updateData;
 
     const location = await Location.findByPk(id);
     if (!location) {
@@ -493,6 +588,11 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
         success: false, status: 400,
         message: 'Invalid Wikipedia URL. Must be a valid Wikipedia domain URL (e.g., https://en.wikipedia.org/wiki/...)'
       };
+    }
+
+    const normalizedBoundary = normalizeBoundaryGeoJson(boundary_geojson);
+    if (!normalizedBoundary.success) {
+      return { success: false, status: 400, message: normalizedBoundary.message };
     }
 
     let slug = location.slug;
@@ -534,6 +634,7 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
       lat: lat !== undefined ? lat : location.lat,
       lng: lng !== undefined ? lng : location.lng,
       bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box,
+      boundary_geojson: boundary_geojson !== undefined ? normalizedBoundary.value : location.boundary_geojson,
       wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url,
       population_override: population_override !== undefined ? (() => {
         if (population_override === null || population_override === '') return null;

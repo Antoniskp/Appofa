@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button';
 import Pagination from '@/components/ui/Pagination';
 import AdminLayout from '@/components/admin/AdminLayout';
 import LocationSelector from '@/components/ui/LocationSelector';
+import LocationBoundaryGeoJsonField from '@/components/locations/LocationBoundaryGeoJsonField';
 
 const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
 
@@ -66,7 +67,9 @@ function LocationManagementContent() {
     lat: '',
     lng: '',
     wikipedia_url: '',
+    boundary_geojson: null,
   });
+  const [boundaryValidation, setBoundaryValidation] = useState({ isValid: true });
   const [submitting, setSubmitting] = useState(false);
   const [requestStatusFilter, setRequestStatusFilter] = useState('pending');
 
@@ -141,6 +144,7 @@ function LocationManagementContent() {
         lat: location.lat || '',
         lng: location.lng || '',
         wikipedia_url: location.wikipedia_url || '',
+        boundary_geojson: location.boundary_geojson || null,
       });
     } else {
       setEditingLocation(null);
@@ -153,8 +157,10 @@ function LocationManagementContent() {
         lat: '',
         lng: '',
         wikipedia_url: '',
+        boundary_geojson: null,
       });
     }
+    setBoundaryValidation({ isValid: true });
     setShowModal(true);
   };
 
@@ -181,6 +187,12 @@ function LocationManagementContent() {
     setSubmitting(true);
 
     try {
+      if (!boundaryValidation.isValid) {
+        toastError('Please fix Boundary / GeoJSON validation errors before saving.');
+        setSubmitting(false);
+        return;
+      }
+
       const payload = {
         ...formData,
         parent_id: formData.parent_id ? parseInt(formData.parent_id) : null,
@@ -598,6 +610,18 @@ function LocationManagementContent() {
               </div>
             </div>
           </div>
+
+          <LocationBoundaryGeoJsonField
+            value={formData.boundary_geojson}
+            onChange={(nextBoundary) => setFormData((prev) => ({ ...prev, boundary_geojson: nextBoundary }))}
+            onValidationChange={setBoundaryValidation}
+            locationMeta={{
+              id: editingLocation?.id ?? '',
+              slug: editingLocation?.slug ?? '',
+              name: formData.name,
+              nameLocal: formData.name_local,
+            }}
+          />
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
