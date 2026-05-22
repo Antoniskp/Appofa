@@ -11,12 +11,15 @@
  *   overlays      {Array<object>}  – GeoJSON feature-collection objects (extension point)
  *   className     {string}         – wrapper class for sizing (default: 'h-64 w-full rounded-lg')
  *   scrollWheelZoom {boolean}      – enable/disable scroll-wheel zoom (default false)
- *   interactive   {boolean}        – when false, disables all interaction (future edit mode uses true)
+ *   interactive   {boolean}        – when false, disables all interaction
+ *   onMapClick    {function}       – called with (lat, lng) when the map is clicked; enables picker mode
  *
  * Extension points for future work:
  *   - Pass `overlays` to render GeoJSON prefecture boundaries.
- *   - Set `interactive={true}` + a click/drag callback for coordinate-picking in edit forms.
- *   - Add `onMarkerMove` prop for draggable markers in admin forms.
+ *   - Use `onMapClick` + a draggable-marker wrapper (LocationPickerMap) for coordinate-picking.
+ *
+ * Tile provider: CARTO Positron (light_all) — clean white design, free for non-commercial use.
+ * Attribution: © OpenStreetMap contributors © CARTO (required; kept minimal via setPrefix).
  */
 
 import { useEffect, useRef } from 'react';
@@ -60,12 +63,15 @@ export default function BaseMap({
   className = 'h-64 w-full rounded-lg overflow-hidden',
   scrollWheelZoom = false,
   interactive = true,
+  onMapClick,
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
   // Layer groups for dynamic updates
   const markersLayerRef = useRef(null);
   const overlaysLayerRef = useRef(null);
+  const onMapClickRef = useRef(onMapClick);
+  onMapClickRef.current = onMapClick;
 
   // Initialise the map once on mount
   useEffect(() => {
@@ -84,11 +90,25 @@ export default function BaseMap({
 
     mapInstanceRef.current = map;
 
-    // Tile layer — OpenStreetMap (free, no API key required)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
-      maxZoom: 19,
+    // Tile layer — CARTO Positron (clean light design, free for non-commercial use).
+    // Attribution is required by both OSM (ODbL) and CARTO's terms of service.
+    // We remove the default "Leaflet" prefix to keep it minimal while staying compliant.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+      subdomains: 'abcd',
+      maxZoom: 20,
     }).addTo(map);
+
+    // Remove the default "Leaflet" prefix — attribution links remain (legally required).
+    map.attributionControl?.setPrefix(false);
+
+    // Wire up map-click for picker mode (only if a callback is provided)
+    map.on('click', (e) => {
+      if (onMapClickRef.current) {
+        onMapClickRef.current(e.latlng.lat, e.latlng.lng);
+      }
+    });
 
     // Layer groups allow clean updates without re-creating the whole map
     markersLayerRef.current = L.layerGroup().addTo(map);

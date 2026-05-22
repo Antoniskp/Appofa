@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { locationAPI, locationRequestAPI } from '@/lib/api';
 import Badge from '@/components/ui/Badge';
@@ -14,6 +15,8 @@ import Button from '@/components/ui/Button';
 import Pagination from '@/components/ui/Pagination';
 import AdminLayout from '@/components/admin/AdminLayout';
 import LocationSelector from '@/components/ui/LocationSelector';
+
+const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'electoral_district', 'municipality'];
 const PAGE_SIZE = 25;
@@ -558,34 +561,41 @@ function LocationManagementContent() {
           </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Latitude
-              </label>
-              <input
-                type="number"
-                step="any"
-                name="lat"
-                value={formData.lat}
-                onChange={handleInputChange}
-                placeholder="35.6762"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Longitude
-              </label>
-              <input
-                type="number"
-                step="any"
-                name="lng"
-                value={formData.lng}
-                onChange={handleInputChange}
-                placeholder="139.6503"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-              />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Coordinates
+            </label>
+            <LocationPickerMap
+              lat={formData.lat}
+              lng={formData.lng}
+              onChange={({ lat, lng }) =>
+                setFormData(prev => ({ ...prev, lat: String(lat), lng: String(lng) }))
+              }
+              className="h-56 w-full rounded-lg overflow-hidden"
+            />
+            <div className="grid grid-cols-2 gap-4 mt-2">
+              <div>
+                <input
+                  type="number"
+                  step="any"
+                  name="lat"
+                  value={formData.lat}
+                  onChange={handleInputChange}
+                  placeholder="35.6762"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <input
+                  type="number"
+                  step="any"
+                  name="lng"
+                  value={formData.lng}
+                  onChange={handleInputChange}
+                  placeholder="23.7275"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
 

@@ -29,6 +29,8 @@ jest.mock('leaflet', () => {
     fitBounds: jest.fn(),
     addLayer: jest.fn(),
     remove: jest.fn(),
+    on: jest.fn(),
+    attributionControl: { setPrefix: jest.fn() },
   }));
   return {
     __esModule: true,
