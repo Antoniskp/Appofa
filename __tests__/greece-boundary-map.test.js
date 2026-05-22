@@ -131,6 +131,20 @@ async function cleanup(root, container) {
   container.remove();
 }
 
+function collectLonLatPairs(node, output = []) {
+  if (!Array.isArray(node)) return output;
+  if (
+    node.length >= 2 &&
+    typeof node[0] === 'number' &&
+    typeof node[1] === 'number'
+  ) {
+    output.push([node[0], node[1]]);
+    return output;
+  }
+  node.forEach((child) => collectLonLatPairs(child, output));
+  return output;
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('BaseMap — polygonLayers prop', () => {
@@ -278,9 +292,9 @@ describe('greece-regions.geojson schema', () => {
     expect(attica.properties.capital).toContain('Αθήνα');
     // Athens is at ~23.7°E, 38.0°N — verify the polygon roughly covers this area
     // (simplified check: at least some coordinate is within ±1° of Athens)
-    const coords = attica.geometry.coordinates.flat(2);
-    const lngs = coords.filter((_, i) => i % 2 === 0);
-    const lats = coords.filter((_, i) => i % 2 === 1);
+    const lonLatPairs = collectLonLatPairs(attica.geometry.coordinates);
+    const lngs = lonLatPairs.map(([lng]) => lng);
+    const lats = lonLatPairs.map(([, lat]) => lat);
     const athensLng = 23.73;
     const athensLat = 37.98;
     const withinLng = lngs.some((lng) => Math.abs(lng - athensLng) < 0.8);
@@ -293,8 +307,8 @@ describe('greece-regions.geojson schema', () => {
     const crete = geoData.features.find((f) => f.properties.code === 'GR-M');
     expect(crete).toBeDefined();
     // All coordinates should be south of 36°N
-    const coords = crete.geometry.coordinates.flat(2);
-    const lats = coords.filter((_, i) => i % 2 === 1);
+    const lonLatPairs = collectLonLatPairs(crete.geometry.coordinates);
+    const lats = lonLatPairs.map(([, lat]) => lat);
     lats.forEach((lat) => {
       expect(lat).toBeLessThan(36);
     });

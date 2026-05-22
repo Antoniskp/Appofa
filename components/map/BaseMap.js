@@ -29,7 +29,7 @@
  *
  * Designed for:
  *   - Prefecture / electoral-district / municipality boundary layers
- *   - Future choropleth coloring (override `style.fillColor` per feature via `styleFeature` fn)
+ *   - Future choropleth coloring (by extending PolygonLayerDef with a per-feature style callback)
  *   - Drill-down navigation (handle `onFeatureClick` to route to location pages)
  *
  * Extension points for future work:
@@ -285,4 +285,3 @@ export default function BaseMap({
 
   return <div ref={mapContainerRef} className={className} />;
 }
-

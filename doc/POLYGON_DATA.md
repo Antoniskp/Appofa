@@ -36,7 +36,11 @@ Each feature has:
 }
 ```
 
-The `code` property is the join key for future choropleth coloring — map your vote or participation data to the same code and pass a `styleFeature(feature)` function to the polygon layer.
+The `code` property is the join key for future choropleth coloring — map your vote or participation data to the same code and (in a future BaseMap extension) pass a `styleFeature(feature)` callback to the polygon layer.
+
+### Root metadata fields
+
+`public/data/greece-regions.geojson` currently includes root-level metadata keys (`_comment`, `_license`, `_source`) for attribution/provenance. These are **non-standard GeoJSON extensions** and may be stripped by strict processors; move them to a sidecar README if a downstream consumer requires strict RFC 7946-only root fields.
 
 ## Why peripheries, not electoral districts?
 

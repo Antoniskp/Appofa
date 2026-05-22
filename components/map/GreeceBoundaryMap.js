@@ -41,6 +41,8 @@ const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false }
 
 // Module-level cache so the GeoJSON is only fetched once per browser session,
 // even if the component mounts/unmounts (e.g. navigation back to homepage).
+// Note: this persists during the active tab lifetime; in dev/HMR a hard refresh
+// may be needed to see file edits reflected.
 let GEO_CACHE = null;
 let GEO_CACHE_PROMISE = null;
 
@@ -80,6 +82,8 @@ function buildPopup(props) {
   const nameEn = props.name_en || '';
   const capital = props.capital || '';
   const code = props.code || '';
+  // `type=periphery`/`region=...` are list-page hint params: if unsupported, `/locations`
+  // still opens normally and the query string is safely ignored.
   return (
     `<div style="min-width:160px">` +
     `<p style="font-weight:700;font-size:14px;margin:0 0 4px">${name}</p>` +
