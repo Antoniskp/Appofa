@@ -16,6 +16,7 @@ import HomepageSection from '@/components/HomepageSection';
 import LocationCard from '@/components/locations/LocationCard';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
+const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
 
 export default function HomePage() {
   const tHome = useTranslations('home');
@@ -338,6 +339,12 @@ export default function HomePage() {
           skeletonCount={6}
           bgColor="bg-white"
           renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
+          mapSlot={
+            <ExploreLocationsMap
+              locations={locationDiscovery}
+              loading={locationDiscoveryLoading}
+            />
+          }
         />
       )}
 

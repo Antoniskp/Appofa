@@ -19,6 +19,7 @@ export default function HomepageSection({
   renderItem,
   topTags = [],
   tagLinkPrefix,
+  mapSlot,
 }) {
   return (
     <section className={`${bgColor} border-t border-gray-200`}>
@@ -33,6 +34,7 @@ export default function HomepageSection({
           )}
         </div>
         {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        {mapSlot && !loading && <div className="mt-4 mb-6">{mapSlot}</div>}
         {loading && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <SkeletonLoader type="card" count={skeletonCount} variant="grid" />

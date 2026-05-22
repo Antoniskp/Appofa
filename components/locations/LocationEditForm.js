@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import LocationSectionManager from '@/components/LocationSectionManager';
 import LocationRoleManager from '@/components/LocationRoleManager';
@@ -9,6 +10,8 @@ import { locationAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
 import { normalizeUploadImage, isHeicFile, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
+
+const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
 
 /** Accepted MIME types / extensions for location image upload (must match backend allowlist). */
 const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence', '.heic', '.heif'];
@@ -168,9 +171,18 @@ export default function LocationEditForm({ location, editedData, isSaving, onSav
             placeholder="Location code"
           />
         </div>
-        <div>
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Coordinates (lat, lng)</label>
-          <div className="flex gap-2">
+          <LocationPickerMap
+            lat={editedData.lat}
+            lng={editedData.lng}
+            onChange={({ lat, lng }) => {
+              onInputChange('lat', String(lat));
+              onInputChange('lng', String(lng));
+            }}
+            className="h-56 w-full rounded-lg overflow-hidden"
+          />
+          <div className="flex gap-2 mt-2">
             <input
               type="number"
               step="0.000001"
