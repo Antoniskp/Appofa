@@ -76,11 +76,11 @@ The Hellenic Statistical Authority (ΕΛΣΤΑΤ) publishes official administrat
 [GADM](https://gadm.org) provides ready-made country administrative boundaries:
 
 1. Download [Greece level-1 (regions)](https://gadm.org/download_country.html) as GeoJSON.
-2. The file is pre-simplified and license-free for non-commercial use.
+2. The file is pre-simplified and available for non-commercial use under GADM's license.
 3. Map GADM column `NAME_1` → `name_en` and add the `code` column from ISO 3166-2.
 4. Drop the file in `public/data/greece-regions.geojson`.
 
-> ⚠️ GADM license: non-commercial use only.
+> ⚠️ GADM license: non-commercial use only; requires attribution.
 
 ### Option 3 — OpenStreetMap / Overpass
 

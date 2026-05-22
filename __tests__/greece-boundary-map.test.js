@@ -278,7 +278,7 @@ describe('greece-regions.geojson schema', () => {
     expect(attica.properties.capital).toContain('Αθήνα');
     // Athens is at ~23.7°E, 38.0°N — verify the polygon roughly covers this area
     // (simplified check: at least some coordinate is within ±1° of Athens)
-    const coords = attica.geometry.coordinates.flat(3);
+    const coords = attica.geometry.coordinates.flat(2);
     const lngs = coords.filter((_, i) => i % 2 === 0);
     const lats = coords.filter((_, i) => i % 2 === 1);
     const athensLng = 23.73;

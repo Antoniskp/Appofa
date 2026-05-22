@@ -254,9 +254,8 @@ export default function BaseMap({
           // Hover: highlight + bring to front
           featureLayer.on('mouseover', () => {
             featureLayer.setStyle(hoverStyle);
-            if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
-              featureLayer.bringToFront();
-            }
+            // bringToFront is not supported by all renderers; swallow silently
+            try { featureLayer.bringToFront(); } catch (_) { /* no-op */ }
           });
 
           // Mouseout: reset to base style
