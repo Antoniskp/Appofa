@@ -39,7 +39,56 @@ import Link from 'next/link';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 
-// Default view: Greece
+// Module-level cache so the GeoJSON is only fetched once per browser session,
+// even if the component mounts/unmounts (e.g. navigation back to homepage).
+let _geoCache = null;
+let _geoCachePromise = null;
+
+function loadGeoData() {
+  if (_geoCache) return Promise.resolve(_geoCache);
+  if (_geoCachePromise) return _geoCachePromise;
+  _geoCachePromise = fetch('/data/greece-regions.geojson')
+    .then((r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      return r.json();
+    })
+    .then((data) => {
+      _geoCache = data;
+      _geoCachePromise = null;
+      return data;
+    })
+    .catch((err) => {
+      _geoCachePromise = null;
+      throw err;
+    });
+  return _geoCachePromise;
+}
+
+// Tooltip HTML builder — shown on hover (region name + capital)
+function buildTooltip(props) {
+  const name = props.name || '';
+  const capital = props.capital || '';
+  return (
+    `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>` +
+    (capital ? `<div style="font-size:11px;color:#6b7280;margin-top:2px">📍 ${capital}</div>` : '')
+  );
+}
+
+// Popup HTML builder — shown on click (richer info + navigation link)
+function buildPopup(props) {
+  const name = props.name || '';
+  const nameEn = props.name_en || '';
+  const capital = props.capital || '';
+  const code = props.code || '';
+  return (
+    `<div style="min-width:160px">` +
+    `<p style="font-weight:700;font-size:14px;margin:0 0 4px">${name}</p>` +
+    (nameEn ? `<p style="font-size:11px;color:#6b7280;margin:0 0 6px">${nameEn}</p>` : '') +
+    (capital ? `<p style="font-size:12px;margin:0 0 8px">🏛️ ${capital}</p>` : '') +
+    `<a href="/locations?type=periphery&region=${code}" style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none">Εξερεύνησε &rarr;</a>` +
+    `</div>`
+  );
+}
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
 
@@ -113,16 +162,10 @@ export default function GreeceBoundaryMap({ locations = [], className, loading =
   const [geoError, setGeoError] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(null);
 
-  // Load the boundary GeoJSON from the public folder.
-  // Fetching at runtime (not bundled) keeps the JS bundle lean and lets the file be
-  // replaced without a redeploy.
+  // Load the boundary GeoJSON from the public folder (module-level cache avoids redundant fetches).
   useEffect(() => {
     let cancelled = false;
-    fetch('/data/greece-regions.geojson')
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
+    loadGeoData()
       .then((data) => {
         if (!cancelled) setGeoData(data);
       })
@@ -173,17 +216,8 @@ export default function GreeceBoundaryMap({ locations = [], className, loading =
         hoverStyle: POLY_HOVER_STYLE,
         fitBoundsOnClick: true,
         onFeatureClick: handleFeatureClick,
-        // Tooltip: shown on hover — region name + capital
-        getTooltip: (props) =>
-          `<div style="font-weight:600;font-size:13px;line-height:1.3">${props.name || ''}</div>${props.capital ? `<div style="font-size:11px;color:#6b7280;margin-top:2px">📍 ${props.capital}</div>` : ''}`,
-        // Popup: shown after click — richer info with navigation link
-        getPopup: (props) =>
-          `<div style="min-width:160px">` +
-          `<p style="font-weight:700;font-size:14px;margin:0 0 4px">${props.name || ''}</p>` +
-          (props.name_en ? `<p style="font-size:11px;color:#6b7280;margin:0 0 6px">${props.name_en}</p>` : '') +
-          (props.capital ? `<p style="font-size:12px;margin:0 0 8px">🏛️ ${props.capital}</p>` : '') +
-          `<a href="/locations?type=periphery&region=${props.code}" style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none">Εξερεύνησε &rarr;</a>` +
-          `</div>`,
+        getTooltip: buildTooltip,
+        getPopup: buildPopup,
       },
     ];
   }, [geoData, handleFeatureClick]);
