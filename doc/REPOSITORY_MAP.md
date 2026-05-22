@@ -583,7 +583,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## Components (149)
+## Components (150)
 
 | Directory | Count | Key Components |
 |-----------|-------|----------------|
@@ -595,7 +595,8 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `layout/` | 10 | AppShell (hides TopNav/Footer/CookieBanner on `/embed/*` while keeping normal chrome elsewhere), TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics |
 | `embed/` | 1 | EntityEmbedView (shared embed card renderer for polls, suggestions, and civic questions) |
 | `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging; rendered only for guests) |
-| `locations/` | 10 | CountryFundingBanner (country no-content card: detected-country flag + network/IP-region label, support CTA, optional donation CTA, diaspora shortcut to Greece), LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (balanced desktop two-column top box with participation-first CTA hierarchy: one primary action + compact edit icon, muted zero stat tiles), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (legacy summary cards component, no longer rendered in default location detail flow), LocationRelatedLocations (compact related/nearby chip layout replacing large hierarchy blocks), LocationTabs (polls/suggestions-first tab UX with compact poll-card grid and explicit `+ Ξεκίνησε ...` empty-state actions) |
+| `locations/` | 11 | CountryFundingBanner (country no-content card: detected-country flag + network/IP-region label, support CTA, optional donation CTA, diaspora shortcut to Greece), ExploreLocationsMap (homepage `Εξερεύνησε Περιοχές` map wrapper), LocationBreadcrumb, LocationCard, LocationEditForm (includes LocationModeratorManager section), LocationElectionsTab, LocationHeader (balanced desktop two-column top box with participation-first CTA hierarchy: one primary action + compact edit icon, muted zero stat tiles), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (legacy summary cards component, no longer rendered in default location detail flow), LocationRelatedLocations (compact related/nearby chip layout replacing large hierarchy blocks), LocationTabs (polls/suggestions-first tab UX with compact poll-card grid and explicit `+ Ξεκίνησε ...` empty-state actions) |
+| `map/` | 3 | BaseMap (shared Leaflet map with marker + overlay + polygonLayers support and compliant attribution), GreeceBoundaryMap (13 Greek periphery polygon layer map using `public/data/greece-regions.geojson`), LocationPickerMap (interactive click/drag coordinate picker reused by location create/edit flows) |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
 | `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
