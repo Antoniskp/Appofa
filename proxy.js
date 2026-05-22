@@ -119,11 +119,13 @@ export async function proxy(request) {
 
   if (!shouldSkipRedirect && !countryCode && ipAddress) {
     fallbackCountry = await lookupCountryCodeByIp({ apiBase, ipAddress });
-    countryCode = fallbackCountry;
+    if (fallbackCountry === 'GR') {
+      countryCode = fallbackCountry;
+    }
   }
 
   const withDetectedCountryCookie = (response) => {
-    const detectedCountry = headerCountry || fallbackCountry;
+    const detectedCountry = headerCountry || (fallbackCountry === 'GR' ? fallbackCountry : null);
     if (detectedCountry) {
       response.cookies.set('appofa_detected_country', detectedCountry, { path: '/', maxAge: 86400, sameSite: 'Lax' });
     }

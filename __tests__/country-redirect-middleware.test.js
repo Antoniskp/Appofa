@@ -192,7 +192,7 @@ describe('country redirect middleware', () => {
     );
   });
 
-  test('falls back to backend geo detection when header and cookie are unavailable', async () => {
+  test('does not redirect to non-GR country pages from backend fallback geo detection', async () => {
     mockFetch.mockImplementation((url, options) => {
       if (String(url).endsWith('/api/geo/detect')) {
         expect(options.headers.get('x-forwarded-for')).toBe('8.8.8.8');
@@ -230,9 +230,56 @@ describe('country redirect middleware', () => {
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
 
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(response.cookies.set).not.toHaveBeenCalledWith('appofa_detected_country', 'DE', {
+      path: '/',
+      maxAge: 86400,
+      sameSite: 'Lax',
+    });
+  });
+
+  test('allows fallback GR detection to redirect to Greece country page', async () => {
+    mockFetch.mockImplementation((url, options) => {
+      if (String(url).endsWith('/api/geo/detect')) {
+        expect(options.headers.get('x-forwarded-for')).toBe('8.8.8.8');
+        expect(options.headers.get('x-real-ip')).toBe('8.8.8.8');
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              countryCode: 'gr',
+              countryName: 'Greece',
+            },
+          }),
+        });
+      }
+
+      if (String(url).endsWith('/api/geo/access-rules')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {
+              blockedCountries: [],
+              unknownCountryAction: 'allow',
+              unknownCountryRedirectPath: '/unknown-country',
+              noIpAction: 'allow',
+              noIpRedirectPath: '/unknown-country',
+            },
+          }),
+        });
+      }
+
+      return Promise.resolve({ ok: true });
+    });
+
+    const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
+
     expect(response.type).toBe('redirect');
-    expect(response.url).toBe('https://appofasi.gr/country/DE');
-    expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'DE', {
+    expect(response.url).toBe('https://appofasi.gr/country/GR');
+    expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
       path: '/',
       maxAge: 86400,
       sameSite: 'Lax',
