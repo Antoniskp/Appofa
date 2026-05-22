@@ -26,7 +26,7 @@ const isValidWikipediaUrl = (url) => {
 
 const SUPPORTED_BOUNDARY_GEOMETRY_TYPES = new Set(['Polygon', 'MultiPolygon']);
 
-const hasNestedCoordinates = (value) => {
+const containsCoordinatePair = (value) => {
   if (!Array.isArray(value) || value.length === 0) return false;
   if (
     value.length >= 2
@@ -35,13 +35,13 @@ const hasNestedCoordinates = (value) => {
   ) {
     return true;
   }
-  return value.some((entry) => hasNestedCoordinates(entry));
+  return value.some((entry) => containsCoordinatePair(entry));
 };
 
 const validateBoundaryGeometry = (geometry) => {
   if (!geometry || typeof geometry !== 'object') return false;
   if (!SUPPORTED_BOUNDARY_GEOMETRY_TYPES.has(geometry.type)) return false;
-  return hasNestedCoordinates(geometry.coordinates);
+  return containsCoordinatePair(geometry.coordinates);
 };
 
 const normalizeBoundaryGeoJson = (input) => {

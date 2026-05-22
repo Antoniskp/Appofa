@@ -54,10 +54,10 @@ function isCoordinatePair(value) {
     && Number.isFinite(Number(value[1]));
 }
 
-function hasNestedCoordinates(value) {
+function containsCoordinatePair(value) {
   if (!Array.isArray(value) || value.length === 0) return false;
   if (isCoordinatePair(value)) return true;
-  return value.some((entry) => hasNestedCoordinates(entry));
+  return value.some((entry) => containsCoordinatePair(entry));
 }
 
 function validateGeometry(geometry) {
@@ -70,7 +70,7 @@ function validateGeometry(geometry) {
       message: 'Unsupported geometry type. Use Polygon or MultiPolygon.'
     };
   }
-  if (!hasNestedCoordinates(geometry.coordinates)) {
+  if (!containsCoordinatePair(geometry.coordinates)) {
     return { isValid: false, message: 'Geometry coordinates are empty or invalid.' };
   }
   return { isValid: true };
@@ -121,13 +121,13 @@ function normalizeGeojson(value) {
   };
 }
 
-function collectBoundsCoordinates(value, bucket) {
+function collectBoundsCoordinates(value, collectedCoordinates) {
   if (!Array.isArray(value)) return;
   if (isCoordinatePair(value)) {
-    bucket.push([Number(value[0]), Number(value[1])]);
+    collectedCoordinates.push([Number(value[0]), Number(value[1])]);
     return;
   }
-  value.forEach((child) => collectBoundsCoordinates(child, bucket));
+  value.forEach((child) => collectBoundsCoordinates(child, collectedCoordinates));
 }
 
 function getGeojsonBounds(featureCollection) {
