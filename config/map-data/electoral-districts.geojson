@@ -1,0 +1,2253 @@
+{
+  "type": "FeatureCollection",
+  "properties": {
+    "dataset": "greece-electoral-districts",
+    "geometryQuality": "synthetic-placeholder",
+    "joinKey": "id",
+    "regionJoinKey": "regionId"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "district-athens-a",
+      "properties": {
+        "id": "district-athens-a",
+        "regionId": "region-attica",
+        "name": "Α΄ Αθηνών",
+        "seats": 13,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.06965,
+              38.344500000000004
+            ],
+            [
+              23.32315,
+              38.344500000000004
+            ],
+            [
+              23.32315,
+              38.539500000000004
+            ],
+            [
+              23.06965,
+              38.539500000000004
+            ],
+            [
+              23.06965,
+              38.344500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-athens-b1-north-sector",
+      "properties": {
+        "id": "district-athens-b1-north-sector",
+        "regionId": "region-attica",
+        "name": "Β1΄ Βόρειου Τομέα Αθηνών",
+        "seats": 16,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.39465,
+              38.344500000000004
+            ],
+            [
+              23.648149999999998,
+              38.344500000000004
+            ],
+            [
+              23.648149999999998,
+              38.539500000000004
+            ],
+            [
+              23.39465,
+              38.539500000000004
+            ],
+            [
+              23.39465,
+              38.344500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-athens-b2-west-sector",
+      "properties": {
+        "id": "district-athens-b2-west-sector",
+        "regionId": "region-attica",
+        "name": "Β2΄ Δυτικού Τομέα Αθηνών",
+        "seats": 12,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.719649999999998,
+              38.344500000000004
+            ],
+            [
+              23.973149999999997,
+              38.344500000000004
+            ],
+            [
+              23.973149999999997,
+              38.539500000000004
+            ],
+            [
+              23.719649999999998,
+              38.539500000000004
+            ],
+            [
+              23.719649999999998,
+              38.344500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-athens-b3-south-sector",
+      "properties": {
+        "id": "district-athens-b3-south-sector",
+        "regionId": "region-attica",
+        "name": "Β3΄ Νότιου Τομέα Αθηνών",
+        "seats": 19,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.06965,
+              38.094500000000004
+            ],
+            [
+              23.32315,
+              38.094500000000004
+            ],
+            [
+              23.32315,
+              38.289500000000004
+            ],
+            [
+              23.06965,
+              38.289500000000004
+            ],
+            [
+              23.06965,
+              38.094500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-east-attica",
+      "properties": {
+        "id": "district-east-attica",
+        "regionId": "region-attica",
+        "name": "Ανατολικής Αττικής",
+        "seats": 12,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.39465,
+              38.094500000000004
+            ],
+            [
+              23.648149999999998,
+              38.094500000000004
+            ],
+            [
+              23.648149999999998,
+              38.289500000000004
+            ],
+            [
+              23.39465,
+              38.289500000000004
+            ],
+            [
+              23.39465,
+              38.094500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-west-attica",
+      "properties": {
+        "id": "district-west-attica",
+        "regionId": "region-attica",
+        "name": "Δυτικής Αττικής",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.719649999999998,
+              38.094500000000004
+            ],
+            [
+              23.973149999999997,
+              38.094500000000004
+            ],
+            [
+              23.973149999999997,
+              38.289500000000004
+            ],
+            [
+              23.719649999999998,
+              38.289500000000004
+            ],
+            [
+              23.719649999999998,
+              38.094500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-piraeus-a",
+      "properties": {
+        "id": "district-piraeus-a",
+        "regionId": "region-attica",
+        "name": "Α΄ Πειραιώς",
+        "seats": 6,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.06965,
+              37.844500000000004
+            ],
+            [
+              23.32315,
+              37.844500000000004
+            ],
+            [
+              23.32315,
+              38.039500000000004
+            ],
+            [
+              23.06965,
+              38.039500000000004
+            ],
+            [
+              23.06965,
+              37.844500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-piraeus-b",
+      "properties": {
+        "id": "district-piraeus-b",
+        "regionId": "region-attica",
+        "name": "Β΄ Πειραιώς",
+        "seats": 8,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.39465,
+              37.844500000000004
+            ],
+            [
+              23.648149999999998,
+              37.844500000000004
+            ],
+            [
+              23.648149999999998,
+              38.039500000000004
+            ],
+            [
+              23.39465,
+              38.039500000000004
+            ],
+            [
+              23.39465,
+              37.844500000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-thessaloniki-a",
+      "properties": {
+        "id": "district-thessaloniki-a",
+        "regionId": "region-central-macedonia",
+        "name": "Α΄ Θεσσαλονίκης",
+        "seats": 16,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.82625,
+              41.0912
+            ],
+            [
+              22.313750000000002,
+              41.0912
+            ],
+            [
+              22.313750000000002,
+              41.4032
+            ],
+            [
+              21.82625,
+              41.4032
+            ],
+            [
+              21.82625,
+              41.0912
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-thessaloniki-b",
+      "properties": {
+        "id": "district-thessaloniki-b",
+        "regionId": "region-central-macedonia",
+        "name": "Β΄ Θεσσαλονίκης",
+        "seats": 10,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.45125,
+              41.0912
+            ],
+            [
+              22.938750000000002,
+              41.0912
+            ],
+            [
+              22.938750000000002,
+              41.4032
+            ],
+            [
+              22.45125,
+              41.4032
+            ],
+            [
+              22.45125,
+              41.0912
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-serres",
+      "properties": {
+        "id": "district-serres",
+        "regionId": "region-central-macedonia",
+        "name": "Σερρών",
+        "seats": 5,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.07625,
+              41.0912
+            ],
+            [
+              23.563750000000002,
+              41.0912
+            ],
+            [
+              23.563750000000002,
+              41.4032
+            ],
+            [
+              23.07625,
+              41.4032
+            ],
+            [
+              23.07625,
+              41.0912
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-imathia",
+      "properties": {
+        "id": "district-imathia",
+        "regionId": "region-central-macedonia",
+        "name": "Ημαθίας",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.82625,
+              40.6912
+            ],
+            [
+              22.313750000000002,
+              40.6912
+            ],
+            [
+              22.313750000000002,
+              41.0032
+            ],
+            [
+              21.82625,
+              41.0032
+            ],
+            [
+              21.82625,
+              40.6912
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-pella",
+      "properties": {
+        "id": "district-pella",
+        "regionId": "region-central-macedonia",
+        "name": "Πέλλας",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.45125,
+              40.6912
+            ],
+            [
+              22.938750000000002,
+              40.6912
+            ],
+            [
+              22.938750000000002,
+              41.0032
+            ],
+            [
+              22.45125,
+              41.0032
+            ],
+            [
+              22.45125,
+              40.6912
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-pieria",
+      "properties": {
+        "id": "district-pieria",
+        "regionId": "region-central-macedonia",
+        "name": "Πιερίας",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.07625,
+              40.6912
+            ],
+            [
+              23.563750000000002,
+              40.6912
+            ],
+            [
+              23.563750000000002,
+              41.0032
+            ],
+            [
+              23.07625,
+              41.0032
+            ],
+            [
+              23.07625,
+              40.6912
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-kilkis",
+      "properties": {
+        "id": "district-kilkis",
+        "regionId": "region-central-macedonia",
+        "name": "Κιλκίς",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.82625,
+              40.291199999999996
+            ],
+            [
+              22.313750000000002,
+              40.291199999999996
+            ],
+            [
+              22.313750000000002,
+              40.603199999999994
+            ],
+            [
+              21.82625,
+              40.603199999999994
+            ],
+            [
+              21.82625,
+              40.291199999999996
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-chalkidiki",
+      "properties": {
+        "id": "district-chalkidiki",
+        "regionId": "region-central-macedonia",
+        "name": "Χαλκιδικής",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.45125,
+              40.291199999999996
+            ],
+            [
+              22.938750000000002,
+              40.291199999999996
+            ],
+            [
+              22.938750000000002,
+              40.603199999999994
+            ],
+            [
+              22.45125,
+              40.603199999999994
+            ],
+            [
+              22.45125,
+              40.291199999999996
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-larisa",
+      "properties": {
+        "id": "district-larisa",
+        "regionId": "region-thessaly",
+        "name": "Λαρίσης",
+        "seats": 8,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.7132,
+              39.82306666666666
+            ],
+            [
+              22.1812,
+              39.82306666666666
+            ],
+            [
+              22.1812,
+              40.18706666666667
+            ],
+            [
+              21.7132,
+              40.18706666666667
+            ],
+            [
+              21.7132,
+              39.82306666666666
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-magnesia",
+      "properties": {
+        "id": "district-magnesia",
+        "regionId": "region-thessaly",
+        "name": "Μαγνησίας",
+        "seats": 5,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.3132,
+              39.82306666666666
+            ],
+            [
+              22.7812,
+              39.82306666666666
+            ],
+            [
+              22.7812,
+              40.18706666666667
+            ],
+            [
+              22.3132,
+              40.18706666666667
+            ],
+            [
+              22.3132,
+              39.82306666666666
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-karditsa",
+      "properties": {
+        "id": "district-karditsa",
+        "regionId": "region-thessaly",
+        "name": "Καρδίτσας",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.7132,
+              39.3564
+            ],
+            [
+              22.1812,
+              39.3564
+            ],
+            [
+              22.1812,
+              39.720400000000005
+            ],
+            [
+              21.7132,
+              39.720400000000005
+            ],
+            [
+              21.7132,
+              39.3564
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-trikala",
+      "properties": {
+        "id": "district-trikala",
+        "regionId": "region-thessaly",
+        "name": "Τρικάλων",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.3132,
+              39.3564
+            ],
+            [
+              22.7812,
+              39.3564
+            ],
+            [
+              22.7812,
+              39.720400000000005
+            ],
+            [
+              22.3132,
+              39.720400000000005
+            ],
+            [
+              22.3132,
+              39.3564
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-achaia",
+      "properties": {
+        "id": "district-achaia",
+        "regionId": "region-west-greece",
+        "name": "Αχαΐας",
+        "seats": 9,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.6828,
+              38.7868
+            ],
+            [
+              21.254800000000003,
+              38.7868
+            ],
+            [
+              21.254800000000003,
+              39.2548
+            ],
+            [
+              20.6828,
+              39.2548
+            ],
+            [
+              20.6828,
+              38.7868
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-aitoloakarnania",
+      "properties": {
+        "id": "district-aitoloakarnania",
+        "regionId": "region-west-greece",
+        "name": "Αιτωλοακαρνανίας",
+        "seats": 7,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.41613333333333,
+              38.7868
+            ],
+            [
+              21.988133333333334,
+              38.7868
+            ],
+            [
+              21.988133333333334,
+              39.2548
+            ],
+            [
+              21.41613333333333,
+              39.2548
+            ],
+            [
+              21.41613333333333,
+              38.7868
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-ilia",
+      "properties": {
+        "id": "district-ilia",
+        "regionId": "region-west-greece",
+        "name": "Ηλείας",
+        "seats": 5,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.6828,
+              38.186800000000005
+            ],
+            [
+              21.254800000000003,
+              38.186800000000005
+            ],
+            [
+              21.254800000000003,
+              38.65480000000001
+            ],
+            [
+              20.6828,
+              38.65480000000001
+            ],
+            [
+              20.6828,
+              38.186800000000005
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-messinia",
+      "properties": {
+        "id": "district-messinia",
+        "regionId": "region-peloponnese",
+        "name": "Μεσσηνίας",
+        "seats": 5,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.600150000000003,
+              37.52086666666666
+            ],
+            [
+              22.048650000000002,
+              37.52086666666666
+            ],
+            [
+              22.048650000000002,
+              37.96286666666666
+            ],
+            [
+              21.600150000000003,
+              37.96286666666666
+            ],
+            [
+              21.600150000000003,
+              37.52086666666666
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-corinthia",
+      "properties": {
+        "id": "district-corinthia",
+        "regionId": "region-peloponnese",
+        "name": "Κορινθίας",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.175150000000002,
+              37.52086666666666
+            ],
+            [
+              22.62365,
+              37.52086666666666
+            ],
+            [
+              22.62365,
+              37.96286666666666
+            ],
+            [
+              22.175150000000002,
+              37.96286666666666
+            ],
+            [
+              22.175150000000002,
+              37.52086666666666
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-argolida",
+      "properties": {
+        "id": "district-argolida",
+        "regionId": "region-peloponnese",
+        "name": "Αργολίδας",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.75015,
+              37.52086666666666
+            ],
+            [
+              23.19865,
+              37.52086666666666
+            ],
+            [
+              23.19865,
+              37.96286666666666
+            ],
+            [
+              22.75015,
+              37.96286666666666
+            ],
+            [
+              22.75015,
+              37.52086666666666
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-arcadia",
+      "properties": {
+        "id": "district-arcadia",
+        "regionId": "region-peloponnese",
+        "name": "Αρκαδίας",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.600150000000003,
+              36.9542
+            ],
+            [
+              22.048650000000002,
+              36.9542
+            ],
+            [
+              22.048650000000002,
+              37.3962
+            ],
+            [
+              21.600150000000003,
+              37.3962
+            ],
+            [
+              21.600150000000003,
+              36.9542
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-laconia",
+      "properties": {
+        "id": "district-laconia",
+        "regionId": "region-peloponnese",
+        "name": "Λακωνίας",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.175150000000002,
+              36.9542
+            ],
+            [
+              22.62365,
+              36.9542
+            ],
+            [
+              22.62365,
+              37.3962
+            ],
+            [
+              22.175150000000002,
+              37.3962
+            ],
+            [
+              22.175150000000002,
+              36.9542
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-evros",
+      "properties": {
+        "id": "district-evros",
+        "regionId": "region-east-macedonia-thrace",
+        "name": "Έβρου",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.252349999999996,
+              41.523066666666665
+            ],
+            [
+              24.77885,
+              41.523066666666665
+            ],
+            [
+              24.77885,
+              41.88706666666667
+            ],
+            [
+              24.252349999999996,
+              41.88706666666667
+            ],
+            [
+              24.252349999999996,
+              41.523066666666665
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-kavala",
+      "properties": {
+        "id": "district-kavala",
+        "regionId": "region-east-macedonia-thrace",
+        "name": "Καβάλας",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.92735,
+              41.523066666666665
+            ],
+            [
+              25.453850000000003,
+              41.523066666666665
+            ],
+            [
+              25.453850000000003,
+              41.88706666666667
+            ],
+            [
+              24.92735,
+              41.88706666666667
+            ],
+            [
+              24.92735,
+              41.523066666666665
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-xanthi",
+      "properties": {
+        "id": "district-xanthi",
+        "regionId": "region-east-macedonia-thrace",
+        "name": "Ξάνθης",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              25.602349999999998,
+              41.523066666666665
+            ],
+            [
+              26.12885,
+              41.523066666666665
+            ],
+            [
+              26.12885,
+              41.88706666666667
+            ],
+            [
+              25.602349999999998,
+              41.88706666666667
+            ],
+            [
+              25.602349999999998,
+              41.523066666666665
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-drama",
+      "properties": {
+        "id": "district-drama",
+        "regionId": "region-east-macedonia-thrace",
+        "name": "Δράμας",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.252349999999996,
+              41.056400000000004
+            ],
+            [
+              24.77885,
+              41.056400000000004
+            ],
+            [
+              24.77885,
+              41.42040000000001
+            ],
+            [
+              24.252349999999996,
+              41.42040000000001
+            ],
+            [
+              24.252349999999996,
+              41.056400000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-rodopi",
+      "properties": {
+        "id": "district-rodopi",
+        "regionId": "region-east-macedonia-thrace",
+        "name": "Ροδόπης",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.92735,
+              41.056400000000004
+            ],
+            [
+              25.453850000000003,
+              41.056400000000004
+            ],
+            [
+              25.453850000000003,
+              41.42040000000001
+            ],
+            [
+              24.92735,
+              41.42040000000001
+            ],
+            [
+              24.92735,
+              41.056400000000004
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-heraklion",
+      "properties": {
+        "id": "district-heraklion",
+        "regionId": "region-crete",
+        "name": "Ηρακλείου",
+        "seats": 8,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.921999999999997,
+              35.42746666666667
+            ],
+            [
+              24.701999999999998,
+              35.42746666666667
+            ],
+            [
+              24.701999999999998,
+              35.635466666666666
+            ],
+            [
+              23.921999999999997,
+              35.635466666666666
+            ],
+            [
+              23.921999999999997,
+              35.42746666666667
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-chania",
+      "properties": {
+        "id": "district-chania",
+        "regionId": "region-crete",
+        "name": "Χανίων",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.921999999999997,
+              35.42746666666667
+            ],
+            [
+              25.701999999999998,
+              35.42746666666667
+            ],
+            [
+              25.701999999999998,
+              35.635466666666666
+            ],
+            [
+              24.921999999999997,
+              35.635466666666666
+            ],
+            [
+              24.921999999999997,
+              35.42746666666667
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-lasithi",
+      "properties": {
+        "id": "district-lasithi",
+        "regionId": "region-crete",
+        "name": "Λασιθίου",
+        "seats": 2,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.921999999999997,
+              35.160799999999995
+            ],
+            [
+              24.701999999999998,
+              35.160799999999995
+            ],
+            [
+              24.701999999999998,
+              35.36879999999999
+            ],
+            [
+              23.921999999999997,
+              35.36879999999999
+            ],
+            [
+              23.921999999999997,
+              35.160799999999995
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-rethymno",
+      "properties": {
+        "id": "district-rethymno",
+        "regionId": "region-crete",
+        "name": "Ρεθύμνης",
+        "seats": 2,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.921999999999997,
+              35.160799999999995
+            ],
+            [
+              25.701999999999998,
+              35.160799999999995
+            ],
+            [
+              25.701999999999998,
+              35.36879999999999
+            ],
+            [
+              24.921999999999997,
+              35.36879999999999
+            ],
+            [
+              24.921999999999997,
+              35.160799999999995
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-evia",
+      "properties": {
+        "id": "district-evia",
+        "regionId": "region-central-greece",
+        "name": "Εύβοιας",
+        "seats": 6,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.852349999999998,
+              39.15493333333334
+            ],
+            [
+              22.37885,
+              39.15493333333334
+            ],
+            [
+              22.37885,
+              39.570933333333336
+            ],
+            [
+              21.852349999999998,
+              39.570933333333336
+            ],
+            [
+              21.852349999999998,
+              39.15493333333334
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-fthiotida",
+      "properties": {
+        "id": "district-fthiotida",
+        "regionId": "region-central-greece",
+        "name": "Φθιώτιδας",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.52735,
+              39.15493333333334
+            ],
+            [
+              23.05385,
+              39.15493333333334
+            ],
+            [
+              23.05385,
+              39.570933333333336
+            ],
+            [
+              22.52735,
+              39.570933333333336
+            ],
+            [
+              22.52735,
+              39.15493333333334
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-viotia",
+      "properties": {
+        "id": "district-viotia",
+        "regionId": "region-central-greece",
+        "name": "Βοιωτίας",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              23.20235,
+              39.15493333333334
+            ],
+            [
+              23.72885,
+              39.15493333333334
+            ],
+            [
+              23.72885,
+              39.570933333333336
+            ],
+            [
+              23.20235,
+              39.570933333333336
+            ],
+            [
+              23.20235,
+              39.15493333333334
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-evrytania",
+      "properties": {
+        "id": "district-evrytania",
+        "regionId": "region-central-greece",
+        "name": "Ευρυτανίας",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.852349999999998,
+              38.6216
+            ],
+            [
+              22.37885,
+              38.6216
+            ],
+            [
+              22.37885,
+              39.0376
+            ],
+            [
+              21.852349999999998,
+              39.0376
+            ],
+            [
+              21.852349999999998,
+              38.6216
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-fokida",
+      "properties": {
+        "id": "district-fokida",
+        "regionId": "region-central-greece",
+        "name": "Φωκίδας",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              22.52735,
+              38.6216
+            ],
+            [
+              23.05385,
+              38.6216
+            ],
+            [
+              23.05385,
+              39.0376
+            ],
+            [
+              22.52735,
+              39.0376
+            ],
+            [
+              22.52735,
+              38.6216
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-ioannina",
+      "properties": {
+        "id": "district-ioannina",
+        "regionId": "region-epirus",
+        "name": "Ιωαννίνων",
+        "seats": 5,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.226200000000002,
+              40.31646666666667
+            ],
+            [
+              20.564200000000003,
+              40.31646666666667
+            ],
+            [
+              20.564200000000003,
+              40.91446666666667
+            ],
+            [
+              20.226200000000002,
+              40.91446666666667
+            ],
+            [
+              20.226200000000002,
+              40.31646666666667
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-arta",
+      "properties": {
+        "id": "district-arta",
+        "regionId": "region-epirus",
+        "name": "Άρτας",
+        "seats": 2,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.659533333333332,
+              40.31646666666667
+            ],
+            [
+              20.997533333333333,
+              40.31646666666667
+            ],
+            [
+              20.997533333333333,
+              40.91446666666667
+            ],
+            [
+              20.659533333333332,
+              40.91446666666667
+            ],
+            [
+              20.659533333333332,
+              40.31646666666667
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-preveza",
+      "properties": {
+        "id": "district-preveza",
+        "regionId": "region-epirus",
+        "name": "Πρέβεζας",
+        "seats": 2,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.226200000000002,
+              39.5498
+            ],
+            [
+              20.564200000000003,
+              39.5498
+            ],
+            [
+              20.564200000000003,
+              40.1478
+            ],
+            [
+              20.226200000000002,
+              40.1478
+            ],
+            [
+              20.226200000000002,
+              39.5498
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-thesprotia",
+      "properties": {
+        "id": "district-thesprotia",
+        "regionId": "region-epirus",
+        "name": "Θεσπρωτίας",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.659533333333332,
+              39.5498
+            ],
+            [
+              20.997533333333333,
+              39.5498
+            ],
+            [
+              20.997533333333333,
+              40.1478
+            ],
+            [
+              20.659533333333332,
+              40.1478
+            ],
+            [
+              20.659533333333332,
+              39.5498
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-dodecanese",
+      "properties": {
+        "id": "district-dodecanese",
+        "regionId": "region-south-aegean",
+        "name": "Δωδεκανήσου",
+        "seats": 5,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              25.096,
+              36.7225
+            ],
+            [
+              26.136,
+              36.7225
+            ],
+            [
+              26.136,
+              37.6975
+            ],
+            [
+              25.096,
+              37.6975
+            ],
+            [
+              25.096,
+              36.7225
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-cyclades",
+      "properties": {
+        "id": "district-cyclades",
+        "regionId": "region-south-aegean",
+        "name": "Κυκλάδων",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              26.429333333333332,
+              36.7225
+            ],
+            [
+              27.46933333333333,
+              36.7225
+            ],
+            [
+              27.46933333333333,
+              37.6975
+            ],
+            [
+              26.429333333333332,
+              37.6975
+            ],
+            [
+              26.429333333333332,
+              36.7225
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-kozani",
+      "properties": {
+        "id": "district-kozani",
+        "regionId": "region-west-macedonia",
+        "name": "Κοζάνης",
+        "seats": 4,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.961,
+              40.854933333333335
+            ],
+            [
+              21.351,
+              40.854933333333335
+            ],
+            [
+              21.351,
+              41.27093333333333
+            ],
+            [
+              20.961,
+              41.27093333333333
+            ],
+            [
+              20.961,
+              40.854933333333335
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-florina",
+      "properties": {
+        "id": "district-florina",
+        "regionId": "region-west-macedonia",
+        "name": "Φλώρινας",
+        "seats": 2,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.461,
+              40.854933333333335
+            ],
+            [
+              21.851,
+              40.854933333333335
+            ],
+            [
+              21.851,
+              41.27093333333333
+            ],
+            [
+              21.461,
+              41.27093333333333
+            ],
+            [
+              21.461,
+              40.854933333333335
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-grevena",
+      "properties": {
+        "id": "district-grevena",
+        "regionId": "region-west-macedonia",
+        "name": "Γρεβενών",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.961,
+              40.3216
+            ],
+            [
+              21.351,
+              40.3216
+            ],
+            [
+              21.351,
+              40.73759999999999
+            ],
+            [
+              20.961,
+              40.73759999999999
+            ],
+            [
+              20.961,
+              40.3216
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-kastoria",
+      "properties": {
+        "id": "district-kastoria",
+        "regionId": "region-west-macedonia",
+        "name": "Καστοριάς",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              21.461,
+              40.3216
+            ],
+            [
+              21.851,
+              40.3216
+            ],
+            [
+              21.851,
+              40.73759999999999
+            ],
+            [
+              21.461,
+              40.73759999999999
+            ],
+            [
+              21.461,
+              40.3216
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-corfu",
+      "properties": {
+        "id": "district-corfu",
+        "regionId": "region-ionian-islands",
+        "name": "Κέρκυρας",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              19.861,
+              39.1824
+            ],
+            [
+              20.251,
+              39.1824
+            ],
+            [
+              20.251,
+              39.8064
+            ],
+            [
+              19.861,
+              39.8064
+            ],
+            [
+              19.861,
+              39.1824
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-zakynthos",
+      "properties": {
+        "id": "district-zakynthos",
+        "regionId": "region-ionian-islands",
+        "name": "Ζακύνθου",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.361,
+              39.1824
+            ],
+            [
+              20.751,
+              39.1824
+            ],
+            [
+              20.751,
+              39.8064
+            ],
+            [
+              20.361,
+              39.8064
+            ],
+            [
+              20.361,
+              39.1824
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-kefalonia",
+      "properties": {
+        "id": "district-kefalonia",
+        "regionId": "region-ionian-islands",
+        "name": "Κεφαλληνίας",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              19.861,
+              38.3824
+            ],
+            [
+              20.251,
+              38.3824
+            ],
+            [
+              20.251,
+              39.00639999999999
+            ],
+            [
+              19.861,
+              39.00639999999999
+            ],
+            [
+              19.861,
+              38.3824
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-lefkada",
+      "properties": {
+        "id": "district-lefkada",
+        "regionId": "region-ionian-islands",
+        "name": "Λευκάδας",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              20.361,
+              38.3824
+            ],
+            [
+              20.751,
+              38.3824
+            ],
+            [
+              20.751,
+              39.00639999999999
+            ],
+            [
+              20.361,
+              39.00639999999999
+            ],
+            [
+              20.361,
+              38.3824
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-lesvos",
+      "properties": {
+        "id": "district-lesvos",
+        "regionId": "region-north-aegean",
+        "name": "Λέσβου",
+        "seats": 3,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.9524,
+              39.74173333333333
+            ],
+            [
+              25.628400000000003,
+              39.74173333333333
+            ],
+            [
+              25.628400000000003,
+              40.62573333333333
+            ],
+            [
+              24.9524,
+              40.62573333333333
+            ],
+            [
+              24.9524,
+              39.74173333333333
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-chios",
+      "properties": {
+        "id": "district-chios",
+        "regionId": "region-north-aegean",
+        "name": "Χίου",
+        "seats": 2,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              25.819066666666668,
+              39.74173333333333
+            ],
+            [
+              26.49506666666667,
+              39.74173333333333
+            ],
+            [
+              26.49506666666667,
+              40.62573333333333
+            ],
+            [
+              25.819066666666668,
+              40.62573333333333
+            ],
+            [
+              25.819066666666668,
+              39.74173333333333
+            ]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "district-samos",
+      "properties": {
+        "id": "district-samos",
+        "regionId": "region-north-aegean",
+        "name": "Σάμου",
+        "seats": 1,
+        "type": "electoral_district"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              24.9524,
+              38.608399999999996
+            ],
+            [
+              25.628400000000003,
+              38.608399999999996
+            ],
+            [
+              25.628400000000003,
+              39.492399999999996
+            ],
+            [
+              24.9524,
+              39.492399999999996
+            ],
+            [
+              24.9524,
+              38.608399999999996
+            ]
+          ]
+        ]
+      }
+    }
+  ]
+}

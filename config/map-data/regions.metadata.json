@@ -1,0 +1,208 @@
+{
+  "version": 1,
+  "generatedAt": "2026-05-22",
+  "regions": [
+    {
+      "id": "region-attica",
+      "name": "Αττική",
+      "capital": "Αθήνα",
+      "totalSeats": 90,
+      "districtIds": [
+        "district-athens-a",
+        "district-athens-b1-north-sector",
+        "district-athens-b2-west-sector",
+        "district-athens-b3-south-sector",
+        "district-east-attica",
+        "district-west-attica",
+        "district-piraeus-a",
+        "district-piraeus-b"
+      ],
+      "locationSearch": "Αττική",
+      "locationType": "prefecture",
+      "geoCode": "GR-I"
+    },
+    {
+      "id": "region-central-macedonia",
+      "name": "Κεντρική Μακεδονία",
+      "capital": "Θεσσαλονίκη",
+      "totalSeats": 49,
+      "districtIds": [
+        "district-thessaloniki-a",
+        "district-thessaloniki-b",
+        "district-serres",
+        "district-imathia",
+        "district-pella",
+        "district-pieria",
+        "district-kilkis",
+        "district-chalkidiki"
+      ],
+      "locationSearch": "Κεντρική Μακεδονία",
+      "locationType": "prefecture",
+      "geoCode": "GR-B"
+    },
+    {
+      "id": "region-thessaly",
+      "name": "Θεσσαλία",
+      "capital": "Λάρισα",
+      "totalSeats": 21,
+      "districtIds": [
+        "district-larisa",
+        "district-magnesia",
+        "district-karditsa",
+        "district-trikala"
+      ],
+      "locationSearch": "Θεσσαλία",
+      "locationType": "prefecture",
+      "geoCode": "GR-E"
+    },
+    {
+      "id": "region-west-greece",
+      "name": "Δυτική Ελλάδα",
+      "capital": "Πάτρα",
+      "totalSeats": 21,
+      "districtIds": [
+        "district-achaia",
+        "district-aitoloakarnania",
+        "district-ilia"
+      ],
+      "locationSearch": "Δυτική Ελλάδα",
+      "locationType": "prefecture",
+      "geoCode": "GR-G"
+    },
+    {
+      "id": "region-peloponnese",
+      "name": "Πελοπόννησος",
+      "capital": "Τρίπολη",
+      "totalSeats": 18,
+      "districtIds": [
+        "district-messinia",
+        "district-corinthia",
+        "district-argolida",
+        "district-arcadia",
+        "district-laconia"
+      ],
+      "locationSearch": "Πελοπόννησος",
+      "locationType": "prefecture",
+      "geoCode": "GR-J"
+    },
+    {
+      "id": "region-east-macedonia-thrace",
+      "name": "Ανατολική Μακεδονία & Θράκη",
+      "capital": "Κομοτηνή",
+      "totalSeats": 17,
+      "districtIds": [
+        "district-evros",
+        "district-kavala",
+        "district-xanthi",
+        "district-drama",
+        "district-rodopi"
+      ],
+      "locationSearch": "Ανατολική Μακεδονία & Θράκη",
+      "locationType": "prefecture",
+      "geoCode": "GR-A"
+    },
+    {
+      "id": "region-crete",
+      "name": "Κρήτη",
+      "capital": "Ηράκλειο",
+      "totalSeats": 16,
+      "districtIds": [
+        "district-heraklion",
+        "district-chania",
+        "district-lasithi",
+        "district-rethymno"
+      ],
+      "locationSearch": "Κρήτη",
+      "locationType": "prefecture",
+      "geoCode": "GR-M"
+    },
+    {
+      "id": "region-central-greece",
+      "name": "Στερεά Ελλάδα",
+      "capital": "Λαμία",
+      "totalSeats": 15,
+      "districtIds": [
+        "district-evia",
+        "district-fthiotida",
+        "district-viotia",
+        "district-evrytania",
+        "district-fokida"
+      ],
+      "locationSearch": "Στερεά Ελλάδα",
+      "locationType": "prefecture",
+      "geoCode": "GR-H"
+    },
+    {
+      "id": "region-epirus",
+      "name": "Ήπειρος",
+      "capital": "Ιωάννινα",
+      "totalSeats": 10,
+      "districtIds": [
+        "district-ioannina",
+        "district-arta",
+        "district-preveza",
+        "district-thesprotia"
+      ],
+      "locationSearch": "Ήπειρος",
+      "locationType": "prefecture",
+      "geoCode": "GR-D"
+    },
+    {
+      "id": "region-south-aegean",
+      "name": "Νότιο Αιγαίο",
+      "capital": "Ερμούπολη",
+      "totalSeats": 9,
+      "districtIds": [
+        "district-dodecanese",
+        "district-cyclades"
+      ],
+      "locationSearch": "Νότιο Αιγαίο",
+      "locationType": "prefecture",
+      "geoCode": "GR-L"
+    },
+    {
+      "id": "region-west-macedonia",
+      "name": "Δυτική Μακεδονία",
+      "capital": "Κοζάνη",
+      "totalSeats": 8,
+      "districtIds": [
+        "district-kozani",
+        "district-florina",
+        "district-grevena",
+        "district-kastoria"
+      ],
+      "locationSearch": "Δυτική Μακεδονία",
+      "locationType": "prefecture",
+      "geoCode": "GR-C"
+    },
+    {
+      "id": "region-ionian-islands",
+      "name": "Ιόνια Νησιά",
+      "capital": "Κέρκυρα",
+      "totalSeats": 6,
+      "districtIds": [
+        "district-corfu",
+        "district-zakynthos",
+        "district-kefalonia",
+        "district-lefkada"
+      ],
+      "locationSearch": "Ιόνια Νησιά",
+      "locationType": "prefecture",
+      "geoCode": "GR-F"
+    },
+    {
+      "id": "region-north-aegean",
+      "name": "Βόρειο Αιγαίο",
+      "capital": "Μυτιλήνη",
+      "totalSeats": 6,
+      "districtIds": [
+        "district-lesvos",
+        "district-chios",
+        "district-samos"
+      ],
+      "locationSearch": "Βόρειο Αιγαίο",
+      "locationType": "prefecture",
+      "geoCode": "GR-K"
+    }
+  ]
+}
