@@ -1,7 +1,15 @@
+const fs = require('fs');
+const path = require('path');
+
 const regionsMeta = require('../config/map-data/regions.metadata.json');
 const districtsMeta = require('../config/map-data/electoral-districts.metadata.json');
-const regionsGeo = require('../config/map-data/regions.geojson');
-const districtsGeo = require('../config/map-data/electoral-districts.geojson');
+
+const regionsGeo = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'config', 'map-data', 'regions.geojson'), 'utf8')
+);
+const districtsGeo = JSON.parse(
+  fs.readFileSync(path.join(__dirname, '..', 'config', 'map-data', 'electoral-districts.geojson'), 'utf8')
+);
 
 describe('political mapping data joins', () => {
   test('includes 13 regions and 59 electoral districts', () => {

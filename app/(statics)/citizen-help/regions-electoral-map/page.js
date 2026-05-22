@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import fs from 'node:fs';
+import path from 'node:path';
 import StaticPageLayout from '@/components/StaticPageLayout';
 import AnalyticalMappingExplorer from '@/components/political/AnalyticalMappingExplorer';
 import regionsMetaData from '@/config/map-data/regions.metadata.json';
@@ -23,6 +25,12 @@ export const metadata = {
 const sortedRegions = [...regionsMetaData.regions].sort((a, b) => b.totalSeats - a.totalSeats);
 const totalDistricts = districtsMetaData.electoralDistricts.length;
 const totalRegionSeats = sortedRegions.reduce((sum, region) => sum + region.totalSeats, 0);
+const regionsGeoJson = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), 'config', 'map-data', 'regions.geojson'), 'utf8')
+);
+const districtsGeoJson = JSON.parse(
+  fs.readFileSync(path.join(process.cwd(), 'config', 'map-data', 'electoral-districts.geojson'), 'utf8')
+);
 
 function getRegionBadge(totalSeats) {
   if (totalSeats >= 30) return { label: '30+ έδρες', className: 'bg-red-100 text-red-800' };
@@ -96,7 +104,10 @@ export default function RegionsElectoralMapPage() {
 
       <section>
         <h2 className="text-2xl font-semibold mb-4">Αναλυτική Χαρτογράφηση</h2>
-        <AnalyticalMappingExplorer />
+        <AnalyticalMappingExplorer
+          regionsGeoJson={regionsGeoJson}
+          districtsGeoJson={districtsGeoJson}
+        />
       </section>
 
       <section className="bg-indigo-50 border border-indigo-200 rounded-lg p-5">

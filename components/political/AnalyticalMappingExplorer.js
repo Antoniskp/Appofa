@@ -5,8 +5,6 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import regionsMetaData from '@/config/map-data/regions.metadata.json';
 import districtsMetaData from '@/config/map-data/electoral-districts.metadata.json';
-import regionsGeoJson from '@/config/map-data/regions.geojson';
-import districtsGeoJson from '@/config/map-data/electoral-districts.geojson';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 
@@ -69,7 +67,10 @@ function UnitLink({ unit, fallbackText, className }) {
   );
 }
 
-export default function AnalyticalMappingExplorer() {
+export default function AnalyticalMappingExplorer({
+  regionsGeoJson = { type: 'FeatureCollection', features: [] },
+  districtsGeoJson = { type: 'FeatureCollection', features: [] },
+}) {
   const [selectedRegionId, setSelectedRegionId] = useState(regionsMetaData.regions[0]?.id ?? null);
 
   const selectedRegion = useMemo(
@@ -90,10 +91,10 @@ export default function AnalyticalMappingExplorer() {
       joinKey: 'id',
       regionJoinKey: 'regionId',
     },
-    features: districtsGeoJson.features.filter(
+    features: (districtsGeoJson?.features || []).filter(
       (feature) => feature?.properties?.regionId === selectedRegionId
     ),
-  }), [selectedRegionId]);
+  }), [selectedRegionId, districtsGeoJson]);
 
   const polygonLayers = useMemo(() => [
     {
@@ -114,7 +115,7 @@ export default function AnalyticalMappingExplorer() {
       fitBoundsOnClick: false,
       getTooltip: (props) => `${props.name || ''} · ${props.seats || 0} έδρες`,
     },
-  ], [selectedDistrictGeo]);
+  ], [selectedDistrictGeo, regionsGeoJson]);
 
   return (
     <div className="grid gap-4 lg:grid-cols-[1.25fr_1fr]">
