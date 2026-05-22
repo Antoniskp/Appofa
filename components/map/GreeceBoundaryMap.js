@@ -33,7 +33,7 @@
  *   See doc/POLYGON_DATA.md for authoritative sources and how to replace this file.
  */
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, memo } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
@@ -41,27 +41,27 @@ const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false }
 
 // Module-level cache so the GeoJSON is only fetched once per browser session,
 // even if the component mounts/unmounts (e.g. navigation back to homepage).
-let _geoCache = null;
-let _geoCachePromise = null;
+let GEO_CACHE = null;
+let GEO_CACHE_PROMISE = null;
 
 function loadGeoData() {
-  if (_geoCache) return Promise.resolve(_geoCache);
-  if (_geoCachePromise) return _geoCachePromise;
-  _geoCachePromise = fetch('/data/greece-regions.geojson')
+  if (GEO_CACHE) return Promise.resolve(GEO_CACHE);
+  if (GEO_CACHE_PROMISE) return GEO_CACHE_PROMISE;
+  GEO_CACHE_PROMISE = fetch('/data/greece-regions.geojson')
     .then((r) => {
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       return r.json();
     })
     .then((data) => {
-      _geoCache = data;
-      _geoCachePromise = null;
+      GEO_CACHE = data;
+      GEO_CACHE_PROMISE = null;
       return data;
     })
     .catch((err) => {
-      _geoCachePromise = null;
+      GEO_CACHE_PROMISE = null;
       throw err;
     });
-  return _geoCachePromise;
+  return GEO_CACHE_PROMISE;
 }
 
 // Tooltip HTML builder — shown on hover (region name + capital)
@@ -157,7 +157,7 @@ function RegionInfoCard({ region, onClose }) {
   );
 }
 
-export default function GreeceBoundaryMap({ locations = [], className, loading = false }) {
+export default memo(function GreeceBoundaryMap({ locations = [], className, loading = false }) {
   const [geoData, setGeoData] = useState(null);
   const [geoError, setGeoError] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(null);
@@ -249,4 +249,4 @@ export default function GreeceBoundaryMap({ locations = [], className, loading =
       </div>
     </div>
   );
-}
+});

@@ -57,11 +57,11 @@ The Hellenic Statistical Authority (ΕΛΣΤΑΤ) publishes official administrat
 1. Go to [geodata.gov.gr](https://geodata.gov.gr) (Greek open government data portal).
 2. Search for "Καλλικρατικοί Δήμοι" or "Περιφέρειες".
 3. Download the Shapefile (`.shp`) or GeoJSON for the layer you want.
-4. If you downloaded a Shapefile, convert to GeoJSON:
+4. If you downloaded a Shapefile, convert to GeoJSON (requires [GDAL](https://gdal.org); install with `brew install gdal` on macOS or `apt-get install gdal-bin` on Debian/Ubuntu):
    ```bash
    ogr2ogr -f GeoJSON output.geojson input.shp -t_srs EPSG:4326
    ```
-5. Simplify the geometry to reduce file size (optional but recommended):
+5. Simplify the geometry to reduce file size (optional but recommended; [mapshaper](https://mapshaper.org) will be downloaded automatically via `npx` on first run, or install globally with `npm i -g mapshaper`):
    ```bash
    npx mapshaper output.geojson -simplify 2% -o public/data/greece-regions.geojson
    ```

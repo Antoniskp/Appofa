@@ -283,8 +283,8 @@ describe('greece-regions.geojson schema', () => {
     const lats = coords.filter((_, i) => i % 2 === 1);
     const athensLng = 23.73;
     const athensLat = 37.98;
-    const withinLng = lngs.some((lng) => Math.abs(lng - athensLng) < 1.5);
-    const withinLat = lats.some((lat) => Math.abs(lat - athensLat) < 1.5);
+    const withinLng = lngs.some((lng) => Math.abs(lng - athensLng) < 0.8);
+    const withinLat = lats.some((lat) => Math.abs(lat - athensLat) < 0.8);
     expect(withinLng).toBe(true);
     expect(withinLat).toBe(true);
   });

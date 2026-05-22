@@ -223,9 +223,10 @@ export default function BaseMap({
       const fitOnClick = layerDef.fitBoundsOnClick !== false; // default true
 
       const geoLayer = L.geoJSON(layerDef.geojson, {
-        // styleFeature hook: callers can swap this for choropleth coloring later.
-        // For now use the static baseStyle for every feature.
-        style: () => ({ ...baseStyle }),
+        // Return baseStyle directly; no per-feature modification at this level.
+        // Extension point: add a `styleFeature(feature) => PathOptions` prop to PolygonLayerDef
+        // to enable choropleth coloring without touching BaseMap internals.
+        style: () => baseStyle,
 
         onEachFeature: (feature, featureLayer) => {
           const props = feature.properties || {};
