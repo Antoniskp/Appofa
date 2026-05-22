@@ -57,6 +57,11 @@ const Location = sequelize.define('Location', {
     allowNull: true,
     comment: 'Optional bounding box for map display: {north, south, east, west}'
   },
+  boundary_geojson: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Optional per-location GeoJSON boundary (Polygon/MultiPolygon)'
+  },
   wikipedia_url: {
     type: DataTypes.STRING(500),
     allowNull: true,

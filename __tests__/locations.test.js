@@ -246,6 +246,37 @@ describe('Location API Tests', () => {
       testLocation = response.body.location;
     });
 
+    it('should create location with boundary GeoJSON', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Boundary Test Prefecture',
+          type: 'prefecture',
+          boundary_geojson: {
+            type: 'Feature',
+            properties: { source: 'test' },
+            geometry: {
+              type: 'Polygon',
+              coordinates: [
+                [
+                  [23.72, 37.98],
+                  [23.73, 37.98],
+                  [23.73, 37.99],
+                  [23.72, 37.99],
+                  [23.72, 37.98]
+                ]
+              ]
+            }
+          }
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.boundary_geojson).toBeTruthy();
+      expect(response.body.location.boundary_geojson.type).toBe('Feature');
+    });
+
     it('should not create location as viewer', async () => {
       const response = await request(app)
         .post('/api/locations')
@@ -331,6 +362,27 @@ describe('Location API Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.location.name).toBe('Germany');
+    });
+
+    it('should reject unsupported boundary geometry type', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Invalid Boundary Country',
+          type: 'country',
+          boundary_geojson: {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [23.72, 37.98]
+            }
+          }
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Invalid boundary GeoJSON');
     });
   });
 
@@ -515,6 +567,33 @@ describe('Location API Tests', () => {
 
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('Invalid Wikipedia URL');
+    });
+
+    it('should update location boundary GeoJSON as admin', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${testLocation.id}`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          boundary_geojson: {
+            type: 'MultiPolygon',
+            coordinates: [
+              [
+                [
+                  [23.72, 37.98],
+                  [23.74, 37.98],
+                  [23.74, 38.0],
+                  [23.72, 38.0],
+                  [23.72, 37.98]
+                ]
+              ]
+            ]
+          }
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.boundary_geojson).toBeTruthy();
+      expect(response.body.location.boundary_geojson.type).toBe('MultiPolygon');
     });
   });
 
