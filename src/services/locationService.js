@@ -30,8 +30,10 @@ const containsCoordinatePair = (value) => {
   if (!Array.isArray(value) || value.length === 0) return false;
   if (
     value.length >= 2
-    && Number.isFinite(Number(value[0]))
-    && Number.isFinite(Number(value[1]))
+    && typeof value[0] === 'number'
+    && Number.isFinite(value[0])
+    && typeof value[1] === 'number'
+    && Number.isFinite(value[1])
   ) {
     return true;
   }

@@ -50,8 +50,10 @@ function stringifyGeojson(value) {
 function isCoordinatePair(value) {
   return Array.isArray(value)
     && value.length >= 2
-    && Number.isFinite(Number(value[0]))
-    && Number.isFinite(Number(value[1]));
+    && typeof value[0] === 'number'
+    && Number.isFinite(value[0])
+    && typeof value[1] === 'number'
+    && Number.isFinite(value[1]);
 }
 
 function containsCoordinatePair(value) {
@@ -124,7 +126,7 @@ function normalizeGeojson(value) {
 function collectBoundsCoordinates(value, collectedCoordinates) {
   if (!Array.isArray(value)) return;
   if (isCoordinatePair(value)) {
-    collectedCoordinates.push([Number(value[0]), Number(value[1])]);
+    collectedCoordinates.push([value[0], value[1]]);
     return;
   }
   value.forEach((child) => collectBoundsCoordinates(child, collectedCoordinates));
