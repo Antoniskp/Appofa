@@ -8,14 +8,32 @@
  *   zoom          {number}         – initial zoom level (default 12)
  *   bounds        {{north,south,east,west}}  – if provided, the map fits to these bounds
  *   markers       {Array<{lat, lng, popup?, key?}>}  – list of marker objects
- *   overlays      {Array<object>}  – GeoJSON feature-collection objects (extension point)
+ *   overlays      {Array<object>}  – GeoJSON feature-collection objects (legacy extension point; no interactivity)
+ *   polygonLayers {Array<PolygonLayerDef>} – interactive polygon/boundary layers with hover, tooltip, popup, click-to-zoom
  *   className     {string}         – wrapper class for sizing (default: 'h-64 w-full rounded-lg')
  *   scrollWheelZoom {boolean}      – enable/disable scroll-wheel zoom (default false)
  *   interactive   {boolean}        – when false, disables all interaction
  *   onMapClick    {function}       – called with (lat, lng) when the map is clicked; enables picker mode
  *
+ * PolygonLayerDef shape:
+ *   {
+ *     id:               string,   – unique key (required for React reconciliation)
+ *     geojson:          object,   – GeoJSON FeatureCollection or Feature
+ *     style:            object,   – default Leaflet PathOptions
+ *     hoverStyle:       object,   – PathOptions applied on mouseover
+ *     getTooltip:       (props) => string | null,  – HTML string for hover tooltip
+ *     getPopup:         (props) => string | null,  – HTML string for click popup
+ *     fitBoundsOnClick: boolean,  – auto-fit map to feature bounds on click (default true)
+ *     onFeatureClick:   (feature) => void,  – optional callback after click
+ *   }
+ *
+ * Designed for:
+ *   - Prefecture / electoral-district / municipality boundary layers
+ *   - Future choropleth coloring (by extending PolygonLayerDef with a per-feature style callback)
+ *   - Drill-down navigation (handle `onFeatureClick` to route to location pages)
+ *
  * Extension points for future work:
- *   - Pass `overlays` to render GeoJSON prefecture boundaries.
+ *   - Pass `overlays` to render GeoJSON prefecture boundaries (simple, non-interactive).
  *   - Use `onMapClick` + a draggable-marker wrapper (LocationPickerMap) for coordinate-picking.
  *
  * Tile provider: CARTO Positron (light_all) — clean white design, free for non-commercial use.
@@ -54,12 +72,30 @@ function boundingBoxToLeaflet(bb) {
   );
 }
 
+// Default styles for interactive polygon layers (boundary mode)
+const DEFAULT_POLY_STYLE = {
+  color: '#3b82f6',
+  weight: 1.5,
+  opacity: 0.7,
+  fillColor: '#3b82f6',
+  fillOpacity: 0.08,
+};
+
+const DEFAULT_POLY_HOVER_STYLE = {
+  color: '#1d4ed8',
+  weight: 2.5,
+  opacity: 1,
+  fillColor: '#3b82f6',
+  fillOpacity: 0.22,
+};
+
 export default function BaseMap({
   center,
   zoom = 12,
   bounds,
   markers = [],
   overlays = [],
+  polygonLayers = [],
   className = 'h-64 w-full rounded-lg overflow-hidden',
   scrollWheelZoom = false,
   interactive = true,
@@ -70,6 +106,7 @@ export default function BaseMap({
   // Layer groups for dynamic updates
   const markersLayerRef = useRef(null);
   const overlaysLayerRef = useRef(null);
+  const polyLayersGroupRef = useRef(null);  // dedicated group for interactive polygon layers
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
 
@@ -113,12 +150,14 @@ export default function BaseMap({
     // Layer groups allow clean updates without re-creating the whole map
     markersLayerRef.current = L.layerGroup().addTo(map);
     overlaysLayerRef.current = L.layerGroup().addTo(map);
+    polyLayersGroupRef.current = L.layerGroup().addTo(map);
 
     return () => {
       map.remove();
       mapInstanceRef.current = null;
       markersLayerRef.current = null;
       overlaysLayerRef.current = null;
+      polyLayersGroupRef.current = null;
     };
   }, []);  // Empty deps: map is initialised once; scrollWheelZoom/interactive aren't reactive
 
@@ -147,7 +186,7 @@ export default function BaseMap({
     });
   }, [markers]);
 
-  // Sync GeoJSON overlays (extension point for prefecture boundaries etc.)
+  // Sync GeoJSON overlays (legacy extension point for simple, non-interactive boundaries)
   useEffect(() => {
     const layer = overlaysLayerRef.current;
     if (!layer) return;
@@ -166,6 +205,83 @@ export default function BaseMap({
     });
   }, [overlays]);
 
+  // Sync interactive polygon layers (boundary mode with hover, click-to-zoom, tooltip, popup).
+  // Each entry in polygonLayers is a PolygonLayerDef (see JSDoc at top of file).
+  // Extension point: to support choropleth coloring, replace the static `style` object with
+  //   a `styleFeature(feature) => PathOptions` function passed in the layer def.
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    const group = polyLayersGroupRef.current;
+    if (!map || !group) return;
+    group.clearLayers();
+
+    polygonLayers.forEach((layerDef) => {
+      if (!layerDef || !layerDef.geojson) return;
+
+      const baseStyle = layerDef.style || DEFAULT_POLY_STYLE;
+      const hoverStyle = layerDef.hoverStyle || DEFAULT_POLY_HOVER_STYLE;
+      const fitOnClick = layerDef.fitBoundsOnClick !== false; // default true
+
+      const geoLayer = L.geoJSON(layerDef.geojson, {
+        // Return baseStyle directly; no per-feature modification at this level.
+        // Extension point: add a `styleFeature(feature) => PathOptions` prop to PolygonLayerDef
+        // to enable choropleth coloring without touching BaseMap internals.
+        style: () => baseStyle,
+
+        onEachFeature: (feature, featureLayer) => {
+          const props = feature.properties || {};
+
+          // Hover tooltip (shown while the pointer is over the feature)
+          if (layerDef.getTooltip) {
+            const tooltipContent = layerDef.getTooltip(props);
+            if (tooltipContent) {
+              featureLayer.bindTooltip(tooltipContent, {
+                sticky: true,
+                direction: 'top',
+                offset: [0, -4],
+                className: 'leaflet-boundary-tooltip',
+              });
+            }
+          }
+
+          // Click popup (shown after clicking the feature)
+          if (layerDef.getPopup) {
+            const popupContent = layerDef.getPopup(props);
+            if (popupContent) {
+              featureLayer.bindPopup(popupContent, { maxWidth: 260 });
+            }
+          }
+
+          // Hover: highlight + bring to front
+          featureLayer.on('mouseover', () => {
+            featureLayer.setStyle(hoverStyle);
+            // bringToFront is not supported by all renderers; swallow silently
+            try { featureLayer.bringToFront(); } catch (_) { /* no-op */ }
+          });
+
+          // Mouseout: reset to base style
+          featureLayer.on('mouseout', () => {
+            geoLayer.resetStyle(featureLayer);
+          });
+
+          // Click: fit to feature bounds, open popup, fire optional callback
+          featureLayer.on('click', () => {
+            if (fitOnClick) {
+              const bounds = featureLayer.getBounds();
+              if (bounds && bounds.isValid()) {
+                map.fitBounds(bounds, { padding: [30, 30], maxZoom: 10 });
+              }
+            }
+            if (layerDef.onFeatureClick) {
+              layerDef.onFeatureClick(feature);
+            }
+          });
+        },
+      });
+
+      geoLayer.addTo(group);
+    });
+  }, [polygonLayers]);
+
   return <div ref={mapContainerRef} className={className} />;
 }
-
