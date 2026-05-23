@@ -333,6 +333,11 @@ describe('locationToFeatures', () => {
     expect(locationToFeatures(SAMPLE_PREFECTURE_NO_BOUNDARY)).toHaveLength(0);
   });
 
+  test('returns empty array when boundary_geojson is an invalid JSON string', () => {
+    const loc = { ...SAMPLE_PREFECTURE, boundary_geojson: 'not-valid-json' };
+    expect(locationToFeatures(loc)).toHaveLength(0);
+  });
+
   test('expands a FeatureCollection boundary into multiple features with location props', () => {
     const fc = {
       type: 'FeatureCollection',

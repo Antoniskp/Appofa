@@ -346,12 +346,12 @@ export default function HomePage() {
           title={tHome('explore_locations_title')}
           subtitle={tHome('explore_locations_subtitle')}
           linkHref="/locations"
-          loading={prefecturesLoading}
+          loading={false}
           error={null}
           items={[]}
           emptyTitle=""
           emptyDescription=""
-          skeletonCount={3}
+          skeletonCount={0}
           bgColor="bg-white"
           renderItem={() => null}
           mapSlot={

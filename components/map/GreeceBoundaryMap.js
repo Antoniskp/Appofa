@@ -86,6 +86,8 @@ function normalizeBoundaryGeoJSON(raw, displayName) {
  * merged into the feature properties so tooltips, popups, and the info card have access.
  */
 function locationToFeatures(loc) {
+  if (!loc.boundary_geojson) return [];
+
   const displayName = loc.name_local || loc.name;
   const normalized = normalizeBoundaryGeoJSON(loc.boundary_geojson, displayName);
   if (!normalized) return [];
