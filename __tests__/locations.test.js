@@ -277,6 +277,44 @@ describe('Location API Tests', () => {
       expect(response.body.location.boundary_geojson.type).toBe('Feature');
     });
 
+    it('should create location with boundary color and map defaults', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Colored Prefecture',
+          type: 'prefecture',
+          parent_id: testLocation.id,
+          boundary_color: '#12abef',
+          map_default_center_lat: 38.05,
+          map_default_center_lng: 23.85,
+          map_default_zoom: 7,
+        })
+        .expect(201);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.boundary_color).toBe('#12abef');
+      expect(Number(response.body.location.map_default_center_lat)).toBeCloseTo(38.05);
+      expect(Number(response.body.location.map_default_center_lng)).toBeCloseTo(23.85);
+      expect(response.body.location.map_default_zoom).toBe(7);
+    });
+
+    it('should reject invalid boundary color', async () => {
+      const response = await request(app)
+        .post('/api/locations')
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          name: 'Invalid Color Prefecture',
+          type: 'prefecture',
+          parent_id: testLocation.id,
+          boundary_color: 'blue',
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Invalid boundary color');
+    });
+
     it('should not create location as viewer', async () => {
       const response = await request(app)
         .post('/api/locations')
@@ -594,6 +632,25 @@ describe('Location API Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.location.boundary_geojson).toBeTruthy();
       expect(response.body.location.boundary_geojson.type).toBe('MultiPolygon');
+    });
+
+    it('should update map defaults and boundary color as admin', async () => {
+      const response = await request(app)
+        .put(`/api/locations/${testLocation.id}`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          boundary_color: '#ff7700',
+          map_default_center_lat: 37.9,
+          map_default_center_lng: 23.6,
+          map_default_zoom: 6,
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.location.boundary_color).toBe('#ff7700');
+      expect(Number(response.body.location.map_default_center_lat)).toBeCloseTo(37.9);
+      expect(Number(response.body.location.map_default_center_lng)).toBeCloseTo(23.6);
+      expect(response.body.location.map_default_zoom).toBe(6);
     });
   });
 

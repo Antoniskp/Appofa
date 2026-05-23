@@ -90,6 +90,53 @@ const normalizeBoundaryGeoJson = (input) => {
     success: false,
     message: 'Invalid boundary GeoJSON: root must be FeatureCollection, Feature, Polygon, or MultiPolygon.'
   };
+
+  const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
+  const normalizeBoundaryColor = (input) => {
+    if (input === undefined) return { success: true, value: undefined };
+    if (input === null || input === '') return { success: true, value: null };
+    const value = String(input).trim();
+    if (!HEX_COLOR_RE.test(value)) {
+      return { success: false, message: 'Invalid boundary color: expected a hex color like #3b82f6.' };
+    }
+    return { success: true, value: value.toLowerCase() };
+  };
+
+  const parseOptionalCoord = (value, min, max, label) => {
+    if (value === undefined) return { success: true, value: undefined };
+    if (value === null || value === '') return { success: true, value: null };
+    const n = Number(value);
+    if (!Number.isFinite(n) || n < min || n > max) {
+      return { success: false, message: `${label} must be a number between ${min} and ${max}.` };
+    }
+    return { success: true, value: n };
+  };
+
+  const parseOptionalMapZoom = (value) => {
+    if (value === undefined) return { success: true, value: undefined };
+    if (value === null || value === '') return { success: true, value: null };
+    const n = Number(value);
+    if (!Number.isInteger(n) || n < 1 || n > 18) {
+      return { success: false, message: 'Map default zoom must be an integer between 1 and 18.' };
+    }
+    return { success: true, value: n };
+  };
+
+  const validateMapDefaults = ({ latResult, lngResult, zoomResult }) => {
+    const hasLat = latResult.value != null;
+    const hasLng = lngResult.value != null;
+    if (hasLat !== hasLng) {
+      return { success: false, message: 'Map default center requires both latitude and longitude.' };
+    }
+    if (!hasLat && !hasLng && zoomResult.value != null) {
+      return { success: false, message: 'Map default zoom requires map default center latitude and longitude.' };
+    }
+    if ((hasLat || hasLng) && zoomResult.value == null) {
+      return { success: false, message: 'Map default zoom is required when map default center is set.' };
+    }
+    return { success: true };
+  };
 };
 
 // ---------------------------------------------------------------------------
@@ -113,6 +160,10 @@ const createLocation = async (locationData) => {
       lng,
       bounding_box,
       boundary_geojson,
+      boundary_color,
+      map_default_center_lat,
+      map_default_center_lng,
+      map_default_zoom,
       wikipedia_url
     } = locationData;
     const normalizedName = typeof name === 'string' ? name.trim() : '';
@@ -136,6 +187,27 @@ const createLocation = async (locationData) => {
     const normalizedBoundary = normalizeBoundaryGeoJson(boundary_geojson);
     if (!normalizedBoundary.success) {
       return { success: false, status: 400, message: normalizedBoundary.message };
+    }
+
+    const normalizedBoundaryColor = normalizeBoundaryColor(boundary_color);
+    if (!normalizedBoundaryColor.success) {
+      return { success: false, status: 400, message: normalizedBoundaryColor.message };
+    }
+
+    const mapCenterLat = parseOptionalCoord(map_default_center_lat, -90, 90, 'Map default center latitude');
+    if (!mapCenterLat.success) return { success: false, status: 400, message: mapCenterLat.message };
+    const mapCenterLng = parseOptionalCoord(map_default_center_lng, -180, 180, 'Map default center longitude');
+    if (!mapCenterLng.success) return { success: false, status: 400, message: mapCenterLng.message };
+    const mapZoom = parseOptionalMapZoom(map_default_zoom);
+    if (!mapZoom.success) return { success: false, status: 400, message: mapZoom.message };
+
+    const mapDefaultsValidation = validateMapDefaults({
+      latResult: mapCenterLat,
+      lngResult: mapCenterLng,
+      zoomResult: mapZoom,
+    });
+    if (!mapDefaultsValidation.success) {
+      return { success: false, status: 400, message: mapDefaultsValidation.message };
     }
 
     const baseSlug = generateSlug(normalizedName, type);
@@ -190,6 +262,10 @@ const createLocation = async (locationData) => {
       lng,
       bounding_box,
       boundary_geojson: normalizedBoundary.value,
+      boundary_color: normalizedBoundaryColor.value,
+      map_default_center_lat: mapCenterLat.value,
+      map_default_center_lng: mapCenterLng.value,
+      map_default_zoom: mapZoom.value,
       wikipedia_url,
       wikipedia_image_url,
       population,
@@ -558,6 +634,10 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
       lng,
       bounding_box,
       boundary_geojson,
+      boundary_color,
+      map_default_center_lat,
+      map_default_center_lng,
+      map_default_zoom,
       wikipedia_url,
       population_override
     } = updateData;
@@ -595,6 +675,33 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
     const normalizedBoundary = normalizeBoundaryGeoJson(boundary_geojson);
     if (!normalizedBoundary.success) {
       return { success: false, status: 400, message: normalizedBoundary.message };
+    }
+
+    const normalizedBoundaryColor = normalizeBoundaryColor(boundary_color);
+    if (!normalizedBoundaryColor.success) {
+      return { success: false, status: 400, message: normalizedBoundaryColor.message };
+    }
+
+    const mapCenterLat = parseOptionalCoord(map_default_center_lat, -90, 90, 'Map default center latitude');
+    if (!mapCenterLat.success) return { success: false, status: 400, message: mapCenterLat.message };
+    const mapCenterLng = parseOptionalCoord(map_default_center_lng, -180, 180, 'Map default center longitude');
+    if (!mapCenterLng.success) return { success: false, status: 400, message: mapCenterLng.message };
+    const mapZoom = parseOptionalMapZoom(map_default_zoom);
+    if (!mapZoom.success) return { success: false, status: 400, message: mapZoom.message };
+
+    const mapDefaultsValidation = validateMapDefaults({
+      latResult: {
+        value: map_default_center_lat !== undefined ? mapCenterLat.value : location.map_default_center_lat
+      },
+      lngResult: {
+        value: map_default_center_lng !== undefined ? mapCenterLng.value : location.map_default_center_lng
+      },
+      zoomResult: {
+        value: map_default_zoom !== undefined ? mapZoom.value : location.map_default_zoom
+      },
+    });
+    if (!mapDefaultsValidation.success) {
+      return { success: false, status: 400, message: mapDefaultsValidation.message };
     }
 
     let slug = location.slug;
@@ -637,6 +744,10 @@ const updateLocation = async (id, updateData, actorRole = null, actorUserId = nu
       lng: lng !== undefined ? lng : location.lng,
       bounding_box: bounding_box !== undefined ? bounding_box : location.bounding_box,
       boundary_geojson: boundary_geojson !== undefined ? normalizedBoundary.value : location.boundary_geojson,
+      boundary_color: boundary_color !== undefined ? normalizedBoundaryColor.value : location.boundary_color,
+      map_default_center_lat: map_default_center_lat !== undefined ? mapCenterLat.value : location.map_default_center_lat,
+      map_default_center_lng: map_default_center_lng !== undefined ? mapCenterLng.value : location.map_default_center_lng,
+      map_default_zoom: map_default_zoom !== undefined ? mapZoom.value : location.map_default_zoom,
       wikipedia_url: wikipedia_url !== undefined ? wikipedia_url : location.wikipedia_url,
       population_override: population_override !== undefined ? (() => {
         if (population_override === null || population_override === '') return null;
