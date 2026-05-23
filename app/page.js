@@ -162,7 +162,19 @@ export default function HomePage() {
 
     const fetchPrefectures = async () => {
       try {
-        const response = await locationAPI.getAll({ type: 'prefecture', limit: 50 });
+        // Scope prefectures to Greece only: first resolve Greece's location ID, then
+        // fetch prefectures filtered by that parent_id so Cyprus / other countries are excluded.
+        const greeceRes = await locationAPI.getAll({ type: 'country', code: 'GR', limit: 1 });
+        const greeceId =
+          greeceRes.success && greeceRes.locations?.length > 0
+            ? greeceRes.locations[0].id
+            : null;
+        if (!greeceId) return;
+        const response = await locationAPI.getAll({
+          type: 'prefecture',
+          parent_id: greeceId,
+          limit: 50,
+        });
         if (response.success) {
           setPrefectures(response.locations || []);
         }
