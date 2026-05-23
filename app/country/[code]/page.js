@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { articleAPI, geoAPI, locationAPI } from '@/lib/api';
@@ -15,6 +16,16 @@ const countryCodeToFlag = (code) => {
   const upper = String(code).toUpperCase();
   if (!ISO2_RE.test(upper) || INVALID_FLAG_CODES.has(upper)) return '🌍';
   return [...upper].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
+};
+
+const extractBrowserLocaleCountryCode = () => {
+  if (typeof navigator === 'undefined') return null;
+  const browserLocale = navigator.language
+    || (navigator.languages?.length > 0 ? navigator.languages[0] : null)
+    || null;
+  if (!browserLocale || !browserLocale.includes('-')) return null;
+  const maybeCountry = browserLocale.split('-')[1]?.toUpperCase() || null;
+  return ISO2_RE.test(maybeCountry || '') && !INVALID_FLAG_CODES.has(maybeCountry) ? maybeCountry : null;
 };
 
 const renderArticleLink = (article) => (
@@ -34,6 +45,40 @@ export default function CountryLandingPage() {
   const params = useParams();
   const router = useRouter();
   const code = String(params.code || '').toUpperCase();
+  const [geoPanelState, setGeoPanelState] = useState({
+    detectedCountryCode: null,
+    detectedCountryName: null,
+    detectionSource: 'none',
+    trustedForCountryRedirect: false,
+    browserLocaleCountryCode: null,
+    appliedCountryCode: code,
+  });
+
+  useEffect(() => {
+    const browserLocaleCountryCode = extractBrowserLocaleCountryCode();
+
+    geoAPI.detect()
+      .then((res) => {
+        const data = res?.data || {};
+        const detectedCountryCode = data.countryCode ? String(data.countryCode).toUpperCase() : null;
+        setGeoPanelState({
+          detectedCountryCode,
+          detectedCountryName: data.countryName || null,
+          detectionSource: data.detectionSource || 'none',
+          trustedForCountryRedirect: Boolean(data.trustedForCountryRedirect),
+          browserLocaleCountryCode,
+          appliedCountryCode: code,
+        });
+      })
+      .catch(() => {
+        setGeoPanelState((prev) => ({
+          ...prev,
+          browserLocaleCountryCode,
+          appliedCountryCode: code,
+          detectionSource: prev.detectionSource || 'none',
+        }));
+      });
+  }, [code]);
 
   const { data, loading, error } = useAsyncData(
     async () => {
@@ -113,6 +158,7 @@ export default function CountryLandingPage() {
             locationName={fallbackName}
             countryCode={code}
             hasContent={false}
+            geoPanelState={geoPanelState}
           />
         </div>
       </div>
@@ -138,6 +184,7 @@ export default function CountryLandingPage() {
           locationName={countryName}
           countryCode={code}
           hasContent={data.news.length > 0 || data.articles.length > 0}
+          geoPanelState={geoPanelState}
         />
 
         <section className="bg-white border border-gray-200 rounded-xl p-6 grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
+import Script from 'next/script';
 import { trackPageView, initGA, getGAMeasurementId } from '@/lib/analytics/google-analytics';
 import { getGdprConsent } from '@/components/layout/CookieBanner';
 
@@ -45,11 +46,11 @@ function GoogleAnalyticsInner() {
 
   return (
     <>
-      {/* Google Analytics Script */}
-      <script
-        async
+      <Script
+        id="google-analytics-script"
+        strategy="afterInteractive"
         src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}
-      />
+      ></Script>
     </>
   );
 }
