@@ -699,7 +699,7 @@ function LocationManagementContent() {
             </label>
             <input
               type="number"
-              step="any"
+              step="0.000001"
               min="-90"
               max="90"
               name="map_default_center_lat"
@@ -716,7 +716,7 @@ function LocationManagementContent() {
             </label>
             <input
               type="number"
-              step="any"
+              step="0.000001"
               min="-180"
               max="180"
               name="map_default_center_lng"

@@ -90,53 +90,53 @@ const normalizeBoundaryGeoJson = (input) => {
     success: false,
     message: 'Invalid boundary GeoJSON: root must be FeatureCollection, Feature, Polygon, or MultiPolygon.'
   };
+};
 
-  const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
-  const normalizeBoundaryColor = (input) => {
-    if (input === undefined) return { success: true, value: undefined };
-    if (input === null || input === '') return { success: true, value: null };
-    const value = String(input).trim();
-    if (!HEX_COLOR_RE.test(value)) {
-      return { success: false, message: 'Invalid boundary color: expected a hex color like #3b82f6.' };
-    }
-    return { success: true, value: value.toLowerCase() };
-  };
+const normalizeBoundaryColor = (input) => {
+  if (input === undefined) return { success: true, value: undefined };
+  if (input === null || input === '') return { success: true, value: null };
+  const value = String(input).trim();
+  if (!HEX_COLOR_RE.test(value)) {
+    return { success: false, message: 'Invalid boundary color: expected a hex color like #3b82f6.' };
+  }
+  return { success: true, value: value.toLowerCase() };
+};
 
-  const parseOptionalCoord = (value, min, max, label) => {
-    if (value === undefined) return { success: true, value: undefined };
-    if (value === null || value === '') return { success: true, value: null };
-    const n = Number(value);
-    if (!Number.isFinite(n) || n < min || n > max) {
-      return { success: false, message: `${label} must be a number between ${min} and ${max}.` };
-    }
-    return { success: true, value: n };
-  };
+const parseOptionalCoord = (value, min, max, label) => {
+  if (value === undefined) return { success: true, value: undefined };
+  if (value === null || value === '') return { success: true, value: null };
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < min || n > max) {
+    return { success: false, message: `${label} must be a number between ${min} and ${max}.` };
+  }
+  return { success: true, value: n };
+};
 
-  const parseOptionalMapZoom = (value) => {
-    if (value === undefined) return { success: true, value: undefined };
-    if (value === null || value === '') return { success: true, value: null };
-    const n = Number(value);
-    if (!Number.isInteger(n) || n < 1 || n > 18) {
-      return { success: false, message: 'Map default zoom must be an integer between 1 and 18.' };
-    }
-    return { success: true, value: n };
-  };
+const parseOptionalMapZoom = (value) => {
+  if (value === undefined) return { success: true, value: undefined };
+  if (value === null || value === '') return { success: true, value: null };
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < 1 || n > 18) {
+    return { success: false, message: 'Map default zoom must be an integer between 1 and 18.' };
+  }
+  return { success: true, value: n };
+};
 
-  const validateMapDefaults = ({ latResult, lngResult, zoomResult }) => {
-    const hasLat = latResult.value != null;
-    const hasLng = lngResult.value != null;
-    if (hasLat !== hasLng) {
-      return { success: false, message: 'Map default center requires both latitude and longitude.' };
-    }
-    if (!hasLat && !hasLng && zoomResult.value != null) {
-      return { success: false, message: 'Map default zoom requires map default center latitude and longitude.' };
-    }
-    if ((hasLat || hasLng) && zoomResult.value == null) {
-      return { success: false, message: 'Map default zoom is required when map default center is set.' };
-    }
-    return { success: true };
-  };
+const validateMapDefaults = ({ latResult, lngResult, zoomResult }) => {
+  const hasLat = latResult.value != null;
+  const hasLng = lngResult.value != null;
+  if (hasLat !== hasLng) {
+    return { success: false, message: 'Map default center requires both latitude and longitude.' };
+  }
+  if (!hasLat && !hasLng && zoomResult.value != null) {
+    return { success: false, message: 'Map default zoom requires map default center latitude and longitude.' };
+  }
+  if ((hasLat || hasLng) && zoomResult.value == null) {
+    return { success: false, message: 'Map default zoom is required when map default center is set.' };
+  }
+  return { success: true };
 };
 
 // ---------------------------------------------------------------------------

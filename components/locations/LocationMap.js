@@ -85,52 +85,53 @@ function normalizeBoundaryGeoJSON(raw, displayName) {
       };
     }
 
-    function collectLonLatPairs(node, output = []) {
-      if (!Array.isArray(node)) return output;
-      if (
-        node.length >= 2
-        && typeof node[0] === 'number'
-        && Number.isFinite(node[0])
-        && typeof node[1] === 'number'
-        && Number.isFinite(node[1])
-      ) {
-        output.push([node[0], node[1]]);
-        return output;
-      }
-      node.forEach((child) => collectLonLatPairs(child, output));
-      return output;
-    }
-
-    function getBoundaryBounds(geojson) {
-      if (!geojson) return null;
-      const geometries = [];
-      if (geojson.type === 'FeatureCollection') {
-        geojson.features?.forEach((feature) => {
-          if (feature?.geometry) geometries.push(feature.geometry);
-        });
-      } else if (geojson.type === 'Feature') {
-        if (geojson.geometry) geometries.push(geojson.geometry);
-      } else if (geojson.type === 'Polygon' || geojson.type === 'MultiPolygon') {
-        geometries.push(geojson);
-      }
-
-      const pairs = geometries.flatMap((geometry) => collectLonLatPairs(geometry.coordinates, []));
-      if (pairs.length === 0) return null;
-
-      const lons = pairs.map(([lon]) => lon);
-      const lats = pairs.map(([, lat]) => lat);
-      return {
-        north: Math.max(...lats),
-        south: Math.min(...lats),
-        east: Math.max(...lons),
-        west: Math.min(...lons),
-      };
-    }
-
     return null;
   } catch {
     return null;
   }
+}
+
+function collectLonLatPairs(node, output = []) {
+  if (!Array.isArray(node)) return output;
+  if (
+    node.length >= 2
+    && typeof node[0] === 'number'
+    && Number.isFinite(node[0])
+    && typeof node[1] === 'number'
+    && Number.isFinite(node[1])
+  ) {
+    // GeoJSON coordinate order is [lng, lat].
+    output.push([node[0], node[1]]);
+    return output;
+  }
+  node.forEach((child) => collectLonLatPairs(child, output));
+  return output;
+}
+
+function getBoundaryBounds(geojson) {
+  if (!geojson) return null;
+  const geometries = [];
+  if (geojson.type === 'FeatureCollection') {
+    geojson.features?.forEach((feature) => {
+      if (feature?.geometry) geometries.push(feature.geometry);
+    });
+  } else if (geojson.type === 'Feature') {
+    if (geojson.geometry) geometries.push(geojson.geometry);
+  } else if (geojson.type === 'Polygon' || geojson.type === 'MultiPolygon') {
+    geometries.push(geojson);
+  }
+
+  const pairs = geometries.flatMap((geometry) => collectLonLatPairs(geometry.coordinates, []));
+  if (pairs.length === 0) return null;
+
+  const lons = pairs.map(([lon]) => lon);
+  const lats = pairs.map(([, lat]) => lat);
+  return {
+    north: Math.max(...lats),
+    south: Math.min(...lats),
+    east: Math.max(...lons),
+    west: Math.min(...lons),
+  };
 }
 
 // Fallback centre for Greece, used when a boundary is present but no lat/lng are available.
