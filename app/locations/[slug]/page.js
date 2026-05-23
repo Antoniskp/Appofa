@@ -447,8 +447,8 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
-            {/* Map — shown when the location has valid coordinates */}
-            {location?.lat && location?.lng && (
+            {/* Map — shown when the location has valid coordinates or a boundary polygon */}
+            {((location?.lat && location?.lng) || location?.boundary_geojson) && (
               <div id="location-map" className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">
