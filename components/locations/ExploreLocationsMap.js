@@ -3,40 +3,57 @@
 /**
  * ExploreLocationsMap — a discovery map for the homepage "Εξερεύνησε Περιοχές" section.
  *
- * Shows a map of Greece with:
- *   1. Interactive polygon boundaries for the 13 Greek peripheries (GreeceBoundaryMap).
- *   2. Point markers for locations that have coordinates (layered on top).
- *
- * Hovering a region polygon shows a tooltip; clicking it zooms to that region and shows
- * a React info card overlay with the region name, capital, and a navigation link.
+ * Renders the `GreeceBoundaryMap` (using per-location `boundary_geojson` polygons when
+ * available, with a static-file fallback) and a row of clickable prefecture pills below
+ * the map for quick navigation.
  *
  * Props:
- *   locations  {Array<{id, name, name_local, lat, lng, slug}>}  – list of locations to show
- *   className  {string}  – override map container height/styling
- *   loading    {boolean} – when true shows a skeleton placeholder instead of the map
- *
- * Architecture:
- *   Delegates to GreeceBoundaryMap which handles GeoJSON loading and polygon interactivity.
- *   GreeceBoundaryMap wraps BaseMap (via dynamic import) and passes polygonLayers.
- *
- * Extension points:
- *   - To add electoral districts: extend GreeceBoundaryMap with a second polygonLayer entry.
- *   - To enable choropleth: supply a styleFeature function via the layer def that maps
- *     region codes to fill colors based on vote or participation data.
- *   - For municipality drill-down: swap layers based on zoom level in GreeceBoundaryMap.
+ *   prefectures  {Array<Location>}  – prefecture location objects (may include boundary_geojson).
+ *                                     Used both for polygon layers and for the pills row.
+ *   className    {string}           – override map container height/styling
+ *   loading      {boolean}          – when true shows a skeleton placeholder instead of the map
  */
 
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 const GreeceBoundaryMap = dynamic(() => import('@/components/map/GreeceBoundaryMap'), { ssr: false });
 
-export default function ExploreLocationsMap({ locations = [], className, loading = false }) {
+/**
+ * A single prefecture pill that links to the location page.
+ */
+function PrefecturePill({ prefecture }) {
+  const displayName = prefecture.name_local || prefecture.name;
+  const href = prefecture.slug ? `/locations/${prefecture.slug}` : '/locations';
   return (
-    <GreeceBoundaryMap
-      locations={locations}
-      loading={loading}
-      className={className}
-    />
+    <Link
+      href={href}
+      className="inline-flex items-center px-3 py-1.5 rounded-full border border-blue-200 bg-blue-50 text-sm font-medium text-blue-700 hover:bg-blue-100 hover:border-blue-300 transition-colors whitespace-nowrap"
+    >
+      {displayName}
+    </Link>
+  );
+}
+
+export default function ExploreLocationsMap({ prefectures = [], className, loading = false }) {
+  return (
+    <div>
+      <GreeceBoundaryMap
+        prefectures={prefectures}
+        loading={loading}
+        className={className}
+      />
+      {!loading && prefectures.length > 0 && (
+        <div
+          className="mt-3 flex flex-wrap gap-2"
+          aria-label="Περιφέρειες"
+        >
+          {prefectures.map((pref) => (
+            <PrefecturePill key={pref.id} prefecture={pref} />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

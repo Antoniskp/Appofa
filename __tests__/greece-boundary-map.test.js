@@ -1,7 +1,8 @@
 /** @jest-environment jsdom */
 
 /**
- * Tests for the GreeceBoundaryMap component and the BaseMap polygonLayers extension.
+ * Tests for the GreeceBoundaryMap component, the BaseMap polygonLayers extension,
+ * and the ExploreLocationsMap prefecture-pills enhancement.
  */
 
 const React = require('react');
@@ -81,7 +82,7 @@ jest.mock('next/link', () => {
   return Link;
 });
 
-// Mock fetch for GeoJSON loading
+// Mock fetch for GeoJSON loading (used only when fallback is needed)
 const SAMPLE_GEOJSON = {
   type: 'FeatureCollection',
   features: [
@@ -114,6 +115,12 @@ global.fetch = jest.fn(() =>
 
 const BaseMap = require('../components/map/BaseMap').default;
 
+const {
+  normalizeBoundaryGeoJSON,
+  buildFeatureCollectionFromLocations,
+  locationToFeatures,
+} = require('../components/map/GreeceBoundaryMap');
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 async function renderComponent(element) {
@@ -144,6 +151,32 @@ function collectLonLatPairs(node, output = []) {
   node.forEach((child) => collectLonLatPairs(child, output));
   return output;
 }
+
+// Sample prefecture Location objects with boundary_geojson
+const SAMPLE_PREFECTURE_POLYGON = {
+  type: 'Polygon',
+  coordinates: [[[22.9, 38.2], [23.0, 38.5], [23.9, 38.4], [22.9, 38.2]]],
+};
+
+const SAMPLE_PREFECTURE = {
+  id: 1,
+  name: 'Attica',
+  name_local: 'Αττική',
+  slug: 'attiki',
+  code: 'GR-I',
+  type: 'prefecture',
+  boundary_geojson: SAMPLE_PREFECTURE_POLYGON,
+};
+
+const SAMPLE_PREFECTURE_NO_BOUNDARY = {
+  id: 2,
+  name: 'Crete',
+  name_local: 'Κρήτη',
+  slug: 'kriti',
+  code: 'GR-M',
+  type: 'prefecture',
+  boundary_geojson: null,
+};
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -238,6 +271,132 @@ describe('BaseMap — polygonLayers prop', () => {
   });
 });
 
+describe('normalizeBoundaryGeoJSON', () => {
+  test('returns FeatureCollection unchanged', () => {
+    const fc = { type: 'FeatureCollection', features: [] };
+    expect(normalizeBoundaryGeoJSON(fc, 'Test')).toBe(fc);
+  });
+
+  test('returns Feature unchanged', () => {
+    const f = { type: 'Feature', geometry: { type: 'Polygon', coordinates: [] }, properties: {} };
+    expect(normalizeBoundaryGeoJSON(f, 'Test')).toBe(f);
+  });
+
+  test('wraps bare Polygon in a Feature with displayName', () => {
+    const polygon = { type: 'Polygon', coordinates: [[[0, 0], [1, 1], [0, 0]]] };
+    const result = normalizeBoundaryGeoJSON(polygon, 'Αττική');
+    expect(result.type).toBe('Feature');
+    expect(result.geometry).toBe(polygon);
+    expect(result.properties.name).toBe('Αττική');
+  });
+
+  test('wraps bare MultiPolygon in a Feature with displayName', () => {
+    const mp = { type: 'MultiPolygon', coordinates: [[[[0, 0], [1, 1], [0, 0]]]] };
+    const result = normalizeBoundaryGeoJSON(mp, 'Κρήτη');
+    expect(result.type).toBe('Feature');
+    expect(result.geometry).toBe(mp);
+    expect(result.properties.name).toBe('Κρήτη');
+  });
+
+  test('returns null for unsupported geometry type', () => {
+    const point = { type: 'Point', coordinates: [23.7, 38.0] };
+    expect(normalizeBoundaryGeoJSON(point, 'Test')).toBeNull();
+  });
+
+  test('returns null for null input', () => {
+    expect(normalizeBoundaryGeoJSON(null, 'Test')).toBeNull();
+  });
+
+  test('returns null for invalid JSON string', () => {
+    expect(normalizeBoundaryGeoJSON('not-json', 'Test')).toBeNull();
+  });
+
+  test('parses a JSON string and normalises it', () => {
+    const polygon = { type: 'Polygon', coordinates: [[[0, 0], [1, 1], [0, 0]]] };
+    const result = normalizeBoundaryGeoJSON(JSON.stringify(polygon), 'Αττική');
+    expect(result.type).toBe('Feature');
+    expect(result.properties.name).toBe('Αττική');
+  });
+});
+
+describe('locationToFeatures', () => {
+  test('produces a single Feature from a bare Polygon boundary', () => {
+    const features = locationToFeatures(SAMPLE_PREFECTURE);
+    expect(features).toHaveLength(1);
+    expect(features[0].type).toBe('Feature');
+    expect(features[0].properties.name).toBe('Αττική'); // name_local preferred
+    expect(features[0].properties.slug).toBe('attiki');
+    expect(features[0].properties.code).toBe('GR-I');
+  });
+
+  test('returns empty array when boundary_geojson is null', () => {
+    expect(locationToFeatures(SAMPLE_PREFECTURE_NO_BOUNDARY)).toHaveLength(0);
+  });
+
+  test('returns empty array when boundary_geojson is an invalid JSON string', () => {
+    const loc = { ...SAMPLE_PREFECTURE, boundary_geojson: 'not-valid-json' };
+    expect(locationToFeatures(loc)).toHaveLength(0);
+  });
+
+  test('expands a FeatureCollection boundary into multiple features with location props', () => {
+    const fc = {
+      type: 'FeatureCollection',
+      features: [
+        { type: 'Feature', geometry: { type: 'Polygon', coordinates: [] }, properties: { island: 'A' } },
+        { type: 'Feature', geometry: { type: 'Polygon', coordinates: [] }, properties: { island: 'B' } },
+      ],
+    };
+    const loc = { id: 5, name: 'Νότιο Αιγαίο', name_local: null, slug: 'notio-aigaio', code: 'GR-L', boundary_geojson: fc };
+    const features = locationToFeatures(loc);
+    expect(features).toHaveLength(2);
+    features.forEach((f) => {
+      expect(f.properties.name).toBe('Νότιο Αιγαίο'); // name used when name_local is null
+      expect(f.properties.slug).toBe('notio-aigaio');
+    });
+    // Original FeatureCollection properties are preserved
+    expect(features[0].properties.island).toBe('A');
+    expect(features[1].properties.island).toBe('B');
+  });
+
+  test('uses name (not name_local) when name_local is absent', () => {
+    const loc = { ...SAMPLE_PREFECTURE, name_local: null };
+    const features = locationToFeatures(loc);
+    expect(features[0].properties.name).toBe('Attica');
+    expect(features[0].properties.name_en).toBe('Attica');
+  });
+});
+
+describe('buildFeatureCollectionFromLocations', () => {
+  test('returns null when no locations have boundary_geojson', () => {
+    expect(buildFeatureCollectionFromLocations([SAMPLE_PREFECTURE_NO_BOUNDARY])).toBeNull();
+  });
+
+  test('returns null for empty array', () => {
+    expect(buildFeatureCollectionFromLocations([])).toBeNull();
+  });
+
+  test('builds a FeatureCollection from prefectures with boundary_geojson', () => {
+    const result = buildFeatureCollectionFromLocations([SAMPLE_PREFECTURE, SAMPLE_PREFECTURE_NO_BOUNDARY]);
+    expect(result).not.toBeNull();
+    expect(result.type).toBe('FeatureCollection');
+    expect(result.features).toHaveLength(1);
+    expect(result.features[0].properties.slug).toBe('attiki');
+  });
+
+  test('merges multiple location boundaries into one collection', () => {
+    const loc2 = {
+      id: 3,
+      name: 'Crete',
+      name_local: 'Κρήτη',
+      slug: 'kriti',
+      code: 'GR-M',
+      boundary_geojson: { type: 'Polygon', coordinates: [[[24, 35], [25, 35.5], [24, 35]]] },
+    };
+    const result = buildFeatureCollectionFromLocations([SAMPLE_PREFECTURE, loc2]);
+    expect(result.features).toHaveLength(2);
+  });
+});
+
 describe('greece-regions.geojson schema', () => {
   let geoData;
 
@@ -312,5 +471,77 @@ describe('greece-regions.geojson schema', () => {
     lats.forEach((lat) => {
       expect(lat).toBeLessThan(36);
     });
+  });
+});
+
+describe('ExploreLocationsMap — prefecture pills', () => {
+  const ExploreLocationsMap = require('../components/locations/ExploreLocationsMap').default;
+
+  test('renders prefecture pills for each prefecture with a slug', async () => {
+    const prefectures = [
+      { id: 1, name: 'Attica', name_local: 'Αττική', slug: 'attiki', code: 'GR-I', boundary_geojson: null },
+      { id: 2, name: 'Crete', name_local: 'Κρήτη', slug: 'kriti', code: 'GR-M', boundary_geojson: null },
+    ];
+    const { container, root } = await renderComponent(
+      React.createElement(ExploreLocationsMap, { prefectures, loading: false })
+    );
+
+    const links = container.querySelectorAll('a');
+    const hrefs = Array.from(links).map((a) => a.getAttribute('href'));
+    expect(hrefs).toContain('/locations/attiki');
+    expect(hrefs).toContain('/locations/kriti');
+
+    await cleanup(root, container);
+  });
+
+  test('renders pills with name_local when available', async () => {
+    const prefectures = [
+      { id: 1, name: 'Attica', name_local: 'Αττική', slug: 'attiki', code: 'GR-I', boundary_geojson: null },
+    ];
+    const { container, root } = await renderComponent(
+      React.createElement(ExploreLocationsMap, { prefectures, loading: false })
+    );
+
+    expect(container.textContent).toContain('Αττική');
+    await cleanup(root, container);
+  });
+
+  test('does not render pills while loading', async () => {
+    const prefectures = [
+      { id: 1, name: 'Attica', name_local: 'Αττική', slug: 'attiki', code: 'GR-I', boundary_geojson: null },
+    ];
+    const { container, root } = await renderComponent(
+      React.createElement(ExploreLocationsMap, { prefectures, loading: true })
+    );
+
+    // Links to location pages should not appear during loading
+    const locationLinks = Array.from(container.querySelectorAll('a'))
+      .filter((a) => a.getAttribute('href')?.startsWith('/locations/'));
+    expect(locationLinks).toHaveLength(0);
+
+    await cleanup(root, container);
+  });
+
+  test('renders no pills when prefectures array is empty', async () => {
+    const { container, root } = await renderComponent(
+      React.createElement(ExploreLocationsMap, { prefectures: [], loading: false })
+    );
+    const locationLinks = Array.from(container.querySelectorAll('a'))
+      .filter((a) => a.getAttribute('href')?.startsWith('/locations/'));
+    expect(locationLinks).toHaveLength(0);
+    await cleanup(root, container);
+  });
+
+  test('falls back to /locations href when prefecture has no slug', async () => {
+    const prefectures = [
+      { id: 1, name: 'Unknown', name_local: null, slug: null, code: 'GR-X', boundary_geojson: null },
+    ];
+    const { container, root } = await renderComponent(
+      React.createElement(ExploreLocationsMap, { prefectures, loading: false })
+    );
+
+    const links = container.querySelectorAll('a[href="/locations"]');
+    expect(links.length).toBeGreaterThan(0);
+    await cleanup(root, container);
   });
 });

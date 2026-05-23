@@ -13,7 +13,6 @@ import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
-import LocationCard from '@/components/locations/LocationCard';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
 const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
@@ -47,6 +46,8 @@ export default function HomePage() {
   const [manifestLoading, setManifestLoading] = useState(true);
   const [locationDiscovery, setLocationDiscovery] = useState([]);
   const [locationDiscoveryLoading, setLocationDiscoveryLoading] = useState(true);
+  const [prefectures, setPrefectures] = useState([]);
+  const [prefecturesLoading, setPrefecturesLoading] = useState(true);
   const [articleTags, setArticleTags] = useState([]);
   const [suggestionTags, setSuggestionTags] = useState([]);
   const [pollTags, setPollTags] = useState([]);
@@ -159,6 +160,19 @@ export default function HomePage() {
       }
     };
 
+    const fetchPrefectures = async () => {
+      try {
+        const response = await locationAPI.getAll({ type: 'prefecture', limit: 50 });
+        if (response.success) {
+          setPrefectures(response.locations || []);
+        }
+      } catch {
+        // non-critical — fail silently
+      } finally {
+        setPrefecturesLoading(false);
+      }
+    };
+
     const fetchTagsForType = async (entityType, setter) => {
       try {
         const response = await tagAPI.getSuggestions({ entityType });
@@ -192,6 +206,7 @@ export default function HomePage() {
     fetchLatestNews();
     fetchVideos();
     fetchLocationDiscovery();
+    fetchPrefectures();
     fetchTagsForType('article', setArticleTags);
     fetchTagsForType('suggestion', setSuggestionTags);
     fetchTagsForType('poll', setPollTags);
@@ -325,24 +340,24 @@ export default function HomePage() {
         topTags={suggestionTags}
       />
 
-      {/* Featured Locations Section */}
-      {(locationDiscoveryLoading || locationDiscovery.length > 0) && (
+      {/* Featured Locations Section — map + prefecture pills, no location cards */}
+      {(prefecturesLoading || prefectures.length > 0) && (
         <HomepageSection
           title={tHome('explore_locations_title')}
           subtitle={tHome('explore_locations_subtitle')}
           linkHref="/locations"
-          loading={locationDiscoveryLoading}
+          loading={false}
           error={null}
-          items={locationDiscovery}
+          items={[]}
           emptyTitle=""
           emptyDescription=""
-          skeletonCount={6}
+          skeletonCount={0}
           bgColor="bg-white"
-          renderItem={(loc) => <LocationCard key={loc.id} location={loc} />}
+          renderItem={() => null}
           mapSlot={
             <ExploreLocationsMap
-              locations={locationDiscovery}
-              loading={locationDiscoveryLoading}
+              prefectures={prefectures}
+              loading={prefecturesLoading}
             />
           }
         />
