@@ -49,11 +49,19 @@ const parseClientIp = (req) => {
 
 router.get('/detect', apiLimiter, (req, res) => {
   try {
-    let countryCode = normalizeCountryCode(
-      req.headers['cf-ipcountry']
-      || req.headers['x-vercel-ip-country']
-      || req.headers['x-country-code']
-    );
+    let countryCode = null;
+    let detectionSource = 'none';
+
+    const headerCandidates = ['cf-ipcountry', 'x-vercel-ip-country', 'x-country-code'];
+
+    for (const headerName of headerCandidates) {
+      const normalized = normalizeCountryCode(req.headers[headerName]);
+      if (normalized) {
+        countryCode = normalized;
+        detectionSource = headerName;
+        break;
+      }
+    }
 
     if (!countryCode) {
       try {
@@ -62,7 +70,11 @@ router.get('/detect', apiLimiter, (req, res) => {
         const ip = parseClientIp(req);
         if (ip) {
           const geo = geoip.lookup(ip);
-          countryCode = normalizeCountryCode(geo?.country);
+          const normalizedFallback = normalizeCountryCode(geo?.country);
+          if (normalizedFallback) {
+            countryCode = normalizedFallback;
+            detectionSource = 'geoip-fallback';
+          }
         }
       } catch {
         // geoip-lite not installed
@@ -70,9 +82,29 @@ router.get('/detect', apiLimiter, (req, res) => {
     }
 
     const countryName = countryCode ? (COUNTRY_NAMES[countryCode] || countryCode) : null;
-    return res.json({ success: true, data: { countryCode, countryName } });
+    const trustedForCountryRedirect = Boolean(
+      countryCode
+      && (detectionSource !== 'geoip-fallback' || countryCode === 'GR')
+    );
+    return res.json({
+      success: true,
+      data: {
+        countryCode,
+        countryName,
+        detectionSource,
+        trustedForCountryRedirect,
+      }
+    });
   } catch {
-    return res.json({ success: true, data: { countryCode: null, countryName: null } });
+    return res.json({
+      success: true,
+      data: {
+        countryCode: null,
+        countryName: null,
+        detectionSource: 'error',
+        trustedForCountryRedirect: false,
+      }
+    });
   }
 });
 

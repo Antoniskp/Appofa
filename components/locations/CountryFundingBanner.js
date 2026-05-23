@@ -6,10 +6,16 @@ import { useTranslations } from 'next-intl';
 const ISO2_RE = /^[A-Z]{2}$/;
 const INVALID_FLAG_CODES = new Set(['XX', 'T1']);
 
-const countryCodeToFlag = (code) => {
-  if (!code) return '🌍';
+const normalizeDisplayCode = (code) => {
+  if (!code) return null;
   const upper = String(code).toUpperCase();
-  if (!ISO2_RE.test(upper) || INVALID_FLAG_CODES.has(upper)) return '🌍';
+  if (!ISO2_RE.test(upper) || INVALID_FLAG_CODES.has(upper)) return null;
+  return upper;
+};
+
+const countryCodeToFlag = (code) => {
+  const upper = normalizeDisplayCode(code);
+  if (!upper) return '🌍';
   return [...upper].map((c) => String.fromCodePoint(127397 + c.charCodeAt(0))).join('');
 };
 
@@ -18,6 +24,7 @@ export default function CountryFundingBanner({
   locationName,
   countryCode,
   hasContent,
+  geoPanelState = {},
 }) {
   const tCountry = useTranslations('country_page');
 
@@ -28,6 +35,26 @@ export default function CountryFundingBanner({
   const goal = Number(funding?.goalAmount) || 500;
   const current = Number(funding?.currentAmount) || 0;
   const pct = Math.min(100, goal > 0 ? (current / goal) * 100 : 0);
+  const detectedCode = normalizeDisplayCode(geoPanelState.detectedCountryCode);
+  const appliedCode = normalizeDisplayCode(geoPanelState.appliedCountryCode) || normalizeDisplayCode(countryCode);
+  const browserLocaleCode = normalizeDisplayCode(geoPanelState.browserLocaleCountryCode);
+
+  const sourceLabel = (() => {
+    switch (geoPanelState.detectionSource) {
+      case 'cf-ipcountry':
+        return tCountry('geo_source_cf_header');
+      case 'x-vercel-ip-country':
+        return tCountry('geo_source_vercel_header');
+      case 'x-country-code':
+        return tCountry('geo_source_proxy_header');
+      case 'geoip-fallback':
+        return tCountry('geo_source_backend_fallback');
+      case 'error':
+        return tCountry('geo_source_error');
+      default:
+        return tCountry('geo_source_unknown');
+    }
+  })();
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 shadow-sm">
@@ -36,8 +63,44 @@ export default function CountryFundingBanner({
           {flag} {locationName}
         </span>
         <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-800 text-xs font-medium">
-          📡 {tCountry('detection_source')}
+          📡 {tCountry('geo_panel_title')}
         </span>
+      </div>
+
+      <div className="mb-4 rounded-lg border border-blue-200 bg-white/80 p-3 text-sm text-blue-900">
+        <ul className="space-y-1.5">
+          <li>
+            <span className="font-semibold">{tCountry('geo_panel_detected_country')}:</span>{' '}
+            {detectedCode
+              ? `${countryCodeToFlag(detectedCode)} ${geoPanelState.detectedCountryName || detectedCode}`
+              : tCountry('geo_panel_unknown')}
+          </li>
+          <li>
+            <span className="font-semibold">{tCountry('geo_panel_detection_source')}:</span> {sourceLabel}
+          </li>
+          {browserLocaleCode ? (
+            <li>
+              <span className="font-semibold">{tCountry('geo_panel_browser_locale')}:</span>{' '}
+              {countryCodeToFlag(browserLocaleCode)} {browserLocaleCode}
+            </li>
+          ) : null}
+          <li>
+            <span className="font-semibold">{tCountry('geo_panel_trust')}:</span>{' '}
+            {geoPanelState.trustedForCountryRedirect
+              ? tCountry('geo_trust_trusted')
+              : tCountry('geo_trust_informational')}
+          </li>
+          <li>
+            <span className="font-semibold">{tCountry('geo_panel_applied_mode')}:</span>{' '}
+            {appliedCode ? `${countryCodeToFlag(appliedCode)} ${appliedCode}` : tCountry('geo_panel_unknown')}
+          </li>
+          {detectedCode && appliedCode && detectedCode !== appliedCode ? (
+            <li className="text-blue-700">{tCountry('geo_applied_differs')}</li>
+          ) : null}
+          {geoPanelState.detectionSource === 'geoip-fallback' && !geoPanelState.trustedForCountryRedirect ? (
+            <li className="text-blue-700">{tCountry('geo_fallback_informational_note')}</li>
+          ) : null}
+        </ul>
       </div>
 
       <h3 className="text-lg font-bold text-blue-900 mb-2">
