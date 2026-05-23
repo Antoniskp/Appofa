@@ -48,7 +48,7 @@ export default function HomepageSection({
             action={{ text: 'Δοκιμάστε ξανά', onClick: () => window.location.reload() }}
           />
         )}
-        {!loading && !error && items.length === 0 && (
+        {!loading && !error && items.length === 0 && emptyTitle && (
           <EmptyState
             type="empty"
             title={emptyTitle}

@@ -1,23 +1,33 @@
 # Polygon Data for the Homepage Map
 
-This document explains how polygon boundary data is sourced, structured, and replaced for the Appofa homepage map.
+This document explains how polygon boundary data is sourced, structured, and used for the Appofa homepage map.
 
 ## Current implementation
 
-The homepage `Εξερεύνησε Περιοχές` map uses **simplified polygon outlines for the 13 Greek peripheries** (administrative regions / περιφέρειες), stored in:
+The homepage `Εξερεύνησε Περιοχές` map renders **per-location `boundary_geojson` polygons** fetched from the API for Greek prefecture locations.  The map prefers the user-uploaded location boundaries and only falls back to the static simplified file when no location boundaries are available.
 
-```
-public/data/greece-regions.geojson
-```
+### Boundary source priority
 
-These polygons are:
-- **Approximate**: hand-crafted approximations, not survey-grade boundaries.
-- **Sufficient for discovery**: recognisable at the default zoom level (6) and clearly interactive.
-- **Designed to be replaced**: the schema is stable so authoritative data can be dropped in without changing any component code.
+| Priority | Source | When used |
+|----------|--------|-----------|
+| **1st — preferred** | `Location.boundary_geojson` from the database | When at least one prefecture in the API response has `boundary_geojson` set |
+| **2nd — fallback** | `public/data/greece-regions.geojson` (static file) | When NO prefecture has `boundary_geojson` (e.g. fresh install) |
 
-## GeoJSON schema
+### How to add/update a prefecture boundary
 
-Each feature has:
+1. Open the location's edit page (`/locations/<slug>` → Edit → Boundary GeoJSON field).
+2. Paste or upload a `.geojson` / `.json` file with a `Polygon`, `MultiPolygon`, `Feature`, or `FeatureCollection` containing Polygon/MultiPolygon geometry.
+3. Save.  The next homepage load uses the new boundary automatically.
+
+The homepage fetches prefectures with `GET /api/locations?type=prefecture&limit=50`; the `boundary_geojson` column is included in the response via `l.*` (raw query path) or `toJSON()` (ORM path).
+
+### Prefecture pills
+
+Below the map a row of clickable pills renders for every prefecture in the API response.  Each pill shows `name_local || name` and links to `/locations/<slug>`.  Pills render regardless of whether a boundary is present.
+
+## Static fallback GeoJSON schema
+
+`public/data/greece-regions.geojson` is retained as a fallback and may be updated with higher-quality boundaries.  Each feature has:
 
 ```jsonc
 {
@@ -52,7 +62,18 @@ The `code` property is the join key for future choropleth coloring — map your 
 
 **Recommendation**: use peripheries as the top-level layer, with municipalities as a drill-down layer (Phase 2). Electoral districts can be added as a parallel layer when needed — the architecture already supports multiple `polygonLayers`.
 
-## How to replace with authoritative data
+## How to add authoritative data (preferred path)
+
+The preferred way to upgrade boundaries is through the admin UI:
+
+1. Go to the location's edit page.
+2. Use the **Boundary GeoJSON** field to paste or upload a `.geojson` / `.json` file.
+3. The platform validates that the root type is `Polygon`, `MultiPolygon`, `Feature`, or `FeatureCollection` containing only Polygon/MultiPolygon geometries.
+4. Save — the homepage map picks up the new boundary automatically.
+
+## How to update the static fallback file
+
+If you want to upgrade the fallback `public/data/greece-regions.geojson`:
 
 ### Option 1 — ELSTAT / geodata.gov.gr (recommended for Greece)
 
@@ -155,12 +176,12 @@ The `code` property in the GeoJSON is the join key — map your backend data to 
 
 | File | Purpose |
 |------|---------|
-| `public/data/greece-regions.geojson` | Starter simplified polygon data (13 peripheries) |
+| `public/data/greece-regions.geojson` | Fallback simplified polygon data (13 peripheries) — used only when no location `boundary_geojson` is set |
 | `config/map-data/regions.metadata.json` | Political region metadata (stable `id`, `capital`, `totalSeats`, district joins, location link hints) |
 | `config/map-data/electoral-districts.metadata.json` | Electoral district metadata (`id`, `regionId`, `seats`, location link hints) |
 | `config/map-data/regions.geojson` | Region polygon FeatureCollection for political explorer (join key `id`) |
 | `config/map-data/electoral-districts.geojson` | Electoral district placeholder polygon FeatureCollection (join keys `id` + `regionId`) |
 | `components/map/BaseMap.js` | Core Leaflet wrapper; `polygonLayers` prop drives interactivity |
-| `components/map/GreeceBoundaryMap.js` | Homepage boundary map — loads GeoJSON, builds layers, renders info card |
-| `components/locations/ExploreLocationsMap.js` | Thin wrapper used by `app/page.js`; delegates to `GreeceBoundaryMap` |
+| `components/map/GreeceBoundaryMap.js` | Homepage boundary map — prefers per-location `boundary_geojson`, falls back to static file |
+| `components/locations/ExploreLocationsMap.js` | Wrapper used by `app/page.js`; renders `GreeceBoundaryMap` + prefecture pills |
 | `components/political/AnalyticalMappingExplorer.js` | Reusable map+detail political explorer used by `/citizen-help/regions-electoral-map` |

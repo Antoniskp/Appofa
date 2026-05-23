@@ -3,34 +3,32 @@
 /**
  * GreeceBoundaryMap — homepage discovery map with interactive polygon boundaries.
  *
- * Extends ExploreLocationsMap by adding a polygon boundary layer for the 13 Greek
- * peripheries (administrative regions / περιφέρειες) on top of the point-marker layer.
+ * Renders interactive polygon boundaries for Greek peripheries on a Leaflet map.
+ *
+ * Boundary source priority:
+ *   1. When `prefectures` prop is supplied and at least one location has `boundary_geojson`,
+ *      the map is built entirely from the per-location boundaries.  Each feature inherits the
+ *      location's name, code, and slug so popups can navigate directly to the location page.
+ *   2. When no location boundaries are available, the component falls back to the static
+ *      `/public/data/greece-regions.geojson` file (same behaviour as before this change).
  *
  * Behaviour:
- *   - Shows simplified polygon boundaries for all 13 Greek peripheries at the default
- *     Greece-wide view (zoom 6).
+ *   - Shows polygon boundaries for all Greek peripheries at the default Greece-wide view (zoom 6).
  *   - Hovering a polygon highlights it and shows a tooltip with the region name.
  *   - Clicking a polygon zooms the map to fit that region's bounds and opens a popup
- *     with the region name, capital, and a link to explore locations in that region.
- *   - Point markers for known locations are layered on top.
+ *     with the region name and a link to the location page (or a fallback explore link).
  *   - Shows a small info card overlay when a region is selected (React layer, outside Leaflet).
  *
  * Props:
- *   locations  {Array<{id, name, name_local, lat, lng, slug}>}  – locations for point markers
- *   className  {string}  – override the map container height/styling
- *   loading    {boolean} – when true shows a skeleton placeholder
+ *   prefectures  {Array<Location>}  – prefecture location objects (may include boundary_geojson)
+ *   className    {string}           – override the map container height/styling
+ *   loading      {boolean}          – when true shows a skeleton placeholder
  *
  * Architecture for future extensions:
- *   - To add choropleth coloring: replace the static `style` in `boundaryLayer` with a
- *     `styleFeature(feature)` function that maps feature.properties.code → fill color.
- *   - To add electoral districts: create a second entry in `polygonLayers` pointing at
- *     `/data/greece-electoral-districts.geojson` (same schema, same interaction pattern).
- *   - To add municipality drill-down: listen for zoom events and swap the boundary layer
- *     from peripheries to municipalities when zoom > 8.
- *
- * Data source:
- *   /public/data/greece-regions.geojson — simplified starter dataset.
- *   See doc/POLYGON_DATA.md for authoritative sources and how to replace this file.
+ *   - To add choropleth coloring: replace the static `style` with a `styleFeature(feature)`
+ *     function that maps feature.properties.code → fill color.
+ *   - To add electoral districts: create a second entry in `polygonLayers`.
+ *   - To add municipality drill-down: swap layers based on zoom level.
  */
 
 import { useState, useMemo, useEffect, useCallback, memo } from 'react';
@@ -39,14 +37,11 @@ import Link from 'next/link';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 
-// Module-level cache so the GeoJSON is only fetched once per browser session,
-// even if the component mounts/unmounts (e.g. navigation back to homepage).
-// Note: this persists during the active tab lifetime; in dev/HMR a hard refresh
-// may be needed to see file edits reflected.
+// Module-level cache for the fallback static GeoJSON — avoids redundant fetches.
 let GEO_CACHE = null;
 let GEO_CACHE_PROMISE = null;
 
-function loadGeoData() {
+function loadFallbackGeoData() {
   if (GEO_CACHE) return Promise.resolve(GEO_CACHE);
   if (GEO_CACHE_PROMISE) return GEO_CACHE_PROMISE;
   GEO_CACHE_PROMISE = fetch('/data/greece-regions.geojson')
@@ -66,33 +61,90 @@ function loadGeoData() {
   return GEO_CACHE_PROMISE;
 }
 
-// Tooltip HTML builder — shown on hover (region name + capital)
-function buildTooltip(props) {
-  const name = props.name || '';
-  const capital = props.capital || '';
-  return (
-    `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>` +
-    (capital ? `<div style="font-size:11px;color:#6b7280;margin-top:2px">📍 ${capital}</div>` : '')
-  );
+/**
+ * Normalises a `boundary_geojson` value (string or object) into a form that
+ * Leaflet's L.geoJSON() can consume (FeatureCollection or Feature).
+ * Returns null when the input is absent, unparseable, or has an unsupported type.
+ */
+function normalizeBoundaryGeoJSON(raw, displayName) {
+  try {
+    const geom = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!geom || !geom.type) return null;
+    const { type } = geom;
+    if (type === 'FeatureCollection' || type === 'Feature') return geom;
+    if (type === 'Polygon' || type === 'MultiPolygon') {
+      return { type: 'Feature', geometry: geom, properties: { name: displayName } };
+    }
+    return null;
+  } catch {
+    return null;
+  }
 }
 
-// Popup HTML builder — shown on click (richer info + navigation link)
+/**
+ * Converts a Location object into one or more GeoJSON features with location metadata
+ * merged into the feature properties so tooltips, popups, and the info card have access.
+ */
+function locationToFeatures(loc) {
+  const displayName = loc.name_local || loc.name;
+  const normalized = normalizeBoundaryGeoJSON(loc.boundary_geojson, displayName);
+  if (!normalized) return [];
+
+  const locProps = {
+    name: displayName,
+    name_en: loc.name,
+    slug: loc.slug || null,
+    code: loc.code || null,
+  };
+
+  if (normalized.type === 'FeatureCollection') {
+    return normalized.features.map((f) => ({
+      ...f,
+      properties: { ...f.properties, ...locProps },
+    }));
+  }
+  // Single Feature
+  return [{ ...normalized, properties: { ...normalized.properties, ...locProps } }];
+}
+
+/**
+ * Builds a FeatureCollection from an array of location objects that have boundary_geojson.
+ * Returns null when no locations produce valid features.
+ */
+function buildFeatureCollectionFromLocations(locations) {
+  const features = locations.flatMap((loc) =>
+    loc.boundary_geojson ? locationToFeatures(loc) : []
+  );
+  if (features.length === 0) return null;
+  return { type: 'FeatureCollection', features };
+}
+
+// Tooltip HTML builder — shown on hover (region name)
+function buildTooltip(props) {
+  const name = props.name || '';
+  return `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>`;
+}
+
+// Popup HTML builder — shown on click (name + navigation link)
 function buildPopup(props) {
   const name = props.name || '';
-  const nameEn = props.name_en || '';
+  const nameEn = props.name_en && props.name_en !== name ? props.name_en : '';
   const capital = props.capital || '';
+  const slug = props.slug || null;
   const code = props.code || '';
-  // `type=periphery`/`region=...` are list-page hint params: if unsupported, `/locations`
-  // still opens normally and the query string is safely ignored.
+  const href = slug
+    ? `/locations/${slug}`
+    : `/locations?type=periphery&region=${code}`;
   return (
     `<div style="min-width:160px">` +
     `<p style="font-weight:700;font-size:14px;margin:0 0 4px">${name}</p>` +
     (nameEn ? `<p style="font-size:11px;color:#6b7280;margin:0 0 6px">${nameEn}</p>` : '') +
     (capital ? `<p style="font-size:12px;margin:0 0 8px">🏛️ ${capital}</p>` : '') +
-    `<a href="/locations?type=periphery&region=${code}" style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none">Εξερεύνησε &rarr;</a>` +
+    `<a href="${href}" style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none">Εξερεύνησε &rarr;</a>` +
     `</div>`
   );
 }
+
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
 
@@ -113,12 +165,6 @@ const POLY_HOVER_STYLE = {
   fillOpacity: 0.28,
 };
 
-function isValidCoord(value, min, max) {
-  if (value == null || value === '') return false;
-  const n = Number(value);
-  return isFinite(n) && n >= min && n <= max;
-}
-
 function Skeleton() {
   return (
     <div className="h-[420px] w-full rounded-xl overflow-hidden bg-gray-100 animate-pulse" />
@@ -131,6 +177,9 @@ function Skeleton() {
  */
 function RegionInfoCard({ region, onClose }) {
   if (!region) return null;
+  const href = region.slug
+    ? `/locations/${region.slug}`
+    : `/locations?type=periphery&region=${region.code}`;
   return (
     <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 min-w-[180px] max-w-[220px] pointer-events-auto">
       <div className="flex items-start justify-between gap-2 mb-1">
@@ -149,7 +198,7 @@ function RegionInfoCard({ region, onClose }) {
         <p className="text-xs text-gray-500 mb-2">Πρωτεύουσα: {region.capital}</p>
       )}
       <Link
-        href={`/locations?type=periphery&region=${region.code}`}
+        href={href}
         className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
       >
         Εξερεύνησε περιοχές
@@ -161,43 +210,28 @@ function RegionInfoCard({ region, onClose }) {
   );
 }
 
-export default memo(function GreeceBoundaryMap({ locations = [], className, loading = false }) {
-  const [geoData, setGeoData] = useState(null);
-  const [geoError, setGeoError] = useState(false);
+export default memo(function GreeceBoundaryMap({ prefectures = [], className, loading = false }) {
+  const [fallbackGeoData, setFallbackGeoData] = useState(null);
+  const [fallbackGeoError, setFallbackGeoError] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(null);
 
-  // Load the boundary GeoJSON from the public folder (module-level cache avoids redundant fetches).
-  useEffect(() => {
-    let cancelled = false;
-    loadGeoData()
-      .then((data) => {
-        if (!cancelled) setGeoData(data);
-      })
-      .catch(() => {
-        if (!cancelled) setGeoError(true);
-      });
-    return () => { cancelled = true; };
-  }, []);
-
-  // Build point markers for locations that have valid coordinates
-  const markers = useMemo(
-    () =>
-      locations
-        .filter(
-          (loc) =>
-            isValidCoord(loc.lat, -90, 90) &&
-            isValidCoord(loc.lng, -180, 180)
-        )
-        .map((loc) => ({
-          lat: Number(loc.lat),
-          lng: Number(loc.lng),
-          popup: loc.slug
-            ? `<a href="/locations/${loc.slug}" class="font-medium text-blue-600 hover:underline">${loc.name_local || loc.name}</a>`
-            : (loc.name_local || loc.name),
-          key: loc.id,
-        })),
-    [locations]
+  // Build a feature collection from location boundary_geojson values when available.
+  const locationFeatureCollection = useMemo(
+    () => buildFeatureCollectionFromLocations(prefectures),
+    [prefectures]
   );
+
+  const useFallback = !locationFeatureCollection;
+
+  // Only load the static fallback file when no location boundaries are available.
+  useEffect(() => {
+    if (!useFallback) return;
+    let cancelled = false;
+    loadFallbackGeoData()
+      .then((data) => { if (!cancelled) setFallbackGeoData(data); })
+      .catch(() => { if (!cancelled) setFallbackGeoError(true); });
+    return () => { cancelled = true; };
+  }, [useFallback]);
 
   // Handler: a region polygon was clicked — update React info card
   const handleFeatureClick = useCallback((feature) => {
@@ -206,11 +240,13 @@ export default memo(function GreeceBoundaryMap({ locations = [], className, load
       name: p.name || p.name_en || '',
       capital: p.capital || '',
       code: p.code || '',
+      slug: p.slug || null,
     });
   }, []);
 
   // Build the polygonLayers config (memoized so it doesn't trigger map re-init)
   const polygonLayers = useMemo(() => {
+    const geoData = useFallback ? fallbackGeoData : locationFeatureCollection;
     if (!geoData) return [];
     return [
       {
@@ -224,19 +260,22 @@ export default memo(function GreeceBoundaryMap({ locations = [], className, load
         getPopup: buildPopup,
       },
     ];
-  }, [geoData, handleFeatureClick]);
+  }, [useFallback, fallbackGeoData, locationFeatureCollection, handleFeatureClick]);
 
   if (loading) return <Skeleton />;
 
-  // Fallback: if GeoJSON failed to load and there are no markers, nothing to show
-  if (geoError && markers.length === 0) return null;
+  // Fallback: if static GeoJSON failed and no location boundaries, nothing to show
+  if (useFallback && fallbackGeoError) return null;
+
+  // While waiting for the fallback to load, show skeleton
+  if (useFallback && !fallbackGeoData) return <Skeleton />;
 
   return (
     <div className={`relative ${className || 'h-[420px] w-full rounded-xl overflow-hidden'}`}>
       <BaseMap
         center={GREECE_CENTER}
         zoom={GREECE_ZOOM}
-        markers={markers}
+        markers={[]}
         polygonLayers={polygonLayers}
         className="h-full w-full"
         scrollWheelZoom={false}
@@ -247,10 +286,13 @@ export default memo(function GreeceBoundaryMap({ locations = [], className, load
         region={selectedRegion}
         onClose={() => setSelectedRegion(null)}
       />
-      {/* Legend / attribution note for the simplified boundaries */}
+      {/* Source label */}
       <div className="absolute bottom-1 left-1 z-[1000] bg-white/80 rounded px-1.5 py-0.5 text-[10px] text-gray-400 pointer-events-none select-none">
-        Περιφέρειες Ελλάδας · απλοποιημένα όρια
+        Περιφέρειες Ελλάδας
       </div>
     </div>
   );
 });
+
+// Named exports for unit tests
+export { normalizeBoundaryGeoJSON, buildFeatureCollectionFromLocations, locationToFeatures };
