@@ -246,6 +246,36 @@ describe('BaseMap — polygonLayers prop', () => {
     await cleanup(root, container);
   });
 
+  test('uses styleFeature when provided for per-feature coloring', async () => {
+    const layer = {
+      id: 'styled-layer-feature',
+      geojson: SAMPLE_GEOJSON,
+      style: { color: '#111111', fillColor: '#111111' },
+      styleFeature: (feature, baseStyle) => ({
+        ...baseStyle,
+        color: feature.properties?.boundary_color || '#222222',
+      }),
+    };
+
+    const { container, root } = await renderComponent(
+      React.createElement(BaseMap, {
+        center: [38.5, 23.8],
+        zoom: 6,
+        polygonLayers: [layer],
+      })
+    );
+
+    const options = mockGeoJSON.mock.calls[0][1];
+    expect(options.style({
+      properties: { boundary_color: '#ff7700' },
+    })).toMatchObject({
+      color: '#ff7700',
+      fillColor: '#111111',
+    });
+
+    await cleanup(root, container);
+  });
+
   test('does not crash when polygonLayers contains a null entry', async () => {
     const { container, root } = await renderComponent(
       React.createElement(BaseMap, {
@@ -327,6 +357,11 @@ describe('locationToFeatures', () => {
     expect(features[0].properties.name).toBe('Αττική'); // name_local preferred
     expect(features[0].properties.slug).toBe('attiki');
     expect(features[0].properties.code).toBe('GR-I');
+  });
+
+  test('copies boundary_color into feature properties when present', () => {
+    const features = locationToFeatures({ ...SAMPLE_PREFECTURE, boundary_color: '#12abef' });
+    expect(features[0].properties.boundary_color).toBe('#12abef');
   });
 
   test('returns empty array when boundary_geojson is null', () => {

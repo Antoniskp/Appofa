@@ -68,6 +68,10 @@ function LocationManagementContent() {
     lng: '',
     wikipedia_url: '',
     boundary_geojson: null,
+    boundary_color: '',
+    map_default_center_lat: '',
+    map_default_center_lng: '',
+    map_default_zoom: '',
   });
   const [boundaryValidation, setBoundaryValidation] = useState({ isValid: true });
   const [submitting, setSubmitting] = useState(false);
@@ -145,6 +149,10 @@ function LocationManagementContent() {
         lng: location.lng || '',
         wikipedia_url: location.wikipedia_url || '',
         boundary_geojson: location.boundary_geojson || null,
+        boundary_color: location.boundary_color || '',
+        map_default_center_lat: location.map_default_center_lat != null ? String(location.map_default_center_lat) : '',
+        map_default_center_lng: location.map_default_center_lng != null ? String(location.map_default_center_lng) : '',
+        map_default_zoom: location.map_default_zoom != null ? String(location.map_default_zoom) : '',
       });
     } else {
       setEditingLocation(null);
@@ -158,6 +166,10 @@ function LocationManagementContent() {
         lng: '',
         wikipedia_url: '',
         boundary_geojson: null,
+        boundary_color: '',
+        map_default_center_lat: '',
+        map_default_center_lng: '',
+        map_default_zoom: '',
       });
     }
     setBoundaryValidation({ isValid: true });
@@ -198,10 +210,38 @@ function LocationManagementContent() {
         parent_id: formData.parent_id ? parseInt(formData.parent_id) : null,
         lat: formData.lat ? parseFloat(formData.lat) : null,
         lng: formData.lng ? parseFloat(formData.lng) : null,
+        boundary_color: formData.boundary_color?.trim() || null,
+        map_default_center_lat: formData.map_default_center_lat ? parseFloat(formData.map_default_center_lat) : null,
+        map_default_center_lng: formData.map_default_center_lng ? parseFloat(formData.map_default_center_lng) : null,
+        map_default_zoom: formData.map_default_zoom ? parseInt(formData.map_default_zoom, 10) : null,
       };
+
+      if (payload.boundary_color && !/^#[0-9A-Fa-f]{6}$/.test(payload.boundary_color)) {
+        toastError('Boundary color must be a HEX value like #3b82f6');
+        setSubmitting(false);
+        return;
+      }
 
       if (payload.type !== 'international' && !payload.parent_id) {
         toastError(`A ${payload.type} requires a parent location.`);
+        setSubmitting(false);
+        return;
+      }
+
+      const hasDefaultLat = payload.map_default_center_lat != null;
+      const hasDefaultLng = payload.map_default_center_lng != null;
+      if (hasDefaultLat !== hasDefaultLng) {
+        toastError('Default map center requires both latitude and longitude.');
+        setSubmitting(false);
+        return;
+      }
+      if ((hasDefaultLat || hasDefaultLng) && payload.map_default_zoom == null) {
+        toastError('Default map zoom is required when default center is set.');
+        setSubmitting(false);
+        return;
+      }
+      if (!hasDefaultLat && !hasDefaultLng && payload.map_default_zoom != null) {
+        toastError('Default map zoom requires default center latitude and longitude.');
         setSubmitting(false);
         return;
       }
@@ -622,6 +662,70 @@ function LocationManagementContent() {
               nameLocal: formData.name_local,
             }}
           />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Boundary Color
+            </label>
+            <input
+              type="text"
+              name="boundary_color"
+              value={formData.boundary_color}
+              onChange={handleInputChange}
+              placeholder="#3b82f6"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Default Map Zoom
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="18"
+              name="map_default_zoom"
+              value={formData.map_default_zoom}
+              onChange={handleInputChange}
+              placeholder="7"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Default Map Center Latitude
+            </label>
+            <input
+              type="number"
+              step="0.000001"
+              min="-90"
+              max="90"
+              name="map_default_center_lat"
+              value={formData.map_default_center_lat}
+              onChange={handleInputChange}
+              placeholder="38.0"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Default Map Center Longitude
+            </label>
+            <input
+              type="number"
+              step="0.000001"
+              min="-180"
+              max="180"
+              name="map_default_center_lng"
+              value={formData.map_default_center_lng}
+              onChange={handleInputChange}
+              placeholder="23.8"
+              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -226,6 +226,55 @@ export default function LocationEditForm({
             nameLocal: editedData.name_local || location.name_local,
           }}
         />
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Boundary Color</label>
+          <input
+            type="text"
+            value={editedData.boundary_color || ''}
+            onChange={(e) => onInputChange('boundary_color', e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="#3b82f6"
+          />
+          <p className="mt-1 text-xs text-gray-500">Optional HEX color (#RRGGBB) used for territory fill/outline.</p>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Default Map Zoom</label>
+          <input
+            type="number"
+            min="1"
+            max="18"
+            value={editedData.map_default_zoom || ''}
+            onChange={(e) => onInputChange('map_default_zoom', e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="7"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Default Map Center Latitude</label>
+          <input
+            type="number"
+            step="0.000001"
+            min="-90"
+            max="90"
+            value={editedData.map_default_center_lat || ''}
+            onChange={(e) => onInputChange('map_default_center_lat', e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="38.0"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Default Map Center Longitude</label>
+          <input
+            type="number"
+            step="0.000001"
+            min="-180"
+            max="180"
+            value={editedData.map_default_center_lng || ''}
+            onChange={(e) => onInputChange('map_default_center_lng', e.target.value)}
+            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="23.8"
+          />
+        </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Wikipedia URL</label>
           <input

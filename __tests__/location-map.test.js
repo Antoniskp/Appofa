@@ -9,6 +9,14 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 // Track geoJSON calls so we can assert polygon boundary rendering
 const mockGeoJSONInst = { addTo: jest.fn().mockReturnThis() };
 const mockGeoJSON = jest.fn(() => mockGeoJSONInst);
+const mockMapInstance = {
+  setView: jest.fn(),
+  fitBounds: jest.fn(),
+  addLayer: jest.fn(),
+  remove: jest.fn(),
+  on: jest.fn(),
+  attributionControl: { setPrefix: jest.fn() },
+};
 
 // Mock next/dynamic so LocationMap renders BaseMap synchronously in tests
 jest.mock('next/dynamic', () => (_fn, _options) => {
@@ -27,14 +35,7 @@ jest.mock('leaflet', () => {
   const latLngBounds = jest.fn(() => ({ isValid: () => true }));
   const layerGroupObj = { addTo: jest.fn().mockReturnThis(), clearLayers: jest.fn() };
   const layerGroup = jest.fn(() => layerGroupObj);
-  const map = jest.fn(() => ({
-    setView: jest.fn(),
-    fitBounds: jest.fn(),
-    addLayer: jest.fn(),
-    remove: jest.fn(),
-    on: jest.fn(),
-    attributionControl: { setPrefix: jest.fn() },
-  }));
+  const map = jest.fn(() => mockMapInstance);
   return {
     __esModule: true,
     default: { map, tileLayer, marker, geoJSON: mockGeoJSON, latLngBounds, layerGroup, icon: jest.fn(() => ({})) },
@@ -62,6 +63,8 @@ describe('LocationMap', () => {
     document.body.appendChild(container);
     root = createRoot(container);
     jest.clearAllMocks();
+    mockMapInstance.setView.mockClear();
+    mockMapInstance.fitBounds.mockClear();
   });
 
   afterEach(async () => {
@@ -153,6 +156,8 @@ describe('LocationMap — boundary_geojson', () => {
     document.body.appendChild(container);
     root = createRoot(container);
     jest.clearAllMocks();
+    mockMapInstance.setView.mockClear();
+    mockMapInstance.fitBounds.mockClear();
   });
 
   afterEach(async () => {
@@ -279,6 +284,57 @@ describe('LocationMap — boundary_geojson', () => {
     });
     expect(container.querySelector('div')).toBeTruthy();
     expect(mockGeoJSON).toHaveBeenCalled();
+  });
+
+  test('fits map bounds to boundary_geojson extents', async () => {
+    const location = {
+      id: 18,
+      name: 'Attica',
+      boundary_geojson: SAMPLE_POLYGON_GEOJSON,
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+
+    expect(mockMapInstance.fitBounds).toHaveBeenCalled();
+  });
+
+  test('uses boundary_color for polygon style', async () => {
+    const location = {
+      id: 19,
+      name: 'Colored boundary',
+      lat: 37.97,
+      lng: 23.73,
+      boundary_geojson: SAMPLE_POLYGON_GEOJSON,
+      boundary_color: '#ff7700',
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+
+    expect(mockGeoJSON).toHaveBeenCalled();
+    const options = mockGeoJSON.mock.calls[0][1];
+    expect(options.style()).toMatchObject({
+      color: '#ff7700',
+      fillColor: '#ff7700',
+    });
+  });
+
+  test('uses saved map default center/zoom when provided', async () => {
+    const location = {
+      id: 20,
+      name: 'Default centered',
+      lat: 37.97,
+      lng: 23.73,
+      map_default_center_lat: 36.2,
+      map_default_center_lng: 24.5,
+      map_default_zoom: 7,
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+
+    expect(mockMapInstance.setView).toHaveBeenCalledWith([36.2, 24.5], 7);
   });
 
   test('renders nothing when both lat/lng are missing and boundary_geojson is absent', async () => {

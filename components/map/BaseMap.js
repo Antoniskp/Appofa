@@ -20,6 +20,7 @@
  *     id:               string,   – unique key (required for React reconciliation)
  *     geojson:          object,   – GeoJSON FeatureCollection or Feature
  *     style:            object,   – default Leaflet PathOptions
+ *     styleFeature:     (feature, defaultStyle) => PathOptions, – optional per-feature style
  *     hoverStyle:       object,   – PathOptions applied on mouseover
  *     getTooltip:       (props) => string | null,  – HTML string for hover tooltip
  *     getPopup:         (props) => string | null,  – HTML string for click popup
@@ -219,14 +220,18 @@ export default function BaseMap({
       if (!layerDef || !layerDef.geojson) return;
 
       const baseStyle = layerDef.style || DEFAULT_POLY_STYLE;
+      const styleFeature = typeof layerDef.styleFeature === 'function'
+        ? layerDef.styleFeature
+        : null;
       const hoverStyle = layerDef.hoverStyle || DEFAULT_POLY_HOVER_STYLE;
       const fitOnClick = layerDef.fitBoundsOnClick !== false; // default true
 
       const geoLayer = L.geoJSON(layerDef.geojson, {
-        // Return baseStyle directly; no per-feature modification at this level.
-        // Extension point: add a `styleFeature(feature) => PathOptions` prop to PolygonLayerDef
-        // to enable choropleth coloring without touching BaseMap internals.
-        style: () => baseStyle,
+        style: (feature) => {
+          if (!styleFeature) return baseStyle;
+          const nextStyle = styleFeature(feature, baseStyle);
+          return nextStyle && typeof nextStyle === 'object' ? nextStyle : baseStyle;
+        },
 
         onEachFeature: (feature, featureLayer) => {
           const props = feature.properties || {};

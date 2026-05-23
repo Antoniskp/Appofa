@@ -17,6 +17,7 @@ import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import LocationMap from '@/components/locations/LocationMap';
+import ExploreLocationsMap from '@/components/locations/ExploreLocationsMap';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
@@ -43,6 +44,8 @@ export default function LocationDetailPage() {
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [fundingData, setFundingData] = useState(null);
   const [fundingLoaded, setFundingLoaded] = useState(false);
+  const [greecePrefectures, setGreecePrefectures] = useState([]);
+  const [greecePrefecturesLoading, setGreecePrefecturesLoading] = useState(false);
 
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
@@ -75,6 +78,8 @@ export default function LocationDetailPage() {
         setIsEditing(false);
         setFundingData(null);
         setFundingLoaded(false);
+        setGreecePrefectures([]);
+        setGreecePrefecturesLoading(false);
         setSecondaryLoading(true);
 
         // Build breadcrumb
@@ -96,14 +101,20 @@ export default function LocationDetailPage() {
           wikipedia_url: loc.wikipedia_url || '',
           population_override: loc.population_override != null ? String(loc.population_override) : '',
           boundary_geojson: loc.boundary_geojson || null,
+          boundary_color: loc.boundary_color || '',
+          map_default_center_lat: loc.map_default_center_lat != null ? String(loc.map_default_center_lat) : '',
+          map_default_center_lng: loc.map_default_center_lng != null ? String(loc.map_default_center_lng) : '',
+          map_default_zoom: loc.map_default_zoom != null ? String(loc.map_default_zoom) : '',
         });
         setBoundaryValidation({ isValid: true });
 
         // Use the resolved numeric ID for subsequent queries
         const locId = loc.id;
+        const shouldLoadGreecePrefectures = loc.type === 'country' && String(loc.code || '').toUpperCase() === 'GR';
+        setGreecePrefecturesLoading(shouldLoadGreecePrefectures);
 
         // Fetch all secondary data in parallel
-        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes] =
+        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes, greecePrefecturesRes] =
           await Promise.allSettled([
             // 0: linked entities/content
             locationAPI.getLocationEntities(locId),
@@ -115,6 +126,10 @@ export default function LocationDetailPage() {
             suggestionAPI.getAll({ locationId: locId, limit: 50 }),
             // 4: sibling locations (same parent)
             loc.parent?.id ? locationAPI.getAll({ parent_id: loc.parent.id }) : Promise.resolve({ success: true, locations: [] }),
+            // 5: Greece-prefecture map data for /locations/greece parity with homepage map + pills
+            shouldLoadGreecePrefectures
+              ? locationAPI.getAll({ type: 'prefecture', parent_id: loc.id, limit: 50 })
+              : Promise.resolve({ success: true, locations: [] }),
           ]);
 
         if (entitiesRes.status === 'fulfilled' && entitiesRes.value.success) {
@@ -153,6 +168,11 @@ export default function LocationDetailPage() {
         } else if (siblingsRes.status === 'rejected') {
           console.error('Failed to load sibling locations:', siblingsRes.reason);
         }
+
+        if (greecePrefecturesRes.status === 'fulfilled' && greecePrefecturesRes.value.success) {
+          setGreecePrefectures(greecePrefecturesRes.value.locations || []);
+        }
+        setGreecePrefecturesLoading(false);
 
         setSecondaryLoading(false);
         if (loc.type === 'country') {
@@ -215,6 +235,10 @@ export default function LocationDetailPage() {
         wikipedia_url: location.wikipedia_url || '',
         population_override: location.population_override != null ? String(location.population_override) : '',
         boundary_geojson: location.boundary_geojson || null,
+        boundary_color: location.boundary_color || '',
+        map_default_center_lat: location.map_default_center_lat != null ? String(location.map_default_center_lat) : '',
+        map_default_center_lng: location.map_default_center_lng != null ? String(location.map_default_center_lng) : '',
+        map_default_zoom: location.map_default_zoom != null ? String(location.map_default_zoom) : '',
       });
       setBoundaryValidation({ isValid: true });
     }
@@ -250,8 +274,44 @@ export default function LocationDetailPage() {
       return;
     }
 
+    const mapDefaultCenterLat = editedData.map_default_center_lat !== '' ? parseFloat(editedData.map_default_center_lat) : null;
+    const mapDefaultCenterLng = editedData.map_default_center_lng !== '' ? parseFloat(editedData.map_default_center_lng) : null;
+    const mapDefaultZoom = editedData.map_default_zoom !== '' ? parseInt(editedData.map_default_zoom, 10) : null;
+
+    if (editedData.map_default_center_lat !== '' && (isNaN(mapDefaultCenterLat) || mapDefaultCenterLat < -90 || mapDefaultCenterLat > 90)) {
+      toastError('Default map center latitude must be between -90 and 90');
+      return;
+    }
+    if (editedData.map_default_center_lng !== '' && (isNaN(mapDefaultCenterLng) || mapDefaultCenterLng < -180 || mapDefaultCenterLng > 180)) {
+      toastError('Default map center longitude must be between -180 and 180');
+      return;
+    }
+    if (editedData.map_default_zoom !== '' && (isNaN(mapDefaultZoom) || mapDefaultZoom < 1 || mapDefaultZoom > 18)) {
+      toastError('Default map zoom must be an integer between 1 and 18');
+      return;
+    }
+    const hasDefaultLat = mapDefaultCenterLat != null;
+    const hasDefaultLng = mapDefaultCenterLng != null;
+    if (hasDefaultLat !== hasDefaultLng) {
+      toastError('Default map center requires both latitude and longitude');
+      return;
+    }
+    if ((hasDefaultLat || hasDefaultLng) && mapDefaultZoom == null) {
+      toastError('Default map zoom is required when default center is set');
+      return;
+    }
+    if (!hasDefaultLat && !hasDefaultLng && mapDefaultZoom != null) {
+      toastError('Default map zoom requires default center latitude and longitude');
+      return;
+    }
+
     if (!boundaryValidation.isValid) {
       toastError('Please fix Boundary / GeoJSON validation errors before saving.');
+      return;
+    }
+
+    if (editedData.boundary_color && !/^#[0-9A-Fa-f]{6}$/.test(editedData.boundary_color.trim())) {
+      toastError('Boundary color must be a HEX value like #3b82f6');
       return;
     }
 
@@ -279,6 +339,10 @@ export default function LocationDetailPage() {
         lng,
         wikipedia_url: editedData.wikipedia_url.trim() || null,
         boundary_geojson: editedData.boundary_geojson || null,
+        boundary_color: editedData.boundary_color.trim() || null,
+        map_default_center_lat: mapDefaultCenterLat,
+        map_default_center_lng: mapDefaultCenterLng,
+        map_default_zoom: mapDefaultZoom,
         population_override: (() => {
           if (editedData.population_override === '') return null;
           const v = parseInt(editedData.population_override, 10);
@@ -339,6 +403,7 @@ export default function LocationDetailPage() {
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
   const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0;
+  const isGreeceCountryPage = location?.type === 'country' && String(location?.code || '').toUpperCase() === 'GR';
 
   const TAB_LABELS = {
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
@@ -447,8 +512,21 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
+            {/* Greece page parity: show the same homepage map + prefecture pills first */}
+            {isGreeceCountryPage && (
+              <div id="greece-prefectures-map" className="mb-8">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">Περιφέρειες Ελλάδας</h2>
+                <div className="bg-white rounded-lg shadow-md p-3">
+                  <ExploreLocationsMap
+                    prefectures={greecePrefectures}
+                    loading={greecePrefecturesLoading}
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Map — shown when the location has valid coordinates or a boundary polygon */}
-            {((location?.lat && location?.lng) || location?.boundary_geojson) && (
+            {(!isGreeceCountryPage && ((location?.lat && location?.lng) || location?.boundary_geojson)) && (
               <div id="location-map" className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">

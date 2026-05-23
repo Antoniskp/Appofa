@@ -49,6 +49,8 @@ const BOUNDARY_HOVER_STYLE = {
   fillOpacity: 0.25,
 };
 
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
 /**
  * Returns true when a value is a finite number (or a string representing one) within
  * the valid coordinate range.
@@ -89,6 +91,49 @@ function normalizeBoundaryGeoJSON(raw, displayName) {
   }
 }
 
+function collectLonLatPairs(node, output = []) {
+  if (!Array.isArray(node)) return output;
+  if (
+    node.length >= 2
+    && typeof node[0] === 'number'
+    && Number.isFinite(node[0])
+    && typeof node[1] === 'number'
+    && Number.isFinite(node[1])
+  ) {
+    // GeoJSON coordinate order is [lng, lat].
+    output.push([node[0], node[1]]);
+    return output;
+  }
+  node.forEach((child) => collectLonLatPairs(child, output));
+  return output;
+}
+
+function getBoundaryBounds(geojson) {
+  if (!geojson) return null;
+  const geometries = [];
+  if (geojson.type === 'FeatureCollection') {
+    geojson.features?.forEach((feature) => {
+      if (feature?.geometry) geometries.push(feature.geometry);
+    });
+  } else if (geojson.type === 'Feature') {
+    if (geojson.geometry) geometries.push(geojson.geometry);
+  } else if (geojson.type === 'Polygon' || geojson.type === 'MultiPolygon') {
+    geometries.push(geojson);
+  }
+
+  const pairs = geometries.flatMap((geometry) => collectLonLatPairs(geometry.coordinates, []));
+  if (pairs.length === 0) return null;
+
+  const lons = pairs.map(([lon]) => lon);
+  const lats = pairs.map(([, lat]) => lat);
+  return {
+    north: Math.max(...lats),
+    south: Math.min(...lats),
+    east: Math.max(...lons),
+    west: Math.min(...lons),
+  };
+}
+
 // Fallback centre for Greece, used when a boundary is present but no lat/lng are available.
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
@@ -104,6 +149,10 @@ export default function LocationMap({
 
   const { lat, lng, bounding_box, name, name_local, boundary_geojson } = location;
   const displayName = name_local || name;
+  const normalizedBoundaryColor =
+    HEX_COLOR_RE.test(String(location.boundary_color || '').trim())
+      ? String(location.boundary_color).trim().toLowerCase()
+      : null;
 
   const hasValidCoords =
     isValidCoord(lat, -90, 90) && isValidCoord(lng, -180, 180);
@@ -112,14 +161,31 @@ export default function LocationMap({
   const normalizedBoundary = boundary_geojson
     ? normalizeBoundaryGeoJSON(boundary_geojson, displayName)
     : null;
+  const boundaryBounds = normalizedBoundary ? getBoundaryBounds(normalizedBoundary) : null;
+
+  const boundaryStyle = normalizedBoundaryColor
+    ? {
+        ...BOUNDARY_STYLE,
+        color: normalizedBoundaryColor,
+        fillColor: normalizedBoundaryColor,
+      }
+    : BOUNDARY_STYLE;
+
+  const boundaryHoverStyle = normalizedBoundaryColor
+    ? {
+        ...BOUNDARY_HOVER_STYLE,
+        color: normalizedBoundaryColor,
+        fillColor: normalizedBoundaryColor,
+      }
+    : BOUNDARY_HOVER_STYLE;
 
   const polygonLayers = normalizedBoundary
     ? [
         {
           id: 'location-boundary',
           geojson: normalizedBoundary,
-          style: BOUNDARY_STYLE,
-          hoverStyle: BOUNDARY_HOVER_STYLE,
+          style: boundaryStyle,
+          hoverStyle: boundaryHoverStyle,
           // Don't auto-fit on click — the page already fits on load via bounding_box/center.
           fitBoundsOnClick: false,
           getTooltip: () => displayName,
@@ -130,10 +196,16 @@ export default function LocationMap({
   // Nothing to render if we have neither valid coords nor a boundary polygon.
   if (!hasValidCoords && !normalizedBoundary) return null;
 
-  // When coords are absent but a boundary is present, fall back to a Greece-wide view
-  // so the boundary is still visible without crashing.
-  const center = hasValidCoords ? [Number(lat), Number(lng)] : GREECE_CENTER;
-  const zoom = hasValidCoords ? 12 : GREECE_ZOOM;
+  const hasDefaultCenter =
+    isValidCoord(location.map_default_center_lat, -90, 90)
+    && isValidCoord(location.map_default_center_lng, -180, 180);
+  const center = hasDefaultCenter
+    ? [Number(location.map_default_center_lat), Number(location.map_default_center_lng)]
+    : (hasValidCoords ? [Number(lat), Number(lng)] : GREECE_CENTER);
+  const zoom = Number.isFinite(Number(location.map_default_zoom))
+    ? Number(location.map_default_zoom)
+    : (hasValidCoords ? 12 : GREECE_ZOOM);
+  const initialBounds = boundaryBounds || bounding_box || null;
 
   const markers = hasValidCoords
     ? [{ lat: Number(lat), lng: Number(lng), popup: displayName }]
@@ -143,7 +215,7 @@ export default function LocationMap({
     <BaseMap
       center={center}
       zoom={zoom}
-      bounds={bounding_box}
+      bounds={initialBounds}
       markers={markers}
       overlays={overlays}
       polygonLayers={polygonLayers}

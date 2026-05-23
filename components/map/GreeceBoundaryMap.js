@@ -15,8 +15,7 @@
  * Behaviour:
  *   - Shows polygon boundaries for all Greek peripheries at the default Greece-wide view (zoom 6).
  *   - Hovering a polygon highlights it and shows a tooltip with the region name.
- *   - Clicking a polygon zooms the map to fit that region's bounds and opens a popup
- *     with the region name and a link to the location page (or a fallback explore link).
+ *   - Clicking a polygon zooms the map to fit that region's bounds and updates the React info card.
  *   - Shows a small info card overlay when a region is selected (React layer, outside Leaflet).
  *
  * Props:
@@ -97,6 +96,7 @@ function locationToFeatures(loc) {
     name_en: loc.name,
     slug: loc.slug || null,
     code: loc.code || null,
+    boundary_color: loc.boundary_color || null,
   };
 
   if (normalized.type === 'FeatureCollection') {
@@ -127,26 +127,6 @@ function buildTooltip(props) {
   return `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>`;
 }
 
-// Popup HTML builder — shown on click (name + navigation link)
-function buildPopup(props) {
-  const name = props.name || '';
-  const nameEn = props.name_en && props.name_en !== name ? props.name_en : '';
-  const capital = props.capital || '';
-  const slug = props.slug || null;
-  const code = props.code || '';
-  const href = slug
-    ? `/locations/${slug}`
-    : `/locations?type=periphery&region=${code}`;
-  return (
-    `<div style="min-width:160px">` +
-    `<p style="font-weight:700;font-size:14px;margin:0 0 4px">${name}</p>` +
-    (nameEn ? `<p style="font-size:11px;color:#6b7280;margin:0 0 6px">${nameEn}</p>` : '') +
-    (capital ? `<p style="font-size:12px;margin:0 0 8px">🏛️ ${capital}</p>` : '') +
-    `<a href="${href}" style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none">Εξερεύνησε &rarr;</a>` +
-    `</div>`
-  );
-}
-
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
 
@@ -166,6 +146,16 @@ const POLY_HOVER_STYLE = {
   fillColor: '#3b82f6',
   fillOpacity: 0.28,
 };
+
+function styleFeature(feature, baseStyle) {
+  const color = feature?.properties?.boundary_color;
+  if (!color || !/^#[0-9A-Fa-f]{6}$/.test(color)) return baseStyle;
+  return {
+    ...baseStyle,
+    color,
+    fillColor: color,
+  };
+}
 
 function Skeleton() {
   return (
@@ -255,11 +245,11 @@ export default memo(function GreeceBoundaryMap({ prefectures = [], className, lo
         id: 'greece-peripheries',
         geojson: geoData,
         style: POLY_DEFAULT_STYLE,
+        styleFeature,
         hoverStyle: POLY_HOVER_STYLE,
         fitBoundsOnClick: true,
         onFeatureClick: handleFeatureClick,
         getTooltip: buildTooltip,
-        getPopup: buildPopup,
       },
     ];
   }, [useFallback, fallbackGeoData, locationFeatureCollection, handleFeatureClick]);

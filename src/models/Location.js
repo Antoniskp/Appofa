@@ -62,6 +62,26 @@ const Location = sequelize.define('Location', {
     allowNull: true,
     comment: 'Optional per-location GeoJSON boundary (Polygon/MultiPolygon)'
   },
+  boundary_color: {
+    type: DataTypes.STRING(7),
+    allowNull: true,
+    comment: 'Optional hex color for rendering boundary polygons (e.g. #3b82f6)'
+  },
+  map_default_center_lat: {
+    type: DataTypes.DECIMAL(10, 8),
+    allowNull: true,
+    comment: 'Optional map default center latitude used when bounds cannot be derived'
+  },
+  map_default_center_lng: {
+    type: DataTypes.DECIMAL(11, 8),
+    allowNull: true,
+    comment: 'Optional map default center longitude used when bounds cannot be derived'
+  },
+  map_default_zoom: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    comment: 'Optional map default zoom used with map_default_center_* as viewport fallback'
+  },
   wikipedia_url: {
     type: DataTypes.STRING(500),
     allowNull: true,
