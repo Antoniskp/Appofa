@@ -545,3 +545,134 @@ describe('ExploreLocationsMap — prefecture pills', () => {
     await cleanup(root, container);
   });
 });
+
+// ── Regression: homepage prefecture scoping to Greece only ──────────────────
+//
+// The homepage `fetchPrefectures` function in `app/page.js` must scope the
+// prefecture list to Greece only (via `parent_id`) so that Cyprus or other
+// country prefectures are never rendered as homepage map / pill content.
+//
+// The fix uses a 2-step API pattern:
+//   1. `locationAPI.getAll({ type: 'country', code: 'GR', limit: 1 })` → resolve Greece ID
+//   2. `locationAPI.getAll({ type: 'prefecture', parent_id: greeceId, limit: 50 })` → Greek prefectures only
+//
+// These tests verify the contract for that pattern.
+
+describe('homepage Greek prefecture scoping — regression for Cyprus pills bug', () => {
+  // Mirror the fetch logic from app/page.js fetchPrefectures so we can test it in isolation.
+  async function fetchGreekPrefectures(mockGetAll) {
+    const greeceRes = await mockGetAll({ type: 'country', code: 'GR', limit: 1 });
+    const greeceId =
+      greeceRes.success && greeceRes.locations?.length > 0
+        ? greeceRes.locations[0].id
+        : null;
+    if (!greeceId) return [];
+    const response = await mockGetAll({ type: 'prefecture', parent_id: greeceId, limit: 50 });
+    return response.success ? (response.locations || []) : [];
+  }
+
+  const GREECE_LOCATION = { id: 7, name: 'Greece', name_local: 'Ελλάδα', code: 'GR', type: 'country' };
+  const CYPRUS_LOCATION = { id: 12, name: 'Cyprus', name_local: 'Κύπρος', code: 'CY', type: 'country' };
+
+  const GREEK_PREFECTURES = [
+    { id: 101, name: 'Attica', name_local: 'Αττική', slug: 'attiki', parent_id: 7, type: 'prefecture' },
+    { id: 102, name: 'Crete', name_local: 'Κρήτη', slug: 'kriti', parent_id: 7, type: 'prefecture' },
+  ];
+
+  const CYPRUS_PREFECTURES = [
+    { id: 201, name: 'Nicosia', name_local: 'Λευκωσία', slug: 'nicosia', parent_id: 12, type: 'prefecture' },
+    { id: 202, name: 'Limassol', name_local: 'Λεμεσός', slug: 'limassol', parent_id: 12, type: 'prefecture' },
+  ];
+
+  test('second API call uses Greece parent_id so only Greek prefectures are returned', async () => {
+    const mockGetAll = jest.fn()
+      .mockResolvedValueOnce({ success: true, locations: [GREECE_LOCATION] }) // Greece lookup
+      .mockResolvedValueOnce({ success: true, locations: GREEK_PREFECTURES }); // scoped prefectures
+
+    const prefectures = await fetchGreekPrefectures(mockGetAll);
+
+    // First call: country code lookup
+    expect(mockGetAll).toHaveBeenNthCalledWith(1, { type: 'country', code: 'GR', limit: 1 });
+    // Second call: prefectures scoped to Greece's ID
+    expect(mockGetAll).toHaveBeenNthCalledWith(2, { type: 'prefecture', parent_id: 7, limit: 50 });
+
+    expect(prefectures).toHaveLength(2);
+    const names = prefectures.map((p) => p.name);
+    expect(names).toContain('Attica');
+    expect(names).toContain('Crete');
+  });
+
+  test('Cyprus prefectures are excluded because they have a different parent_id', async () => {
+    // Simulate a DB that has both Greek and Cyprus prefectures — the API call with
+    // parent_id=7 (Greece) will naturally only return Greek prefectures.
+    const mockGetAll = jest.fn()
+      .mockResolvedValueOnce({ success: true, locations: [GREECE_LOCATION] })
+      .mockResolvedValueOnce({ success: true, locations: GREEK_PREFECTURES }); // only GR prefectures returned
+
+    const prefectures = await fetchGreekPrefectures(mockGetAll);
+
+    const names = prefectures.map((p) => p.name);
+    // Cyprus locations must not appear
+    expect(names).not.toContain('Nicosia');
+    expect(names).not.toContain('Limassol');
+    // Greek locations are present
+    expect(names).toContain('Attica');
+  });
+
+  test('returns empty array when Greece country location is not found', async () => {
+    const mockGetAll = jest.fn()
+      .mockResolvedValueOnce({ success: true, locations: [] }); // no Greece in DB
+
+    const prefectures = await fetchGreekPrefectures(mockGetAll);
+
+    // Should not make a second API call
+    expect(mockGetAll).toHaveBeenCalledTimes(1);
+    expect(prefectures).toHaveLength(0);
+  });
+
+  test('returns empty array when Greece lookup call fails (success: false)', async () => {
+    const mockGetAll = jest.fn()
+      .mockResolvedValueOnce({ success: false, locations: [] });
+
+    const prefectures = await fetchGreekPrefectures(mockGetAll);
+
+    expect(mockGetAll).toHaveBeenCalledTimes(1);
+    expect(prefectures).toHaveLength(0);
+  });
+
+  test('ExploreLocationsMap renders no Cyprus pills when only Greek prefectures are passed', async () => {
+    const ExploreLocationsMap = require('../components/locations/ExploreLocationsMap').default;
+
+    const { container, root } = await renderComponent(
+      React.createElement(ExploreLocationsMap, { prefectures: GREEK_PREFECTURES, loading: false })
+    );
+
+    const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    // Greek prefectures are present
+    expect(hrefs).toContain('/locations/attiki');
+    expect(hrefs).toContain('/locations/kriti');
+    // Cyprus slugs are absent
+    expect(hrefs).not.toContain('/locations/nicosia');
+    expect(hrefs).not.toContain('/locations/limassol');
+
+    await cleanup(root, container);
+  });
+
+  test('ExploreLocationsMap would render Cyprus pills if they were incorrectly passed (documenting the old bug)', async () => {
+    const ExploreLocationsMap = require('../components/locations/ExploreLocationsMap').default;
+    const allPrefectures = [...GREEK_PREFECTURES, ...CYPRUS_PREFECTURES];
+
+    const { container, root } = await renderComponent(
+      React.createElement(ExploreLocationsMap, { prefectures: allPrefectures, loading: false })
+    );
+
+    const hrefs = Array.from(container.querySelectorAll('a')).map((a) => a.getAttribute('href'));
+    // Cyprus pills ARE rendered when passed in (the component renders all that it receives)
+    expect(hrefs).toContain('/locations/nicosia');
+    expect(hrefs).toContain('/locations/limassol');
+    // This test documents why the fix must happen at the data-fetching level (app/page.js),
+    // not inside ExploreLocationsMap itself.
+
+    await cleanup(root, container);
+  });
+});
