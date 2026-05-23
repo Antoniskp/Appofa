@@ -6,6 +6,10 @@ const { createRoot } = require('react-dom/client');
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+// Track geoJSON calls so we can assert polygon boundary rendering
+const mockGeoJSONInst = { addTo: jest.fn().mockReturnThis() };
+const mockGeoJSON = jest.fn(() => mockGeoJSONInst);
+
 // Mock next/dynamic so LocationMap renders BaseMap synchronously in tests
 jest.mock('next/dynamic', () => (_fn, _options) => {
   // Resolve the loader synchronously via require so tests don't have to deal with async.
@@ -20,7 +24,6 @@ jest.mock('leaflet', () => {
   const markerObj = { addTo: jest.fn().mockReturnThis(), bindPopup: jest.fn() };
   const marker = jest.fn(() => markerObj);
   const tileLayer = jest.fn(() => ({ addTo: jest.fn() }));
-  const geoJSON = jest.fn(() => ({ addTo: jest.fn() }));
   const latLngBounds = jest.fn(() => ({ isValid: () => true }));
   const layerGroupObj = { addTo: jest.fn().mockReturnThis(), clearLayers: jest.fn() };
   const layerGroup = jest.fn(() => layerGroupObj);
@@ -34,11 +37,11 @@ jest.mock('leaflet', () => {
   }));
   return {
     __esModule: true,
-    default: { map, tileLayer, marker, geoJSON, latLngBounds, layerGroup, icon: jest.fn(() => ({})) },
+    default: { map, tileLayer, marker, geoJSON: mockGeoJSON, latLngBounds, layerGroup, icon: jest.fn(() => ({})) },
     map,
     tileLayer,
     marker,
-    geoJSON,
+    geoJSON: mockGeoJSON,
     latLngBounds,
     layerGroup,
     icon: jest.fn(() => ({})),
@@ -58,6 +61,7 @@ describe('LocationMap', () => {
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
+    jest.clearAllMocks();
   });
 
   afterEach(async () => {
@@ -121,5 +125,167 @@ describe('LocationMap', () => {
       root.render(React.createElement(LocationMap, { location }));
     });
     expect(container.querySelector('div')).toBeTruthy();
+  });
+});
+
+// ── boundary_geojson tests ───────────────────────────────────────────────────
+
+const SAMPLE_POLYGON_GEOJSON = {
+  type: 'FeatureCollection',
+  features: [
+    {
+      type: 'Feature',
+      properties: { name: 'Αττική' },
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[[23.5, 37.8], [23.9, 37.8], [23.9, 38.1], [23.5, 38.1], [23.5, 37.8]]],
+      },
+    },
+  ],
+};
+
+describe('LocationMap — boundary_geojson', () => {
+  let container;
+  let root;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+    root = createRoot(container);
+    jest.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    await act(async () => {
+      root.unmount();
+    });
+    document.body.innerHTML = '';
+  });
+
+  test('calls L.geoJSON when boundary_geojson is a FeatureCollection object', async () => {
+    const location = {
+      id: 10,
+      name: 'Attica',
+      name_local: 'Αττική',
+      lat: 37.97,
+      lng: 23.73,
+      boundary_geojson: SAMPLE_POLYGON_GEOJSON,
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    expect(mockGeoJSON).toHaveBeenCalled();
+    const callArg = mockGeoJSON.mock.calls[0][0];
+    expect(callArg).toBe(SAMPLE_POLYGON_GEOJSON);
+  });
+
+  test('calls L.geoJSON when boundary_geojson is a JSON string', async () => {
+    const location = {
+      id: 11,
+      name: 'Attica',
+      lat: 37.97,
+      lng: 23.73,
+      boundary_geojson: JSON.stringify(SAMPLE_POLYGON_GEOJSON),
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    expect(mockGeoJSON).toHaveBeenCalled();
+    const callArg = mockGeoJSON.mock.calls[0][0];
+    expect(callArg).toEqual(SAMPLE_POLYGON_GEOJSON);
+  });
+
+  test('wraps a bare Polygon geometry in a Feature before passing to L.geoJSON', async () => {
+    const barePolygon = {
+      type: 'Polygon',
+      coordinates: [[[23.5, 37.8], [23.9, 37.8], [23.9, 38.1], [23.5, 37.8]]],
+    };
+    const location = {
+      id: 12,
+      name: 'Attica',
+      lat: 37.97,
+      lng: 23.73,
+      boundary_geojson: barePolygon,
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    expect(mockGeoJSON).toHaveBeenCalled();
+    const callArg = mockGeoJSON.mock.calls[0][0];
+    expect(callArg.type).toBe('Feature');
+    expect(callArg.geometry).toBe(barePolygon);
+  });
+
+  test('wraps a bare MultiPolygon geometry in a Feature before passing to L.geoJSON', async () => {
+    const bareMultiPolygon = {
+      type: 'MultiPolygon',
+      coordinates: [[[[23.5, 37.8], [23.9, 37.8], [23.9, 38.1], [23.5, 37.8]]]],
+    };
+    const location = {
+      id: 13,
+      name: 'Test',
+      lat: 37.97,
+      lng: 23.73,
+      boundary_geojson: bareMultiPolygon,
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    expect(mockGeoJSON).toHaveBeenCalled();
+    const callArg = mockGeoJSON.mock.calls[0][0];
+    expect(callArg.type).toBe('Feature');
+    expect(callArg.geometry).toBe(bareMultiPolygon);
+  });
+
+  test('does NOT call L.geoJSON when boundary_geojson is absent', async () => {
+    const location = {
+      id: 14,
+      name: 'Athens',
+      lat: 37.97,
+      lng: 23.73,
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    expect(mockGeoJSON).not.toHaveBeenCalled();
+  });
+
+  test('still renders map when boundary_geojson is invalid JSON string', async () => {
+    const location = {
+      id: 15,
+      name: 'Athens',
+      lat: 37.97,
+      lng: 23.73,
+      boundary_geojson: '{not valid json',
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    // Should still render (graceful degradation — boundary is ignored, marker shown)
+    expect(container.querySelector('div')).toBeTruthy();
+    expect(mockGeoJSON).not.toHaveBeenCalled();
+  });
+
+  test('renders map when boundary_geojson is present but lat/lng are missing', async () => {
+    const location = {
+      id: 16,
+      name: 'Boundary-only location',
+      lat: null,
+      lng: null,
+      boundary_geojson: SAMPLE_POLYGON_GEOJSON,
+    };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    expect(container.querySelector('div')).toBeTruthy();
+    expect(mockGeoJSON).toHaveBeenCalled();
+  });
+
+  test('renders nothing when both lat/lng are missing and boundary_geojson is absent', async () => {
+    const location = { id: 17, name: 'Empty', lat: null, lng: null };
+    await act(async () => {
+      root.render(React.createElement(LocationMap, { location }));
+    });
+    expect(container.innerHTML).toBe('');
   });
 });
