@@ -108,8 +108,10 @@ describe('Organization suggestions tab uses SuggestionCard', () => {
   });
 
   test('does not use bespoke inline suggestion card rendering (old pattern removed)', () => {
-    // Old pattern had suggestion.body inline
-    expect(src).not.toContain("suggestion_type_${suggestion.type}");
+    // Old bespoke pattern rendered suggestion.body directly in a <p> tag
+    expect(src).not.toContain('suggestion.body && <p');
+    // And no longer has the inline type badge hardcoded per-suggestion
+    expect(src).not.toContain('bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700');
   });
 
   test('includes search input for suggestions', () => {

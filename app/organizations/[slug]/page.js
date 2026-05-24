@@ -290,7 +290,7 @@ export default function OrganizationProfilePage({ params }) {
   const handleInviteSelect = (result) => {
     const isRealUser = result.entityType === 'user';
     // Claimed persons have a real user account behind them (claimedByUserId)
-    const isClaimed = result.entityType === 'person' && result.claimStatus === 'claimed' && result.claimedByUserId;
+    const isClaimed = result.entityType === 'person' && result.claimStatus === 'claimed' && result.claimedByUserId != null;
 
     if (!isRealUser && !isClaimed) {
       setInviteSearchError(t('invite_not_a_user'));
@@ -299,7 +299,7 @@ export default function OrganizationProfilePage({ params }) {
     }
 
     const userId = isRealUser ? result.id : result.claimedByUserId;
-    const displayName = (`${result.firstNameNative || ''} ${result.lastNameNative || ''}`.trim()) || result.username || '';
+    const displayName = (`${result.firstNameNative || ''} ${result.lastNameNative || ''}`.trim()) || result.username || t('invite_member');
     setInviteDisplayName(displayName);
     setInviteSelectedUser({ id: userId, displayName });
     setInviteSearchError('');
