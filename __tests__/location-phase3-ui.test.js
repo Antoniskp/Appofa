@@ -53,6 +53,7 @@ describe('Location phase-3 UI', () => {
     expect(container.textContent).toContain('Προτάσεις');
     expect(container.textContent).toContain('4');
     expect(container.textContent).toContain('Νομοί / Περιφέρειες');
+    expect(container.textContent).toContain('τοποθεσίες (νομοί / περιφέρειες)');
     expect(container.textContent).toContain('Δεν έχουν οριστεί ακόμη ρόλοι');
     expect(container.textContent).toContain('Δεν έχουν προστεθεί ακόμη τοπικά μέσα');
     expect(container.querySelector('a[href="/locations/attica?tab=suggestions#location-content"]')).toBeTruthy();
