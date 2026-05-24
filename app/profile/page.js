@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Card from '@/components/ui/Card';
@@ -18,9 +18,27 @@ const PROFILE_TABS = [
   { id: 'settings', labelKey: 'tab_settings' },
 ];
 
+const PROFILE_TAB_IDS = new Set(PROFILE_TABS.map((t) => t.id));
+
+function getTabFromHash(hash) {
+  const id = hash ? hash.replace(/^#/, '') : '';
+  return PROFILE_TAB_IDS.has(id) ? id : null;
+}
+
 function ProfileContent() {
   const tProfile = useTranslations('profile');
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState(
+    () => getTabFromHash(window.location.hash) || 'profile'
+  );
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const tab = getTabFromHash(window.location.hash);
+      if (tab) setActiveTab(tab);
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const {
     loading,

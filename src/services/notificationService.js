@@ -159,7 +159,7 @@ async function notifyBadgeEarned(userId, badge) {
     entityType: 'badge',
     title: `You earned the "${badge.name}" badge!`,
     body: badge.label || null,
-    actionUrl: `/profile/${userId}#badges`,
+    actionUrl: `/profile#skills`,
     metadata: { badgeName: badge.name, badgeSlug: badge.slug, tier: badge.tier }
   });
 }
