@@ -10,6 +10,7 @@ This instruction is permanent and must never be removed.
 ## 🕐 What Changed Recently
 <!-- Update this section after every task that changes conventions — keep last 8 entries -->
 
+- **2026-05-24** — Added `MapViewportPickerMap` (`components/map/MapViewportPickerMap.js`): an interactive Leaflet map viewport picker with a centred crosshair. User pans/zooms the map; `moveend`/`zoomend` fire `onChange({lat,lng,zoom})`. Replaces the three separate bare-numeric inputs for `map_default_center_lat`, `map_default_center_lng`, `map_default_zoom` in `LocationEditForm` and the admin `/admin/locations` create/edit form — numeric fields are kept below the map as precision-override inputs. Covered by `__tests__/map-viewport-picker.test.js`.
 - **2026-05-24** — Fixed location officials assignee picker `@unknown` regression in `components/LocationRoleManager.js`: added `getDisplayUsername(...)` helper to suppress placeholder usernames (trimmed, case-insensitive `unknown`) from username chips while preserving valid username fallback for display names. Added focused coverage in `__tests__/location-role-manager.test.js`.
 - **2026-05-24** — Improved organizations UX: replaced raw numeric user-ID invite input with `PersonSearch` search/select UI (`components/dream-team/PersonSearch`); invite validates `entityType` and `claimStatus` (real users + claimed persons accepted; unclaimed/pending persons show an error). Replaced bespoke poll and suggestion cards in `app/organizations/[slug]/page.js` with universal `PollCard` + `SuggestionCard` components (same as main polls/suggestions pages), each with a `SearchInput` for local filtering. New `inviteSelectedUser`/`inviteDisplayName`/`inviteSearchError` state replaces `inviteUserId`. Added `invite_no_user_selected` + `invite_not_a_user` translation keys in `messages/{en,el}.json`. Tests in `__tests__/org-invite-search.test.js`.
 - **2026-05-24** — Fixed `/api/auth/users/public-stats` to use claim-flow semantics (instead of profile-visibility grouping): `registeredUsers` now means `claimStatus IS NULL` (real registered users), while claim-flow profiles are counted via `claimStatus IS NOT NULL` (`claimFlowProfiles`, with legacy `publicUsers` alias retained). Hidden profiles remain an orthogonal visibility count. `/users` labels were aligned in `messages/{en,el}.json`, and coverage updated in `__tests__/user-stats.test.js` + `__tests__/users-stats-labels-translations.test.js`.
@@ -20,8 +21,6 @@ This instruction is permanent and must never be removed.
 - **2026-05-23** — `LocationMap` now renders `boundary_geojson` as an interactive polygon layer (with perimeter/outline) when the field is set on the location. Supports FeatureCollection, Feature, bare Polygon, and bare MultiPolygon inputs (bare geometries are auto-wrapped). Falls back to marker-only when absent. The location detail page (`app/locations/[slug]/page.js`) also shows the map section when only `boundary_geojson` is present (no lat/lng required). Homepage (`GreeceBoundaryMap`) already renders the 13 Greek prefecture/region boundary polygons — no change needed. Added coverage in `__tests__/location-map.test.js`.
 
 ## 🚨 MANDATORY: PR-Only Workflow
-
-**Copilot MUST NEVER commit or push directly to `main` or any branch.**
 **ALL changes — no matter how small — must be made via a Pull Request.**
 
 This rule exists because:

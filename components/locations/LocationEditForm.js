@@ -13,6 +13,7 @@ import { isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
 import { normalizeUploadImage, isHeicFile, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
 
 const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
+const MapViewportPickerMap = dynamic(() => import('@/components/map/MapViewportPickerMap'), { ssr: false });
 
 /** Accepted MIME types / extensions for location image upload (must match backend allowlist). */
 const IMAGE_ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence', '.heic', '.heif'];
@@ -237,43 +238,53 @@ export default function LocationEditForm({
           />
           <p className="mt-1 text-xs text-gray-500">Optional HEX color (#RRGGBB) used for territory fill/outline.</p>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Default Map Zoom</label>
-          <input
-            type="number"
-            min="1"
-            max="18"
-            value={editedData.map_default_zoom || ''}
-            onChange={(e) => onInputChange('map_default_zoom', e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="7"
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Default Map Viewport</label>
+          <MapViewportPickerMap
+            lat={editedData.map_default_center_lat}
+            lng={editedData.map_default_center_lng}
+            zoom={editedData.map_default_zoom}
+            onChange={({ lat, lng, zoom }) => {
+              onInputChange('map_default_center_lat', String(lat));
+              onInputChange('map_default_center_lng', String(lng));
+              onInputChange('map_default_zoom', String(zoom));
+            }}
+            className="h-56 w-full rounded-lg overflow-hidden"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Default Map Center Latitude</label>
-          <input
-            type="number"
-            step="0.000001"
-            min="-90"
-            max="90"
-            value={editedData.map_default_center_lat || ''}
-            onChange={(e) => onInputChange('map_default_center_lat', e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="38.0"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Default Map Center Longitude</label>
-          <input
-            type="number"
-            step="0.000001"
-            min="-180"
-            max="180"
-            value={editedData.map_default_center_lng || ''}
-            onChange={(e) => onInputChange('map_default_center_lng', e.target.value)}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="23.8"
-          />
+          <div className="flex gap-2 mt-2">
+            <input
+              type="number"
+              step="0.000001"
+              min="-90"
+              max="90"
+              value={editedData.map_default_center_lat || ''}
+              onChange={(e) => onInputChange('map_default_center_lat', e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Latitude (38.0)"
+              aria-label="Default map center latitude"
+            />
+            <input
+              type="number"
+              step="0.000001"
+              min="-180"
+              max="180"
+              value={editedData.map_default_center_lng || ''}
+              onChange={(e) => onInputChange('map_default_center_lng', e.target.value)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Longitude (23.8)"
+              aria-label="Default map center longitude"
+            />
+            <input
+              type="number"
+              min="1"
+              max="18"
+              value={editedData.map_default_zoom || ''}
+              onChange={(e) => onInputChange('map_default_zoom', e.target.value)}
+              className="w-32 border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Zoom (7)"
+              aria-label="Default map zoom"
+            />
+          </div>
         </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">Wikipedia URL</label>
