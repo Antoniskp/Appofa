@@ -19,6 +19,26 @@ function formatPersonName(firstNameNative, lastNameNative, fallback) {
   return firstNameNative ? `${firstNameNative} ${lastNameNative || ''}`.trim() : (fallback || '');
 }
 
+export function getDisplayUsername(username) {
+  if (typeof username !== 'string') return null;
+  const normalized = username.trim();
+  if (!normalized) return null;
+  if (normalized.toLowerCase() === 'unknown') return null;
+  return normalized;
+}
+
+export function mapAssigneeSearchResult(r) {
+  const displayUsername = getDisplayUsername(r.username);
+  return {
+    userId: r.id,
+    name: formatPersonName(r.firstNameNative, r.lastNameNative, displayUsername || r.username),
+    photo: r.displayPhoto || r.photo || r.avatar || null,
+    username: displayUsername,
+    claimStatus: r.claimStatus,
+    entityType: r.entityType,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Person / User search picker
 // ---------------------------------------------------------------------------
@@ -44,14 +64,7 @@ function AssigneePicker({ onSelect, onClose }) {
       try {
         const res = await apiRequest(`/api/persons/unified-search?search=${encodeURIComponent(query)}&limit=8`).catch(() => null);
         const items = res?.data?.results || [];
-        setResults(items.map((r) => ({
-          userId: r.id,
-          name: formatPersonName(r.firstNameNative, r.lastNameNative, r.username),
-          photo: r.displayPhoto || r.photo || r.avatar || null,
-          username: r.username,
-          claimStatus: r.claimStatus,
-          entityType: r.entityType,
-        })));
+        setResults(items.map(mapAssigneeSearchResult));
       } catch {
         // ignore search errors silently
       } finally {
