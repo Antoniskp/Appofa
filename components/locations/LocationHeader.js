@@ -26,6 +26,7 @@ export default function LocationHeader({
   location,
   sections,
   children,
+  hideChildren = false,
   activePolls,
   newsArticles,
   regularArticles,
@@ -261,7 +262,7 @@ export default function LocationHeader({
             </div>
           </div>
 
-          {children.length > 0 && (
+          {children.length > 0 && !hideChildren && (
             <div className="mt-6 pt-4 border-t border-gray-100">
               <p className="text-sm font-semibold text-gray-700 mb-2">{childLocationTerms.label} ({children.length})</p>
               <div className="flex flex-wrap gap-2">

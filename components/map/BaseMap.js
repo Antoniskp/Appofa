@@ -262,11 +262,17 @@ export default function BaseMap({
             featureLayer.setStyle(hoverStyle);
             // bringToFront is not supported by all renderers; swallow silently
             try { featureLayer.bringToFront(); } catch (_) { /* no-op */ }
+            if (layerDef.onFeatureHover) {
+              layerDef.onFeatureHover(feature);
+            }
           });
 
           // Mouseout: reset to base style
           featureLayer.on('mouseout', () => {
             geoLayer.resetStyle(featureLayer);
+            if (layerDef.onFeatureHover) {
+              layerDef.onFeatureHover(null);
+            }
           });
 
           // Click: fit to feature bounds, open popup, fire optional callback
