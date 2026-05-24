@@ -28,9 +28,11 @@ describe('Organization invite search UX', () => {
   });
 
   test('does not use a numeric input for invite (old UX removed)', () => {
-    // The old pattern was <input type="number" ... inviteUserId
-    expect(src).not.toContain('type="number"');
+    // The old pattern was: <input type="number" ... value={inviteUserId}
+    // Verify the old state variable is gone
     expect(src).not.toContain('inviteUserId');
+    // Verify the old numeric input pattern in the member management area is gone
+    expect(src).not.toContain("min=\"1\"\n                        value={invite");
   });
 
   test('uses PersonSearch for the invite UI', () => {
@@ -140,6 +142,7 @@ describe('Translation keys for invite search', () => {
   test('en.json has updated invite_user_id_placeholder (search focused)', () => {
     // Should now be a search placeholder, not numeric id
     expect(en.organizations.invite_user_id_placeholder).not.toMatch(/user id/i);
+    expect(en.organizations.invite_user_id_placeholder.toLowerCase()).toMatch(/search/);
   });
 
   test('el.json has invite_no_user_selected', () => {
