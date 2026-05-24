@@ -18,6 +18,7 @@ import LocationSelector from '@/components/ui/LocationSelector';
 import LocationBoundaryGeoJsonField from '@/components/locations/LocationBoundaryGeoJsonField';
 
 const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
+const MapViewportPickerMap = dynamic(() => import('@/components/map/MapViewportPickerMap'), { ssr: false });
 
 const LOCATION_TYPES = ['international', 'country', 'prefecture', 'electoral_district', 'municipality'];
 const PAGE_SIZE = 25;
@@ -679,52 +680,59 @@ function LocationManagementContent() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Default Map Zoom
+              Default Map Viewport
             </label>
-            <input
-              type="number"
-              min="1"
-              max="18"
-              name="map_default_zoom"
-              value={formData.map_default_zoom}
-              onChange={handleInputChange}
-              placeholder="7"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+            <MapViewportPickerMap
+              lat={formData.map_default_center_lat}
+              lng={formData.map_default_center_lng}
+              zoom={formData.map_default_zoom}
+              onChange={({ lat, lng, zoom }) =>
+                setFormData(prev => ({
+                  ...prev,
+                  map_default_center_lat: String(lat),
+                  map_default_center_lng: String(lng),
+                  map_default_zoom: String(zoom),
+                }))
+              }
+              className="h-56 w-full rounded-lg overflow-hidden"
             />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Default Map Center Latitude
-            </label>
-            <input
-              type="number"
-              step="0.000001"
-              min="-90"
-              max="90"
-              name="map_default_center_lat"
-              value={formData.map_default_center_lat}
-              onChange={handleInputChange}
-              placeholder="38.0"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Default Map Center Longitude
-            </label>
-            <input
-              type="number"
-              step="0.000001"
-              min="-180"
-              max="180"
-              name="map_default_center_lng"
-              value={formData.map_default_center_lng}
-              onChange={handleInputChange}
-              placeholder="23.8"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-            />
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <input
+                type="number"
+                step="0.000001"
+                min="-90"
+                max="90"
+                name="map_default_center_lat"
+                value={formData.map_default_center_lat}
+                onChange={handleInputChange}
+                placeholder="Lat (38.0)"
+                aria-label="Default map center latitude"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <input
+                type="number"
+                step="0.000001"
+                min="-180"
+                max="180"
+                name="map_default_center_lng"
+                value={formData.map_default_center_lng}
+                onChange={handleInputChange}
+                placeholder="Lng (23.8)"
+                aria-label="Default map center longitude"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <input
+                type="number"
+                min="1"
+                max="18"
+                name="map_default_zoom"
+                value={formData.map_default_zoom}
+                onChange={handleInputChange}
+                placeholder="Zoom (7)"
+                aria-label="Default map zoom"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
 
           <div>
