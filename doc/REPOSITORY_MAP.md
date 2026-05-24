@@ -524,7 +524,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/locations`, `/locations/[slug]` | Locations |
-| `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile with improved poll/suggestion tabs: collapsible create forms, richer cards with deadline/type/author metadata, styled empty states |
+| `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile page with: invite member search using `PersonSearch` (replaces raw user-ID input; real users + claimed persons invitable), polls tab using universal `PollCard` + `SearchInput` filter, suggestions tab using universal `SuggestionCard` + `SearchInput` filter (both tabs keep org-scoped create forms and permission gating) |
 | `/official-posts` | Public discovery feed for platform-wide official organization posts |
 | `/country/[code]` | Country landing page after first-visit geo redirect; when no local content is available it shows a richer `CountryFundingBanner` empty state with explicit Geo-IP transparency (detected country, detection source, browser locale, trust level, applied country mode), plus support CTA (`/contribute`), optional donation CTA, and diaspora shortcut to `/country/GR` |
 | `/dream-team`, `/dream-team/f/[slug]` | Dream team & formations (`/dream-team` auto-redirects logged-in users to their resolved own country when available; `/dream-team/[countryCode]` keeps other countries browseable in read-only mode for voting) |
