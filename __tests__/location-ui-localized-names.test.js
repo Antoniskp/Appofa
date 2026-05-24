@@ -50,7 +50,7 @@ describe('Location UI localized names', () => {
     document.body.innerHTML = '';
   });
 
-  test('renders sub-location chips with local names and fallback name, plus Greek section label', async () => {
+  test('renders sub-location chips with local names and fallback generic child label for unsupported parent type', async () => {
     const props = {
       location: {
         id: 101,
@@ -88,6 +88,39 @@ describe('Location UI localized names', () => {
     });
   });
 
+  test('renders prefecture/region child label when parent is country', async () => {
+    const props = {
+      location: {
+        id: 201,
+        slug: 'greece',
+        name: 'Greece',
+        name_local: 'Ελλάδα',
+        type: 'country',
+        hasModerator: false,
+      },
+      sections: [],
+      children: [
+        { id: 1, slug: 'attica', name: 'Attica', name_local: 'Αττική' },
+      ],
+      activePolls: [],
+      newsArticles: [],
+      regularArticles: [],
+      entities: { usersCount: 0 },
+      imageError: false,
+      setImageError: jest.fn(),
+      canManageLocations: () => false,
+      onEdit: jest.fn(),
+    };
+
+    const { container, root } = await renderComponent(LocationHeader, props);
+
+    expect(container.textContent).toContain('Νομοί / Περιφέρειες (1)');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('shows limited sub-location chips by default and expands on demand', async () => {
     const manyChildren = Array.from({ length: 10 }, (_, i) => ({
       id: i + 1,
@@ -101,7 +134,7 @@ describe('Location UI localized names', () => {
         slug: 'athens',
         name: 'Athens',
         name_local: 'Αθήνα',
-        type: 'municipality',
+        type: 'prefecture',
         hasModerator: false,
       },
       sections: [],
@@ -120,9 +153,9 @@ describe('Location UI localized names', () => {
 
     expect(container.textContent).toContain('Περιοχή 8');
     expect(container.textContent).not.toContain('Περιοχή 9');
-    expect(container.textContent).toContain('+2 ακόμα υποπεριοχές');
+    expect(container.textContent).toContain('+2 ακόμα δήμοι');
 
-    const toggleButton = container.querySelector('button[aria-label="Εναλλαγή προβολής υποπεριοχών"]');
+    const toggleButton = container.querySelector('button[aria-label="Εναλλαγή προβολής δήμων"]');
     expect(toggleButton).toBeTruthy();
     await act(async () => {
       toggleButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -130,7 +163,7 @@ describe('Location UI localized names', () => {
 
     expect(container.textContent).toContain('Περιοχή 9');
     expect(container.textContent).toContain('Περιοχή 10');
-    expect(container.textContent).not.toContain('+2 ακόμα υποπεριοχές');
+    expect(container.textContent).not.toContain('+2 ακόμα δήμοι');
 
     await act(async () => {
       root.unmount();

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getChildLocationTerminology } from '@/lib/constants/locations';
 
 function OverviewCard({ label, value, href, valueClassName, description, emptyHint }) {
   const hasValue = value > 0;
@@ -30,9 +31,12 @@ function OverviewCard({ label, value, href, valueClassName, description, emptyHi
 
 export default function LocationOverviewPanel({
   locationIdentifier,
+  locationType,
   summaryCounts,
   canManageLocations = false,
 }) {
+  const childLocationTerms = getChildLocationTerminology(locationType);
+
   const cards = [
     {
       key: 'suggestions',
@@ -87,12 +91,12 @@ export default function LocationOverviewPanel({
     },
     {
       key: 'children',
-      label: 'Υποπεριοχές',
+      label: childLocationTerms.label,
       value: summaryCounts.children,
       href: '#location-related',
       valueClassName: 'border-gray-200 bg-gray-50 text-gray-700',
-      description: 'Υπάρχουν διαθέσιμες υποπεριοχές για γρήγορη πλοήγηση στη διοικητική ιεραρχία.',
-      emptyHint: 'Δεν υπάρχουν καταγεγραμμένες υποπεριοχές κάτω από αυτή την τοποθεσία.',
+      description: `Υπάρχουν διαθέσιμες τοποθεσίες (${childLocationTerms.label}) για γρήγορη πλοήγηση στη διοικητική ιεραρχία.`,
+      emptyHint: `Δεν υπάρχουν καταγεγραμμένες τοποθεσίες (${childLocationTerms.label}) κάτω από αυτή την τοποθεσία.`,
     },
   ];
 

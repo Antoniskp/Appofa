@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Badge from '@/components/ui/Badge';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import LocationSections from '@/components/LocationSections';
-import { HEADER_SECTION_TYPES } from '@/lib/constants/locations';
+import { HEADER_SECTION_TYPES, getChildLocationTerminology } from '@/lib/constants/locations';
 
 const CHILDREN_PREVIEW_COUNT = 8;
 
@@ -44,6 +44,7 @@ export default function LocationHeader({
   const visibleChildren = showAllChildren ? children : children.slice(0, CHILDREN_PREVIEW_COUNT);
   const hiddenChildrenCount = Math.max(children.length - visibleChildren.length, 0);
   const populationValue = location.population_override ?? location.population;
+  const childLocationTerms = getChildLocationTerminology(location?.type);
 
   const locationNeedsModerator = !location.hasModerator;
   const hasActivePolls = activePolls.length > 0;
@@ -262,7 +263,7 @@ export default function LocationHeader({
 
           {children.length > 0 && (
             <div className="mt-6 pt-4 border-t border-gray-100">
-              <p className="text-sm font-semibold text-gray-700 mb-2">Υποπεριοχές ({children.length})</p>
+              <p className="text-sm font-semibold text-gray-700 mb-2">{childLocationTerms.label} ({children.length})</p>
               <div className="flex flex-wrap gap-2">
                 {visibleChildren.map(child => (
                   <Link
@@ -278,10 +279,10 @@ export default function LocationHeader({
                 <button
                   type="button"
                   onClick={() => setShowAllChildren(v => !v)}
-                  aria-label="Εναλλαγή προβολής υποπεριοχών"
+                  aria-label={`Εναλλαγή προβολής ${childLocationTerms.genitivePlural}`}
                   className="mt-3 inline-flex items-center rounded-md border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 transition-colors"
                 >
-                  {showAllChildren ? 'Εμφάνιση λιγότερων' : `+${hiddenChildrenCount} ακόμα υποπεριοχές`}
+                  {showAllChildren ? 'Εμφάνιση λιγότερων' : `+${hiddenChildrenCount} ακόμα ${childLocationTerms.lowerPlural}`}
                 </button>
               )}
             </div>

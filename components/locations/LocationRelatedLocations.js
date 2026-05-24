@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getChildLocationTerminology } from '@/lib/constants/locations';
 
 function LocationChip({ location, tone = 'gray' }) {
   const toneClasses = {
@@ -29,6 +30,7 @@ export default function LocationRelatedLocations({
 
   const visibleSiblings = siblings.slice(0, 8);
   const visibleChildren = children.slice(0, 8);
+  const childLocationTerms = getChildLocationTerminology(location?.type);
 
   return (
     <section
@@ -70,7 +72,7 @@ export default function LocationRelatedLocations({
 
         {visibleChildren.length > 0 && (
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Υποπεριοχές</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{childLocationTerms.label}</p>
             <div className="mt-2 flex flex-wrap gap-2">
               {visibleChildren.map((child) => (
                 <LocationChip key={child.id} location={child} tone="emerald" />
@@ -78,7 +80,7 @@ export default function LocationRelatedLocations({
             </div>
             {children.length > visibleChildren.length && (
               <p className="mt-2 text-xs text-gray-500">
-                +{children.length - visibleChildren.length} ακόμη υποπεριοχές
+                +{children.length - visibleChildren.length} ακόμη {childLocationTerms.lowerPlural}
               </p>
             )}
           </div>
