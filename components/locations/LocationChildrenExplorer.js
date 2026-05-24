@@ -52,6 +52,7 @@ const POLY_SELECTED = {
 };
 
 function escapeHtml(str) {
+  if (!str) return '';
   return str
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -118,7 +119,7 @@ export default function LocationChildrenExplorer({
     if (!feature) { setHoveredChildId(null); return; }
     const slug = feature.properties?.slug;
     const child = slug ? childBySlug.get(slug) : null;
-    setHoveredChildId(child ? child.id : null);
+    setHoveredChildId(child?.id ?? null);
   }, [childBySlug]);
 
   // Build polygon layers — includes selectedChildId so the selected polygon is highlighted.

@@ -387,7 +387,8 @@ export default function LocationDetailPage() {
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
   const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0;
-  // True when the location has child locations (to suppress duplicate chips in header/related)
+  // True when the location has or is loading child locations.
+  // Controls LocationChildrenExplorer rendering and suppresses duplicate child chips in header/related.
   const hasChildren = children.length > 0 || secondaryLoading;
 
   const TAB_LABELS = {
