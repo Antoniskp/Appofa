@@ -51,8 +51,17 @@ const POLY_SELECTED = {
   fillOpacity: 0.35,
 };
 
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function buildTooltip(props) {
-  const name = props.name || '';
+  const name = escapeHtml(props.name || '');
   return `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>`;
 }
 
@@ -88,23 +97,29 @@ export default function LocationChildrenExplorer({
   const hasMarkers = !hasPolygons && children.some((c) => c.lat && c.lng);
   const hasGeometry = hasPolygons || hasMarkers;
 
+  // O(1) slug → child lookup to avoid repeated linear scans in hover/click handlers
+  const childBySlug = useMemo(
+    () => new Map(children.filter((c) => c.slug).map((c) => [c.slug, c])),
+    [children]
+  );
+
   // Map feature click: select the matching pill and scroll it into view
   const handleFeatureClick = useCallback((feature) => {
     const slug = feature.properties?.slug;
-    const child = children.find((c) => c.slug === slug);
+    const child = slug ? childBySlug.get(slug) : null;
     if (!child) return;
     setSelectedChildId((prev) => (prev === child.id ? null : child.id));
     const el = pillRefs.current[child.id];
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-  }, [children]);
+  }, [childBySlug]);
 
   // Map feature hover: highlight the matching pill
   const handleFeatureHover = useCallback((feature) => {
     if (!feature) { setHoveredChildId(null); return; }
     const slug = feature.properties?.slug;
-    const child = children.find((c) => c.slug === slug);
+    const child = slug ? childBySlug.get(slug) : null;
     setHoveredChildId(child ? child.id : null);
-  }, [children]);
+  }, [childBySlug]);
 
   // Build polygon layers — includes selectedChildId so the selected polygon is highlighted.
   // Rebuilding on click (when selectedChildId changes) is acceptable; it happens once per click
@@ -120,7 +135,7 @@ export default function LocationChildrenExplorer({
         style: POLY_DEFAULT,
         styleFeature: (feature, base) => {
           const slug = feature.properties?.slug;
-          const child = children.find((c) => c.slug === slug);
+          const child = slug ? childBySlug.get(slug) : null;
           if (child && child.id === selectedChildId) return POLY_SELECTED;
           return base;
         },
@@ -131,7 +146,7 @@ export default function LocationChildrenExplorer({
         getTooltip: buildTooltip,
       },
     ];
-  }, [children, hasPolygons, selectedChildId, handleFeatureClick, handleFeatureHover]);
+  }, [children, childBySlug, hasPolygons, selectedChildId, handleFeatureClick, handleFeatureHover]);
 
   // Marker fallback: used when children only have coordinates (no polygons)
   const markers = useMemo(() => {
