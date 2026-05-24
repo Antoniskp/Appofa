@@ -9,7 +9,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let mockPathname = '/';
 let mockSearch = '';
 let mockMeasurementId = 'G-TEST123456';
-let mockConsent = { analytics: true };
+let mockConsent = null;
 
 const mockInitGA = jest.fn();
 const mockTrackPageView = jest.fn();
@@ -47,7 +47,7 @@ describe('GoogleAnalytics component', () => {
     mockPathname = '/';
     mockSearch = '';
     mockMeasurementId = 'G-TEST123456';
-    mockConsent = { analytics: true };
+    mockConsent = null;
     mockInitGA.mockClear();
     mockTrackPageView.mockClear();
     container = document.createElement('div');
@@ -62,7 +62,7 @@ describe('GoogleAnalytics component', () => {
     document.body.innerHTML = '';
   });
 
-  test('initializes and tracks page views when GA ID and consent exist', async () => {
+  test('initializes and tracks page views by default on first visit', async () => {
     mockPathname = '/news';
     mockSearch = 'page=2';
 
@@ -77,7 +77,7 @@ describe('GoogleAnalytics component', () => {
     expect(script.getAttribute('src')).toContain('G-TEST123456');
   });
 
-  test('renders nothing and does not track without consent', async () => {
+  test('renders nothing and does not track after explicit opt-out', async () => {
     mockConsent = { analytics: false };
 
     await act(async () => {

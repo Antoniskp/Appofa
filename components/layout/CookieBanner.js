@@ -14,13 +14,9 @@ export function getGdprConsent() {
       return null;
     }
 
-    if (typeof parsed.analytics !== 'boolean') {
-      return null;
-    }
-
     return {
       necessary: true,
-      analytics: parsed.analytics,
+      analytics: typeof parsed.analytics === 'boolean' ? parsed.analytics : true,
       functional: typeof parsed.functional === 'boolean' ? parsed.functional : false,
       timestamp: typeof parsed.timestamp === 'string' ? parsed.timestamp : new Date().toISOString(),
     };
@@ -45,12 +41,14 @@ export default function CookieBanner() {
   const t = useTranslations('gdpr');
   const [visible, setVisible] = useState(false);
   const [showPanel, setShowPanel] = useState(false);
-  const [analytics, setAnalytics] = useState(false);
+  const [analytics, setAnalytics] = useState(true);
   const [functional, setFunctional] = useState(false);
 
   useEffect(() => {
     const existing = getGdprConsent();
     if (!existing) {
+      setAnalytics(true);
+      setFunctional(false);
       setVisible(true);
     } else {
       setAnalytics(existing.analytics);
@@ -62,6 +60,9 @@ export default function CookieBanner() {
       if (current) {
         setAnalytics(current.analytics);
         setFunctional(current.functional);
+      } else {
+        setAnalytics(true);
+        setFunctional(false);
       }
       setVisible(true);
       setShowPanel(true);
@@ -95,11 +96,12 @@ export default function CookieBanner() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="cookie-banner-title"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50"
+      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50"
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4">
         <p id="cookie-banner-title" className="text-sm font-semibold text-gray-900">{t('banner_title')}</p>
         <p className="text-xs text-gray-500 mt-1 leading-relaxed">{t('banner_description')}</p>
+        <p className="text-xs text-gray-600 mt-2 font-medium">{t('banner_settings_hint')}</p>
 
         {showPanel && (
           <div className="mt-3 space-y-2 rounded-xl border border-gray-100 p-3 bg-gray-50 text-xs">

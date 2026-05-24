@@ -16,10 +16,10 @@ function GoogleAnalyticsInner() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const measurementId = getGAMeasurementId();
-  const [analyticsConsent, setAnalyticsConsent] = useState(() => getGdprConsent()?.analytics ?? false);
+  const [analyticsConsent, setAnalyticsConsent] = useState(() => getGdprConsent()?.analytics ?? true);
 
   useEffect(() => {
-    const handler = (e) => setAnalyticsConsent(e.detail?.analytics ?? false);
+    const handler = (e) => setAnalyticsConsent(e.detail?.analytics ?? true);
     window.addEventListener('gdpr-consent-updated', handler);
     return () => window.removeEventListener('gdpr-consent-updated', handler);
   }, []);
