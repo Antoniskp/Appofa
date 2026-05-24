@@ -291,8 +291,9 @@ export default function OrganizationProfilePage({ params }) {
     const isRealUser = result.entityType === 'user';
     // A person profile is invitable only when it has been claimed by a real user
     // (claimStatus === 'claimed' ensures the claim was approved, and claimedByUserId
-    // holds the actual user ID to invite).
-    const isClaimed = result.entityType === 'person' && result.claimStatus === 'claimed' && result.claimedByUserId != null;
+    // must be a positive integer ID for the actual invitable user account).
+    const isClaimed = result.entityType === 'person' && result.claimStatus === 'claimed'
+      && typeof result.claimedByUserId === 'number' && result.claimedByUserId > 0;
 
     if (!isRealUser && !isClaimed) {
       setInviteSearchError(t('invite_not_a_user'));
@@ -301,7 +302,10 @@ export default function OrganizationProfilePage({ params }) {
     }
 
     const userId = isRealUser ? result.id : result.claimedByUserId;
-    const displayName = (`${result.firstNameNative || ''} ${result.lastNameNative || ''}`.trim()) || result.username || '';
+    // Build display name: prefer native names, fall back to English names, then username
+    const nativeName = (`${result.firstNameNative || ''} ${result.lastNameNative || ''}`).trim();
+    const englishName = (`${result.firstNameEn || ''} ${result.lastNameEn || ''}`).trim();
+    const displayName = nativeName || englishName || result.username || '';
     setInviteDisplayName(displayName);
     setInviteSelectedUser({ id: userId, displayName });
     setInviteSearchError('');
@@ -545,12 +549,14 @@ export default function OrganizationProfilePage({ params }) {
                   <div className="p-3 rounded-lg border border-gray-200 bg-gray-50 space-y-3">
                     <p className="text-sm font-medium text-gray-800">{t('member_management')}</p>
                     <div className="space-y-2">
-                      <PersonSearch
-                        placeholder={t('invite_user_id_placeholder')}
-                        value={inviteDisplayName}
-                        onChange={handleInviteSearchChange}
-                        onSelect={handleInviteSelect}
-                      />
+                      <div className={inviteSearchError ? 'ring-1 ring-red-400 rounded-lg' : undefined}>
+                        <PersonSearch
+                          placeholder={t('invite_user_id_placeholder')}
+                          value={inviteDisplayName}
+                          onChange={handleInviteSearchChange}
+                          onSelect={handleInviteSelect}
+                        />
+                      </div>
                       {inviteSearchError && (
                         <p className="text-xs text-red-600">{inviteSearchError}</p>
                       )}
