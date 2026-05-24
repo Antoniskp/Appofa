@@ -164,6 +164,9 @@ export default function LocationChildrenExplorer({
   const mapCenter = useMemo(() => computeMapCenter(location, children), [location, children]);
   const mapZoom = location?.map_default_zoom ? Number(location.map_default_zoom) : 7;
   const selectedChild = selectedChildId != null ? children.find((c) => c.id === selectedChildId) : null;
+  const showMap = !loading && hasGeometry && mapCenter;
+  const showPills = !loading && children.length > 0;
+  const useDesktopSplitLayout = showMap && showPills;
 
   // Don't render anything when there are no children (after loading completes)
   if (!loading && children.length === 0) return null;
@@ -174,60 +177,66 @@ export default function LocationChildrenExplorer({
         {childTerms.label}{!loading ? ` (${children.length})` : ''}
       </h2>
       <div className="bg-white rounded-lg shadow-md p-3 space-y-3">
-        {/* Map — skeleton while loading, actual map when geometry is available */}
+        {/* Map + pills explorer layout */}
         {loading ? (
           <div className="h-[300px] w-full rounded-xl bg-gray-100 animate-pulse" aria-hidden="true" />
-        ) : hasGeometry && mapCenter ? (
-          <BaseMap
-            center={mapCenter}
-            zoom={mapZoom}
-            markers={markers}
-            polygonLayers={polygonLayers}
-            className="h-[300px] w-full rounded-xl overflow-hidden"
-            scrollWheelZoom={false}
-            interactive={true}
-          />
-        ) : null}
-
-        {/* Helper text shown below the map */}
-        {!loading && hasGeometry && (
-          <p className="text-xs text-gray-500">
-            Επίλεξε περιοχή από τον χάρτη ή τη λίστα για να εξερευνήσεις τοπική δραστηριότητα
-          </p>
-        )}
-
-        {/* Pills — one per child location; selection and hover are synced with the map */}
-        {!loading && children.length > 0 && (
+        ) : (
           <div
-            className="flex flex-wrap gap-2"
-            role="list"
-            aria-label={childTerms.label}
+            className={useDesktopSplitLayout ? 'grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(280px,360px)] lg:items-start lg:gap-4' : 'space-y-3'}
+            data-testid={useDesktopSplitLayout ? 'children-explorer-split-layout' : 'children-explorer-stacked-layout'}
           >
-            {children.map((child) => {
-              const isSelected = child.id === selectedChildId;
-              const isHovered = child.id === hoveredChildId;
-              return (
-                <button
-                  key={child.id}
-                  role="listitem"
-                  ref={(el) => { if (el) pillRefs.current[child.id] = el; }}
-                  type="button"
-                  onClick={() => setSelectedChildId(isSelected ? null : child.id)}
-                  onMouseEnter={() => setHoveredChildId(child.id)}
-                  onMouseLeave={() => setHoveredChildId(null)}
-                  aria-pressed={isSelected}
-                  className={`inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-medium transition-colors whitespace-nowrap ${
-                    isSelected
-                      ? 'border-blue-500 bg-blue-100 text-blue-900 shadow-sm'
-                      : isHovered
-                        ? 'border-blue-300 bg-blue-50 text-blue-700'
-                        : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300'
-                  }`}
+            {showMap && (
+              <div className="space-y-2">
+                <BaseMap
+                  center={mapCenter}
+                  zoom={mapZoom}
+                  markers={markers}
+                  polygonLayers={polygonLayers}
+                  className="h-[300px] w-full rounded-xl overflow-hidden sm:h-[340px] lg:h-auto lg:aspect-square"
+                  scrollWheelZoom={false}
+                  interactive={true}
+                />
+                <p className="text-xs text-gray-500">
+                  Επίλεξε περιοχή από τον χάρτη ή τη λίστα για να εξερευνήσεις τοπική δραστηριότητα
+                </p>
+              </div>
+            )}
+
+            {showPills && (
+              <div className={useDesktopSplitLayout ? 'rounded-xl border border-gray-200 bg-gray-50 p-3 lg:max-h-[420px] lg:overflow-y-auto' : ''}>
+                <div
+                  className="flex flex-wrap gap-2"
+                  role="list"
+                  aria-label={childTerms.label}
                 >
-                  {child.name_local || child.name}
-                </button>
-              );
-            })}
+                  {children.map((child) => {
+                    const isSelected = child.id === selectedChildId;
+                    const isHovered = child.id === hoveredChildId;
+                    return (
+                      <button
+                        key={child.id}
+                        role="listitem"
+                        ref={(el) => { if (el) pillRefs.current[child.id] = el; }}
+                        type="button"
+                        onClick={() => setSelectedChildId(isSelected ? null : child.id)}
+                        onMouseEnter={() => setHoveredChildId(child.id)}
+                        onMouseLeave={() => setHoveredChildId(null)}
+                        aria-pressed={isSelected}
+                        className={`inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-medium transition-colors whitespace-nowrap ${
+                          isSelected
+                            ? 'border-blue-500 bg-blue-100 text-blue-900 shadow-sm'
+                            : isHovered
+                              ? 'border-blue-300 bg-blue-50 text-blue-700'
+                              : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300'
+                        }`}
+                      >
+                        {child.name_local || child.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

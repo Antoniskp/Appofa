@@ -244,6 +244,8 @@ describe('LocationChildrenExplorer', () => {
     // BaseMap dynamic stub should be present
     const mapStub = container.querySelector('[data-testid="base-map-stub"]');
     expect(mapStub).not.toBeNull();
+    expect(mapStub.className).toContain('lg:aspect-square');
+    expect(container.querySelector('[data-testid="children-explorer-split-layout"]')).not.toBeNull();
     await cleanup(root, container);
   });
 
@@ -257,6 +259,8 @@ describe('LocationChildrenExplorer', () => {
       loading: false,
     });
     expect(container.querySelector('[data-testid="base-map-stub"]')).toBeNull();
+    expect(container.querySelector('[data-testid="children-explorer-stacked-layout"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="children-explorer-split-layout"]')).toBeNull();
     const pills = container.querySelectorAll('button[role="listitem"]');
     expect(pills).toHaveLength(1);
     await cleanup(root, container);
@@ -303,6 +307,20 @@ describe('LocationHeader hideChildren prop', () => {
     });
     // Child chips section should not appear
     expect(container.textContent).not.toContain('Νομοί / Περιφέρειες (2)');
+    await cleanup(root, container);
+  });
+
+  test('uses denser desktop header column balance classes', async () => {
+    const { container, root } = await renderComponent(LocationHeader, {
+      ...baseProps,
+      children: childList,
+      hideChildren: true,
+    });
+    const desktopGrid = container.querySelector('.lg\\:grid-cols-12');
+    expect(desktopGrid).not.toBeNull();
+    expect(desktopGrid.classList.contains('gap-5')).toBe(true);
+    expect(container.querySelector('.lg\\:col-span-7')).not.toBeNull();
+    expect(container.querySelector('.lg\\:col-span-5')).not.toBeNull();
     await cleanup(root, container);
   });
 });
