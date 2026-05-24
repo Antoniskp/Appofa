@@ -37,6 +37,7 @@ describe('Location phase-3 UI', () => {
   test('overview panel surfaces summary cards with empty-state guidance', async () => {
     const { container, root } = await renderComponent(LocationOverviewPanel, {
       locationIdentifier: 'attica',
+      locationType: 'country',
       canManageLocations: true,
       summaryCounts: {
         suggestions: 4,
@@ -51,6 +52,8 @@ describe('Location phase-3 UI', () => {
     expect(container.textContent).toContain('Σύνοψη τοποθεσίας');
     expect(container.textContent).toContain('Προτάσεις');
     expect(container.textContent).toContain('4');
+    expect(container.textContent).toContain('Νομοί / Περιφέρειες');
+    expect(container.textContent).toContain('τοποθεσίες (νομοί / περιφέρειες)');
     expect(container.textContent).toContain('Δεν έχουν οριστεί ακόμη ρόλοι');
     expect(container.textContent).toContain('Δεν έχουν προστεθεί ακόμη τοπικά μέσα');
     expect(container.querySelector('a[href="/locations/attica?tab=suggestions#location-content"]')).toBeTruthy();
@@ -71,7 +74,7 @@ describe('Location phase-3 UI', () => {
     }));
 
     const { container, root } = await renderComponent(LocationRelatedLocations, {
-      location: { id: 1, slug: 'attica', name: 'Attica', name_local: 'Αττική' },
+      location: { id: 1, slug: 'attica', type: 'prefecture', name: 'Attica', name_local: 'Αττική' },
       parent: { id: 2, slug: 'greece', type: 'country', name: 'Greece', name_local: 'Ελλάδα' },
       siblings: [
         { id: 3, slug: 'crete', type: 'prefecture', name: 'Crete', name_local: 'Κρήτη' },
@@ -84,7 +87,8 @@ describe('Location phase-3 UI', () => {
     expect(container.textContent).toContain('Κρήτη');
     expect(container.textContent).toContain('Παιδί 8');
     expect(container.textContent).not.toContain('Παιδί 9');
-    expect(container.textContent).toContain('+1 ακόμη υποπεριοχές');
+    expect(container.textContent).toContain('Δήμοι');
+    expect(container.textContent).toContain('+1 ακόμη δήμοι');
 
     await act(async () => {
       root.unmount();
