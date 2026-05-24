@@ -1405,7 +1405,9 @@
     "dream_team_cta": "Discover People →"
   },
   "gdpr": {
-    "banner_description": "We use cookies to improve your experience, analyse traffic and personalise content. For security and abuse-prevention purposes, we always record visitor entry data (IP address, country, page path) regardless of your preferences. You can manage optional cookie preferences below.",
+    "banner_title": "Cookie settings",
+    "banner_description": "Analytics cookies are enabled by default to help us improve Appofa. You can opt out at any time from cookie settings. For security and abuse-prevention purposes, we always record visitor entry data (IP address, country, page path) regardless of your preferences.",
+    "banner_settings_hint": "You can reopen cookie settings anytime from the footer.",
     "accept_all": "Accept All",
     "reject_non_essential": "Reject Non-Essential",
     "manage_preferences": "Manage Preferences",
