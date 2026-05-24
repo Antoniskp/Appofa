@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, ClockIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { organizationAPI } from '@/lib/api';
 import organizationContentConfig from '@/config/organizationContent.json';
@@ -11,6 +11,10 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import AlertMessage from '@/components/ui/AlertMessage';
+import PersonSearch from '@/components/dream-team/PersonSearch';
+import PollCard from '@/components/polls/PollCard';
+import SuggestionCard from '@/components/SuggestionCard';
+import SearchInput from '@/components/ui/SearchInput';
 
 const BASE_TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
 const OFFICIAL_POST_TABS = ['tab_official_posts'];
@@ -18,22 +22,6 @@ const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
 const ORG_VISIBILITY_OPTIONS = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
-
-function parsePositiveInt(value) {
-  const parsed = parseInt(value, 10);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
-
-function isPollClosed(deadline) {
-  if (!deadline) return false;
-  return new Date(deadline) < new Date();
-}
-
-function formatShortDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-}
 
 export default function OrganizationProfilePage({ params }) {
   const t = useTranslations('organizations');
@@ -43,7 +31,10 @@ export default function OrganizationProfilePage({ params }) {
   const [actionLoading, setActionLoading] = useState(false);
   const [memberActionError, setMemberActionError] = useState('');
   const [memberActionSuccess, setMemberActionSuccess] = useState('');
-  const [inviteUserId, setInviteUserId] = useState('');
+  // Invite search state: controlled input + selected user object
+  const [inviteDisplayName, setInviteDisplayName] = useState('');
+  const [inviteSelectedUser, setInviteSelectedUser] = useState(null);
+  const [inviteSearchError, setInviteSearchError] = useState('');
   const [roleDrafts, setRoleDrafts] = useState({});
   const [pollForm, setPollForm] = useState({ title: '', description: '', deadline: '', visibility: 'members_only' });
   const [suggestionForm, setSuggestionForm] = useState({ type: 'idea', title: '', body: '', visibility: 'members_only' });
@@ -58,6 +49,9 @@ export default function OrganizationProfilePage({ params }) {
   const [contentActionSuccess, setContentActionSuccess] = useState('');
   const [showPollForm, setShowPollForm] = useState(false);
   const [showSuggestionForm, setShowSuggestionForm] = useState(false);
+  // Local search filter for org polls and suggestions tabs
+  const [pollSearch, setPollSearch] = useState('');
+  const [suggestionSearch, setSuggestionSearch] = useState('');
 
   const { data: organization, loading, error } = useAsyncData(
     async () => {
@@ -275,14 +269,40 @@ export default function OrganizationProfilePage({ params }) {
 
   const handleInvite = async () => {
     if (!organization?.id) return;
-    const userId = parsePositiveInt(inviteUserId);
-    if (!userId) {
-      setMemberActionError(t('invite_invalid_user_id'));
+    if (!inviteSelectedUser) {
+      setMemberActionError(t('invite_no_user_selected'));
       return;
     }
 
-    await runMemberAction(() => organizationAPI.inviteMember(organization.id, userId), t('invite_success'));
-    setInviteUserId('');
+    await runMemberAction(() => organizationAPI.inviteMember(organization.id, inviteSelectedUser.id), t('invite_success'));
+    setInviteSelectedUser(null);
+    setInviteDisplayName('');
+    setInviteSearchError('');
+  };
+
+  const handleInviteSearchChange = (e) => {
+    setInviteDisplayName(e.target.value);
+    // Clear selection when the user modifies the search text
+    setInviteSelectedUser(null);
+    setInviteSearchError('');
+  };
+
+  const handleInviteSelect = (result) => {
+    const isRealUser = result.entityType === 'user';
+    // Claimed persons have a real user account behind them (claimedByUserId)
+    const isClaimed = result.entityType === 'person' && result.claimStatus === 'claimed' && result.claimedByUserId;
+
+    if (!isRealUser && !isClaimed) {
+      setInviteSearchError(t('invite_not_a_user'));
+      setInviteSelectedUser(null);
+      return;
+    }
+
+    const userId = isRealUser ? result.id : result.claimedByUserId;
+    const displayName = (`${result.firstNameNative || ''} ${result.lastNameNative || ''}`.trim()) || result.username || '';
+    setInviteDisplayName(displayName);
+    setInviteSelectedUser({ id: userId, displayName });
+    setInviteSearchError('');
   };
 
   const runContentAction = async (action, successMessage, failureMessage, onSuccessRefetch) => {
@@ -522,19 +542,20 @@ export default function OrganizationProfilePage({ params }) {
                 {canManageMembers && (
                   <div className="p-3 rounded-lg border border-gray-200 bg-gray-50 space-y-3">
                     <p className="text-sm font-medium text-gray-800">{t('member_management')}</p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <input
-                        type="number"
-                        min="1"
-                        value={inviteUserId}
-                        onChange={(e) => setInviteUserId(e.target.value)}
+                    <div className="space-y-2">
+                      <PersonSearch
                         placeholder={t('invite_user_id_placeholder')}
-                        className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        value={inviteDisplayName}
+                        onChange={handleInviteSearchChange}
+                        onSelect={handleInviteSelect}
                       />
+                      {inviteSearchError && (
+                        <p className="text-xs text-red-600">{inviteSearchError}</p>
+                      )}
                       <button
                         type="button"
                         onClick={handleInvite}
-                        disabled={actionLoading}
+                        disabled={actionLoading || !inviteSelectedUser}
                         className="px-3 py-2 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
                       >
                         {t('invite_member')}
@@ -718,50 +739,36 @@ export default function OrganizationProfilePage({ params }) {
                   </div>
                 )}
 
-                {pollsLoading && <SkeletonLoader count={3} type="list" />}
+                {pollsLoading && <SkeletonLoader count={3} type="card" />}
                 {!pollsLoading && pollsError && <AlertMessage message={pollsError} />}
+                {!pollsLoading && !pollsError && polls.length > 0 && (
+                  <SearchInput
+                    name="poll_search"
+                    placeholder={t('polls_voting')}
+                    value={pollSearch}
+                    onChange={(e) => setPollSearch(e.target.value)}
+                    className="w-full md:max-w-sm"
+                  />
+                )}
                 {!pollsLoading && !pollsError && polls.length === 0 && (
                   <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
-                    <ClockIcon className="mx-auto h-8 w-8 text-gray-300 mb-2" />
                     <p className="text-sm text-gray-500">{t('polls_empty')}</p>
                   </div>
                 )}
-                {!pollsLoading && !pollsError && polls.length > 0 && (
-                  <div className="space-y-3">
-                    {polls.map((poll) => {
-                      const closed = isPollClosed(poll.deadline);
-                      const deadlineLabel = poll.deadline
-                        ? (closed ? t('poll_closed_label') : `${t('poll_ends_label')}: ${formatShortDate(poll.deadline)}`)
-                        : null;
-                      return (
-                        <div key={poll.id} className="rounded-lg border border-gray-200 bg-white p-4">
-                          <div className="flex flex-wrap items-start justify-between gap-2">
-                            <p className="font-semibold text-gray-900 flex-1 min-w-0">{poll.title}</p>
-                            <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700">
-                              {t(`visibility_${poll.visibility}`)}
-                            </span>
-                          </div>
-                          {poll.description && <p className="mt-1.5 text-sm text-gray-600 line-clamp-2">{poll.description}</p>}
-                          <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                            {poll.creator?.username && (
-                              <span className="flex items-center gap-1">
-                                <UserCircleIcon className="h-3.5 w-3.5" />
-                                @{poll.creator.username}
-                              </span>
-                            )}
-                            {deadlineLabel && (
-                              <span className={`flex items-center gap-1 font-medium ${closed ? 'text-red-500' : 'text-green-600'}`}>
-                                <ClockIcon className="h-3.5 w-3.5" />
-                                {deadlineLabel}
-                              </span>
-                            )}
-                            <span>{formatShortDate(poll.createdAt)}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                {!pollsLoading && !pollsError && polls.length > 0 && (() => {
+                  const filtered = pollSearch.trim()
+                    ? polls.filter((p) => p.title?.toLowerCase().includes(pollSearch.toLowerCase()))
+                    : polls;
+                  return filtered.length === 0 ? (
+                    <p className="text-sm text-gray-500">{t('polls_empty')}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filtered.map((poll) => (
+                        <PollCard key={poll.id} poll={poll} variant="grid" />
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
@@ -845,41 +852,37 @@ export default function OrganizationProfilePage({ params }) {
                   </div>
                 )}
 
-                {suggestionsLoading && <SkeletonLoader count={3} type="list" />}
+                {suggestionsLoading && <SkeletonLoader count={3} type="card" />}
                 {!suggestionsLoading && suggestionsError && <AlertMessage message={suggestionsError} />}
+                {!suggestionsLoading && !suggestionsError && suggestions.length > 0 && (
+                  <SearchInput
+                    name="suggestion_search"
+                    placeholder={t('suggestions')}
+                    value={suggestionSearch}
+                    onChange={(e) => setSuggestionSearch(e.target.value)}
+                    className="w-full md:max-w-sm"
+                  />
+                )}
                 {!suggestionsLoading && !suggestionsError && suggestions.length === 0 && (
                   <div className="rounded-lg border border-dashed border-gray-300 p-8 text-center">
                     <BuildingOffice2Icon className="mx-auto h-8 w-8 text-gray-300 mb-2" />
                     <p className="text-sm text-gray-500">{t('suggestions_empty')}</p>
                   </div>
                 )}
-                {!suggestionsLoading && !suggestionsError && suggestions.length > 0 && (
-                  <div className="space-y-3">
-                    {suggestions.map((suggestion) => (
-                      <div key={suggestion.id} className="rounded-lg border border-gray-200 bg-white p-4">
-                        <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="rounded-full bg-purple-50 px-2.5 py-0.5 text-xs font-medium text-purple-700">
-                            {t(`suggestion_type_${suggestion.type}`)}
-                          </span>
-                          <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
-                            {t(`visibility_${suggestion.visibility}`)}
-                          </span>
-                        </div>
-                        <p className="font-semibold text-gray-900">{suggestion.title}</p>
-                        {suggestion.body && <p className="mt-1.5 text-sm text-gray-600 line-clamp-3">{suggestion.body}</p>}
-                        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                          {suggestion.author?.username && (
-                            <span className="flex items-center gap-1">
-                              <UserCircleIcon className="h-3.5 w-3.5" />
-                              @{suggestion.author.username}
-                            </span>
-                          )}
-                          <span>{formatShortDate(suggestion.createdAt)}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {!suggestionsLoading && !suggestionsError && suggestions.length > 0 && (() => {
+                  const filtered = suggestionSearch.trim()
+                    ? suggestions.filter((s) => s.title?.toLowerCase().includes(suggestionSearch.toLowerCase()))
+                    : suggestions;
+                  return filtered.length === 0 ? (
+                    <p className="text-sm text-gray-500">{t('suggestions_empty')}</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filtered.map((suggestion) => (
+                        <SuggestionCard key={suggestion.id} suggestion={suggestion} />
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
