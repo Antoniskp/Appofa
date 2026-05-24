@@ -1130,37 +1130,31 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
 }
 
 async function getPublicUserStats() {
-  const stats = await User.findAll({
-    attributes: [
-      'profileVisibility',
-      [sequelize.fn('COUNT', sequelize.col('profileVisibility')), 'count']
-    ],
-    group: ['profileVisibility']
-  });
-
-  let totalUsers = 0;
-  let hiddenUsers = 0;
-  let registeredUsers = 0;
-  let publicUsers = 0;
-
-  stats.forEach((item) => {
-    const count = parseInt(item.get('count'), 10);
-    totalUsers += count;
-    if (item.get('profileVisibility') === PROFILE_VISIBILITY.HIDDEN) {
-      hiddenUsers = count;
-    } else if (item.get('profileVisibility') === PROFILE_VISIBILITY.PUBLIC) {
-      publicUsers = count;
-    } else {
-      registeredUsers = count;
-    }
-  });
+  const [
+    totalUsers,
+    registeredUsers,
+    claimFlowProfiles,
+    hiddenUsers,
+    unclaimedProfiles,
+  ] = await Promise.all([
+    User.count(),
+    // Real registered users: never in claim flow.
+    User.count({ where: { claimStatus: { [Op.is]: null } } }),
+    // Public-person profile rows: unclaimed/pending/claimed/rejected.
+    User.count({ where: { claimStatus: { [Op.not]: null } } }),
+    User.count({ where: { profileVisibility: PROFILE_VISIBILITY.HIDDEN } }),
+    User.count({ where: { claimStatus: 'unclaimed' } }),
+  ]);
 
   return {
     totalUsers,
+    totalProfiles: totalUsers,
     hiddenUsers,
     registeredUsers,
-    publicUsers,
-    searchableUsers: registeredUsers + publicUsers,
+    claimFlowProfiles,
+    unclaimedProfiles,
+    publicUsers: claimFlowProfiles, // legacy field name kept for compatibility
+    searchableUsers: Math.max(totalUsers - hiddenUsers, 0),
     nonSearchableUsers: hiddenUsers,
   };
 }

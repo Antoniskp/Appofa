@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-23
+> **Last updated**: 2026-05-24
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -204,7 +204,7 @@ Appofa/
 | DELETE | /users/:id | admin | Delete user |
 | GET | /users/search | ✅ | Search users (public) |
 | GET | /users/:id/public | ✅ | Public user profile |
-| GET | /users/public-stats | — | Public user stats |
+| GET | /users/public-stats | — | Public users-strip stats: `totalUsers`, `registeredUsers` (`claimStatus IS NULL`), `claimFlowProfiles` (`claimStatus IS NOT NULL`, legacy alias `publicUsers`), `hiddenUsers`/`nonSearchableUsers` (`profileVisibility='hidden'`) |
 
 ### Newsletter (`/api/newsletter`)
 | Method | Path | Auth | Description |
@@ -457,7 +457,7 @@ Appofa/
 | pollService.js | Poll operations & calculations (including org-membership access enforcement for org-scoped private polls/results/voting) |
 | civicQuestionService.js | Civic question business logic: visibility/location-scoped access, fixed-choice voting (`agree|disagree|present`), results visibility rules |
 | organizationService.js | Organization slug generation + organization search helpers |
-| userService.js | User management & utilities |
+| userService.js | User management & utilities, including public `/users` stats buckets based on claim-flow semantics (`claimStatus`) with hidden-visibility overlay counts |
 | workerClientService.js | Appofasistis worker integration client (`GET /health`, `POST /internal/snapshots` with `x-worker-token`) using `WORKER_BASE_URL` + `WORKER_TOKEN` |
 | workerTokenService.js | Worker token management: secure token generation, bcrypt hash storage, metadata listing/revoke, DB token validation with `last_used_at` update |
 
