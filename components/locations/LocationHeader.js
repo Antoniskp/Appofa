@@ -107,8 +107,8 @@ export default function LocationHeader({
 
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-12">
-        <div className="lg:col-span-8">
+      <div className="grid gap-5 lg:grid-cols-12">
+        <div className="lg:col-span-7">
           <div className="flex items-start gap-4">
             {(() => {
               const uploadedSrc = location.imageUrl
@@ -158,7 +158,7 @@ export default function LocationHeader({
                   )}
               </div>
 
-              <div className="flex items-center gap-2 mt-2 text-sm">
+              <div className="flex items-center gap-2 mt-1.5 text-sm">
                 <span className="font-medium text-gray-700">Συντονιστής:</span>
                 {locationNeedsModerator ? (
                   <Link
@@ -191,7 +191,7 @@ export default function LocationHeader({
               </div>
 
               {(populationValue || activePolls.length > 0 || suggestionsCount > 0 || entities.usersCount > 0 || newsArticles.length > 0 || regularArticles.length > 0) ? (
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
                   {populationValue && (
                     <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2">
                       <div className="text-[11px] font-medium uppercase tracking-wide text-gray-500">Πληθυσμός</div>
@@ -217,11 +217,11 @@ export default function LocationHeader({
                   )}
                 </div>
               ) : (
-                <p className="mt-4 text-xs text-gray-400 italic">Δεν υπάρχει περιεχόμενο ακόμα</p>
+                <p className="mt-3 text-xs text-gray-400 italic">Δεν υπάρχει περιεχόμενο ακόμα</p>
               )}
 
               {hasExtendedInfo && (
-                <details className="mt-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 lg:hidden">
+                <details className="mt-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 lg:hidden">
                   <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-gray-900">
                     Περισσότερες πληροφορίες
                   </summary>
@@ -290,7 +290,7 @@ export default function LocationHeader({
           )}
         </div>
 
-        <aside className="lg:col-span-4">
+        <aside className="lg:col-span-5">
           <div className="space-y-4 lg:sticky lg:top-24">
             <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
               <h3 className="text-sm font-semibold text-gray-800">Συμμετοχή τώρα</h3>
