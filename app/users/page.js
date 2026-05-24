@@ -656,7 +656,7 @@ export default function UsersPage() {
             </span>
             <span className="flex items-center gap-1.5">
               <span className="text-xs text-gray-500">{t('stats_public')}</span>
-              <span className="text-lg font-bold text-green-600">{userStats.publicUsers}</span>
+              <span className="text-lg font-bold text-green-600">{userStats.claimFlowProfiles ?? userStats.publicUsers}</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="text-xs text-gray-500">{t('stats_hidden')}</span>

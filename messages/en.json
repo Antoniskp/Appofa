@@ -1430,7 +1430,7 @@
     "stats_label": "Statistics",
     "stats_registered": "Total accounts",
     "stats_registered_only": "Registered users",
-    "stats_public": "Unclaimed profiles",
+    "stats_public": "Claim-flow profiles",
     "stats_hidden": "Hidden profiles",
     "worthy_citizens_title": "Recognized by the Community",
     "worthy_citizens_desc": "Citizens recognized per topic area.",
