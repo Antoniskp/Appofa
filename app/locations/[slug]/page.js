@@ -17,7 +17,7 @@ import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import LocationMap from '@/components/locations/LocationMap';
-import ExploreLocationsMap from '@/components/locations/ExploreLocationsMap';
+import LocationChildrenExplorer from '@/components/locations/LocationChildrenExplorer';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
@@ -44,8 +44,6 @@ export default function LocationDetailPage() {
   const [secondaryLoading, setSecondaryLoading] = useState(false);
   const [fundingData, setFundingData] = useState(null);
   const [fundingLoaded, setFundingLoaded] = useState(false);
-  const [greecePrefectures, setGreecePrefectures] = useState([]);
-  const [greecePrefecturesLoading, setGreecePrefecturesLoading] = useState(false);
 
   // Derive active tab from URL query param
   const rawTab = searchParams.get('tab');
@@ -78,8 +76,6 @@ export default function LocationDetailPage() {
         setIsEditing(false);
         setFundingData(null);
         setFundingLoaded(false);
-        setGreecePrefectures([]);
-        setGreecePrefecturesLoading(false);
         setSecondaryLoading(true);
 
         // Build breadcrumb
@@ -110,11 +106,8 @@ export default function LocationDetailPage() {
 
         // Use the resolved numeric ID for subsequent queries
         const locId = loc.id;
-        const shouldLoadGreecePrefectures = loc.type === 'country' && String(loc.code || '').toUpperCase() === 'GR';
-        setGreecePrefecturesLoading(shouldLoadGreecePrefectures);
-
         // Fetch all secondary data in parallel
-        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes, greecePrefecturesRes] =
+        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes] =
           await Promise.allSettled([
             // 0: linked entities/content
             locationAPI.getLocationEntities(locId),
@@ -126,10 +119,6 @@ export default function LocationDetailPage() {
             suggestionAPI.getAll({ locationId: locId, limit: 50 }),
             // 4: sibling locations (same parent)
             loc.parent?.id ? locationAPI.getAll({ parent_id: loc.parent.id }) : Promise.resolve({ success: true, locations: [] }),
-            // 5: Greece-prefecture map data for /locations/greece parity with homepage map + pills
-            shouldLoadGreecePrefectures
-              ? locationAPI.getAll({ type: 'prefecture', parent_id: loc.id, limit: 50 })
-              : Promise.resolve({ success: true, locations: [] }),
           ]);
 
         if (entitiesRes.status === 'fulfilled' && entitiesRes.value.success) {
@@ -168,11 +157,6 @@ export default function LocationDetailPage() {
         } else if (siblingsRes.status === 'rejected') {
           console.error('Failed to load sibling locations:', siblingsRes.reason);
         }
-
-        if (greecePrefecturesRes.status === 'fulfilled' && greecePrefecturesRes.value.success) {
-          setGreecePrefectures(greecePrefecturesRes.value.locations || []);
-        }
-        setGreecePrefecturesLoading(false);
 
         setSecondaryLoading(false);
         if (loc.type === 'country') {
@@ -403,7 +387,8 @@ export default function LocationDetailPage() {
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
   const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0;
-  const isGreeceCountryPage = location?.type === 'country' && String(location?.code || '').toUpperCase() === 'GR';
+  // True when the location has child locations (to suppress duplicate chips in header/related)
+  const hasChildren = children.length > 0 || secondaryLoading;
 
   const TAB_LABELS = {
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
@@ -496,6 +481,7 @@ export default function LocationDetailPage() {
               location={location}
               sections={sections}
               children={children}
+              hideChildren={hasChildren}
               activePolls={activePolls}
               newsArticles={newsArticles}
               regularArticles={regularArticles}
@@ -512,21 +498,15 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
-            {/* Greece page parity: show the same homepage map + prefecture pills first */}
-            {isGreeceCountryPage && (
-              <div id="greece-prefectures-map" className="mb-8">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">Περιφέρειες Ελλάδας</h2>
-                <div className="bg-white rounded-lg shadow-md p-3">
-                  <ExploreLocationsMap
-                    prefectures={greecePrefectures}
-                    loading={greecePrefecturesLoading}
-                  />
-                </div>
-              </div>
-            )}
+            {/* Unified children explorer — shown for all location types that have children */}
+            <LocationChildrenExplorer
+              location={location}
+              children={children}
+              loading={secondaryLoading}
+            />
 
-            {/* Map — shown when the location has valid coordinates or a boundary polygon */}
-            {(!isGreeceCountryPage && ((location?.lat && location?.lng) || location?.boundary_geojson)) && (
+            {/* Map — shown when the location has its own geometry AND no children explorer */}
+            {!hasChildren && ((location?.lat && location?.lng) || location?.boundary_geojson) && (
               <div id="location-map" className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -585,13 +565,14 @@ export default function LocationDetailPage() {
               </div>
             )}
 
-            {(location.parent || siblings.length > 0 || children.length > 0) && (
+            {(location.parent || siblings.length > 0 || (!hasChildren && children.length > 0)) && (
               <div className="mb-8">
                 <LocationRelatedLocations
                   location={location}
                   parent={location.parent}
                   siblings={siblings}
                   children={children}
+                  hideChildren={hasChildren}
                 />
               </div>
             )}

@@ -23,13 +23,14 @@ export default function LocationRelatedLocations({
   parent,
   siblings = [],
   children = [],
+  hideChildren = false,
 }) {
-  if (!parent && siblings.length === 0 && children.length === 0) {
+  if (!parent && siblings.length === 0 && (hideChildren || children.length === 0)) {
     return null;
   }
 
   const visibleSiblings = siblings.slice(0, 8);
-  const visibleChildren = children.slice(0, 8);
+  const visibleChildren = hideChildren ? [] : children.slice(0, 8);
   const childLocationTerms = getChildLocationTerminology(location?.type);
 
   return (
@@ -86,7 +87,7 @@ export default function LocationRelatedLocations({
           </div>
         )}
 
-        {!parent && visibleSiblings.length === 0 && visibleChildren.length === 0 && (
+        {!parent && visibleSiblings.length === 0 && (hideChildren || visibleChildren.length === 0) && (
           <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-3 text-sm text-gray-500">
             Δεν υπάρχουν ακόμη σχετικές τοποθεσίες για το {location.name_local || location.name}.
           </div>
