@@ -37,7 +37,7 @@ jest.mock('@/components/layout/CookieBanner', () => ({
   getGdprConsent: () => mockConsent,
 }));
 
-const GoogleAnalytics = require('../components/layout/GoogleAnalytics').default;
+const GoogleAnalytics = require('../components/GoogleAnalytics').default;
 
 describe('GoogleAnalytics component', () => {
   let container;
@@ -87,5 +87,26 @@ describe('GoogleAnalytics component', () => {
     expect(mockInitGA).not.toHaveBeenCalled();
     expect(mockTrackPageView).not.toHaveBeenCalled();
     expect(container.querySelector('script[src*="googletagmanager.com/gtag/js"]')).toBeNull();
+  });
+
+  test('starts GA when consent is granted after initial render', async () => {
+    mockPathname = '/polls';
+    mockConsent = { analytics: false };
+
+    await act(async () => {
+      root.render(React.createElement(GoogleAnalytics));
+    });
+
+    expect(mockInitGA).not.toHaveBeenCalled();
+    expect(mockTrackPageView).not.toHaveBeenCalled();
+    expect(container.querySelector('script[src*="googletagmanager.com/gtag/js"]')).toBeNull();
+
+    await act(async () => {
+      window.dispatchEvent(new CustomEvent('gdpr-consent-updated', { detail: { analytics: true } }));
+    });
+
+    expect(mockInitGA).toHaveBeenCalledWith('G-TEST123456');
+    expect(mockTrackPageView).toHaveBeenCalledWith('/polls?');
+    expect(container.querySelector('script[src*="googletagmanager.com/gtag/js"]')).toBeTruthy();
   });
 });

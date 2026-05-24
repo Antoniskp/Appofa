@@ -7,7 +7,23 @@ export function getGdprConsent() {
   if (typeof window === 'undefined') return null;
   try {
     const raw = localStorage.getItem('gdpr_consent');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return null;
+    }
+
+    if (typeof parsed.analytics !== 'boolean') {
+      return null;
+    }
+
+    return {
+      necessary: true,
+      analytics: parsed.analytics,
+      functional: typeof parsed.functional === 'boolean' ? parsed.functional : false,
+      timestamp: typeof parsed.timestamp === 'string' ? parsed.timestamp : new Date().toISOString(),
+    };
   } catch {
     return null;
   }
@@ -36,9 +52,17 @@ export default function CookieBanner() {
     const existing = getGdprConsent();
     if (!existing) {
       setVisible(true);
+    } else {
+      setAnalytics(existing.analytics);
+      setFunctional(existing.functional);
     }
 
     const handleOpen = () => {
+      const current = getGdprConsent();
+      if (current) {
+        setAnalytics(current.analytics);
+        setFunctional(current.functional);
+      }
       setVisible(true);
       setShowPanel(true);
     };
