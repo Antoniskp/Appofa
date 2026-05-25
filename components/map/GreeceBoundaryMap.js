@@ -97,6 +97,8 @@ function locationToFeatures(loc) {
     slug: loc.slug || null,
     code: loc.code || null,
     boundary_color: loc.boundary_color || null,
+    userCount: typeof loc.userCount === 'number' ? loc.userCount : null,
+    moderatorPreview: loc.moderatorPreview || null,
   };
 
   if (normalized.type === 'FeatureCollection') {

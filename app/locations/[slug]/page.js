@@ -111,8 +111,8 @@ export default function LocationDetailPage() {
           await Promise.allSettled([
             // 0: linked entities/content
             locationAPI.getLocationEntities(locId),
-            // 1: direct children
-            locationAPI.getAll({ parent_id: locId }),
+            // 1: direct children (sort=mostUsers ensures userCount is included in the response)
+            locationAPI.getAll({ parent_id: locId, sort: 'mostUsers' }),
             // 2: published location sections
             locationSectionAPI.getSections(locId),
             // 3: suggestions feed
