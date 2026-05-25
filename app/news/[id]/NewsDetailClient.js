@@ -7,7 +7,7 @@ import { ShareIcon, BookmarkIcon, PrinterIcon, PencilSquareIcon } from '@heroico
 import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
 import { bookmarkAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import Badge, { StatusBadge, TypeBadge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/Badge';
 import { useToast } from '@/components/ToastProvider';
 import { useFetchArticle } from '@/hooks/useFetchArticle';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -19,6 +19,7 @@ import CommentsThread from '@/components/comments/CommentsThread';
 import VideoEmbed from '@/components/articles/VideoEmbed';
 import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
+import ArticleTaxonomyPills from '@/components/articles/ArticleTaxonomyPills';
 
 export default function NewsDetailPage() {
   const params = useParams();
@@ -201,17 +202,7 @@ export default function NewsDetailPage() {
             {/* Article Header */}
             <div className="mb-8">
               <div className="flex flex-wrap gap-2 mb-4">
-                {article.type && <TypeBadge type={article.type} size="md" />}
-                {article.category && (
-                  <Badge variant="primary" size="md">
-                    {article.category}
-                  </Badge>
-                )}
-                {Array.isArray(article.tags) && article.tags.length > 0 && (
-                  <Badge variant="purple" size="md">
-                    {article.tags.join(', ')}
-                  </Badge>
-                )}
+                <ArticleTaxonomyPills article={article} size="md" />
                 {article.status !== 'published' && (
                   <StatusBadge status={article.status} size="md" />
                 )}

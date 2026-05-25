@@ -511,11 +511,11 @@ Appofa/
 ### Content
 | Route | Description |
 |-------|-------------|
-| `/articles`, `/articles/[id]`, `/articles/new`, `/articles/[id]/edit` | Articles |
-| `/news`, `/news/[id]` | News |
+| `/articles`, `/articles/[id]`, `/articles/new`, `/articles/[id]/edit` | Articles (detail taxonomy pills link to canonical list filters; list reads initial `tag`, `category`, and `type` query params) |
+| `/news`, `/news/[id]` | News (detail taxonomy pills link to canonical list filters; list reads initial `tag` and `category` query params) |
 | `/videos`, `/videos/[id]`, `/videos/new` | Videos |
 | `/editor` | Content editor |
-| `/polls`, `/polls/[id]`, `/polls/create`, `/polls/[id]/edit` | Polls |
+| `/polls`, `/polls/[id]`, `/polls/create`, `/polls/[id]/edit` | Polls (detail category/tag pills link to filtered `/polls`; list reads initial `tag` and `category` query params) |
 | `/civic-questions`, `/civic-questions/[id]`, `/civic-questions/create`, `/civic-questions/[id]/edit` | Civic Questions (Phase 2: list filters/sorting, official-style detail sections, enhanced results UI; detail page now includes metadata via server wrapper + client detail component split) |
 | `/suggestions`, `/suggestions/[id]`, `/suggestions/new`, `/suggestions/[id]/edit` | Suggestions |
 | `/embed/[entityType]/[id]` | Public iframe-friendly embed route for `polls`, `suggestions`, and `civic-questions`; renders responsive read-only cards with a strong CTA back to the full Appofasi page, hides global chrome via `AppShell`, and returns safe unavailable states for non-public / missing content |
@@ -586,12 +586,12 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## Components (152)
+## Components (153)
 
 | Directory | Count | Key Components |
 |-----------|-------|----------------|
 | `admin/` | 5 | AdminHeader, AdminLayout, AdminSidebar, AdminTable, AdminTableActions |
-| `articles/` | 9 | ArticleCard, ArticleForm, RichArticleContent, VideoEmbed, VideoPostForm |
+| `articles/` | 10 | ArticleCard, **ArticleTaxonomyPills** (shared clickable taxonomy pills for article/news/video detail headers), ArticleForm, RichArticleContent, VideoEmbed, VideoPostForm |
 | `comments/` | 2 | CommentForm, CommentsThread |
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |

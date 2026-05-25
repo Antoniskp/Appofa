@@ -27,6 +27,7 @@ import { useToast } from '@/components/ToastProvider';
 import { TooltipIconButton } from '@/components/ui/Tooltip';
 import { idSlug } from '@/lib/utils/slugify';
 import { getEmbedPath } from '@/lib/utils/embed';
+import { buildTaxonomyHref } from '@/lib/utils/taxonomyLinks';
 import ReportButton from '@/components/ReportButton';
 import ShareModal from '@/components/ui/ShareModal';
 
@@ -230,12 +231,18 @@ export default function PollDetailPage() {
                 {isPollActive ? 'Ενεργή' : 'Κλειστή'}
               </Badge>
               {poll.category && (
-                <Badge variant="primary">{poll.category}</Badge>
+                <Link href={buildTaxonomyHref('/polls', 'category', poll.category)} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                  <Badge variant="primary" className="cursor-pointer hover:opacity-90 transition-opacity">{poll.category}</Badge>
+                </Link>
               )}
               {Array.isArray(poll.tags) && poll.tags.length > 0 && (
-                <Badge variant="purple" size="md">
-                  {poll.tags.join(', ')}
-                </Badge>
+                poll.tags.filter(Boolean).map((tag) => (
+                  <Link key={tag} href={buildTaxonomyHref('/polls', 'tag', tag)} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    <Badge variant="purple" size="md" className="cursor-pointer hover:opacity-90 transition-opacity">
+                      {tag}
+                    </Badge>
+                  </Link>
+                ))
               )}
               {poll.visibility === 'locals_only' && (
                 <Badge variant="orange">Τοπική</Badge>

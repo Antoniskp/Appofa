@@ -24,12 +24,14 @@ function ArticlesContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
+  const initialCategory = searchParams.get('category') || '';
+  const initialType = searchParams.get('type') || 'articles';
   const {
     filters,
     updateFilter,
   } = useFilters({
-    category: '',
-    type: 'articles',
+    category: initialCategory,
+    type: initialType,
     tag: initialTag,
     search: '',
     locationId: null,
