@@ -74,8 +74,48 @@ jest.mock('@/components/map/GreeceBoundaryMap', () => {
     if (features.length === 0) return null;
     return { type: 'FeatureCollection', features };
   }
+  function normalizeLookupValue(value) {
+    if (value == null) return null;
+    const str = String(value).trim();
+    if (!str) return null;
+    return str.toLowerCase();
+  }
+  function getLookupKeys(locationLike = {}) {
+    const keys = [];
+    if (locationLike.code) keys.push(`code:${normalizeLookupValue(locationLike.code)}`);
+    if (locationLike.slug) keys.push(`slug:${normalizeLookupValue(locationLike.slug)}`);
+    if (locationLike.name_local) keys.push(`name:${normalizeLookupValue(locationLike.name_local)}`);
+    if (locationLike.name) keys.push(`name:${normalizeLookupValue(locationLike.name)}`);
+    if (locationLike.name_en) keys.push(`name:${normalizeLookupValue(locationLike.name_en)}`);
+    return Array.from(new Set(keys));
+  }
+  function buildLocationLookupByFeatureProps(locations = []) {
+    const lookup = new Map();
+    locations.forEach((loc) => {
+      getLookupKeys(loc).forEach((key) => lookup.set(key, loc));
+    });
+    return lookup;
+  }
+  function resolveLocationFromFeatureProps(props, lookup) {
+    const keys = getLookupKeys(props || {});
+    for (const key of keys) {
+      if (lookup.has(key)) return lookup.get(key);
+    }
+    return null;
+  }
+  function getLocationFeatureKey(locationLike = {}) {
+    const keys = getLookupKeys(locationLike);
+    return keys[0] || null;
+  }
   stub.buildFeatureCollectionFromLocations = buildFeatureCollectionFromLocations;
-  return { __esModule: true, default: stub, buildFeatureCollectionFromLocations };
+  return {
+    __esModule: true,
+    default: stub,
+    buildFeatureCollectionFromLocations,
+    buildLocationLookupByFeatureProps,
+    resolveLocationFromFeatureProps,
+    getLocationFeatureKey,
+  };
 });
 
 jest.mock('@/components/ui/Badge', () => {
@@ -433,7 +473,7 @@ describe('LocationChildrenExplorer', () => {
     });
 
     // Because the hover is still active (hoveredChildIdRef is set), onLayerInit re-applies the highlight
-    expect(highlight2).toHaveBeenCalledWith('attiki');
+    expect(highlight2).toHaveBeenCalledWith('slug:attiki');
 
     await cleanup(root, tc);
   });
@@ -509,6 +549,27 @@ describe('LocationChildrenExplorer', () => {
   });
 
   // ── Marker mode hover ─────────────────────────────────────────────────────
+
+  test('renders markers even when polygons exist (coexisting geometry mode)', async () => {
+    const children = [
+      makeChild(1, 'Attica', 'Αττική', 'attiki', true, { userCount: 5 }),
+      makeChild(2, 'Crete', 'Κρήτη', 'kriti', true, { userCount: 3 }),
+    ];
+    const { container, root } = await renderComponent(LocationChildrenExplorer, {
+      location,
+      children,
+      loading: false,
+    });
+
+    const { markers, polygonLayers, onMarkerHover, onMarkersReady } = global.__baseMapLastProps;
+    expect(Array.isArray(markers)).toBe(true);
+    expect(markers).toHaveLength(2);
+    expect(polygonLayers).toHaveLength(1);
+    expect(typeof onMarkerHover).toBe('function');
+    expect(typeof onMarkersReady).toBe('function');
+
+    await cleanup(root, container);
+  });
 
   test('marker mode: onMarkerHover callback updates pill hover state', async () => {
     const children = [

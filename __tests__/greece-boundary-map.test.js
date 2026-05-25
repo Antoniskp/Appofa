@@ -119,6 +119,9 @@ const {
   normalizeBoundaryGeoJSON,
   buildFeatureCollectionFromLocations,
   locationToFeatures,
+  buildLocationLookupByFeatureProps,
+  resolveLocationFromFeatureProps,
+  getLocationFeatureKey,
 } = require('../components/map/GreeceBoundaryMap');
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -404,6 +407,29 @@ describe('locationToFeatures', () => {
 describe('buildFeatureCollectionFromLocations', () => {
   test('returns null when no locations have boundary_geojson', () => {
     expect(buildFeatureCollectionFromLocations([SAMPLE_PREFECTURE_NO_BOUNDARY])).toBeNull();
+  });
+
+  describe('shared location feature lookup helpers', () => {
+    test('getLocationFeatureKey prefers normalized code when available', () => {
+      expect(getLocationFeatureKey({
+        id: 1,
+        slug: 'attiki',
+        code: 'GR-I',
+        name_local: 'Αττική',
+        name: 'Attica',
+      })).toBe('code:gr-i');
+    });
+
+    test('resolveLocationFromFeatureProps matches static fallback feature by code', () => {
+      const lookup = buildLocationLookupByFeatureProps([
+        { id: 1, slug: 'attiki', code: 'GR-I', name_local: 'Αττική', name: 'Attica' },
+      ]);
+      const resolved = resolveLocationFromFeatureProps(
+        { code: 'GR-I', name: 'Αττική' },
+        lookup
+      );
+      expect(resolved?.id).toBe(1);
+    });
   });
 
   test('returns null for empty array', () => {

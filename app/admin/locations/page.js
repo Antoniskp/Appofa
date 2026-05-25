@@ -518,7 +518,7 @@ function LocationManagementContent() {
         isOpen={showModal}
         onClose={handleCloseModal}
         title={editingLocation ? 'Edit Location' : 'Add New Location'}
-        size="lg"
+        size="xl"
         footer={
           <>
             <Button variant="secondary" onClick={handleCloseModal}>
@@ -624,7 +624,7 @@ function LocationManagementContent() {
               onChange={({ lat, lng }) =>
                 setFormData(prev => ({ ...prev, lat: String(lat), lng: String(lng) }))
               }
-              className="h-56 w-full rounded-lg overflow-hidden"
+              className="h-[300px] w-full rounded-xl overflow-hidden sm:h-[340px]"
             />
             <div className="grid grid-cols-2 gap-4 mt-2">
               <div>
@@ -694,7 +694,7 @@ function LocationManagementContent() {
                   map_default_zoom: String(zoom),
                 }))
               }
-              className="h-56 w-full rounded-lg overflow-hidden"
+              className="h-[300px] w-full rounded-xl overflow-hidden sm:h-[340px]"
             />
             <div className="grid grid-cols-3 gap-2 mt-2">
               <input

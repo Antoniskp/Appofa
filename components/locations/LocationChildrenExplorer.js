@@ -24,7 +24,12 @@ import { useState, useMemo, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { getChildLocationTerminology } from '@/lib/constants/locations';
-import { buildFeatureCollectionFromLocations } from '@/components/map/GreeceBoundaryMap';
+import {
+  buildFeatureCollectionFromLocations,
+  buildLocationLookupByFeatureProps,
+  resolveLocationFromFeatureProps,
+  getLocationFeatureKey,
+} from '@/components/map/GreeceBoundaryMap';
 
 const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false });
 
@@ -132,12 +137,12 @@ export default function LocationChildrenExplorer({
 
   const childTerms = getChildLocationTerminology(location?.type);
   const hasPolygons = children.some((c) => c.boundary_geojson);
-  const hasMarkers = !hasPolygons && children.some((c) => c.lat && c.lng);
+  const hasMarkers = children.some((c) => c.lat && c.lng);
   const hasGeometry = hasPolygons || hasMarkers;
 
-  // O(1) slug → child lookup to avoid repeated linear scans in hover/click handlers
-  const childBySlug = useMemo(
-    () => new Map(children.filter((c) => c.slug).map((c) => [c.slug, c])),
+  // O(1) feature props → child lookup (supports slug/code/name fallbacks).
+  const childLookup = useMemo(
+    () => buildLocationLookupByFeatureProps(children),
     [children]
   );
 
@@ -150,22 +155,20 @@ export default function LocationChildrenExplorer({
 
   // Map feature click: select the matching pill and scroll it into view
   const handleFeatureClick = useCallback((feature) => {
-    const slug = feature.properties?.slug;
-    const child = slug ? childBySlug.get(slug) : null;
+    const child = resolveLocationFromFeatureProps(feature.properties || {}, childLookup);
     if (!child) return;
     setSelectedChildId((prev) => (prev === child.id ? null : child.id));
     const el = pillRefs.current[child.id];
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-  }, [childBySlug]);
+  }, [childLookup]);
 
   // Map feature hover: update the ref FIRST (so resetStyle in BaseMap sees the new
   // value), then queue the React state update for pill CSS.
   const handleFeatureHover = useCallback((feature) => {
     if (!feature) { setHoveredChild(null); return; }
-    const slug = feature.properties?.slug;
-    const child = slug ? childBySlug.get(slug) : null;
+    const child = resolveLocationFromFeatureProps(feature.properties || {}, childLookup);
     setHoveredChild(child?.id ?? null);
-  }, [childBySlug, setHoveredChild]);
+  }, [childLookup, setHoveredChild]);
 
   // Marker hover callback: map marker hovered/un-hovered → update pill highlight.
   const handleMarkerHover = useCallback((id) => {
@@ -190,8 +193,7 @@ export default function LocationChildrenExplorer({
         // styleFeature reads hoveredChildIdRef so resetStyle always reflects the
         // most current hover state without requiring a layer rebuild on every hover.
         styleFeature: (feature, base) => {
-          const slug = feature.properties?.slug;
-          const child = slug ? childBySlug.get(slug) : null;
+          const child = resolveLocationFromFeatureProps(feature.properties || {}, childLookup);
           if (child && child.id === selectedChildId) return POLY_SELECTED;
           if (child && child.id === hoveredChildIdRef.current) return POLY_HOVER;
           return base;
@@ -201,6 +203,7 @@ export default function LocationChildrenExplorer({
         onFeatureClick: handleFeatureClick,
         onFeatureHover: handleFeatureHover,
         getTooltip: buildTooltip,
+        getFeatureId: (feature) => getLocationFeatureKey(feature.properties || {}),
         // onLayerInit is called each time the layer is (re)built — store fresh controls
         // and re-apply any active pill hover so the highlight survives layer rebuilds
         // (e.g. when selectedChildId changes).
@@ -209,14 +212,15 @@ export default function LocationChildrenExplorer({
           const currentHovered = hoveredChildIdRef.current;
           if (currentHovered !== null) {
             const hoveredChild = children.find((c) => c.id === currentHovered);
-            if (hoveredChild?.slug) {
-              controls.highlight(hoveredChild.slug);
+            const featureId = getLocationFeatureKey(hoveredChild || {});
+            if (featureId) {
+              controls.highlight(featureId);
             }
           }
         },
       },
     ];
-  }, [children, childBySlug, hasPolygons, selectedChildId, handleFeatureClick, handleFeatureHover]);
+  }, [children, childLookup, hasPolygons, selectedChildId, handleFeatureClick, handleFeatureHover]);
 
   // Marker fallback: used when children only have coordinates (no polygons).
   // Markers include tooltip content and a variant flag so BaseMap uses the
@@ -298,18 +302,22 @@ export default function LocationChildrenExplorer({
                         onMouseEnter={() => {
                           setHoveredChild(child.id);
                           // Imperatively highlight the polygon/marker without rebuilding layers
-                          if (hasPolygons && child.slug) {
-                            featureLayerControlsRef.current?.highlight(child.slug);
-                          } else if (hasMarkers) {
+                          const featureId = getLocationFeatureKey(child || {});
+                          if (hasPolygons && featureId) {
+                            featureLayerControlsRef.current?.highlight(featureId);
+                          }
+                          if (hasMarkers) {
                             markerLayerControlsRef.current?.highlight(String(child.id));
                           }
                         }}
                         onMouseLeave={() => {
                           setHoveredChild(null);
                           // Restore polygon/marker to its computed style (selected or default)
-                          if (hasPolygons && child.slug) {
-                            featureLayerControlsRef.current?.unhighlight(child.slug);
-                          } else if (hasMarkers) {
+                          const featureId = getLocationFeatureKey(child || {});
+                          if (hasPolygons && featureId) {
+                            featureLayerControlsRef.current?.unhighlight(featureId);
+                          }
+                          if (hasMarkers) {
                             markerLayerControlsRef.current?.unhighlight(
                               String(child.id),
                               child.id === selectedChildId ? 'selected' : 'explorer'
