@@ -7,6 +7,8 @@ import { idSlug } from '@/lib/utils/slugify';
 import { FilmIcon } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import UserAvatar from '@/components/user/UserAvatar';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 /**
  * Helper function to strip markdown syntax from text
@@ -67,6 +69,7 @@ export function stripMarkdown(text) {
 export default function ArticleCard({ article, variant = 'grid' }) {
   const tArticles = useTranslations('articles');
   const tCommon = useTranslations('common');
+  const router = useRouter();
   const defaultBannerImageUrl = '/images/branding/news default.png';
   const bannerImageUrl = article.bannerImageUrl || defaultBannerImageUrl;
   const createdAt = new Date(article.createdAt);
@@ -76,6 +79,42 @@ export default function ArticleCard({ article, variant = 'grid' }) {
   const articleHref = article.type === 'news'
     ? `/news/${idSlug(article.id, article.title)}`
     : `/articles/${idSlug(article.id, article.title)}`;
+  const articleListHrefByType = article.type === 'news'
+    ? '/news'
+    : article.type === 'video'
+      ? '/videos'
+      : '/articles';
+  const getArticleTaxonomyHref = (filterKey, value) => (
+    `${articleListHrefByType}?${filterKey}=${encodeURIComponent(value)}`
+  );
+  const tags = Array.isArray(article.tags) ? article.tags.filter(Boolean) : [];
+
+  const taxonomyBadges = (
+    <>
+      {article.type && (
+        <Link href={articleListHrefByType} onClick={(event) => event.stopPropagation()}>
+          <TypeBadge type={article.type} />
+        </Link>
+      )}
+      {article.category && (
+        <Link
+          href={getArticleTaxonomyHref('category', article.category)}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Badge variant="primary">{article.category}</Badge>
+        </Link>
+      )}
+      {tags.map((tag) => (
+        <Link
+          key={tag}
+          href={getArticleTaxonomyHref('tag', tag)}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Badge variant="purple">{tag}</Badge>
+        </Link>
+      ))}
+    </>
+  );
 
   // Detect video articles (YouTube / TikTok with usable embed data or at least
   // a sourceUrl so the VideoEmbed fallback card can still render).
@@ -107,17 +146,13 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         imageAlt={`${article.title} video thumbnail`}
         imageFallback={defaultBannerImageUrl}
         imageClassName="h-32"
-        href={articleHref}
+        onClick={() => router.push(articleHref)}
         hoverable
         className={`overflow-hidden ${accentClass}`}
       >
         <div className="flex flex-col flex-1">
           <div className="flex flex-wrap gap-2 mb-2">
-            {article.type && <TypeBadge type={article.type} />}
-            {article.category && <Badge variant="primary">{article.category}</Badge>}
-            {Array.isArray(article.tags) && article.tags.length > 0 && (
-              <Badge variant="purple">{article.tags.join(', ')}</Badge>
-            )}
+            {taxonomyBadges}
           </div>
           <h3 className="headline hover:text-blue-600 flex items-start gap-1.5">
             <FilmIcon className="w-4 h-4 mt-0.5 flex-shrink-0 text-gray-400" aria-hidden="true" />
@@ -160,18 +195,14 @@ export default function ArticleCard({ article, variant = 'grid' }) {
         image={bannerImageUrl}
         imageAlt={`${article.title} banner`}
         imageFallback={defaultBannerImageUrl}
-        href={articleHref}
+        onClick={() => router.push(articleHref)}
         hoverable
         className="overflow-hidden"
       >
         <div className="flex flex-col flex-1">
           {/* Badges */}
           <div className="flex flex-wrap gap-2 mb-2">
-            {article.type && <TypeBadge type={article.type} />}
-            {article.category && <Badge variant="primary">{article.category}</Badge>}
-            {Array.isArray(article.tags) && article.tags.length > 0 && (
-              <Badge variant="purple">{article.tags.join(', ')}</Badge>
-            )}
+            {taxonomyBadges}
           </div>
           
           {/* Title */}
@@ -219,17 +250,13 @@ export default function ArticleCard({ article, variant = 'grid' }) {
       imageAlt={`${article.title} banner`}
       imageFallback={defaultBannerImageUrl}
       imageClassName="h-32"
-      href={articleHref}
+      onClick={() => router.push(articleHref)}
       hoverable
       className="overflow-hidden"
     >
       <div className="flex flex-col flex-1">
         <div className="flex flex-wrap gap-2 mb-2">
-          {article.type && <TypeBadge type={article.type} />}
-          {article.category && <Badge variant="primary">{article.category}</Badge>}
-          {Array.isArray(article.tags) && article.tags.length > 0 && (
-            <Badge variant="purple">{article.tags.join(', ')}</Badge>
-          )}
+          {taxonomyBadges}
         </div>
         <h3 className="headline hover:text-blue-600">
           <TruncatedTextTooltip maxLines={2}>

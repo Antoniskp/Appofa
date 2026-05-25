@@ -45,6 +45,15 @@ export default function ArticleDetailPage() {
   const isVideo = article?.type === 'video';
   const breadcrumbLabel = isVideo ? tArticles('videos') : (isNews ? tArticles('news') : tArticles('title'));
   const breadcrumbHref = isVideo ? '/videos' : (isNews ? '/news' : '/articles');
+  const articleListHrefByType = article?.type === 'news'
+    ? '/news'
+    : article?.type === 'video'
+      ? '/videos'
+      : '/articles';
+  const getArticleTaxonomyHref = (filterKey, value) => (
+    `${articleListHrefByType}?${filterKey}=${encodeURIComponent(value)}`
+  );
+  const tags = Array.isArray(article?.tags) ? article.tags.filter(Boolean) : [];
 
   const handleShare = () => {
     setShowShareModal(true);
@@ -221,17 +230,25 @@ export default function ArticleDetailPage() {
             {/* Article Header */}
             <div className="mb-8">
               <div className="flex flex-wrap gap-2 mb-4">
-                {article.type && <TypeBadge type={article.type} size="md" />}
+                {article.type && (
+                  <Link href={articleListHrefByType}>
+                    <TypeBadge type={article.type} size="md" />
+                  </Link>
+                )}
                 {article.category && (
-                  <Badge variant="primary" size="md">
-                    {article.category}
-                  </Badge>
+                  <Link href={getArticleTaxonomyHref('category', article.category)}>
+                    <Badge variant="primary" size="md">
+                      {article.category}
+                    </Badge>
+                  </Link>
                 )}
-                {Array.isArray(article.tags) && article.tags.length > 0 && (
-                  <Badge variant="purple" size="md">
-                    {article.tags.join(', ')}
-                  </Badge>
-                )}
+                {tags.map((tag) => (
+                  <Link key={tag} href={getArticleTaxonomyHref('tag', tag)}>
+                    <Badge variant="purple" size="md">
+                      {tag}
+                    </Badge>
+                  </Link>
+                ))}
                 {article.status !== 'published' && (
                   <StatusBadge status={article.status} size="md" />
                 )}
