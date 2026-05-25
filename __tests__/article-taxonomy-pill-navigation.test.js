@@ -8,6 +8,24 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const mockRouterPush = jest.fn();
 const mockRouterReplace = jest.fn();
+const mockRouter = { push: mockRouterPush, replace: mockRouterReplace };
+const mockParams = { id: '1-sample-article' };
+const mockArticle = {
+  id: 1,
+  title: 'Sample Article',
+  type: 'articles',
+  category: 'Economy',
+  tags: ['Tax', 'Budget'],
+  summary: 'Summary',
+  content: 'Content',
+  createdAt: '2026-05-01T12:00:00.000Z',
+  updatedAt: '2026-05-01T12:00:00.000Z',
+  status: 'published',
+  author: { username: 'writer' },
+  hideAuthor: false,
+  commentsEnabled: true,
+  commentsLocked: false,
+};
 
 jest.mock('next/link', () => {
   const React = require('react');
@@ -18,8 +36,8 @@ jest.mock('next/link', () => {
 });
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: mockRouterPush, replace: mockRouterReplace }),
-  useParams: () => ({ id: '1-sample-article' }),
+  useRouter: () => mockRouter,
+  useParams: () => mockParams,
   usePathname: () => '/articles/1-sample-article',
 }));
 
@@ -27,22 +45,7 @@ jest.mock('@/hooks/useFetchArticle', () => ({
   useFetchArticle: () => ({
     loading: false,
     error: null,
-    article: {
-      id: 1,
-      title: 'Sample Article',
-      type: 'articles',
-      category: 'Economy',
-      tags: ['Tax', 'Budget'],
-      summary: 'Summary',
-      content: 'Content',
-      createdAt: '2026-05-01T12:00:00.000Z',
-      updatedAt: '2026-05-01T12:00:00.000Z',
-      status: 'published',
-      author: { username: 'writer' },
-      hideAuthor: false,
-      commentsEnabled: true,
-      commentsLocked: false,
-    },
+    article: mockArticle,
   }),
 }));
 
