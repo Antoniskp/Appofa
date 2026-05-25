@@ -50,6 +50,7 @@ export const metadata = {
     languages: {
       el: SITE_URL,
       en: SITE_URL,
+      ro: SITE_URL,
     },
   },
 };

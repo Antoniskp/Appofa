@@ -36,7 +36,7 @@ function GeoTrackerInner() {
 
       try {
         const fallbackLocale = navigator.language?.split('-')[0] || null;
-        const locale = readCookie('NEXT_LOCALE') || (['el', 'en'].includes(fallbackLocale) ? fallbackLocale : null);
+        const locale = readCookie('NEXT_LOCALE') || (['el', 'en', 'ro'].includes(fallbackLocale) ? fallbackLocale : null);
 
         // auth_token is HttpOnly — the browser sends it automatically as a cookie.
         // The backend reads it server-side from the request; do not pass it in the body.

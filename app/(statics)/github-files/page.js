@@ -120,6 +120,11 @@ const fileGroups = [
         description: 'Όλα τα αγγλικά κείμενα UI',
         url: 'https://github.com/Antoniskp/Appofa/blob/main/messages/en.json',
       },
+      {
+        label: 'messages/ro.json',
+        description: 'Όλα τα ρουμανικά κείμενα UI',
+        url: 'https://github.com/Antoniskp/Appofa/blob/main/messages/ro.json',
+      },
     ],
   },
   {
