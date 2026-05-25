@@ -84,7 +84,7 @@ function buildTooltip(props) {
     );
     if (modName) {
       lines.push(
-        `<div style="font-size:11px;color:#6b7280;margin-top:2px">🏛 ${modName}</div>`
+        `<div style="font-size:11px;color:#6b7280;margin-top:2px">🏛 <span aria-label="Υπεύθυνος">${modName}</span></div>`
       );
     }
   }
@@ -141,6 +141,13 @@ export default function LocationChildrenExplorer({
     [children]
   );
 
+  // Sync helper: update ref immediately (so styleFeature/resetStyle callbacks read
+  // the new value) and queue the React state update for pill CSS repaint.
+  const setHoveredChild = useCallback((id) => {
+    hoveredChildIdRef.current = id;
+    setHoveredChildId(id);
+  }, []);
+
   // Map feature click: select the matching pill and scroll it into view
   const handleFeatureClick = useCallback((feature) => {
     const slug = feature.properties?.slug;
@@ -154,30 +161,18 @@ export default function LocationChildrenExplorer({
   // Map feature hover: update the ref FIRST (so resetStyle in BaseMap sees the new
   // value), then queue the React state update for pill CSS.
   const handleFeatureHover = useCallback((feature) => {
-    if (!feature) {
-      hoveredChildIdRef.current = null;
-      setHoveredChildId(null);
-      return;
-    }
+    if (!feature) { setHoveredChild(null); return; }
     const slug = feature.properties?.slug;
     const child = slug ? childBySlug.get(slug) : null;
-    hoveredChildIdRef.current = child?.id ?? null;
-    setHoveredChildId(child?.id ?? null);
-  }, [childBySlug]);
+    setHoveredChild(child?.id ?? null);
+  }, [childBySlug, setHoveredChild]);
 
   // Marker hover callback: map marker hovered/un-hovered → update pill highlight.
   const handleMarkerHover = useCallback((id) => {
-    if (!id) {
-      hoveredChildIdRef.current = null;
-      setHoveredChildId(null);
-      return;
-    }
+    if (!id) { setHoveredChild(null); return; }
     const child = children.find((c) => String(c.id) === String(id));
-    if (child) {
-      hoveredChildIdRef.current = child.id;
-      setHoveredChildId(child.id);
-    }
-  }, [children]);
+    if (child) setHoveredChild(child.id);
+  }, [children, setHoveredChild]);
 
   // Build polygon layers — includes selectedChildId so the selected polygon is highlighted.
   // Rebuilding on click (when selectedChildId changes) is acceptable.
@@ -301,8 +296,7 @@ export default function LocationChildrenExplorer({
                         type="button"
                         onClick={() => setSelectedChildId(isSelected ? null : child.id)}
                         onMouseEnter={() => {
-                          hoveredChildIdRef.current = child.id;
-                          setHoveredChildId(child.id);
+                          setHoveredChild(child.id);
                           // Imperatively highlight the polygon/marker without rebuilding layers
                           if (hasPolygons && child.slug) {
                             featureLayerControlsRef.current?.highlight(child.slug);
@@ -311,8 +305,7 @@ export default function LocationChildrenExplorer({
                           }
                         }}
                         onMouseLeave={() => {
-                          hoveredChildIdRef.current = null;
-                          setHoveredChildId(null);
+                          setHoveredChild(null);
                           // Restore polygon/marker to its computed style (selected or default)
                           if (hasPolygons && child.slug) {
                             featureLayerControlsRef.current?.unhighlight(child.slug);
