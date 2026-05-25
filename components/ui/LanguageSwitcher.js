@@ -3,6 +3,12 @@
 import { useEffect, useState } from 'react';
 import { DEFAULT_LOCALE, SUPPORTED_LOCALES } from '@/lib/constants/i18n';
 
+const LOCALE_OPTIONS = [
+  { value: 'el', label: 'ΕΛ', flag: '🇬🇷', ariaLabel: 'Ελληνικά' },
+  { value: 'en', label: 'EN', flag: '🇬🇧', ariaLabel: 'English' },
+  { value: 'ro', label: 'RO', flag: '🇷🇴', ariaLabel: 'Română' },
+];
+
 export default function LanguageSwitcher() {
   const [current, setCurrent] = useState(DEFAULT_LOCALE);
 
@@ -27,21 +33,18 @@ export default function LanguageSwitcher() {
 
   return (
     <div className="flex items-center gap-1 text-sm">
-      <button
-        onClick={() => handleSwitch('el')}
-        className={`px-2 py-1 rounded ${current === 'el' ? 'font-bold' : 'opacity-50 hover:opacity-100'}`}
-        aria-label="Ελληνικά"
-      >
-        🇬🇷 ΕΛ
-      </button>
-      <span className="opacity-30">|</span>
-      <button
-        onClick={() => handleSwitch('en')}
-        className={`px-2 py-1 rounded ${current === 'en' ? 'font-bold' : 'opacity-50 hover:opacity-100'}`}
-        aria-label="English"
-      >
-        🇬🇧 EN
-      </button>
+      {LOCALE_OPTIONS.map((option, index) => (
+        <div key={option.value} className="contents">
+          <button
+            onClick={() => handleSwitch(option.value)}
+            className={`px-2 py-1 rounded ${current === option.value ? 'font-bold' : 'opacity-50 hover:opacity-100'}`}
+            aria-label={option.ariaLabel}
+          >
+            {option.flag} {option.label}
+          </button>
+          {index < LOCALE_OPTIONS.length - 1 && <span className="opacity-30">|</span>}
+        </div>
+      ))}
     </div>
   );
 }

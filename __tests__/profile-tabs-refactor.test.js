@@ -6,6 +6,7 @@ describe('Profile page tab refactor', () => {
   const profileHookPath = path.join(__dirname, '..', 'hooks', 'useProfileForm.js');
   const enMessagesPath = path.join(__dirname, '..', 'messages', 'en.json');
   const elMessagesPath = path.join(__dirname, '..', 'messages', 'el.json');
+  const roMessagesPath = path.join(__dirname, '..', 'messages', 'ro.json');
 
   it('profile page uses useProfileForm and renders tab components', () => {
     const source = fs.readFileSync(profilePagePath, 'utf8');
@@ -36,9 +37,10 @@ describe('Profile page tab refactor', () => {
     expect(source).toContain('handleAddInterest');
   });
 
-  it('defines profile tab labels for both locales', () => {
+  it('defines profile tab labels for supported locales', () => {
     const en = JSON.parse(fs.readFileSync(enMessagesPath, 'utf8'));
     const el = JSON.parse(fs.readFileSync(elMessagesPath, 'utf8'));
+    const ro = JSON.parse(fs.readFileSync(roMessagesPath, 'utf8'));
 
     expect(en.profile.tab_profile).toBeTruthy();
     expect(en.profile.tab_location_politics).toBeTruthy();
@@ -49,5 +51,10 @@ describe('Profile page tab refactor', () => {
     expect(el.profile.tab_location_politics).toBeTruthy();
     expect(el.profile.tab_skills_interests).toBeTruthy();
     expect(el.profile.tab_settings).toBeTruthy();
+
+    expect(ro.profile.tab_profile).toBeTruthy();
+    expect(ro.profile.tab_location_politics).toBeTruthy();
+    expect(ro.profile.tab_skills_interests).toBeTruthy();
+    expect(ro.profile.tab_settings).toBeTruthy();
   });
 });

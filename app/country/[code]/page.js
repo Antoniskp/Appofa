@@ -146,7 +146,7 @@ export default function CountryLandingPage() {
   if (!data.location) {
     let fallbackName = code;
     try {
-      fallbackName = new Intl.DisplayNames(['el', 'en'], { type: 'region' }).of(code) || code;
+      fallbackName = new Intl.DisplayNames(['el', 'en', 'ro'], { type: 'region' }).of(code) || code;
     } catch {
       // keep raw code if Intl.DisplayNames is unavailable
     }

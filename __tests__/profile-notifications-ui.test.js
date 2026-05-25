@@ -6,6 +6,7 @@ describe('Profile notifications UI wiring', () => {
   const settingsTabPath = path.join(__dirname, '..', 'app', 'profile', 'tabs', 'SettingsTab.js');
   const enMessagesPath = path.join(__dirname, '..', 'messages', 'en.json');
   const elMessagesPath = path.join(__dirname, '..', 'messages', 'el.json');
+  const roMessagesPath = path.join(__dirname, '..', 'messages', 'ro.json');
 
   it('renders PushNotificationEnable in profile settings tab', () => {
     const source = fs.readFileSync(settingsTabPath, 'utf8');
@@ -23,13 +24,16 @@ describe('Profile notifications UI wiring', () => {
     expect(source).toContain('<SettingsTab');
   });
 
-  it('has push notification copy keys for both locales', () => {
+  it('has push notification copy keys for supported locales', () => {
     const en = JSON.parse(fs.readFileSync(enMessagesPath, 'utf8'));
     const el = JSON.parse(fs.readFileSync(elMessagesPath, 'utf8'));
+    const ro = JSON.parse(fs.readFileSync(roMessagesPath, 'utf8'));
 
     expect(en.profile.push_notifications_title).toBeTruthy();
     expect(en.profile.push_notifications_description).toBeTruthy();
     expect(el.profile.push_notifications_title).toBeTruthy();
     expect(el.profile.push_notifications_description).toBeTruthy();
+    expect(ro.profile.push_notifications_title).toBeTruthy();
+    expect(ro.profile.push_notifications_description).toBeTruthy();
   });
 });
