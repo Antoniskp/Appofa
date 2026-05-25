@@ -24,6 +24,7 @@ function NewsContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
+  const initialCategory = searchParams.get('category') || '';
   const {
     filters,
     page,
@@ -35,7 +36,7 @@ function NewsContent() {
     goToPage,
     updateFilter,
   } = useFilters({
-    category: '',
+    category: initialCategory,
     tag: initialTag,
     search: '',
     locationId: null,

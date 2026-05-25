@@ -26,6 +26,7 @@ function PollsContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
+  const initialCategory = searchParams.get('category') || '';
   const {
     filters,
     page,
@@ -38,7 +39,7 @@ function PollsContent() {
     updateFilter,
   } = useFilters({
     status: '',
-    category: '',
+    category: initialCategory,
     tag: initialTag,
     search: '',
     locationId: null,
