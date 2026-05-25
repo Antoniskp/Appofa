@@ -191,7 +191,7 @@ export default function LocationEditForm({
               onInputChange('lat', String(lat));
               onInputChange('lng', String(lng));
             }}
-            className="h-56 w-full rounded-lg overflow-hidden"
+            className="h-[300px] w-full rounded-xl overflow-hidden sm:h-[340px]"
           />
           <div className="flex gap-2 mt-2">
             <input
@@ -249,7 +249,7 @@ export default function LocationEditForm({
               onInputChange('map_default_center_lng', String(lng));
               onInputChange('map_default_zoom', String(zoom));
             }}
-            className="h-56 w-full rounded-lg overflow-hidden"
+            className="h-[300px] w-full rounded-xl overflow-hidden sm:h-[340px]"
           />
           <div className="flex gap-2 mt-2">
             <input

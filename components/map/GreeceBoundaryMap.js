@@ -80,6 +80,51 @@ function normalizeBoundaryGeoJSON(raw, displayName) {
   }
 }
 
+function normalizeLookupValue(value) {
+  if (value == null) return null;
+  const str = String(value).trim();
+  if (!str) return null;
+  return str.toLowerCase();
+}
+
+function getLocationLookupKeys(locationLike = {}) {
+  const keys = [];
+  const slug = normalizeLookupValue(locationLike.slug);
+  const code = normalizeLookupValue(locationLike.code);
+  const nameLocal = normalizeLookupValue(locationLike.name_local);
+  const name = normalizeLookupValue(locationLike.name);
+  const nameEn = normalizeLookupValue(locationLike.name_en);
+
+  if (code) keys.push(`code:${code}`);
+  if (slug) keys.push(`slug:${slug}`);
+  if (nameLocal) keys.push(`name:${nameLocal}`);
+  if (name) keys.push(`name:${name}`);
+  if (nameEn) keys.push(`name:${nameEn}`);
+  return Array.from(new Set(keys));
+}
+
+function buildLocationLookupByFeatureProps(locations = []) {
+  const lookup = new Map();
+  locations.forEach((loc) => {
+    getLocationLookupKeys(loc).forEach((key) => lookup.set(key, loc));
+  });
+  return lookup;
+}
+
+function resolveLocationFromFeatureProps(props, lookup) {
+  if (!props || !lookup) return null;
+  const keys = getLocationLookupKeys(props);
+  for (const key of keys) {
+    if (lookup.has(key)) return lookup.get(key);
+  }
+  return null;
+}
+
+function getLocationFeatureKey(locationLike = {}) {
+  const keys = getLocationLookupKeys(locationLike);
+  return keys[0] || null;
+}
+
 /**
  * Converts a Location object into one or more GeoJSON features with location metadata
  * merged into the feature properties so tooltips, popups, and the info card have access.
@@ -126,7 +171,20 @@ function buildFeatureCollectionFromLocations(locations) {
 // Tooltip HTML builder — shown on hover (region name)
 function buildTooltip(props) {
   const name = props.name || '';
-  return `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>`;
+  const lines = [`<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>`];
+  if (typeof props.userCount === 'number' && props.userCount > 0) {
+    lines.push(
+      `<div style="font-size:11px;color:#6b7280;margin-top:2px">👥 ${props.userCount} χρήστ${props.userCount === 1 ? 'ης' : 'ες'}</div>`
+    );
+  }
+  const mod = props.moderatorPreview;
+  if (mod) {
+    const modName = [mod.firstNameNative, mod.lastNameNative].filter(Boolean).join(' ') || mod.username || '';
+    if (modName) {
+      lines.push(`<div style="font-size:11px;color:#6b7280;margin-top:2px">🏛 ${modName}</div>`);
+    }
+  }
+  return lines.join('');
 }
 
 const GREECE_CENTER = [38.5, 23.8];
@@ -147,6 +205,14 @@ const POLY_HOVER_STYLE = {
   opacity: 0.9,
   fillColor: '#3b82f6',
   fillOpacity: 0.28,
+};
+
+const POLY_SELECTED_STYLE = {
+  color: '#1d4ed8',
+  weight: 2.5,
+  opacity: 1,
+  fillColor: '#1d4ed8',
+  fillOpacity: 0.35,
 };
 
 function styleFeature(feature, baseStyle) {
@@ -204,7 +270,19 @@ function RegionInfoCard({ region, onClose }) {
   );
 }
 
-export default memo(function GreeceBoundaryMap({ prefectures = [], className, loading = false }) {
+export default memo(function GreeceBoundaryMap({
+  prefectures = [],
+  className,
+  loading = false,
+  selectedLocationId = null,
+  hoveredLocationId = null,
+  onLocationSelect,
+  onLocationHover,
+  onLayerInit,
+  onMarkerHover,
+  onMarkersReady,
+  showSelectionCard = true,
+}) {
   const [fallbackGeoData, setFallbackGeoData] = useState(null);
   const [fallbackGeoError, setFallbackGeoError] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(null);
@@ -212,6 +290,10 @@ export default memo(function GreeceBoundaryMap({ prefectures = [], className, lo
   // Build a feature collection from location boundary_geojson values when available.
   const locationFeatureCollection = useMemo(
     () => buildFeatureCollectionFromLocations(prefectures),
+    [prefectures]
+  );
+  const locationLookup = useMemo(
+    () => buildLocationLookupByFeatureProps(prefectures),
     [prefectures]
   );
 
@@ -230,13 +312,49 @@ export default memo(function GreeceBoundaryMap({ prefectures = [], className, lo
   // Handler: a region polygon was clicked — update React info card
   const handleFeatureClick = useCallback((feature) => {
     const p = feature.properties || {};
+    const linkedLocation = resolveLocationFromFeatureProps(p, locationLookup);
+    if (linkedLocation?.id != null && onLocationSelect) {
+      onLocationSelect(linkedLocation.id);
+    }
     setSelectedRegion({
       name: p.name || p.name_en || '',
       capital: p.capital || '',
       code: p.code || '',
       slug: p.slug || null,
     });
-  }, []);
+  }, [locationLookup, onLocationSelect]);
+
+  const handleFeatureHover = useCallback((featureOrNull) => {
+    if (!onLocationHover) return;
+    if (!featureOrNull) {
+      onLocationHover(null);
+      return;
+    }
+    const linkedLocation = resolveLocationFromFeatureProps(featureOrNull.properties || {}, locationLookup);
+    onLocationHover(linkedLocation?.id ?? null);
+  }, [locationLookup, onLocationHover]);
+
+  const markers = useMemo(
+    () => prefectures
+      .filter((p) => p.lat && p.lng)
+      .map((p) => ({
+        id: String(p.id),
+        lat: Number(p.lat),
+        lng: Number(p.lng),
+        tooltip: buildTooltip({
+          name: p.name_local || p.name,
+          userCount: typeof p.userCount === 'number' ? p.userCount : null,
+          moderatorPreview: p.moderatorPreview || null,
+        }),
+        popup: buildTooltip({
+          name: p.name_local || p.name,
+          userCount: typeof p.userCount === 'number' ? p.userCount : null,
+          moderatorPreview: p.moderatorPreview || null,
+        }),
+        variant: Number(selectedLocationId) === Number(p.id) ? 'selected' : 'explorer',
+      })),
+    [prefectures, selectedLocationId]
+  );
 
   // Build the polygonLayers config (memoized so it doesn't trigger map re-init)
   const polygonLayers = useMemo(() => {
@@ -247,14 +365,36 @@ export default memo(function GreeceBoundaryMap({ prefectures = [], className, lo
         id: 'greece-peripheries',
         geojson: geoData,
         style: POLY_DEFAULT_STYLE,
-        styleFeature,
+        styleFeature: (feature, baseStyle) => {
+          const linkedLocation = resolveLocationFromFeatureProps(feature.properties || {}, locationLookup);
+          if (linkedLocation && Number(linkedLocation.id) === Number(selectedLocationId)) {
+            return styleFeature(feature, POLY_SELECTED_STYLE);
+          }
+          if (linkedLocation && Number(linkedLocation.id) === Number(hoveredLocationId)) {
+            return styleFeature(feature, POLY_HOVER_STYLE);
+          }
+          return styleFeature(feature, baseStyle);
+        },
         hoverStyle: POLY_HOVER_STYLE,
         fitBoundsOnClick: true,
         onFeatureClick: handleFeatureClick,
+        onFeatureHover: handleFeatureHover,
         getTooltip: buildTooltip,
+        getFeatureId: (feature) => getLocationFeatureKey(feature.properties || {}),
+        onLayerInit,
       },
     ];
-  }, [useFallback, fallbackGeoData, locationFeatureCollection, handleFeatureClick]);
+  }, [
+    useFallback,
+    fallbackGeoData,
+    locationFeatureCollection,
+    handleFeatureClick,
+    handleFeatureHover,
+    locationLookup,
+    selectedLocationId,
+    hoveredLocationId,
+    onLayerInit,
+  ]);
 
   if (loading) return <Skeleton />;
 
@@ -269,17 +409,21 @@ export default memo(function GreeceBoundaryMap({ prefectures = [], className, lo
       <BaseMap
         center={GREECE_CENTER}
         zoom={GREECE_ZOOM}
-        markers={[]}
+        markers={markers}
         polygonLayers={polygonLayers}
         className="h-full w-full"
         scrollWheelZoom={false}
         interactive={true}
+        onMarkerHover={onMarkerHover}
+        onMarkersReady={onMarkersReady}
       />
       {/* React info card overlay — positioned inside the relative container, above Leaflet */}
-      <RegionInfoCard
-        region={selectedRegion}
-        onClose={() => setSelectedRegion(null)}
-      />
+      {showSelectionCard && (
+        <RegionInfoCard
+          region={selectedRegion}
+          onClose={() => setSelectedRegion(null)}
+        />
+      )}
       {/* Source label */}
       <div className="absolute bottom-1 left-1 z-[1000] bg-white/80 rounded px-1.5 py-0.5 text-[10px] text-gray-400 pointer-events-none select-none">
         Περιφέρειες Ελλάδας
@@ -289,4 +433,11 @@ export default memo(function GreeceBoundaryMap({ prefectures = [], className, lo
 });
 
 // Named exports for unit tests
-export { normalizeBoundaryGeoJSON, buildFeatureCollectionFromLocations, locationToFeatures };
+export {
+  normalizeBoundaryGeoJSON,
+  buildFeatureCollectionFromLocations,
+  locationToFeatures,
+  buildLocationLookupByFeatureProps,
+  resolveLocationFromFeatureProps,
+  getLocationFeatureKey,
+};
