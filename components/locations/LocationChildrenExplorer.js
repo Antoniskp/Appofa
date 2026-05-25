@@ -4,19 +4,19 @@
  * LocationChildrenExplorer — unified "inside this location" section.
  *
  * Renders child locations as an interactive map (polygons when boundary_geojson is
- * available, markers when only coordinates exist) with a pills/list below the map.
- * Pills and map features are linked bidirectionally:
+ * available, markers when only coordinates exist) with a pills/list beside the map.
+ * Pills and map features are fully bidirectionally linked:
  *   - hover/click on a map polygon/marker → highlights + selects the corresponding pill
+ *   - hover on a pill → highlights the corresponding polygon or marker on the map
  *   - click on a pill → selects and shows an inline preview card; map zooms to that child
  *     (via BaseMap fitBoundsOnClick)
- *   - hover on a pill → highlights the pill (map hover is handled internally by BaseMap)
  *
  * When no children have geometry, the section renders as a pills-only list.
  * When children.length === 0 (after loading), the section renders nothing.
  *
  * Props:
  *   location  {object}   – parent location object (used for context labels + map defaults)
- *   children  {Array}    – child location objects from the API
+ *   children  {Array}    – child location objects from the API (may include userCount + moderatorPreview)
  *   loading   {boolean}  – when true shows skeleton placeholders
  */
 
@@ -61,9 +61,35 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Build a compact tooltip HTML string for a child location.
+ * Shows: name (bold), user count (when available), first moderator name (when available).
+ */
 function buildTooltip(props) {
   const name = escapeHtml(props.name || '');
-  return `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>`;
+  const lines = [
+    `<div style="font-weight:600;font-size:13px;line-height:1.3">${name}</div>`,
+  ];
+
+  if (typeof props.userCount === 'number' && props.userCount > 0) {
+    lines.push(
+      `<div style="font-size:11px;color:#6b7280;margin-top:2px">👥 ${props.userCount} χρήστ${props.userCount === 1 ? 'ης' : 'ες'}</div>`
+    );
+  }
+
+  const mod = props.moderatorPreview;
+  if (mod) {
+    const modName = escapeHtml(
+      [mod.firstNameNative, mod.lastNameNative].filter(Boolean).join(' ') || mod.username || ''
+    );
+    if (modName) {
+      lines.push(
+        `<div style="font-size:11px;color:#6b7280;margin-top:2px">🏛 <span aria-label="Υπεύθυνος">${modName}</span></div>`
+      );
+    }
+  }
+
+  return lines.join('');
 }
 
 /**
@@ -93,6 +119,17 @@ export default function LocationChildrenExplorer({
   const [hoveredChildId, setHoveredChildId] = useState(null);
   const pillRefs = useRef({});
 
+  // Ref tracks the current hovered child id synchronously (updated before state).
+  // styleFeature reads from this ref so resetStyle always sees the correct value.
+  const hoveredChildIdRef = useRef(null);
+
+  // Imperative controls exposed by BaseMap after each layer init — used to
+  // apply/remove polygon highlight when a pill is hovered without rebuilding layers.
+  const featureLayerControlsRef = useRef(null);
+
+  // Imperative controls for the marker-fallback layer.
+  const markerLayerControlsRef = useRef(null);
+
   const childTerms = getChildLocationTerminology(location?.type);
   const hasPolygons = children.some((c) => c.boundary_geojson);
   const hasMarkers = !hasPolygons && children.some((c) => c.lat && c.lng);
@@ -104,6 +141,13 @@ export default function LocationChildrenExplorer({
     [children]
   );
 
+  // Sync helper: update ref immediately (so styleFeature/resetStyle callbacks read
+  // the new value) and queue the React state update for pill CSS repaint.
+  const setHoveredChild = useCallback((id) => {
+    hoveredChildIdRef.current = id;
+    setHoveredChildId(id);
+  }, []);
+
   // Map feature click: select the matching pill and scroll it into view
   const handleFeatureClick = useCallback((feature) => {
     const slug = feature.properties?.slug;
@@ -114,17 +158,26 @@ export default function LocationChildrenExplorer({
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
   }, [childBySlug]);
 
-  // Map feature hover: highlight the matching pill
+  // Map feature hover: update the ref FIRST (so resetStyle in BaseMap sees the new
+  // value), then queue the React state update for pill CSS.
   const handleFeatureHover = useCallback((feature) => {
-    if (!feature) { setHoveredChildId(null); return; }
+    if (!feature) { setHoveredChild(null); return; }
     const slug = feature.properties?.slug;
     const child = slug ? childBySlug.get(slug) : null;
-    setHoveredChildId(child?.id ?? null);
-  }, [childBySlug]);
+    setHoveredChild(child?.id ?? null);
+  }, [childBySlug, setHoveredChild]);
+
+  // Marker hover callback: map marker hovered/un-hovered → update pill highlight.
+  const handleMarkerHover = useCallback((id) => {
+    if (!id) { setHoveredChild(null); return; }
+    const child = children.find((c) => String(c.id) === String(id));
+    if (child) setHoveredChild(child.id);
+  }, [children, setHoveredChild]);
 
   // Build polygon layers — includes selectedChildId so the selected polygon is highlighted.
-  // Rebuilding on click (when selectedChildId changes) is acceptable; it happens once per click
-  // and the browser only paints the final result, so there is no visible flicker.
+  // Rebuilding on click (when selectedChildId changes) is acceptable.
+  // Hover highlighting is applied imperatively via featureLayerControlsRef so that the
+  // layer is not rebuilt on every mouse movement.
   const polygonLayers = useMemo(() => {
     if (!hasPolygons) return [];
     const featureCollection = buildFeatureCollectionFromLocations(children);
@@ -134,10 +187,13 @@ export default function LocationChildrenExplorer({
         id: 'location-children',
         geojson: featureCollection,
         style: POLY_DEFAULT,
+        // styleFeature reads hoveredChildIdRef so resetStyle always reflects the
+        // most current hover state without requiring a layer rebuild on every hover.
         styleFeature: (feature, base) => {
           const slug = feature.properties?.slug;
           const child = slug ? childBySlug.get(slug) : null;
           if (child && child.id === selectedChildId) return POLY_SELECTED;
+          if (child && child.id === hoveredChildIdRef.current) return POLY_HOVER;
           return base;
         },
         hoverStyle: POLY_HOVER,
@@ -145,21 +201,39 @@ export default function LocationChildrenExplorer({
         onFeatureClick: handleFeatureClick,
         onFeatureHover: handleFeatureHover,
         getTooltip: buildTooltip,
+        // onLayerInit is called each time the layer is (re)built — store fresh controls
+        // and re-apply any active pill hover so the highlight survives layer rebuilds
+        // (e.g. when selectedChildId changes).
+        onLayerInit: (controls) => {
+          featureLayerControlsRef.current = controls;
+          const currentHovered = hoveredChildIdRef.current;
+          if (currentHovered !== null) {
+            const hoveredChild = children.find((c) => c.id === currentHovered);
+            if (hoveredChild?.slug) {
+              controls.highlight(hoveredChild.slug);
+            }
+          }
+        },
       },
     ];
   }, [children, childBySlug, hasPolygons, selectedChildId, handleFeatureClick, handleFeatureHover]);
 
-  // Marker fallback: used when children only have coordinates (no polygons)
+  // Marker fallback: used when children only have coordinates (no polygons).
+  // Markers include tooltip content and a variant flag so BaseMap uses the
+  // correct DivIcon (default / selected).  Hover highlighting uses markerLayerControlsRef.
   const markers = useMemo(() => {
     if (!hasMarkers) return [];
     return children
       .filter((c) => c.lat && c.lng)
       .map((c) => ({
+        id: String(c.id),
         lat: Number(c.lat),
         lng: Number(c.lng),
-        popup: c.name_local || c.name,
+        popup: buildTooltip({ name: c.name_local || c.name, userCount: c.userCount ?? null, moderatorPreview: c.moderatorPreview ?? null }),
+        tooltip: buildTooltip({ name: c.name_local || c.name, userCount: c.userCount ?? null, moderatorPreview: c.moderatorPreview ?? null }),
+        variant: c.id === selectedChildId ? 'selected' : 'explorer',
       }));
-  }, [children, hasMarkers]);
+  }, [children, hasMarkers, selectedChildId]);
 
   const mapCenter = useMemo(() => computeMapCenter(location, children), [location, children]);
   const mapZoom = location?.map_default_zoom ? Number(location.map_default_zoom) : 7;
@@ -195,6 +269,8 @@ export default function LocationChildrenExplorer({
                   className="h-[300px] w-full rounded-xl overflow-hidden sm:h-[340px] lg:h-auto lg:aspect-square"
                   scrollWheelZoom={false}
                   interactive={true}
+                  onMarkerHover={hasMarkers ? handleMarkerHover : undefined}
+                  onMarkersReady={hasMarkers ? (controls) => { markerLayerControlsRef.current = controls; } : undefined}
                 />
                 <p className="text-xs text-gray-500">
                   Επίλεξε περιοχή από τον χάρτη ή τη λίστα για να εξερευνήσεις τοπική δραστηριότητα
@@ -219,8 +295,27 @@ export default function LocationChildrenExplorer({
                         ref={(el) => { if (el) pillRefs.current[child.id] = el; }}
                         type="button"
                         onClick={() => setSelectedChildId(isSelected ? null : child.id)}
-                        onMouseEnter={() => setHoveredChildId(child.id)}
-                        onMouseLeave={() => setHoveredChildId(null)}
+                        onMouseEnter={() => {
+                          setHoveredChild(child.id);
+                          // Imperatively highlight the polygon/marker without rebuilding layers
+                          if (hasPolygons && child.slug) {
+                            featureLayerControlsRef.current?.highlight(child.slug);
+                          } else if (hasMarkers) {
+                            markerLayerControlsRef.current?.highlight(String(child.id));
+                          }
+                        }}
+                        onMouseLeave={() => {
+                          setHoveredChild(null);
+                          // Restore polygon/marker to its computed style (selected or default)
+                          if (hasPolygons && child.slug) {
+                            featureLayerControlsRef.current?.unhighlight(child.slug);
+                          } else if (hasMarkers) {
+                            markerLayerControlsRef.current?.unhighlight(
+                              String(child.id),
+                              child.id === selectedChildId ? 'selected' : 'explorer'
+                            );
+                          }
+                        }}
                         aria-pressed={isSelected}
                         className={`inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-medium transition-colors whitespace-nowrap ${
                           isSelected
@@ -242,18 +337,29 @@ export default function LocationChildrenExplorer({
 
         {/* Selected child preview card — shown when a pill or map feature is selected */}
         {selectedChild && (
-          <div className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-2.5">
-            <div>
-              <p className="text-sm font-semibold text-blue-900">
+          <div className="flex items-start justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-2.5">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-blue-900 truncate">
                 {selectedChild.name_local || selectedChild.name}
               </p>
               {selectedChild.type && (
                 <p className="text-xs text-blue-600 capitalize">{selectedChild.type}</p>
               )}
+              {typeof selectedChild.userCount === 'number' && selectedChild.userCount > 0 && (
+                <p className="text-xs text-blue-500 mt-0.5">
+                  {selectedChild.userCount} χρήστ{selectedChild.userCount === 1 ? 'ης' : 'ες'}
+                </p>
+              )}
+              {selectedChild.moderatorPreview && (
+                <p className="text-xs text-blue-500 mt-0.5 truncate">
+                  {[selectedChild.moderatorPreview.firstNameNative, selectedChild.moderatorPreview.lastNameNative]
+                    .filter(Boolean).join(' ') || selectedChild.moderatorPreview.username}
+                </p>
+              )}
             </div>
             <Link
               href={`/locations/${selectedChild.slug || selectedChild.id}`}
-              className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
+              className="flex-shrink-0 inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
             >
               Άνοιγμα →
             </Link>

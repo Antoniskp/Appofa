@@ -26,7 +26,24 @@
  *     getPopup:         (props) => string | null,  – HTML string for click popup
  *     fitBoundsOnClick: boolean,  – auto-fit map to feature bounds on click (default true)
  *     onFeatureClick:   (feature) => void,  – optional callback after click
+ *     onFeatureHover:   (feature | null) => void, – optional callback on mouseover/mouseout
+ *     onLayerInit:      (controls) => void, – called after layer is built; controls: { highlight(slug), unhighlight(slug) }
+ *                        Use to imperatively apply hover styles from outside the map (e.g. pill hover).
  *   }
+ *
+ * Marker shape (extended):
+ *   {
+ *     lat:      number,
+ *     lng:      number,
+ *     popup?:   string,    – HTML for click popup
+ *     tooltip?: string,    – HTML for hover tooltip
+ *     id?:      string,    – identifier for hover linking
+ *     variant?: 'default' | 'hovered' | 'selected', – icon variant (uses DivIcon circles)
+ *   }
+ *
+ * Extra BaseMap props:
+ *   onMarkerHover    {function(id | null)}  – called when a marker is hovered/un-hovered (requires marker.id)
+ *   onMarkersReady   {function(controls)}  – called after markers are built; controls: { highlight(id), unhighlight(id, variant) }
  *
  * Designed for:
  *   - Prefecture / electoral-district / municipality boundary layers
@@ -90,6 +107,59 @@ const DEFAULT_POLY_HOVER_STYLE = {
   fillOpacity: 0.22,
 };
 
+// DivIcon circle markers used in explorer/fallback mode (variant-based).
+// Lazy-initialized so they are created only when Leaflet is fully ready,
+// which avoids "L.divIcon is not a function" errors in test environments
+// where the Leaflet mock may not include divIcon.
+const _explorerIcons = {};
+
+function resolveMarkerIcon(variant) {
+  if (!L.divIcon) {
+    // Fallback when Leaflet mock does not provide divIcon (e.g. in jest)
+    return DEFAULT_ICON;
+  }
+  if (variant === 'hovered') {
+    if (!_explorerIcons.hovered) {
+      _explorerIcons.hovered = L.divIcon({
+        html: '<div style="width:16px;height:16px;border-radius:50%;background:#1d4ed8;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>',
+        className: '',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -12],
+        tooltipAnchor: [8, -8],
+      });
+    }
+    return _explorerIcons.hovered;
+  }
+  if (variant === 'selected') {
+    if (!_explorerIcons.selected) {
+      _explorerIcons.selected = L.divIcon({
+        html: '<div style="width:16px;height:16px;border-radius:50%;background:#1e40af;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>',
+        className: '',
+        iconSize: [16, 16],
+        iconAnchor: [8, 8],
+        popupAnchor: [0, -12],
+        tooltipAnchor: [8, -8],
+      });
+    }
+    return _explorerIcons.selected;
+  }
+  if (variant === 'explorer') {
+    if (!_explorerIcons.explorer) {
+      _explorerIcons.explorer = L.divIcon({
+        html: '<div style="width:12px;height:12px;border-radius:50%;background:#3b82f6;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,0.4)"></div>',
+        className: '',
+        iconSize: [12, 12],
+        iconAnchor: [6, 6],
+        popupAnchor: [0, -10],
+        tooltipAnchor: [6, -6],
+      });
+    }
+    return _explorerIcons.explorer;
+  }
+  return DEFAULT_ICON;
+}
+
 export default function BaseMap({
   center,
   zoom = 12,
@@ -101,6 +171,8 @@ export default function BaseMap({
   scrollWheelZoom = false,
   interactive = true,
   onMapClick,
+  onMarkerHover,
+  onMarkersReady,
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -110,6 +182,10 @@ export default function BaseMap({
   const polyLayersGroupRef = useRef(null);  // dedicated group for interactive polygon layers
   const onMapClickRef = useRef(onMapClick);
   onMapClickRef.current = onMapClick;
+  const onMarkerHoverRef = useRef(onMarkerHover);
+  onMarkerHoverRef.current = onMarkerHover;
+  const onMarkersReadyRef = useRef(onMarkersReady);
+  onMarkersReadyRef.current = onMarkersReady;
 
   // Initialise the map once on mount
   useEffect(() => {
@@ -179,12 +255,46 @@ export default function BaseMap({
     const layer = markersLayerRef.current;
     if (!layer) return;
     layer.clearLayers();
-    markers.forEach(({ lat, lng, popup }) => {
-      const marker = L.marker([lat, lng], { icon: DEFAULT_ICON }).addTo(layer);
+
+    // id → L.marker map for external highlight controls
+    const idToMarker = new Map();
+
+    markers.forEach(({ lat, lng, popup, tooltip, id, variant }) => {
+      const icon = resolveMarkerIcon(variant);
+      const marker = L.marker([lat, lng], { icon }).addTo(layer);
       if (popup) {
-        marker.bindPopup(popup);
+        marker.bindPopup(popup, { maxWidth: 260 });
+      }
+      if (tooltip) {
+        marker.bindTooltip(tooltip, {
+          sticky: true,
+          direction: 'top',
+          offset: [0, -4],
+          className: 'leaflet-boundary-tooltip',
+        });
+      }
+      if (id) {
+        idToMarker.set(id, marker);
+        if (onMarkerHoverRef.current) {
+          marker.on('mouseover', () => onMarkerHoverRef.current(id));
+          marker.on('mouseout', () => onMarkerHoverRef.current(null));
+        }
       }
     });
+
+    // Expose imperative controls for external hover management (e.g. pill hover → marker icon)
+    if (onMarkersReadyRef.current) {
+      onMarkersReadyRef.current({
+        highlight: (id) => {
+          const marker = idToMarker.get(id);
+          if (marker) marker.setIcon(resolveMarkerIcon('hovered'));
+        },
+        unhighlight: (id, variant = 'default') => {
+          const marker = idToMarker.get(id);
+          if (marker) marker.setIcon(resolveMarkerIcon(variant));
+        },
+      });
+    }
   }, [markers]);
 
   // Sync GeoJSON overlays (legacy extension point for simple, non-interactive boundaries)
@@ -226,6 +336,9 @@ export default function BaseMap({
       const hoverStyle = layerDef.hoverStyle || DEFAULT_POLY_HOVER_STYLE;
       const fitOnClick = layerDef.fitBoundsOnClick !== false; // default true
 
+      // slug/id → featureLayer map for onLayerInit controls
+      const slugToLayer = new Map();
+
       const geoLayer = L.geoJSON(layerDef.geojson, {
         style: (feature) => {
           if (!styleFeature) return baseStyle;
@@ -235,6 +348,12 @@ export default function BaseMap({
 
         onEachFeature: (feature, featureLayer) => {
           const props = feature.properties || {};
+
+          // Track featureId → featureLayer for onLayerInit imperative controls
+          const featureId = typeof layerDef.getFeatureId === 'function'
+            ? layerDef.getFeatureId(feature)
+            : (props.slug || props.id || props.code);
+          if (featureId) slugToLayer.set(featureId, featureLayer);
 
           // Hover tooltip (shown while the pointer is over the feature)
           if (layerDef.getTooltip) {
@@ -267,12 +386,14 @@ export default function BaseMap({
             }
           });
 
-          // Mouseout: reset to base style
+          // Mouseout: fire onFeatureHover(null) BEFORE resetStyle so that
+          // any styleFeature callback that reads a ref-based hover state sees
+          // the cleared value when resetStyle computes the restored style.
           featureLayer.on('mouseout', () => {
-            geoLayer.resetStyle(featureLayer);
             if (layerDef.onFeatureHover) {
               layerDef.onFeatureHover(null);
             }
+            geoLayer.resetStyle(featureLayer);
           });
 
           // Click: fit to feature bounds, open popup, fire optional callback
@@ -291,6 +412,27 @@ export default function BaseMap({
       });
 
       geoLayer.addTo(group);
+
+      // Expose imperative controls after layer is built so callers can apply
+      // external highlight (e.g. pill hover → polygon highlight) without
+      // rebuilding the whole layer.
+      if (typeof layerDef.onLayerInit === 'function') {
+        layerDef.onLayerInit({
+          highlight: (id) => {
+            const fl = slugToLayer.get(id);
+            if (fl) {
+              fl.setStyle(hoverStyle);
+              try { fl.bringToFront(); } catch (_) { /* no-op */ }
+            }
+          },
+          unhighlight: (id) => {
+            const fl = slugToLayer.get(id);
+            if (fl) {
+              geoLayer.resetStyle(fl);
+            }
+          },
+        });
+      }
     });
   }, [polygonLayers]);
 
