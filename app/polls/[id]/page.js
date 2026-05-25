@@ -44,6 +44,7 @@ export default function PollDetailPage() {
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [showShareModal, setShowShareModal] = useState(false);
+  const tags = Array.isArray(poll?.tags) ? poll.tags.filter(Boolean) : [];
 
   // Support both numeric IDs and slug-prefixed IDs like "42-my-poll-title"
   const pollId = parseInt(params.id, 10);
@@ -223,20 +224,26 @@ export default function PollDetailPage() {
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
           <div className="mb-8">
             <div className="flex flex-wrap gap-2 mb-4">
+            <Link href="/polls">
               <Badge variant={poll.type === 'simple' ? 'primary' : 'purple'}>
                 {poll.type === 'simple' ? 'Απλή' : 'Σύνθετη'}
               </Badge>
-              <Badge variant={isPollActive ? 'success' : 'gray'}>
-                {isPollActive ? 'Ενεργή' : 'Κλειστή'}
-              </Badge>
-              {poll.category && (
+            </Link>
+            <Badge variant={isPollActive ? 'success' : 'gray'}>
+              {isPollActive ? 'Ενεργή' : 'Κλειστή'}
+            </Badge>
+            {poll.category && (
+              <Link href={`/polls?category=${encodeURIComponent(poll.category)}`}>
                 <Badge variant="primary">{poll.category}</Badge>
-              )}
-              {Array.isArray(poll.tags) && poll.tags.length > 0 && (
+              </Link>
+            )}
+            {tags.map((tag) => (
+              <Link key={tag} href={`/polls?tag=${encodeURIComponent(tag)}`}>
                 <Badge variant="purple" size="md">
-                  {poll.tags.join(', ')}
+                  {tag}
                 </Badge>
-              )}
+              </Link>
+            ))}
               {poll.visibility === 'locals_only' && (
                 <Badge variant="orange">Τοπική</Badge>
               )}

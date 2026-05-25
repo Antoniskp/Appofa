@@ -187,6 +187,7 @@ export function ImageTopCard({
   children,
   footer,
   href,
+  onClick,
   hoverable = true,
   className = ''
 }) {
@@ -223,6 +224,7 @@ export function ImageTopCard({
   return (
     <Card 
       hoverable={hoverable} 
+      onClick={onClick}
       href={href}
       padding="none" 
       className={`flex flex-col h-full ${className}`}

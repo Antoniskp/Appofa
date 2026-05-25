@@ -159,6 +159,11 @@ export default function NewsDetailPage() {
     event.currentTarget.src = defaultBannerImageUrl;
   };
   const authorLabel = article.hideAuthor ? 'Anonymous' : (article.author?.username || 'Unknown');
+  const articleListHrefByType = article?.type === 'video' ? '/videos' : '/news';
+  const getArticleTaxonomyHref = (filterKey, value) => (
+    `${articleListHrefByType}?${filterKey}=${encodeURIComponent(value)}`
+  );
+  const tags = Array.isArray(article?.tags) ? article.tags.filter(Boolean) : [];
 
   // For video articles the embed becomes the hero element at the top of the
   // card; the static banner image is hidden so the user lands directly on the
@@ -201,17 +206,25 @@ export default function NewsDetailPage() {
             {/* Article Header */}
             <div className="mb-8">
               <div className="flex flex-wrap gap-2 mb-4">
-                {article.type && <TypeBadge type={article.type} size="md" />}
+                {article.type && (
+                  <Link href={articleListHrefByType}>
+                    <TypeBadge type={article.type} size="md" />
+                  </Link>
+                )}
                 {article.category && (
-                  <Badge variant="primary" size="md">
-                    {article.category}
-                  </Badge>
+                  <Link href={getArticleTaxonomyHref('category', article.category)}>
+                    <Badge variant="primary" size="md">
+                      {article.category}
+                    </Badge>
+                  </Link>
                 )}
-                {Array.isArray(article.tags) && article.tags.length > 0 && (
-                  <Badge variant="purple" size="md">
-                    {article.tags.join(', ')}
-                  </Badge>
-                )}
+                {tags.map((tag) => (
+                  <Link key={tag} href={getArticleTaxonomyHref('tag', tag)}>
+                    <Badge variant="purple" size="md">
+                      {tag}
+                    </Badge>
+                  </Link>
+                ))}
                 {article.status !== 'published' && (
                   <StatusBadge status={article.status} size="md" />
                 )}
