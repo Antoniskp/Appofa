@@ -21,19 +21,20 @@ import LocationChildrenExplorer from '@/components/locations/LocationChildrenExp
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
-export async function buildLocationBreadcrumb(locationKey) {
+export async function buildLocationBreadcrumb(locationIdOrSlug) {
   const crumbs = [];
-  const visitedIds = new Set();
+  const visitedKeys = new Set();
 
-  let response = await locationAPI.getById(locationKey);
+  let response = await locationAPI.getById(locationIdOrSlug);
   if (!response?.success || !response.location) {
     return [];
   }
 
   let current = response.location;
   while (current) {
-    if (current.id && visitedIds.has(current.id)) break;
-    if (current.id) visitedIds.add(current.id);
+    const currentKey = current.id ? `id:${current.id}` : current.slug ? `slug:${current.slug}` : null;
+    if (currentKey && visitedKeys.has(currentKey)) break;
+    if (currentKey) visitedKeys.add(currentKey);
     crumbs.unshift(current);
 
     if (current.parent) {
@@ -42,7 +43,7 @@ export async function buildLocationBreadcrumb(locationKey) {
     }
 
     const parentId = current.parent_id ?? current.parentId;
-    if (!parentId || visitedIds.has(parentId)) break;
+    if (!parentId || visitedKeys.has(`id:${parentId}`)) break;
 
     response = await locationAPI.getById(parentId);
     if (!response?.success || !response.location) break;
