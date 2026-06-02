@@ -21,6 +21,38 @@ import LocationChildrenExplorer from '@/components/locations/LocationChildrenExp
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
+export async function buildLocationBreadcrumb(locationIdOrSlug) {
+  const crumbs = [];
+  const visitedKeys = new Set();
+
+  let response = await locationAPI.getById(locationIdOrSlug);
+  if (!response?.success || !response.location) {
+    return [];
+  }
+
+  let current = response.location;
+  while (current) {
+    const currentKey = current.id ? `id:${current.id}` : current.slug ? `slug:${current.slug}` : null;
+    if (currentKey && visitedKeys.has(currentKey)) break;
+    if (currentKey) visitedKeys.add(currentKey);
+    crumbs.unshift(current);
+
+    if (current.parent) {
+      current = current.parent;
+      continue;
+    }
+
+    const parentId = current.parent_id ?? current.parentId;
+    if (!parentId || visitedKeys.has(`id:${parentId}`)) break;
+
+    response = await locationAPI.getById(parentId);
+    if (!response?.success || !response.location) break;
+    current = response.location;
+  }
+
+  return crumbs;
+}
+
 export default function LocationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -184,23 +216,29 @@ export default function LocationDetailPage() {
   }, [location, params.slug, router]);
 
   // Build home breadcrumb from user's homeLocation (full parent chain)
-  const homeLocationSlug = user?.homeLocation?.slug;
+  const homeLocationKey = user?.homeLocation?.id ?? user?.homeLocation?.slug;
   useEffect(() => {
-    if (!homeLocationSlug) {
+    if (authLoading) return;
+    if (!homeLocationKey) {
       setHomeBreadcrumb([]);
       return;
     }
-    locationAPI.getById(homeLocationSlug).then((res) => {
-      if (!res.success) return;
-      const crumbs = [];
-      let current = res.location;
-      while (current) {
-        crumbs.unshift(current);
-        current = current.parent;
+
+    let cancelled = false;
+    buildLocationBreadcrumb(homeLocationKey).then((crumbs) => {
+      if (!cancelled) {
+        setHomeBreadcrumb(crumbs);
       }
-      setHomeBreadcrumb(crumbs);
-    }).catch(() => {});
-  }, [homeLocationSlug]);
+    }).catch(() => {
+      if (!cancelled) {
+        setHomeBreadcrumb([]);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, homeLocationKey]);
 
   const handleEdit = () => {
     setIsEditing(true);
