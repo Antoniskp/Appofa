@@ -673,4 +673,70 @@ describe('Organizations API', () => {
     expect(analyticsRow.pollCount).toBeGreaterThanOrEqual(1);
     expect(analyticsRow.suggestionCount).toBeGreaterThanOrEqual(1);
   });
+
+  it('supports members-only visibility on official posts and blocks voting on official suggestions', async () => {
+    const createParty = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-phase6-party'))
+      .send({
+        name: 'Phase Six Party',
+        type: 'party',
+        isPublic: true,
+      });
+    expect(createParty.status).toBe(201);
+    const partyId = createParty.body.data.organization.id;
+
+    // Create a members-only official suggestion
+    const createMembersOnly = await request(app)
+      .post(`/api/organizations/${partyId}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-phase6-members-only'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Members-only party proposal',
+        body: 'This internal proposal body is definitely long enough.',
+        visibility: 'members_only',
+      });
+    expect(createMembersOnly.status).toBe(201);
+    expect(createMembersOnly.body.data.officialPost.isOfficialPost).toBe(true);
+    expect(createMembersOnly.body.data.officialPost.visibility).toBe('members_only');
+
+    const officialSuggestionId = createMembersOnly.body.data.officialPost.id;
+
+    // Guest cannot see members-only official post in org feed
+    const guestOrgFeed = await request(app).get(`/api/organizations/${partyId}/official-posts`);
+    expect(guestOrgFeed.status).toBe(200);
+    expect(guestOrgFeed.body.data.officialPosts.some((p) => p.id === officialSuggestionId)).toBe(false);
+
+    // Admin (org member) can see it in org feed
+    const memberOrgFeed = await request(app)
+      .get(`/api/organizations/${partyId}/official-posts`)
+      .set('Cookie', `auth_token=${adminToken}`);
+    expect(memberOrgFeed.status).toBe(200);
+    expect(memberOrgFeed.body.data.officialPosts.some((p) => p.id === officialSuggestionId)).toBe(true);
+
+    // Members-only official post must not appear in the public official-posts feed
+    const publicFeed = await request(app).get('/api/official-posts');
+    expect(publicFeed.status).toBe(200);
+    expect(publicFeed.body.data.officialPosts.some((p) => p.id === officialSuggestionId)).toBe(false);
+
+    // Voting on an official suggestion must be blocked with 403
+    const voteAttempt = await request(app)
+      .post(`/api/suggestions/${officialSuggestionId}/vote`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-phase6-vote'))
+      .send({ value: 1 });
+    expect(voteAttempt.status).toBe(403);
+
+    // Create a public official post and verify visibility in response
+    const createPublic = await request(app)
+      .post(`/api/organizations/${partyId}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-phase6-public'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Public party proposal',
+        body: 'This public proposal body is definitely long enough.',
+        visibility: 'public',
+      });
+    expect(createPublic.status).toBe(201);
+    expect(createPublic.body.data.officialPost.visibility).toBe('public');
+  });
 });

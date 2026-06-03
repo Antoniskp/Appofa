@@ -795,6 +795,7 @@
     "official_post_scope": "Εμβέλεια επίσημης ανάρτησης",
     "official_post_scope_platform": "Σε όλη την πλατφόρμα",
     "official_post_scope_organization": "Μόνο στη σελίδα οργανισμού",
+    "official_post_visibility": "Κοινό",
     "official_post_title": "Τίτλος",
     "official_post_body": "Περιεχόμενο",
     "official_post_create_success": "Η επίσημη ανάρτηση δημιουργήθηκε επιτυχώς.",

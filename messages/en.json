@@ -795,6 +795,7 @@
     "official_post_scope": "Official post scope",
     "official_post_scope_platform": "Platform-wide",
     "official_post_scope_organization": "Organization page only",
+    "official_post_visibility": "Audience",
     "official_post_title": "Title",
     "official_post_body": "Content",
     "official_post_create_success": "Official post created successfully.",

@@ -43,6 +43,7 @@ export default function OrganizationProfilePage({ params }) {
     title: '',
     body: '',
     officialPostScope: 'platform',
+    visibility: 'public',
   });
   const [contentActionLoading, setContentActionLoading] = useState(false);
   const [contentActionError, setContentActionError] = useState('');
@@ -368,6 +369,7 @@ export default function OrganizationProfilePage({ params }) {
       title: '',
       body: '',
       officialPostScope: 'platform',
+      visibility: 'public',
     });
   };
 
@@ -939,7 +941,7 @@ export default function OrganizationProfilePage({ params }) {
                 {supportsOfficialPosts && canCreateOfficialPosts && (
                   <form onSubmit={handleCreateOfficialPost} className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4">
                     <p className="text-sm font-medium text-gray-800">{t('create_official_post')}</p>
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid gap-3 sm:grid-cols-3">
                       <div>
                         <label className="mb-1 block text-xs font-medium text-gray-700">{t('official_post_type')}</label>
                         <select
@@ -960,6 +962,18 @@ export default function OrganizationProfilePage({ params }) {
                         >
                           <option value="platform">{t('official_post_scope_platform')}</option>
                           <option value="organization">{t('official_post_scope_organization')}</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">{t('official_post_visibility')}</label>
+                        <select
+                          value={officialPostForm.visibility}
+                          onChange={(e) => setOfficialPostForm((prev) => ({ ...prev, visibility: e.target.value }))}
+                          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                        >
+                          {ORG_VISIBILITY_OPTIONS.map((visibility) => (
+                            <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
@@ -1009,9 +1023,19 @@ export default function OrganizationProfilePage({ params }) {
                             <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-700">
                               {t(`official_post_scope_${post.officialPostScope || 'platform'}`)}
                             </span>
+                            <span className={`rounded px-2 py-0.5 text-xs ${post.visibility === 'public' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                              {t(`visibility_${post.visibility || 'public'}`)}
+                            </span>
                           </div>
                         </div>
                         {post.body && <p className="mt-2 text-sm text-gray-700">{post.body}</p>}
+                        <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-500">
+                          <BuildingOffice2Icon className="h-3.5 w-3.5" />
+                          <span className="font-medium">{post.organization?.name || organization?.name}</span>
+                          {post.createdAt && (
+                            <span className="text-gray-400">· {new Date(post.createdAt).toLocaleDateString('el-GR')}</span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
