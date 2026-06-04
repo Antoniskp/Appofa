@@ -136,4 +136,41 @@ describe('SuggestionCard layout', () => {
       root.unmount();
     });
   });
+
+  test('renders organization identity whenever public feed data includes organization metadata', async () => {
+    const suggestion = {
+      id: 4,
+      type: 'idea',
+      title: 'Πρόταση οργανισμού',
+      tags: [],
+      upvotes: 1,
+      downvotes: 0,
+      myVote: null,
+      isOfficialPost: false,
+      hideCreator: true,
+      organization: {
+        name: 'Δημόσια Οργάνωση',
+        logo: 'https://example.com/public-org-logo.png',
+      },
+      author: null,
+      createdAt: '2026-05-18T00:00:00.000Z',
+    };
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(React.createElement(SuggestionCard, { suggestion }));
+    });
+
+    expect(container.textContent).toContain('Δημόσια Οργάνωση');
+    expect(container.querySelector('img[src="https://example.com/public-org-logo.png"]')).toBeTruthy();
+    expect(container.textContent).not.toContain('Ανώνυμος');
+    expect(container.querySelector('[data-testid="user-avatar"]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });
