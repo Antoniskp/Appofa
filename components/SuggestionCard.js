@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import Badge from '@/components/ui/Badge';
 import { TruncatedTextTooltip } from '@/components/ui/Tooltip';
 import InlineSuggestionVote from '@/components/InlineSuggestionVote';
 import UserAvatar from '@/components/user/UserAvatar';
+import OrgAvatar from '@/components/organization/OrgAvatar';
 
 const TYPE_LABELS = {
   idea: 'Ιδέα',
@@ -21,23 +21,6 @@ const TYPE_VARIANTS = {
   problem_request: 'danger',
   location_suggestion: 'success',
 };
-
-function OrgAvatar({ org, size = 'h-6 w-6' }) {
-  if (org.logo) {
-    return (
-      <img
-        src={org.logo}
-        alt={org.name}
-        className={`${size} rounded object-cover border border-gray-200 flex-shrink-0`}
-      />
-    );
-  }
-  return (
-    <span className={`${size} rounded bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0`}>
-      <BuildingOffice2Icon className="h-3.5 w-3.5 text-gray-400" />
-    </span>
-  );
-}
 
 export default function SuggestionCard({ suggestion }) {
   const tCommon = useTranslations('common');

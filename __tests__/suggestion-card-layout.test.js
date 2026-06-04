@@ -100,4 +100,40 @@ describe('SuggestionCard layout', () => {
       root.unmount();
     });
   });
+
+  test('renders organization logo and name for official organization suggestions', async () => {
+    const suggestion = {
+      id: 3,
+      type: 'idea',
+      title: 'Επίσημη πρόταση οργανισμού',
+      tags: [],
+      upvotes: 3,
+      downvotes: 0,
+      myVote: null,
+      isOfficialPost: true,
+      organization: {
+        name: 'Οργανισμός Δοκιμής',
+        logo: 'https://example.com/org-logo.png',
+      },
+      author: { username: 'regular_user' },
+      createdAt: '2026-05-18T00:00:00.000Z',
+    };
+
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(React.createElement(SuggestionCard, { suggestion }));
+    });
+
+    expect(container.textContent).toContain('Οργανισμός Δοκιμής');
+    const logo = container.querySelector('img[src="https://example.com/org-logo.png"]');
+    expect(logo).toBeTruthy();
+    expect(container.querySelector('[data-testid="user-avatar"]')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });

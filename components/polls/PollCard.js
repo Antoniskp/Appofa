@@ -12,6 +12,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { idSlug } from '@/lib/utils/slugify';
 import { pollAPI } from '@/lib/api';
 import UserAvatar from '@/components/user/UserAvatar';
+import OrgAvatar from '@/components/organization/OrgAvatar';
 
 /**
  * Reusable poll card component
@@ -27,6 +28,7 @@ export default function PollCard({ poll, variant = 'grid' }) {
   const formattedDate = createdAt.toLocaleDateString('el-GR');
   const formattedTime = createdAt.toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' });
   const creatorLabel = poll.hideCreator ? 'Ανώνυμος' : (poll.creator?.username || 'Άγνωστος');
+  const isOfficialOrgPoll = Boolean(poll.isOfficialPost && poll.organization);
   
   const isPollActive = poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
   const totalVotes = poll.totalVotes || 0;
@@ -516,7 +518,12 @@ export default function PollCard({ poll, variant = 'grid' }) {
             {totalVotes} {totalVotes === 1 ? 'ψήφος' : 'ψήφοι'}
           </span>
           <span>
-            {poll.hideCreator ? (
+            {isOfficialOrgPoll ? (
+              <span className="flex items-center gap-1.5">
+                <OrgAvatar org={poll.organization} size="h-6 w-6" />
+                <span className="font-medium text-gray-700">{poll.organization.name}</span>
+              </span>
+            ) : poll.hideCreator ? (
               <span>Ανώνυμος</span>
             ) : poll.creator ? (
               <span className="flex items-center gap-1.5">

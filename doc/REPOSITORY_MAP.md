@@ -246,7 +246,7 @@ Appofa/
 ### Polls (`/api/polls`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | / | opt | List polls |
+| GET | / | opt | List polls (includes `organization` relation: id/name/slug/type/logo/isVerified when poll has `organizationId`) |
 | GET | /category-counts | — | Category counts |
 | GET | /my-voted | ✅ | My voted polls |
 | GET | /:id | opt | Get poll |
@@ -273,7 +273,7 @@ Appofa/
 ### Suggestions (`/api/suggestions`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | / | opt | List suggestions (author omitted when `hideCreator=true` for guests/non-owner/non-admin/non-moderator viewers) |
+| GET | / | opt | List suggestions (author omitted when `hideCreator=true` for guests/non-owner/non-admin/non-moderator viewers; includes `organization` relation: id/name/slug/type/logo/isVerified when suggestion has `organizationId`) |
 | GET | /category-counts | — | Category counts |
 | GET | /:id | opt | Get suggestion (author omitted when `hideCreator=true` for guests/non-owner/non-admin/non-moderator viewers) |
 | GET | /:id/solutions | — | Get solutions |
@@ -603,6 +603,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `political/` | 1 | AnalyticalMappingExplorer (reusable political map + detail panel powered by external metadata/GeoJSON in `config/map-data/*`, with region/district joins via stable IDs and location-search links) |
 | `civicQuestions/` | 5 | CivicQuestionCard, CivicQuestionForm (includes `commissionRequirement` field), CivicQuestionVoting, CivicQuestionResults, statusUtils |
 | `polls/` | 5 | PollCard, PollForm, PollResults, PollVoting |
+| `organization/` | 1 | OrgAvatar (shared organization logo/fallback avatar used by SuggestionCard and PollCard identity rows) |
 | `profile/` | 18 | ProfileBadgesSection, ProfileBasicInfoForm, ProfileBioSection, ProfileCompleteness, ProfileDangerZone, ProfileExpertiseSection (searchable tag picker, max 5, hides input at max), ProfileHomeLocationSection, ProfileInterestsSection, ProfileLocationSection, ProfileManifestSection, ProfilePoliticsSection, ProfileProfessionsSection (4-level cascade: domain→profession→specialization→subspecialization, i18n labels, max 5), ProfilePrivacySection, ProfileSecuritySection, ProfileSocialLinksSection, ProfileTwitchSection, TwitchEmbed |
 | `ui/` | 23+ | AlertMessage, ConfirmDialog, DropdownMenu, EmptyState, FilterBar (toggle has explicit visible sizing `h-10 min-w-10`; expanded inputs render below toggle and switch to `w-full` on mobile to avoid overflow), **ListPageToolbar** (shared search+filter+action row for list pages: `searchSlot`/`filtersSlot`/`actionsSlot`/`extraSlot`; primary row switches at `md` with wrap safeguards and search `md:min-w-[240px]` to prevent collapse/overlap), LanguageSwitcher (profile settings locale switch; supports `EL`/`EN`/`RO` and writes `NEXT_LOCALE` cookie), LoadMoreTrigger, LocationFilterBreadcrumb (`🏠 home-location filter button` — shows breadcrumb drill-down when active, X to clear; used in `/users` FilterBar), LocationSelector, LoginLink (`redirectTo` supported), Pagination, RateLimitBanner (countdown timer + auth-aware 429 UX), ShareModal (supports regular share link + optional embed URL + iframe code copy flow), SkeletonLoader, TagInput, Tooltip |
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
@@ -617,6 +618,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 - `components/LocationRoles.js`: representatives list now uses clearer hierarchy/actionability (assignment count, role badges, emphasized names, and direct “Προβολή προφίλ” CTA per card) and can render a public actionable empty state when no assignments exist.
 - `components/LocationRoleManager.js`: assignee picker now normalizes usernames via `getDisplayUsername(...)` and suppresses placeholder/fallback values (trimmed, case-insensitive `unknown`) from `@username` chips while keeping valid username-only display-name fallback behavior; regression coverage in `__tests__/location-role-manager.test.js`.
 - `components/SuggestionCard.js`, `components/InlineSuggestionVote.js`, `app/suggestions/[id]/page.js`: vote rows use `flex-wrap` on the parent footer row so vote controls wrap below metadata on narrow viewports. `SuggestionCard` now also renders a `category` badge (purple) when present, a location pill for suggestions with a location but no `locals_only` vote restriction, and—for `isOfficialPost` suggestions that carry an `organization` relation—swaps the author row for the organization logo + name instead of the creator avatar.
+- `components/polls/PollCard.js`: footer identity row now mirrors `SuggestionCard` behavior for official organization content — when `poll.isOfficialPost && poll.organization`, it renders organization logo (or fallback icon) + organization name via shared `components/organization/OrgAvatar.js`; regular user/anonymous creator behavior remains unchanged.
 - **Tactile depth**: `components/ui/Card.js` default variant uses `shadow-sm border border-gray-200`; elevated variant uses `shadow-md border border-gray-200`; hoverable cards add `hover:shadow-md hover:-translate-y-0.5 transition-all duration-150` for a subtle lift effect. The `.card` CSS utility class (in `app/globals.css`) also gains hover lift + `shadow-sm` border treatment.
 - **Static-page shell stability**: `components/layout/StaticPageLayout.js` outer wrapper now uses explicit non-hover container classes (`bg-white rounded-lg shadow-sm border border-gray-200 p-8`) instead of the generic `card` class. This ensures the static-page content box never shifts on hover in/out (the `.card` CSS utility includes hover lift/transform transitions that are intentional for interactive cards but incorrect for a static-page shell).
 - **Υπέρ/Κατά tints**: `app/civic-questions/[id]/CivicQuestionDetailClient.js` renders the pros section with `bg-green-50 border-green-200` and the cons section with `bg-red-50 border-red-200`; each heading includes a semantic icon (✅/❌) so the distinction is not color-only.
