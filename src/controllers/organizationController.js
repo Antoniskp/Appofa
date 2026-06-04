@@ -150,7 +150,7 @@ function mapOfficialPostItem(item, contentType, viewer = null) {
     organizationId: data.organizationId,
     title: data.title,
     body: contentType === 'poll' ? data.description : data.body,
-    visibility: data.visibility,
+    visibility: mapDbVisibilityToOrg(data.visibility),
     isOfficialPost: Boolean(data.isOfficialPost),
     officialPostScope: data.officialPostScope || null,
     createdAt: data.createdAt,
@@ -1138,6 +1138,16 @@ const organizationController = {
         return res.status(400).json({ success: false, message: scopeResult.error });
       }
 
+      const visibilityResult = normalizeEnum(
+        req.body?.visibility || 'public',
+        ORG_CONTENT_VISIBILITIES,
+        'Visibility'
+      );
+      if (visibilityResult.error) {
+        return res.status(400).json({ success: false, message: visibilityResult.error });
+      }
+      const dbVisibility = mapOrgVisibilityToDb(visibilityResult.value);
+
       const titleResult = normalizeRequiredText(req.body?.title, 'Title', 5, 200);
       if (titleResult.error) {
         return res.status(400).json({ success: false, message: titleResult.error });
@@ -1157,7 +1167,7 @@ const organizationController = {
           description: req.body?.body || null,
           creatorId: req.user.id,
           organizationId,
-          visibility: 'public',
+          visibility: dbVisibility,
           deadline,
           isOfficialPost: true,
           officialPostScope: scopeResult.value,
@@ -1200,7 +1210,7 @@ const organizationController = {
         type: typeResult.value,
         authorId: req.user.id,
         organizationId,
-        visibility: 'public',
+        visibility: dbVisibility,
         voteRestriction: 'authenticated',
         isOfficialPost: true,
         officialPostScope: scopeResult.value,

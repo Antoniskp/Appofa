@@ -19,7 +19,7 @@ function mapOfficialPostItem(item, contentType, viewer = null) {
     organizationId: data.organizationId,
     title: data.title,
     body: contentType === 'poll' ? data.description : data.body,
-    visibility: data.visibility,
+    visibility: data.visibility === 'public' ? 'public' : 'members_only',
     isOfficialPost: Boolean(data.isOfficialPost),
     officialPostScope: data.officialPostScope || null,
     createdAt: data.createdAt,

@@ -531,6 +531,10 @@ const suggestionController = {
       const suggestion = await Suggestion.findByPk(targetId);
       if (!suggestion) return res.status(404).json({ success: false, message: 'Suggestion not found.' });
 
+      if (suggestion.isOfficialPost) {
+        return res.status(403).json({ success: false, message: 'Official organization suggestions are not open for voting.' });
+      }
+
       if (suggestion.voteRestriction === 'locals_only' && suggestion.locationId) {
         if (!req.user) {
           return res.status(403).json({ success: false, message: 'Authentication required.' });
