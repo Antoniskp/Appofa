@@ -42,7 +42,7 @@ function OrgAvatar({ org, size = 'h-6 w-6' }) {
 export default function SuggestionCard({ suggestion }) {
   const tCommon = useTranslations('common');
 
-  const isOfficialOrgSuggestion = Boolean(suggestion.isOfficialPost && suggestion.organization);
+  const isOfficialOrgSuggestion = suggestion.isOfficialPost && suggestion.organization;
   const showLocationBadge = suggestion.location && suggestion.voteRestriction !== 'locals_only';
 
   return (

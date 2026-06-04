@@ -1025,7 +1025,7 @@ const organizationController = {
         organizationId,
         visibility: mapOrgVisibilityToDb(visibilityResult.value),
         voteRestriction: 'authenticated',
-        category: normalizeOptionalText(req.body?.category, 'Category', 1, 100).value || null,
+        category: normalizeOptionalText(req.body?.category, 'Category', 1, 100).value,
         locationId: parsePositiveInt(req.body?.locationId) || null,
       });
 
