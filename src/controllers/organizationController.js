@@ -13,7 +13,7 @@ const {
 } = require('../models');
 const organizationService = require('../services/organizationService');
 const { notifyOrgInvite, notifyOrgJoinApproved, notifyOrgMemberRemoved } = require('../services/notificationService');
-const { normalizeRequiredText, normalizeEnum } = require('../utils/validators');
+const { normalizeRequiredText, normalizeEnum, normalizeOptionalText } = require('../utils/validators');
 const { isActiveMember, isOrgAdmin } = require('../utils/organizationUtils');
 const { shouldHideSuggestionAuthor } = require('../utils/suggestionAuthorVisibility');
 const { randomUUID } = require('crypto');
@@ -950,6 +950,16 @@ const organizationController = {
             as: 'author',
             attributes: ['id', 'username', 'avatar', 'avatarColor'],
           },
+          {
+            model: Organization,
+            as: 'organization',
+            attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified'],
+          },
+          {
+            model: Location,
+            as: 'location',
+            attributes: ['id', 'name', 'slug'],
+          },
         ],
         order: [['createdAt', 'DESC']],
       });
@@ -1015,6 +1025,8 @@ const organizationController = {
         organizationId,
         visibility: mapOrgVisibilityToDb(visibilityResult.value),
         voteRestriction: 'authenticated',
+        category: normalizeOptionalText(req.body?.category, 'Category', 1, 100).value,
+        locationId: parsePositiveInt(req.body?.locationId) || null,
       });
 
       return res.status(201).json({

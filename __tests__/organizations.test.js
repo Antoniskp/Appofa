@@ -739,4 +739,91 @@ describe('Organizations API', () => {
     expect(createPublic.status).toBe(201);
     expect(createPublic.body.data.officialPost.visibility).toBe('public');
   });
+
+  it('org suggestions response includes organization, location, and category metadata', async () => {
+    const createOrg = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-meta-create'))
+      .send({
+        name: 'Meta Test Organization',
+        type: 'organization',
+        isPublic: true,
+      });
+    expect(createOrg.status).toBe(201);
+    const orgId = createOrg.body.data.organization.id;
+
+    // Create a suggestion with category and location
+    const createSuggestion = await request(app)
+      .post(`/api/organizations/${orgId}/suggestions`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-meta-suggestion'))
+      .send({
+        title: 'Proposal with metadata',
+        body: 'This proposal includes category and location metadata.',
+        type: 'idea',
+        category: 'Περιβάλλον',
+        visibility: 'public',
+        locationId: testLocation.id,
+      });
+    expect(createSuggestion.status).toBe(201);
+
+    // Fetch org suggestions and verify metadata fields are present
+    const getSuggestions = await request(app).get(`/api/organizations/${orgId}/suggestions`);
+    expect(getSuggestions.status).toBe(200);
+    expect(getSuggestions.body.success).toBe(true);
+    expect(getSuggestions.body.data.suggestions).toHaveLength(1);
+
+    const s = getSuggestions.body.data.suggestions[0];
+    // category must be included
+    expect(s.category).toBe('Περιβάλλον');
+    // organization relation must be included with essential fields
+    expect(s.organization).toBeTruthy();
+    expect(s.organization.id).toBe(orgId);
+    expect(s.organization.name).toBe('Meta Test Organization');
+    expect(typeof s.organization.slug).toBe('string');
+    // location relation must be included
+    expect(s.location).toBeTruthy();
+    expect(s.location.id).toBe(testLocation.id);
+    expect(s.location.name).toBe('Organizations Test Location');
+    // author should be present for non-official member suggestions
+    expect(s.author).toBeTruthy();
+    expect(s.author.username).toBe('organizations_admin');
+  });
+
+  it('official org suggestions expose organization identity in the org suggestions feed', async () => {
+    const createParty = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-official-identity-party'))
+      .send({
+        name: 'Identity Test Party',
+        type: 'party',
+        isPublic: true,
+      });
+    expect(createParty.status).toBe(201);
+    const partyId = createParty.body.data.organization.id;
+
+    // Create an official post (isOfficialPost=true) for the party
+    const createOfficial = await request(app)
+      .post(`/api/organizations/${partyId}/official-posts`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-org-official-identity-post'))
+      .send({
+        contentType: 'suggestion',
+        title: 'Official identity proposal',
+        body: 'This official proposal body is long enough to pass validation.',
+        visibility: 'public',
+      });
+    expect(createOfficial.status).toBe(201);
+    expect(createOfficial.body.data.officialPost.isOfficialPost).toBe(true);
+
+    // Fetch the org suggestions feed — official posts are isOfficialPost suggestions
+    const getSuggestions = await request(app).get(`/api/organizations/${partyId}/suggestions`);
+    expect(getSuggestions.status).toBe(200);
+    const officialSuggestion = getSuggestions.body.data.suggestions.find(
+      (s) => s.isOfficialPost === true
+    );
+    expect(officialSuggestion).toBeTruthy();
+    // organization relation must be present so the UI can render org identity
+    expect(officialSuggestion.organization).toBeTruthy();
+    expect(officialSuggestion.organization.id).toBe(partyId);
+    expect(officialSuggestion.organization.name).toBe('Identity Test Party');
+  });
 });
