@@ -156,6 +156,45 @@ describe('Suggestions & Solutions API Tests', () => {
         isVerified: false
       });
     });
+
+    it('includes organization metadata for organization-backed public suggestions even when not flagged as official', async () => {
+      const organization = await Organization.create({
+        name: 'Public Feed Party',
+        slug: 'public-feed-party',
+        type: 'party',
+        logo: 'https://example.com/party-logo.png',
+        isPublic: true,
+        createdByUserId: adminId
+      });
+
+      const orgSuggestion = await Suggestion.create({
+        title: 'Public party suggestion',
+        body: 'Organization-backed public suggestions should still expose organization identity.',
+        type: 'idea',
+        status: 'open',
+        visibility: 'public',
+        voteRestriction: 'authenticated',
+        authorId: user1Id,
+        organizationId: organization.id,
+        isOfficialPost: false,
+        hideCreator: true
+      });
+
+      const res = await request(app).get('/api/suggestions');
+      expect(res.status).toBe(200);
+      const item = res.body.data.find((s) => s.id === orgSuggestion.id);
+      expect(item).toBeTruthy();
+      expect(item.organizationId).toBe(organization.id);
+      expect(item.isOfficialPost).toBe(false);
+      expect(item.organization).toMatchObject({
+        id: organization.id,
+        name: 'Public Feed Party',
+        slug: 'public-feed-party',
+        type: 'party',
+        logo: 'https://example.com/party-logo.png',
+        isVerified: false
+      });
+    });
   });
 
   // ─── POST /api/suggestions ───────────────────────────────────────────────────

@@ -25,7 +25,10 @@ const TYPE_VARIANTS = {
 export default function SuggestionCard({ suggestion }) {
   const tCommon = useTranslations('common');
 
-  const isOfficialOrgSuggestion = suggestion.isOfficialPost && suggestion.organization;
+  const organizationIdentity = suggestion.organization
+    && (suggestion.organization.name || suggestion.organization.logo)
+    ? suggestion.organization
+    : null;
   const showLocationBadge = suggestion.location && suggestion.voteRestriction !== 'locals_only';
 
   return (
@@ -60,10 +63,10 @@ export default function SuggestionCard({ suggestion }) {
       </Link>
       <div className="mt-auto flex flex-wrap items-center justify-between text-sm text-gray-500 pt-2 border-t border-gray-100 gap-3">
         <div className="flex items-center gap-2">
-          {isOfficialOrgSuggestion ? (
+          {organizationIdentity ? (
             <>
-              <OrgAvatar org={suggestion.organization} size="h-6 w-6" />
-              <span className="font-medium text-gray-700">{suggestion.organization.name}</span>
+              <OrgAvatar org={organizationIdentity} size="h-6 w-6" />
+              <span className="font-medium text-gray-700">{organizationIdentity.name}</span>
             </>
           ) : (
             <>
