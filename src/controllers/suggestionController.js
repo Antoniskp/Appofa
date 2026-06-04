@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { Suggestion, Solution, SuggestionVote, User, Location, Tag, TaggableItem, sequelize } = require('../models');
+const { Suggestion, Solution, SuggestionVote, User, Location, Organization, Tag, TaggableItem, sequelize } = require('../models');
 const { normalizeRequiredText, normalizeEnum, normalizeBoolean } = require('../utils/validators');
 const badgeService = require('../services/badgeService');
 const { getAncestorLocationIds } = require('../utils/locationUtils');
@@ -142,6 +142,12 @@ const suggestionController = {
         where,
         include: [
           { model: User, as: 'author', attributes: ['id', 'username', 'avatar', 'avatarColor'] },
+          {
+            model: Organization,
+            as: 'organization',
+            attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified'],
+            required: false
+          },
           { model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false }
         ],
         order,

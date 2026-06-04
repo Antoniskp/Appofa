@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, Poll, PollOption, PollVote, Location, LocationLink, Comment } = require('../src/models');
+const { sequelize, User, Poll, PollOption, PollVote, Location, LocationLink, Organization, Comment } = require('../src/models');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -571,6 +571,48 @@ describe('Poll API Tests', () => {
       });
 
       expect(matchesSearch).toBe(true);
+    });
+
+    test('should include organization metadata for official organization polls', async () => {
+      const organization = await Organization.create({
+        name: 'Poll Feed Organization',
+        slug: 'poll-feed-organization',
+        type: 'organization',
+        logo: 'https://example.com/poll-org-logo.png',
+        isPublic: true,
+        createdByUserId: adminUserId
+      });
+
+      const poll = await Poll.create({
+        title: 'Official organization poll in public feed',
+        description: 'Poll card should show organization identity for official organization polls.',
+        type: 'simple',
+        voteRestriction: 'anyone',
+        visibility: 'public',
+        resultsVisibility: 'always',
+        creatorId: adminUserId,
+        status: 'active',
+        organizationId: organization.id,
+        isOfficialPost: true
+      });
+
+      await PollOption.bulkCreate([
+        { pollId: poll.id, text: 'Ναι', order: 0 },
+        { pollId: poll.id, text: 'Όχι', order: 1 }
+      ]);
+
+      const response = await request(app).get('/api/polls');
+      expect(response.status).toBe(200);
+      const listedPoll = response.body.data.find((item) => item.id === poll.id);
+      expect(listedPoll).toBeTruthy();
+      expect(listedPoll.organization).toMatchObject({
+        id: organization.id,
+        name: 'Poll Feed Organization',
+        slug: 'poll-feed-organization',
+        type: 'organization',
+        logo: 'https://example.com/poll-org-logo.png',
+        isVerified: false
+      });
     });
   });
 

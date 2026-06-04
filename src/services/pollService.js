@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { Poll, PollOption, PollVote, Comment, User, Location, LocationLink, Tag, TaggableItem, OrganizationMember, sequelize } = require('../models');
+const { Poll, PollOption, PollVote, Comment, User, Location, Organization, LocationLink, Tag, TaggableItem, OrganizationMember, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
@@ -665,6 +665,12 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
           model: Location,
           as: 'location',
           attributes: ['id', 'name', 'slug'],
+          required: false
+        },
+        {
+          model: Organization,
+          as: 'organization',
+          attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified'],
           required: false
         }
       ],

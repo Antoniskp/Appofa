@@ -16,6 +16,7 @@ const {
   sequelize,
   User,
   Location,
+  Organization,
   Suggestion,
   Solution,
   SuggestionVote
@@ -117,6 +118,43 @@ describe('Suggestions & Solutions API Tests', () => {
     it('should be accessible without authentication', async () => {
       const res = await request(app).get('/api/suggestions');
       expect(res.status).toBe(200);
+    });
+
+    it('includes organization metadata for official organization suggestions in the public feed', async () => {
+      const organization = await Organization.create({
+        name: 'Public Feed Organization',
+        slug: 'public-feed-organization',
+        type: 'organization',
+        logo: 'https://example.com/org-logo.png',
+        isPublic: true,
+        createdByUserId: adminId
+      });
+
+      const officialSuggestion = await Suggestion.create({
+        title: 'Public official organization suggestion',
+        body: 'Official suggestions should expose organization identity in public feeds.',
+        type: 'idea',
+        status: 'open',
+        visibility: 'public',
+        voteRestriction: 'authenticated',
+        authorId: user1Id,
+        organizationId: organization.id,
+        isOfficialPost: true,
+        hideCreator: false
+      });
+
+      const res = await request(app).get('/api/suggestions');
+      expect(res.status).toBe(200);
+      const item = res.body.data.find((s) => s.id === officialSuggestion.id);
+      expect(item).toBeTruthy();
+      expect(item.organization).toMatchObject({
+        id: organization.id,
+        name: 'Public Feed Organization',
+        slug: 'public-feed-organization',
+        type: 'organization',
+        logo: 'https://example.com/org-logo.png',
+        isVerified: false
+      });
     });
   });
 
