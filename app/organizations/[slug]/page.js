@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, use } from 'react';
+import { useEffect, useMemo, useState, use, useRef } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
@@ -15,6 +15,8 @@ import PersonSearch from '@/components/dream-team/PersonSearch';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import SearchInput from '@/components/ui/SearchInput';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
+import articleCategories from '@/config/articleCategories.json';
 
 const BASE_TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
 const OFFICIAL_POST_TABS = ['tab_official_posts'];
@@ -22,9 +24,18 @@ const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
 const ORG_VISIBILITY_OPTIONS = organizationContentConfig.visibilities;
 const ORG_SUGGESTION_TYPES = organizationContentConfig.suggestionTypes;
+const DEFAULT_SUGGESTION_FORM = {
+  type: 'idea',
+  title: '',
+  body: '',
+  visibility: 'members_only',
+  category: '',
+  locationId: null,
+};
 
 export default function OrganizationProfilePage({ params }) {
   const t = useTranslations('organizations');
+  const tCommon = useTranslations('common');
   const { slug } = use(params);
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('tab_info');
@@ -37,7 +48,7 @@ export default function OrganizationProfilePage({ params }) {
   const [inviteSearchError, setInviteSearchError] = useState('');
   const [roleDrafts, setRoleDrafts] = useState({});
   const [pollForm, setPollForm] = useState({ title: '', description: '', deadline: '', visibility: 'members_only' });
-  const [suggestionForm, setSuggestionForm] = useState({ type: 'idea', title: '', body: '', visibility: 'members_only' });
+  const [suggestionForm, setSuggestionForm] = useState(DEFAULT_SUGGESTION_FORM);
   const [officialPostForm, setOfficialPostForm] = useState({
     contentType: 'suggestion',
     title: '',
@@ -53,6 +64,7 @@ export default function OrganizationProfilePage({ params }) {
   // Local search filter for org polls and suggestions tabs
   const [pollSearch, setPollSearch] = useState('');
   const [suggestionSearch, setSuggestionSearch] = useState('');
+  const hasAutoFilledSuggestionLocation = useRef(false);
 
   const { data: organization, loading, error } = useAsyncData(
     async () => {
@@ -219,6 +231,17 @@ export default function OrganizationProfilePage({ params }) {
     }
   }, [activeTab, canSeeAnalytics]);
 
+  useEffect(() => {
+    if (!showSuggestionForm) {
+      hasAutoFilledSuggestionLocation.current = false;
+      return;
+    }
+    if (!hasAutoFilledSuggestionLocation.current && user?.homeLocationId && !suggestionForm.locationId) {
+      hasAutoFilledSuggestionLocation.current = true;
+      setSuggestionForm((prev) => ({ ...prev, locationId: user.homeLocationId }));
+    }
+  }, [showSuggestionForm, user?.homeLocationId, suggestionForm.locationId]);
+
   const roleLabel = (role) => t(`role_${role}`);
   const statusLabel = (status) => t(`status_${status}`);
   const canEdit = user && ['admin', 'moderator'].includes(user.role);
@@ -345,13 +368,18 @@ export default function OrganizationProfilePage({ params }) {
   const handleCreateSuggestion = async (event) => {
     event.preventDefault();
     if (!organization?.id) return;
+    const suggestionPayload = {
+      ...suggestionForm,
+      category: suggestionForm.category || '',
+      locationId: suggestionForm.locationId || null,
+    };
     await runContentAction(
-      () => organizationAPI.createSuggestion(organization.id, suggestionForm),
+      () => organizationAPI.createSuggestion(organization.id, suggestionPayload),
       t('org_suggestion_create_success'),
       t('org_suggestion_create_failed'),
       refetchSuggestions
     );
-    setSuggestionForm({ type: 'idea', title: '', body: '', visibility: 'members_only' });
+    setSuggestionForm(DEFAULT_SUGGESTION_FORM);
     setShowSuggestionForm(false);
   };
 
@@ -824,6 +852,33 @@ export default function OrganizationProfilePage({ params }) {
                                 <option key={visibility} value={visibility}>{t(`visibility_${visibility}`)}</option>
                               ))}
                             </select>
+                          </div>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-700">
+                              {t('suggestion_category')} <span className="font-normal text-gray-500">({tCommon('optional')})</span>
+                            </label>
+                            <select
+                              value={suggestionForm.category}
+                              onChange={(e) => setSuggestionForm((prev) => ({ ...prev, category: e.target.value }))}
+                              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                            >
+                              <option value="">{t('suggestion_category_placeholder')}</option>
+                              {(articleCategories.suggestionCategories || []).map((category) => (
+                                <option key={category} value={category}>{category}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-700">
+                              {t('suggestion_location')} <span className="font-normal text-gray-500">({tCommon('optional')})</span>
+                            </label>
+                            <CascadingLocationSelector
+                              value={suggestionForm.locationId}
+                              onChange={(locationId) => setSuggestionForm((prev) => ({ ...prev, locationId: locationId || null }))}
+                              allowClear
+                            />
                           </div>
                         </div>
                         <input

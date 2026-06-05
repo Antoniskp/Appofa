@@ -120,10 +120,20 @@ describe('organizationAPI', () => {
     expect(buildQueryEndpoint).toHaveBeenCalledWith('/api/organizations/5/suggestions', { sort: 'newest' });
     expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/suggestions?sort=newest');
 
-    await organizationAPI.createSuggestion(5, { title: 'Proposal', body: 'Long enough proposal body' });
+    await organizationAPI.createSuggestion(5, {
+      title: 'Proposal',
+      body: 'Long enough proposal body',
+      category: 'Infrastructure',
+      locationId: 42,
+    });
     expect(apiRequest).toHaveBeenCalledWith('/api/organizations/5/suggestions', {
       method: 'POST',
-      body: JSON.stringify({ title: 'Proposal', body: 'Long enough proposal body' }),
+      body: JSON.stringify({
+        title: 'Proposal',
+        body: 'Long enough proposal body',
+        category: 'Infrastructure',
+        locationId: 42,
+      }),
     });
   });
 
