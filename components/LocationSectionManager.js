@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { locationSectionAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
+import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import {
   PlusIcon,
   PencilIcon,
@@ -183,21 +184,31 @@ function WebcamsEditor({ content, onChange }) {
     <RepeatingRows
       items={webcams}
       setItems={setWebcams}
-      newRow={{ label: '', url: '' }}
+      newRow={{ label: '', url: '', locationId: null }}
       renderRow={(item, i, update) => (
-        <div className="grid grid-cols-2 gap-2">
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            placeholder="Label"
-            value={item.label}
-            onChange={(e) => update(i, 'label', e.target.value)}
-          />
-          <input
-            className="border rounded px-2 py-1 text-sm"
-            placeholder="https://..."
-            value={item.url}
-            onChange={(e) => update(i, 'url', e.target.value)}
-          />
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              placeholder="Label"
+              value={item.label}
+              onChange={(e) => update(i, 'label', e.target.value)}
+            />
+            <input
+              className="border rounded px-2 py-1 text-sm"
+              placeholder="https://..."
+              value={item.url}
+              onChange={(e) => update(i, 'url', e.target.value)}
+            />
+          </div>
+          <div>
+            <p className="mb-1 text-xs text-gray-500">Optional map location</p>
+            <CascadingLocationSelector
+              value={item.locationId || null}
+              onChange={(value) => update(i, 'locationId', value)}
+              allowClear
+            />
+          </div>
         </div>
       )}
     />
