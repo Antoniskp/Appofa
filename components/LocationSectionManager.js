@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { locationSectionAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
-import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import {
   PlusIcon,
   PencilIcon,
@@ -195,7 +194,7 @@ export function WebcamsEditor({ content, onChange }) {
     <RepeatingRows
       items={webcams}
       setItems={setWebcams}
-      newRow={{ label: '', url: '', locationId: null, lat: '', lng: '' }}
+      newRow={{ label: '', url: '', lat: '', lng: '' }}
       renderRow={(item, i, update) => (
         <div className="space-y-3">
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -210,14 +209,6 @@ export function WebcamsEditor({ content, onChange }) {
               placeholder="https://..."
               value={item.url}
               onChange={(e) => update(i, 'url', e.target.value)}
-            />
-          </div>
-          <div>
-            <p className="mb-1 text-xs text-gray-500">Optional associated location</p>
-            <CascadingLocationSelector
-              value={item.locationId || null}
-              onChange={(value) => update(i, 'locationId', value)}
-              allowClear
             />
           </div>
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
