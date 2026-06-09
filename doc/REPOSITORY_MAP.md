@@ -294,11 +294,11 @@ Appofa/
 | PUT | /requests/:id | admin | Review request |
 | POST | /link | ✅ | Link entity to location |
 | POST | /unlink | ✅ | Unlink entity |
-| GET | /cameras | — | Flattened public cameras feed from published location webcam sections |
-| GET | /:locationId/sections | — | Get sections (webcams may include optional `content.webcams[].locationId`) |
-| POST | /:locationId/sections | mod | Create section (webcams support optional per-camera `locationId`) |
+| GET | /cameras | — | Flattened public cameras feed from published location webcam sections; `mapLocation` prefers exact `content.webcams[].lat/lng`, then `locationId`, then source location |
+| GET | /:locationId/sections | — | Get sections (webcams may include optional `content.webcams[].locationId` and exact `lat` / `lng`) |
+| POST | /:locationId/sections | mod | Create section (webcams support optional per-camera `locationId` plus exact `lat` / `lng`) |
 | PUT | /:locationId/sections/reorder | mod | Reorder sections |
-| PUT | /:locationId/sections/:id | mod | Update section (webcam `locationId` references validated) |
+| PUT | /:locationId/sections/:id | mod | Update section (webcam `locationId` references plus exact `lat` / `lng` validated/normalized) |
 | DELETE | /:locationId/sections/:id | mod | Delete section |
 | GET | /:locationId/roles | — | Get roles |
 | PUT | /:locationId/roles | mod | Upsert roles (single-slot roles via `userId`; repeatable roles via `userIds[]`, backward-compatible with single `userId`) |
