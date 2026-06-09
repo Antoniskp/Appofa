@@ -77,7 +77,8 @@ The `embedType` field is **auto-detected server-side** and should not be set by 
 - URLs ending in `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp` → `"image"` (rendered as `<img>`)
 - All other URLs → `"link"` (shown as a clickable link)
 - `"iframe"` remains a valid stored value but is not auto-detected (set programmatically if needed)
-- `locationId` is optional. When present, it must reference an existing `Location` and is used by the public `/cameras` page and `/api/locations/cameras` feed to place the camera on the map. When omitted, the parent location section's location is used as the fallback map context.
+- `locationId` is optional. When present, it must reference an existing `Location` and is used by the public `/cameras` page and `/api/locations/cameras` feed as the semantic associated location.
+- `lat` / `lng` are optional exact per-camera pin coordinates. If one is provided, the other is required too. When present, the public cameras feed uses them first for marker placement, then falls back to `locationId`, then to the parent location section's location.
 
 ```json
 {
@@ -91,7 +92,9 @@ The `embedType` field is **auto-detected server-side** and should not be set by 
       "label": "Harbour view",
       "url": "https://cam.example.com/harbour.jpg",
       "embedType": "image",
-      "locationId": 123
+      "locationId": 123,
+      "lat": 37.9838,
+      "lng": 23.7275
     }
   ]
 }
@@ -103,7 +106,9 @@ The `embedType` field is **auto-detected server-side** and should not be set by 
 | `webcams[].label` | string | ✅ | Human-readable label |
 | `webcams[].url` | string | ✅ | Must start with `https://` |
 | `webcams[].embedType` | string | ❌ | Auto-detected: `"link"` (default) or `"image"` (for image URLs) |
-| `webcams[].locationId` | integer | ❌ | Optional associated location used for map placement; must reference an existing `Location` |
+| `webcams[].locationId` | integer | ❌ | Optional associated location; must reference an existing `Location` |
+| `webcams[].lat` | number | ❌ | Optional exact camera pin latitude; requires `webcams[].lng`; range `-90..90` |
+| `webcams[].lng` | number | ❌ | Optional exact camera pin longitude; requires `webcams[].lat`; range `-180..180` |
 
 > **Security note:** `iframe` embeds use `sandbox="allow-scripts allow-same-origin"` to limit risk. Arbitrary HTML is never allowed.
 
@@ -360,6 +365,8 @@ All section content is validated server-side before saving.
 | All URLs must use `https://` | `http://` URLs are rejected to enforce security |
 | Required string fields | See per-type tables above |
 | `webcams[].embedType` | Auto-detected from URL; must be `"link"`, `"image"`, or `"iframe"` if explicitly provided |
+| `webcams[].lat` / `webcams[].lng` | Optional, but must be provided together; numeric strings are normalized; latitude range `-90..90`, longitude range `-180..180` |
+| `webcams[].locationId` | Optional positive integer; unknown locations are rejected |
 | Date fields | `startsAt` / `endsAt` must be parseable by `Date.parse()` |
 | `news_sources[].sources` | Must be a non-empty array; each entry needs `name` and `url` |
 

@@ -34,7 +34,9 @@ describe('Location Sections', () => {
       name: 'Test Municipality',
       type: 'municipality',
       slug: 'municipality-test-municipality',
-      parent_id: parentLocation.id
+      parent_id: parentLocation.id,
+      lat: 39.362,
+      lng: 22.945
     });
 
     associatedCameraLocation = await Location.create({
@@ -123,6 +125,14 @@ describe('Location Sections', () => {
         expect(validateContent('webcams', content)).toBeNull();
         expect(content.webcams[0].locationId).toBe(associatedCameraLocation.id);
       });
+      it('accepts webcam exact coordinates and normalizes string values', () => {
+        const content = {
+          webcams: [{ label: 'Square cam', url: 'https://cam.example.com/stream', lat: '37.9838', lng: '23.7275' }]
+        };
+        expect(validateContent('webcams', content)).toBeNull();
+        expect(content.webcams[0].lat).toBe(37.9838);
+        expect(content.webcams[0].lng).toBe(23.7275);
+      });
       it('auto-detects image embedType for .jpg URL', () => {
         const content = { webcams: [{ label: 'Still', url: 'https://cam.example.com/still.jpg' }] };
         validateContent('webcams', content);
@@ -157,6 +167,16 @@ describe('Location Sections', () => {
         expect(validateContent('webcams', {
           webcams: [{ label: 'Cam', url: 'https://cam.example.com', locationId: 'invalid' }]
         })).not.toBeNull();
+      });
+      it('rejects webcam exact pins when only one coordinate is provided', () => {
+        expect(validateContent('webcams', {
+          webcams: [{ label: 'Cam', url: 'https://cam.example.com', lat: '37.9' }]
+        })).toBe('Each webcam exact pin must include both lat and lng');
+      });
+      it('rejects out-of-range webcam exact coordinates', () => {
+        expect(validateContent('webcams', {
+          webcams: [{ label: 'Cam', url: 'https://cam.example.com', lat: '120', lng: '23.7' }]
+        })).toBe('Each webcam lat must be a number between -90 and 90');
       });
     });
 
@@ -322,6 +342,30 @@ describe('Location Sections', () => {
       expect(res.body.section.content.webcams[0].embedType).toBe('image');
     });
 
+    it('creates a webcam with an exact map pin and normalizes string coordinates', async () => {
+      const res = await request(app)
+        .post(`/api/locations/${testLocation.id}/sections`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          type: 'webcams',
+          content: {
+            webcams: [{
+              label: 'Cliff lookout',
+              url: 'https://cam.example.com/cliff',
+              locationId: associatedCameraLocation.id,
+              lat: '37.991111',
+              lng: '23.744444'
+            }]
+          },
+          isPublished: true
+        })
+        .expect(201);
+
+      expect(res.body.section.content.webcams[0].lat).toBe(37.991111);
+      expect(res.body.section.content.webcams[0].lng).toBe(23.744444);
+      expect(res.body.section.content.webcams[0].locationId).toBe(associatedCameraLocation.id);
+    });
+
     it('rejects webcams that reference unknown locations', async () => {
       const res = await request(app)
         .post(`/api/locations/${testLocation.id}/sections`)
@@ -444,12 +488,26 @@ describe('Location Sections', () => {
       expect(cameraWithAssociation.locationId).toBe(associatedCameraLocation.id);
       expect(cameraWithAssociation.location.id).toBe(associatedCameraLocation.id);
       expect(cameraWithAssociation.mapLocation.id).toBe(associatedCameraLocation.id);
+      expect(cameraWithAssociation.mapLocation.lat).toBe(associatedCameraLocation.lat);
+      expect(cameraWithAssociation.mapLocation.lng).toBe(associatedCameraLocation.lng);
 
       const inheritedLocationCamera = res.body.cameras.find((camera) => camera.label === 'Town square');
       expect(inheritedLocationCamera).toBeTruthy();
       expect(inheritedLocationCamera.location).toBeNull();
       expect(inheritedLocationCamera.sourceLocation.id).toBe(testLocation.id);
       expect(inheritedLocationCamera.mapLocation.id).toBe(testLocation.id);
+      expect(inheritedLocationCamera.mapLocation.lat).toBe(testLocation.lat);
+      expect(inheritedLocationCamera.mapLocation.lng).toBe(testLocation.lng);
+
+      const exactPinCamera = res.body.cameras.find((camera) => camera.label === 'Cliff lookout');
+      expect(exactPinCamera).toBeTruthy();
+      expect(exactPinCamera.location.id).toBe(associatedCameraLocation.id);
+      expect(exactPinCamera.exactCoordinates).toEqual({ lat: 37.991111, lng: 23.744444 });
+      expect(exactPinCamera.mapLocationSource).toBe('camera');
+      expect(exactPinCamera.mapLocation.id).toBe(associatedCameraLocation.id);
+      expect(exactPinCamera.mapLocation.lat).toBe(37.991111);
+      expect(exactPinCamera.mapLocation.lng).toBe(23.744444);
+      expect(exactPinCamera.sourceLocation.id).toBe(testLocation.id);
     });
 
     it('reorders sections', async () => {

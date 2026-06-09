@@ -26,6 +26,15 @@ const normalizeOptionalLocationId = (value) => {
   return parsed;
 };
 
+const normalizeOptionalCoordinate = (value, min, max) => {
+  if (value === undefined || value === null) return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < min || parsed > max) return NaN;
+  return parsed;
+};
+
 const getWebcamLocationIds = (content) => {
   const webcams = Array.isArray(content?.webcams) ? content.webcams : [];
   return [...new Set(
@@ -114,6 +123,8 @@ const validateContent = (type, content) => {
         if (!cam.url || typeof cam.url !== 'string') return 'Each webcam must have a string "url"';
         if (!isValidHttpsUrl(cam.url)) return `Webcam URL must start with https://: "${cam.url}"`;
         const normalizedLocationId = normalizeOptionalLocationId(cam.locationId);
+        const normalizedLat = normalizeOptionalCoordinate(cam.lat, -90, 90);
+        const normalizedLng = normalizeOptionalCoordinate(cam.lng, -180, 180);
         if (cam.locationId !== undefined) {
           if (normalizedLocationId === null) {
             delete cam.locationId;
@@ -121,6 +132,21 @@ const validateContent = (type, content) => {
             return 'Each webcam locationId must be a positive integer';
           } else {
             cam.locationId = normalizedLocationId;
+          }
+        }
+        if (cam.lat !== undefined || cam.lng !== undefined) {
+          if (normalizedLat === null && normalizedLng === null) {
+            delete cam.lat;
+            delete cam.lng;
+          } else if (Number.isNaN(normalizedLat)) {
+            return 'Each webcam lat must be a number between -90 and 90';
+          } else if (Number.isNaN(normalizedLng)) {
+            return 'Each webcam lng must be a number between -180 and 180';
+          } else if (normalizedLat === null || normalizedLng === null) {
+            return 'Each webcam exact pin must include both lat and lng';
+          } else {
+            cam.lat = normalizedLat;
+            cam.lng = normalizedLng;
           }
         }
         if (cam.embedType && !validEmbedTypes.includes(cam.embedType)) {
@@ -253,9 +279,29 @@ exports.getAllCameras = async (_req, res) => {
 
       return webcams.map((camera, index) => {
         const normalizedLocationId = normalizeOptionalLocationId(camera.locationId);
+        const normalizedLat = normalizeOptionalCoordinate(camera.lat, -90, 90);
+        const normalizedLng = normalizeOptionalCoordinate(camera.lng, -180, 180);
         const explicitLocation = Number.isInteger(normalizedLocationId)
           ? (cameraLocationById.get(Number(normalizedLocationId)) || null)
           : null;
+        const exactCoordinates = normalizedLat !== null && normalizedLng !== null
+          && !Number.isNaN(normalizedLat) && !Number.isNaN(normalizedLng)
+          ? { lat: normalizedLat, lng: normalizedLng }
+          : null;
+        const fallbackMapLocation = explicitLocation || sourceLocation || null;
+        const mapLocation = exactCoordinates
+          ? {
+              ...(fallbackMapLocation || {
+                id: null,
+                name: camera.label,
+                name_local: null,
+                slug: null,
+                type: null,
+              }),
+              lat: exactCoordinates.lat,
+              lng: exactCoordinates.lng,
+            }
+          : fallbackMapLocation;
 
         return {
           id: `${section.id}:${index}`,
@@ -267,7 +313,13 @@ exports.getAllCameras = async (_req, res) => {
           locationId: Number.isInteger(normalizedLocationId) ? normalizedLocationId : null,
           location: explicitLocation,
           sourceLocation,
-          mapLocation: explicitLocation || sourceLocation,
+          exactCoordinates,
+          mapLocation,
+          mapLocationSource: exactCoordinates
+            ? 'camera'
+            : explicitLocation
+              ? 'location'
+              : 'sourceLocation',
         };
       });
     });

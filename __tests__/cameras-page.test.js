@@ -71,7 +71,8 @@ describe('CamerasPageClient', () => {
           embedType: 'image',
           location: { id: 2, name: 'Harbour', slug: 'harbour', lat: 37.9, lng: 23.7 },
           sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
-          mapLocation: { id: 2, name: 'Harbour', slug: 'harbour', lat: 37.9, lng: 23.7 },
+          exactCoordinates: { lat: 37.91, lng: 23.71 },
+          mapLocation: { id: 2, name: 'Harbour', slug: 'harbour', lat: 37.91, lng: 23.71 },
         },
         {
           id: '1:1',
@@ -100,7 +101,7 @@ describe('CamerasPageClient', () => {
     expect(baseMapRenderSpy).toHaveBeenCalledTimes(1);
     const mapProps = baseMapRenderSpy.mock.calls[0][0];
     expect(mapProps.markers).toHaveLength(1);
-    expect(mapProps.markers[0].lat).toBe(37.9);
-    expect(mapProps.markers[0].lng).toBe(23.7);
+    expect(mapProps.markers[0].lat).toBe(37.91);
+    expect(mapProps.markers[0].lng).toBe(23.71);
   });
 });

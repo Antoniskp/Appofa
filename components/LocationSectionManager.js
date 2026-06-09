@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { locationSectionAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
@@ -15,6 +16,8 @@ import {
   CheckIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+
+const LocationPickerMap = dynamic(() => import('@/components/map/LocationPickerMap'), { ssr: false });
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -177,17 +180,25 @@ function ContactsEditor({ content, onChange }) {
   );
 }
 
-function WebcamsEditor({ content, onChange }) {
+function roundCoordinate(value) {
+  return Math.round(Number(value) * 1e6) / 1e6;
+}
+
+export function WebcamsEditor({ content, onChange }) {
   const webcams = content?.webcams || [];
   const setWebcams = (w) => onChange({ webcams: w });
+  const updateWebcam = (index, patch) => {
+    setWebcams(webcams.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)));
+  };
+
   return (
     <RepeatingRows
       items={webcams}
       setItems={setWebcams}
-      newRow={{ label: '', url: '', locationId: null }}
+      newRow={{ label: '', url: '', locationId: null, lat: '', lng: '' }}
       renderRow={(item, i, update) => (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <input
               className="border rounded px-2 py-1 text-sm"
               placeholder="Label"
@@ -202,12 +213,58 @@ function WebcamsEditor({ content, onChange }) {
             />
           </div>
           <div>
-            <p className="mb-1 text-xs text-gray-500">Optional map location</p>
+            <p className="mb-1 text-xs text-gray-500">Optional associated location</p>
             <CascadingLocationSelector
               value={item.locationId || null}
               onChange={(value) => update(i, 'locationId', value)}
               allowClear
             />
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Exact map pin</p>
+                <p className="text-xs text-gray-500">Optional exact marker placement for the /cameras map.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => updateWebcam(i, { lat: '', lng: '' })}
+                className="text-xs font-medium text-gray-500 hover:text-gray-700"
+              >
+                Clear pin
+              </button>
+            </div>
+
+            <LocationPickerMap
+              lat={item.lat ?? ''}
+              lng={item.lng ?? ''}
+              onChange={({ lat, lng }) => updateWebcam(i, {
+                lat: roundCoordinate(lat),
+                lng: roundCoordinate(lng),
+              })}
+              className="h-[240px] w-full rounded-xl overflow-hidden sm:h-[280px]"
+            />
+
+            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <input
+                className="border rounded px-2 py-1 text-sm bg-white"
+                type="number"
+                inputMode="decimal"
+                step="0.000001"
+                placeholder="Latitude"
+                value={item.lat ?? ''}
+                onChange={(e) => update(i, 'lat', e.target.value)}
+              />
+              <input
+                className="border rounded px-2 py-1 text-sm bg-white"
+                type="number"
+                inputMode="decimal"
+                step="0.000001"
+                placeholder="Longitude"
+                value={item.lng ?? ''}
+                onChange={(e) => update(i, 'lng', e.target.value)}
+              />
+            </div>
           </div>
         </div>
       )}
