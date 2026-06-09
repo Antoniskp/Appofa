@@ -19,13 +19,6 @@ const isValidHttpsUrl = (url) => {
   }
 };
 
-const normalizeOptionalLocationId = (value) => {
-  if (value === undefined || value === null || value === '') return null;
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) return NaN;
-  return parsed;
-};
-
 const normalizeOptionalCoordinate = (value, min, max) => {
   if (value === undefined || value === null) return null;
   if (typeof value === 'string' && value.trim() === '') return null;
@@ -33,15 +26,6 @@ const normalizeOptionalCoordinate = (value, min, max) => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < min || parsed > max) return NaN;
   return parsed;
-};
-
-const getWebcamLocationIds = (content) => {
-  const webcams = Array.isArray(content?.webcams) ? content.webcams : [];
-  return [...new Set(
-    webcams
-      .map((cam) => normalizeOptionalLocationId(cam.locationId))
-      .filter((locationId) => Number.isInteger(locationId) && locationId > 0)
-  )];
 };
 
 const toLocationSummary = (location) => {
@@ -55,25 +39,6 @@ const toLocationSummary = (location) => {
     lat: location.lat,
     lng: location.lng,
   };
-};
-
-const validateReferencedLocations = async (type, content) => {
-  if (type !== 'webcams') return null;
-
-  const locationIds = getWebcamLocationIds(content);
-  if (locationIds.length === 0) return null;
-
-  const locations = await Location.findAll({
-    where: { id: locationIds },
-    attributes: ['id'],
-  });
-
-  const existingIds = new Set(locations.map((location) => Number(location.id)));
-  const missingLocationId = locationIds.find((locationId) => !existingIds.has(Number(locationId)));
-
-  return missingLocationId
-    ? `Unknown webcam locationId: ${missingLocationId}`
-    : null;
 };
 
 /**
@@ -122,18 +87,8 @@ const validateContent = (type, content) => {
         if (!cam.label || typeof cam.label !== 'string') return 'Each webcam must have a string "label"';
         if (!cam.url || typeof cam.url !== 'string') return 'Each webcam must have a string "url"';
         if (!isValidHttpsUrl(cam.url)) return `Webcam URL must start with https://: "${cam.url}"`;
-        const normalizedLocationId = normalizeOptionalLocationId(cam.locationId);
         const normalizedLat = normalizeOptionalCoordinate(cam.lat, -90, 90);
         const normalizedLng = normalizeOptionalCoordinate(cam.lng, -180, 180);
-        if (cam.locationId !== undefined) {
-          if (normalizedLocationId === null) {
-            delete cam.locationId;
-          } else if (Number.isNaN(normalizedLocationId)) {
-            return 'Each webcam locationId must be a positive integer';
-          } else {
-            cam.locationId = normalizedLocationId;
-          }
-        }
         if (cam.lat !== undefined || cam.lng !== undefined) {
           if (normalizedLat === null && normalizedLng === null) {
             delete cam.lat;
@@ -258,40 +213,20 @@ exports.getAllCameras = async (_req, res) => {
       order: [['sortOrder', 'ASC'], ['id', 'ASC']],
     });
 
-    const explicitLocationIds = [...new Set(
-      sections.flatMap((section) => getWebcamLocationIds(section.content))
-    )];
-
-    const cameraLocations = explicitLocationIds.length > 0
-      ? await Location.findAll({
-          where: { id: explicitLocationIds },
-          attributes: ['id', 'name', 'name_local', 'slug', 'type', 'lat', 'lng'],
-        })
-      : [];
-
-    const cameraLocationById = new Map(
-      cameraLocations.map((location) => [Number(location.id), toLocationSummary(location)])
-    );
-
     const cameras = sections.flatMap((section) => {
       const sourceLocation = toLocationSummary(section.location);
       const webcams = Array.isArray(section.content?.webcams) ? section.content.webcams : [];
 
       return webcams.map((camera, index) => {
-        const normalizedLocationId = normalizeOptionalLocationId(camera.locationId);
         const normalizedLat = normalizeOptionalCoordinate(camera.lat, -90, 90);
         const normalizedLng = normalizeOptionalCoordinate(camera.lng, -180, 180);
-        const explicitLocation = Number.isInteger(normalizedLocationId)
-          ? (cameraLocationById.get(Number(normalizedLocationId)) || null)
-          : null;
         const exactCoordinates = normalizedLat !== null && normalizedLng !== null
           && !Number.isNaN(normalizedLat) && !Number.isNaN(normalizedLng)
           ? { lat: normalizedLat, lng: normalizedLng }
           : null;
-        const fallbackMapLocation = explicitLocation || sourceLocation || null;
         const mapLocation = exactCoordinates
           ? {
-              ...(fallbackMapLocation || {
+              ...(sourceLocation || {
                 id: null,
                 name: camera.label,
                 name_local: null,
@@ -301,7 +236,7 @@ exports.getAllCameras = async (_req, res) => {
               lat: exactCoordinates.lat,
               lng: exactCoordinates.lng,
             }
-          : fallbackMapLocation;
+          : sourceLocation;
 
         return {
           id: `${section.id}:${index}`,
@@ -310,16 +245,10 @@ exports.getAllCameras = async (_req, res) => {
           label: camera.label,
           url: camera.url,
           embedType: camera.embedType || 'link',
-          locationId: Number.isInteger(normalizedLocationId) ? normalizedLocationId : null,
-          location: explicitLocation,
           sourceLocation,
           exactCoordinates,
           mapLocation,
-          mapLocationSource: exactCoordinates
-            ? 'camera'
-            : explicitLocation
-              ? 'location'
-              : 'sourceLocation',
+          mapLocationSource: exactCoordinates ? 'camera' : 'sourceLocation',
         };
       });
     });
@@ -360,11 +289,6 @@ exports.createSection = async (req, res) => {
     const contentError = validateContent(type, content);
     if (contentError) {
       return res.status(400).json({ success: false, message: contentError });
-    }
-
-    const referencedLocationError = await validateReferencedLocations(type, content);
-    if (referencedLocationError) {
-      return res.status(400).json({ success: false, message: referencedLocationError });
     }
 
     // For news_sources, enforce a single section per location by merging into the existing one
@@ -431,10 +355,6 @@ exports.updateSection = async (req, res) => {
       const contentError = validateContent(section.type, content);
       if (contentError) {
         return res.status(400).json({ success: false, message: contentError });
-      }
-      const referencedLocationError = await validateReferencedLocations(section.type, content);
-      if (referencedLocationError) {
-        return res.status(400).json({ success: false, message: referencedLocationError });
       }
       section.content = content;
     }

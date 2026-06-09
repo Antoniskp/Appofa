@@ -21,24 +21,6 @@ jest.mock('next/dynamic', () => () => {
   };
 });
 
-jest.mock('@/components/ui/CascadingLocationSelector', () => {
-  const React = require('react');
-  return function CascadingLocationSelectorMock({ value, onChange }) {
-    return React.createElement(
-      'select',
-      {
-        'data-testid': 'location-selector',
-        value: value ?? '',
-        onChange: (event) => onChange(event.target.value ? Number(event.target.value) : null),
-      },
-      [
-        React.createElement('option', { key: 'empty', value: '' }, 'No location'),
-        React.createElement('option', { key: '12', value: '12' }, 'Camera square'),
-      ]
-    );
-  };
-});
-
 jest.mock('@/lib/api', () => ({ locationSectionAPI: {} }));
 jest.mock('@/components/ToastProvider', () => ({
   useToast: () => ({ error: jest.fn(), success: jest.fn() }),
@@ -63,20 +45,20 @@ describe('WebcamsEditor', () => {
     document.body.innerHTML = '';
   });
 
-  test('updates exact pin coordinates from the map picker while preserving locationId', async () => {
+  test('updates exact pin coordinates from the map picker', async () => {
     const onChange = jest.fn();
 
     await act(async () => {
       root.render(React.createElement(WebcamsEditor, {
         content: {
-          webcams: [{ label: 'Harbour cam', url: 'https://cam.example.com/live', locationId: 12, lat: '', lng: '' }],
+          webcams: [{ label: 'Harbour cam', url: 'https://cam.example.com/live', lat: '', lng: '' }],
         },
         onChange,
       }));
     });
 
     expect(container.textContent).toContain('Exact map pin');
-    expect(container.textContent).toContain('Optional associated location');
+    expect(container.textContent).not.toContain('Optional associated location');
 
     await act(async () => {
       container.querySelector('[data-testid="webcam-map-stub"]').dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -86,20 +68,19 @@ describe('WebcamsEditor', () => {
       webcams: [{
         label: 'Harbour cam',
         url: 'https://cam.example.com/live',
-        locationId: 12,
         lat: 37.983812,
         lng: 23.727599,
       }],
     });
   });
 
-  test('clears the exact pin without removing the associated location', async () => {
+  test('clears the exact pin', async () => {
     const onChange = jest.fn();
 
     await act(async () => {
       root.render(React.createElement(WebcamsEditor, {
         content: {
-          webcams: [{ label: 'Square cam', url: 'https://cam.example.com/live', locationId: 12, lat: 37.9, lng: 23.7 }],
+          webcams: [{ label: 'Square cam', url: 'https://cam.example.com/live', lat: 37.9, lng: 23.7 }],
         },
         onChange,
       }));
@@ -114,7 +95,6 @@ describe('WebcamsEditor', () => {
       webcams: [{
         label: 'Square cam',
         url: 'https://cam.example.com/live',
-        locationId: 12,
         lat: '',
         lng: '',
       }],

@@ -9,7 +9,6 @@ describe('Location Sections', () => {
   let editorToken;
   let parentLocation;
   let testLocation;
-  let associatedCameraLocation;
   let outOfScopeLocation;
 
   const moderatorAuthHeader = () => ({
@@ -37,15 +36,6 @@ describe('Location Sections', () => {
       parent_id: parentLocation.id,
       lat: 39.362,
       lng: 22.945
-    });
-
-    associatedCameraLocation = await Location.create({
-      name: 'Camera Square',
-      type: 'municipality',
-      slug: 'municipality-camera-square',
-      parent_id: parentLocation.id,
-      lat: 37.9838,
-      lng: 23.7275
     });
 
     outOfScopeLocation = parentLocation;
@@ -118,13 +108,6 @@ describe('Location Sections', () => {
           webcams: [{ label: 'Main cam', url: 'https://cam.example.com/stream' }]
         })).toBeNull();
       });
-      it('accepts webcam with optional locationId and normalizes string values', () => {
-        const content = {
-          webcams: [{ label: 'Square cam', url: 'https://cam.example.com/stream', locationId: String(associatedCameraLocation.id) }]
-        };
-        expect(validateContent('webcams', content)).toBeNull();
-        expect(content.webcams[0].locationId).toBe(associatedCameraLocation.id);
-      });
       it('accepts webcam exact coordinates and normalizes string values', () => {
         const content = {
           webcams: [{ label: 'Square cam', url: 'https://cam.example.com/stream', lat: '37.9838', lng: '23.7275' }]
@@ -161,11 +144,6 @@ describe('Location Sections', () => {
       it('rejects http URL', () => {
         expect(validateContent('webcams', {
           webcams: [{ label: 'Cam', url: 'http://cam.example.com' }]
-        })).not.toBeNull();
-      });
-      it('rejects invalid locationId values', () => {
-        expect(validateContent('webcams', {
-          webcams: [{ label: 'Cam', url: 'https://cam.example.com', locationId: 'invalid' }]
         })).not.toBeNull();
       });
       it('rejects webcam exact pins when only one coordinate is provided', () => {
@@ -321,27 +299,6 @@ describe('Location Sections', () => {
       expect(res.body.section.content.webcams[0].label).toBe('Town square');
     });
 
-    it('creates a webcam with an optional location association', async () => {
-      const res = await request(app)
-        .post(`/api/locations/${testLocation.id}/sections`)
-        .set('Cookie', `auth_token=${adminToken}`)
-        .send({
-          type: 'webcams',
-          content: {
-            webcams: [{
-              label: 'Camera square',
-              url: 'https://cam.example.com/square.jpg',
-              locationId: associatedCameraLocation.id
-            }]
-          },
-          isPublished: true
-        })
-        .expect(201);
-
-      expect(res.body.section.content.webcams[0].locationId).toBe(associatedCameraLocation.id);
-      expect(res.body.section.content.webcams[0].embedType).toBe('image');
-    });
-
     it('creates a webcam with an exact map pin and normalizes string coordinates', async () => {
       const res = await request(app)
         .post(`/api/locations/${testLocation.id}/sections`)
@@ -352,7 +309,6 @@ describe('Location Sections', () => {
             webcams: [{
               label: 'Cliff lookout',
               url: 'https://cam.example.com/cliff',
-              locationId: associatedCameraLocation.id,
               lat: '37.991111',
               lng: '23.744444'
             }]
@@ -363,24 +319,6 @@ describe('Location Sections', () => {
 
       expect(res.body.section.content.webcams[0].lat).toBe(37.991111);
       expect(res.body.section.content.webcams[0].lng).toBe(23.744444);
-      expect(res.body.section.content.webcams[0].locationId).toBe(associatedCameraLocation.id);
-    });
-
-    it('rejects webcams that reference unknown locations', async () => {
-      const res = await request(app)
-        .post(`/api/locations/${testLocation.id}/sections`)
-        .set('Cookie', `auth_token=${adminToken}`)
-        .send({
-          type: 'webcams',
-          content: {
-            webcams: [{ label: 'Broken cam', url: 'https://cam.example.com/stream', locationId: 999999 }]
-          },
-          isPublished: true
-        })
-        .expect(400);
-
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain('Unknown webcam locationId');
     });
 
     it('creates a news_sources section', async () => {
@@ -483,28 +421,19 @@ describe('Location Sections', () => {
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.cameras)).toBe(true);
 
-      const cameraWithAssociation = res.body.cameras.find((camera) => camera.label === 'Camera square');
-      expect(cameraWithAssociation).toBeTruthy();
-      expect(cameraWithAssociation.locationId).toBe(associatedCameraLocation.id);
-      expect(cameraWithAssociation.location.id).toBe(associatedCameraLocation.id);
-      expect(cameraWithAssociation.mapLocation.id).toBe(associatedCameraLocation.id);
-      expect(cameraWithAssociation.mapLocation.lat).toBe(associatedCameraLocation.lat);
-      expect(cameraWithAssociation.mapLocation.lng).toBe(associatedCameraLocation.lng);
-
       const inheritedLocationCamera = res.body.cameras.find((camera) => camera.label === 'Town square');
       expect(inheritedLocationCamera).toBeTruthy();
-      expect(inheritedLocationCamera.location).toBeNull();
       expect(inheritedLocationCamera.sourceLocation.id).toBe(testLocation.id);
       expect(inheritedLocationCamera.mapLocation.id).toBe(testLocation.id);
       expect(inheritedLocationCamera.mapLocation.lat).toBe(testLocation.lat);
       expect(inheritedLocationCamera.mapLocation.lng).toBe(testLocation.lng);
+      expect(inheritedLocationCamera.mapLocationSource).toBe('sourceLocation');
 
       const exactPinCamera = res.body.cameras.find((camera) => camera.label === 'Cliff lookout');
       expect(exactPinCamera).toBeTruthy();
-      expect(exactPinCamera.location.id).toBe(associatedCameraLocation.id);
       expect(exactPinCamera.exactCoordinates).toEqual({ lat: 37.991111, lng: 23.744444 });
       expect(exactPinCamera.mapLocationSource).toBe('camera');
-      expect(exactPinCamera.mapLocation.id).toBe(associatedCameraLocation.id);
+      expect(exactPinCamera.mapLocation.id).toBe(testLocation.id);
       expect(exactPinCamera.mapLocation.lat).toBe(37.991111);
       expect(exactPinCamera.mapLocation.lng).toBe(23.744444);
       expect(exactPinCamera.sourceLocation.id).toBe(testLocation.id);
