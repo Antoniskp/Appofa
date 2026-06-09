@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-05-25
+> **Last updated**: 2026-06-09
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -31,13 +31,13 @@ This instruction is permanent and must never be removed.
 - [Services (15)](#services-15)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (139)](#frontend-pages-139)
-- [Components (151)](#components-151)
+- [Frontend Pages (140)](#frontend-pages-140)
+- [Components (154)](#components-154)
 - [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
 - [Constants](#constants)
 - [Migrations (93)](#migrations-93)
-- [Tests (103 files)](#tests-103-files)
+- [Tests (104 files)](#tests-104-files)
 - [Scripts](#scripts)
 - [npm Scripts](#npm-scripts)
 
@@ -294,10 +294,11 @@ Appofa/
 | PUT | /requests/:id | admin | Review request |
 | POST | /link | ✅ | Link entity to location |
 | POST | /unlink | ✅ | Unlink entity |
-| GET | /:locationId/sections | — | Get sections |
-| POST | /:locationId/sections | mod | Create section |
+| GET | /cameras | — | Flattened public cameras feed from published location webcam sections |
+| GET | /:locationId/sections | — | Get sections (webcams may include optional `content.webcams[].locationId`) |
+| POST | /:locationId/sections | mod | Create section (webcams support optional per-camera `locationId`) |
 | PUT | /:locationId/sections/reorder | mod | Reorder sections |
-| PUT | /:locationId/sections/:id | mod | Update section |
+| PUT | /:locationId/sections/:id | mod | Update section (webcam `locationId` references validated) |
 | DELETE | /:locationId/sections/:id | mod | Delete section |
 | GET | /:locationId/roles | — | Get roles |
 | PUT | /:locationId/roles | mod | Upsert roles (single-slot roles via `userId`; repeatable roles via `userIds[]`, backward-compatible with single `userId`) |
@@ -423,7 +424,7 @@ Appofa/
 | locationController.js | Location CRUD, sections, roles |
 | locationPlatformRoleController.js | Platform-level location role assignment management (UserLocationRole): list/add/remove; admin-only; auto-elevates/demotes global role; ancestor-chain validation |
 | locationRoleController.js | Location role management (single-slot + repeatable linked officials in `LocationRoles`) |
-| locationSectionController.js | Location section management |
+| locationSectionController.js | Location section management + flattened public cameras feed (`GET /api/locations/cameras`) |
 | manifestController.js | Manifest CRUD & acceptance |
 | messageController.js | Contact messages |
 | newsletterController.js | Newsletter subscription + authenticated self preference read/update + admin subscriber management (CSV import/export) + campaign CRUD/schedule/test-send/send/logs |
@@ -492,7 +493,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (139)
+## Frontend Pages (140)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -524,6 +525,7 @@ Appofa/
 | Route | Description |
 |-------|-------------|
 | `/locations`, `/locations/[slug]` | Locations |
+| `/cameras` | Community cameras directory with map-first layout powered by `GET /api/locations/cameras` |
 | `/organizations`, `/organizations/[slug]` | Organizations list (includes role-gated CTA to `/admin/organizations` for admin/moderator) + profile page with: invite member search using `PersonSearch` (replaces raw user-ID input; real users + claimed persons invitable), polls tab using universal `PollCard` + `SearchInput` filter, suggestions tab using universal `SuggestionCard` + `SearchInput` filter (both tabs keep org-scoped create forms and permission gating) |
 | `/official-posts` | Public discovery feed for platform-wide official organization posts |
 | `/country/[code]` | Country landing page after first-visit geo redirect; when no local content is available it shows a richer `CountryFundingBanner` empty state with explicit Geo-IP transparency (detected country, detection source, browser locale, trust level, applied country mode), plus support CTA (`/contribute`), optional donation CTA, and diaspora shortcut to `/country/GR` |
@@ -586,7 +588,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 
 ---
 
-## Components (153)
+## Components (154)
 
 | Directory | Count | Key Components |
 |-----------|-------|----------------|
@@ -596,6 +598,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `dream-team/` | 17 | FormationBuilder, FormationCard, FormationView, Leaderboard, PersonSearch, ShareModal, PositionCard |
 | `follow/` | 1 | FollowButton |
 | `layout/` | 10 | AppShell (hides TopNav/Footer/CookieBanner on `/embed/*` while keeping normal chrome elsewhere), TopNav, Footer, HomeHero, ToastProvider, StaticPageLayout, GeoTracker, GoogleAnalytics (loads GA script via `next/script` and tracks route-change pageviews by default unless cookie settings explicitly opt out) |
+| `cameras/` | 1 | CamerasPageClient (user-facing `/cameras` directory with map-first layout, BaseMap markers, and cards linking to camera streams + associated/source locations) |
 | `embed/` | 1 | EntityEmbedView (shared embed card renderer for polls, suggestions, and civic questions) |
 | `newsletter/` | 1 | NewsletterSignupForm (public footer subscription form with locale capture + generic success/error messaging; rendered only for guests) |
 | `locations/` | 13 | CountryFundingBanner (country no-content card with Geo-IP transparency panel: detected country, source, browser locale, trust level, and applied mode; plus support CTA, optional donation CTA, diaspora shortcut to Greece), ExploreLocationsMap (homepage + `/locations/greece` prefecture discovery explorer with pills and the same bidirectional polygon/marker↔pill hover linkage pattern as location detail explorers), LocationBoundaryGeoJsonField (reusable location boundary editor with instructions, template buttons, paste/upload validation, and BaseMap polygon preview), LocationBreadcrumb, LocationCard, **LocationChildrenExplorer** (shared child-location explorer for location detail pages; desktop split layout with square map left + pills panel right, mobile stacked; **hover fully bidirectional**: polygon/marker hover highlights pill via `onFeatureHover`/`onMarkerHover`; pill hover highlights polygon/marker via `onLayerInit`/`onMarkersReady` controls; markers now render whenever coordinates exist even when polygons are present; tooltips show name + user count + first moderator; children fetched with `sort=mostUsers`), LocationEditForm (includes LocationModeratorManager section, `MapViewportPickerMap` for visual `map_default_center_lat`/`map_default_center_lng`/`map_default_zoom` picker, updated larger map sizing classes `h-[300px] sm:h-[340px]`, and boundary-color inputs), LocationElectionsTab, LocationHeader (balanced desktop top box with participation-first CTA hierarchy, denser `7/5` desktop split and compact spacing to reduce empty space; child-location labels are context-aware via `getChildLocationTerminology`: `country` → `Νομοί / Περιφέρειες`, `prefecture` → `Δήμοι`, fallback `Υποπεριοχές`), LocationMap (**updated**: renders `boundary_geojson` as interactive polygon layer with perimeter/outline when present; bare Polygon/MultiPolygon auto-wrapped; auto-fits derived polygon bounds; supports `boundary_color`; falls back to marker/default center/zoom), LocationModeratorManager (admin: add/remove moderator assignments for a location), LocationOverviewPanel (legacy summary cards component, no longer rendered in default location detail flow), LocationRelatedLocations (compact related/nearby chip layout replacing large hierarchy blocks; child section text/counters follow the same context-aware terminology helper), LocationTabs (polls/suggestions-first tab UX with compact poll-card grid and explicit `+ Ξεκίνησε ...` empty-state actions) |
@@ -609,7 +612,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | Root | 20+ | ContactForm, DiasporaModal, EndorsementPanel, PartyBadge, ProtectedRoute, ReportButton, SuggestionCard, UserCard, VerifiedBadge |
 
 ### Layout resilience notes (mobile)
-- `components/layout/TopNav.js`: **plain in-flow header (no fixed/sticky or scroll behavior)** with grouped IA redesign — desktop top-level nav now uses 3 `DropdownMenu` sections: **Ενημέρωση** (`/articles`, `/news`, `/videos`), **Συμμετοχή** (`/polls`, `/civic-questions` labeled `Civic Polls`, `/suggestions`), **Κοινότητα** (`/locations`, `/users`), and **Σελίδες** (`/platform`, `/elections`, `/citizen-help`, `/education`) without the legacy `/pages` item. Desktop/nav-auth switch now happens at `md` (`hidden md:flex`) while hamburger + mobile panel stay active below `md` (`md:hidden`). Section triggers and dropdown items highlight active routes, default `DropdownMenu` triggers provide keyboard/ARIA behavior, and the mobile toggle SR label now flips correctly between open/close states. Unauthenticated CTAs are hierarchical (`/register` primary solid, `/login` secondary outline). Mobile menu (`#mobile-menu`) remains independently scrollable (`max-h-[calc(100dvh-4rem)] overflow-y-auto`), mirrors grouped sections with icons + `min-h-11` touch targets/focus-visible styles, closes immediately on mobile section/auth link taps, and locks body scroll while open (restored on close/unmount). Mobile auth dropdown still uses `menuClassName="w-full max-h-[55vh] overflow-y-auto"` for internal scrolling.
+- `components/layout/TopNav.js`: **plain in-flow header (no fixed/sticky or scroll behavior)** with grouped IA redesign — desktop top-level nav now uses 3 `DropdownMenu` sections: **Ενημέρωση** (`/articles`, `/news`, `/videos`), **Συμμετοχή** (`/polls`, `/civic-questions` labeled `Civic Polls`, `/suggestions`), **Κοινότητα** (`/locations`, `/cameras`, `/users`), and **Σελίδες** (`/platform`, `/elections`, `/citizen-help`, `/education`) without the legacy `/pages` item. Desktop/nav-auth switch now happens at `md` (`hidden md:flex`) while hamburger + mobile panel stay active below `md` (`md:hidden`). Section triggers and dropdown items highlight active routes, default `DropdownMenu` triggers provide keyboard/ARIA behavior, and the mobile toggle SR label now flips correctly between open/close states. Unauthenticated CTAs are hierarchical (`/register` primary solid, `/login` secondary outline). Mobile menu (`#mobile-menu`) remains independently scrollable (`max-h-[calc(100dvh-4rem)] overflow-y-auto`), mirrors grouped sections with icons + `min-h-11` touch targets/focus-visible styles, closes immediately on mobile section/auth link taps, and locks body scroll while open (restored on close/unmount). Mobile auth dropdown still uses `menuClassName="w-full max-h-[55vh] overflow-y-auto"` for internal scrolling.
 - `components/layout/Footer.js`: footer newsletter signup card is now guest-only (`useAuth` + `!loading && !user`) and hidden for authenticated users; logged-in newsletter preference is managed from `/profile`.
 - `components/layout/AppShell.js`: `/embed/*` routes intentionally hide `TopNav`, `Footer`, and `CookieBanner` so iframe embeds render as standalone cards without site chrome, while all non-embed routes preserve the standard shell.
 - `components/layout/HomeHero.js`: arrow navigation row is always rendered and hidden with `invisible` when not needed, preventing hero height jumps during async slide loading. A fixed uppercase tagline (`Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη`) now appears above slide titles. CTA logic is simplified: guests get two primary actions (`Εγγραφή`, `Βρες την Περιοχή σου`), logged-in users get location + polls, and only `admin`/`moderator` roles see the admin link. `NAV_CARDS` now has three value-proposition cards linking to `/polls`, `/suggestions`, and `/locations`.
@@ -650,7 +653,7 @@ All in `lib/api/`, barrel-exported via `lib/api/index.js`. Each uses `apiRequest
 | homepageSettings.js | Homepage settings |
 | ipRules.js | IP whitelist/blacklist management |
 | linkPreview.js | Link previews |
-| locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI`, `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments), `electoralDistrictAPI` (municipality↔district mapping: getMunicipalityDistricts, getDistrictMunicipalities, addMapping, removeMapping) |
+| locations.js | Locations; exports: `locationAPI`, `locationRequestAPI`, `locationSectionAPI` (`getSections`, `createSection`, `updateSection`, `deleteSection`, `reorderSections`, `getAllCameras`), `locationRoleAPI`, `locationElectionAPI`, `locationPlatformRoleAPI` (admin: list/add/remove UserLocationRole assignments), `electoralDistrictAPI` (municipality↔district mapping: getMunicipalityDistricts, getDistrictMunicipalities, addMapping, removeMapping) |
 | manifest.js | Manifests |
 | messages.js | Messages |
 | newsletter.js | Newsletter public subscribe/unsubscribe + authenticated `/me/preference` read/update + admin subscriber management (CSV import/export) + campaign CRUD/schedule/due-processing/test-send/send/log endpoints |
@@ -844,13 +847,13 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (103 files)
+## Tests (104 files)
 
 ### Component Tests
-AdminHeader, AdminTable, AdminTableActions, ArticleCard, AppShell embed routing, ConfirmDialog, DropdownMenu, EntityEmbedView, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, ShareModal embed flow, SkeletonLoader, TagInput, Tooltip, ReportButton
+AdminHeader, AdminTable, AdminTableActions, ArticleCard, AppShell embed routing, Cameras page, ConfirmDialog, DropdownMenu, EntityEmbedView, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, ShareModal embed flow, SkeletonLoader, TagInput, Tooltip, ReportButton
 
 ### Feature/Integration Tests
-api-client, civicQuestions, electoral-districts, embed-utils, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-phase2-ui, location-phase3-ui, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
+api-client, civicQuestions, electoral-districts, embed-utils, newsletter, personRemovalRequest, report, app, article-form, comments, community-stats, delete-account, encryption, endorsements, frontend, google-analytics, imageUpload, link-preview, location-elections, location-phase2-ui, location-phase3-ui, location-sections, location-tabs, locations, migrations, oauth, password-reset, persons, polls, profile-components, proxy-error-handling, public-profile, rate-limit-banner, rate-limit-voting, security, specialist-matching, suggestions, top-nav grouped menu, uploads-proxy, user-profiles-verification, user-stats, wikipediaFetcher, worker-status-admin, worker-status-page, worker-ws-server
 
 ### Hook Tests
 useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, usePermissions

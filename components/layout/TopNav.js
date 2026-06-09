@@ -154,6 +154,13 @@ export default function TopNav() {
           mobileIcon: <MapPinIcon className="h-5 w-5" />
         },
         {
+          id: 'cameras',
+          label: tNav('cameras'),
+          href: '/cameras',
+          icon: <VideoCameraIcon className="h-4 w-4" />,
+          mobileIcon: <VideoCameraIcon className="h-5 w-5" />
+        },
+        {
           id: 'users',
           label: tNav('users'),
           href: '/users',

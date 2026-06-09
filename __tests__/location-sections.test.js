@@ -9,6 +9,7 @@ describe('Location Sections', () => {
   let editorToken;
   let parentLocation;
   let testLocation;
+  let associatedCameraLocation;
   let outOfScopeLocation;
 
   const moderatorAuthHeader = () => ({
@@ -34,6 +35,15 @@ describe('Location Sections', () => {
       type: 'municipality',
       slug: 'municipality-test-municipality',
       parent_id: parentLocation.id
+    });
+
+    associatedCameraLocation = await Location.create({
+      name: 'Camera Square',
+      type: 'municipality',
+      slug: 'municipality-camera-square',
+      parent_id: parentLocation.id,
+      lat: 37.9838,
+      lng: 23.7275
     });
 
     outOfScopeLocation = parentLocation;
@@ -106,6 +116,13 @@ describe('Location Sections', () => {
           webcams: [{ label: 'Main cam', url: 'https://cam.example.com/stream' }]
         })).toBeNull();
       });
+      it('accepts webcam with optional locationId and normalizes string values', () => {
+        const content = {
+          webcams: [{ label: 'Square cam', url: 'https://cam.example.com/stream', locationId: String(associatedCameraLocation.id) }]
+        };
+        expect(validateContent('webcams', content)).toBeNull();
+        expect(content.webcams[0].locationId).toBe(associatedCameraLocation.id);
+      });
       it('auto-detects image embedType for .jpg URL', () => {
         const content = { webcams: [{ label: 'Still', url: 'https://cam.example.com/still.jpg' }] };
         validateContent('webcams', content);
@@ -134,6 +151,11 @@ describe('Location Sections', () => {
       it('rejects http URL', () => {
         expect(validateContent('webcams', {
           webcams: [{ label: 'Cam', url: 'http://cam.example.com' }]
+        })).not.toBeNull();
+      });
+      it('rejects invalid locationId values', () => {
+        expect(validateContent('webcams', {
+          webcams: [{ label: 'Cam', url: 'https://cam.example.com', locationId: 'invalid' }]
         })).not.toBeNull();
       });
     });
@@ -279,6 +301,44 @@ describe('Location Sections', () => {
       expect(res.body.section.content.webcams[0].label).toBe('Town square');
     });
 
+    it('creates a webcam with an optional location association', async () => {
+      const res = await request(app)
+        .post(`/api/locations/${testLocation.id}/sections`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          type: 'webcams',
+          content: {
+            webcams: [{
+              label: 'Camera square',
+              url: 'https://cam.example.com/square.jpg',
+              locationId: associatedCameraLocation.id
+            }]
+          },
+          isPublished: true
+        })
+        .expect(201);
+
+      expect(res.body.section.content.webcams[0].locationId).toBe(associatedCameraLocation.id);
+      expect(res.body.section.content.webcams[0].embedType).toBe('image');
+    });
+
+    it('rejects webcams that reference unknown locations', async () => {
+      const res = await request(app)
+        .post(`/api/locations/${testLocation.id}/sections`)
+        .set('Cookie', `auth_token=${adminToken}`)
+        .send({
+          type: 'webcams',
+          content: {
+            webcams: [{ label: 'Broken cam', url: 'https://cam.example.com/stream', locationId: 999999 }]
+          },
+          isPublished: true
+        })
+        .expect(400);
+
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toContain('Unknown webcam locationId');
+    });
+
     it('creates a news_sources section', async () => {
       const res = await request(app)
         .post(`/api/locations/${testLocation.id}/sections`)
@@ -369,6 +429,27 @@ describe('Location Sections', () => {
       // Should include draft sections
       const hasDraft = res.body.sections.some(s => !s.isPublished);
       expect(hasDraft).toBe(true);
+    });
+
+    it('GET /api/locations/cameras returns flattened published cameras with map locations', async () => {
+      const res = await request(app)
+        .get('/api/locations/cameras')
+        .expect(200);
+
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.cameras)).toBe(true);
+
+      const cameraWithAssociation = res.body.cameras.find((camera) => camera.label === 'Camera square');
+      expect(cameraWithAssociation).toBeTruthy();
+      expect(cameraWithAssociation.locationId).toBe(associatedCameraLocation.id);
+      expect(cameraWithAssociation.location.id).toBe(associatedCameraLocation.id);
+      expect(cameraWithAssociation.mapLocation.id).toBe(associatedCameraLocation.id);
+
+      const inheritedLocationCamera = res.body.cameras.find((camera) => camera.label === 'Town square');
+      expect(inheritedLocationCamera).toBeTruthy();
+      expect(inheritedLocationCamera.location).toBeNull();
+      expect(inheritedLocationCamera.sourceLocation.id).toBe(testLocation.id);
+      expect(inheritedLocationCamera.mapLocation.id).toBe(testLocation.id);
     });
 
     it('reorders sections', async () => {

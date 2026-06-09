@@ -77,6 +77,7 @@ The `embedType` field is **auto-detected server-side** and should not be set by 
 - URLs ending in `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp` → `"image"` (rendered as `<img>`)
 - All other URLs → `"link"` (shown as a clickable link)
 - `"iframe"` remains a valid stored value but is not auto-detected (set programmatically if needed)
+- `locationId` is optional. When present, it must reference an existing `Location` and is used by the public `/cameras` page and `/api/locations/cameras` feed to place the camera on the map. When omitted, the parent location section's location is used as the fallback map context.
 
 ```json
 {
@@ -89,7 +90,8 @@ The `embedType` field is **auto-detected server-side** and should not be set by 
     {
       "label": "Harbour view",
       "url": "https://cam.example.com/harbour.jpg",
-      "embedType": "image"
+      "embedType": "image",
+      "locationId": 123
     }
   ]
 }
@@ -101,6 +103,7 @@ The `embedType` field is **auto-detected server-side** and should not be set by 
 | `webcams[].label` | string | ✅ | Human-readable label |
 | `webcams[].url` | string | ✅ | Must start with `https://` |
 | `webcams[].embedType` | string | ❌ | Auto-detected: `"link"` (default) or `"image"` (for image URLs) |
+| `webcams[].locationId` | integer | ❌ | Optional associated location used for map placement; must reference an existing `Location` |
 
 > **Security note:** `iframe` embeds use `sandbox="allow-scripts allow-same-origin"` to limit risk. Arbitrary HTML is never allowed.
 
@@ -361,4 +364,3 @@ All section content is validated server-side before saving.
 | `news_sources[].sources` | Must be a non-empty array; each entry needs `name` and `url` |
 
 See `src/controllers/locationSectionController.js` → `validateContent()` for the authoritative implementation.
-

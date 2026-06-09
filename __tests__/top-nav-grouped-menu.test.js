@@ -132,6 +132,17 @@ describe('TopNav grouped navigation redesign', () => {
     expect(participationDropdown.querySelector('a[href="/dream-team"]')).toBeTruthy();
   });
 
+  test('shows Cameras under the community navigation in desktop and mobile menus', () => {
+    const communityDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-community-menu"]');
+    expect(communityDropdown).toBeTruthy();
+    expect(communityDropdown.querySelector('a[href="/locations"]')).toBeTruthy();
+    expect(communityDropdown.querySelector('a[href="/cameras"]')).toBeTruthy();
+    expect(communityDropdown.querySelector('a[href="/users"]')).toBeTruthy();
+
+    const mobileCamerasLink = container.querySelector('#mobile-menu a[href="/cameras"]');
+    expect(mobileCamerasLink).toBeTruthy();
+  });
+
   test('Σελίδες is a dropdown with sub-page links (without legacy all-pages item)', () => {
     const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(pagesDropdown).toBeTruthy();

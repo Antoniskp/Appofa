@@ -19,6 +19,54 @@ const isValidHttpsUrl = (url) => {
   }
 };
 
+const normalizeOptionalLocationId = (value) => {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) return NaN;
+  return parsed;
+};
+
+const getWebcamLocationIds = (content) => {
+  const webcams = Array.isArray(content?.webcams) ? content.webcams : [];
+  return [...new Set(
+    webcams
+      .map((cam) => normalizeOptionalLocationId(cam.locationId))
+      .filter((locationId) => Number.isInteger(locationId) && locationId > 0)
+  )];
+};
+
+const toLocationSummary = (location) => {
+  if (!location) return null;
+  return {
+    id: location.id,
+    name: location.name,
+    name_local: location.name_local || null,
+    slug: location.slug,
+    type: location.type,
+    lat: location.lat,
+    lng: location.lng,
+  };
+};
+
+const validateReferencedLocations = async (type, content) => {
+  if (type !== 'webcams') return null;
+
+  const locationIds = getWebcamLocationIds(content);
+  if (locationIds.length === 0) return null;
+
+  const locations = await Location.findAll({
+    where: { id: locationIds },
+    attributes: ['id'],
+  });
+
+  const existingIds = new Set(locations.map((location) => Number(location.id)));
+  const missingLocationId = locationIds.find((locationId) => !existingIds.has(Number(locationId)));
+
+  return missingLocationId
+    ? `Unknown webcam locationId: ${missingLocationId}`
+    : null;
+};
+
 /**
  * Validate section content against the expected shape for each type.
  * Returns null on success or a descriptive error string.
@@ -65,6 +113,16 @@ const validateContent = (type, content) => {
         if (!cam.label || typeof cam.label !== 'string') return 'Each webcam must have a string "label"';
         if (!cam.url || typeof cam.url !== 'string') return 'Each webcam must have a string "url"';
         if (!isValidHttpsUrl(cam.url)) return `Webcam URL must start with https://: "${cam.url}"`;
+        const normalizedLocationId = normalizeOptionalLocationId(cam.locationId);
+        if (cam.locationId !== undefined) {
+          if (normalizedLocationId === null) {
+            delete cam.locationId;
+          } else if (Number.isNaN(normalizedLocationId)) {
+            return 'Each webcam locationId must be a positive integer';
+          } else {
+            cam.locationId = normalizedLocationId;
+          }
+        }
         if (cam.embedType && !validEmbedTypes.includes(cam.embedType)) {
           return `Webcam embedType must be one of: ${validEmbedTypes.join(', ')}`;
         }
@@ -154,6 +212,74 @@ exports.getSections = async (req, res) => {
 };
 
 /**
+ * GET /api/locations/cameras
+ * Public: returns all published webcams flattened into a single cameras feed.
+ */
+exports.getAllCameras = async (_req, res) => {
+  try {
+    const sections = await LocationSection.findAll({
+      where: {
+        type: 'webcams',
+        isPublished: true,
+      },
+      include: [
+        {
+          model: Location,
+          as: 'location',
+          attributes: ['id', 'name', 'name_local', 'slug', 'type', 'lat', 'lng'],
+        },
+      ],
+      order: [['sortOrder', 'ASC'], ['id', 'ASC']],
+    });
+
+    const explicitLocationIds = [...new Set(
+      sections.flatMap((section) => getWebcamLocationIds(section.content))
+    )];
+
+    const cameraLocations = explicitLocationIds.length > 0
+      ? await Location.findAll({
+          where: { id: explicitLocationIds },
+          attributes: ['id', 'name', 'name_local', 'slug', 'type', 'lat', 'lng'],
+        })
+      : [];
+
+    const cameraLocationById = new Map(
+      cameraLocations.map((location) => [Number(location.id), toLocationSummary(location)])
+    );
+
+    const cameras = sections.flatMap((section) => {
+      const sourceLocation = toLocationSummary(section.location);
+      const webcams = Array.isArray(section.content?.webcams) ? section.content.webcams : [];
+
+      return webcams.map((camera, index) => {
+        const normalizedLocationId = normalizeOptionalLocationId(camera.locationId);
+        const explicitLocation = Number.isInteger(normalizedLocationId)
+          ? (cameraLocationById.get(Number(normalizedLocationId)) || null)
+          : null;
+
+        return {
+          id: `${section.id}:${index}`,
+          sectionId: section.id,
+          index,
+          label: camera.label,
+          url: camera.url,
+          embedType: camera.embedType || 'link',
+          locationId: Number.isInteger(normalizedLocationId) ? normalizedLocationId : null,
+          location: explicitLocation,
+          sourceLocation,
+          mapLocation: explicitLocation || sourceLocation,
+        };
+      });
+    });
+
+    return res.status(200).json({ success: true, cameras });
+  } catch (err) {
+    console.error('getAllCameras error:', err);
+    return res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+/**
  * POST /api/locations/:locationId/sections
  * Moderator/Admin only.
  */
@@ -182,6 +308,11 @@ exports.createSection = async (req, res) => {
     const contentError = validateContent(type, content);
     if (contentError) {
       return res.status(400).json({ success: false, message: contentError });
+    }
+
+    const referencedLocationError = await validateReferencedLocations(type, content);
+    if (referencedLocationError) {
+      return res.status(400).json({ success: false, message: referencedLocationError });
     }
 
     // For news_sources, enforce a single section per location by merging into the existing one
@@ -248,6 +379,10 @@ exports.updateSection = async (req, res) => {
       const contentError = validateContent(section.type, content);
       if (contentError) {
         return res.status(400).json({ success: false, message: contentError });
+      }
+      const referencedLocationError = await validateReferencedLocations(section.type, content);
+      if (referencedLocationError) {
+        return res.status(400).json({ success: false, message: referencedLocationError });
       }
       section.content = content;
     }
