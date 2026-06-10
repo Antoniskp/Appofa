@@ -68,6 +68,7 @@ function buildCameraPopup(camera, t) {
   const cameraLabel = escapeHtml(camera.label);
   const mapLocationLabel = escapeHtml(getLocationLabel(camera.mapLocation));
   const openCameraLabel = escapeHtml(t('open_camera'));
+  const openCameraAriaLabel = escapeHtml(t('open_camera_new_tab_aria', { label: camera.label }));
   const locationLabel = escapeHtml(t('map_popup_location'));
   const pinTypeLabel = escapeHtml(
     camera.mapLocationSource === 'camera' ? t('pin_source_exact') : t('pin_source_source')
@@ -77,18 +78,19 @@ function buildCameraPopup(camera, t) {
   const safeLocationSlug = camera.mapLocation?.slug ? escapeHtml(camera.mapLocation.slug) : '';
   const viewLocationLabel = escapeHtml(t('view_location'));
 
+  const viewLocationAriaLabel = escapeHtml(t('view_location_aria', { location: getLocationLabel(camera.mapLocation) }));
   const locationLink = safeLocationSlug
-    ? `<a href="/locations/${safeLocationSlug}" class="inline-flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:underline">${viewLocationLabel}</a>`
+    ? `<a href="/locations/${safeLocationSlug}" aria-label="${viewLocationAriaLabel}" class="inline-flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:underline">${viewLocationLabel}</a>`
     : '';
 
   const cameraLink = safeUrl
-    ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">${openCameraLabel}</a>`
+    ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${openCameraAriaLabel}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">${openCameraLabel}</a>`
     : '';
 
   return `
     <div class="space-y-2">
       <div>
-        <p class="text-sm font-semibold text-gray-900">${cameraLabel}</p>
+        <h3 class="text-sm font-semibold text-gray-900">${cameraLabel}</h3>
         ${mapLocationLabel ? `<p class="mt-0.5 text-xs text-gray-600">${locationLabel}: ${mapLocationLabel}</p>` : ''}
       </div>
       <div class="flex flex-wrap gap-1.5">
@@ -227,6 +229,7 @@ function CameraCard({ camera, t, isHighlighted, onHoverChange, onShowOnMap }) {
               href={safeCameraUrl}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label={t('open_camera_new_tab_aria', { label: camera.label })}
               className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
             >
               <ArrowTopRightOnSquareIcon className="h-4 w-4" />
@@ -320,7 +323,10 @@ export default function CamerasPageClient() {
     setFocusedMarkerId(cameraId);
     setHoveredCardId(cameraId);
     if (typeof mapSectionRef.current?.scrollIntoView === 'function') {
-      mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const reduceMotion = typeof window !== 'undefined'
+        && typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      mapSectionRef.current.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     }
     mapControlsRef.current?.fitTo?.(cameraId, { zoom: 13 });
   }
@@ -350,8 +356,12 @@ export default function CamerasPageClient() {
           )}
         </section>
 
-        <section className="mt-8 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
+        <section ref={mapSectionRef} className="mt-8 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6">
+          <div
+            className="mb-4 flex flex-wrap items-center gap-2"
+            role="radiogroup"
+            aria-label={t('filters_label')}
+          >
             <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-gray-500">
               <FunnelIcon className="h-4 w-4" />
               {t('filters_label')}
@@ -360,12 +370,14 @@ export default function CamerasPageClient() {
               <button
                 key={filter.id}
                 type="button"
+                role="radio"
                 onClick={() => {
                   setActiveFilter(filter.id);
                   setHoveredCardId(null);
                   setHoveredMarkerId(null);
                   setFocusedMarkerId(null);
                 }}
+                aria-checked={activeFilter === filter.id}
                 className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${activeFilter === filter.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
               >
                 {filter.label}
@@ -406,9 +418,6 @@ export default function CamerasPageClient() {
               description={filteredCameras.length > 0 ? t('no_map_filtered_description') : t('no_map_description')}
             />
           )}
-
-          <div ref={mapSectionRef} />
-
           {!loading && !error && unmappedCount > 0 && (
             <p className="mt-3 text-sm text-amber-700">
               {t('unmapped_notice', { count: unmappedCount })}
