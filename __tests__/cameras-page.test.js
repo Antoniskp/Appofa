@@ -7,6 +7,7 @@ const { createRoot } = require('react-dom/client');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const baseMapRenderSpy = jest.fn();
+const markerFitToSpy = jest.fn();
 
 jest.mock('next/link', () => {
   const React = require('react');
@@ -30,7 +31,29 @@ jest.mock('@/components/map/BaseMap', () => {
     __esModule: true,
     default: (props) => {
       baseMapRenderSpy(props);
-      return React.createElement('div', { 'data-testid': 'base-map' });
+      React.useEffect(() => {
+        if (props.onMarkersReady) {
+          props.onMarkersReady({
+            fitTo: markerFitToSpy,
+          });
+        }
+      }, [props.onMarkersReady]);
+
+      return React.createElement(
+        'div',
+        { 'data-testid': 'base-map' },
+        (props.markers || []).map((marker) => React.createElement(
+          'button',
+          {
+            key: marker.id,
+            type: 'button',
+            onMouseEnter: () => props.onMarkerHover?.(marker.id),
+            onMouseLeave: () => props.onMarkerHover?.(null),
+            'data-testid': `marker-${marker.id}`,
+          },
+          marker.id
+        ))
+      );
     },
   };
 });
@@ -51,6 +74,7 @@ describe('CamerasPageClient', () => {
     document.body.appendChild(container);
     root = createRoot(container);
     baseMapRenderSpy.mockClear();
+    markerFitToSpy.mockClear();
   });
 
   afterEach(async () => {
@@ -104,5 +128,67 @@ describe('CamerasPageClient', () => {
     expect(mapProps.markers).toHaveLength(1);
     expect(mapProps.markers[0].lat).toBe(37.91);
     expect(mapProps.markers[0].lng).toBe(23.71);
+    expect(mapProps.markers[0].popup).toContain('Άνοιγμα κάμερας');
+    expect(mapProps.markers[0].popup).toContain('Port town');
+  });
+
+  test('supports filters, marker to card hover, and show-on-map focus', async () => {
+    useAsyncData.mockReturnValue({
+      data: [
+        {
+          id: '1:0',
+          label: 'Harbour camera',
+          url: 'https://cam.example.com/harbour.jpg',
+          embedType: 'image',
+          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+          exactCoordinates: { lat: 37.91, lng: 23.71 },
+          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+          mapLocationSource: 'camera',
+        },
+        {
+          id: '2:0',
+          label: 'Center cam',
+          url: 'https://cam.example.com/center',
+          embedType: 'link',
+          sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+          exactCoordinates: null,
+          mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+          mapLocationSource: 'sourceLocation',
+        },
+      ],
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    await act(async () => {
+      root.render(React.createElement(CamerasPageClient));
+    });
+
+    await act(async () => {
+      const exactButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Ακριβές pin');
+      exactButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    const mapProps = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0];
+    expect(mapProps.markers).toHaveLength(1);
+    expect(mapProps.markers[0].id).toBe('1:0');
+    expect(container.textContent).toContain('Harbour camera');
+    expect(container.textContent).not.toContain('Center cam');
+
+    await act(async () => {
+      const marker = container.querySelector('[data-testid="marker-1:0"]');
+      marker.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    });
+
+    const harbourTitle = Array.from(container.querySelectorAll('h2')).find((el) => el.textContent === 'Harbour camera');
+    expect(harbourTitle.closest('article').className).toContain('border-blue-400');
+
+    await act(async () => {
+      const showOnMapButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Εστίαση στον χάρτη');
+      showOnMapButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(markerFitToSpy).toHaveBeenCalledWith('1:0', { zoom: 13 });
   });
 });
