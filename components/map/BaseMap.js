@@ -43,6 +43,7 @@
  *
  * Extra BaseMap props:
  *   onMarkerHover    {function(id | null)}  – called when a marker is hovered/un-hovered (requires marker.id)
+ *   onMarkerClick    {function(id)}        – called when a marker is clicked (requires marker.id)
  *   onMarkersReady   {function(controls)}  – called after markers are built; controls: { highlight(id), unhighlight(id, variant) }
  *
  * Designed for:
@@ -172,6 +173,7 @@ export default function BaseMap({
   interactive = true,
   onMapClick,
   onMarkerHover,
+  onMarkerClick,
   onMarkersReady,
 }) {
   const mapContainerRef = useRef(null);
@@ -184,6 +186,8 @@ export default function BaseMap({
   onMapClickRef.current = onMapClick;
   const onMarkerHoverRef = useRef(onMarkerHover);
   onMarkerHoverRef.current = onMarkerHover;
+  const onMarkerClickRef = useRef(onMarkerClick);
+  onMarkerClickRef.current = onMarkerClick;
   const onMarkersReadyRef = useRef(onMarkersReady);
   onMarkersReadyRef.current = onMarkersReady;
 
@@ -278,6 +282,9 @@ export default function BaseMap({
         if (onMarkerHoverRef.current) {
           marker.on('mouseover', () => onMarkerHoverRef.current(id));
           marker.on('mouseout', () => onMarkerHoverRef.current(null));
+        }
+        if (onMarkerClickRef.current) {
+          marker.on('click', () => onMarkerClickRef.current(id));
         }
       }
     });
