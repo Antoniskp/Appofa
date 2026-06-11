@@ -64,59 +64,25 @@ function getEmbedTypeLabel(camera, t) {
   return t('badge_live_link');
 }
 
-function buildCameraPopup(camera, t) {
-  const cameraLabel = escapeHtml(camera.label);
-  const mapLocationLabel = escapeHtml(getLocationLabel(camera.mapLocation));
-  const openCameraLabel = escapeHtml(t('open_camera'));
-  const openCameraAriaLabel = escapeHtml(t('open_camera_new_tab_aria', { label: camera.label }));
-  const locationLabel = escapeHtml(t('map_popup_location'));
-  const pinTypeLabel = escapeHtml(
-    camera.mapLocationSource === 'camera' ? t('pin_source_exact') : t('pin_source_source')
-  );
-  const embedTypeLabel = escapeHtml(getEmbedTypeLabel(camera, t));
-  const safeUrl = getSafeCameraUrl(camera.url);
-  const safeLocationSlug = camera.mapLocation?.slug ? escapeHtml(camera.mapLocation.slug) : '';
-  const viewLocationLabel = escapeHtml(t('view_location'));
-
-  const viewLocationAriaLabel = escapeHtml(t('view_location_aria', { location: getLocationLabel(camera.mapLocation) }));
-  const locationLink = safeLocationSlug
-    ? `<a href="/locations/${safeLocationSlug}" aria-label="${viewLocationAriaLabel}" class="inline-flex items-center gap-1 text-blue-700 hover:text-blue-800 hover:underline">${viewLocationLabel}</a>`
-    : '';
-
-  const cameraLink = safeUrl
-    ? `<a href="${escapeHtml(safeUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${openCameraAriaLabel}" class="inline-flex items-center justify-center rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">${openCameraLabel}</a>`
-    : '';
-
-  return `
-    <div class="space-y-2">
-      <div>
-        <h3 class="text-sm font-semibold text-gray-900">${cameraLabel}</h3>
-        ${mapLocationLabel ? `<p class="mt-0.5 text-xs text-gray-600">${locationLabel}: ${mapLocationLabel}</p>` : ''}
-      </div>
-      <div class="flex flex-wrap gap-1.5">
-        <span class="inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700">${pinTypeLabel}</span>
-        <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-700">${embedTypeLabel}</span>
-      </div>
-      ${(cameraLink || locationLink) ? `<div class="flex flex-wrap gap-2">${cameraLink}${locationLink}</div>` : ''}
-    </div>
-  `;
+function buildCameraTooltip(camera) {
+  const label = escapeHtml(camera.label);
+  const locationLabel = escapeHtml(getLocationLabel(camera.mapLocation));
+  return locationLabel ? `${label} · ${locationLabel}` : label;
 }
 
-function buildCameraMarkers(cameras, t, highlightedMarkerId = null) {
+function buildCameraMarkers(cameras, highlightedMarkerId = null) {
   return cameras.flatMap((camera) => {
     if (!hasMapLocation(camera)) {
       return [];
     }
 
     const mapLocation = camera.mapLocation;
-    const label = escapeHtml(camera.label);
 
     return [{
       id: camera.id,
       lat: Number(mapLocation.lat),
       lng: Number(mapLocation.lng),
-      popup: buildCameraPopup(camera, t),
-      tooltip: label,
+      tooltip: buildCameraTooltip(camera),
       variant: camera.id === highlightedMarkerId ? 'hovered' : 'explorer',
     }];
   });
@@ -304,7 +270,7 @@ export default function CamerasPageClient() {
   }, [activeFilter, allCameras]);
 
   const highlightedMarkerId = hoveredCardId || hoveredMarkerId || focusedMarkerId || null;
-  const markers = buildCameraMarkers(filteredCameras, t, highlightedMarkerId);
+  const markers = buildCameraMarkers(filteredCameras, highlightedMarkerId);
   const bounds = getMapBounds(markers);
   const mapCenter = markers.length > 0
     ? [markers[0].lat, markers[0].lng]
@@ -329,6 +295,14 @@ export default function CamerasPageClient() {
       mapSectionRef.current.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
     }
     mapControlsRef.current?.fitTo?.(cameraId, { zoom: 13 });
+  }
+
+  function handleMarkerClick(cameraId) {
+    const camera = filteredCameras.find((c) => c.id === cameraId);
+    const safeUrl = camera ? getSafeCameraUrl(camera.url) : null;
+    if (safeUrl && typeof window !== 'undefined') {
+      window.open(safeUrl, '_blank', 'noopener,noreferrer');
+    }
   }
 
   return (
@@ -406,6 +380,7 @@ export default function CamerasPageClient() {
               bounds={bounds}
               markers={markers}
               onMarkerHover={setHoveredMarkerId}
+              onMarkerClick={handleMarkerClick}
               onMarkersReady={(controls) => {
                 mapControlsRef.current = controls;
               }}
