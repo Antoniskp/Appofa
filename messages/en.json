@@ -904,6 +904,8 @@
     "role_historical_badge": "Historical",
     "assign_user": "Assign user",
     "assign_person": "Assign person",
+    "role_assign_must_be_user": "Please select a registered platform user for this role.",
+    "role_assign_must_be_person": "Please select a person profile (unclaimed) for this role.",
     "unassign": "Remove assignment",
     "role_title_placeholder": "e.g. President, Director, Professor"
   },

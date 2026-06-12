@@ -904,6 +904,8 @@
     "role_historical_badge": "Istoric",
     "assign_user": "Atribuie utilizator",
     "assign_person": "Atribuie persoană",
+    "role_assign_must_be_user": "Vă rugăm să selectați un utilizator înregistrat pe platformă pentru acest rol.",
+    "role_assign_must_be_person": "Vă rugăm să selectați un profil de persoană (nerevendicat) pentru acest rol.",
     "unassign": "Elimină atribuirea",
     "role_title_placeholder": "ex. Președinte, Director, Profesor"
   },

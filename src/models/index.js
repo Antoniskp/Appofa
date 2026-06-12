@@ -462,7 +462,7 @@ OrganizationAnalytics.belongsTo(Organization, { foreignKey: 'organizationId', as
 // OrganizationRole associations
 OrganizationRole.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
 OrganizationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-OrganizationRole.belongsTo(User, { foreignKey: 'personId', as: 'person' });
+OrganizationRole.belongsTo(User, { foreignKey: 'personId', as: 'personProfile' });
 
 // PushSubscription associations
 PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });

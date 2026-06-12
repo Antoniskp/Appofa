@@ -1395,7 +1395,7 @@ const organizationController = {
           },
           {
             model: User,
-            as: 'person',
+            as: 'personProfile',
             attributes: ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'photo', 'avatar', 'claimStatus'],
             required: false,
           },
@@ -1495,7 +1495,7 @@ const organizationController = {
           },
           {
             model: User,
-            as: 'person',
+            as: 'personProfile',
             attributes: ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'photo', 'avatar', 'claimStatus'],
             required: false,
           },
@@ -1604,7 +1604,7 @@ const organizationController = {
           },
           {
             model: User,
-            as: 'person',
+            as: 'personProfile',
             attributes: ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'photo', 'avatar', 'claimStatus'],
             required: false,
           },

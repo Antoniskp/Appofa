@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, BriefcaseIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { organizationAPI } from '@/lib/api';
 import organizationContentConfig from '@/config/organizationContent.json';
@@ -434,7 +434,7 @@ export default function OrganizationProfilePage({ params }) {
       setRoleAssignSelected({ id: role.userId, entityType: 'user', displayName: nativeName || enName || u?.username || '' });
     } else if (role.personId) {
       setRoleAssignType('person');
-      const p = role.person;
+      const p = role.personProfile;
       const nativeName = (`${p?.firstNameNative || ''} ${p?.lastNameNative || ''}`).trim();
       const enName = (`${p?.firstNameEn || ''} ${p?.lastNameEn || ''}`).trim();
       setRoleAssignDisplayName(nativeName || enName || '');
@@ -764,8 +764,8 @@ export default function OrganizationProfilePage({ params }) {
                           onSelect={(result) => {
                             const isUser = result.entityType === 'user';
                             const isPerson = result.entityType === 'person';
-                            if (roleAssignType === 'user' && !isUser) { setRoleActionError(t('assign_user')); return; }
-                            if (roleAssignType === 'person' && !isPerson) { setRoleActionError(t('assign_person')); return; }
+                            if (roleAssignType === 'user' && !isUser) { setRoleActionError(t('role_assign_must_be_user')); return; }
+                            if (roleAssignType === 'person' && !isPerson) { setRoleActionError(t('role_assign_must_be_person')); return; }
                             handleRoleAssignSelect(result);
                           }}
                         />
@@ -799,11 +799,11 @@ export default function OrganizationProfilePage({ params }) {
                 {!rolesLoading && !rolesError && orgRoles.length > 0 && (
                   <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 overflow-hidden">
                     {orgRoles.map((role) => {
-                      const assignee = role.user || role.person || null;
+                      const assignee = role.user || role.personProfile || null;
                       const nativeName = assignee ? (`${assignee.firstNameNative || ''} ${assignee.lastNameNative || ''}`).trim() : '';
                       const enName = assignee ? (`${assignee.firstNameEn || ''} ${assignee.lastNameEn || ''}`).trim() : '';
                       const displayName = nativeName || enName || assignee?.username || '';
-                      const profileHref = role.user ? `/users/${role.user.username}` : role.person ? `/persons/${role.person.slug}` : null;
+                      const profileHref = role.user ? `/users/${role.user.username}` : role.personProfile ? `/persons/${role.personProfile.slug}` : null;
 
                       return (
                         <div key={role.id} className="flex items-start gap-3 p-3 bg-white hover:bg-gray-50 transition-colors">
