@@ -5,6 +5,7 @@ const {
   Organization,
   OrganizationMember,
   OrganizationAnalytics,
+  OrganizationRole,
   User,
   Location,
   Poll,
@@ -1356,6 +1357,294 @@ const organizationController = {
     } catch (error) {
       console.error('organizationController.getAnalytics error:', error);
       return res.status(500).json({ success: false, message: 'Failed to fetch organization analytics.' });
+    }
+  },
+
+  // ─── Organization Roles ────────────────────────────────────────────────────
+
+  /**
+   * GET /api/organizations/:id/roles
+   * Public read. Returns current roles by default; pass ?all=true to include
+   * historical (isCurrent=false) roles.
+   */
+  getRoles: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id', 'isPublic']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const where = { organizationId };
+      if (req.query.all !== 'true') {
+        where.isCurrent = true;
+      }
+
+      const roles = await OrganizationRole.findAll({
+        where,
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'avatar', 'avatarColor', 'slug'],
+            required: false,
+          },
+          {
+            model: User,
+            as: 'person',
+            attributes: ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'photo', 'avatar', 'claimStatus'],
+            required: false,
+          },
+        ],
+        order: [['sortOrder', 'ASC'], ['createdAt', 'ASC']],
+      });
+
+      return res.status(200).json({ success: true, data: { roles } });
+    } catch (error) {
+      console.error('organizationController.getRoles error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to fetch organization roles.' });
+    }
+  },
+
+  /**
+   * POST /api/organizations/:id/roles
+   * Create a new role slot. Requires org admin or platform admin/moderator.
+   */
+  createRole: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      if (!organizationId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization id.' });
+      }
+
+      const organization = await requireOrganizationById(organizationId, ['id']);
+      if (!organization) {
+        return res.status(404).json({ success: false, message: 'Organization not found.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage organization roles.' });
+      }
+
+      const titleResult = normalizeRequiredText(req.body.title, 'Title', 1, 255);
+      if (titleResult.error) {
+        return res.status(400).json({ success: false, message: titleResult.error });
+      }
+
+      const categoryResult = normalizeOptionalText(req.body.category, 'Category', undefined, 100);
+      if (categoryResult.error) {
+        return res.status(400).json({ success: false, message: categoryResult.error });
+      }
+
+      const descriptionResult = normalizeOptionalText(req.body.description, 'Description');
+      if (descriptionResult.error) {
+        return res.status(400).json({ success: false, message: descriptionResult.error });
+      }
+
+      const rawUserId = req.body.userId != null ? parsePositiveInt(req.body.userId) : undefined;
+      const rawPersonId = req.body.personId != null ? parsePositiveInt(req.body.personId) : undefined;
+
+      if (rawUserId !== undefined && rawPersonId !== undefined && rawUserId !== null && rawPersonId !== null) {
+        return res.status(400).json({ success: false, message: 'A role cannot be assigned to both a user and a person at the same time.' });
+      }
+
+      let userId = null;
+      if (rawUserId) {
+        const assignedUser = await User.findOne({ where: { id: rawUserId, claimStatus: null }, attributes: ['id'] });
+        if (!assignedUser) {
+          return res.status(400).json({ success: false, message: 'Assigned user not found or is a person profile.' });
+        }
+        userId = rawUserId;
+      }
+
+      let personId = null;
+      if (rawPersonId) {
+        const assignedPerson = await User.findOne({ where: { id: rawPersonId, claimStatus: { [Op.ne]: null } }, attributes: ['id'] });
+        if (!assignedPerson) {
+          return res.status(400).json({ success: false, message: 'Assigned person profile not found.' });
+        }
+        personId = rawPersonId;
+      }
+
+      const sortOrder = req.body.sortOrder != null ? (parseInt(req.body.sortOrder, 10) || 0) : 0;
+      const isCurrent = req.body.isCurrent !== undefined ? Boolean(req.body.isCurrent) : true;
+
+      const role = await OrganizationRole.create({
+        organizationId,
+        title: titleResult.value,
+        category: categoryResult.value ?? null,
+        description: descriptionResult.value ?? null,
+        userId,
+        personId,
+        sortOrder,
+        isCurrent,
+      });
+
+      const created = await OrganizationRole.findByPk(role.id, {
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'avatar', 'avatarColor', 'slug'],
+            required: false,
+          },
+          {
+            model: User,
+            as: 'person',
+            attributes: ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'photo', 'avatar', 'claimStatus'],
+            required: false,
+          },
+        ],
+      });
+
+      return res.status(201).json({ success: true, data: { role: created } });
+    } catch (error) {
+      console.error('organizationController.createRole error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to create organization role.' });
+    }
+  },
+
+  /**
+   * PUT /api/organizations/:id/roles/:roleId
+   * Update a role. Requires org admin or platform admin/moderator.
+   */
+  updateRole: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      const roleId = parsePositiveInt(req.params.roleId);
+      if (!organizationId || !roleId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization or role id.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage organization roles.' });
+      }
+
+      const role = await OrganizationRole.findOne({ where: { id: roleId, organizationId } });
+      if (!role) {
+        return res.status(404).json({ success: false, message: 'Role not found.' });
+      }
+
+      const updates = {};
+
+      if (req.body.title !== undefined) {
+        const titleResult = normalizeRequiredText(req.body.title, 'Title', 1, 255);
+        if (titleResult.error) return res.status(400).json({ success: false, message: titleResult.error });
+        updates.title = titleResult.value;
+      }
+
+      if (req.body.category !== undefined) {
+        const categoryResult = normalizeOptionalText(req.body.category, 'Category', undefined, 100);
+        if (categoryResult.error) return res.status(400).json({ success: false, message: categoryResult.error });
+        updates.category = categoryResult.value ?? null;
+      }
+
+      if (req.body.description !== undefined) {
+        const descriptionResult = normalizeOptionalText(req.body.description, 'Description');
+        if (descriptionResult.error) return res.status(400).json({ success: false, message: descriptionResult.error });
+        updates.description = descriptionResult.value ?? null;
+      }
+
+      if (req.body.sortOrder !== undefined) {
+        updates.sortOrder = parseInt(req.body.sortOrder, 10) || 0;
+      }
+
+      if (req.body.isCurrent !== undefined) {
+        updates.isCurrent = Boolean(req.body.isCurrent);
+      }
+
+      // Handle assignment changes
+      const hasUserId = req.body.userId !== undefined;
+      const hasPersonId = req.body.personId !== undefined;
+
+      if (hasUserId || hasPersonId) {
+        const rawUserId = hasUserId && req.body.userId != null ? parsePositiveInt(req.body.userId) : null;
+        const rawPersonId = hasPersonId && req.body.personId != null ? parsePositiveInt(req.body.personId) : null;
+
+        if (rawUserId && rawPersonId) {
+          return res.status(400).json({ success: false, message: 'A role cannot be assigned to both a user and a person at the same time.' });
+        }
+
+        if (hasUserId) {
+          if (rawUserId) {
+            const assignedUser = await User.findOne({ where: { id: rawUserId, claimStatus: null }, attributes: ['id'] });
+            if (!assignedUser) return res.status(400).json({ success: false, message: 'Assigned user not found or is a person profile.' });
+          }
+          updates.userId = rawUserId;
+          // Clearing a user also clears the person if not explicitly set
+          if (!hasPersonId && rawUserId === null) updates.personId = null;
+        }
+
+        if (hasPersonId) {
+          if (rawPersonId) {
+            const assignedPerson = await User.findOne({ where: { id: rawPersonId, claimStatus: { [Op.ne]: null } }, attributes: ['id'] });
+            if (!assignedPerson) return res.status(400).json({ success: false, message: 'Assigned person profile not found.' });
+          }
+          updates.personId = rawPersonId;
+          // Clearing a person also clears the user if not explicitly set
+          if (!hasUserId && rawPersonId === null) updates.userId = null;
+        }
+      }
+
+      await role.update(updates);
+
+      const updated = await OrganizationRole.findByPk(role.id, {
+        include: [
+          {
+            model: User,
+            as: 'user',
+            attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'avatar', 'avatarColor', 'slug'],
+            required: false,
+          },
+          {
+            model: User,
+            as: 'person',
+            attributes: ['id', 'slug', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'photo', 'avatar', 'claimStatus'],
+            required: false,
+          },
+        ],
+      });
+
+      return res.status(200).json({ success: true, data: { role: updated } });
+    } catch (error) {
+      console.error('organizationController.updateRole error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to update organization role.' });
+    }
+  },
+
+  /**
+   * DELETE /api/organizations/:id/roles/:roleId
+   * Delete a role. Requires org admin or platform admin/moderator.
+   */
+  deleteRole: async (req, res) => {
+    try {
+      const organizationId = parsePositiveInt(req.params.id);
+      const roleId = parsePositiveInt(req.params.roleId);
+      if (!organizationId || !roleId) {
+        return res.status(400).json({ success: false, message: 'Invalid organization or role id.' });
+      }
+
+      const canManage = await hasOrganizationManageAccess(organizationId, req.user);
+      if (!canManage) {
+        return res.status(403).json({ success: false, message: 'You do not have permission to manage organization roles.' });
+      }
+
+      const role = await OrganizationRole.findOne({ where: { id: roleId, organizationId } });
+      if (!role) {
+        return res.status(404).json({ success: false, message: 'Role not found.' });
+      }
+
+      await role.destroy();
+      return res.status(200).json({ success: true, data: { deleted: true } });
+    } catch (error) {
+      console.error('organizationController.deleteRole error:', error);
+      return res.status(500).json({ success: false, message: 'Failed to delete organization role.' });
     }
   },
 };
