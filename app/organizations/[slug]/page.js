@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import {
+  BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon,
+  PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon,
+} from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { organizationAPI } from '@/lib/api';
 import organizationContentConfig from '@/config/organizationContent.json';
@@ -16,7 +19,7 @@ import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import SearchInput from '@/components/ui/SearchInput';
 
-const BASE_TABS = ['tab_info', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
+const BASE_TABS = ['tab_info', 'tab_roles', 'tab_members', 'tab_polls', 'tab_suggestions', 'tab_analytics'];
 const OFFICIAL_POST_TABS = ['tab_official_posts'];
 const OFFICIAL_POST_ORG_TYPES = ['party', 'institution'];
 const MANAGEABLE_ROLES = ['admin', 'moderator', 'member'];
@@ -53,6 +56,17 @@ export default function OrganizationProfilePage({ params }) {
   // Local search filter for org polls and suggestions tabs
   const [pollSearch, setPollSearch] = useState('');
   const [suggestionSearch, setSuggestionSearch] = useState('');
+  // Roles management state
+  const [showRoleForm, setShowRoleForm] = useState(false);
+  const [editingRole, setEditingRole] = useState(null);
+  const [roleForm, setRoleForm] = useState({ title: '', category: '', description: '', sortOrder: 0, isCurrent: true });
+  const [roleAssignType, setRoleAssignType] = useState('vacant');
+  const [roleAssignDisplayName, setRoleAssignDisplayName] = useState('');
+  const [roleAssignSelected, setRoleAssignSelected] = useState(null);
+  const [roleActionLoading, setRoleActionLoading] = useState(false);
+  const [roleActionError, setRoleActionError] = useState('');
+  const [roleActionSuccess, setRoleActionSuccess] = useState('');
+  const [showHistoricalRoles, setShowHistoricalRoles] = useState(false);
 
   const { data: organization, loading, error } = useAsyncData(
     async () => {
@@ -188,6 +202,22 @@ export default function OrganizationProfilePage({ params }) {
     { initialData: { analytics: [] } }
   );
   const analytics = analyticsData?.analytics || [];
+
+  const {
+    data: rolesData,
+    loading: rolesLoading,
+    error: rolesError,
+    refetch: refetchRoles,
+  } = useAsyncData(
+    async () => {
+      if (!organization?.id) return { roles: [] };
+      const res = await organizationAPI.getRoles(organization.id, showHistoricalRoles ? { all: 'true' } : {});
+      return { roles: res?.data?.roles || [] };
+    },
+    [organization?.id, showHistoricalRoles],
+    { initialData: { roles: [] } }
+  );
+  const orgRoles = rolesData?.roles || [];
 
   useEffect(() => {
     setRoleDrafts((prev) => {
@@ -373,6 +403,123 @@ export default function OrganizationProfilePage({ params }) {
     });
   };
 
+  const resetRoleForm = () => {
+    setRoleForm({ title: '', category: '', description: '', sortOrder: 0, isCurrent: true });
+    setRoleAssignType('vacant');
+    setRoleAssignDisplayName('');
+    setRoleAssignSelected(null);
+    setEditingRole(null);
+    setShowRoleForm(false);
+    setRoleActionError('');
+  };
+
+  const openRoleCreate = () => {
+    resetRoleForm();
+    setShowRoleForm(true);
+  };
+
+  const openRoleEdit = (role) => {
+    setEditingRole(role);
+    setRoleForm({
+      title: role.title || '',
+      category: role.category || '',
+      description: role.description || '',
+      sortOrder: role.sortOrder ?? 0,
+      isCurrent: role.isCurrent !== false,
+    });
+    // Determine assign type from existing role data
+    if (role.userId) {
+      setRoleAssignType('user');
+      const u = role.user;
+      const nativeName = (`${u?.firstNameNative || ''} ${u?.lastNameNative || ''}`).trim();
+      const enName = (`${u?.firstNameEn || ''} ${u?.lastNameEn || ''}`).trim();
+      setRoleAssignDisplayName(nativeName || enName || u?.username || '');
+      setRoleAssignSelected({ id: role.userId, entityType: 'user', displayName: nativeName || enName || u?.username || '' });
+    } else if (role.personId) {
+      setRoleAssignType('person');
+      const p = role.personProfile;
+      const nativeName = (`${p?.firstNameNative || ''} ${p?.lastNameNative || ''}`).trim();
+      const enName = (`${p?.firstNameEn || ''} ${p?.lastNameEn || ''}`).trim();
+      setRoleAssignDisplayName(nativeName || enName || '');
+      setRoleAssignSelected({ id: role.personId, entityType: 'person', displayName: nativeName || enName || '' });
+    } else {
+      setRoleAssignType('vacant');
+      setRoleAssignDisplayName('');
+      setRoleAssignSelected(null);
+    }
+    setRoleActionError('');
+    setShowRoleForm(true);
+  };
+
+  const handleRoleAssignSelect = (result) => {
+    const nativeName = (`${result.firstNameNative || ''} ${result.lastNameNative || ''}`).trim();
+    const enName = (`${result.firstNameEn || ''} ${result.lastNameEn || ''}`).trim();
+    const displayName = nativeName || enName || result.username || '';
+    setRoleAssignDisplayName(displayName);
+    setRoleAssignSelected({ ...result, displayName });
+  };
+
+  const handleSubmitRole = async (event) => {
+    event.preventDefault();
+    if (!organization?.id) return;
+    if (!roleForm.title.trim()) {
+      setRoleActionError(t('role_title') + ' ' + t('is_required', 'is required'));
+      return;
+    }
+
+    setRoleActionLoading(true);
+    setRoleActionError('');
+    setRoleActionSuccess('');
+
+    try {
+      const payload = {
+        title: roleForm.title.trim(),
+        category: roleForm.category.trim() || null,
+        description: roleForm.description.trim() || null,
+        sortOrder: Number(roleForm.sortOrder) || 0,
+        isCurrent: roleForm.isCurrent,
+        userId: null,
+        personId: null,
+      };
+
+      if (roleAssignType === 'user' && roleAssignSelected?.entityType === 'user') {
+        payload.userId = roleAssignSelected.id;
+      } else if (roleAssignType === 'person' && roleAssignSelected?.entityType === 'person') {
+        payload.personId = roleAssignSelected.id;
+      }
+
+      if (editingRole) {
+        await organizationAPI.updateRole(organization.id, editingRole.id, payload);
+        setRoleActionSuccess(t('role_updated'));
+      } else {
+        await organizationAPI.createRole(organization.id, payload);
+        setRoleActionSuccess(t('role_created'));
+      }
+      resetRoleForm();
+      await refetchRoles();
+    } catch (err) {
+      setRoleActionError(err?.message || (editingRole ? t('role_update_failed') : t('role_create_failed')));
+    } finally {
+      setRoleActionLoading(false);
+    }
+  };
+
+  const handleDeleteRole = async (roleId) => {
+    if (!organization?.id || !window.confirm(t('role_delete_confirm'))) return;
+    setRoleActionLoading(true);
+    setRoleActionError('');
+    setRoleActionSuccess('');
+    try {
+      await organizationAPI.deleteRole(organization.id, roleId);
+      setRoleActionSuccess(t('role_deleted'));
+      await refetchRoles();
+    } catch (err) {
+      setRoleActionError(err?.message || t('role_delete_failed'));
+    } finally {
+      setRoleActionLoading(false);
+    }
+  };
+
   if (loading) {
     return <div className="app-container py-10"><SkeletonLoader count={1} type="card" /></div>;
   }
@@ -506,6 +653,223 @@ export default function OrganizationProfilePage({ params }) {
                     </ul>
                   )}
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'tab_roles' && (
+              <div className="space-y-4">
+                {roleActionError && <AlertMessage message={roleActionError} />}
+                {roleActionSuccess && <AlertMessage tone="success" message={roleActionSuccess} />}
+
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-base font-semibold text-gray-800">{t('roles')}</h3>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowHistoricalRoles((v) => !v)}
+                      className="px-3 py-1.5 text-xs rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    >
+                      {showHistoricalRoles ? t('hide_historical_roles') : t('show_historical_roles')}
+                    </button>
+                    {canManageMembers && !showRoleForm && (
+                      <button
+                        type="button"
+                        onClick={openRoleCreate}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                      >
+                        <PlusIcon className="h-4 w-4" />
+                        {t('add_role')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {canManageMembers && showRoleForm && (
+                  <form onSubmit={handleSubmitRole} className="p-4 rounded-lg border border-blue-100 bg-blue-50 space-y-3">
+                    <p className="text-sm font-semibold text-blue-800">{editingRole ? t('edit_role') : t('add_role')}</p>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">{t('role_title')} *</label>
+                      <input
+                        type="text"
+                        value={roleForm.title}
+                        onChange={(e) => setRoleForm((f) => ({ ...f, title: e.target.value }))}
+                        placeholder={t('role_title_placeholder')}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        maxLength={255}
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">{t('role_category')}</label>
+                        <input
+                          type="text"
+                          value={roleForm.category}
+                          onChange={(e) => setRoleForm((f) => ({ ...f, category: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          maxLength={100}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">{t('role_sort_order')}</label>
+                        <input
+                          type="number"
+                          value={roleForm.sortOrder}
+                          onChange={(e) => setRoleForm((f) => ({ ...f, sortOrder: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                          min={0}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">{t('role_description')}</label>
+                      <textarea
+                        value={roleForm.description}
+                        onChange={(e) => setRoleForm((f) => ({ ...f, description: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="role-is-current"
+                        type="checkbox"
+                        checked={roleForm.isCurrent}
+                        onChange={(e) => setRoleForm((f) => ({ ...f, isCurrent: e.target.checked }))}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600"
+                      />
+                      <label htmlFor="role-is-current" className="text-sm text-gray-700">{t('role_is_current')}</label>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">{t('assign_user')} / {t('assign_person')}</label>
+                      <div className="flex gap-2 mb-2">
+                        {['vacant', 'user', 'person'].map((type) => (
+                          <button
+                            key={type}
+                            type="button"
+                            onClick={() => { setRoleAssignType(type); setRoleAssignDisplayName(''); setRoleAssignSelected(null); }}
+                            className={`px-2.5 py-1 text-xs rounded-lg border transition-colors ${roleAssignType === type ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}
+                          >
+                            {type === 'vacant' ? t('roles_vacant') : type === 'user' ? t('assign_user') : t('assign_person')}
+                          </button>
+                        ))}
+                      </div>
+                      {(roleAssignType === 'user' || roleAssignType === 'person') && (
+                        <PersonSearch
+                          placeholder={roleAssignType === 'user' ? t('assign_user') : t('assign_person')}
+                          value={roleAssignDisplayName}
+                          onChange={(e) => { setRoleAssignDisplayName(e.target.value); setRoleAssignSelected(null); }}
+                          onSelect={(result) => {
+                            const isUser = result.entityType === 'user';
+                            const isPerson = result.entityType === 'person';
+                            if (roleAssignType === 'user' && !isUser) { setRoleActionError(t('role_assign_must_be_user')); return; }
+                            if (roleAssignType === 'person' && !isPerson) { setRoleActionError(t('role_assign_must_be_person')); return; }
+                            handleRoleAssignSelect(result);
+                          }}
+                        />
+                      )}
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                      <button
+                        type="submit"
+                        disabled={roleActionLoading}
+                        className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        {editingRole ? t('edit_role') : t('add_role')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={resetRoleForm}
+                        className="px-4 py-2 text-sm rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      >
+                        {t('cancel')}
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                {rolesLoading && <SkeletonLoader count={3} type="list" />}
+                {!rolesLoading && rolesError && <AlertMessage message={rolesError} />}
+                {!rolesLoading && !rolesError && orgRoles.length === 0 && (
+                  <p className="text-sm text-gray-500 py-4">{t('roles_empty')}</p>
+                )}
+                {!rolesLoading && !rolesError && orgRoles.length > 0 && (
+                  <div className="divide-y divide-gray-100 rounded-lg border border-gray-200 overflow-hidden">
+                    {orgRoles.map((role) => {
+                      const assignee = role.user || role.personProfile || null;
+                      const nativeName = assignee ? (`${assignee.firstNameNative || ''} ${assignee.lastNameNative || ''}`).trim() : '';
+                      const enName = assignee ? (`${assignee.firstNameEn || ''} ${assignee.lastNameEn || ''}`).trim() : '';
+                      const displayName = nativeName || enName || assignee?.username || '';
+                      const profileHref = role.user ? `/users/${role.user.username}` : role.personProfile ? `/persons/${role.personProfile.slug}` : null;
+
+                      return (
+                        <div key={role.id} className="flex items-start gap-3 p-3 bg-white hover:bg-gray-50 transition-colors">
+                          <div className="flex-shrink-0 mt-0.5">
+                            {assignee?.avatar ? (
+                              <img src={assignee.avatar} alt={displayName} className="w-9 h-9 rounded-full object-cover border border-gray-200" />
+                            ) : (
+                              <div className="w-9 h-9 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center">
+                                <UserCircleIcon className="h-5 w-5 text-gray-400" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="font-medium text-sm text-gray-900">{role.title}</span>
+                              {role.category && (
+                                <span className="px-1.5 py-0.5 text-xs rounded bg-gray-100 text-gray-600">{role.category}</span>
+                              )}
+                              {!role.isCurrent && (
+                                <span className="px-1.5 py-0.5 text-xs rounded bg-amber-100 text-amber-700">{t('role_historical_badge')}</span>
+                              )}
+                            </div>
+                            {assignee ? (
+                              <div className="mt-0.5 text-sm text-gray-700">
+                                {profileHref ? (
+                                  <Link href={profileHref} className="hover:text-blue-600 hover:underline">{displayName}</Link>
+                                ) : (
+                                  <span>{displayName}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="mt-0.5 text-sm text-gray-400 italic">{t('roles_vacant')}</p>
+                            )}
+                            {role.description && (
+                              <p className="mt-1 text-xs text-gray-500 whitespace-pre-line">{role.description}</p>
+                            )}
+                          </div>
+                          {canManageMembers && (
+                            <div className="flex-shrink-0 flex gap-1">
+                              <button
+                                type="button"
+                                onClick={() => openRoleEdit(role)}
+                                className="p-1.5 rounded text-gray-500 hover:bg-gray-100 hover:text-blue-600"
+                                aria-label={t('edit_role')}
+                              >
+                                <PencilSquareIcon className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteRole(role.id)}
+                                disabled={roleActionLoading}
+                                className="p-1.5 rounded text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-50"
+                                aria-label={t('delete_role')}
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 

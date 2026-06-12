@@ -1,6 +1,6 @@
 const request = require('supertest');
 const app = require('../src/index');
-const { sequelize, User, Location, OrganizationMember, OrganizationAnalytics, PollOption, Notification } = require('../src/models');
+const { sequelize, User, Location, OrganizationMember, OrganizationAnalytics, OrganizationRole, PollOption, Notification } = require('../src/models');
 const { storeCsrfToken } = require('../src/utils/csrf');
 
 describe('Organizations API', () => {
@@ -825,5 +825,148 @@ describe('Organizations API', () => {
     expect(officialSuggestion.organization).toBeTruthy();
     expect(officialSuggestion.organization.id).toBe(partyId);
     expect(officialSuggestion.organization.name).toBe('Identity Test Party');
+  });
+
+  it('organization roles: CRUD and public read with permission checks', async () => {
+    // ── Setup: create an org owned by admin and a separate viewer ────────────
+    const csrfCreate = 'csrf-roles-org-create';
+    const createRes = await request(app)
+      .post('/api/organizations')
+      .set(withCsrf(adminUser.id, adminToken, csrfCreate))
+      .send({ name: 'Roles Test Org', type: 'school', description: 'School for role tests' });
+    expect(createRes.status).toBe(201);
+    const orgId = createRes.body.data.organization.id;
+
+    // ── Public can list roles (empty) ────────────────────────────────────────
+    const listEmpty = await request(app).get(`/api/organizations/${orgId}/roles`);
+    expect(listEmpty.status).toBe(200);
+    expect(listEmpty.body.data.roles).toHaveLength(0);
+
+    // ── Unauthenticated user cannot create a role ────────────────────────────
+    const unauth = await request(app)
+      .post(`/api/organizations/${orgId}/roles`)
+      .send({ title: 'Hacker' });
+    expect(unauth.status).toBe(401);
+
+    // ── Viewer (non-member) cannot create a role ─────────────────────────────
+    const viewerCreate = await request(app)
+      .post(`/api/organizations/${orgId}/roles`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-roles-viewer-create'))
+      .send({ title: 'Unauthorized Role' });
+    expect(viewerCreate.status).toBe(403);
+
+    // ── Admin creates a vacant role ──────────────────────────────────────────
+    const vacantRes = await request(app)
+      .post(`/api/organizations/${orgId}/roles`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-create-1'))
+      .send({ title: 'Διευθυντής', category: 'governance', sortOrder: 1, isCurrent: true });
+    expect(vacantRes.status).toBe(201);
+    expect(vacantRes.body.data.role.title).toBe('Διευθυντής');
+    expect(vacantRes.body.data.role.category).toBe('governance');
+    expect(vacantRes.body.data.role.userId).toBeNull();
+    expect(vacantRes.body.data.role.personId).toBeNull();
+    const vacantRoleId = vacantRes.body.data.role.id;
+
+    // ── Admin creates a second repeatable role (teacher) ─────────────────────
+    const teacher1 = await request(app)
+      .post(`/api/organizations/${orgId}/roles`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-create-2'))
+      .send({ title: 'Καθηγητής', category: 'staff', sortOrder: 2 });
+    expect(teacher1.status).toBe(201);
+
+    const teacher2 = await request(app)
+      .post(`/api/organizations/${orgId}/roles`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-create-3'))
+      .send({ title: 'Καθηγητής', category: 'staff', sortOrder: 3 });
+    expect(teacher2.status).toBe(201);
+
+    // ── Listing now returns 3 current roles ─────────────────────────────────
+    const listCurrent = await request(app).get(`/api/organizations/${orgId}/roles`);
+    expect(listCurrent.status).toBe(200);
+    expect(listCurrent.body.data.roles).toHaveLength(3);
+
+    // ── Admin assigns a claimed user to the vacant role ──────────────────────
+    const updateRes = await request(app)
+      .put(`/api/organizations/${orgId}/roles/${vacantRoleId}`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-update-1'))
+      .send({ userId: adminUser.id });
+    expect(updateRes.status).toBe(200);
+    expect(updateRes.body.data.role.userId).toBe(adminUser.id);
+    expect(updateRes.body.data.role.user).toBeTruthy();
+    expect(updateRes.body.data.role.user.username).toBe('organizations_admin');
+
+    // ── Cannot assign both userId and personId simultaneously ────────────────
+    const bothAssign = await request(app)
+      .put(`/api/organizations/${orgId}/roles/${vacantRoleId}`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-update-2'))
+      .send({ userId: adminUser.id, personId: viewerUser.id });
+    expect(bothAssign.status).toBe(400);
+
+    // ── Cannot assign a person profile as userId ─────────────────────────────
+    // First make viewerUser look like a person profile (claimStatus not null)
+    await viewerUser.update({ claimStatus: 'unclaimed' });
+    const badUserAssign = await request(app)
+      .put(`/api/organizations/${orgId}/roles/${vacantRoleId}`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-update-3'))
+      .send({ userId: viewerUser.id });
+    expect(badUserAssign.status).toBe(400);
+
+    // ── Assign person profile using personId ─────────────────────────────────
+    const personAssign = await request(app)
+      .put(`/api/organizations/${orgId}/roles/${vacantRoleId}`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-update-4'))
+      .send({ userId: null, personId: viewerUser.id });
+    expect(personAssign.status).toBe(200);
+    expect(personAssign.body.data.role.personId).toBe(viewerUser.id);
+    expect(personAssign.body.data.role.userId).toBeNull();
+    await viewerUser.update({ claimStatus: null }); // restore
+
+    // ── Mark a role as historical (isCurrent=false) ──────────────────────────
+    const historicalRes = await request(app)
+      .put(`/api/organizations/${orgId}/roles/${vacantRoleId}`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-update-5'))
+      .send({ isCurrent: false });
+    expect(historicalRes.status).toBe(200);
+    expect(historicalRes.body.data.role.isCurrent).toBe(false);
+
+    // ── Default listing excludes historical roles ─────────────────────────────
+    const listCurrentOnly = await request(app).get(`/api/organizations/${orgId}/roles`);
+    expect(listCurrentOnly.status).toBe(200);
+    expect(listCurrentOnly.body.data.roles).toHaveLength(2);
+
+    // ── all=true includes historical roles ───────────────────────────────────
+    const listAll = await request(app).get(`/api/organizations/${orgId}/roles?all=true`);
+    expect(listAll.status).toBe(200);
+    expect(listAll.body.data.roles).toHaveLength(3);
+
+    // ── Title is required for creation ──────────────────────────────────────
+    const noTitle = await request(app)
+      .post(`/api/organizations/${orgId}/roles`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-create-notitle'))
+      .send({ category: 'staff' });
+    expect(noTitle.status).toBe(400);
+
+    // ── Viewer cannot delete a role ──────────────────────────────────────────
+    const teacher1Id = teacher1.body.data.role.id;
+    const viewerDelete = await request(app)
+      .delete(`/api/organizations/${orgId}/roles/${teacher1Id}`)
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-roles-viewer-delete'));
+    expect(viewerDelete.status).toBe(403);
+
+    // ── Admin can delete a role ──────────────────────────────────────────────
+    const deleteRes = await request(app)
+      .delete(`/api/organizations/${orgId}/roles/${teacher1Id}`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-delete-1'));
+    expect(deleteRes.status).toBe(200);
+    expect(deleteRes.body.data.deleted).toBe(true);
+
+    // ── Deleting non-existent role returns 404 ───────────────────────────────
+    const deleteAgain = await request(app)
+      .delete(`/api/organizations/${orgId}/roles/${teacher1Id}`)
+      .set(withCsrf(adminUser.id, adminToken, 'csrf-roles-delete-2'));
+    expect(deleteAgain.status).toBe(404);
+
+    // ── Cleanup ───────────────────────────────────────────────────────────────
+    await OrganizationRole.destroy({ where: { organizationId: orgId } });
   });
 });

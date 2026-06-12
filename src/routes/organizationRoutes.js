@@ -22,6 +22,10 @@ router.patch('/:id/verify', apiLimiter, authMiddleware, csrfProtection, organiza
 router.get('/:id/children', optionalAuthMiddleware, apiLimiter, organizationController.getChildren);
 router.patch('/:id/parent', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.setParent);
 router.get('/:id/analytics', apiLimiter, authMiddleware, organizationController.getAnalytics);
+router.get('/:id/roles', optionalAuthMiddleware, apiLimiter, organizationController.getRoles);
+router.post('/:id/roles', apiLimiter, authMiddleware, csrfProtection, organizationController.createRole);
+router.put('/:id/roles/:roleId', apiLimiter, authMiddleware, csrfProtection, organizationController.updateRole);
+router.delete('/:id/roles/:roleId', apiLimiter, authMiddleware, csrfProtection, organizationController.deleteRole);
 router.get('/:slug', optionalAuthMiddleware, apiLimiter, organizationController.getOrganizationBySlug);
 
 router.post('/', apiLimiter, createLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, organizationController.createOrganization);

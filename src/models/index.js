@@ -46,6 +46,7 @@ const CountryAccessRule = require('./CountryAccessRule');
 const GeoAccessSetting = require('./GeoAccessSetting');
 const Organization = require('./Organization');
 const OrganizationMember = require('./OrganizationMember');
+const OrganizationRole = require('./OrganizationRole');
 const OrganizationAnalytics = require('./OrganizationAnalytics');
 const NewsletterSubscriber = require('./NewsletterSubscriber');
 const NewsletterCampaign = require('./NewsletterCampaign');
@@ -445,6 +446,7 @@ Organization.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
 Location.hasMany(Organization, { foreignKey: 'locationId', as: 'organizations' });
 
 Organization.hasMany(OrganizationMember, { foreignKey: 'organizationId', as: 'members' });
+Organization.hasMany(OrganizationRole, { foreignKey: 'organizationId', as: 'orgRoles' });
 Organization.hasMany(Poll, { foreignKey: 'organizationId', as: 'polls' });
 Organization.hasMany(Suggestion, { foreignKey: 'organizationId', as: 'suggestions' });
 Organization.belongsTo(Organization, { foreignKey: 'parentId', as: 'parent' });
@@ -456,6 +458,11 @@ User.hasMany(OrganizationMember, { foreignKey: 'userId', as: 'organizationMember
 OrganizationMember.belongsTo(User, { foreignKey: 'invitedByUserId', as: 'invitedBy' });
 User.hasMany(OrganizationMember, { foreignKey: 'invitedByUserId', as: 'organizationInvitationsSent' });
 OrganizationAnalytics.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+
+// OrganizationRole associations
+OrganizationRole.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+OrganizationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+OrganizationRole.belongsTo(User, { foreignKey: 'personId', as: 'personProfile' });
 
 // PushSubscription associations
 PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
@@ -545,6 +552,7 @@ module.exports = {
   GeoAccessSetting,
   Organization,
   OrganizationMember,
+  OrganizationRole,
   OrganizationAnalytics,
   NewsletterSubscriber,
   NewsletterCampaign,
