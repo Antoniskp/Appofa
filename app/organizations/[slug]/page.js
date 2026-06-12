@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useState, use } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon, PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline';
+import {
+  BuildingOffice2Icon, GlobeAltIcon, EnvelopeIcon, MapPinIcon,
+  PencilSquareIcon, UserCircleIcon, PlusIcon, ChevronUpIcon, TrashIcon,
+} from '@heroicons/react/24/outline';
 import { CheckBadgeIcon } from '@heroicons/react/24/solid';
 import { organizationAPI } from '@/lib/api';
 import organizationContentConfig from '@/config/organizationContent.json';
