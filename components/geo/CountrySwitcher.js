@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { GlobeAltIcon } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
-import { getSavedUserCountry, getDetectedCountry } from '@/lib/geo/countryResolver';
+import { resolveCountry } from '@/lib/geo/countryResolver';
 
 const countryCodeToFlag = (code) => {
   if (!code) return null;
@@ -23,8 +23,7 @@ export default function CountrySwitcher({ className = '' }) {
   const [countryCode, setCountryCode] = useState(null);
 
   useEffect(() => {
-    // Prefer explicit saved choice; fall back to IP-detected hint
-    const code = getSavedUserCountry() || getDetectedCountry();
+    const { code } = resolveCountry();
     setCountryCode(code);
   }, []);
 

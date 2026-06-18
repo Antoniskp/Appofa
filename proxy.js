@@ -183,14 +183,12 @@ export async function proxy(request) {
     return nextResponse();
   }
 
-  // Only redirect to the Greece onboarding page; non-GR IP detections are treated as
-  // informational hints only and must not force users to a foreign country page.
-  //
-  // GR is the primary country for this platform and is the only code we consider a
-  // strong-enough signal to warrant an automatic first-visit redirect.  If the platform
-  // expands to other primary countries in the future, add their codes to an allow-list
-  // constant here (e.g. const AUTO_REDIRECT_COUNTRIES = new Set(['GR', 'CY'])).
-  if (countryCode !== 'GR') {
+  // Only redirect to onboarding pages for primary countries where we trust IP detection
+  // enough to warrant an automatic first-visit redirect.  Non-listed IP detections are
+  // treated as informational hints only and must not force users to a foreign country page.
+  // Add codes here when the platform expands to additional primary countries (e.g. 'CY').
+  const AUTO_REDIRECT_COUNTRIES = new Set(['GR']);
+  if (!AUTO_REDIRECT_COUNTRIES.has(countryCode)) {
     return nextResponse();
   }
 
