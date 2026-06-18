@@ -36,6 +36,7 @@ import DropdownMenu from '@/components/ui/DropdownMenu';
 import Tooltip from '@/components/ui/Tooltip';
 import LoginLink from '@/components/ui/LoginLink';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import CountrySwitcher from '@/components/geo/CountrySwitcher';
 
 export default function TopNav() {
   const tNav = useTranslations('nav');
@@ -429,6 +430,7 @@ export default function TopNav() {
               </div>
             ) : user ? (
               <div className="flex items-center gap-2">
+                <CountrySwitcher />
                 <NotificationBell />
                 <DropdownMenu
                    triggerText={`${tNav('greeting')} ${user.username}`}
@@ -442,6 +444,7 @@ export default function TopNav() {
               </div>
             ) : (
               <>
+                <CountrySwitcher />
                 <LoginLink
                   className="inline-flex items-center gap-2 rounded-md border border-blue-300 px-3 py-2 text-sm font-medium text-blue-900 transition-colors hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
@@ -507,6 +510,9 @@ export default function TopNav() {
           ))}
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <CountrySwitcher className="text-base" />
+          </div>
           {loading ? (
             <div className="space-y-2">
               <SkeletonLoader type="button" count={2} className="space-y-2" />

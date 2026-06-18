@@ -41,7 +41,8 @@
     "government": "Κυβέρνηση",
     "citizen_help": "Βοήθεια Πολίτη",
     "education": "Εκπαίδευση",
-    "all_pages": "Όλες οι Σελίδες"
+    "all_pages": "Όλες οι Σελίδες",
+    "change_country": "Αλλαγή χώρας"
   },
   "cameras": {
     "title": "Κάμερες κοινότητας",
@@ -423,7 +424,10 @@
     "latest_news": "Τελευταία Νέα",
     "latest_articles": "Τελευταία Άρθρα",
     "continue": "Συνέχεια στην αρχική →",
-    "not_found": "Δεν βρέθηκε περιεχόμενο για αυτή τη χώρα."
+    "not_found": "Δεν βρέθηκε περιεχόμενο για αυτή τη χώρα.",
+    "mismatch_notice": "Ο browser σου υποδεικνύει ότι βρίσκεσαι σε {browserCountry}. Θέλεις να αλλάξεις χώρα;",
+    "mismatch_switch": "Μετάβαση σε {browserCountry}",
+    "mismatch_stay": "Παραμονή στο {country}"
   },
   "funding": {
     "goal": "Στόχος",

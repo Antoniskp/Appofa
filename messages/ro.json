@@ -41,7 +41,8 @@
     "government": "Guvern",
     "citizen_help": "Ajutor pentru cetățeni",
     "education": "Educație",
-    "all_pages": "Toate paginile"
+    "all_pages": "Toate paginile",
+    "change_country": "Schimbă țara"
   },
   "cameras": {
     "title": "Camerele comunității",
@@ -423,7 +424,10 @@
     "latest_news": "Latest News",
     "latest_articles": "Latest Articles",
     "continue": "Continue to home →",
-    "not_found": "No content found for this country."
+    "not_found": "No content found for this country.",
+    "mismatch_notice": "Browserul tău sugerează că vă aflați în {browserCountry}. Doriți să schimbați?",
+    "mismatch_switch": "Schimbați la {browserCountry}",
+    "mismatch_stay": "Rămâneți în {country}"
   },
   "funding": {
     "goal": "Goal",

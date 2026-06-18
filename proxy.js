@@ -111,11 +111,14 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
+  // Highest-priority: explicit country saved by the user (1-year cookie set on country page Continue)
+  const userCountry = normalizeCountryCode(request.cookies.get('appofa_user_country')?.value);
   const shouldSkipRedirect = isSkippableForRedirect(pathname);
   const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const ipAddress = getClientIp(request);
   let fallbackCountry = null;
-  let countryCode = headerCountry || cookieCountry;
+  // userCountry takes priority over IP/header detection for routing decisions
+  let countryCode = userCountry || headerCountry || cookieCountry;
 
   if (!shouldSkipRedirect && !countryCode && ipAddress) {
     fallbackCountry = await lookupCountryCodeByIp({ apiBase, ipAddress });
@@ -164,11 +167,22 @@ export async function proxy(request) {
     }
   }
 
+  // User has explicitly chosen a country — never override their choice with an auto-redirect
+  if (userCountry) {
+    return nextResponse();
+  }
+
   if (request.cookies.get('appofa_country_visited')?.value) {
     return nextResponse();
   }
 
   if (!countryCode) {
+    return nextResponse();
+  }
+
+  // Only redirect to the Greece onboarding page; non-GR IP detections are treated as
+  // informational hints only and must not force users to a foreign country page.
+  if (countryCode !== 'GR') {
     return nextResponse();
   }
 
