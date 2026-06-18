@@ -142,7 +142,14 @@
     "latest_videos_title": "Latest Videos",
     "latest_videos_subtitle": "Video analysis and discussions",
     "empty_videos_title": "No videos found",
-    "empty_videos_description": "There are no videos right now. Check back soon!"
+    "empty_videos_description": "There are no videos right now. Check back soon!",
+    "country_popup_title": "View your local version?",
+    "country_popup_body": "We detected that you may be in {country}. Would you like to switch to that country version?",
+    "country_popup_switch_detected": "Switch to {country}",
+    "country_popup_stay": "Stay on home",
+    "country_popup_choose_other": "Or choose another country:",
+    "country_popup_switch_selected": "Switch",
+    "country_popup_dismiss": "Dismiss"
   },
   "auth": {
     "login_title": "Sign in to your account",

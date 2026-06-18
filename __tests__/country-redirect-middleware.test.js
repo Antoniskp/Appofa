@@ -155,23 +155,18 @@ describe('country redirect middleware', () => {
     });
   });
 
-  test('redirects using Cloudflare country header and sets visited cookie', async () => {
+  test('does not auto-redirect from Cloudflare country header', async () => {
     const response = await middleware(makeRequest({
       pathname: '/',
       countryHeader: 'gr',
       forwardedFor: '::ffff:185.230.31.201, 10.0.0.1',
       cookies: { NEXT_LOCALE: 'el' }
     }));
-    expect(response.type).toBe('redirect');
-    expect(response.url).toBe('https://appofasi.gr/country/GR');
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/geo/access-rules'
     );
-    expect(response.cookies.set).toHaveBeenCalledWith('appofa_country_visited', '1', {
-      path: '/',
-      maxAge: 86400,
-      sameSite: 'Lax',
-    });
     expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
       path: '/',
       maxAge: 86400,
@@ -292,7 +287,7 @@ describe('country redirect middleware', () => {
     });
   });
 
-  test('allows fallback GR detection to redirect to Greece country page', async () => {
+  test('does not auto-redirect when backend fallback detects GR', async () => {
     mockFetch.mockImplementation((url, options) => {
       if (String(url).endsWith('/api/geo/detect')) {
         expect(options.headers.get('x-forwarded-for')).toBe('8.8.8.8');
@@ -330,8 +325,8 @@ describe('country redirect middleware', () => {
 
     const response = await middleware(makeRequest({ pathname: '/', countryHeader: null, realIp: '8.8.8.8' }));
 
-    expect(response.type).toBe('redirect');
-    expect(response.url).toBe('https://appofasi.gr/country/GR');
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
     expect(response.cookies.set).toHaveBeenCalledWith('appofa_detected_country', 'GR', {
       path: '/',
       maxAge: 86400,

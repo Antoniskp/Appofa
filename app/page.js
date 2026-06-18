@@ -13,6 +13,7 @@ import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
+import CountryEntryPopup from '@/components/geo/CountryEntryPopup';
 
 const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
 const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
@@ -270,6 +271,7 @@ export default function HomePage() {
 
   return (
     <div className="bg-gray-50">
+      <CountryEntryPopup isAuthenticated={Boolean(user)} />
       <HomeHero />
       <GovernmentSnapshotSection />
       {homepageSettings?.infoSection?.enabled && isVisibleForAudience(homepageSettings?.infoSection?.audience) && (

@@ -142,7 +142,14 @@
     "latest_videos_title": "Ultimele videouri",
     "latest_videos_subtitle": "Analize și discuții video",
     "empty_videos_title": "Nu s-au găsit videouri",
-    "empty_videos_description": "Nu există videouri acum. Revino curând!"
+    "empty_videos_description": "Nu există videouri acum. Revino curând!",
+    "country_popup_title": "Vrei versiunea locală?",
+    "country_popup_body": "Am detectat că este posibil să fii în {country}. Vrei să treci la versiunea pentru această țară?",
+    "country_popup_switch_detected": "Comută la {country}",
+    "country_popup_stay": "Rămâi pe pagina principală",
+    "country_popup_choose_other": "Sau alege altă țară:",
+    "country_popup_switch_selected": "Comută",
+    "country_popup_dismiss": "Închide"
   },
   "auth": {
     "login_title": "Conectează-te la contul tău",

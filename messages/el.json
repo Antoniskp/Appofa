@@ -142,7 +142,14 @@
     "latest_videos_title": "Τελευταία Βίντεο",
     "latest_videos_subtitle": "Βίντεο αναλύσεις και συζητήσεις",
     "empty_videos_title": "Δεν βρέθηκαν βίντεο",
-    "empty_videos_description": "Δεν υπάρχουν βίντεο αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!"
+    "empty_videos_description": "Δεν υπάρχουν βίντεο αυτή τη στιγμή. Ελέγξτε ξανά σύντομα!",
+    "country_popup_title": "Θέλεις την τοπική έκδοση;",
+    "country_popup_body": "Εντοπίσαμε ότι βρίσκεσαι πιθανόν στη χώρα {country}. Θέλεις να μεταβείς στην αντίστοιχη έκδοση;",
+    "country_popup_switch_detected": "Μετάβαση σε {country}",
+    "country_popup_stay": "Παραμονή στην αρχική",
+    "country_popup_choose_other": "Ή διάλεξε άλλη χώρα:",
+    "country_popup_switch_selected": "Μετάβαση",
+    "country_popup_dismiss": "Κλείσιμο"
   },
   "auth": {
     "login_title": "Σύνδεση στον λογαριασμό σας",
