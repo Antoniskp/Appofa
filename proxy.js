@@ -111,7 +111,8 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
-  // Highest-priority: explicit country saved by the user (1-year cookie set on country page Continue)
+  // Highest-priority: explicit country saved by the user (1-year cookie set when the user
+  // clicks "Continue" on the country onboarding page or "Switch" in the mismatch banner)
   const userCountry = normalizeCountryCode(request.cookies.get('appofa_user_country')?.value);
   const shouldSkipRedirect = isSkippableForRedirect(pathname);
   const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';

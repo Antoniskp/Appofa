@@ -31,7 +31,7 @@ export default function CountrySwitcher({ className = '' }) {
 
   return (
     <Link
-      href={countryCode ? `/country/${countryCode}` : '/locations'}
+      href={countryCode ? `/country/${countryCode}` : '/locations' /* neutral fallback when country is undetermined */}
       className={[
         'inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm',
         'text-blue-900 hover:bg-seafoam/40 transition-colors',
