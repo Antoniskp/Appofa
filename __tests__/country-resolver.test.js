@@ -28,7 +28,37 @@ const {
   getBrowserLocaleCountry,
   getTimezoneCountry,
   resolveCountry,
+  isValidCountryCode,
 } = require('../lib/geo/countryResolver');
+
+describe('countryResolver — isValidCountryCode', () => {
+  test('returns true for valid ISO-2 code', () => {
+    expect(isValidCountryCode('GR')).toBe(true);
+  });
+
+  test('returns true for lowercase valid code', () => {
+    expect(isValidCountryCode('cy')).toBe(true);
+  });
+
+  test('returns false for reserved codes (XX, T1)', () => {
+    expect(isValidCountryCode('XX')).toBe(false);
+    expect(isValidCountryCode('T1')).toBe(false);
+  });
+
+  test('returns false for non-ISO2 values', () => {
+    expect(isValidCountryCode('GBR')).toBe(false);
+    expect(isValidCountryCode('')).toBe(false);
+    expect(isValidCountryCode(null)).toBe(false);
+  });
+});
+
+describe('countryResolver — readCookie error handling', () => {
+  test('returns null when cookie value has invalid percent-encoding', () => {
+    // %E0%A4%A is an incomplete multi-byte sequence that decodeURIComponent will reject
+    global.document = { cookie: 'appofa_user_country=%E0%A4%A' };
+    expect(getSavedUserCountry()).toBeNull();
+  });
+});
 
 describe('countryResolver — getSavedUserCountry', () => {
   test('returns null when cookie is absent', () => {

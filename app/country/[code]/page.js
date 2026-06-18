@@ -7,7 +7,7 @@ import { articleAPI, geoAPI, locationAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import { useTranslations } from 'next-intl';
-import { saveUserCountry } from '@/lib/geo/countryResolver';
+import { saveUserCountry, isValidCountryCode } from '@/lib/geo/countryResolver';
 
 const ISO2_RE = /^[A-Z]{2}$/;
 const INVALID_FLAG_CODES = new Set(['XX', 'T1']);
@@ -175,11 +175,9 @@ export default function CountryLandingPage() {
   const countryName = data.location.name_local || data.location.name || code;
 
   // Mismatch: browser locale suggests a different country than the one in the URL.
-  // Validate that the browser country is a proper ISO-2 code before showing the banner.
-  const browserCountry = ISO2_RE.test(geoPanelState.browserLocaleCountryCode || '')
-    && !INVALID_FLAG_CODES.has(geoPanelState.browserLocaleCountryCode)
-    ? geoPanelState.browserLocaleCountryCode
-    : null;
+  // Validate using the shared isValidCountryCode helper for consistent rules.
+  const rawBrowserCountry = geoPanelState.browserLocaleCountryCode;
+  const browserCountry = isValidCountryCode(rawBrowserCountry) ? rawBrowserCountry : null;
   const showMismatch = browserCountry && browserCountry !== code;
 
   return (
