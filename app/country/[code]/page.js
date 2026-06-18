@@ -203,7 +203,8 @@ export default function CountryLandingPage() {
                 onClick={() => handleContinue(browserCountry)}
                 className="inline-flex items-center px-4 py-2 rounded-lg bg-amber-600 text-white font-medium text-sm hover:bg-amber-700 transition-colors"
               >
-                {countryCodeToFlag(browserCountry)} {tCountry('mismatch_switch', { browserCountry })}
+                <span aria-hidden="true">{countryCodeToFlag(browserCountry)}</span>{' '}
+                {tCountry('mismatch_switch', { browserCountry })}
               </button>
               <button
                 type="button"

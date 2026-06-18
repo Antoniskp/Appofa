@@ -39,6 +39,7 @@ export default function CountrySwitcher({ className = '' }) {
         className,
       ].join(' ')}
       title={tNav('change_country')}
+      aria-label={countryCode ? `${tNav('change_country')} (${countryCode})` : tNav('change_country')}
     >
       {flag ? (
         <span aria-hidden="true" className="text-base leading-none">{flag}</span>
@@ -47,7 +48,7 @@ export default function CountrySwitcher({ className = '' }) {
       )}
       <span className="sr-only">{tNav('change_country')}</span>
       {countryCode && (
-        <span className="hidden sm:inline font-medium">{countryCode}</span>
+        <span className="hidden sm:inline font-medium" aria-hidden="true">{countryCode}</span>
       )}
     </Link>
   );

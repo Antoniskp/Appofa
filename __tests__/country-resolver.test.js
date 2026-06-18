@@ -58,6 +58,17 @@ describe('countryResolver — readCookie error handling', () => {
     global.document = { cookie: 'appofa_user_country=%E0%A4%A' };
     expect(getSavedUserCountry()).toBeNull();
   });
+
+  test('correctly decodes valid percent-encoded cookie values', () => {
+    // GR as a plain value (no special chars) but ensures the decode path works
+    global.document = { cookie: 'appofa_user_country=GR' };
+    expect(getSavedUserCountry()).toBe('GR');
+  });
+
+  test('handles a cookie string with multiple cookies correctly', () => {
+    global.document = { cookie: 'foo=bar; appofa_user_country=CY; baz=qux' };
+    expect(getSavedUserCountry()).toBe('CY');
+  });
 });
 
 describe('countryResolver — getSavedUserCountry', () => {

@@ -177,6 +177,9 @@ export async function proxy(request) {
   }
 
   if (!countryCode) {
+    // No country signal at all — pass through; the non-GR filter below would be
+    // a no-op here anyway since countryCode is falsy, but the explicit guard keeps
+    // the intent readable.
     return nextResponse();
   }
 
