@@ -263,25 +263,21 @@ describe('TopNav grouped navigation redesign', () => {
     expect(mobileMenu.className).not.toContain('sm:hidden');
   });
 
-  test('Education AI page appears in the Σελίδες dropdown and mobile nav', () => {
-    // Desktop Σελίδες dropdown must include /education/ai
+  test('Education AI page is NOT in the Σελίδες dropdown or mobile nav', () => {
+    // Desktop Σελίδες dropdown must NOT include /education/ai
     const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(pagesDropdown).toBeTruthy();
-    expect(pagesDropdown.querySelector('a[href="/education/ai"]')).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/education/ai"]')).toBeNull();
 
-    // Mobile menu must also include the /education/ai link
+    // Mobile menu must also NOT include the /education/ai link
     const mobileMenu = container.querySelector('#mobile-menu');
     expect(mobileMenu).toBeTruthy();
-    expect(mobileMenu.querySelector('a[href="/education/ai"]')).toBeTruthy();
+    expect(mobileMenu.querySelector('a[href="/education/ai"]')).toBeNull();
   });
 
-  test('marks pages section active when on /education/ai', async () => {
-    mockPathname = '/education/ai';
-    await renderTopNav();
-
+  test('Education page /education is still in the Σελίδες dropdown', () => {
     const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(pagesDropdown).toBeTruthy();
-    expect(pagesDropdown.getAttribute('data-trigger-class')).toContain('bg-blue-50');
-    expect(pagesDropdown.getAttribute('data-trigger-class')).toContain('text-blue-700');
+    expect(pagesDropdown.querySelector('a[href="/education"]')).toBeTruthy();
   });
 });
