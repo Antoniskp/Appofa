@@ -111,11 +111,15 @@ export async function proxy(request) {
   const { pathname } = request.nextUrl;
   const headerCountry = normalizeCountryCode(request.headers.get('CF-IPCountry'));
   const cookieCountry = normalizeCountryCode(request.cookies.get('appofa_detected_country')?.value);
+  // Highest-priority: explicit country saved by the user (1-year cookie set when the user
+  // clicks "Continue" on the country onboarding page or "Switch" in the mismatch banner)
+  const userCountry = normalizeCountryCode(request.cookies.get('appofa_user_country')?.value);
   const shouldSkipRedirect = isSkippableForRedirect(pathname);
   const apiBase = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const ipAddress = getClientIp(request);
   let fallbackCountry = null;
-  let countryCode = headerCountry || cookieCountry;
+  // userCountry takes priority over IP/header detection for routing decisions
+  let countryCode = userCountry || headerCountry || cookieCountry;
 
   if (!shouldSkipRedirect && !countryCode && ipAddress) {
     fallbackCountry = await lookupCountryCodeByIp({ apiBase, ipAddress });
@@ -164,11 +168,28 @@ export async function proxy(request) {
     }
   }
 
+  // User has explicitly chosen a country — never override their choice with an auto-redirect
+  if (userCountry) {
+    return nextResponse();
+  }
+
   if (request.cookies.get('appofa_country_visited')?.value) {
     return nextResponse();
   }
 
   if (!countryCode) {
+    // No country signal at all — pass through; the non-GR filter below would be
+    // a no-op here anyway since countryCode is falsy, but the explicit guard keeps
+    // the intent readable.
+    return nextResponse();
+  }
+
+  // Only redirect to onboarding pages for primary countries where we trust IP detection
+  // enough to warrant an automatic first-visit redirect.  Non-listed IP detections are
+  // treated as informational hints only and must not force users to a foreign country page.
+  // Add codes here when the platform expands to additional primary countries (e.g. 'CY').
+  const AUTO_REDIRECT_COUNTRIES = new Set(['GR']);
+  if (!AUTO_REDIRECT_COUNTRIES.has(countryCode)) {
     return nextResponse();
   }
 

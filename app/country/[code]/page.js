@@ -7,6 +7,7 @@ import { articleAPI, geoAPI, locationAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import { useTranslations } from 'next-intl';
+import { saveUserCountry, isValidCountryCode } from '@/lib/geo/countryResolver';
 
 const ISO2_RE = /^[A-Z]{2}$/;
 const INVALID_FLAG_CODES = new Set(['XX', 'T1']);
@@ -119,9 +120,15 @@ export default function CountryLandingPage() {
     }
   );
 
-  const handleContinue = () => {
+  const handleContinue = (targetCode = code) => {
+    // Save explicit choice for 1 year so the proxy never overrides it again
+    saveUserCountry(targetCode);
     document.cookie = 'appofa_country_visited=1; path=/; max-age=86400; SameSite=Lax';
-    router.push('/');
+    if (targetCode !== code) {
+      router.push(`/country/${targetCode}`);
+    } else {
+      router.push('/');
+    }
   };
 
   if (loading) {
@@ -167,6 +174,12 @@ export default function CountryLandingPage() {
 
   const countryName = data.location.name_local || data.location.name || code;
 
+  // Mismatch: browser locale suggests a different country than the one in the URL.
+  // Validate using the shared isValidCountryCode helper for consistent rules.
+  const rawBrowserCountry = geoPanelState.browserLocaleCountryCode;
+  const browserCountry = isValidCountryCode(rawBrowserCountry) ? rawBrowserCountry : null;
+  const showMismatch = browserCountry && browserCountry !== code;
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="app-container space-y-6">
@@ -178,6 +191,31 @@ export default function CountryLandingPage() {
             {tCountry('subtitle')}
           </p>
         </section>
+
+        {showMismatch && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+            <p className="text-sm font-medium text-amber-900 mb-3">
+              {tCountry('mismatch_notice', { browserCountry })}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => handleContinue(browserCountry)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white font-medium text-sm hover:bg-amber-700 transition-colors"
+              >
+                <span aria-hidden="true">{countryCodeToFlag(browserCountry)}</span>
+                {tCountry('mismatch_switch', { browserCountry })}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleContinue(code)}
+                className="inline-flex items-center px-4 py-2 rounded-lg bg-white text-amber-800 font-medium text-sm border border-amber-300 hover:bg-amber-50 transition-colors"
+              >
+                {tCountry('mismatch_stay', { country: countryName })}
+              </button>
+            </div>
+          </div>
+        )}
 
         <CountryFundingBanner
           funding={data.funding}
@@ -211,15 +249,17 @@ export default function CountryLandingPage() {
           </div>
         </section>
 
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={handleContinue}
-            className="inline-flex items-center px-5 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-          >
-            {tCountry('continue')}
-          </button>
-        </div>
+        {!showMismatch && (
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => handleContinue(code)}
+              className="inline-flex items-center px-5 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
+            >
+              {tCountry('continue')}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

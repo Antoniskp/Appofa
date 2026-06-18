@@ -179,17 +179,70 @@ describe('country redirect middleware', () => {
     });
   });
 
-  test('falls back to detected country cookie when header is unavailable', async () => {
+  test('falls back to detected country cookie for x-detected-country header but does not redirect to non-GR country', async () => {
     const response = await middleware(makeRequest({
       pathname: '/',
       countryHeader: 'XX',
       cookies: { appofa_detected_country: 'cy' }
     }));
-    expect(response.type).toBe('redirect');
-    expect(response.url).toBe('https://appofasi.gr/country/CY');
+    // CY from cookie is informational only — should NOT cause a redirect
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
     expect(mockFetch).toHaveBeenCalledWith(
       'http://localhost:3000/api/geo/access-rules'
     );
+  });
+
+  test('does not redirect when appofa_user_country cookie is set (explicit user choice)', async () => {
+    const response = await middleware(makeRequest({
+      pathname: '/',
+      countryHeader: 'GR',
+      cookies: { appofa_user_country: 'GR' },
+    }));
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
+    // x-detected-country should reflect the resolved country
+    expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
+  });
+
+  test('appofa_user_country takes priority and prevents redirect even when CF header differs', async () => {
+    const response = await middleware(makeRequest({
+      pathname: '/',
+      countryHeader: 'GB',
+      cookies: { appofa_user_country: 'GR' },
+    }));
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
+    // userCountry (GR) wins over headerCountry (GB)
+    expect(mockNext.mock.calls[0][0].request.headers.get('x-detected-country')).toBe('GR');
+  });
+
+  test('does not redirect to non-GR country page when CF-IPCountry says GB (never force to UK)', async () => {
+    const response = await middleware(makeRequest({
+      pathname: '/',
+      countryHeader: 'GB',
+    }));
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  test('does not redirect to non-GR country page when CF-IPCountry says US', async () => {
+    const response = await middleware(makeRequest({
+      pathname: '/',
+      countryHeader: 'US',
+    }));
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
+  });
+
+  test('does not redirect when appofa_detected_country cookie is a non-GR country', async () => {
+    const response = await middleware(makeRequest({
+      pathname: '/',
+      countryHeader: 'XX',
+      cookies: { appofa_detected_country: 'cy' },
+    }));
+    expect(response.type).toBe('next');
+    expect(mockRedirect).not.toHaveBeenCalled();
   });
 
   test('does not redirect to non-GR country pages from backend fallback geo detection', async () => {
