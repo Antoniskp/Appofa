@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+/** @jest-environment <rootDir>/jest-jsdom-env.js */
 
 const React = require('react');
 const { act } = require('react');
@@ -261,5 +261,48 @@ describe('TopNav grouped navigation redesign', () => {
 
     expect(mobileMenu.className).toContain('md:hidden');
     expect(mobileMenu.className).not.toContain('sm:hidden');
+  });
+
+  test('Education AI page appears in the Σελίδες dropdown and mobile nav', () => {
+    // Desktop Σελίδες dropdown must include /education/ai
+    const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
+    expect(pagesDropdown).toBeTruthy();
+    expect(pagesDropdown.querySelector('a[href="/education/ai"]')).toBeTruthy();
+
+    // Mobile menu must also include the /education/ai link
+    const mobileMenu = container.querySelector('#mobile-menu');
+    expect(mobileMenu).toBeTruthy();
+    expect(mobileMenu.querySelector('a[href="/education/ai"]')).toBeTruthy();
+  });
+
+  test('marks pages section active when on /education/ai', async () => {
+    mockPathname = '/education/ai';
+    await renderTopNav();
+
+    const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
+    expect(pagesDropdown).toBeTruthy();
+    expect(pagesDropdown.getAttribute('data-trigger-class')).toContain('bg-blue-50');
+    expect(pagesDropdown.getAttribute('data-trigger-class')).toContain('text-blue-700');
+  });
+
+  test('CountrySwitcher link points to /country/[code] or /locations fallback', () => {
+    // CountrySwitcher reads from resolveCountry() which uses cookies + browser signals.
+    // In the test env the component renders without crashing and the link either goes
+    // to a /country/XX route or the neutral /locations fallback.
+    const switcher = container.querySelector('a[title]');
+    expect(switcher).toBeTruthy();
+    const href = switcher.getAttribute('href');
+    expect(href === '/locations' || href.startsWith('/country/')).toBe(true);
+  });
+
+  test('CountrySwitcher reflects country code from the current /country/[code] route', async () => {
+    // When the pathname is /country/DE the switcher should immediately reflect DE
+    mockPathname = '/country/DE';
+    await renderTopNav();
+
+    // Both the anchor's aria-label and href must reference DE
+    const switcher = container.querySelector('a[aria-label*="DE"]');
+    expect(switcher).toBeTruthy();
+    expect(switcher.getAttribute('href')).toBe('/country/DE');
   });
 });

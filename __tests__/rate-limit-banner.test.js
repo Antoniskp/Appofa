@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+/** @jest-environment <rootDir>/jest-jsdom-env.js */
 
 /**
  * Tests for RateLimitBanner component rendering.

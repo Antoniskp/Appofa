@@ -115,6 +115,24 @@ export default function EducationPage() {
       </section>
 
       <section>
+        <h2 className="text-2xl font-semibold mb-3">Τεχνολογία &amp; Τεχνητή Νοημοσύνη</h2>
+        <div className="bg-white border border-indigo-200 rounded-lg p-5 flex flex-col gap-2">
+          <h3 className="text-lg font-semibold text-indigo-700">🤖 Τεχνητή Νοημοσύνη (AI)</h3>
+          <p className="text-gray-700 text-sm">
+            Σύντομος οδηγός για σημαντικά μοντέλα και έργα τεχνητής νοημοσύνης παγκοσμίως και
+            στην Ελλάδα — από LLMs και πολυτροπικά συστήματα ως open-source υποδομές και ελληνικές
+            ερευνητικές πρωτοβουλίες.
+          </p>
+          <Link
+            href="/education/ai"
+            className="self-start inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+          >
+            Δες τη σελίδα AI →
+          </Link>
+        </div>
+      </section>
+
+      <section>
         <h2 className="text-2xl font-semibold mb-3">Εκπαιδευτικοί Πόροι</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="bg-white border border-gray-200 rounded-lg p-5">

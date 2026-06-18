@@ -1,4 +1,4 @@
-/** @jest-environment jsdom */
+/** @jest-environment <rootDir>/jest-jsdom-env.js */
 
 /**
  * Tests for the GreeceBoundaryMap component, the BaseMap polygonLayers extension,
