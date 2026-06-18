@@ -36,7 +36,9 @@ export default function CountrySwitcher({ className = '' }) {
   useEffect(() => {
     // If we're on a country-specific page, use its code directly so the
     // indicator always matches the active country context.
-    const routeMatch = pathname ? pathname.match(/^\/country\/([A-Za-z]{2})(?:\/.*)?$/) : null;
+    // Only match the exact /country/[code] segment (with optional trailing slash)
+    // to avoid false positives from unrelated routes like /country-info/...
+    const routeMatch = pathname ? pathname.match(/^\/country\/([A-Za-z]{2})\/?$/) : null;
     if (routeMatch) {
       setCountryCode(routeMatch[1].toUpperCase());
       return;
