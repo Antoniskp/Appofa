@@ -8,7 +8,6 @@ import {
   AcademicCapIcon,
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
-  BeakerIcon,
   BuildingOffice2Icon,
   ChatBubbleLeftRightIcon,
   ChevronDownIcon,
@@ -203,13 +202,6 @@ export default function TopNav() {
           icon: <AcademicCapIcon className="h-4 w-4" />,
           mobileIcon: <AcademicCapIcon className="h-5 w-5" />
         },
-        {
-          id: 'education-ai',
-          label: tNav('education_ai'),
-          href: '/education/ai',
-          icon: <BeakerIcon className="h-4 w-4" />,
-          mobileIcon: <BeakerIcon className="h-5 w-5" />
-        }
       ]
     }
   ];

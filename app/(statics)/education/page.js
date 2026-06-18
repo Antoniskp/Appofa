@@ -116,18 +116,25 @@ export default function EducationPage() {
 
       <section>
         <h2 className="text-2xl font-semibold mb-3">Τεχνολογία &amp; Τεχνητή Νοημοσύνη</h2>
-        <div className="bg-white border border-indigo-200 rounded-lg p-5 flex flex-col gap-2">
-          <h3 className="text-lg font-semibold text-indigo-700">🤖 Τεχνητή Νοημοσύνη (AI)</h3>
-          <p className="text-gray-700 text-sm">
-            Σύντομος οδηγός για σημαντικά μοντέλα και έργα τεχνητής νοημοσύνης παγκοσμίως και
-            στην Ελλάδα — από LLMs και πολυτροπικά συστήματα ως open-source υποδομές και ελληνικές
-            ερευνητικές πρωτοβουλίες.
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-300 rounded-xl p-5 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl" aria-hidden="true">🤖</span>
+            <h3 className="text-xl font-bold text-indigo-700">Τεχνητή Νοημοσύνη (AI) — Δωρεάν Εργαλεία</h3>
+          </div>
+          <p className="text-gray-700 text-sm leading-relaxed">
+            Ανακάλυψε δεκάδες δωρεάν AI εργαλεία για γραφή, έρευνα, κώδικα, εικόνες, μετάφραση και μάθηση
+            — μαζί με πρακτικούς οδηγούς βήμα-βήμα για σπουδές, βιογραφικό, ξένη γλώσσα και πολλά άλλα.
           </p>
+          <div className="flex flex-wrap gap-2 text-xs text-gray-500">
+            {['✍️ Γραφή', '🔬 Έρευνα', '💻 Κώδικας', '🎨 Εικόνες', '🌍 Μετάφραση', '🎓 Μάθηση'].map((tag) => (
+              <span key={tag} className="bg-white border border-indigo-200 rounded-full px-2 py-0.5">{tag}</span>
+            ))}
+          </div>
           <Link
             href="/education/ai"
-            className="self-start inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+            className="self-start inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors"
           >
-            Δες τη σελίδα AI →
+            🚀 Εξερεύνησε τα Δωρεάν Εργαλεία AI →
           </Link>
         </div>
       </section>
