@@ -12,11 +12,13 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-06-09
+> **Last updated**: 2026-06-18
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
 > Dependency update notes: direct `axios` is pinned to `1.16.0` (no `overrides.axios`) and direct `nodemailer` (`^8.0.7`) is used for SMTP password reset email delivery. Direct `next` is now pinned to `16.2.6` to resolve high-severity advisories affecting `16.0.0 - 16.2.5` in CI security-audit workflow. `next-intl` bumped to `^4.11.1` (fixes GHSA-4c35-wcg5-mm9h prototype pollution). `overrides.ip-address: ">=10.1.1"` added to patch XSS in transitive `ip-address` used by `express-rate-limit` and `geoip-lite` (GHSA-v2v4-37r5-5v8g). `overrides.brace-expansion: ">=2.1.0 <3.0.0 || >=5.0.6"` added to resolve DoS vulnerability (GHSA-4gwj-5jf2). `overrides.nodemailer` removed — direct deps satisfy themselves and must not be in overrides. Direct `ws` dependency is now included for backend worker WebSocket support at `/ws/workers`.
+>
+> Country-entry UX note: `/` is the universal entry point (no automatic IP-based redirect). `proxy.js` now keeps country detection as metadata/cookies only, while guest non-GR hints are handled client-side by `components/geo/CountryEntryPopup.js` on `app/page.js` with persisted decisions in `localStorage` (`appofa_country_entry_decision_v1`). `app/country/[code]/page.js` persists explicit country selection and renders the main homepage structure.
 >
 > Backend startup convention: `require('dotenv').config()` is the very first statement in `src/index.js` so that all subsequent module-level `process.env` reads (e.g. `FRONTEND_URL` in `src/config/securityHeaders.js`) get the correct production values.
 
@@ -47,7 +49,7 @@ This instruction is permanent and must never be removed.
 
 ```
 Appofa/
-├── proxy.js                 # Next.js edge proxy (country redirect + conservative non-Cloudflare backend geo fallback)
+├── proxy.js                 # Next.js edge proxy (country metadata/cookies, blocked-country rules, no home auto-redirect)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
 ├── config/map-data/         # Political mapping datasets (region/district metadata + GeoJSON geometry)
 ├── messages/                # next-intl locale messages (el.json, en.json, ro.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages)

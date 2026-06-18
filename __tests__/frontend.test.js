@@ -6,9 +6,14 @@ const { act } = require('react');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const immediateTimers = [];
+const originalFetch = global.fetch;
 
 beforeAll(() => {
   jest.useFakeTimers();
+  global.fetch = jest.fn(() => Promise.resolve({
+    ok: true,
+    json: async () => ({ type: 'FeatureCollection', features: [] }),
+  }));
   global.ResizeObserver = class {
     observe() {}
     unobserve() {}
@@ -26,6 +31,7 @@ beforeAll(() => {
 afterAll(() => {
   immediateTimers.splice(0, immediateTimers.length);
   jest.useRealTimers();
+  global.fetch = originalFetch;
   delete global.ResizeObserver;
 });
 const { createRoot } = require('react-dom/client');
@@ -256,6 +262,7 @@ describe('Frontend smoke tests', () => {
     locationAPI.getAll.mockResolvedValue({ success: true, locations: [] });
     mockSearchParams.get.mockReset();
     mockRouter.push.mockReset();
+    localStorage.clear();
     document.body.innerHTML = '';
   });
 
@@ -287,6 +294,82 @@ describe('Frontend smoke tests', () => {
 
     await act(async () => {
       root.unmount();
+    });
+  });
+
+  test('shows country suggestion popup only for unauthenticated non-GR visitors', async () => {
+    useAuth.mockReturnValue(buildAuthState({ user: null }));
+    geoAPI.detect.mockResolvedValue({
+      success: true,
+      data: { countryCode: 'DE', countryName: 'Germany' },
+    });
+
+    const HomePage = require('../app/page').default;
+    const { container, root } = await renderPage(HomePage);
+
+    expect(container.textContent).toContain('Θέλεις την τοπική έκδοση;');
+    expect(container.textContent).toContain('Μετάβαση σε {country}');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('does not show country suggestion popup for authenticated users', async () => {
+    useAuth.mockReturnValue(buildAuthState({
+      user: { id: 99, username: 'member' },
+    }));
+    geoAPI.detect.mockResolvedValue({
+      success: true,
+      data: { countryCode: 'DE', countryName: 'Germany' },
+    });
+
+    const HomePage = require('../app/page').default;
+    const { container, root } = await renderPage(HomePage);
+
+    expect(container.textContent).not.toContain('Θέλεις την τοπική έκδοση;');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('persists country popup stay decision and does not re-open after decision exists', async () => {
+    useAuth.mockReturnValue(buildAuthState({ user: null }));
+    geoAPI.detect.mockResolvedValue({
+      success: true,
+      data: { countryCode: 'DE', countryName: 'Germany' },
+    });
+
+    const HomePage = require('../app/page').default;
+    const { container, root } = await renderPage(HomePage);
+
+    const stayButton = Array.from(container.querySelectorAll('button')).find((button) => (
+      button.textContent.includes('Παραμονή στην αρχική')
+    ));
+    expect(stayButton).toBeTruthy();
+
+    await act(async () => {
+      stayButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    const storedDecision = JSON.parse(localStorage.getItem('appofa_country_entry_decision_v1'));
+    expect(storedDecision.decision).toBe('stay');
+    expect(container.textContent).not.toContain('Θέλεις την τοπική έκδοση;');
+
+    await act(async () => {
+      root.unmount();
+    });
+
+    geoAPI.detect.mockClear();
+
+    const secondRender = await renderPage(HomePage);
+    expect(secondRender.container.textContent).not.toContain('Θέλεις την τοπική έκδοση;');
+    expect(geoAPI.detect).not.toHaveBeenCalled();
+
+    await act(async () => {
+      secondRender.root.unmount();
     });
   });
 
