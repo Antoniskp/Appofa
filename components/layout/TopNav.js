@@ -510,9 +510,7 @@ export default function TopNav() {
           ))}
         </div>
         <div className="border-t border-seafoam px-4 py-3 space-y-3">
-          <div className="flex items-center justify-between">
-            <CountrySwitcher className="text-base" />
-          </div>
+          <CountrySwitcher className="text-base" />
           {loading ? (
             <div className="space-y-2">
               <SkeletonLoader type="button" count={2} className="space-y-2" />
