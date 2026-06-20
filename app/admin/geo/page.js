@@ -617,7 +617,11 @@ function GeoAdminContent() {
                       <tbody className="divide-y divide-gray-100">
                         {(visits?.topPaths || []).map((row) => (
                           <tr key={row.path} className="hover:bg-gray-50">
-                            <td className="px-4 py-3 text-sm text-gray-900 break-all">{row.path}</td>
+                            <td className="px-4 py-3 text-sm text-gray-900">
+                              <span className="block max-w-[420px] truncate whitespace-nowrap" title={row.path}>
+                                {row.path}
+                              </span>
+                            </td>
                             <td className="px-4 py-3 text-sm text-gray-700">{row.visits || 0}</td>
                           </tr>
                         ))}
@@ -661,9 +665,13 @@ function GeoAdminContent() {
                                 <span className="text-gray-400 italic">Ανώνυμος</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-sm text-gray-700 break-all">{row.path || '—'}</td>
-                            <td className="px-4 py-3 text-sm text-gray-700 font-mono">{row.ipAddress || '—'}</td>
                             <td className="px-4 py-3 text-sm text-gray-700">
+                              <span className="block max-w-[420px] truncate whitespace-nowrap" title={row.path || '—'}>
+                                {row.path || '—'}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-xs text-gray-700 font-mono tracking-tight whitespace-nowrap">{row.ipAddress || '—'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                               {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
                             </td>
                             <td className="px-4 py-3 text-right">
@@ -758,9 +766,13 @@ function GeoAdminContent() {
                             <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
                           </td>
                            <td className="px-4 py-3 text-sm text-gray-700">{row.reason || '—'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-700 font-mono">{row.redirectPath || '—'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-700 font-mono">
+                            <span className="block max-w-[320px] truncate whitespace-nowrap" title={row.redirectPath || '—'}>
+                              {row.redirectPath || '—'}
+                            </span>
+                          </td>
                           <td className="px-4 py-3 text-sm text-gray-700">{row.createdBy?.username || '—'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-700">
+                          <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                             {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
                           </td>
                           <td className="px-4 py-3 text-right">
