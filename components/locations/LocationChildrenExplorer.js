@@ -6,10 +6,9 @@
  * Renders child locations as an interactive map (polygons when boundary_geojson is
  * available, markers when only coordinates exist) with a pills/list beside the map.
  * Pills and map features are fully bidirectionally linked:
- *   - hover/click on a map polygon/marker → highlights + selects the corresponding pill
+ *   - hover on a map polygon/marker → highlights the corresponding pill
  *   - hover on a pill → highlights the corresponding polygon or marker on the map
- *   - click on a pill → selects and shows an inline preview card; map zooms to that child
- *     (via BaseMap fitBoundsOnClick)
+ *   - click on a pill OR map polygon/marker → navigates directly to that location page
  *
  * When no children have geometry, the section renders as a pills-only list.
  * When children.length === 0 (after loading), the section renders nothing.
@@ -21,8 +20,8 @@
  */
 
 import { useState, useMemo, useCallback, useRef } from 'react';
-import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { getChildLocationTerminology } from '@/lib/constants/locations';
 import {
   buildFeatureCollectionFromLocations,
@@ -47,13 +46,6 @@ const POLY_HOVER = {
   opacity: 0.9,
   fillColor: '#3b82f6',
   fillOpacity: 0.28,
-};
-const POLY_SELECTED = {
-  color: '#1d4ed8',
-  weight: 2.5,
-  opacity: 1,
-  fillColor: '#1d4ed8',
-  fillOpacity: 0.35,
 };
 
 function escapeHtml(str) {
@@ -120,9 +112,8 @@ export default function LocationChildrenExplorer({
   children = [],
   loading = false,
 }) {
-  const [selectedChildId, setSelectedChildId] = useState(null);
+  const router = useRouter();
   const [hoveredChildId, setHoveredChildId] = useState(null);
-  const pillRefs = useRef({});
 
   // Ref tracks the current hovered child id synchronously (updated before state).
   // styleFeature reads from this ref so resetStyle always sees the correct value.
@@ -153,14 +144,12 @@ export default function LocationChildrenExplorer({
     setHoveredChildId(id);
   }, []);
 
-  // Map feature click: select the matching pill and scroll it into view
+  // Map feature click: navigate directly to that child location's page.
   const handleFeatureClick = useCallback((feature) => {
     const child = resolveLocationFromFeatureProps(feature.properties || {}, childLookup);
     if (!child) return;
-    setSelectedChildId((prev) => (prev === child.id ? null : child.id));
-    const el = pillRefs.current[child.id];
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-  }, [childLookup]);
+    router.push(`/locations/${child.slug || child.id}`);
+  }, [childLookup, router]);
 
   // Map feature hover: update the ref FIRST (so resetStyle in BaseMap sees the new
   // value), then queue the React state update for pill CSS.
@@ -170,6 +159,13 @@ export default function LocationChildrenExplorer({
     setHoveredChild(child?.id ?? null);
   }, [childLookup, setHoveredChild]);
 
+  // Marker click: navigate directly to that child location's page.
+  const handleMarkerClick = useCallback((id) => {
+    const child = children.find((c) => String(c.id) === String(id));
+    if (!child) return;
+    router.push(`/locations/${child.slug || child.id}`);
+  }, [children, router]);
+
   // Marker hover callback: map marker hovered/un-hovered → update pill highlight.
   const handleMarkerHover = useCallback((id) => {
     if (!id) { setHoveredChild(null); return; }
@@ -177,8 +173,7 @@ export default function LocationChildrenExplorer({
     if (child) setHoveredChild(child.id);
   }, [children, setHoveredChild]);
 
-  // Build polygon layers — includes selectedChildId so the selected polygon is highlighted.
-  // Rebuilding on click (when selectedChildId changes) is acceptable.
+  // Build polygon layers — no longer needs selectedChildId (click now navigates away).
   // Hover highlighting is applied imperatively via featureLayerControlsRef so that the
   // layer is not rebuilt on every mouse movement.
   const polygonLayers = useMemo(() => {
@@ -194,19 +189,17 @@ export default function LocationChildrenExplorer({
         // most current hover state without requiring a layer rebuild on every hover.
         styleFeature: (feature, base) => {
           const child = resolveLocationFromFeatureProps(feature.properties || {}, childLookup);
-          if (child && child.id === selectedChildId) return POLY_SELECTED;
           if (child && child.id === hoveredChildIdRef.current) return POLY_HOVER;
           return base;
         },
         hoverStyle: POLY_HOVER,
-        fitBoundsOnClick: true,
+        fitBoundsOnClick: false,
         onFeatureClick: handleFeatureClick,
         onFeatureHover: handleFeatureHover,
         getTooltip: buildTooltip,
         getFeatureId: (feature) => getLocationFeatureKey(feature.properties || {}),
         // onLayerInit is called each time the layer is (re)built — store fresh controls
-        // and re-apply any active pill hover so the highlight survives layer rebuilds
-        // (e.g. when selectedChildId changes).
+        // and re-apply any active pill hover so the highlight survives layer rebuilds.
         onLayerInit: (controls) => {
           featureLayerControlsRef.current = controls;
           const currentHovered = hoveredChildIdRef.current;
@@ -220,11 +213,10 @@ export default function LocationChildrenExplorer({
         },
       },
     ];
-  }, [children, childLookup, hasPolygons, selectedChildId, handleFeatureClick, handleFeatureHover]);
+  }, [children, childLookup, hasPolygons, handleFeatureClick, handleFeatureHover]);
 
   // Marker fallback: used when children only have coordinates (no polygons).
-  // Markers include tooltip content and a variant flag so BaseMap uses the
-  // correct DivIcon (default / selected).  Hover highlighting uses markerLayerControlsRef.
+  // Markers include tooltip content; hover highlighting uses markerLayerControlsRef.
   const markers = useMemo(() => {
     if (!hasMarkers) return [];
     return children
@@ -235,13 +227,12 @@ export default function LocationChildrenExplorer({
         lng: Number(c.lng),
         popup: buildTooltip({ name: c.name_local || c.name, userCount: c.userCount ?? null, moderatorPreview: c.moderatorPreview ?? null }),
         tooltip: buildTooltip({ name: c.name_local || c.name, userCount: c.userCount ?? null, moderatorPreview: c.moderatorPreview ?? null }),
-        variant: c.id === selectedChildId ? 'selected' : 'explorer',
+        variant: 'explorer',
       }));
-  }, [children, hasMarkers, selectedChildId]);
+  }, [children, hasMarkers]);
 
   const mapCenter = useMemo(() => computeMapCenter(location, children), [location, children]);
   const mapZoom = location?.map_default_zoom ? Number(location.map_default_zoom) : 7;
-  const selectedChild = selectedChildId != null ? children.find((c) => c.id === selectedChildId) : null;
   const showMap = !loading && hasGeometry && mapCenter;
   const showPills = !loading && children.length > 0;
   const useDesktopSplitLayout = showMap && showPills;
@@ -274,6 +265,7 @@ export default function LocationChildrenExplorer({
                   scrollWheelZoom={false}
                   interactive={true}
                   onMarkerHover={hasMarkers ? handleMarkerHover : undefined}
+                  onMarkerClick={hasMarkers ? handleMarkerClick : undefined}
                   onMarkersReady={hasMarkers ? (controls) => { markerLayerControlsRef.current = controls; } : undefined}
                 />
                 <p className="text-xs text-gray-500">
@@ -290,15 +282,13 @@ export default function LocationChildrenExplorer({
                   aria-label={childTerms.label}
                 >
                   {children.map((child) => {
-                    const isSelected = child.id === selectedChildId;
                     const isHovered = child.id === hoveredChildId;
                     return (
                       <button
                         key={child.id}
                         role="listitem"
-                        ref={(el) => { if (el) pillRefs.current[child.id] = el; }}
                         type="button"
-                        onClick={() => setSelectedChildId(isSelected ? null : child.id)}
+                        onClick={() => router.push(`/locations/${child.slug || child.id}`)}
                         onMouseEnter={() => {
                           setHoveredChild(child.id);
                           // Imperatively highlight the polygon/marker without rebuilding layers
@@ -312,7 +302,7 @@ export default function LocationChildrenExplorer({
                         }}
                         onMouseLeave={() => {
                           setHoveredChild(null);
-                          // Restore polygon/marker to its computed style (selected or default)
+                          // Restore polygon/marker to its default style
                           const featureId = getLocationFeatureKey(child || {});
                           if (hasPolygons && featureId) {
                             featureLayerControlsRef.current?.unhighlight(featureId);
@@ -320,17 +310,14 @@ export default function LocationChildrenExplorer({
                           if (hasMarkers) {
                             markerLayerControlsRef.current?.unhighlight(
                               String(child.id),
-                              child.id === selectedChildId ? 'selected' : 'explorer'
+                              'explorer'
                             );
                           }
                         }}
-                        aria-pressed={isSelected}
                         className={`inline-flex items-center px-3 py-1.5 rounded-full border text-sm font-medium transition-colors whitespace-nowrap ${
-                          isSelected
-                            ? 'border-blue-500 bg-blue-100 text-blue-900 shadow-sm'
-                            : isHovered
-                              ? 'border-blue-300 bg-blue-50 text-blue-700'
-                              : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300'
+                          isHovered
+                            ? 'border-blue-300 bg-blue-50 text-blue-700'
+                            : 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:border-blue-300'
                         }`}
                       >
                         {child.name_local || child.name}
@@ -343,36 +330,6 @@ export default function LocationChildrenExplorer({
           </div>
         )}
 
-        {/* Selected child preview card — shown when a pill or map feature is selected */}
-        {selectedChild && (
-          <div className="flex items-start justify-between gap-3 rounded-lg border border-blue-200 bg-blue-50 p-2.5">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-blue-900 truncate">
-                {selectedChild.name_local || selectedChild.name}
-              </p>
-              {selectedChild.type && (
-                <p className="text-xs text-blue-600 capitalize">{selectedChild.type}</p>
-              )}
-              {typeof selectedChild.userCount === 'number' && selectedChild.userCount > 0 && (
-                <p className="text-xs text-blue-500 mt-0.5">
-                  {selectedChild.userCount} χρήστ{selectedChild.userCount === 1 ? 'ης' : 'ες'}
-                </p>
-              )}
-              {selectedChild.moderatorPreview && (
-                <p className="text-xs text-blue-500 mt-0.5 truncate">
-                  {[selectedChild.moderatorPreview.firstNameNative, selectedChild.moderatorPreview.lastNameNative]
-                    .filter(Boolean).join(' ') || selectedChild.moderatorPreview.username}
-                </p>
-              )}
-            </div>
-            <Link
-              href={`/locations/${selectedChild.slug || selectedChild.id}`}
-              className="flex-shrink-0 inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 transition-colors"
-            >
-              Άνοιγμα →
-            </Link>
-          </div>
-        )}
       </div>
     </section>
   );

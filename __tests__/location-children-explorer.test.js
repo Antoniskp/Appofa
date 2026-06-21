@@ -128,6 +128,13 @@ jest.mock('@/components/LocationSections', () => {
   return { __esModule: true, default: () => React.createElement('div') };
 });
 
+const mockRouterPush = jest.fn();
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockRouterPush }),
+  usePathname: () => '/',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 const LocationChildrenExplorer = require('../components/locations/LocationChildrenExplorer').default;
 const LocationHeader = require('../components/locations/LocationHeader').default;
 const LocationRelatedLocations = require('../components/locations/LocationRelatedLocations').default;
@@ -246,7 +253,8 @@ describe('LocationChildrenExplorer', () => {
     await cleanup(root, container);
   });
 
-  test('shows selected child preview card when a pill is clicked', async () => {
+  test('clicking a pill navigates directly to that child location page', async () => {
+    mockRouterPush.mockClear();
     const children = [makeChild(1, 'Attica', 'Αττική', 'attiki')];
     const { container, root } = await renderComponent(LocationChildrenExplorer, {
       location,
@@ -257,14 +265,15 @@ describe('LocationChildrenExplorer', () => {
     await act(async () => {
       pill.click();
     });
-    // Preview card should show the selected child name and an "open" link
-    expect(container.textContent).toContain('Αττική');
+    // Primary click must navigate — no preview card or "Άνοιγμα" link should appear
+    expect(mockRouterPush).toHaveBeenCalledWith('/locations/attiki');
     const openLink = container.querySelector('a[href="/locations/attiki"]');
-    expect(openLink).not.toBeNull();
+    expect(openLink).toBeNull();
     await cleanup(root, container);
   });
 
-  test('deselects child when the same pill is clicked again', async () => {
+  test('clicking the same pill twice navigates to the same location both times', async () => {
+    mockRouterPush.mockClear();
     const children = [makeChild(1, 'Attica', 'Αττική', 'attiki')];
     const { container, root } = await renderComponent(LocationChildrenExplorer, {
       location,
@@ -272,17 +281,15 @@ describe('LocationChildrenExplorer', () => {
       loading: false,
     });
     const pill = container.querySelector('button[role="listitem"]');
-    // First click selects
+    // First click
     await act(async () => { pill.click(); });
-    expect(container.querySelector('a[href="/locations/attiki"]')).not.toBeNull();
-    // Second click deselects
+    // Second click
     await act(async () => { pill.click(); });
-    // Preview link should be gone
-    const links = Array.from(container.querySelectorAll('a[href="/locations/attiki"]'));
-    // No preview card — link may not exist anymore
-    const previewCard = container.querySelector('.bg-blue-50.rounded-lg');
-    // After deselect, there should be no preview card with flex layout
-    // We just check no "Άνοιγμα" button exists
+    // Both clicks should trigger navigation
+    expect(mockRouterPush).toHaveBeenCalledTimes(2);
+    expect(mockRouterPush).toHaveBeenNthCalledWith(1, '/locations/attiki');
+    expect(mockRouterPush).toHaveBeenNthCalledWith(2, '/locations/attiki');
+    // No "Άνοιγμα" preview link should exist at any point
     const openLinks = container.querySelectorAll('a');
     const hasOpenButton = Array.from(openLinks).some((a) =>
       a.textContent.trim().startsWith('Άνοιγμα')
@@ -373,7 +380,7 @@ describe('LocationChildrenExplorer', () => {
     await cleanup(root, container);
   });
 
-  test('polygonLayers styleFeature returns POLY_HOVER for hovered child and POLY_SELECTED for selected', async () => {
+  test('polygonLayers styleFeature returns POLY_HOVER for hovered child', async () => {
     const children = [
       makeChild(1, 'Attica', 'Αττική', 'attiki', true),
       makeChild(2, 'Crete', 'Κρήτη', 'kriti', true),
@@ -394,18 +401,44 @@ describe('LocationChildrenExplorer', () => {
     const defaultStyle = polyLayer.styleFeature(attikiFeature, baseStyle);
     expect(defaultStyle).toBe(baseStyle);
 
-    // Click Attica pill to select it → styleFeature should return POLY_SELECTED for attiki
-    const attikaPill = Array.from(container.querySelectorAll('button[role="listitem"]'))
-      .find((p) => p.textContent.trim() === 'Αττική');
-    await act(async () => { attikaPill.click(); });
+    // Simulate polygon hover from map → styleFeature should return POLY_HOVER for attiki
+    await act(async () => {
+      polyLayer.onFeatureHover({ properties: { slug: 'attiki' } });
+    });
 
-    // After re-render, get fresh polygonLayers
+    // After hover, get fresh polygonLayers
     const polyLayer2 = global.__baseMapLastProps?.polygonLayers?.[0];
-    const selectedStyle = polyLayer2.styleFeature(attikiFeature, baseStyle);
-    // Should be POLY_SELECTED (fillOpacity 0.35)
-    expect(selectedStyle).toMatchObject({ fillOpacity: 0.35 });
+    // hoveredChildIdRef is set so styleFeature returns POLY_HOVER (fillOpacity 0.28)
+    expect(polyLayer2.styleFeature(attikiFeature, baseStyle)).toMatchObject({ fillOpacity: 0.28 });
     // Kriti should still be default
     expect(polyLayer2.styleFeature(kritiFeature, baseStyle)).toBe(baseStyle);
+
+    await cleanup(root, container);
+  });
+
+  test('map feature click (onFeatureClick) navigates to that location page', async () => {
+    mockRouterPush.mockClear();
+    const children = [makeChild(1, 'Attica', 'Αττική', 'attiki', true)];
+    const { container, root } = await renderComponent(LocationChildrenExplorer, {
+      location,
+      children,
+      loading: false,
+    });
+
+    const polyLayer = global.__baseMapLastProps?.polygonLayers?.[0];
+    expect(typeof polyLayer.onFeatureClick).toBe('function');
+
+    // Simulate polygon click from map
+    await act(async () => {
+      polyLayer.onFeatureClick({ properties: { slug: 'attiki' } });
+    });
+
+    expect(mockRouterPush).toHaveBeenCalledWith('/locations/attiki');
+    // No preview card should appear
+    const openLinks = Array.from(container.querySelectorAll('a')).filter((a) =>
+      a.textContent.trim().startsWith('Άνοιγμα')
+    );
+    expect(openLinks).toHaveLength(0);
 
     await cleanup(root, container);
   });
@@ -531,7 +564,8 @@ describe('LocationChildrenExplorer', () => {
     await cleanup(root, tc);
   });
 
-  test('selected child preview card shows userCount and moderator when available', async () => {
+  test('pill click navigates to location even when child has userCount and moderatorPreview', async () => {
+    mockRouterPush.mockClear();
     const mod = { firstNameNative: 'Νίκος', lastNameNative: 'Αλεξίου', username: 'nalexiou' };
     const children = [makeChild(1, 'Attica', 'Αττική', 'attiki', false, { userCount: 15, moderatorPreview: mod })];
     const { container, root } = await renderComponent(LocationChildrenExplorer, {
@@ -542,9 +576,12 @@ describe('LocationChildrenExplorer', () => {
     const pill = container.querySelector('button[role="listitem"]');
     await act(async () => { pill.click(); });
 
-    expect(container.textContent).toContain('15');
-    expect(container.textContent).toContain('Νίκος');
-    expect(container.textContent).toContain('Αλεξίου');
+    // Navigates directly — no preview card with user/moderator info shown in DOM
+    expect(mockRouterPush).toHaveBeenCalledWith('/locations/attiki');
+    const openLinks = Array.from(container.querySelectorAll('a')).filter((a) =>
+      a.textContent.trim().startsWith('Άνοιγμα')
+    );
+    expect(openLinks).toHaveLength(0);
     await cleanup(root, container);
   });
 
@@ -561,12 +598,35 @@ describe('LocationChildrenExplorer', () => {
       loading: false,
     });
 
-    const { markers, polygonLayers, onMarkerHover, onMarkersReady } = global.__baseMapLastProps;
+    const { markers, polygonLayers, onMarkerHover, onMarkersReady, onMarkerClick } = global.__baseMapLastProps;
     expect(Array.isArray(markers)).toBe(true);
     expect(markers).toHaveLength(2);
     expect(polygonLayers).toHaveLength(1);
     expect(typeof onMarkerHover).toBe('function');
     expect(typeof onMarkersReady).toBe('function');
+    expect(typeof onMarkerClick).toBe('function');
+
+    await cleanup(root, container);
+  });
+
+  test('marker click (onMarkerClick) navigates to that location page', async () => {
+    mockRouterPush.mockClear();
+    const children = [
+      { id: 1, name: 'Attica', name_local: 'Αττική', slug: 'attiki', type: 'prefecture', lat: 38.0, lng: 23.8, boundary_geojson: null },
+      { id: 2, name: 'Crete', name_local: 'Κρήτη', slug: 'kriti', type: 'prefecture', lat: 35.3, lng: 24.9, boundary_geojson: null },
+    ];
+    const { container, root } = await renderComponent(LocationChildrenExplorer, {
+      location,
+      children,
+      loading: false,
+    });
+
+    const { onMarkerClick } = global.__baseMapLastProps;
+    expect(typeof onMarkerClick).toBe('function');
+
+    // Simulate clicking the Attica marker
+    await act(async () => { onMarkerClick('1'); });
+    expect(mockRouterPush).toHaveBeenCalledWith('/locations/attiki');
 
     await cleanup(root, container);
   });

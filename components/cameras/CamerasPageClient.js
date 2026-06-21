@@ -270,11 +270,24 @@ export default function CamerasPageClient() {
   }, [activeFilter, allCameras]);
 
   const highlightedMarkerId = hoveredCardId || hoveredMarkerId || focusedMarkerId || null;
-  const markers = buildCameraMarkers(filteredCameras, highlightedMarkerId);
-  const bounds = getMapBounds(markers);
-  const mapCenter = markers.length > 0
-    ? [markers[0].lat, markers[0].lng]
-    : GREECE_CENTER;
+  const markers = useMemo(
+    () => buildCameraMarkers(filteredCameras, highlightedMarkerId),
+    [filteredCameras, highlightedMarkerId]
+  );
+  // Stable bounds and center — derived from filteredCameras coordinates only so that
+  // BaseMap.fitBounds is NOT re-triggered when hover/focus state changes (which only
+  // affect marker icon variant, not the viewport).  fitBounds fires only when the
+  // camera data or the active filter actually changes.
+  const bounds = useMemo(() => {
+    const pts = filteredCameras
+      .filter(hasMapLocation)
+      .map((c) => ({ lat: Number(c.mapLocation.lat), lng: Number(c.mapLocation.lng) }));
+    return getMapBounds(pts);
+  }, [filteredCameras]);
+  const mapCenter = useMemo(() => {
+    const first = filteredCameras.find(hasMapLocation);
+    return first ? [Number(first.mapLocation.lat), Number(first.mapLocation.lng)] : GREECE_CENTER;
+  }, [filteredCameras]);
   const unmappedCount = filteredCameras.length - markers.length;
 
   const filters = [
