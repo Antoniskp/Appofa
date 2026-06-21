@@ -253,4 +253,61 @@ describe('CamerasPageClient', () => {
 
     expect(windowOpenSpy).not.toHaveBeenCalled();
   });
+
+  test('hover on camera card does not change the bounds prop (avoids map zoom reset)', async () => {
+    useAsyncData.mockReturnValue({
+      data: [
+        {
+          id: '1:0',
+          label: 'Harbour camera',
+          url: 'https://cam.example.com/harbour.jpg',
+          embedType: 'image',
+          sourceLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.8, lng: 23.6 },
+          exactCoordinates: { lat: 37.91, lng: 23.71 },
+          mapLocation: { id: 1, name: 'Port town', slug: 'port-town', lat: 37.91, lng: 23.71 },
+          mapLocationSource: 'camera',
+        },
+        {
+          id: '2:0',
+          label: 'Center cam',
+          url: 'https://cam.example.com/center',
+          embedType: 'link',
+          sourceLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+          exactCoordinates: null,
+          mapLocation: { id: 2, name: 'Center', slug: 'center', lat: 37.9, lng: 23.7 },
+          mapLocationSource: 'sourceLocation',
+        },
+      ],
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+
+    await act(async () => {
+      root.render(React.createElement(CamerasPageClient));
+    });
+
+    // Capture the bounds prop from the initial render
+    const initialBounds = baseMapRenderSpy.mock.calls[0][0].bounds;
+    expect(initialBounds).not.toBeNull();
+
+    // Hover a camera marker from the map — this changes hoveredMarkerId state (triggers re-render).
+    // (React's mouseenter isn't reliably triggered via dispatchEvent in JSDOM; use marker
+    // mouseover which the mock BaseMap converts into onMarkerHover.)
+    const marker = container.querySelector('[data-testid="marker-1:0"]');
+    await act(async () => {
+      marker.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+    });
+
+    // BaseMap re-renders but the bounds reference must be the SAME object:
+    // memoized bounds depend only on filteredCameras (not hover state), so fitBounds
+    // must NOT be triggered again by the hover.
+    const latestBounds = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0].bounds;
+    expect(latestBounds).toBe(initialBounds);
+
+    // Also verify the hovered marker receives the 'hovered' variant (icon still updates)
+    const lastMarkers = baseMapRenderSpy.mock.calls[baseMapRenderSpy.mock.calls.length - 1][0].markers;
+    const hoveredMarker = lastMarkers.find((m) => m.variant === 'hovered');
+    expect(hoveredMarker).toBeDefined();
+  });
 });
