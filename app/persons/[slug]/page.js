@@ -9,7 +9,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
-import { getPartyById } from '@/lib/utils/politicalParties';
+import { getPartyById, POSITION_LABELS, formatPoliticalPosition } from '@/lib/utils/politicalParties';
 import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
 import ReportButton from '@/components/ReportButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
@@ -120,20 +120,44 @@ export default function PersonProfilePage({ params }) {
                     Εκλογική Περιφέρεια: {profile.constituency.name}
                   </p>
                 )}
-                {profile.partyId && (() => {
-                  const party = getPartyById(profile.partyId);
-                  return party ? (
-                    <span
-                      className={`mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${party.colorLight}`}
-                    >
-                      <span
-                        className="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: party.color }}
-                      />
-                      {party.name}
-                    </span>
-                  ) : null;
-                })()}
+                {/* Political affiliations — prefer new model, fallback to legacy partyId */}
+                {profile.politicalAffiliations && profile.politicalAffiliations.length > 0
+                 ? (
+                   <div className="mt-1 flex flex-wrap gap-1">
+                     {profile.politicalAffiliations.map((aff) => {
+                       const org = aff.organization;
+                       if (!org) return null;
+                       return (
+                         <span
+                           key={aff.id}
+                           className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                           title={formatPoliticalPosition(org.politicalPosition) ?? undefined}
+                         >
+                           {org.logo && (
+                             <img src={org.logo} alt={org.name} className="h-3 w-3 rounded-full object-cover flex-shrink-0" />
+                           )}
+                           {org.name}
+                         </span>
+                       );
+                     })}
+                   </div>
+                 )
+                 : profile.partyId && (() => {
+                   // Legacy fallback
+                   const party = getPartyById(profile.partyId);
+                   return party ? (
+                     <span
+                       className={`mt-1 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${party.colorLight}`}
+                     >
+                       <span
+                         className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                         style={{ backgroundColor: party.color }}
+                       />
+                       {party.name}
+                     </span>
+                   ) : null;
+                 })()
+                }
                 {profile.professions && profile.professions.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1">
                     {profile.professions.map((entry, idx) => (
