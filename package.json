@@ -84,7 +84,9 @@
     },
     "next-intl": {
       "postcss": ">=8.5.10"
-    }
+    },
+    "undici": ">=6.27.0",
+    "js-yaml": ">=4.2.0"
   },
   "devDependencies": {
     "eslint": "^9.39.3",
