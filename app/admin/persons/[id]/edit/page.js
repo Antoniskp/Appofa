@@ -3,10 +3,9 @@
 import { use, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { personAPI, locationAPI } from '@/lib/api';
+import { personAPI, locationAPI, organizationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import { getAllParties } from '@/lib/utils/politicalParties';
 import { AVATAR_ACCEPTED_TYPES, isAcceptedAvatarFile } from '@/lib/utils/avatarFileValidation';
 import { normalizeUploadImage, isHeicFile, UPLOAD_PRESETS } from '@/lib/utils/normalizeUploadImage';
 import NationalitySelector from '@/components/ui/NationalitySelector';
@@ -71,6 +70,7 @@ function EditPersonProfilePageContent({ params }) {
     partyId: '',
   });
   const [politicalPositions, setPoliticalPositions] = useState([{ key: '', value: '' }]);
+  const [partyOrganizations, setPartyOrganizations] = useState([]);
 
   // Constituency cascading picker
   const [constPrefectures, setConstPrefectures] = useState([]);
@@ -93,6 +93,13 @@ function EditPersonProfilePageContent({ params }) {
     [id],
     { initialData: null }
   );
+
+  // Load party organizations on mount
+  useEffect(() => {
+    organizationAPI.getAll({ type: 'party', limit: 100 })
+      .then((res) => setPartyOrganizations(res.organizations || []))
+      .catch(() => {});
+  }, []);
 
   // Load person countries on mount
   useEffect(() => {
@@ -604,8 +611,8 @@ function EditPersonProfilePageContent({ params }) {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Κανένα / Ανεξάρτητος</option>
-                    {getAllParties().map((party) => (
-                      <option key={party.id} value={party.id}>{party.abbreviation} — {party.name}</option>
+                    {partyOrganizations.map((org) => (
+                      <option key={org.id} value={org.slug}>{org.name}</option>
                     ))}
                   </select>
                 </div>

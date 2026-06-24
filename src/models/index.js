@@ -48,6 +48,7 @@ const Organization = require('./Organization');
 const OrganizationMember = require('./OrganizationMember');
 const OrganizationRole = require('./OrganizationRole');
 const OrganizationAnalytics = require('./OrganizationAnalytics');
+const UserPoliticalAffiliation = require('./UserPoliticalAffiliation');
 const NewsletterSubscriber = require('./NewsletterSubscriber');
 const NewsletterCampaign = require('./NewsletterCampaign');
 const NewsletterSendLog = require('./NewsletterSendLog');
@@ -464,6 +465,12 @@ OrganizationRole.belongsTo(Organization, { foreignKey: 'organizationId', as: 'or
 OrganizationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 OrganizationRole.belongsTo(User, { foreignKey: 'personId', as: 'personProfile' });
 
+// UserPoliticalAffiliation associations
+User.hasMany(UserPoliticalAffiliation, { foreignKey: 'userId', as: 'politicalAffiliations' });
+UserPoliticalAffiliation.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+UserPoliticalAffiliation.belongsTo(Organization, { foreignKey: 'organizationId', as: 'organization' });
+Organization.hasMany(UserPoliticalAffiliation, { foreignKey: 'organizationId', as: 'politicalAffiliations' });
+
 // PushSubscription associations
 PushSubscription.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(PushSubscription, { foreignKey: 'userId', as: 'pushSubscriptions' });
@@ -554,6 +561,7 @@ module.exports = {
   OrganizationMember,
   OrganizationRole,
   OrganizationAnalytics,
+  UserPoliticalAffiliation,
   NewsletterSubscriber,
   NewsletterCampaign,
   NewsletterSendLog,

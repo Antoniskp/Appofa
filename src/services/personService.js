@@ -2,7 +2,7 @@
 
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { User, Location, LocationLink, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick } = require('../models');
+const { User, Location, LocationLink, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick, Organization, UserPoliticalAffiliation } = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const {
@@ -15,7 +15,9 @@ const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/pr
 const politicalParties = require('../../config/politicalParties.json');
 
 const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
-const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
+// Legacy hardcoded party IDs — kept to validate existing User.partyId values during the
+// transition period while organizations are used as the new source of truth
+const LEGACY_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -66,7 +68,18 @@ const PROFILE_INCLUDE = [
     as: 'createdByModerator',
     attributes: ['id', 'username'],
     required: false
-  }
+  },
+  {
+    model: UserPoliticalAffiliation,
+    as: 'politicalAffiliations',
+    include: [
+      {
+        model: Organization,
+        as: 'organization',
+        attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified', 'politicalPosition'],
+      },
+    ],
+  },
 ];
 
 const SAFE_USER_ATTRS = [
@@ -89,9 +102,19 @@ function validateExpertiseArea(expertiseArea) {
 
 // ─── Party ID validation helper ──────────────────────────────────────────────
 
-function validatePartyId(partyId) {
+async function validatePartyId(partyId) {
   if (partyId === undefined || partyId === null || partyId === '') return null;
-  if (!VALID_PARTY_IDS.has(partyId)) throw new ServiceError(400, 'Invalid political party.');
+  if (typeof partyId !== 'string' || partyId.length > 100) {
+    throw new ServiceError(400, 'Invalid political party.');
+  }
+  // Accept legacy config IDs
+  if (LEGACY_PARTY_IDS.has(partyId)) return partyId;
+  // Accept organization slugs (type='party') from DB
+  const org = await Organization.findOne({
+    where: { slug: partyId, type: 'party' },
+    attributes: ['id', 'slug'],
+  });
+  if (!org) throw new ServiceError(400, 'Invalid political party.');
   return partyId;
 }
 
@@ -206,7 +229,7 @@ async function createProfile(moderatorUserId, moderatorRole, data) {
   if (!lastNameEn || !lastNameEn.trim()) throw new ServiceError(400, 'English last name is required.');
 
   const validatedExpertiseArea = validateExpertiseArea(expertiseArea);
-  const validatedPartyId = validatePartyId(partyId);
+  const validatedPartyId = await validatePartyId(partyId);
 
   const base = generateSlug(firstNameEn.trim(), lastNameEn.trim());
   const slug = await ensureUniqueSlug(base);
@@ -438,7 +461,7 @@ async function updateProfile(requestingUserId, requestingRole, profileId, data) 
   }
 
   if (data.partyId !== undefined) {
-    updates.partyId = validatePartyId(data.partyId);
+    updates.partyId = await validatePartyId(data.partyId);
   }
 
   const previousHomeLocationId = profile.homeLocationId;

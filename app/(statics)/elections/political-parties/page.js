@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { getAllParties } from '@/lib/utils/politicalParties';
+import { getAllParties, POSITION_LABELS } from '@/lib/utils/politicalParties';
 import { StaticPageLayout } from '@/components/layout';
 
 const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
@@ -24,16 +24,6 @@ export const metadata = {
   alternates: {
     canonical: `${SITE_URL}/elections/political-parties`,
   },
-};
-
-const POSITION_LABELS = {
-  'far-left': 'Ακροαριστερά',
-  'left': 'Αριστερά',
-  'center-left': 'Κεντροαριστερά',
-  'center-right': 'Κεντροδεξιά',
-  'right': 'Δεξιά',
-  'far-right': 'Ακροδεξιά',
-  'independent': 'Ανεξάρτητος',
 };
 
 export default function PoliticalPartiesPage() {

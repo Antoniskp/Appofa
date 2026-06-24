@@ -17,7 +17,7 @@ import ArticleCard from '@/components/articles/ArticleCard';
 import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
-import { getPartyById } from '@/lib/utils/politicalParties';
+import { getPartyById, formatPoliticalPosition } from '@/lib/utils/politicalParties';
 import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
 import TwitchEmbed from '@/components/profile/TwitchEmbed';
 
@@ -303,20 +303,40 @@ export default function PublicUserProfilePage() {
                         {user.role}
                       </Badge>
                     )}
-                    {user.partyId && (() => {
-                      const party = getPartyById(user.partyId);
-                      return party ? (
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${party.colorLight}`}
-                        >
-                          <span
-                            className="inline-block w-2 h-2 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: party.color }}
-                          />
-                          {party.abbreviation}
-                        </span>
-                      ) : null;
-                    })()}
+                    {/* New: political affiliations from UserPoliticalAffiliation */}
+                    {user.politicalAffiliations && user.politicalAffiliations.length > 0
+                      ? user.politicalAffiliations.map((aff) => {
+                          const org = aff.organization;
+                          if (!org) return null;
+                          return (
+                            <span
+                              key={aff.id}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                            title={formatPoliticalPosition(org.politicalPosition) ?? undefined}
+                            >
+                              {org.logo && (
+                                <img src={org.logo} alt={org.name} className="h-3 w-3 rounded-full object-cover flex-shrink-0" />
+                              )}
+                              {org.name}
+                            </span>
+                          );
+                        })
+                      : user.partyId && (() => {
+                          // Legacy fallback: show old partyId from config
+                          const party = getPartyById(user.partyId);
+                          return party ? (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${party.colorLight}`}
+                            >
+                              <span
+                                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: party.color }}
+                              />
+                              {party.abbreviation}
+                            </span>
+                          ) : null;
+                        })()
+                    }
                     <FollowButton
                       targetUserId={user.id}
                       onCountChange={() => setCountsKey((k) => k + 1)}

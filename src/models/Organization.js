@@ -48,6 +48,11 @@ const Organization = sequelize.define('Organization', {
     references: { model: 'Organizations', key: 'id' },
     onDelete: 'SET NULL',
   },
+  politicalPosition: {
+    type: DataTypes.ENUM('far-left', 'left', 'center-left', 'center-right', 'right', 'far-right', 'independent'),
+    allowNull: true,
+    comment: 'Ideological position on the political spectrum — only applicable to type="party" organizations',
+  },
   isPublic: {
     type: DataTypes.BOOLEAN,
     allowNull: false,

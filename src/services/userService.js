@@ -1,5 +1,5 @@
 const { Op } = require('sequelize');
-const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookmark, Follow, sequelize, UserLocationRole } = require('../models');
+const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookmark, Follow, sequelize, UserLocationRole, UserPoliticalAffiliation, Organization } = require('../models');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -136,7 +136,18 @@ async function getUserProfile(userId) {
             ]
           }
         ]
-      }
+      },
+      {
+        model: UserPoliticalAffiliation,
+        as: 'politicalAffiliations',
+        include: [
+          {
+            model: Organization,
+            as: 'organization',
+            attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified', 'politicalPosition'],
+          },
+        ],
+      },
     ]
   });
 
@@ -962,7 +973,20 @@ async function getPublicUserProfile(userId, viewer = null) {
 
   const user = await User.findOne({
     where: { id: userId },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility'],
+    include: [
+      {
+        model: UserPoliticalAffiliation,
+        as: 'politicalAffiliations',
+        include: [
+          {
+            model: Organization,
+            as: 'organization',
+            attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified', 'politicalPosition'],
+          },
+        ],
+      },
+    ],
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
@@ -987,7 +1011,20 @@ async function getPublicUserProfileByUsername(username, viewer = null) {
 
   const user = await User.findOne({
     where: { username: username.trim() },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility']
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility'],
+    include: [
+      {
+        model: UserPoliticalAffiliation,
+        as: 'politicalAffiliations',
+        include: [
+          {
+            model: Organization,
+            as: 'organization',
+            attributes: ['id', 'name', 'slug', 'type', 'logo', 'isVerified', 'politicalPosition'],
+          },
+        ],
+      },
+    ],
   });
 
   if (!user) throw new ServiceError(404, 'User not found or not visible.');
