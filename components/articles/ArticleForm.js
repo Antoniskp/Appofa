@@ -10,6 +10,7 @@ import FormSelect from '@/components/ui/FormSelect';
 import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector';
 import TagInput from '@/components/ui/TagInput';
 import VideoEmbedField from '@/components/articles/VideoEmbedField';
+import ArticleBannerImageField from '@/components/articles/ArticleBannerImageField';
 import { locationAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
@@ -30,6 +31,7 @@ export default function ArticleForm({
   const { user } = useAuth();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const isAdminOrModerator = user?.role === 'admin' || user?.role === 'moderator';
+  const canManageArticleMedia = ['admin', 'moderator', 'editor'].includes(user?.role);
   const contentInputRef = useRef(null);
   const [contentSelection, setContentSelection] = useState({ start: 0, end: 0 });
   const [tagSuggestions, setTagSuggestions] = useState([]);
@@ -495,12 +497,12 @@ export default function ArticleForm({
       />
  
       {!formData.sourceUrl && (
-        <FormInput
-          name="bannerImageUrl"
-            label={tArticles('form_banner_url_label')}
+        <ArticleBannerImageField
           value={formData.bannerImageUrl}
           onChange={handleInputChange}
-            placeholder={tArticles('form_banner_url_placeholder')}
+          canManageMedia={canManageArticleMedia}
+          label={tArticles('form_banner_url_label')}
+          placeholder={tArticles('form_banner_url_placeholder')}
         />
       )}
 

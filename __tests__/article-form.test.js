@@ -43,8 +43,17 @@ const mockLocationAPI = {
   }))
 };
 
+const mockMediaAPI = {
+  list: jest.fn(() => Promise.resolve({ success: true, media: [] })),
+  uploadArticleImage: jest.fn(() => Promise.resolve({
+    success: true,
+    media: { id: 1, url: '/uploads/media/test.webp' },
+  })),
+};
+
 jest.mock('@/lib/api', () => ({
   locationAPI: mockLocationAPI,
+  mediaAPI: mockMediaAPI,
   tagAPI: {
     getSuggestions: jest.fn(() => Promise.resolve({ tags: [] })),
   },
@@ -382,6 +391,45 @@ describe('ArticleForm Component', () => {
     const approvedCheckbox = container.querySelector('input[name="approved"]');
     expect(approvedCheckbox).toBeTruthy();
     expect(approvedCheckbox.type).toBe('checkbox');
+
+    await act(async () => { root.unmount(); });
+  });
+
+  test('banner image upload controls are shown for article media managers', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 3, role: 'editor' } });
+    const ArticleForm = require('../components/articles/ArticleForm').default;
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    expect(container.textContent).toContain('Upload photo');
+    expect(container.textContent).toContain('Refresh library');
+    expect(container.querySelector('input[type="file"]')).toBeTruthy();
+    expect(mockMediaAPI.list).toHaveBeenCalledWith({ usageType: 'article_banner', limit: 12 });
+
+    await act(async () => { root.unmount(); });
+  });
+
+  test('banner image upload controls are hidden for regular viewers', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 4, role: 'viewer' } });
+    const ArticleForm = require('../components/articles/ArticleForm').default;
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    expect(container.textContent).not.toContain('Upload photo');
+    expect(container.querySelector('input[type="file"]')).toBeNull();
+    expect(mockMediaAPI.list).not.toHaveBeenCalled();
 
     await act(async () => { root.unmount(); });
   });
