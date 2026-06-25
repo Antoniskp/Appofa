@@ -4,6 +4,7 @@ const path = require('path');
 const dbConfig = require('../config/database');
 const { Op } = require('sequelize');
 const { Organization, OrganizationMember, OrganizationAnalytics, Poll, Suggestion } = require('../models');
+const { escapeLikePattern } = require('../utils/validators');
 
 const { types: ORGANIZATION_TYPES } = require(path.resolve(__dirname, '../../config/organizationTypes.json'));
 
@@ -46,7 +47,7 @@ function buildSearchWhere(search) {
   if (!cleanSearch) return {};
 
   const likeOp = dbConfig.getDialect() === 'postgres' ? Op.iLike : Op.like;
-  const escaped = cleanSearch.replace(/[%_\\]/g, '\\$&');
+  const escaped = escapeLikePattern(cleanSearch);
 
   return {
     [Op.or]: [
