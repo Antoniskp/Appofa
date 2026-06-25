@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { articleAPI, pollAPI, suggestionAPI, manifestAPI, locationAPI, tagAPI, homepageSettingsAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
+import HomeActionLanes from '@/components/HomeActionLanes';
 import GovernmentSnapshotSection from '@/components/GovernmentSnapshotSection';
 import HomepageInfoSection from '@/components/HomepageInfoSection';
 import ArticleCard from '@/components/articles/ArticleCard';
@@ -277,6 +278,7 @@ export default function HomePage() {
       {homepageSettings?.infoSection?.enabled && isVisibleForAudience(homepageSettings?.infoSection?.audience) && (
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
+      <HomeActionLanes user={user} />
 
       {/* CTA / Engagement Banner */}
       <section className="bg-gradient-to-r from-blue-600 to-blue-800">
