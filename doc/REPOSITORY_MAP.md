@@ -33,7 +33,7 @@ This instruction is permanent and must never be removed.
 - [Services (15)](#services-15)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (140)](#frontend-pages-140)
+- [Frontend Pages (141)](#frontend-pages-141)
 - [Components (154)](#components-154)
 - [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
@@ -497,7 +497,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (140)
+## Frontend Pages (141)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -567,7 +567,7 @@ Appofa/
 | `/admin/removal-requests` | Removal request admin |
 | `/admin/reports` | Report admin |
 
-### Static Pages (50 pages in `(statics)` layout)
+### Static Pages (51 pages in `(statics)` layout)
 Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, github-files, etc.
 
 - `/citizen-help/regions-electoral-map` now renders reusable **Αναλυτική Χαρτογράφηση** UI: map + selected-region detail panel with district seats, fed by external JSON/GeoJSON datasets in `config/map-data/` (`regions.metadata.json`, `electoral-districts.metadata.json`, `regions.geojson`, `electoral-districts.geojson`) joined by stable IDs (`id`, `regionId`); region/district labels link into Appofa locations via search/type query links when metadata includes location hints.
@@ -583,6 +583,7 @@ Informational content: about, mission, contact, contribute, instructions, FAQ, t
 | `/platform/features` | Platform features overview |
 | `/platform/modules` | Application modules and pages |
 | `/platform/cost` | Estimated development and maintenance cost |
+| `/platform/technology` | Dedicated technology stack showcase page with grouped logo-style cards and outbound links |
 | `/platform/badges` | Badge system and acquisition |
 | `/platform/security` | **Canonical** public security overview — auth, CSRF, rate limiting, geo controls, incident response |
 | `/platform/production-rules` | **Canonical** production/deployment rules — PR-only workflow, CI checks, testing standards, AI agent rules |
