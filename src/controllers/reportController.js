@@ -4,6 +4,13 @@ const { Report, User } = require('../models');
 
 const CONTENT_TYPES = ['article', 'person', 'poll', 'comment', 'candidate', 'user'];
 const CATEGORIES = ['misinformation', 'harassment', 'spam', 'privacy_violation', 'impersonation', 'inappropriate_content', 'other'];
+const REPORT_STATUSES = ['pending', 'reviewed', 'dismissed', 'actioned'];
+
+function parseListPagination(query = {}) {
+  const page = Math.max(1, parseInt(query.page, 10) || 1);
+  const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 20));
+  return { page, limit, offset: (page - 1) * limit };
+}
 
 const reportController = {
   // POST /api/reports — public (optionalAuth)
@@ -72,12 +79,22 @@ const reportController = {
 
   // GET /api/reports — admin/moderator
   getReports: async (req, res) => {
-    const { page = 1, limit = 20, status, contentType } = req.query;
-    const offset = (parseInt(page) - 1) * parseInt(limit);
+    const { status, contentType } = req.query;
+    const { page, limit, offset } = parseListPagination(req.query);
 
     const where = {};
-    if (status) where.status = status;
-    if (contentType) where.contentType = contentType;
+    if (status) {
+      if (!REPORT_STATUSES.includes(status)) {
+        return res.status(400).json({ success: false, message: 'Invalid report status.' });
+      }
+      where.status = status;
+    }
+    if (contentType) {
+      if (!CONTENT_TYPES.includes(contentType)) {
+        return res.status(400).json({ success: false, message: 'Invalid contentType.' });
+      }
+      where.contentType = contentType;
+    }
 
     const { count, rows } = await Report.findAndCountAll({
       where,
@@ -85,7 +102,7 @@ const reportController = {
         { model: User, as: 'reporter', attributes: ['id', 'username'], required: false },
         { model: User, as: 'reviewer', attributes: ['id', 'username'], required: false }
       ],
-      limit: parseInt(limit),
+      limit,
       offset,
       order: [['createdAt', 'DESC']]
     });
@@ -96,8 +113,9 @@ const reportController = {
         reports: rows,
         pagination: {
           total: count,
-          page: parseInt(page),
-          totalPages: Math.ceil(count / parseInt(limit))
+          page,
+          totalPages: Math.ceil(count / limit),
+          itemsPerPage: limit
         }
       }
     });

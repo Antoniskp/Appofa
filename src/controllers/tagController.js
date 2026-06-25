@@ -1,5 +1,6 @@
 const { Tag, TaggableItem, sequelize } = require('../models');
 const { Op } = require('sequelize');
+const { escapeLikePattern } = require('../utils/validators');
 
 const VALID_ENTITY_TYPES = ['article', 'poll', 'suggestion'];
 
@@ -25,10 +26,11 @@ const getSuggestions = async (req, res) => {
     if (q && typeof q === 'string') {
       const prefix = q.trim().toLowerCase();
       if (prefix) {
+        const escapedPrefix = escapeLikePattern(prefix);
         const dialect = sequelize.getDialect();
         tagWhere.name = dialect === 'postgres'
-          ? { [Op.iLike]: `${prefix}%` }
-          : { [Op.like]: `${prefix}%` };
+          ? { [Op.iLike]: `${escapedPrefix}%` }
+          : { [Op.like]: `${escapedPrefix}%` };
       }
     }
 

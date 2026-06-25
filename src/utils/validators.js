@@ -241,6 +241,13 @@ const normalizeInteger = (value, fieldLabel, minValue, maxValue) => {
   return { value: numValue };
 };
 
+/**
+ * Escape special characters in SQL LIKE patterns.
+ * @param {*} value - The raw search text
+ * @returns {string}
+ */
+const escapeLikePattern = (value) => String(value).replace(/[\\%_]/g, '\\$&');
+
 module.exports = {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -251,4 +258,5 @@ module.exports = {
   normalizeEnum,
   normalizeUrl,
   normalizeInteger,
+  escapeLikePattern,
 };
