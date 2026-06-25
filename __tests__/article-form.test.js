@@ -407,10 +407,42 @@ describe('ArticleForm Component', () => {
       submitError: ''
     });
 
-    expect(container.textContent).toContain('Upload photo');
-    expect(container.textContent).toContain('Refresh library');
-    expect(container.querySelector('input[type="file"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="article-banner-upload-button"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="article-banner-refresh-button"]')).toBeTruthy();
+    expect(container.querySelector('[data-testid="article-banner-file-input"]')).toBeTruthy();
     expect(mockMediaAPI.list).toHaveBeenCalledWith({ usageType: 'article_banner', limit: 12 });
+
+    await act(async () => { root.unmount(); });
+  });
+
+  test('uploaded body images are inserted into article content as markdown', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 3, role: 'editor' } });
+    mockMediaAPI.uploadArticleImage.mockResolvedValueOnce({
+      success: true,
+      media: { id: 8, url: '/uploads/media/body.webp', originalName: 'body.webp' },
+    });
+    const ArticleForm = require('../components/articles/ArticleForm').default;
+
+    const { container, root } = await renderComponent(ArticleForm, {
+      article: null,
+      onSubmit: jest.fn(),
+      onCancel: jest.fn(),
+      isSubmitting: false,
+      submitError: ''
+    });
+
+    const fileInput = container.querySelector('[data-testid="article-content-file-input"]');
+    const contentTextarea = container.querySelector('textarea[name="content"]');
+    const file = new File(['image'], 'body.webp', { type: 'image/webp' });
+
+    await act(async () => {
+      Object.defineProperty(fileInput, 'files', { value: [file], configurable: true });
+      fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(mockMediaAPI.uploadArticleImage).toHaveBeenCalledWith(file, { usageType: 'article_content' });
+    expect(contentTextarea.value).toContain('![body.webp](/uploads/media/body.webp)');
 
     await act(async () => { root.unmount(); });
   });
@@ -427,7 +459,8 @@ describe('ArticleForm Component', () => {
       submitError: ''
     });
 
-    expect(container.textContent).not.toContain('Upload photo');
+    expect(container.querySelector('[data-testid="article-banner-upload-button"]')).toBeNull();
+    expect(container.querySelector('[data-testid="article-content-upload-button"]')).toBeNull();
     expect(container.querySelector('input[type="file"]')).toBeNull();
     expect(mockMediaAPI.list).not.toHaveBeenCalled();
 

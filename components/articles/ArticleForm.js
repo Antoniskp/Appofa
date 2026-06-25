@@ -11,7 +11,7 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import TagInput from '@/components/ui/TagInput';
 import VideoEmbedField from '@/components/articles/VideoEmbedField';
 import ArticleBannerImageField from '@/components/articles/ArticleBannerImageField';
-import { locationAPI, tagAPI } from '@/lib/api';
+import { locationAPI, mediaAPI, tagAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import { isCategoryRequired } from '@/lib/utils/articleTypes';
 import Tooltip from '@/components/ui/Tooltip';
@@ -64,6 +64,9 @@ export default function ArticleForm({
   const [isSummaryDirty, setIsSummaryDirty] = useState(false);
   // Embed preview data from VideoEmbedField
   const [embedPreview, setEmbedPreview] = useState(null);
+  const contentImageInputRef = useRef(null);
+  const [isContentImageUploading, setIsContentImageUploading] = useState(false);
+  const [contentImageUploadError, setContentImageUploadError] = useState('');
 
   // Initialize form data from article prop (edit mode)
   useEffect(() => {
@@ -457,6 +460,32 @@ export default function ArticleForm({
     insertAtCursor(`\n![${alt}](${url.trim()})\n`);
   };
 
+  const handleUploadContentImage = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsContentImageUploading(true);
+    setContentImageUploadError('');
+
+    try {
+      const response = await mediaAPI.uploadArticleImage(file, { usageType: 'article_content' });
+      const url = response.media?.url;
+      if (!url) {
+        throw new Error(tArticles('content_image_upload_failed'));
+      }
+
+      const alt = response.media?.altText || response.media?.originalName || tArticles('image_alt_default');
+      insertAtCursor(`\n![${alt}](${url})\n`);
+    } catch (err) {
+      setContentImageUploadError(err.message || tArticles('content_image_upload_failed'));
+    } finally {
+      setIsContentImageUploading(false);
+      if (contentImageInputRef.current) {
+        contentImageInputRef.current.value = '';
+      }
+    }
+  };
+
   const handleInsertVideo = () => {
     const url = window.prompt(tArticles('video_url_prompt'), 'https://');
     if (!url) return;
@@ -579,6 +608,27 @@ export default function ArticleForm({
           >
             {tArticles('format_image')}
           </button>
+          {canManageArticleMedia && (
+            <>
+              <button
+                type="button"
+                onClick={() => contentImageInputRef.current?.click()}
+                disabled={isContentImageUploading}
+                data-testid="article-content-upload-button"
+                className="rounded border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+              >
+                {isContentImageUploading ? tArticles('format_uploading_image') : tArticles('format_upload_image')}
+              </button>
+              <input
+                ref={contentImageInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                data-testid="article-content-file-input"
+                onChange={handleUploadContentImage}
+              />
+            </>
+          )}
           <button
             type="button"
             onClick={handleInsertVideo}
@@ -615,6 +665,7 @@ export default function ArticleForm({
             {tArticles('format_code')}
           </button>
         </div>
+        {contentImageUploadError && <AlertMessage className="mt-3" message={contentImageUploadError} />}
       </div>
       )}
 
