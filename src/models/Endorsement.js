@@ -2,12 +2,10 @@ const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
 
 const ENDORSEMENT_TOPICS = [
-  'Education',
-  'Economy',
-  'Health',
-  'Environment',
-  'Local Governance',
-  'Technology'
+  'Real Profile',
+  'Knows Personally',
+  'Worked Together',
+  'Local Connection'
 ];
 
 const Endorsement = sequelize.define('Endorsement', {
