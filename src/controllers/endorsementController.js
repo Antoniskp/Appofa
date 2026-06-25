@@ -173,7 +173,7 @@ const endorsementController = {
 
   /**
    * GET /api/endorsements/status?userId=...
-   * Returns which topics the current user has endorsed the target user for.
+   * Returns public counts plus the current user's endorsed topics when authenticated.
    */
   status: async (req, res) => {
     try {
@@ -183,12 +183,14 @@ const endorsementController = {
       }
       const endorsedId = idResult.value;
 
-      const endorsements = await Endorsement.findAll({
-        where: { endorserId: req.user.id, endorsedId },
-        attributes: ['topic']
-      });
-
-      const endorsedTopics = endorsements.map((e) => e.topic);
+      let endorsedTopics = [];
+      if (req.user?.id) {
+        const endorsements = await Endorsement.findAll({
+          where: { endorserId: req.user.id, endorsedId },
+          attributes: ['topic']
+        });
+        endorsedTopics = endorsements.map((e) => e.topic);
+      }
 
       // Also return per-topic counts for the target user
       const topicCounts = await Endorsement.findAll({
