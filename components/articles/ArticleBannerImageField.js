@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import FormInput from '@/components/ui/FormInput';
 import AlertMessage from '@/components/ui/AlertMessage';
 import { mediaAPI } from '@/lib/api';
@@ -28,7 +28,7 @@ export default function ArticleBannerImageField({
     });
   };
 
-  const loadMedia = async () => {
+  const loadMedia = useCallback(async () => {
     if (!canManageMedia) return;
     setIsLoading(true);
     setError('');
@@ -41,11 +41,11 @@ export default function ArticleBannerImageField({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [canManageMedia]);
 
   useEffect(() => {
     loadMedia();
-  }, [canManageMedia]);
+  }, [loadMedia]);
 
   const handleFileChange = async (event) => {
     const file = event.target.files?.[0];
