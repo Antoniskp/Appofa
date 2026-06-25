@@ -29,6 +29,17 @@ const TABS = [
 
 const TIER_EMOJI = { bronze: '🥉', silver: '🥈', gold: '🥇' };
 
+function getLocationBreadcrumb(location) {
+  if (!location) return null;
+  const parts = [];
+  let current = location;
+  while (current) {
+    parts.unshift(current.name);
+    current = current.parent;
+  }
+  return parts.join(' → ');
+}
+
 function BadgeImage({ slug, tier }) {
   const [imgError, setImgError] = useState(false);
   if (imgError) {
@@ -213,6 +224,110 @@ function ArticlesTab({ userId }) {
   );
 }
 
+function ProfileOverview({ user }) {
+  const homeLocation = getLocationBreadcrumb(user.homeLocation);
+  const hasProfessions = user.professions && user.professions.length > 0;
+  const hasExpertise = user.expertiseArea && user.expertiseArea.length > 0;
+  const hasSocialLinks = user.socialLinks && Object.values(user.socialLinks).some(Boolean);
+  const hasOverview = user.bio || homeLocation || hasProfessions || hasExpertise || hasSocialLinks || user.twitchChannel;
+
+  if (!hasOverview) {
+    return (
+      <Card>
+        <p className="text-sm text-gray-600">
+          This profile does not have a public summary yet.
+        </p>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <div className="space-y-5">
+        {user.bio && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-700 mb-1">Bio</h2>
+            <p className="text-sm text-gray-600 whitespace-pre-line">{user.bio}</p>
+          </section>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {homeLocation && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-700 mb-1">Home location</h2>
+              <p className="text-sm text-gray-600">{homeLocation}</p>
+            </section>
+          )}
+
+          {hasProfessions && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-700 mb-2">Επαγγελματική Ταυτότητα</h2>
+              <div className="flex flex-wrap gap-2">
+                {user.professions.map((entry, idx) => (
+                  <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
+                    {resolveProfessionLabel(entry)}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {hasExpertise && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-700 mb-2">Τομείς Εμπειρογνωμοσύνης</h2>
+              <div className="flex flex-wrap gap-2">
+                {user.expertiseArea.map((area) => (
+                  <span key={area} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
+                    {getExpertiseTagLabel(area)}
+                  </span>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+
+        {hasSocialLinks && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-700 mb-2">Links</h2>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(user.socialLinks).map(([key, url]) =>
+                url ? (
+                  <a
+                    key={key}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline capitalize"
+                  >
+                    {key}
+                  </a>
+                ) : null
+              )}
+            </div>
+          </section>
+        )}
+
+        {user.twitchChannel && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-700 mb-3">
+              Live on Twitch —{' '}
+              <a
+                href={`https://www.twitch.tv/${user.twitchChannel}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-purple-600 hover:underline"
+              >
+                twitch.tv/{user.twitchChannel}
+              </a>
+            </h2>
+            <TwitchEmbed channel={user.twitchChannel} />
+          </section>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export default function PublicUserProfilePage() {
   const params = useParams();
   const username = params?.username;
@@ -243,17 +358,6 @@ export default function PublicUserProfilePage() {
   const displayName = user?.firstNameNative && user?.lastNameNative
     ? `${user.firstNameNative} ${user.lastNameNative}`
     : user?.firstNameNative || user?.lastNameNative || '';
-
-  const getLocationBreadcrumb = (location) => {
-    if (!location) return null;
-    const parts = [];
-    let current = location;
-    while (current) {
-      parts.unshift(current.name);
-      current = current.parent;
-    }
-    return parts.join(' → ');
-  };
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -303,7 +407,6 @@ export default function PublicUserProfilePage() {
                         {user.role}
                       </Badge>
                     )}
-                    {/* New: political affiliations from UserPoliticalAffiliation */}
                     {user.politicalAffiliations && user.politicalAffiliations.length > 0
                       ? user.politicalAffiliations.map((aff) => {
                           const org = aff.organization;
@@ -322,7 +425,6 @@ export default function PublicUserProfilePage() {
                           );
                         })
                       : user.partyId && (() => {
-                          // Legacy fallback: show old partyId from config
                           const party = getPartyById(user.partyId);
                           return party ? (
                             <span
@@ -353,99 +455,6 @@ export default function PublicUserProfilePage() {
               </div>
             </Card>
 
-            {user.homeLocation && (
-              <Card>
-                <h2 className="text-sm font-semibold text-gray-700 mb-1">Home location</h2>
-                <p className="text-sm text-gray-600">
-                  {getLocationBreadcrumb(user.homeLocation)}
-                </p>
-              </Card>
-            )}
-
-            {/* Professions & Expertise */}
-            {((user.professions && user.professions.length > 0) || (user.expertiseArea && user.expertiseArea.length > 0)) && (
-              <Card>
-                {user.professions && user.professions.length > 0 && (
-                  <div className="mb-3">
-                    <h2 className="text-sm font-semibold text-gray-700 mb-2">Επαγγελματική Ταυτότητα</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {user.professions.map((entry, idx) => (
-                        <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">
-                          {resolveProfessionLabel(entry)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {user.expertiseArea && user.expertiseArea.length > 0 && (
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-700 mb-2">Τομείς Εμπειρογνωμοσύνης</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {user.expertiseArea.map((area) => (
-                        <span key={area} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700">
-                          {getExpertiseTagLabel(area)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {(user.bio || (user.socialLinks && Object.keys(user.socialLinks).length > 0)) && (
-              <Card>
-                {user.bio && (
-                  <div className="mb-3">
-                    <h2 className="text-sm font-semibold text-gray-700 mb-1">Bio</h2>
-                    <p className="text-sm text-gray-600 whitespace-pre-line">{user.bio}</p>
-                  </div>
-                )}
-                {user.socialLinks && Object.keys(user.socialLinks).length > 0 && (
-                  <div>
-                    <h2 className="text-sm font-semibold text-gray-700 mb-2">Links</h2>
-                    <div className="flex flex-wrap gap-2">
-                      {Object.entries(user.socialLinks).map(([key, url]) =>
-                        url ? (
-                          <a
-                            key={key}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline capitalize"
-                          >
-                            {key}
-                          </a>
-                        ) : null
-                      )}
-                    </div>
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {/* Twitch Stream */}
-            {user.twitchChannel && (
-              <Card>
-                <h2 className="text-sm font-semibold text-gray-700 mb-3">
-                  🎮 Live on Twitch —{' '}
-                  <a
-                    href={`https://www.twitch.tv/${user.twitchChannel}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-purple-600 hover:underline"
-                  >
-                    twitch.tv/{user.twitchChannel}
-                  </a>
-                </h2>
-                <TwitchEmbed channel={user.twitchChannel} />
-              </Card>
-            )}
-
-            {/* Endorsements */}
-            <EndorsementPanel targetUserId={user.id} />
-            {/* Badges */}
-            <UserBadgesSection userId={user.id} />
-
             {/* Activity Tabs */}
             <div>
               <div className="flex border-b border-gray-200 mb-6">
@@ -464,18 +473,17 @@ export default function PublicUserProfilePage() {
                 ))}
               </div>
 
-              {activeTab === 'overview' && (
-                <Card>
-                  <p className="text-sm text-gray-600">
-                    Select a tab above to view this user&apos;s polls or articles.
-                  </p>
-                </Card>
-              )}
+              {activeTab === 'overview' && <ProfileOverview user={user} />}
 
               {activeTab === 'polls' && <PollsTab userId={user.id} />}
 
               {activeTab === 'articles' && <ArticlesTab userId={user.id} />}
             </div>
+
+            {/* Endorsements */}
+            <EndorsementPanel targetUserId={user.id} />
+            {/* Badges */}
+            <UserBadgesSection userId={user.id} />
 
             {/* Profile Comments */}
             <CommentsThread
