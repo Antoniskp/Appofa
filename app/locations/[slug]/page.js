@@ -10,6 +10,7 @@ import { useAsyncData } from '@/hooks/useAsyncData';
 import { usePermissions } from '@/hooks/usePermissions';
 import LocationSections from '@/components/LocationSections';
 import LocationRoles from '@/components/LocationRoles';
+import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
 import LocationRelatedLocations from '@/components/locations/LocationRelatedLocations';
@@ -537,6 +538,19 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
+            <LocationActionSummary
+              counts={{
+                polls: activePolls.length,
+                suggestions: suggestions.length,
+                news: newsArticles.length,
+                articles: regularArticles.length,
+                users: entities.usersCount,
+              }}
+              loading={secondaryLoading}
+              isAuthenticated={isAuthenticated}
+              onTabSelect={handleTabChange}
+            />
+
             {/* Unified children explorer — shown for all location types that have children */}
             <LocationChildrenExplorer
               location={location}
