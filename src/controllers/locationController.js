@@ -150,11 +150,20 @@ exports.getLocationEntities = async (req, res) => {
       ...(result.error !== undefined && { error: result.error })
     });
   }
+
+  let usersCount = result.usersCount;
+  if (!req.user) {
+    const publicStats = await locationService.getLocation(req.params.id);
+    if (publicStats.success) {
+      usersCount = publicStats.stats?.userCount ?? usersCount;
+    }
+  }
+
   return res.json({
     success: true,
     articles: result.articles,
     users: result.users,
-    usersCount: result.usersCount,
+    usersCount,
     unclaimed: result.unclaimed,
     unclaimedCount: result.unclaimedCount,
     polls: result.polls
