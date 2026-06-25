@@ -32,6 +32,7 @@ const officialPostsRoutes = require('./officialPostsRoutes');
 const newsletterRoutes = require('./newsletterRoutes');
 const pushRoutes = require('./pushRoutes');
 const politicalAffiliationRoutes = require('./politicalAffiliationRoutes');
+const mediaRoutes = require('./mediaRoutes');
 
 const geoRoutes = express.Router();
 geoRoutes.use(geoAccessPublicRoutes);
@@ -72,6 +73,7 @@ const routes = [
   { prefix: '/api/official-posts', router: officialPostsRoutes },
   { prefix: '/api/newsletter', router: newsletterRoutes },
   { prefix: '/api/push', router: pushRoutes },
+  { prefix: '/api/media', router: mediaRoutes },
   { prefix: '/api/users/:id/political-affiliations', router: politicalAffiliationRoutes },
 ];
 
