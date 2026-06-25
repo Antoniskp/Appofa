@@ -60,11 +60,11 @@ const guestActions = [
   },
   {
     title: 'Ψήφισε χωρίς λογαριασμό',
-    description: 'Μπες σε ανοιχτές ψηφοφορίες και πάρε μια πρώτη γεύση συμμετοχής.',
-    href: '/polls',
+    description: 'Δες μόνο ψηφοφορίες που είναι ανοιχτές σε επισκέπτες χωρίς εγγραφή.',
+    href: '/polls?voteRestriction=anyone',
     icon: ClipboardDocumentListIcon,
     tone: 'emerald',
-    label: 'Ψηφοφορίες',
+    label: 'Χωρίς εγγραφή',
   },
   {
     title: 'Δες προτάσεις πολιτών',

@@ -27,6 +27,7 @@ function PollsContent() {
   const searchParams = useSearchParams();
   const initialTag = searchParams.get('tag') || '';
   const initialCategory = searchParams.get('category') || '';
+  const initialVoteRestriction = searchParams.get('voteRestriction') || '';
   const {
     filters,
     page,
@@ -43,6 +44,7 @@ function PollsContent() {
     tag: initialTag,
     search: '',
     locationId: null,
+    voteRestriction: initialVoteRestriction,
   });
 
   const [categoryCounts, setCategoryCounts] = useState({});
@@ -121,12 +123,23 @@ function PollsContent() {
               filterConfig={[
                 {
                   name: 'status',
-                   label: tPolls('status'),
+                  label: tPolls('status'),
                   type: 'select',
                   options: [
-                     { value: '', label: tPolls('all_statuses') },
-                     { value: 'active', label: tPolls('active') },
-                     { value: 'closed', label: tPolls('closed') },
+                    { value: '', label: tPolls('all_statuses') },
+                    { value: 'active', label: tPolls('active') },
+                    { value: 'closed', label: tPolls('closed') },
+                  ],
+                },
+                {
+                  name: 'voteRestriction',
+                  label: 'Δικαίωμα ψήφου',
+                  type: 'select',
+                  options: [
+                    { value: '', label: 'Όλες οι ψηφοφορίες' },
+                    { value: 'anyone', label: 'Χωρίς εγγραφή' },
+                    { value: 'authenticated', label: 'Μόνο εγγεγραμμένοι' },
+                    { value: 'locals_only', label: 'Μόνο τοπικοί χρήστες' },
                   ],
                 },
               ]}
@@ -139,7 +152,7 @@ function PollsContent() {
                 className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
               >
                 <PlusCircleIcon className="h-5 w-5" />
-                 {tPolls('new_poll')}
+                {tPolls('new_poll')}
               </Link>
             )
           }
@@ -168,10 +181,10 @@ function PollsContent() {
         {error && (
           <EmptyState
             type="error"
-             title={tPolls('error_loading')}
+            title={tPolls('error_loading')}
             description={error}
             action={{
-               text: tCommon('try_again'),
+              text: tCommon('try_again'),
               onClick: () => window.location.reload()
             }}
           />
@@ -181,12 +194,12 @@ function PollsContent() {
         {!loading && !error && polls.length === 0 && (
           <EmptyState
             type="empty"
-             title={tPolls('not_found_title')}
-             description={tPolls('not_found_description')}
-             action={user ? {
-               text: tPolls('create_one'),
-               onClick: () => window.location.href = '/polls/create'
-             } : undefined}
+            title={tPolls('not_found_title')}
+            description={tPolls('not_found_description')}
+            action={user ? {
+              text: tPolls('create_one'),
+              onClick: () => window.location.href = '/polls/create'
+            } : undefined}
           />
         )}
 
@@ -219,7 +232,7 @@ export default function PollsPage() {
   return (
     <Suspense fallback={
       <div className="bg-gray-50 min-h-screen py-8 flex items-center justify-center">
-         <p className="text-gray-600">{tCommon('loading')}</p>
+        <p className="text-gray-600">{tCommon('loading')}</p>
       </div>
     }>
       <PollsContent />
