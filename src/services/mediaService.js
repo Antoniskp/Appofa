@@ -3,8 +3,13 @@
 const path = require('path');
 const crypto = require('crypto');
 const sharp = require('sharp');
-const { MediaAsset, User } = require('../models');
+const MediaAsset = require('../models/MediaAsset');
+const { User } = require('../models');
 const { getStorageAdapter } = require('./storage');
+
+if (!MediaAsset.associations.uploadedBy) {
+  MediaAsset.belongsTo(User, { foreignKey: 'uploadedByUserId', as: 'uploadedBy' });
+}
 
 const ALLOWED_IMAGE_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 const UPLOAD_ROLES = new Set(['admin', 'moderator', 'editor']);
