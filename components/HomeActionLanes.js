@@ -1,0 +1,159 @@
+'use client';
+
+import Link from 'next/link';
+import {
+  ArrowRightIcon,
+  ChatBubbleLeftRightIcon,
+  ClipboardDocumentListIcon,
+  LightBulbIcon,
+  MapPinIcon,
+  NewspaperIcon,
+  UserCircleIcon,
+  UserPlusIcon,
+} from '@heroicons/react/24/outline';
+
+const signedInActions = (user) => [
+  {
+    title: 'Η περιοχή σου',
+    description: user?.homeLocation
+      ? 'Άνοιξε τον τοπικό πίνακα με ψηφοφορίες, προτάσεις, νέα και ρόλους.'
+      : 'Διάλεξε περιοχή για να βλέπεις πιο σχετικό περιεχόμενο.',
+    href: user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations',
+    icon: MapPinIcon,
+    tone: 'blue',
+    label: user?.homeLocation ? 'Τοπικός πίνακας' : 'Βρες περιοχή',
+  },
+  {
+    title: 'Ψήφισε τώρα',
+    description: 'Δες ανοιχτές ψηφοφορίες και θέματα όπου μπορείς να συμμετέχεις άμεσα.',
+    href: '/polls',
+    icon: ClipboardDocumentListIcon,
+    tone: 'emerald',
+    label: 'Ψηφοφορίες',
+  },
+  {
+    title: 'Πρότεινε λύση',
+    description: 'Κατέθεσε μια ιδέα ή πρόβλημα για την κοινότητα που σε αφορά.',
+    href: '/suggestions/new',
+    icon: LightBulbIcon,
+    tone: 'amber',
+    label: 'Νέα πρόταση',
+  },
+  {
+    title: 'Ολοκλήρωσε προφίλ',
+    description: 'Βελτίωσε την παρουσία σου και βοήθησε τους άλλους να σε αναγνωρίζουν.',
+    href: '/profile',
+    icon: UserCircleIcon,
+    tone: 'indigo',
+    label: 'Προφίλ',
+  },
+];
+
+const guestActions = [
+  {
+    title: 'Βρες την περιοχή σου',
+    description: 'Ξεκίνα από δήμο, περιφέρεια ή χώρα και δες τι συμβαίνει εκεί.',
+    href: '/locations',
+    icon: MapPinIcon,
+    tone: 'blue',
+    label: 'Περιοχές',
+  },
+  {
+    title: 'Ψήφισε χωρίς λογαριασμό',
+    description: 'Μπες σε ανοιχτές ψηφοφορίες και πάρε μια πρώτη γεύση συμμετοχής.',
+    href: '/polls',
+    icon: ClipboardDocumentListIcon,
+    tone: 'emerald',
+    label: 'Ψηφοφορίες',
+  },
+  {
+    title: 'Δες προτάσεις πολιτών',
+    description: 'Παρακολούθησε ιδέες, προβλήματα και λύσεις που ανοίγουν δημόσια.',
+    href: '/suggestions',
+    icon: ChatBubbleLeftRightIcon,
+    tone: 'amber',
+    label: 'Προτάσεις',
+  },
+  {
+    title: 'Δημιούργησε λογαριασμό',
+    description: 'Κράτησε την περιοχή σου, ακολούθησε θέματα και συμμετείχε πιο ουσιαστικά.',
+    href: '/register',
+    icon: UserPlusIcon,
+    tone: 'indigo',
+    label: 'Εγγραφή',
+  },
+];
+
+const secondaryLinks = [
+  { href: '/news', label: 'Ειδήσεις', icon: NewspaperIcon },
+  { href: '/civic-questions', label: 'Θέματα Βουλής', icon: ClipboardDocumentListIcon },
+  { href: '/organizations', label: 'Οργανισμοί', icon: ChatBubbleLeftRightIcon },
+];
+
+const toneClasses = {
+  blue: 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100',
+  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200 group-hover:bg-emerald-100',
+  amber: 'bg-amber-50 text-amber-700 border-amber-200 group-hover:bg-amber-100',
+  indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 group-hover:bg-indigo-100',
+};
+
+function ActionCard({ action }) {
+  const Icon = action.icon;
+  return (
+    <Link
+      href={action.href}
+      className="group flex h-full flex-col rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className={`flex h-11 w-11 items-center justify-center rounded-lg border ${toneClasses[action.tone]}`}>
+          <Icon className="h-5 w-5" />
+        </div>
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700">
+          {action.label}
+          <ArrowRightIcon className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
+      <h3 className="mt-4 text-base font-bold text-gray-900">{action.title}</h3>
+      <p className="mt-2 text-sm leading-6 text-gray-600">{action.description}</p>
+    </Link>
+  );
+}
+
+export default function HomeActionLanes({ user }) {
+  const actions = user ? signedInActions(user) : guestActions;
+
+  return (
+    <section className="border-t border-gray-200 bg-white">
+      <div className="app-container py-12">
+        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Γρήγορη εκκίνηση</p>
+            <h2 className="mt-1 text-2xl font-bold text-gray-900">Τι θέλεις να κάνεις τώρα;</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
+              {user
+                ? 'Συνέχισε από τα σημεία που δίνουν άμεση αξία: περιοχή, ψηφοφορίες, προτάσεις και προφίλ.'
+                : 'Διάλεξε μια απλή διαδρομή και γνώρισε την πλατφόρμα μέσα από πραγματικές ενέργειες.'}
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {secondaryLinks.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                className="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                <Icon className="h-4 w-4 text-gray-500" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </div>
+        <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {actions.map((action) => (
+            <ActionCard key={action.href} action={action} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
