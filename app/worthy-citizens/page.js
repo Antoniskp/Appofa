@@ -10,23 +10,19 @@ import Link from 'next/link';
 import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 
 const TOPICS = [
-  'Education',
-  'Economy',
-  'Health',
-  'Environment',
-  'Local Governance',
-  'Technology',
+  'Real Profile',
+  'Knows Personally',
+  'Worked Together',
+  'Local Connection',
 ];
 
 const PAGE_SIZE = 20;
 
 const TOPIC_LABELS = {
-  Education: 'Παιδεία',
-  Economy: 'Οικονομία',
-  Health: 'Υγεία',
-  Environment: 'Περιβάλλον',
-  'Local Governance': 'Τοπική Αυτοδιοίκηση',
-  Technology: 'Τεχνολογία',
+  'Real Profile': 'Πραγματικό προφίλ',
+  'Knows Personally': 'Προσωπική γνωριμία',
+  'Worked Together': 'Συνεργασία',
+  'Local Connection': 'Τοπική σύνδεση',
 };
 
 const DEFAULT_AVATAR_COLOR = '#64748b';
@@ -72,7 +68,7 @@ function UserLeaderboardCard({ user, rank }) {
       </div>
       <div className="text-right flex-shrink-0">
         <p className="text-2xl font-bold text-blue-600">{user.endorsementCount}</p>
-        <p className="text-xs text-gray-500">εγκρίσεις</p>
+        <p className="text-xs text-gray-500">επιβεβαιώσεις</p>
       </div>
     </Link>
   );
@@ -109,9 +105,9 @@ export default function WorthyCitizensPage() {
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container max-w-3xl mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Αναγνωρισμένοι από την Κοινότητα</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Επιβεβαιωμένοι από την κοινότητα</h1>
           <p className="text-gray-600">
-            Κατάταξη βάσει εγκρίσεων από άλλους πολίτες ανά θεματική περιοχή.
+            Συγκεντρωτικές επιβεβαιώσεις πραγματικών σχέσεων, γνωριμίας και τοπικής σύνδεσης.
           </p>
         </div>
 
@@ -146,7 +142,7 @@ export default function WorthyCitizensPage() {
         {!initialLoading && (
           <p className="text-sm text-gray-500 mb-4">
             {totalItems} πολίτες βρέθηκαν
-            {selectedTopic ? ` για θέμα: ${TOPIC_LABELS[selectedTopic]}` : ''}
+            {selectedTopic ? ` για: ${TOPIC_LABELS[selectedTopic]}` : ''}
           </p>
         )}
 
@@ -165,8 +161,8 @@ export default function WorthyCitizensPage() {
             title="Δεν βρέθηκαν αποτελέσματα"
             description={
               selectedTopic
-                ? `Δεν υπάρχουν ακόμα εγκρίσεις για το θέμα "${TOPIC_LABELS[selectedTopic]}".`
-                : 'Δεν υπάρχουν ακόμα εγκρίσεις. Γίνετε ο πρώτος που θα εγκρίνει έναν συμπολίτη!'
+                ? `Δεν υπάρχουν ακόμα επιβεβαιώσεις για "${TOPIC_LABELS[selectedTopic]}".`
+                : 'Δεν υπάρχουν ακόμα επιβεβαιώσεις κοινότητας.'
             }
           />
         ) : (

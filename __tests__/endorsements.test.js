@@ -64,13 +64,13 @@ describe('Endorsement System Tests', () => {
   // ── Topics endpoint ──────────────────────────────────────────────────────
 
   describe('GET /api/endorsements/topics', () => {
-    it('returns the list of valid topics', async () => {
+    it('returns the list of valid relationship endorsement types', async () => {
       const res = await request(app).get('/api/endorsements/topics');
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.data.topics)).toBe(true);
-      expect(res.body.data.topics).toContain('Education');
-      expect(res.body.data.topics).toContain('Technology');
+      expect(res.body.data.topics).toContain('Real Profile');
+      expect(res.body.data.topics).toContain('Local Connection');
     });
   });
 
@@ -82,7 +82,7 @@ describe('Endorsement System Tests', () => {
         .post('/api/endorsements')
         .set('Authorization', `Bearer ${userAToken}`)
         .set(csrfHeaders(userAId))
-        .send({ endorsedUserId: userBId, topic: 'Education' });
+        .send({ endorsedUserId: userBId, topic: 'Real Profile' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -95,14 +95,14 @@ describe('Endorsement System Tests', () => {
         .post('/api/endorsements')
         .set('Authorization', `Bearer ${userAToken}`)
         .set(csrfHeaders(userAId))
-        .send({ endorsedUserId: userBId, topic: 'Health' });
+        .send({ endorsedUserId: userBId, topic: 'Knows Personally' });
 
       // Duplicate endorsement
       const res = await request(app)
         .post('/api/endorsements')
         .set('Authorization', `Bearer ${userAToken}`)
         .set(csrfHeaders(userAId))
-        .send({ endorsedUserId: userBId, topic: 'Health' });
+        .send({ endorsedUserId: userBId, topic: 'Knows Personally' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -114,7 +114,7 @@ describe('Endorsement System Tests', () => {
         .post('/api/endorsements')
         .set('Authorization', `Bearer ${userAToken}`)
         .set(csrfHeaders(userAId))
-        .send({ endorsedUserId: userAId, topic: 'Economy' });
+        .send({ endorsedUserId: userAId, topic: 'Worked Together' });
 
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
@@ -124,7 +124,7 @@ describe('Endorsement System Tests', () => {
     it('rejects unauthenticated requests', async () => {
       const res = await request(app)
         .post('/api/endorsements')
-        .send({ endorsedUserId: userBId, topic: 'Technology' });
+        .send({ endorsedUserId: userBId, topic: 'Local Connection' });
 
       expect(res.status).toBe(401);
     });
@@ -145,7 +145,7 @@ describe('Endorsement System Tests', () => {
         .post('/api/endorsements')
         .set('Authorization', `Bearer ${userAToken}`)
         .set(csrfHeaders(userAId))
-        .send({ endorsedUserId: 999999, topic: 'Technology' });
+        .send({ endorsedUserId: 999999, topic: 'Local Connection' });
 
       expect(res.status).toBe(404);
     });
@@ -157,7 +157,7 @@ describe('Endorsement System Tests', () => {
     beforeAll(async () => {
       // Ensure endorsement exists before delete tests
       await Endorsement.findOrCreate({
-        where: { endorserId: userAId, endorsedId: userBId, topic: 'Environment' }
+        where: { endorserId: userAId, endorsedId: userBId, topic: 'Worked Together' }
       });
     });
 
@@ -166,7 +166,7 @@ describe('Endorsement System Tests', () => {
         .delete('/api/endorsements')
         .set('Authorization', `Bearer ${userAToken}`)
         .set(csrfHeaders(userAId))
-        .send({ endorsedUserId: userBId, topic: 'Environment' });
+        .send({ endorsedUserId: userBId, topic: 'Worked Together' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -178,7 +178,7 @@ describe('Endorsement System Tests', () => {
         .delete('/api/endorsements')
         .set('Authorization', `Bearer ${userAToken}`)
         .set(csrfHeaders(userAId))
-        .send({ endorsedUserId: userBId, topic: 'Technology' });
+        .send({ endorsedUserId: userBId, topic: 'Local Connection' });
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -188,7 +188,7 @@ describe('Endorsement System Tests', () => {
     it('rejects unauthenticated requests', async () => {
       const res = await request(app)
         .delete('/api/endorsements')
-        .send({ endorsedUserId: userBId, topic: 'Education' });
+        .send({ endorsedUserId: userBId, topic: 'Real Profile' });
 
       expect(res.status).toBe(401);
     });
@@ -198,12 +198,12 @@ describe('Endorsement System Tests', () => {
 
   describe('GET /api/endorsements/status', () => {
     beforeAll(async () => {
-      // Setup: userC endorses userB for Education and Economy
+      // Setup: userC endorses userB for profile authenticity and personal knowledge
       await Endorsement.findOrCreate({
-        where: { endorserId: userCId, endorsedId: userBId, topic: 'Education' }
+        where: { endorserId: userCId, endorsedId: userBId, topic: 'Real Profile' }
       });
       await Endorsement.findOrCreate({
-        where: { endorserId: userCId, endorsedId: userBId, topic: 'Economy' }
+        where: { endorserId: userCId, endorsedId: userBId, topic: 'Knows Personally' }
       });
     });
 
@@ -214,8 +214,8 @@ describe('Endorsement System Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
-      expect(res.body.data.endorsedTopics).toContain('Education');
-      expect(res.body.data.endorsedTopics).toContain('Economy');
+      expect(res.body.data.endorsedTopics).toContain('Real Profile');
+      expect(res.body.data.endorsedTopics).toContain('Knows Personally');
     });
 
     it('returns per-topic counts for the target user', async () => {
@@ -225,15 +225,18 @@ describe('Endorsement System Tests', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.data.topicCounts).toBeDefined();
-      expect(res.body.data.topicCounts['Education']).toBeGreaterThanOrEqual(1);
-      expect(res.body.data.topicCounts['Economy']).toBeGreaterThanOrEqual(1);
+      expect(res.body.data.topicCounts['Real Profile']).toBeGreaterThanOrEqual(1);
+      expect(res.body.data.topicCounts['Knows Personally']).toBeGreaterThanOrEqual(1);
     });
 
-    it('rejects unauthenticated requests', async () => {
+    it('returns public counts without authentication', async () => {
       const res = await request(app)
         .get(`/api/endorsements/status?userId=${userBId}`);
 
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.endorsedTopics).toEqual([]);
+      expect(res.body.data.topicCounts['Real Profile']).toBeGreaterThanOrEqual(1);
     });
 
     it('returns 400 for missing userId', async () => {
@@ -251,20 +254,20 @@ describe('Endorsement System Tests', () => {
     beforeAll(async () => {
       // Setup: ensure userB has more endorsements than userC
       await Endorsement.findOrCreate({
-        where: { endorserId: userAId, endorsedId: userBId, topic: 'Technology' }
+        where: { endorserId: userAId, endorsedId: userBId, topic: 'Local Connection' }
       });
       await Endorsement.findOrCreate({
-        where: { endorserId: userCId, endorsedId: userBId, topic: 'Technology' }
+        where: { endorserId: userCId, endorsedId: userBId, topic: 'Local Connection' }
       });
-      // userC gets 1 endorsement for Technology
+      // userC gets 1 endorsement for Local Connection
       await Endorsement.findOrCreate({
-        where: { endorserId: userAId, endorsedId: userCId, topic: 'Technology' }
+        where: { endorserId: userAId, endorsedId: userCId, topic: 'Local Connection' }
       });
     });
 
     it('returns users ranked by endorsement count (descending)', async () => {
       const res = await request(app)
-        .get('/api/endorsements/leaderboard?topic=Technology');
+        .get('/api/endorsements/leaderboard?topic=Local%20Connection');
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
@@ -280,11 +283,11 @@ describe('Endorsement System Tests', () => {
 
     it('filters by topic correctly', async () => {
       const res = await request(app)
-        .get('/api/endorsements/leaderboard?topic=Education');
+        .get('/api/endorsements/leaderboard?topic=Real%20Profile');
 
       expect(res.status).toBe(200);
       const users = res.body.data.users;
-      // All users returned should have at least 1 endorsement for Education
+      // All users returned should have at least 1 endorsement for Real Profile
       expect(users.every((u) => u.endorsementCount >= 1)).toBe(true);
     });
 
