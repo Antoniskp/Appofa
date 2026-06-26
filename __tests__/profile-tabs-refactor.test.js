@@ -3,7 +3,10 @@ const path = require('path');
 
 describe('Profile page tab refactor', () => {
   const profilePagePath = path.join(__dirname, '..', 'app', 'profile', 'page.js');
+  const publicProfilePagePath = path.join(__dirname, '..', 'app', 'users', '[username]', 'page.js');
   const profileHookPath = path.join(__dirname, '..', 'hooks', 'useProfileForm.js');
+  const profilePoliticsSectionPath = path.join(__dirname, '..', 'components', 'profile', 'ProfilePoliticsSection.js');
+  const politicalAffiliationStatusPath = path.join(__dirname, '..', 'lib', 'utils', 'politicalAffiliationStatus.js');
   const enMessagesPath = path.join(__dirname, '..', 'messages', 'en.json');
   const elMessagesPath = path.join(__dirname, '..', 'messages', 'el.json');
   const roMessagesPath = path.join(__dirname, '..', 'messages', 'ro.json');
@@ -35,6 +38,20 @@ describe('Profile page tab refactor', () => {
     expect(source).toContain('handleAvatarSourceChange');
     expect(source).toContain('handleAddProfession');
     expect(source).toContain('handleAddInterest');
+  });
+
+  it('supports explicit political affiliation status options in the profile flow', () => {
+    const hookSource = fs.readFileSync(profileHookPath, 'utf8');
+    const politicsSource = fs.readFileSync(profilePoliticsSectionPath, 'utf8');
+    const statusSource = fs.readFileSync(politicalAffiliationStatusPath, 'utf8');
+    const publicProfileSource = fs.readFileSync(publicProfilePagePath, 'utf8');
+
+    expect(hookSource).toContain('politicalAffiliationStatus');
+    expect(hookSource).toContain('politicalAffiliationOtherText');
+    expect(statusSource).toContain('PREFER_NOT_TO_SAY');
+    expect(politicsSource).toContain('formatPoliticalAffiliationStatus');
+    expect(publicProfileSource).toContain('politicalStatusLabel');
+    expect(publicProfileSource).toContain('showPoliticalAffiliations');
   });
 
   it('defines profile tab labels for supported locales', () => {

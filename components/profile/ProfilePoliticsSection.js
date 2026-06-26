@@ -250,7 +250,16 @@ export default function ProfilePoliticsSection({
               <p className="rounded-md border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-700">{mutationError}</p>
             )}
 
-            {affiliations.length > 0 ? (
+            {explicitNonPartyStatus ? (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <p className="text-sm font-medium text-gray-900">
+                  {formatPoliticalAffiliationStatus(politicalStatus, profileData?.politicalAffiliationOtherText)}
+                </p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Αυτή η επιλογή θα εμφανίζεται στο δημόσιο προφίλ αντί για κομματικές σχέσεις.
+                </p>
+              </div>
+            ) : showPartyAffiliations && affiliations.length > 0 ? (
               <ul className="space-y-3">
                 {affiliations.map((aff) => {
                   const org = aff.organization;
@@ -300,56 +309,67 @@ export default function ProfilePoliticsSection({
                   );
                 })}
               </ul>
-            ) : (
+            ) : showPartyAffiliations ? (
               <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
                 <p className="text-sm font-medium text-gray-800">Δεν έχεις προσθέσει πολιτική τοποθέτηση.</p>
                 <p className="mt-1 text-sm text-gray-500">
                   Μπορείς να αφήσεις την ενότητα κενή ή να επιλέξεις μόνο σχέσεις που θέλεις να δηλώσεις δημόσια.
                 </p>
               </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4">
+                <p className="text-sm font-medium text-gray-800">Δεν έχεις επιλέξει δημόσια πολιτική τοποθέτηση.</p>
+                <p className="mt-1 text-sm text-gray-500">
+                  Επίλεξε αν θέλεις να δηλώσεις ότι είσαι ανεξάρτητος, ότι δεν απαντάς, κάτι άλλο ή σχέση με πολιτικό οργανισμό.
+                </p>
+              </div>
             )}
 
-            {availableParties.length > 0 ? (
-              <div className="space-y-3 border-t border-gray-100 pt-4">
-                <p className="text-sm font-medium text-gray-800">Προσθήκη σχέσης</p>
-                <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
-                  <select
-                    value={selectedOrgId}
-                    onChange={(e) => setSelectedOrgId(e.target.value)}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    aria-label="Επιλογή κόμματος"
-                  >
-                    <option value="">Επιλογή κόμματος...</option>
-                    {availableParties.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                        {p.politicalPosition ? ` (${formatPoliticalPosition(p.politicalPosition)})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    value={selectedLevel}
-                    onChange={(e) => setSelectedLevel(e.target.value)}
-                    className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    aria-label="Τύπος σχέσης"
-                  >
-                    {ENDORSEMENT_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={handleAdd}
-                    disabled={!selectedOrgId || adding}
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
-                  >
-                    {adding ? 'Προσθήκη...' : 'Προσθήκη'}
-                  </button>
-                </div>
-                {addError && <p className="text-xs text-red-600">{addError}</p>}
-              </div>
-            ) : (
-              <p className="border-t border-gray-100 pt-4 text-sm text-gray-500">Δεν υπάρχουν άλλα διαθέσιμα κόμματα για προσθήκη.</p>
+            {showPartyAffiliations && (
+              <>
+                {availableParties.length > 0 ? (
+                  <div className="space-y-3 border-t border-gray-100 pt-4">
+                    <p className="text-sm font-medium text-gray-800">Προσθήκη σχέσης</p>
+                    <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
+                      <select
+                        value={selectedOrgId}
+                        onChange={(e) => setSelectedOrgId(e.target.value)}
+                        className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        aria-label="Επιλογή κόμματος"
+                      >
+                        <option value="">Επιλογή κόμματος...</option>
+                        {availableParties.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                            {p.politicalPosition ? ` (${formatPoliticalPosition(p.politicalPosition)})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                      <select
+                        value={selectedLevel}
+                        onChange={(e) => setSelectedLevel(e.target.value)}
+                        className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        aria-label="Τύπος σχέσης"
+                      >
+                        {ENDORSEMENT_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleAdd}
+                        disabled={!selectedOrgId || adding}
+                        className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                      >
+                        {adding ? 'Προσθήκη...' : 'Προσθήκη'}
+                      </button>
+                    </div>
+                    {addError && <p className="text-xs text-red-600">{addError}</p>}
+                  </div>
+                ) : (
+                  <p className="border-t border-gray-100 pt-4 text-sm text-gray-500">Δεν υπάρχουν άλλα διαθέσιμα κόμματα για προσθήκη.</p>
+                )}
+              </>
             )}
           </div>
         )}

@@ -18,6 +18,10 @@ import { useAuth } from '@/lib/auth-context';
 import FollowButton from '@/components/follow/FollowButton';
 import EndorsementPanel from '@/components/EndorsementPanel';
 import { getPartyById, formatPoliticalPosition } from '@/lib/utils/politicalParties';
+import {
+  POLITICAL_AFFILIATION_STATUS,
+  formatPoliticalAffiliationStatus,
+} from '@/lib/utils/politicalAffiliationStatus';
 import { getExpertiseTagLabel, resolveProfessionLabel } from '@/lib/utils/professionTaxonomy';
 import TwitchEmbed from '@/components/profile/TwitchEmbed';
 
@@ -358,6 +362,12 @@ export default function PublicUserProfilePage() {
   const displayName = user?.firstNameNative && user?.lastNameNative
     ? `${user.firstNameNative} ${user.lastNameNative}`
     : user?.firstNameNative || user?.lastNameNative || '';
+  const politicalStatusLabel = formatPoliticalAffiliationStatus(
+    user?.politicalAffiliationStatus,
+    user?.politicalAffiliationOtherText
+  );
+  const showPoliticalAffiliations = !user?.politicalAffiliationStatus ||
+    user.politicalAffiliationStatus === POLITICAL_AFFILIATION_STATUS.PARTY;
 
   return (
     <div className="bg-gray-50 min-h-screen py-8">
@@ -407,7 +417,11 @@ export default function PublicUserProfilePage() {
                         {user.role}
                       </Badge>
                     )}
-                    {user.politicalAffiliations && user.politicalAffiliations.length > 0
+                    {!showPoliticalAffiliations && politicalStatusLabel ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                        {politicalStatusLabel}
+                      </span>
+                    ) : user.politicalAffiliations && user.politicalAffiliations.length > 0
                       ? user.politicalAffiliations.map((aff) => {
                           const org = aff.organization;
                           if (!org) return null;
@@ -437,8 +451,7 @@ export default function PublicUserProfilePage() {
                               {party.abbreviation}
                             </span>
                           ) : null;
-                        })()
-                    }
+                        })()}
                     <FollowButton
                       targetUserId={user.id}
                       onCountChange={() => setCountsKey((k) => k + 1)}
