@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { organizationAPI, politicalAffiliationAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { ENDORSEMENT_LABELS, formatPoliticalPosition } from '@/lib/utils/politicalParties';
 import ProfileManifestSection from '@/components/profile/ProfileManifestSection';
 
@@ -66,7 +67,8 @@ export default function ProfilePoliticsSection({
   onWithdraw,
   manifestLoading,
 }) {
-  const userId = profileData?.id;
+  const { user } = useAuth();
+  const userId = profileData?.id ?? user?.id;
 
   const [parties, setParties] = useState([]);
   const [affiliations, setAffiliations] = useState([]);
