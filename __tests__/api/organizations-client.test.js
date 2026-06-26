@@ -28,6 +28,18 @@ describe('organizationAPI', () => {
     expect(apiRequest).toHaveBeenCalledWith('/api/organizations?page=2&type=company');
   });
 
+  it('exposes list data on legacy top-level fields', async () => {
+    const organizations = [{ id: 1, name: 'Party Org' }];
+    const pagination = { currentPage: 1, totalPages: 1 };
+    apiRequest.mockResolvedValue({ success: true, data: { organizations, pagination } });
+
+    const result = await organizationAPI.getAll({ type: 'party' });
+
+    expect(result.data.organizations).toBe(organizations);
+    expect(result.organizations).toBe(organizations);
+    expect(result.pagination).toBe(pagination);
+  });
+
   it('calls get by slug endpoint', async () => {
     await organizationAPI.getBySlug('open-civic-lab');
 
