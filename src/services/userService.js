@@ -32,6 +32,8 @@ const PASSWORD_MIN_LENGTH = 6;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
 const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
+const VALID_POLITICAL_AFFILIATION_STATUSES = new Set(['party', 'unaffiliated', 'prefer_not_to_say', 'other']);
+const POLITICAL_AFFILIATION_OTHER_MAX_LENGTH = 120;
 const MAX_PROFESSIONS = 5;
 const MAX_INTERESTS = 10;
 const MAX_EXPERTISE_AREAS = 5;
@@ -161,7 +163,7 @@ async function getUserProfile(userId) {
 }
 
 async function updateUserProfile(userId, data) {
-  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, profileVisibility, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, nationality, twitchChannel } = data;
+  const { username, firstNameNative, lastNameNative, firstNameEn, lastNameEn, nickname, avatar, avatarColor, homeLocationId, profileVisibility, mobileTel, bio, socialLinks, dateOfBirth, professions, interests, expertiseArea, partyId, politicalAffiliationStatus, politicalAffiliationOtherText, nationality, twitchChannel } = data;
 
   const user = await User.findByPk(userId);
   if (!user) throw new ServiceError(404, 'User not found.');
@@ -423,6 +425,31 @@ async function updateUserProfile(userId, data) {
     }
   }
 
+  if (politicalAffiliationStatus !== undefined) {
+    if (politicalAffiliationStatus === null || politicalAffiliationStatus === '') {
+      user.politicalAffiliationStatus = null;
+    } else if (!VALID_POLITICAL_AFFILIATION_STATUSES.has(politicalAffiliationStatus)) {
+      throw new ServiceError(400, 'Invalid political affiliation status.');
+    } else {
+      user.politicalAffiliationStatus = politicalAffiliationStatus;
+    }
+  }
+
+  if (politicalAffiliationOtherText !== undefined) {
+    const otherTextResult = normalizeOptionalText(
+      politicalAffiliationOtherText,
+      'Political affiliation note',
+      undefined,
+      POLITICAL_AFFILIATION_OTHER_MAX_LENGTH
+    );
+    if (otherTextResult.error) throw new ServiceError(400, otherTextResult.error);
+    user.politicalAffiliationOtherText = otherTextResult.value ?? null;
+  }
+
+  if (user.politicalAffiliationStatus !== 'other') {
+    user.politicalAffiliationOtherText = null;
+  }
+
   if (nationality !== undefined) {
     if (nationality === null || nationality === '') {
       user.nationality = null;
@@ -519,7 +546,9 @@ async function deleteUserAccount(userId, password, mode) {
       professions: null,
       interests: null,
       dateOfBirth: null,
-      partyId: null
+      partyId: null,
+      politicalAffiliationStatus: null,
+      politicalAffiliationOtherText: null
     }, { where: { id: user.id }, individualHooks: false });
   }
 }
@@ -973,7 +1002,7 @@ async function getPublicUserProfile(userId, viewer = null) {
 
   const user = await User.findOne({
     where: { id: userId },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility'],
     include: [
       {
         model: UserPoliticalAffiliation,
@@ -1011,7 +1040,7 @@ async function getPublicUserProfileByUsername(username, viewer = null) {
 
   const user = await User.findOne({
     where: { username: username.trim() },
-    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'twitchChannel', 'profileVisibility'],
+    attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn', 'nickname', 'avatar', 'avatarColor', 'createdAt', 'bio', 'socialLinks', 'isVerified', 'professions', 'interests', 'expertiseArea', 'displayBadgeSlug', 'displayBadgeTier', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'twitchChannel', 'profileVisibility'],
     include: [
       {
         model: UserPoliticalAffiliation,
@@ -1105,7 +1134,7 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
   const userAttributes = [
     'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
     'nickname', 'avatar', 'avatarColor', 'isVerified', 'claimStatus',
-    'professions', 'expertiseArea', 'partyId', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier',
+    'professions', 'expertiseArea', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier',
   ];
 
   // When taxonomy filtering is active, fetch all matching rows for in-memory scoring then paginate

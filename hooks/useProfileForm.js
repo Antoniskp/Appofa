@@ -29,6 +29,8 @@ const INITIAL_PROFILE_DATA = {
   interests: [],
   expertiseArea: [],
   partyId: null,
+  politicalAffiliationStatus: '',
+  politicalAffiliationOtherText: '',
   nationality: '',
   twitchChannel: '',
 };
@@ -135,6 +137,8 @@ export function useProfileForm() {
           professions,
           interests,
           expertiseArea,
+          politicalAffiliationStatus,
+          politicalAffiliationOtherText,
           displayBadgeSlug,
           displayBadgeTier,
           nationality,
@@ -166,6 +170,8 @@ export function useProfileForm() {
           interests: interests || [],
           expertiseArea: expertiseArea || [],
           partyId: userData.partyId || null,
+          politicalAffiliationStatus: politicalAffiliationStatus || '',
+          politicalAffiliationOtherText: politicalAffiliationOtherText || '',
           nationality: nationality || '',
           twitchChannel: twitchChannel || '',
         };

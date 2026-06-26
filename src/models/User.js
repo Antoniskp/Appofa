@@ -225,6 +225,14 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING(50),
     allowNull: true
   },
+  politicalAffiliationStatus: {
+    type: DataTypes.ENUM('party', 'unaffiliated', 'prefer_not_to_say', 'other'),
+    allowNull: true
+  },
+  politicalAffiliationOtherText: {
+    type: DataTypes.STRING(120),
+    allowNull: true
+  },
   twitchChannel: {
     type: DataTypes.STRING(50),
     allowNull: true

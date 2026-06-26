@@ -4,6 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { organizationAPI, politicalAffiliationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { ENDORSEMENT_LABELS, formatPoliticalPosition } from '@/lib/utils/politicalParties';
+import {
+  POLITICAL_AFFILIATION_STATUS,
+  POLITICAL_AFFILIATION_STATUS_LABELS,
+  formatPoliticalAffiliationStatus,
+} from '@/lib/utils/politicalAffiliationStatus';
 import ProfileManifestSection from '@/components/profile/ProfileManifestSection';
 
 const ENDORSEMENT_OPTIONS = [
@@ -62,6 +67,7 @@ function normalizeAffiliations(response) {
  */
 export default function ProfilePoliticsSection({
   profileData,
+  onChange,
   manifests,
   onAccept,
   onWithdraw,
@@ -115,6 +121,23 @@ export default function ProfilePoliticsSection({
       .filter(Boolean)
   );
   const availableParties = parties.filter((p) => !affiliatedOrgIds.has(Number(p.id)));
+  const politicalStatus = profileData?.politicalAffiliationStatus ||
+    (affiliations.length > 0 || profileData?.partyId ? POLITICAL_AFFILIATION_STATUS.PARTY : '');
+  const showPartyAffiliations = politicalStatus === POLITICAL_AFFILIATION_STATUS.PARTY;
+  const explicitNonPartyStatus = politicalStatus && !showPartyAffiliations;
+
+  function updateProfileField(name, value) {
+    if (!onChange) return;
+    onChange({ target: { name, value } });
+  }
+
+  function handlePoliticalStatusChange(event) {
+    const value = event.target.value;
+    updateProfileField('politicalAffiliationStatus', value);
+    if (value !== POLITICAL_AFFILIATION_STATUS.OTHER) {
+      updateProfileField('politicalAffiliationOtherText', '');
+    }
+  }
 
   async function handleAdd() {
     if (!userId || !selectedOrgId) return;
@@ -167,10 +190,40 @@ export default function ProfilePoliticsSection({
               Προαιρετικές, αυτοδηλωμένες σχέσεις με πολιτικούς οργανισμούς. Δεν γίνεται αυτόματη ταξινόμηση.
             </p>
           </div>
-          {!loading && !error && affiliations.length > 0 && (
+          {!loading && !error && showPartyAffiliations && affiliations.length > 0 && (
             <span className="inline-flex w-fit items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700">
               {affiliations.length} {affiliations.length === 1 ? 'τοποθέτηση' : 'τοποθετήσεις'}
             </span>
+          )}
+        </div>
+
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <label className="text-sm font-medium text-gray-700">
+            Δημόσια πολιτική επιλογή
+            <select
+              value={politicalStatus}
+              onChange={handlePoliticalStatusChange}
+              className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Δεν έχει οριστεί</option>
+              {Object.entries(POLITICAL_AFFILIATION_STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </label>
+
+          {politicalStatus === POLITICAL_AFFILIATION_STATUS.OTHER && (
+            <label className="text-sm font-medium text-gray-700">
+              Περιγραφή
+              <input
+                type="text"
+                maxLength={120}
+                value={profileData?.politicalAffiliationOtherText || ''}
+                onChange={(e) => updateProfileField('politicalAffiliationOtherText', e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                placeholder="π.χ. ανεξάρτητη κίνηση, τοπική παράταξη"
+              />
+            </label>
           )}
         </div>
 
