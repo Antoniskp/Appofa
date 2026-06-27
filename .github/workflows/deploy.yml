@@ -40,6 +40,7 @@ jobs:
           chmod 700 ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/appofa_deploy_key
           chmod 600 ~/.ssh/appofa_deploy_key
+          ssh-keygen -y -f ~/.ssh/appofa_deploy_key >/dev/null
 
           if [ -n "$VPS_SSH_KNOWN_HOSTS" ]; then
             printf '%s\n' "$VPS_SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
@@ -48,11 +49,28 @@ jobs:
           fi
           chmod 600 ~/.ssh/known_hosts
 
+      - name: Test SSH connection
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          ssh -i ~/.ssh/appofa_deploy_key \
+            -p "$VPS_PORT" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            "$VPS_USER@$VPS_HOST" \
+            'echo "SSH connection ok"'
+
       - name: Run deploy script
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
           VPS_USER: ${{ secrets.VPS_USER }}
         run: |
-          ssh -i ~/.ssh/appofa_deploy_key -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+          ssh -i ~/.ssh/appofa_deploy_key \
+            -p "$VPS_PORT" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            "$VPS_USER@$VPS_HOST" \
             'cd /var/www/Appofa && ./scripts/deploy.sh'
