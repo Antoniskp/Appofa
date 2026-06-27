@@ -23,3 +23,5 @@ The workflow runs this command on the server:
 ```bash
 cd /var/www/Appofa && ./scripts/deploy.sh
 ```
+
+Smoke test note: merging a docs-only PR should still trigger the automatic deploy workflow on `main`.
