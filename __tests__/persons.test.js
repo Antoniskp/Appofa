@@ -1,5 +1,14 @@
 const request = require('supertest');
-const { sequelize, User, PublicPersonProfile, Location, LocationLink } = require('../src/models');
+const {
+  sequelize,
+  User,
+  PublicPersonProfile,
+  Location,
+  LocationLink,
+  LocationRole,
+  Manifest,
+  ManifestAcceptance,
+} = require('../src/models');
 
 const express = require('express');
 const cors = require('cors');
@@ -161,6 +170,84 @@ describe('Person Profile Tests (POST /api/persons)', () => {
   });
 
   // ── POST /api/persons ────────────────────────────────────────────────────
+
+  describe('GET /api/persons - independent officials and manifest filters', () => {
+    let independentMayorId;
+    let partyMayorId;
+    let independentWithoutOfficeId;
+    let directManifestSlug;
+
+    beforeAll(async () => {
+      const directManifest = await Manifest.create({
+        slug: 'direct-democracy-test',
+        title: 'Direct Democracy Test Manifest',
+        description: 'Officials commit to follow majority decisions.',
+        articleUrl: '/manifest-supporters',
+        isActive: true,
+      });
+      directManifestSlug = directManifest.slug;
+
+      const createPerson = async (firstNameEn, lastNameEn) => {
+        const res = await request(app)
+          .post('/api/persons')
+          .set(csrfHeaders(adminUserId, adminToken))
+          .send({ firstNameEn, lastNameEn, locationId: locationAId });
+        expect(res.status).toBe(201);
+        return res.body.data.profile.id;
+      };
+
+      independentMayorId = await createPerson('Independent', 'Mayor');
+      partyMayorId = await createPerson('Party', 'Mayor');
+      independentWithoutOfficeId = await createPerson('Independent', 'Citizen');
+
+      await User.update(
+        { politicalAffiliationStatus: 'unaffiliated' },
+        { where: { id: [independentMayorId, independentWithoutOfficeId] } }
+      );
+      await User.update(
+        { politicalAffiliationStatus: 'party' },
+        { where: { id: partyMayorId } }
+      );
+
+      await LocationRole.bulkCreate([
+        { locationId: locationAId, roleKey: 'mayor', userId: independentMayorId, sortOrder: 1, isActive: true },
+        { locationId: locationAId, roleKey: 'mayor', userId: partyMayorId, sortOrder: 2, isActive: true },
+      ]);
+
+      await ManifestAcceptance.create({
+        manifestId: directManifest.id,
+        userId: independentMayorId,
+      });
+    });
+
+    it('returns only unaffiliated profiles when independentOnly is set', async () => {
+      const res = await request(app).get('/api/persons?independentOnly=true&limit=100');
+      expect(res.status).toBe(200);
+      const ids = res.body.data.profiles.map((p) => p.id);
+      expect(ids).toContain(independentMayorId);
+      expect(ids).toContain(independentWithoutOfficeId);
+      expect(ids).not.toContain(partyMayorId);
+    });
+
+    it('returns only assigned public office holders when officialOnly is set', async () => {
+      const res = await request(app).get('/api/persons?officialOnly=true&limit=100');
+      expect(res.status).toBe(200);
+      const ids = res.body.data.profiles.map((p) => p.id);
+      expect(ids).toContain(independentMayorId);
+      expect(ids).toContain(partyMayorId);
+      expect(ids).not.toContain(independentWithoutOfficeId);
+      expect(res.body.data.profiles.find((p) => p.id === independentMayorId).locationRoles.length).toBeGreaterThan(0);
+    });
+
+    it('combines independent, office role and direct-democracy manifest filters', async () => {
+      const res = await request(app)
+        .get(`/api/persons?independentOnly=true&officialOnly=true&roleKey=mayor&manifestSlug=${directManifestSlug}&limit=100`);
+      expect(res.status).toBe(200);
+      const ids = res.body.data.profiles.map((p) => p.id);
+      expect(ids).toEqual([independentMayorId]);
+      expect(res.body.data.profiles[0].manifestAcceptances[0].manifest.slug).toBe(directManifestSlug);
+    });
+  });
 
   describe('POST /api/persons', () => {
     it('rejects unauthenticated requests', async () => {

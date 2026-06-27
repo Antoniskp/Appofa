@@ -2,7 +2,21 @@
 
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const { User, Location, LocationLink, Endorsement, DreamTeamVote, LocationRole, GovernmentCurrentHolder, GovernmentPositionSuggestion, FormationPick, Organization, UserPoliticalAffiliation } = require('../models');
+const {
+  User,
+  Location,
+  LocationLink,
+  Endorsement,
+  DreamTeamVote,
+  LocationRole,
+  GovernmentCurrentHolder,
+  GovernmentPositionSuggestion,
+  FormationPick,
+  Organization,
+  UserPoliticalAffiliation,
+  Manifest,
+  ManifestAcceptance,
+} = require('../models');
 const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const {
@@ -82,6 +96,48 @@ const PROFILE_INCLUDE = [
   },
 ];
 
+function buildProfileInclude({ roleKey, officialOnly, manifestSlug, hasManifestAcceptance } = {}) {
+  const include = PROFILE_INCLUDE.map((entry) => ({ ...entry }));
+
+  const roleWhere = { isActive: true };
+  if (roleKey && typeof roleKey === 'string' && roleKey.trim()) {
+    roleWhere.roleKey = roleKey.trim();
+  }
+
+  include.push({
+    model: LocationRole,
+    as: 'locationRoles',
+    required: Boolean(officialOnly || roleKey),
+    where: roleWhere,
+    attributes: ['id', 'locationId', 'roleKey', 'sortOrder', 'isActive'],
+    include: [
+      {
+        model: Location,
+        as: 'location',
+        attributes: ['id', 'name', 'slug', 'type', 'parent_id'],
+      },
+    ],
+  });
+
+  const manifestInclude = {
+    model: Manifest,
+    as: 'manifest',
+    attributes: ['id', 'slug', 'title', 'articleUrl'],
+    where: { isActive: true },
+    required: false,
+  };
+
+  include.push({
+    model: ManifestAcceptance,
+    as: 'manifestAcceptances',
+    required: Boolean(hasManifestAcceptance || manifestSlug),
+    attributes: ['id', 'manifestId', 'acceptedAt'],
+    include: [manifestInclude],
+  });
+
+  return include;
+}
+
 const SAFE_USER_ATTRS = [
   'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
   'nickname', 'avatar', 'email', 'role', 'claimStatus', 'slug'
@@ -146,13 +202,30 @@ function buildNameSearchWhere(search) {
 
 // ─── Public read ─────────────────────────────────────────────────────────────
 
-async function getPersons({ page = 1, limit = 12, constituencyId, search, claimStatus, expertiseArea, locationId, domainId } = {}) {
+async function getPersons({
+  page = 1,
+  limit = 12,
+  constituencyId,
+  search,
+  claimStatus,
+  expertiseArea,
+  locationId,
+  domainId,
+  independentOnly,
+  officialOnly,
+  roleKey,
+  manifestSlug,
+  hasManifestAcceptance,
+} = {}) {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 12));
   const offset = (pageNum - 1) * limitNum;
 
   // Only public person profiles (claimStatus IS NOT NULL)
   const where = { claimStatus: { [Op.ne]: null } };
+  if (independentOnly === true || independentOnly === 'true' || independentOnly === '1') {
+    where.politicalAffiliationStatus = 'unaffiliated';
+  }
   if (constituencyId) where.constituencyId = parseInt(constituencyId, 10);
   if (locationId) {
     const parsedLocationId = parseInt(locationId, 10);
@@ -176,9 +249,62 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
     where.professions = { [likeOp]: `%"domainId":"${safeDomainId}"%` };
   }
 
+  const includeFilters = {
+    officialOnly: officialOnly === true || officialOnly === 'true' || officialOnly === '1',
+    roleKey,
+    hasManifestAcceptance: hasManifestAcceptance === true || hasManifestAcceptance === 'true' || hasManifestAcceptance === '1',
+    manifestSlug,
+  };
+
+  if (manifestSlug && typeof manifestSlug === 'string') {
+    const manifest = await Manifest.findOne({
+      where: { slug: manifestSlug, isActive: true },
+      attributes: ['id'],
+    });
+    if (!manifest) {
+      return {
+        profiles: [],
+        pagination: {
+          currentPage: pageNum,
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: limitNum,
+        },
+      };
+    }
+    includeFilters.hasManifestAcceptance = true;
+    includeFilters.manifestId = manifest.id;
+  } else if (includeFilters.hasManifestAcceptance) {
+    const activeManifests = await Manifest.findAll({
+      where: { isActive: true },
+      attributes: ['id'],
+    });
+    includeFilters.manifestIds = activeManifests.map((manifest) => manifest.id);
+    if (includeFilters.manifestIds.length === 0) {
+      return {
+        profiles: [],
+        pagination: {
+          currentPage: pageNum,
+          totalPages: 0,
+          totalItems: 0,
+          itemsPerPage: limitNum,
+        },
+      };
+    }
+  }
+
+  const include = buildProfileInclude(includeFilters);
+  const manifestAcceptanceInclude = include.find((item) => item.as === 'manifestAcceptances');
+  if (includeFilters.manifestId && manifestAcceptanceInclude) {
+    manifestAcceptanceInclude.where = { manifestId: includeFilters.manifestId };
+  } else if (includeFilters.manifestIds && manifestAcceptanceInclude) {
+    manifestAcceptanceInclude.where = { manifestId: { [Op.in]: includeFilters.manifestIds } };
+  }
+
   const { count, rows } = await User.findAndCountAll({
     where,
-    include: PROFILE_INCLUDE,
+    include,
+    distinct: true,
     limit: limitNum,
     offset,
     order: [['createdAt', 'DESC']]
@@ -198,7 +324,7 @@ async function getPersons({ page = 1, limit = 12, constituencyId, search, claimS
 async function getPersonBySlug(slug) {
   const profile = await User.findOne({
     where: { slug, claimStatus: { [Op.ne]: null } },
-    include: PROFILE_INCLUDE
+    include: buildProfileInclude()
   });
   if (!profile) throw new ServiceError(404, 'Person profile not found.');
   return profile;
@@ -206,7 +332,7 @@ async function getPersonBySlug(slug) {
 
 async function getPersonById(id) {
   const profile = await User.findByPk(id, {
-    include: PROFILE_INCLUDE
+    include: buildProfileInclude()
   });
   if (!profile || profile.claimStatus === null) throw new ServiceError(404, 'Person profile not found.');
   return profile;

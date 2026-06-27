@@ -166,6 +166,13 @@ export default function TopNav() {
           href: '/users',
           icon: <UsersIcon className="h-4 w-4" />,
           mobileIcon: <UsersIcon className="h-5 w-5" />
+        },
+        {
+          id: 'independents',
+          label: tNav('independents'),
+          href: '/independents',
+          icon: <FlagIcon className="h-4 w-4" />,
+          mobileIcon: <FlagIcon className="h-5 w-5" />
         }
       ]
     },
