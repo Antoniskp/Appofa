@@ -45,6 +45,56 @@
     "all_pages": "All Pages",
     "change_country": "Change country"
   },
+  "independents": {
+    "hero": {
+      "eyebrow": "Independent public officials",
+      "title": "Organize officials around the majority mandate",
+      "description": "Find independent parliamentarians, mayors and civic office holders, then identify who has accepted the direct-democracy manifest: the stronger promise to act according to the public majority.",
+      "polls_cta": "See majority polls",
+      "supporters_cta": "View manifest supporters"
+    },
+    "filters": {
+      "title": "Filters",
+      "search_placeholder": "Search by name",
+      "all_offices": "All offices",
+      "any_manifest": "Any active manifest",
+      "committed_only": "Show only direct-democracy committed officials.",
+      "uses_manifest": "Uses accepted manifest: {title}.",
+      "uses_any_manifest": "Uses any active manifest acceptance until a direct-democracy manifest is selected."
+    },
+    "card": {
+      "fallback_name": "Independent official",
+      "verified_profile": "Verified profile",
+      "independent": "Independent",
+      "no_pledge": "No direct-democracy pledge shown",
+      "manifest_accepted": "Majority-rule manifest accepted",
+      "view_profile": "View public profile"
+    },
+    "states": {
+      "load_error_title": "Could not load independent officials",
+      "empty_title": "No independent officials found",
+      "empty_description": "Try removing a filter, or add public office role assignments to independent person profiles."
+    },
+    "results": {
+      "showing": "Showing {count} independent officials",
+      "page_of": "Page {current} of {total}"
+    },
+    "roles": {
+      "secretary_general": "Secretary General",
+      "coordinator": "Coordinator",
+      "president": "President",
+      "prime_minister": "Prime Minister",
+      "parliament_speaker": "Speaker of Parliament",
+      "regional_governor": "Regional Governor",
+      "vice_governor": "Vice Governor",
+      "regional_council_president": "Regional Council President",
+      "parliamentarian": "Member of Parliament",
+      "parliamentary_candidate": "Parliamentary Candidate",
+      "mayor": "Mayor",
+      "deputy_mayor": "Deputy Mayor",
+      "council_president": "Municipal Council President"
+    }
+  },
   "cameras": {
     "title": "Community cameras",
     "subtitle": "Browse every available camera and see which areas they cover on the map.",

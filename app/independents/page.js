@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import {
   ArrowRightIcon,
   CheckBadgeIcon,
@@ -24,17 +25,26 @@ import locationRolesConfig from '@/config/locationRoles.json';
 const PAGE_SIZE = 12;
 const DIRECT_DEMOCRACY_HINTS = ['direct', 'democracy', 'democratic', 'dimokrat', 'δημοκρα'];
 
-function getDisplayName(profile) {
+function getDisplayName(profile, fallbackName) {
   const nativeName = `${profile.firstNameNative || ''} ${profile.lastNameNative || ''}`.trim();
   const englishName = `${profile.firstNameEn || ''} ${profile.lastNameEn || ''}`.trim();
-  return nativeName || englishName || profile.nickname || profile.username || 'Independent official';
+  return nativeName || englishName || profile.nickname || profile.username || fallbackName;
 }
 
-function getRoleOptions() {
+function translateRole(t, roleKey) {
+  if (!roleKey) return '';
+  try {
+    return t(`roles.${roleKey}`);
+  } catch {
+    return roleKey.replaceAll('_', ' ');
+  }
+}
+
+function getRoleOptions(t) {
   return Object.entries(locationRolesConfig.roles || {}).flatMap(([locationType, roles]) =>
     roles.map((role) => ({
       value: role.key,
-      label: role.titleEn || role.title || role.key,
+      label: translateRole(t, role.key) || role.titleEn || role.title || role.key,
       locationType,
     }))
   );
@@ -47,7 +57,7 @@ function pickDirectDemocracyManifest(manifests) {
   }) || manifests[0] || null;
 }
 
-function OfficeList({ roles = [] }) {
+function OfficeList({ roles = [], t }) {
   const activeRoles = roles.filter((role) => role?.isActive !== false);
   if (activeRoles.length === 0) return null;
 
@@ -57,7 +67,7 @@ function OfficeList({ roles = [] }) {
         <div key={role.id} className="flex items-start gap-2 text-sm text-gray-600">
           <ScaleIcon className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600" />
           <div>
-            <p className="font-medium text-gray-800">{role.roleKey?.replaceAll('_', ' ')}</p>
+            <p className="font-medium text-gray-800">{translateRole(t, role.roleKey)}</p>
             {role.location?.name && (
               <p className="text-xs text-gray-500">{role.location.name}</p>
             )}
@@ -68,7 +78,7 @@ function OfficeList({ roles = [] }) {
   );
 }
 
-function ManifestCommitment({ acceptances = [], selectedManifestSlug }) {
+function ManifestCommitment({ acceptances = [], selectedManifestSlug, t }) {
   const accepted = acceptances
     .filter((acceptance) => acceptance?.manifest)
     .filter((acceptance) => !selectedManifestSlug || acceptance.manifest.slug === selectedManifestSlug);
@@ -76,20 +86,20 @@ function ManifestCommitment({ acceptances = [], selectedManifestSlug }) {
   if (accepted.length === 0) {
     return (
       <Badge variant="default" icon={<ClipboardDocumentCheckIcon />}>
-        No direct-democracy pledge shown
+        {t('card.no_pledge')}
       </Badge>
     );
   }
 
   return (
     <Badge variant="success" icon={<ClipboardDocumentCheckIcon />}>
-      Majority-rule manifest accepted
+      {t('card.manifest_accepted')}
     </Badge>
   );
 }
 
-function IndependentCard({ profile, selectedManifestSlug }) {
-  const name = getDisplayName(profile);
+function IndependentCard({ profile, selectedManifestSlug, t }) {
+  const name = getDisplayName(profile, t('card.fallback_name'));
   const photo = profile.photo || profile.avatar;
   const href = profile.slug ? `/persons/${profile.slug}` : '/users';
   const locationName = profile.homeLocation?.name || profile.constituency?.name || profile.location?.name;
@@ -115,7 +125,7 @@ function IndependentCard({ profile, selectedManifestSlug }) {
               {name}
             </h2>
             {profile.claimStatus === 'claimed' && (
-              <CheckBadgeIcon className="h-5 w-5 text-green-600" aria-label="Verified profile" />
+              <CheckBadgeIcon className="h-5 w-5 text-green-600" aria-label={t('card.verified_profile')} />
             )}
           </div>
           {locationName && (
@@ -125,23 +135,24 @@ function IndependentCard({ profile, selectedManifestSlug }) {
             </p>
           )}
           <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant="primary">Independent</Badge>
+            <Badge variant="primary">{t('card.independent')}</Badge>
             <ManifestCommitment
               acceptances={profile.manifestAcceptances || []}
               selectedManifestSlug={selectedManifestSlug}
+              t={t}
             />
           </div>
         </div>
       </div>
 
-      <OfficeList roles={profile.locationRoles || []} />
+      <OfficeList roles={profile.locationRoles || []} t={t} />
 
       {profile.bio && (
         <p className="mt-4 line-clamp-3 text-sm leading-6 text-gray-600">{profile.bio}</p>
       )}
 
       <span className="mt-auto inline-flex items-center gap-1 pt-4 text-sm font-semibold text-blue-700">
-        View public profile
+        {t('card.view_profile')}
         <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
       </span>
     </Link>
@@ -149,6 +160,7 @@ function IndependentCard({ profile, selectedManifestSlug }) {
 }
 
 export default function IndependentsPage() {
+  const t = useTranslations('independents');
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [locationId, setLocationId] = useState('');
@@ -156,7 +168,7 @@ export default function IndependentsPage() {
   const [committedOnly, setCommittedOnly] = useState(false);
   const [selectedManifestSlug, setSelectedManifestSlug] = useState('');
 
-  const roleOptions = useMemo(() => getRoleOptions(), []);
+  const roleOptions = useMemo(() => getRoleOptions(t), [t]);
 
   const { data: manifests } = useAsyncData(
     async () => {
@@ -215,28 +227,27 @@ export default function IndependentsPage() {
         <div className="app-container py-10">
           <div className="max-w-4xl">
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-              Independent public officials
+              {t('hero.eyebrow')}
             </p>
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 md:text-4xl">
-              Organize officials around the majority mandate
+              {t('hero.title')}
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-7 text-gray-600">
-              Find independent parliamentarians, mayors and civic office holders, then identify who has
-              accepted the direct-democracy manifest: the stronger promise to act according to the public majority.
+              {t('hero.description')}
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
                 href="/polls"
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
               >
-                See majority polls
+                {t('hero.polls_cta')}
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
               <Link
                 href="/manifest-supporters"
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
-                View manifest supporters
+                {t('hero.supporters_cta')}
               </Link>
             </div>
           </div>
@@ -247,21 +258,21 @@ export default function IndependentsPage() {
         <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-800">
             <FunnelIcon className="h-5 w-5 text-blue-600" />
-            Filters
+            {t('filters.title')}
           </div>
           <LocationFilterBreadcrumb value={locationId} onChange={(id) => setLocationId(id || '')} />
           <div className="grid gap-3 md:grid-cols-[1.5fr_1fr_1fr]">
             <SearchInput
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name"
+              placeholder={t('filters.search_placeholder')}
             />
             <select
               value={roleKey}
               onChange={(event) => setRoleKey(event.target.value)}
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">All offices</option>
+              <option value="">{t('filters.all_offices')}</option>
               {roleOptions.map((role) => (
                 <option key={`${role.locationType}-${role.value}`} value={role.value}>
                   {role.label}
@@ -273,7 +284,7 @@ export default function IndependentsPage() {
               onChange={(event) => setSelectedManifestSlug(event.target.value)}
               className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Any active manifest</option>
+              <option value="">{t('filters.any_manifest')}</option>
               {manifests.map((manifest) => (
                 <option key={manifest.slug} value={manifest.slug}>
                   {manifest.title}
@@ -289,11 +300,11 @@ export default function IndependentsPage() {
               className="mt-1 h-4 w-4 rounded border-green-300 text-green-600 focus:ring-green-500"
             />
             <span>
-              <span className="font-semibold">Show only direct-democracy committed officials.</span>
+              <span className="font-semibold">{t('filters.committed_only')}</span>
               <span className="block text-green-800/80">
                 {selectedManifest
-                  ? `Uses accepted manifest: ${selectedManifest.title}.`
-                  : 'Uses any active manifest acceptance until a direct-democracy manifest is selected.'}
+                  ? t('filters.uses_manifest', { title: selectedManifest.title })
+                  : t('filters.uses_any_manifest')}
               </span>
             </span>
           </label>
@@ -308,7 +319,7 @@ export default function IndependentsPage() {
         {!loading && error && (
           <EmptyState
             type="error"
-            title="Could not load independent officials"
+            title={t('states.load_error_title')}
             description={error}
           />
         )}
@@ -316,8 +327,8 @@ export default function IndependentsPage() {
         {!loading && !error && profiles.length === 0 && (
           <EmptyState
             type="empty"
-            title="No independent officials found"
-            description="Try removing a filter, or add public office role assignments to independent person profiles."
+            title={t('states.empty_title')}
+            description={t('states.empty_description')}
           />
         )}
 
@@ -325,10 +336,13 @@ export default function IndependentsPage() {
           <>
             <div className="mb-4 flex items-center justify-between text-sm text-gray-600">
               <p>
-                Showing {profiles.length} independent official{profiles.length === 1 ? '' : 's'}
+                {t('results.showing', { count: profiles.length })}
               </p>
               <p>
-                Page {pagination.currentPage || page} of {pagination.totalPages || 1}
+                {t('results.page_of', {
+                  current: pagination.currentPage || page,
+                  total: pagination.totalPages || 1,
+                })}
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -337,6 +351,7 @@ export default function IndependentsPage() {
                   key={profile.id}
                   profile={profile}
                   selectedManifestSlug={selectedManifestSlug}
+                  t={t}
                 />
               ))}
             </div>

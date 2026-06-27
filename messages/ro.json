@@ -45,6 +45,56 @@
     "all_pages": "Toate paginile",
     "change_country": "Schimbă țara"
   },
+  "independents": {
+    "hero": {
+      "eyebrow": "Oficiali publici independenți",
+      "title": "Organizează oficialii în jurul mandatului majorității",
+      "description": "Găsește parlamentari, primari și oficiali civici independenți, apoi vezi cine a acceptat manifestul democrației directe: promisiunea mai puternică de a acționa conform majorității publice.",
+      "polls_cta": "Vezi sondajele majorității",
+      "supporters_cta": "Vezi susținătorii manifestului"
+    },
+    "filters": {
+      "title": "Filtre",
+      "search_placeholder": "Caută după nume",
+      "all_offices": "Toate funcțiile",
+      "any_manifest": "Orice manifest activ",
+      "committed_only": "Arată doar oficialii angajați pentru democrație directă.",
+      "uses_manifest": "Folosește manifestul acceptat: {title}.",
+      "uses_any_manifest": "Folosește orice acceptare a unui manifest activ până când este selectat un manifest de democrație directă."
+    },
+    "card": {
+      "fallback_name": "Oficial independent",
+      "verified_profile": "Profil verificat",
+      "independent": "Independent",
+      "no_pledge": "Nu este afișat un angajament pentru democrație directă",
+      "manifest_accepted": "Manifestul regulii majorității a fost acceptat",
+      "view_profile": "Vezi profilul public"
+    },
+    "states": {
+      "load_error_title": "Oficialii independenți nu au putut fi încărcați",
+      "empty_title": "Nu au fost găsiți oficiali independenți",
+      "empty_description": "Încearcă să elimini un filtru sau adaugă atribuiri de funcții publice la profilurile persoanelor independente."
+    },
+    "results": {
+      "showing": "Se afișează {count} oficiali independenți",
+      "page_of": "Pagina {current} din {total}"
+    },
+    "roles": {
+      "secretary_general": "Secretar general",
+      "coordinator": "Coordonator",
+      "president": "Președinte",
+      "prime_minister": "Prim-ministru",
+      "parliament_speaker": "Președintele parlamentului",
+      "regional_governor": "Guvernator regional",
+      "vice_governor": "Viceguvernator",
+      "regional_council_president": "Președintele consiliului regional",
+      "parliamentarian": "Parlamentar",
+      "parliamentary_candidate": "Candidat parlamentar",
+      "mayor": "Primar",
+      "deputy_mayor": "Viceprimar",
+      "council_president": "Președintele consiliului municipal"
+    }
+  },
   "cameras": {
     "title": "Camerele comunității",
     "subtitle": "Vezi toate camerele disponibile și zonele pe care le acoperă pe hartă.",
