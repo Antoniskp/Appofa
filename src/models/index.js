@@ -280,6 +280,7 @@ LocationSection.belongsTo(User, { foreignKey: 'updatedByUserId', as: 'updatedBy'
 LocationRole.belongsTo(Location, { foreignKey: 'locationId', as: 'location' });
 Location.hasMany(LocationRole, { foreignKey: 'locationId', as: 'roles' });
 LocationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(LocationRole, { foreignKey: 'userId', as: 'locationRoles' });
 
 // UserLocationRole associations (platform moderator/role assignments via join table)
 UserLocationRole.belongsTo(User, { foreignKey: 'userId', as: 'user' });
