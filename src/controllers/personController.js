@@ -5,8 +5,36 @@ const personController = {
   // GET /api/persons
   getPersons: async (req, res) => {
     try {
-      const { page, limit, constituencyId, search, claimStatus, expertiseArea, locationId, domainId } = req.query;
-      const data = await personService.getPersons({ page, limit, constituencyId, search, claimStatus, expertiseArea, locationId, domainId });
+      const {
+        page,
+        limit,
+        constituencyId,
+        search,
+        claimStatus,
+        expertiseArea,
+        locationId,
+        domainId,
+        independentOnly,
+        officialOnly,
+        roleKey,
+        manifestSlug,
+        hasManifestAcceptance,
+      } = req.query;
+      const data = await personService.getPersons({
+        page,
+        limit,
+        constituencyId,
+        search,
+        claimStatus,
+        expertiseArea,
+        locationId,
+        domainId,
+        independentOnly,
+        officialOnly,
+        roleKey,
+        manifestSlug,
+        hasManifestAcceptance,
+      });
       return res.status(200).json({ success: true, data });
     } catch (error) {
       if (error.status) return res.status(error.status).json({ success: false, message: error.message });
