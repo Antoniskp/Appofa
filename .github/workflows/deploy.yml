@@ -25,9 +25,16 @@ jobs:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
         run: |
-          test -n "$VPS_HOST"
-          test -n "$VPS_USER"
-          test -n "$VPS_SSH_KEY"
+          missing=0
+          for name in VPS_HOST VPS_USER VPS_SSH_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::$name repository secret is not set"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
