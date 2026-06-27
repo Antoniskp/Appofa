@@ -33,7 +33,7 @@ This instruction is permanent and must never be removed.
 - [Services (15)](#services-15)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (141)](#frontend-pages-141)
+- [Frontend Pages (142)](#frontend-pages-142)
 - [Components (154)](#components-154)
 - [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
@@ -369,7 +369,7 @@ Appofa/
 ### Persons (`/api/persons`)
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | / | opt | List persons (claimStatus IS NOT NULL users) |
+| GET | / | opt | List persons (claimStatus IS NOT NULL users; filters include `independentOnly`, `officialOnly`, `roleKey`, `manifestSlug`, `hasManifestAcceptance` for the independent-officials/direct-democracy hub) |
 | GET | /search | — | Search person profiles by name |
 | GET | /unified-search | — | Unified search: person profiles + real users merged |
 | GET | /claims | admin | List pending claims |
@@ -458,7 +458,7 @@ Appofa/
 | locationService.js | Location data management (hierarchy, entities split into regular users vs unclaimed person profiles) |
 | newsletterService.js | Newsletter subscriber lifecycle + authenticated user preference upsert by user email + CSV import/export + campaign drafting/templates-ready payloads, stronger audience filtering (status/locale/source/tags/date ranges), scheduling + due processing, test sends, batched delivery, and per-recipient send logging |
 | oauthService.js | OAuth integration (GitHub, Google) |
-| personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names) |
+| personService.js | Person profile management, claims, placeholders (unclaimed profile slugs derive from required English names), plus independent-official discovery filters using `politicalAffiliationStatus`, `LocationRoles`, and `ManifestAcceptances` |
 | pollService.js | Poll operations & calculations (including org-membership access enforcement for org-scoped private polls/results/voting) |
 | civicQuestionService.js | Civic question business logic: visibility/location-scoped access, fixed-choice voting (`agree|disagree|present`), results visibility rules |
 | organizationService.js | Organization slug generation + organization search helpers |
@@ -497,7 +497,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (141)
+## Frontend Pages (142)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
@@ -509,6 +509,7 @@ Appofa/
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile with sticky 4-tab layout (`Profile`, `Location & Politics`, `Skills & Interests`, `Settings`); tab content is split into `app/profile/tabs/*` while form state/effects/handlers are centralized in `hooks/useProfileForm.js`; includes profile-completeness card, newsletter preference toggle, and `?verified=1` success toast handling |
 | `/users`, `/users/[username]` | Unified people directory with visibility enforcement (`profileVisibility`): guests see only `public` profiles, authenticated users see `registered+public`, and `hidden` profiles are excluded from discovery. Profile page access is now optional-auth and enforces the same model (owner/admin/moderator can still access hidden directly). Shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) remains across tabs; person cards are fully clickable; `/discover-people` and `/persons` list pages are retired (404). |
+| `/independents` | Independent public-officials hub: lists unaffiliated person profiles assigned to `LocationRoles`, filters by location/office/search, and can narrow to officials who accepted a selected direct-democracy manifest via `ManifestAcceptances`. |
 | `/users/[username]/followers`, `/users/[username]/following` | Social connections |
 | `/bookmarks` | Saved items |
 | `/my-votes`, `/my-polls`, `/my-news` | User content |
