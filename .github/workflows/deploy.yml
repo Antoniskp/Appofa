@@ -23,22 +23,31 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
           VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
         run: |
           missing=0
-          for name in VPS_HOST VPS_USER VPS_SSH_KEY; do
+          for name in VPS_HOST VPS_USER; do
             if [ -z "${!name}" ]; then
               echo "::error::$name repository secret is not set"
               missing=1
             fi
           done
+          if [ -z "$VPS_SSH_KEY" ] && [ -z "$VPS_SSH_KEY_B64" ]; then
+            echo "::error::Set either VPS_SSH_KEY_B64 or VPS_SSH_KEY repository secret"
+            missing=1
+          fi
           if [ "$missing" -ne 0 ]; then
             exit 1
           fi
 
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
-          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/appofa_deploy_key
+          if [ -n "$VPS_SSH_KEY_B64" ]; then
+            printf '%s' "$VPS_SSH_KEY_B64" | base64 -d > ~/.ssh/appofa_deploy_key
+          else
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/appofa_deploy_key
+          fi
           chmod 600 ~/.ssh/appofa_deploy_key
           ssh-keygen -y -f ~/.ssh/appofa_deploy_key >/dev/null
 
