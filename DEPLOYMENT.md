@@ -25,3 +25,4 @@ cd /var/www/Appofa && ./scripts/deploy.sh
 ```
 
 Smoke test note: merging a docs-only PR should still trigger the automatic deploy workflow on `main`.
+Smoke test note: `VPS_SSH_KEY_B64` can be used to avoid multiline private-key paste issues.
