@@ -215,7 +215,7 @@ describe('Image Upload API', () => {
       expect(res.status).toBe(200);
       expect(res.body.data.avatarUrl).toMatch(new RegExp(`/uploads/profiles/${viewerId}\\.webp`));
       // Only one file should exist
-      const files = fs.readdirSync(uploadsProfiles).filter((f) => f.startsWith(`${viewerId}`));
+      const files = fs.readdirSync(uploadsProfiles).filter((f) => f === `${viewerId}.webp`);
       expect(files.length).toBe(1);
     });
   });

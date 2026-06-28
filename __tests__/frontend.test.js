@@ -303,6 +303,10 @@ describe('Frontend smoke tests', () => {
       success: true,
       data: { countryCode: 'DE', countryName: 'Germany' },
     });
+    locationAPI.getAll.mockResolvedValue({
+      success: true,
+      locations: [{ code: 'DE', name: 'Germany', name_local: 'Germany' }],
+    });
 
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
@@ -339,6 +343,10 @@ describe('Frontend smoke tests', () => {
     geoAPI.detect.mockResolvedValue({
       success: true,
       data: { countryCode: 'DE', countryName: 'Germany' },
+    });
+    locationAPI.getAll.mockResolvedValue({
+      success: true,
+      locations: [{ code: 'DE', name: 'Germany', name_local: 'Germany' }],
     });
 
     const HomePage = require('../app/page').default;
@@ -378,7 +386,7 @@ describe('Frontend smoke tests', () => {
     const ArticlesPage = require('../app/articles/page').default;
     const { container, root } = await renderPage(ArticlesPage);
 
-    expect(container.textContent).toContain('All');
+    expect(container.textContent).toContain('Όλες οι κατηγορίες');
     expect(container.textContent).toContain('Δεν βρέθηκαν άρθρα');
 
     await act(async () => {
@@ -391,7 +399,7 @@ describe('Frontend smoke tests', () => {
     const NewsPage = require('../app/news/page').default;
     const { container, root } = await renderPage(NewsPage);
 
-    expect(container.textContent).toContain('All');
+    expect(container.textContent).toContain('Όλες οι κατηγορίες');
     expect(container.textContent).toContain('Δεν υπάρχουν ειδήσεις');
 
     await act(async () => {

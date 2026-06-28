@@ -8,6 +8,14 @@ const { validateWorkerToken, isValidWorkerTokenFormat } = require('../services/w
 const connectedWorkers = new Map();
 const pendingRequests = new Map();
 
+const pruneDisconnectedWorkers = () => {
+  for (const [workerId, worker] of connectedWorkers.entries()) {
+    if (!worker.ws || worker.ws.readyState !== WebSocket.OPEN) {
+      connectedWorkers.delete(workerId);
+    }
+  }
+};
+
 const getTokenFromRequest = (req) => {
   const requestUrl = new URL(req.url, 'http://localhost');
   const queryToken = requestUrl.searchParams.get('token');
@@ -26,16 +34,20 @@ const isAuthorizedToken = async (token) => {
   return Boolean(envToken && token === envToken);
 };
 
-const getConnectedWorkers = () => Array.from(connectedWorkers.values()).map((worker) => ({
-  workerId: worker.workerId,
-  name: worker.name,
-  capabilities: worker.capabilities,
-  maxConcurrentTasks: worker.maxConcurrentTasks,
-  connectedAt: worker.connectedAt,
-  lastHeartbeat: worker.lastHeartbeat || null,
-}));
+const getConnectedWorkers = () => {
+  pruneDisconnectedWorkers();
+  return Array.from(connectedWorkers.values()).map((worker) => ({
+    workerId: worker.workerId,
+    name: worker.name,
+    capabilities: worker.capabilities,
+    maxConcurrentTasks: worker.maxConcurrentTasks,
+    connectedAt: worker.connectedAt,
+    lastHeartbeat: worker.lastHeartbeat || null,
+  }));
+};
 
 const getFirstConnectedWorkerId = () => {
+  pruneDisconnectedWorkers();
   const first = connectedWorkers.keys().next();
   return first.done ? null : first.value;
 };
@@ -124,6 +136,15 @@ const createWorkerWsServer = (httpServer) => {
 
   workerWsServer.on('connection', async (ws, req) => {
     try {
+      ws.on('close', () => {
+        if (ws.workerId) {
+          connectedWorkers.delete(ws.workerId);
+          console.log(`Worker disconnected: ${ws.workerId}`);
+          return;
+        }
+        console.log('Worker WebSocket disconnected before registration.');
+      });
+
       // Buffer messages immediately before any await, so register is not lost
       const messageBuffer = [];
       const bufferMessage = (raw) => messageBuffer.push(raw);
@@ -166,15 +187,6 @@ const createWorkerWsServer = (httpServer) => {
           console.warn('Failed to parse buffered worker message:', error.message);
         }
       }
-
-      ws.on('close', () => {
-        if (ws.workerId) {
-          connectedWorkers.delete(ws.workerId);
-          console.log(`Worker disconnected: ${ws.workerId}`);
-          return;
-        }
-        console.log('Worker WebSocket disconnected before registration.');
-      });
 
       ws.on('error', (error) => {
         console.error('Worker WebSocket error:', error.message);

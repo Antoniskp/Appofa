@@ -1,8 +1,35 @@
 'use strict';
 
+async function describeTableSafe(queryInterface, tableName) {
+  try {
+    return await queryInterface.describeTable(tableName);
+  } catch (error) {
+    const dialect = queryInterface.sequelize?.getDialect?.();
+    if (dialect !== 'sqlite') {
+      throw error;
+    }
+
+    const [columns] = await queryInterface.sequelize.query(`PRAGMA table_info(${tableName})`);
+    return columns.reduce((description, column) => {
+      description[column.name] = column;
+      return description;
+    }, {});
+  }
+}
+
+async function removeColumnSafe(queryInterface, tableName, columnName) {
+  const dialect = queryInterface.sequelize?.getDialect?.();
+  if (dialect === 'sqlite') {
+    await queryInterface.sequelize.query(`ALTER TABLE ${tableName} DROP COLUMN ${columnName}`);
+    return;
+  }
+
+  await queryInterface.removeColumn(tableName, columnName);
+}
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const tableDescription = await queryInterface.describeTable('Locations');
+    const tableDescription = await describeTableSafe(queryInterface, 'Locations');
 
     if (!tableDescription.population_override) {
       await queryInterface.addColumn('Locations', 'population_override', {
@@ -17,7 +44,13 @@ module.exports = {
   },
 
   async down(queryInterface, _Sequelize) {
-    await queryInterface.removeColumn('Locations', 'population_override');
-    console.log('population_override column removed from Locations table');
+    const tableDescription = await describeTableSafe(queryInterface, 'Locations');
+
+    if (tableDescription.population_override) {
+      await removeColumnSafe(queryInterface, 'Locations', 'population_override');
+      console.log('population_override column removed from Locations table');
+    } else {
+      console.log('population_override column does not exist, skipping removal');
+    }
   }
 };

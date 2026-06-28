@@ -55,6 +55,11 @@ describe('Endorsement System Tests', () => {
     ({ token: userAToken, id: userAId } = await registerAndLogin('end_userA'));
     ({ token: userBToken, id: userBId } = await registerAndLogin('end_userB'));
     ({ token: userCToken, id: userCId } = await registerAndLogin('end_userC'));
+
+    await User.update(
+      { profileVisibility: 'public' },
+      { where: { id: [userBId, userCId] } }
+    );
   });
 
   afterAll(async () => {

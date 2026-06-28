@@ -1,8 +1,35 @@
 'use strict';
 
+async function describeTableSafe(queryInterface, tableName) {
+  try {
+    return await queryInterface.describeTable(tableName);
+  } catch (error) {
+    const dialect = queryInterface.sequelize?.getDialect?.();
+    if (dialect !== 'sqlite') {
+      throw error;
+    }
+
+    const [columns] = await queryInterface.sequelize.query(`PRAGMA table_info(${tableName})`);
+    return columns.reduce((description, column) => {
+      description[column.name] = column;
+      return description;
+    }, {});
+  }
+}
+
+async function removeColumnSafe(queryInterface, tableName, columnName) {
+  const dialect = queryInterface.sequelize?.getDialect?.();
+  if (dialect === 'sqlite') {
+    await queryInterface.sequelize.query(`ALTER TABLE ${tableName} DROP COLUMN ${columnName}`);
+    return;
+  }
+
+  await queryInterface.removeColumn(tableName, columnName);
+}
+
 module.exports = {
   async up(queryInterface, Sequelize) {
-    const tableDescription = await queryInterface.describeTable('Locations');
+    const tableDescription = await describeTableSafe(queryInterface, 'Locations');
 
     if (!tableDescription.boundary_color) {
       await queryInterface.addColumn('Locations', 'boundary_color', {
@@ -38,9 +65,19 @@ module.exports = {
   },
 
   async down(queryInterface, _Sequelize) {
-    await queryInterface.removeColumn('Locations', 'map_default_zoom');
-    await queryInterface.removeColumn('Locations', 'map_default_center_lng');
-    await queryInterface.removeColumn('Locations', 'map_default_center_lat');
-    await queryInterface.removeColumn('Locations', 'boundary_color');
+    const tableDescription = await describeTableSafe(queryInterface, 'Locations');
+
+    if (tableDescription.map_default_zoom) {
+      await removeColumnSafe(queryInterface, 'Locations', 'map_default_zoom');
+    }
+    if (tableDescription.map_default_center_lng) {
+      await removeColumnSafe(queryInterface, 'Locations', 'map_default_center_lng');
+    }
+    if (tableDescription.map_default_center_lat) {
+      await removeColumnSafe(queryInterface, 'Locations', 'map_default_center_lat');
+    }
+    if (tableDescription.boundary_color) {
+      await removeColumnSafe(queryInterface, 'Locations', 'boundary_color');
+    }
   }
 };
