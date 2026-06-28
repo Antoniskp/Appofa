@@ -10,6 +10,7 @@ export default function CategoryPills({
   topTags = [],
   selectedTag = '',
   onTagSelect,
+  allLabel = 'All',
 }) {
   if (!countsLoaded) {
     return (
@@ -32,7 +33,7 @@ export default function CategoryPills({
         className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${!selected ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
         onClick={() => onSelect('')}
       >
-        All
+        {allLabel}
       </button>
       {visibleCategories.map((cat) => {
         const key = cat.value || cat;

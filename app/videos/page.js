@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { articleAPI } from '@/lib/api';
 import articleCategories from '@/config/articleCategories.json';
 import VideoThumbnailCard from '@/components/articles/VideoThumbnailCard';
@@ -28,6 +29,7 @@ function VideoGridSkeleton() {
 }
 
 export default function VideosPage() {
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
 
   // Filter state
@@ -174,6 +176,7 @@ export default function VideosPage() {
             onSelect={handleCategorySelect}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+            allLabel={tCommon('all_categories')}
           />
         </div>
 

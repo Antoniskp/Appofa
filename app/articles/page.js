@@ -128,6 +128,7 @@ function ArticlesContent() {
             onSelect={handleCategorySelect}
             counts={categoryCounts}
             countsLoaded={countsLoaded}
+            allLabel={tCommon('all_categories')}
             topTags={topTags}
             selectedTag={filters.tag}
             onTagSelect={(tag) => updateFilter('tag', tag)}

@@ -163,6 +163,7 @@ function PollsContent() {
               onSelect={(cat) => updateFilter('category', cat)}
               counts={categoryCounts}
               countsLoaded={countsLoaded}
+              allLabel={tCommon('all_categories')}
               topTags={topTags}
               selectedTag={filters.tag}
               onTagSelect={(tag) => updateFilter('tag', tag)}

@@ -228,7 +228,15 @@ export default function HomeHero() {
 
               {/* CTA link – always rendered to reserve space; hidden when no link */}
               <div className={`mb-3 transition-opacity duration-500 ${hasLink ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                {isInternalLink ? (
+                {!hasLink ? (
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex items-center gap-2 px-5 py-2.5 font-semibold border border-transparent"
+                  >
+                    {linkText}
+                    <ArrowRightIcon className="w-4 h-4" />
+                  </span>
+                ) : isInternalLink ? (
                   <Link
                     href={normalizedLinkUrl}
                     tabIndex={hasLink ? 0 : -1}
@@ -239,7 +247,7 @@ export default function HomeHero() {
                   </Link>
                 ) : (
                   <a
-                    href={normalizedLinkUrl || '#'}
+                    href={normalizedLinkUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     tabIndex={hasLink ? 0 : -1}

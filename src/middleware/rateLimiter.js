@@ -1,6 +1,67 @@
-const rateLimit = require('express-rate-limit');
+const { rateLimit, ipKeyGenerator } = require('express-rate-limit');
+const jwt = require('jsonwebtoken');
 const ipAccessService = require('../services/ipAccessService');
 const { normalizeIp } = require('../utils/normalizeIp');
+const { getCookie } = require('../utils/cookies');
+const { User } = require('../models');
+
+const API_LIMIT_ANONYMOUS = 200;
+const API_LIMIT_AUTHENTICATED = 1000;
+const USER_LIMIT_CACHE_TTL_MS = 60 * 1000;
+const userLimitCache = new Map();
+
+const getAuthToken = (req) => {
+  const bearerToken = req.headers.authorization?.split(' ')[1];
+  const cookieToken = getCookie(req, 'auth_token');
+  return bearerToken || cookieToken;
+};
+
+const getCachedUserLimitFields = async (userId) => {
+  const cached = userLimitCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) return cached.user;
+
+  const user = await User.findByPk(userId, {
+    attributes: ['id', 'role', 'isVerified', 'emailVerified'],
+  });
+  const userData = user
+    ? {
+        id: user.id,
+        role: user.role,
+        isVerified: Boolean(user.isVerified),
+        emailVerified: Boolean(user.emailVerified),
+      }
+    : null;
+
+  userLimitCache.set(userId, {
+    user: userData,
+    expiresAt: Date.now() + USER_LIMIT_CACHE_TTL_MS,
+  });
+
+  return userData;
+};
+
+const hydrateRateLimitUser = async (req) => {
+  if (req.user) return req.user;
+  if (!process.env.JWT_SECRET) return null;
+
+  const token = getAuthToken(req);
+  if (!token) return null;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded?.id;
+    if (!userId) return null;
+
+    const cachedUser = await getCachedUserLimitFields(userId);
+    req.user = {
+      ...decoded,
+      ...(cachedUser || {}),
+    };
+    return req.user;
+  } catch {
+    return null;
+  }
+};
 
 const skipForWhitelist = async (req) => {
   if (process.env.NODE_ENV === 'test') return true;
@@ -25,9 +86,8 @@ const isUserExemptFromLimits = (user) =>
  *  - Whitelisted IPs
  *  - Verified users and users with elevated roles (admin, moderator, editor)
  *
- * NOTE: req.user must be populated (i.e., auth middleware must run before the limiter)
- * for the user-based exemption to take effect. All routes using these limiters should
- * place optionalAuthMiddleware or authMiddleware before the limiter in the chain.
+ * The limiter hydrates req.user from the auth cookie/header when route auth
+ * middleware has not run yet, so user-based exemptions are route-order safe.
  * @param {import('express').Request} req
  * @returns {Promise<boolean>}
  */
@@ -38,7 +98,23 @@ const skipForVerifiedOrWhitelist = async (req) => {
   const clientIp = normalizeIp(req.ip) || req.ip;
   if (rules.whitelist.has(clientIp)) return true;
   // Skip for verified users and admins/moderators/editors
-  return isUserExemptFromLimits(req.user);
+  const user = await hydrateRateLimitUser(req);
+  return isUserExemptFromLimits(user);
+};
+
+const apiLimitForRequest = async (req) => {
+  const user = await hydrateRateLimitUser(req);
+  return user ? API_LIMIT_AUTHENTICATED : API_LIMIT_ANONYMOUS;
+};
+
+const keyForIp = (req) => {
+  const clientIp = normalizeIp(req.ip) || req.ip;
+  return `ip:${ipKeyGenerator(clientIp)}`;
+};
+
+const keyForUserOrIp = async (req) => {
+  const user = await hydrateRateLimitUser(req);
+  return user?.id ? `user:${user.id}` : keyForIp(req);
 };
 
 /**
@@ -57,17 +133,16 @@ const makeRateLimitHandler = (message) => (req, res) => {
   return res.status(429).json({ success: false, message, retryAfter, resetTime });
 };
 
-// General API rate limiter - 200 requests per 15 minutes.
+// General API rate limiter - 200 anonymous / 1000 authenticated requests per 15 minutes.
 // Verified users, admins, moderators, and editors are exempt.
-// Auth middleware must run before this limiter for the exemption to take effect.
+// The limiter hydrates req.user from the auth cookie/header so route middleware order
+// does not decide whether authenticated traffic is treated as anonymous traffic.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per windowMs
+  limit: apiLimitForRequest,
+  keyGenerator: keyForUserOrIp,
   skip: skipForVerifiedOrWhitelist,
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again later.'
-  },
+  handler: makeRateLimitHandler('Too many requests from this account or IP, please try again later.'),
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });

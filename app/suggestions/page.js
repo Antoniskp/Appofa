@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { PlusCircleIcon } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { suggestionAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
@@ -25,6 +26,7 @@ const suggestionCategoryOptions = (articleCategories.suggestionCategories || [])
 }));
 
 function SuggestionsContent() {
+  const tCommon = useTranslations('common');
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const mine = searchParams.get('mine') === 'true';
@@ -151,6 +153,7 @@ function SuggestionsContent() {
               onSelect={(cat) => updateFilter('category', cat)}
               counts={categoryCounts}
               countsLoaded={countsLoaded}
+              allLabel={tCommon('all_categories')}
               topTags={topTags}
               selectedTag={filters.tag}
               onTagSelect={(tag) => updateFilter('tag', tag)}

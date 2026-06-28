@@ -59,13 +59,6 @@ export default function CountryEntryPopup({ isAuthenticated = false }) {
         const code = normalizeCountryCode(data.countryCode);
         if (!code || code === 'GR') return;
 
-        setDetectedCountry({
-          code,
-          name: data.countryName || code,
-        });
-        setAlternativeCountry(code);
-        setIsVisible(true);
-
         const countriesRes = await locationAPI.getAll({ type: 'country', limit: 300 }).catch(() => null);
         if (!mounted || !countriesRes?.success) return;
         const countries = (countriesRes.locations || [])
@@ -78,7 +71,17 @@ export default function CountryEntryPopup({ isAuthenticated = false }) {
             };
           })
           .filter(Boolean);
+
+        const detectedAvailableCountry = countries.find((country) => country.code === code);
+        if (!detectedAvailableCountry) return;
+
         setAvailableCountries(countries);
+        setDetectedCountry({
+          code,
+          name: detectedAvailableCountry.name || data.countryName || code,
+        });
+        setAlternativeCountry(code);
+        setIsVisible(true);
       })
       .catch(() => {
         // no-op

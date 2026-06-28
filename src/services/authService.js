@@ -41,7 +41,9 @@ function generateToken(user) {
       id: user.id,
       username: user.username,
       email: user.email,
-      role: user.role
+      role: user.role,
+      isVerified: Boolean(user.isVerified),
+      emailVerified: Boolean(user.emailVerified)
     },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }
