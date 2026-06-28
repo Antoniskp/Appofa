@@ -1,5 +1,4 @@
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const {
   NewsletterSubscriber,
@@ -14,6 +13,7 @@ const {
   normalizeEnum,
   normalizeStringArray,
 } = require('../utils/validators');
+const { sendMail: deliverMail } = require('./mailService');
 
 const SUBSCRIBER_STATUSES = ['pending', 'subscribed', 'unsubscribed'];
 const SUBSCRIBER_SOURCES = ['website', 'admin_manual', 'import'];
@@ -21,10 +21,6 @@ const CAMPAIGN_STATUSES = ['draft', 'scheduled', 'sending', 'sent', 'failed'];
 const SEND_LOG_STATUSES = ['queued', 'sent', 'failed'];
 const NEWSLETTER_GENERIC_SUBSCRIBE_MESSAGE = 'If this email can receive newsletter updates, it has been added or updated.';
 const NEWSLETTER_GENERIC_UNSUBSCRIBE_MESSAGE = 'If this unsubscribe link is valid, the email has been unsubscribed.';
-const NEWSLETTER_FROM_DEFAULT = 'Appofa <no-reply@appofasi.gr>';
-
-let smtpTransporter = null;
-
 class ServiceError extends Error {
   constructor(status, message) {
     super(message);
@@ -84,15 +80,6 @@ const applyStatusDates = (subscriber, status) => {
   }
 };
 
-const toBoolean = (value, defaultValue = false) => {
-  if (typeof value === 'boolean') return value;
-  if (typeof value !== 'string') return defaultValue;
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'true') return true;
-  if (normalized === 'false') return false;
-  return defaultValue;
-};
-
 const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:3001').replace(/\/+$/, '');
 
 const escapeHtml = (value) => String(value)
@@ -108,35 +95,6 @@ const stripHtml = (html) => String(html || '')
   .replace(/<[^>]+>/g, ' ')
   .replace(/\s+/g, ' ')
   .trim();
-
-const getSmtpTransporter = () => {
-  if (smtpTransporter) return smtpTransporter;
-
-  const host = process.env.SMTP_HOST;
-  const port = Number.parseInt(process.env.SMTP_PORT || '', 10);
-  const secure = toBoolean(process.env.SMTP_SECURE, false);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  const missingKeys = [];
-  if (!host) missingKeys.push('SMTP_HOST');
-  if (!Number.isInteger(port)) missingKeys.push('SMTP_PORT');
-  if (!user) missingKeys.push('SMTP_USER');
-  if (!pass) missingKeys.push('SMTP_PASS');
-
-  if (missingKeys.length > 0) {
-    throw new Error(`SMTP configuration is incomplete. Missing/invalid: ${missingKeys.join(', ')}`);
-  }
-
-  smtpTransporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-  });
-
-  return smtpTransporter;
-};
 
 const normalizeAudienceFilters = (value) => {
   if (value === undefined || value === null || value === '') {
@@ -1183,23 +1141,7 @@ function buildCampaignMessage({ campaign, unsubscribeLink, isTest }) {
 }
 
 async function sendMail({ to, subject, html, text }) {
-  const transporter = getSmtpTransporter();
-  const from = process.env.SMTP_FROM || NEWSLETTER_FROM_DEFAULT;
-
-  try {
-    return await transporter.sendMail({
-      from,
-      to,
-      subject,
-      html,
-      text,
-    });
-  } catch (error) {
-    const message = typeof error?.message === 'string' && error.message.trim()
-      ? error.message.trim()
-      : 'Unknown SMTP error.';
-    throw new Error(`Failed to send email via SMTP: ${message}`);
-  }
+  return deliverMail({ to, subject, html, text });
 }
 
 async function sendCampaignTestEmail(campaignId, payload = {}) {

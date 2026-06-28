@@ -21,6 +21,41 @@ const { PushSubscription, Notification } = require('../models');
 
 let _vapidConfigured = false;
 
+const DEFAULT_NOTIFICATION_URL = '/notifications';
+const MAX_TITLE_LENGTH = 120;
+const MAX_BODY_LENGTH = 1800;
+const WEB_PUSH_TTL_SECONDS = 60 * 60 * 24;
+
+function truncate(value, maxLength) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, Math.max(0, maxLength - 3))}...`;
+}
+
+function normalizeInternalUrl(value) {
+  if (typeof value !== 'string') return DEFAULT_NOTIFICATION_URL;
+  const trimmed = value.trim();
+  if (!trimmed.startsWith('/') || trimmed.startsWith('//') || trimmed.includes('\\')) {
+    return DEFAULT_NOTIFICATION_URL;
+  }
+  return trimmed || DEFAULT_NOTIFICATION_URL;
+}
+
+function normalizeUnreadCount(value) {
+  const count = Number(value);
+  if (!Number.isFinite(count) || count < 0) return 0;
+  return Math.min(Math.floor(count), 999);
+}
+
+function buildPushPayload(payload = {}) {
+  return {
+    title: truncate(payload.title, MAX_TITLE_LENGTH) || 'New notification',
+    body: truncate(payload.body, MAX_BODY_LENGTH),
+    unreadCount: normalizeUnreadCount(payload.unreadCount),
+    url: normalizeInternalUrl(payload.url),
+  };
+}
+
 function ensureVapidConfigured() {
   if (_vapidConfigured) return true;
 
@@ -54,7 +89,7 @@ function ensureVapidConfigured() {
 async function sendPushToUser(userId, payload) {
   if (!ensureVapidConfigured()) {
     // VAPID not configured — push silently skipped.
-    return;
+    return { sent: 0, failed: 0, staleRemoved: 0, skipped: true };
   }
 
   let subscriptions;
@@ -62,13 +97,17 @@ async function sendPushToUser(userId, payload) {
     subscriptions = await PushSubscription.findAll({ where: { userId } });
   } catch (err) {
     console.error('[pushService] DB lookup failed for userId', userId, err.message);
-    return;
+    return { sent: 0, failed: 0, staleRemoved: 0, skipped: true };
   }
 
-  if (!subscriptions.length) return;
+  if (!subscriptions.length) {
+    return { sent: 0, failed: 0, staleRemoved: 0, skipped: true };
+  }
 
-  const jsonPayload = JSON.stringify(payload);
+  const jsonPayload = JSON.stringify(buildPushPayload(payload));
   const staleIds = [];
+  let sent = 0;
+  let failed = 0;
 
   await Promise.allSettled(
     subscriptions.map(async (sub) => {
@@ -77,12 +116,17 @@ async function sendPushToUser(userId, payload) {
         keys: { p256dh: sub.p256dh, auth: sub.auth }
       };
       try {
-        await webPush.sendNotification(pushSubscription, jsonPayload);
+        await webPush.sendNotification(pushSubscription, jsonPayload, {
+          TTL: WEB_PUSH_TTL_SECONDS,
+          urgency: 'normal',
+        });
+        sent += 1;
       } catch (err) {
         // 410 Gone or 404 Not Found = subscription no longer valid
         if (err.statusCode === 410 || err.statusCode === 404) {
           staleIds.push(sub.id);
         } else {
+          failed += 1;
           console.error('[pushService] sendNotification error for sub', sub.id, err.message);
         }
       }
@@ -94,6 +138,8 @@ async function sendPushToUser(userId, payload) {
       console.error('[pushService] Failed to remove stale subscriptions:', err.message)
     );
   }
+
+  return { sent, failed, staleRemoved: staleIds.length, skipped: false };
 }
 
 /**
@@ -113,14 +159,33 @@ async function saveSubscription(userId, subscription, userAgent = null) {
     throw err;
   }
 
+  let parsedEndpoint;
+  try {
+    parsedEndpoint = new URL(endpoint);
+  } catch {
+    const err = new Error('Invalid subscription endpoint URL.');
+    err.status = 400;
+    throw err;
+  }
+
+  if (parsedEndpoint.protocol !== 'https:') {
+    const err = new Error('Invalid subscription endpoint URL: https is required.');
+    err.status = 400;
+    throw err;
+  }
+
+  const safeUserAgent = typeof userAgent === 'string' && userAgent.trim()
+    ? userAgent.trim().slice(0, 500)
+    : null;
+
   const [record, created] = await PushSubscription.findOrCreate({
     where: { endpoint },
-    defaults: { userId, endpoint, p256dh, auth, userAgent }
+    defaults: { userId, endpoint, p256dh, auth, userAgent: safeUserAgent }
   });
 
   if (!created) {
     // Refresh keys and reassign to current user (user may have rotated keys)
-    await record.update({ userId, p256dh, auth, userAgent });
+    await record.update({ userId, p256dh, auth, userAgent: safeUserAgent });
   }
 
   return record;
@@ -150,6 +215,7 @@ async function getUnreadCount(userId) {
 }
 
 module.exports = {
+  buildPushPayload,
   sendPushToUser,
   saveSubscription,
   removeSubscription,

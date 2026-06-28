@@ -1,9 +1,9 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 const { Op } = require('sequelize');
 const { User } = require('../models');
 const { PROFILE_VISIBILITY, isValidProfileVisibility } = require('../utils/profileVisibility');
+const { sendMail } = require('./mailService');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -23,8 +23,6 @@ const PASSWORD_RESET_EMAIL_SUBJECT = 'Appofa password reset request';
 const EMAIL_VERIF_DEFAULT_TTL_HOURS = 24;
 const EMAIL_VERIF_TOKEN_BYTES = 32;
 const EMAIL_VERIF_SUBJECT = 'Please verify your Appofa email address';
-
-let smtpTransporter = null;
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -50,15 +48,6 @@ function generateToken(user) {
   );
 }
 
-const toBoolean = (value, defaultValue = false) => {
-  if (typeof value === 'boolean') return value;
-  if (typeof value !== 'string') return defaultValue;
-  const normalized = value.trim().toLowerCase();
-  if (normalized === 'true') return true;
-  if (normalized === 'false') return false;
-  return defaultValue;
-};
-
 const getPasswordResetTtlMinutes = () => {
   const raw = Number.parseInt(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || '', 10);
   return Number.isInteger(raw) && raw > 0 ? raw : PASSWORD_RESET_DEFAULT_TTL_MINUTES;
@@ -75,43 +64,12 @@ const escapeHtml = (value) => String(value)
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#39;');
 
-const getSmtpTransporter = () => {
-  if (smtpTransporter) return smtpTransporter;
-  const host = process.env.SMTP_HOST;
-  const port = Number.parseInt(process.env.SMTP_PORT || '', 10);
-  const secure = toBoolean(process.env.SMTP_SECURE, false);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  const missingKeys = [];
-  if (!host) missingKeys.push('SMTP_HOST');
-  if (!Number.isInteger(port)) missingKeys.push('SMTP_PORT');
-  if (!user) missingKeys.push('SMTP_USER');
-  if (!pass) missingKeys.push('SMTP_PASS');
-
-  if (missingKeys.length > 0) {
-    throw new Error(`SMTP configuration is incomplete. Missing/invalid: ${missingKeys.join(', ')}`);
-  }
-
-  smtpTransporter = nodemailer.createTransport({
-    host,
-    port,
-    secure,
-    auth: { user, pass },
-  });
-
-  return smtpTransporter;
-};
-
 const sendPasswordResetEmail = async (email, token, expiresInMinutes) => {
   const frontendUrl = getFrontendUrl();
   const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
   const safeResetUrl = escapeHtml(resetUrl);
-  const from = process.env.SMTP_FROM || 'Appofa <no-reply@appofasi.gr>';
 
-  const transporter = getSmtpTransporter();
-  await transporter.sendMail({
-    from,
+  await sendMail({
     to: email,
     subject: PASSWORD_RESET_EMAIL_SUBJECT,
     text: [
@@ -140,12 +98,9 @@ const sendVerificationEmail = async (email, token) => {
   const frontendUrl = getFrontendUrl();
   const verificationUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(token)}`;
   const safeVerificationUrl = escapeHtml(verificationUrl);
-  const from = process.env.SMTP_FROM || 'Appofa <no-reply@appofasi.gr>';
   const verificationTtlText = `${EMAIL_VERIF_DEFAULT_TTL_HOURS} hours`;
 
-  const transporter = getSmtpTransporter();
-  await transporter.sendMail({
-    from,
+  await sendMail({
     to: email,
     subject: EMAIL_VERIF_SUBJECT,
     text: [

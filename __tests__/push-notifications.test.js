@@ -159,6 +159,7 @@ describe('Push Notification routes', () => {
   describe('pushService.sendPushToUser', () => {
     beforeEach(() => {
       webPush.sendNotification.mockClear();
+      webPush.sendNotification.mockResolvedValue({ statusCode: 201 });
     });
 
     it('calls webPush.sendNotification with JSON payload including unreadCount as number', async () => {
@@ -183,6 +184,62 @@ describe('Push Notification routes', () => {
       const sentPayload = JSON.parse(callArgs[1]);
       expect(sentPayload.unreadCount).toBe(5);
       expect(typeof sentPayload.unreadCount).toBe('number');
+      expect(callArgs[2]).toEqual(expect.objectContaining({
+        TTL: expect.any(Number),
+        urgency: 'normal',
+      }));
+    });
+
+    it('normalizes unsafe push payload fields before delivery', async () => {
+      const { PushSubscription } = require('../src/models');
+
+      await PushSubscription.create({
+        userId,
+        endpoint: 'https://push.example.com/sub/safe-payload',
+        p256dh: 'BNcRdreALRFXTkOO-safe',
+        auth: 'tBHItJI5svbp-safe',
+      });
+
+      await pushService.sendPushToUser(userId, {
+        title: 'x'.repeat(300),
+        body: 'body',
+        unreadCount: '10000',
+        url: 'https://evil.example/phish',
+      });
+
+      const sentPayload = JSON.parse(webPush.sendNotification.mock.calls[0][1]);
+      expect(sentPayload.title.length).toBeLessThanOrEqual(120);
+      expect(sentPayload.unreadCount).toBe(999);
+      expect(sentPayload.url).toBe('/notifications');
+    });
+
+    it('removes stale push subscriptions after 404 or 410 provider responses', async () => {
+      const { PushSubscription } = require('../src/models');
+      const endpoint = 'https://push.example.com/sub/stale';
+
+      const stale = await PushSubscription.create({
+        userId,
+        endpoint,
+        p256dh: 'BNcRdreALRFXTkOO-stale',
+        auth: 'tBHItJI5svbp-stale',
+      });
+
+      webPush.sendNotification.mockImplementation(async (subscription) => {
+        if (subscription.endpoint === endpoint) {
+          throw Object.assign(new Error('gone'), { statusCode: 410 });
+        }
+        return { statusCode: 201 };
+      });
+
+      const result = await pushService.sendPushToUser(userId, {
+        title: 'Stale',
+        body: '',
+        unreadCount: 1,
+        url: '/notifications',
+      });
+
+      expect(result.staleRemoved).toBeGreaterThanOrEqual(1);
+      await expect(PushSubscription.findByPk(stale.id)).resolves.toBeNull();
     });
 
     it('does not throw when VAPID keys are missing', async () => {
@@ -198,7 +255,10 @@ describe('Push Notification routes', () => {
       // (pushService caches _vapidConfigured; simply calling with missing keys suffices)
       await expect(
         pushService.sendPushToUser(999, { title: 'x', body: '', unreadCount: 1, url: '/' })
-      ).resolves.toBeUndefined();
+      ).resolves.toEqual(expect.objectContaining({
+        sent: 0,
+        skipped: true,
+      }));
 
       // Restore
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = origPublic;
@@ -240,6 +300,17 @@ describe('Push Notification routes', () => {
 
       sendPushSpy.mockRestore();
       getUnreadSpy.mockRestore();
+    });
+  });
+
+  describe('pushService.saveSubscription', () => {
+    it('rejects non-https subscription endpoints', async () => {
+      await expect(
+        pushService.saveSubscription(userId, {
+          endpoint: 'http://push.example.com/sub/not-secure',
+          keys: { p256dh: 'x', auth: 'y' },
+        })
+      ).rejects.toMatchObject({ status: 400 });
     });
   });
 });
