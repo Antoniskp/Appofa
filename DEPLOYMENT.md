@@ -10,6 +10,24 @@ The `Deploy` GitHub Actions workflow runs automatically whenever code is pushed 
 
 It can also be started manually from GitHub with **Actions > Deploy > Run workflow**.
 
+Local commits do not trigger deployment until GitHub can see them. To publish from a local checkout and trigger the same workflow:
+
+```bash
+npm run deploy:publish
+```
+
+Use that only when you are on `main` and the commit is ready to push directly. For the normal PR path from a feature branch:
+
+```bash
+npm run deploy:publish:pr
+```
+
+Then merge the PR. If you have GitHub CLI installed and authenticated and intentionally want the script to create and merge the PR:
+
+```bash
+npm run deploy:publish:merge
+```
+
 Configure these repository secrets before using it:
 
 - `VPS_HOST`: server hostname or IP address
