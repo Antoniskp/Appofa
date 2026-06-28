@@ -7,7 +7,6 @@ const { createRoot } = require('react-dom/client');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const baseMapRenderSpy = jest.fn();
-const markerFitToSpy = jest.fn();
 const windowOpenSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
 
 jest.mock('next/link', () => {
@@ -34,9 +33,7 @@ jest.mock('@/components/map/BaseMap', () => {
       baseMapRenderSpy(props);
       React.useEffect(() => {
         if (props.onMarkersReady) {
-          props.onMarkersReady({
-            fitTo: markerFitToSpy,
-          });
+          props.onMarkersReady({});
         }
       }, [props.onMarkersReady]);
 
@@ -76,7 +73,6 @@ describe('CamerasPageClient', () => {
     document.body.appendChild(container);
     root = createRoot(container);
     baseMapRenderSpy.mockClear();
-    markerFitToSpy.mockClear();
     windowOpenSpy.mockClear();
   });
 
@@ -137,7 +133,7 @@ describe('CamerasPageClient', () => {
     expect(typeof mapProps.onMarkerClick).toBe('function');
   });
 
-  test('supports filters, marker to card hover, and show-on-map focus', async () => {
+  test('supports filters and marker to card hover without a show-on-map card action', async () => {
     useAsyncData.mockReturnValue({
       data: [
         {
@@ -189,12 +185,8 @@ describe('CamerasPageClient', () => {
     const harbourTitle = Array.from(container.querySelectorAll('h2')).find((el) => el.textContent === 'Harbour camera');
     expect(harbourTitle.closest('article').className).toContain('border-blue-400');
 
-    await act(async () => {
-      const showOnMapButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Εστίαση στον χάρτη');
-      showOnMapButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
-
-    expect(markerFitToSpy).toHaveBeenCalledWith('1:0', { zoom: 13 });
+    const showOnMapButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Εστίαση στον χάρτη');
+    expect(showOnMapButton).toBeUndefined();
   });
 
   test('clicking a marker opens the camera stream URL in a new tab', async () => {

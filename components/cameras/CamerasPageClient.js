@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ArrowTopRightOnSquareIcon,
   FunnelIcon,
@@ -98,16 +98,7 @@ function getMapBounds(markers) {
   };
 }
 
-function CameraMetric({ label, value }) {
-  return (
-    <div className="rounded-lg border border-white/15 bg-white/10 px-4 py-3 backdrop-blur">
-      <p className="text-2xl font-semibold text-white">{value}</p>
-      <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-blue-100">{label}</p>
-    </div>
-  );
-}
-
-function CameraCard({ camera, t, isHighlighted, onHoverChange, onShowOnMap }) {
+function CameraCard({ camera, t, isHighlighted, onHoverChange }) {
   const associatedLocation = camera.location;
   const sourceLocation = camera.sourceLocation;
   const showSourceLocation = sourceLocation && (!associatedLocation || associatedLocation.id !== sourceLocation.id);
@@ -116,46 +107,13 @@ function CameraCard({ camera, t, isHighlighted, onHoverChange, onShowOnMap }) {
   const primaryLocation = associatedLocation || sourceLocation || camera.mapLocation;
   const primaryLocationLabel = getLocationLabel(primaryLocation);
 
-  const previewIsImage = camera.embedType === 'image';
-
   return (
     <article
-      className={`group overflow-hidden rounded-lg border bg-white shadow-sm transition ${isHighlighted ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-200 hover:shadow-md'}`}
+      className={`rounded-lg border bg-white p-4 shadow-sm transition ${isHighlighted ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-200 hover:shadow-md'}`}
       onMouseEnter={() => onHoverChange(camera.id)}
       onMouseLeave={() => onHoverChange(null)}
     >
-      <div className="relative aspect-video overflow-hidden bg-slate-100">
-        {previewIsImage ? (
-          <img
-            src={camera.url}
-            alt={camera.label}
-            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-slate-900">
-            <div className="flex flex-col items-center gap-3 text-white">
-              <VideoCameraIcon className="h-12 w-12" />
-              <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white">
-                {camera.embedType === 'iframe' ? 'iframe' : 'live'}
-              </span>
-            </div>
-          </div>
-        )}
-        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm">
-            <VideoCameraIcon className="mr-1 h-4 w-4 text-blue-600" />
-            {getEmbedTypeLabel(camera, t)}
-          </span>
-          {mapLocationAvailable && (
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${camera.mapLocationSource === 'camera' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-              {camera.mapLocationSource === 'camera' ? t('pin_source_exact') : t('pin_source_source')}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="space-y-4 p-4">
+      <div className="space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="text-lg font-semibold text-gray-900">{camera.label}</h2>
@@ -166,6 +124,18 @@ function CameraCard({ camera, t, isHighlighted, onHoverChange, onShowOnMap }) {
           <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${mapLocationAvailable ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
             {mapLocationAvailable ? t('map_available') : t('map_unavailable')}
           </span>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+            <VideoCameraIcon className="mr-1 h-4 w-4 text-blue-600" />
+            {getEmbedTypeLabel(camera, t)}
+          </span>
+          {mapLocationAvailable && (
+            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${camera.mapLocationSource === 'camera' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+              {camera.mapLocationSource === 'camera' ? t('pin_source_exact') : t('pin_source_source')}
+            </span>
+          )}
         </div>
 
         <div className="space-y-2 text-sm text-gray-600">
@@ -215,16 +185,6 @@ function CameraCard({ camera, t, isHighlighted, onHoverChange, onShowOnMap }) {
               {t('open_camera')}
             </a>
           )}
-          {mapLocationAvailable && (
-            <button
-              type="button"
-              onClick={() => onShowOnMap(camera.id)}
-              className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100"
-            >
-              <MapPinIcon className="h-4 w-4" />
-              {t('show_on_map')}
-            </button>
-          )}
           {camera.mapLocation?.slug && (
             <Link
               href={`/locations/${camera.mapLocation.slug}`}
@@ -245,9 +205,6 @@ export default function CamerasPageClient() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [hoveredMarkerId, setHoveredMarkerId] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
-  const [focusedMarkerId, setFocusedMarkerId] = useState(null);
-  const mapControlsRef = useRef(null);
-  const mapSectionRef = useRef(null);
   const {
     data: cameras,
     loading,
@@ -282,7 +239,7 @@ export default function CamerasPageClient() {
     return allCameras;
   }, [activeFilter, allCameras]);
 
-  const highlightedMarkerId = hoveredCardId || hoveredMarkerId || focusedMarkerId || null;
+  const highlightedMarkerId = hoveredCardId || hoveredMarkerId || null;
   const markers = useMemo(
     () => buildCameraMarkers(filteredCameras, highlightedMarkerId),
     [filteredCameras, highlightedMarkerId]
@@ -303,8 +260,6 @@ export default function CamerasPageClient() {
   }, [filteredCameras]);
   const unmappedCount = filteredCameras.length - markers.length;
   const mappedCount = allCameras.filter(hasMapLocation).length;
-  const exactCount = allCameras.filter((camera) => hasMapLocation(camera) && camera.mapLocationSource === 'camera').length;
-  const imageCount = allCameras.filter((camera) => camera.embedType === 'image').length;
   const liveCount = allCameras.filter((camera) => camera.embedType !== 'image').length;
 
   const filters = [
@@ -314,18 +269,6 @@ export default function CamerasPageClient() {
     { id: 'image', label: t('filter_image') },
     { id: 'live', label: t('filter_live') },
   ];
-
-  function handleShowOnMap(cameraId) {
-    setFocusedMarkerId(cameraId);
-    setHoveredCardId(cameraId);
-    if (typeof mapSectionRef.current?.scrollIntoView === 'function') {
-      const reduceMotion = typeof window !== 'undefined'
-        && typeof window.matchMedia === 'function'
-        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      mapSectionRef.current.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
-    }
-    mapControlsRef.current?.fitTo?.(cameraId, { zoom: 13 });
-  }
 
   function handleMarkerClick(cameraId) {
     const camera = filteredCameras.find((c) => c.id === cameraId);
@@ -350,18 +293,17 @@ export default function CamerasPageClient() {
             </div>
 
             {!loading && !error && (
-              <div className="grid grid-cols-2 gap-3">
-                <CameraMetric label={t('filter_all')} value={allCameras.length} />
-                <CameraMetric label={t('filter_mapped')} value={mappedCount} />
-                <CameraMetric label={t('filter_exact')} value={exactCount} />
-                <CameraMetric label={t('filter_live')} value={liveCount} />
+              <div className="flex flex-wrap gap-3 text-sm font-semibold text-blue-100">
+                <span>{t('summary_total', { count: allCameras.length })}</span>
+                <span>{t('summary_mapped', { count: mappedCount })}</span>
+                <span>{t('filter_live')}: {liveCount}</span>
               </div>
             )}
           </div>
         </section>
 
         <div className="mt-8 grid gap-8 xl:grid-cols-[minmax(360px,0.9fr)_minmax(0,1.1fr)]">
-          <section ref={mapSectionRef} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5 xl:sticky xl:top-24 xl:self-start">
+          <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5 xl:sticky xl:top-24 xl:self-start">
             <div
               className="mb-4 flex flex-wrap items-center gap-2"
               role="radiogroup"
@@ -380,7 +322,6 @@ export default function CamerasPageClient() {
                     setActiveFilter(filter.id);
                     setHoveredCardId(null);
                     setHoveredMarkerId(null);
-                    setFocusedMarkerId(null);
                   }}
                   aria-checked={activeFilter === filter.id}
                   className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${activeFilter === filter.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
@@ -419,9 +360,6 @@ export default function CamerasPageClient() {
                 markers={markers}
                 onMarkerHover={setHoveredMarkerId}
                 onMarkerClick={handleMarkerClick}
-                onMarkersReady={(controls) => {
-                  mapControlsRef.current = controls;
-                }}
                 className="h-[360px] w-full overflow-hidden rounded-lg sm:h-[460px] xl:h-[620px]"
                 scrollWheelZoom
               />
@@ -446,11 +384,6 @@ export default function CamerasPageClient() {
                   <p className="mt-1 text-sm text-gray-600">{t('summary_total', { count: filteredCameras.length })}</p>
                 )}
               </div>
-              {!loading && !error && imageCount > 0 && (
-                <p className="rounded-md bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm">
-                  {t('filter_image')}: {imageCount}
-                </p>
-              )}
             </div>
 
             {loading ? (
@@ -476,14 +409,10 @@ export default function CamerasPageClient() {
                     key={camera.id}
                     camera={camera}
                     t={t}
-                    isHighlighted={camera.id === hoveredMarkerId || camera.id === hoveredCardId || camera.id === focusedMarkerId}
+                    isHighlighted={camera.id === hoveredMarkerId || camera.id === hoveredCardId}
                     onHoverChange={(id) => {
                       setHoveredCardId(id);
-                      if (!id) {
-                        setFocusedMarkerId(null);
-                      }
                     }}
-                    onShowOnMap={handleShowOnMap}
                   />
                 ))}
               </div>
