@@ -130,6 +130,7 @@ describe('CamerasPageClient', () => {
     expect(mapProps.markers[0].popup).toBeUndefined();
     expect(mapProps.markers[0].tooltip).toContain('Harbour camera');
     expect(mapProps.markers[0].tooltip).toContain('Port town');
+    expect(mapProps.clusterMarkers).toBe(true);
     expect(typeof mapProps.onMarkerClick).toBe('function');
   });
 

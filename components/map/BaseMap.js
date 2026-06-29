@@ -8,6 +8,8 @@
  *   zoom          {number}         – initial zoom level (default 12)
  *   bounds        {{north,south,east,west}}  – if provided, the map fits to these bounds
  *   markers       {Array<{lat, lng, popup?, key?}>}  – list of marker objects
+ *   clusterMarkers {boolean}     – group nearby markers into count bubbles (default false)
+ *   clusterRadius  {number}      – grouping radius in screen pixels (default 44)
  *   overlays      {Array<object>}  – GeoJSON feature-collection objects (legacy extension point; no interactivity)
  *   polygonLayers {Array<PolygonLayerDef>} – interactive polygon/boundary layers with hover, tooltip, popup, click-to-zoom
  *   className     {string}         – wrapper class for sizing (default: 'h-64 w-full rounded-lg')
@@ -161,11 +163,80 @@ function resolveMarkerIcon(variant) {
   return DEFAULT_ICON;
 }
 
+function resolveClusterIcon(count) {
+  if (!L.divIcon) return DEFAULT_ICON;
+  const size = count >= 100 ? 44 : count >= 10 ? 38 : 32;
+  return L.divIcon({
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#0f172a;color:#fff;border:2px solid #fff;box-shadow:0 2px 8px rgba(15,23,42,0.35);font-size:13px;font-weight:700">${count}</div>`,
+    className: '',
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -(size / 2)],
+    tooltipAnchor: [size / 2, -size / 2],
+  });
+}
+
+function buildClusterPopup(clusterMarkers) {
+  const visible = clusterMarkers.slice(0, 8);
+  const remainingCount = clusterMarkers.length - visible.length;
+  const items = visible
+    .map((marker) => `<li>${marker.tooltip || marker.popup || marker.id || 'Marker'}</li>`)
+    .join('');
+  const remaining = remainingCount > 0
+    ? `<li><strong>+${remainingCount} more</strong></li>`
+    : '';
+
+  return `<div><strong>${clusterMarkers.length} markers in this area</strong><ul style="margin:6px 0 0;padding-left:18px">${items}${remaining}</ul></div>`;
+}
+
+function getMarkerClusters(markers, map, radius, fallbackZoom) {
+  if (!map || typeof map.project !== 'function' || typeof L.latLng !== 'function') {
+    return markers.map((marker) => ({
+      lat: marker.lat,
+      lng: marker.lng,
+      markers: [marker],
+    }));
+  }
+
+  const currentZoom = typeof map.getZoom === 'function' ? map.getZoom() : fallbackZoom;
+  const clusters = [];
+
+  markers.forEach((marker) => {
+    const point = map.project(L.latLng(marker.lat, marker.lng), currentZoom);
+    const existingCluster = clusters.find((cluster) => {
+      if (typeof point.distanceTo === 'function') {
+        return point.distanceTo(cluster.point) <= radius;
+      }
+      const dx = point.x - cluster.point.x;
+      const dy = point.y - cluster.point.y;
+      return Math.sqrt((dx * dx) + (dy * dy)) <= radius;
+    });
+
+    if (existingCluster) {
+      existingCluster.markers.push(marker);
+      existingCluster.lat = existingCluster.markers.reduce((sum, item) => sum + Number(item.lat), 0) / existingCluster.markers.length;
+      existingCluster.lng = existingCluster.markers.reduce((sum, item) => sum + Number(item.lng), 0) / existingCluster.markers.length;
+      existingCluster.point = map.project(L.latLng(existingCluster.lat, existingCluster.lng), currentZoom);
+    } else {
+      clusters.push({
+        lat: Number(marker.lat),
+        lng: Number(marker.lng),
+        point,
+        markers: [marker],
+      });
+    }
+  });
+
+  return clusters;
+}
+
 export default function BaseMap({
   center,
   zoom = 12,
   bounds,
   markers = [],
+  clusterMarkers = false,
+  clusterRadius = 44,
   overlays = [],
   polygonLayers = [],
   className = 'h-64 w-full rounded-lg overflow-hidden',
@@ -263,7 +334,9 @@ export default function BaseMap({
     // id → L.marker map for external highlight controls
     const idToMarker = new Map();
 
-    markers.forEach(({ lat, lng, popup, tooltip, id, variant }) => {
+    const map = mapInstanceRef.current;
+
+    function renderSingleMarker({ lat, lng, popup, tooltip, id, variant }) {
       const icon = resolveMarkerIcon(variant);
       const marker = L.marker([lat, lng], { icon }).addTo(layer);
       if (popup) {
@@ -287,7 +360,52 @@ export default function BaseMap({
           marker.on('click', () => onMarkerClickRef.current(id));
         }
       }
-    });
+    }
+
+    function renderCluster(cluster) {
+      if (cluster.markers.length === 1) {
+        renderSingleMarker(cluster.markers[0]);
+        return;
+      }
+
+      const clusterMarker = L.marker([cluster.lat, cluster.lng], {
+        icon: resolveClusterIcon(cluster.markers.length),
+      }).addTo(layer);
+
+      clusterMarker.bindPopup(buildClusterPopup(cluster.markers), { maxWidth: 300 });
+      clusterMarker.bindTooltip(`${cluster.markers.length} markers`, {
+        sticky: true,
+        direction: 'top',
+        offset: [0, -4],
+        className: 'leaflet-boundary-tooltip',
+      });
+
+      clusterMarker.on('click', () => {
+        if (!map || typeof map.getZoom !== 'function' || typeof map.setView !== 'function') return;
+        const currentZoom = map.getZoom();
+        const maxZoom = typeof map.getMaxZoom === 'function' ? map.getMaxZoom() : 20;
+        if (currentZoom < Math.min(maxZoom, 18)) {
+          map.setView([cluster.lat, cluster.lng], currentZoom + 2);
+        }
+      });
+    }
+
+    function renderMarkers() {
+      layer.clearLayers();
+      idToMarker.clear();
+
+      if (clusterMarkers) {
+        getMarkerClusters(markers, map, clusterRadius, zoom).forEach(renderCluster);
+      } else {
+        markers.forEach(renderSingleMarker);
+      }
+    }
+
+    renderMarkers();
+
+    if (clusterMarkers && map && typeof map.on === 'function') {
+      map.on('zoomend', renderMarkers);
+    }
 
     // Expose imperative controls for external hover management (e.g. pill hover → marker icon)
     if (onMarkersReadyRef.current) {
@@ -302,7 +420,13 @@ export default function BaseMap({
         },
       });
     }
-  }, [markers]);
+
+    return () => {
+      if (clusterMarkers && map && typeof map.off === 'function') {
+        map.off('zoomend', renderMarkers);
+      }
+    };
+  }, [markers, clusterMarkers, clusterRadius, zoom]);
 
   // Sync GeoJSON overlays (legacy extension point for simple, non-interactive boundaries)
   useEffect(() => {

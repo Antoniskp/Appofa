@@ -358,6 +358,7 @@ export default function CamerasPageClient() {
                 zoom={GREECE_ZOOM}
                 bounds={bounds}
                 markers={markers}
+                clusterMarkers
                 onMarkerHover={setHoveredMarkerId}
                 onMarkerClick={handleMarkerClick}
                 className="h-[360px] w-full overflow-hidden rounded-lg sm:h-[460px] xl:h-[620px]"

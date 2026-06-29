@@ -30,12 +30,30 @@ const mockMapInstance = {
   addLayer: jest.fn(),
   remove: jest.fn(),
   on: jest.fn(),
+  off: jest.fn(),
+  getZoom: jest.fn(() => 6),
+  getMaxZoom: jest.fn(() => 20),
+  project: jest.fn((latLng) => ({
+    x: Number(latLng.lng) * 100,
+    y: Number(latLng.lat) * 100,
+    distanceTo(other) {
+      const dx = this.x - other.x;
+      const dy = this.y - other.y;
+      return Math.sqrt((dx * dx) + (dy * dy));
+    },
+  })),
   attributionControl: { setPrefix: jest.fn() },
   Browser: { ie: false, opera: false, edge: false },
 };
 
 jest.mock('leaflet', () => {
-  const markerObj = { addTo: jest.fn().mockReturnThis(), bindPopup: jest.fn() };
+  const markerObj = {
+    addTo: jest.fn().mockReturnThis(),
+    bindPopup: jest.fn().mockReturnThis(),
+    bindTooltip: jest.fn().mockReturnThis(),
+    on: jest.fn().mockReturnThis(),
+    setIcon: jest.fn().mockReturnThis(),
+  };
   return {
     __esModule: true,
     default: {
@@ -46,6 +64,8 @@ jest.mock('leaflet', () => {
       latLngBounds: jest.fn(() => ({ isValid: () => true })),
       layerGroup: mockLayerGroup,
       icon: jest.fn(() => ({})),
+      divIcon: jest.fn((options) => ({ ...options, type: 'divIcon' })),
+      latLng: jest.fn((lat, lng) => ({ lat, lng })),
       Browser: { ie: false, opera: false, edge: false },
     },
     map: jest.fn(() => mockMapInstance),
@@ -55,6 +75,8 @@ jest.mock('leaflet', () => {
     latLngBounds: jest.fn(() => ({ isValid: () => true })),
     layerGroup: mockLayerGroup,
     icon: jest.fn(() => ({})),
+    divIcon: jest.fn((options) => ({ ...options, type: 'divIcon' })),
+    latLng: jest.fn((lat, lng) => ({ lat, lng })),
     Browser: { ie: false, opera: false, edge: false },
   };
 });
@@ -300,6 +322,30 @@ describe('BaseMap — polygonLayers prop', () => {
       })
     );
     expect(container.querySelector('div')).toBeTruthy();
+    await cleanup(root, container);
+  });
+
+  test('clusters nearby markers when clusterMarkers is enabled', async () => {
+    const L = require('leaflet').default;
+
+    const { container, root } = await renderComponent(
+      React.createElement(BaseMap, {
+        center: [38.5, 23.8],
+        zoom: 6,
+        clusterMarkers: true,
+        markers: [
+          { id: 'a', lat: 38, lng: 23, tooltip: 'Camera A' },
+          { id: 'b', lat: 38.001, lng: 23.001, tooltip: 'Camera B' },
+        ],
+      })
+    );
+
+    expect(container.querySelector('div')).toBeTruthy();
+    expect(L.marker).toHaveBeenCalledTimes(1);
+    expect(L.divIcon).toHaveBeenCalledWith(expect.objectContaining({
+      html: expect.stringContaining('2'),
+    }));
+
     await cleanup(root, container);
   });
 });
