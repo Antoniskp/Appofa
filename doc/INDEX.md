@@ -8,6 +8,7 @@ Welcome to the Appofa News Application documentation. All documentation files li
 
 | File | Description |
 |------|-------------|
+| [APP_SCOPE.md](APP_SCOPE.md) | Product scope and direction: direct democracy, civic participation, independent candidates |
 | [REPOSITORY_MAP.md](REPOSITORY_MAP.md) | **Living codebase map** — all models, routes, pages, components, migrations (auto-updated by AI) |
 | [VISUAL_APP_MAP.md](VISUAL_APP_MAP.md) | **Visual app map** — Mermaid diagrams for system flow, routes, APIs, middleware, data models, and deployment |
 | [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md) | Holistic project overview: features, tech stack, role matrix, statistics |
