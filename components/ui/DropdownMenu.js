@@ -24,6 +24,7 @@ import { ChevronDownIcon } from '@heroicons/react/24/outline';
  * @param {Array} items - Array of menu items
  * @param {string} align - Menu alignment: 'left', 'right', 'center' (default: 'right')
  * @param {string} menuClassName - Additional classes for menu container
+ * @param {string} wrapperClassName - Additional classes for the outer wrapper
  * @param {string} menuId - ID for menu (auto-generated if not provided)
  * @param {boolean} open - Controlled open state (optional)
  * @param {function} onOpenChange - Callback when menu open state changes
@@ -36,6 +37,7 @@ export default function DropdownMenu({
   items = [],
   align = 'right',
   menuClassName = '',
+  wrapperClassName = '',
   menuId,
   open,
   onOpenChange
@@ -224,7 +226,7 @@ export default function DropdownMenu({
   );
 
   return (
-    <div className="relative inline-block">
+    <div className={`relative inline-block ${wrapperClassName}`}>
       {trigger ? customTrigger : defaultTrigger}
 
       {isOpen && (
@@ -280,11 +282,11 @@ export default function DropdownMenu({
                   aria-disabled={item.disabled}
                 >
                   {item.icon && (
-                    <span aria-hidden="true">
+                    <span className="flex-shrink-0" aria-hidden="true">
                       {item.icon}
                     </span>
                   )}
-                  {item.label}
+                  <span className="min-w-0 break-words">{item.label}</span>
                 </Link>
               );
             }
@@ -313,11 +315,11 @@ export default function DropdownMenu({
                 aria-disabled={item.disabled}
               >
                 {item.icon && (
-                  <span aria-hidden="true">
+                  <span className="flex-shrink-0" aria-hidden="true">
                     {item.icon}
                   </span>
                 )}
-                {item.label}
+                <span className="min-w-0 break-words">{item.label}</span>
               </button>
             );
           })}

@@ -33,7 +33,6 @@ import { useAuth } from '@/lib/auth-context';
 import { usePermissions } from '@/hooks/usePermissions';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import DropdownMenu from '@/components/ui/DropdownMenu';
-import Tooltip from '@/components/ui/Tooltip';
 import LoginLink from '@/components/ui/LoginLink';
 import NotificationBell from '@/components/notifications/NotificationBell';
 
@@ -465,26 +464,24 @@ export default function TopNav() {
               </>
             )}
           </div>
-          <Tooltip content={isMenuOpen ? tNav('close_menu') : tNav('open_menu')} position="bottom">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 md:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-              aria-controls="mobile-menu"
-              aria-expanded={isMenuOpen}
-              onClick={() => setIsMenuOpen((open) => !open)}
-            >
-              <span className="sr-only">{isMenuOpen ? tNav('close_menu') : tNav('open_menu')}</span>
-              {isMenuOpen ? (
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              )}
-            </button>
-          </Tooltip>
+          <button
+            type="button"
+            className="inline-flex items-center justify-center rounded-md p-2 text-blue-900 hover:bg-seafoam/40 md:hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            aria-controls="mobile-menu"
+            aria-expanded={isMenuOpen}
+            onClick={() => setIsMenuOpen((open) => !open)}
+          >
+            <span className="sr-only">{isMenuOpen ? tNav('close_menu') : tNav('open_menu')}</span>
+            {isMenuOpen ? (
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
       <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-4rem)] overflow-y-auto`} id="mobile-menu">
@@ -540,6 +537,7 @@ export default function TopNav() {
                 items={mobileMenuItems}
                 align="left"
                 menuId="mobile-user-menu"
+                wrapperClassName="w-full"
                 menuClassName="w-full max-h-[55vh] overflow-y-auto"
                 open={isMobileUserMenuOpen}
                 onOpenChange={setIsMobileUserMenuOpen}
