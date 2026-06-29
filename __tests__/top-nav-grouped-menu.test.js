@@ -7,6 +7,8 @@ const { createRoot } = require('react-dom/client');
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 let mockPathname = '/';
+let mockAuthUser = null;
+let mockCanAccessAdmin = false;
 
 jest.mock('next/navigation', () => ({
   usePathname: () => mockPathname,
@@ -29,24 +31,24 @@ jest.mock('next/image', () => {
 });
 
 jest.mock('@/lib/auth-context', () => ({
-  useAuth: () => ({ user: null, loading: false, logout: jest.fn() }),
+  useAuth: () => ({ user: mockAuthUser, loading: false, logout: jest.fn() }),
 }));
 
 jest.mock('@/hooks/usePermissions', () => ({
-  usePermissions: () => ({ isAdmin: false, canAccessAdmin: () => false }),
+  usePermissions: () => ({ isAdmin: mockCanAccessAdmin, canAccessAdmin: () => mockCanAccessAdmin }),
 }));
 
 jest.mock('@/components/ui/DropdownMenu', () => {
   const React = require('react');
 
-  return function DropdownMenuMock({ triggerText, items = [], triggerClassName = '', menuId }) {
+  return function DropdownMenuMock({ triggerText, trigger, items = [], triggerClassName = '', menuId }) {
     return React.createElement(
       'div',
       {
         'data-testid': menuId ? `dropdown-${menuId}` : 'dropdown-custom',
         'data-trigger-class': triggerClassName,
       },
-      triggerText,
+      trigger || triggerText,
       React.createElement(
         'ul',
         null,
@@ -106,6 +108,8 @@ describe('TopNav grouped navigation redesign', () => {
 
   beforeEach(async () => {
     mockPathname = '/';
+    mockAuthUser = null;
+    mockCanAccessAdmin = false;
     container = document.createElement('div');
     document.body.appendChild(container);
     root = createRoot(container);
@@ -279,5 +283,45 @@ describe('TopNav grouped navigation redesign', () => {
     const pagesDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-pages-menu"]');
     expect(pagesDropdown).toBeTruthy();
     expect(pagesDropdown.querySelector('a[href="/education"]')).toBeTruthy();
+  });
+
+  test('authenticated desktop menu stays focused on account-level links', async () => {
+    mockAuthUser = { username: 'demo', homeLocation: { slug: 'athens' } };
+    await renderTopNav();
+
+    const userDropdown = container.querySelector('[data-testid="dropdown-desktop-user-menu"]');
+    expect(userDropdown).toBeTruthy();
+    expect(userDropdown.querySelector('a[href="/profile"]')).toBeTruthy();
+    expect(userDropdown.querySelector('a[href="/locations/athens"]')).toBeTruthy();
+
+    expect(userDropdown.querySelector('a[href="/editor"]')).toBeFalsy();
+    expect(userDropdown.querySelector('a[href="/my-news"]')).toBeFalsy();
+    expect(userDropdown.querySelector('a[href="/my-polls"]')).toBeFalsy();
+    expect(userDropdown.querySelector('a[href="/my-votes"]')).toBeFalsy();
+    expect(userDropdown.querySelector('a[href="/suggestions?mine=true"]')).toBeFalsy();
+    expect(userDropdown.querySelector('a[href="/organizations?mine=true"]')).toBeFalsy();
+  });
+
+  test('mobile authenticated account actions are direct links instead of a nested dropdown', async () => {
+    mockAuthUser = { username: 'demo', homeLocation: { slug: 'athens' } };
+    await renderTopNav();
+
+    const mobileMenu = container.querySelector('#mobile-menu');
+    expect(mobileMenu).toBeTruthy();
+    expect(mobileMenu.querySelector('[data-testid="dropdown-mobile-user-menu"]')).toBeFalsy();
+    expect(mobileMenu.querySelector('a[href="/profile"]')).toBeTruthy();
+    expect(mobileMenu.querySelector('a[href="/locations/athens"]')).toBeTruthy();
+    expect(mobileMenu.querySelector('button[type="button"].text-red-600')).toBeTruthy();
+  });
+
+  test('authenticated admin menu exposes only the admin entry, not diagnostics', async () => {
+    mockAuthUser = { username: 'admin', homeLocation: null };
+    mockCanAccessAdmin = true;
+    await renderTopNav();
+
+    const userDropdown = container.querySelector('[data-testid="dropdown-desktop-user-menu"]');
+    expect(userDropdown).toBeTruthy();
+    expect(userDropdown.querySelector('a[href="/admin"]')).toBeTruthy();
+    expect(userDropdown.querySelector('a[href="/admin/status"]')).toBeFalsy();
   });
 });

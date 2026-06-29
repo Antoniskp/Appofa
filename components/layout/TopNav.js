@@ -8,9 +8,7 @@ import {
   AcademicCapIcon,
   ArrowLeftOnRectangleIcon,
   ArrowRightOnRectangleIcon,
-  BuildingOffice2Icon,
   ChatBubbleLeftRightIcon,
-  ChevronDownIcon,
   ClipboardDocumentListIcon,
   DocumentTextIcon,
   FlagIcon,
@@ -18,8 +16,6 @@ import {
   LightBulbIcon,
   MapPinIcon,
   NewspaperIcon,
-  PencilSquareIcon,
-  ServerIcon,
   ShieldCheckIcon,
   TrophyIcon,
   UserCircleIcon,
@@ -39,11 +35,10 @@ import NotificationBell from '@/components/notifications/NotificationBell';
 export default function TopNav() {
   const tNav = useTranslations('nav');
   const { user, loading, logout } = useAuth();
-  const { isAdmin, canAccessAdmin } = usePermissions();
+  const { canAccessAdmin } = usePermissions();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDesktopUserMenuOpen, setIsDesktopUserMenuOpen] = useState(false);
-  const [isMobileUserMenuOpen, setIsMobileUserMenuOpen] = useState(false);
 
   const isPathActive = (path) => pathname === path || pathname.startsWith(path + '/');
   const isActive = (path) => (isPathActive(path) ? 'text-blue-600 border-b-2 border-blue-600' : '');
@@ -53,7 +48,6 @@ export default function TopNav() {
     // Close all menus when pathname changes (navigation occurs)
     setIsMenuOpen(false);
     setIsDesktopUserMenuOpen(false);
-    setIsMobileUserMenuOpen(false);
   }, [pathname]);
 
   useEffect(() => {
@@ -212,7 +206,7 @@ export default function TopNav() {
     }
   ];
 
-  // Build user menu items for DropdownMenu (desktop - smaller icons)
+  // Keep the authenticated menu focused on account-level destinations.
   const userMenuItems = [
     {
       id: 'profile',
@@ -222,53 +216,11 @@ export default function TopNav() {
       className: isActive('/profile')
     },
     {
-      id: 'my-articles',
-      label: tNav('my_articles'),
-      href: '/editor',
-      icon: <PencilSquareIcon className="h-4 w-4" />,
-      className: isActive('/editor')
-    },
-    {
-      id: 'my-news',
-      label: tNav('my_news'),
-      href: '/my-news',
-      icon: <NewspaperIcon className="h-4 w-4" />,
-      className: isActive('/my-news')
-    },
-    {
-      id: 'my-polls',
-      label: tNav('my_polls'),
-      href: '/my-polls',
-      icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
-      className: isActive('/my-polls')
-    },
-    {
-      id: 'my-votes',
-      label: tNav('my_votes'),
-      href: '/my-votes',
-      icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
-      className: isActive('/my-votes')
-    },
-    {
       id: 'my-location',
       label: tNav('my_location'),
       href: myLocationHref,
       icon: <MapPinIcon className="h-4 w-4" />,
       className: isActive(myLocationHref)
-    },
-    {
-      id: 'suggest',
-      label: tNav('my_suggestions'),
-      href: '/suggestions?mine=true',
-      icon: <LightBulbIcon className="h-4 w-4" />,
-      className: isActive('/suggestions')
-    },
-    {
-      id: 'my-organizations',
-      label: tNav('my_organizations'),
-      href: '/organizations?mine=true',
-      icon: <BuildingOffice2Icon className="h-4 w-4" />,
-      className: isActive('/organizations')
     },
     ...(canAccessAdmin() ? [
       { divider: true },
@@ -278,14 +230,7 @@ export default function TopNav() {
         href: '/admin',
         icon: <ShieldCheckIcon className="h-4 w-4" />,
         className: isActive('/admin')
-      },
-      ...(isAdmin ? [{
-        id: 'admin-status',
-          label: tNav('admin_diagnostics'),
-        href: '/admin/status',
-        icon: <ServerIcon className="h-4 w-4" />,
-        className: isActive('/admin/status')
-      }] : [])
+      }
     ] : []),
     { divider: true },
     {
@@ -297,8 +242,7 @@ export default function TopNav() {
     }
   ];
 
-  // Build mobile menu items (larger icons and font)
-  const mobileMenuItems = [
+  const mobileAccountLinks = [
     {
       id: 'profile',
       label: tNav('my_profile'),
@@ -307,80 +251,21 @@ export default function TopNav() {
       className: `text-base font-medium ${isMobileActive('/profile')}`
     },
     {
-      id: 'my-articles',
-      label: tNav('my_articles'),
-      href: '/editor',
-      icon: <PencilSquareIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isMobileActive('/editor')}`
-    },
-    {
-      id: 'my-news',
-      label: tNav('my_news'),
-      href: '/my-news',
-      icon: <NewspaperIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isMobileActive('/my-news')}`
-    },
-    {
-      id: 'my-polls',
-      label: tNav('my_polls'),
-      href: '/my-polls',
-      icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isMobileActive('/my-polls')}`
-    },
-    {
-      id: 'my-votes',
-      label: tNav('my_votes'),
-      href: '/my-votes',
-      icon: <ClipboardDocumentListIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isMobileActive('/my-votes')}`
-    },
-    {
       id: 'my-location',
       label: tNav('my_location'),
       href: myLocationHref,
       icon: <MapPinIcon className="h-5 w-5" />,
       className: `text-base font-medium ${isMobileActive(myLocationHref)}`
     },
-    {
-      id: 'suggest',
-      label: tNav('my_suggestions'),
-      href: '/suggestions?mine=true',
-      icon: <LightBulbIcon className="h-5 w-5" />,
-      className: `text-base font-medium ${isMobileActive('/suggestions')}`
-    },
-    {
-      id: 'my-organizations',
-      label: tNav('my_organizations'),
-      href: '/organizations?mine=true',
-      icon: <BuildingOffice2Icon className="h-5 w-5" />,
-      className: `text-base font-medium ${isMobileActive('/organizations')}`
-    },
     ...(canAccessAdmin() ? [
-      { divider: true },
       {
         id: 'admin',
         label: tNav('admin'),
         href: '/admin',
         icon: <ShieldCheckIcon className="h-5 w-5" />,
         className: `text-base font-medium ${isMobileActive('/admin')}`
-      },
-      ...(isAdmin ? [{
-        id: 'admin-status',
-          label: tNav('admin_diagnostics'),
-        href: '/admin/status',
-        icon: <ServerIcon className="h-5 w-5" />,
-        className: `text-base font-medium ${isMobileActive('/admin/status')}`
-      }] : [])
-    ] : []),
-    { divider: true },
-    {
-      id: 'logout',
-      label: tNav('logout'),
-      icon: <ArrowRightOnRectangleIcon className="h-5 w-5" />,
-      onClick: handleLogout,
-      variant: 'danger',
-      className: 'text-base font-medium'
-    }
+      }
+    ] : [])
   ];
 
   return (
@@ -517,31 +402,39 @@ export default function TopNav() {
             </div>
           ) : user ? (
             <>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center justify-between gap-3 rounded-md border border-seafoam bg-white px-3 py-2 shadow-sm">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-blue-900">
+                    {tNav('greeting')} {user.username}
+                  </p>
+                  <p className="text-xs text-gray-500">{tNav('notifications')}</p>
+                </div>
                 <NotificationBell />
-                 <span className="text-sm text-gray-500">{tNav('notifications')}</span>
               </div>
-              <DropdownMenu
-                trigger={
-                  <button
-                    type="button"
-                    className="flex w-full min-w-0 items-center justify-between rounded-md border border-seafoam bg-white px-3 py-2 text-sm font-medium text-blue-900 shadow-sm"
+              <div className="space-y-1">
+                {mobileAccountLinks.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className={`flex min-h-11 items-center gap-3 rounded-md px-3 py-2 text-blue-900 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${item.className}`}
                   >
-                    <span className="truncate min-w-0">{tNav('greeting')} {user.username}</span>
-                    <ChevronDownIcon
-                      className={`ml-2 h-4 w-4 flex-shrink-0 transition-transform ${isMobileUserMenuOpen ? 'rotate-180' : ''}`}
-                      aria-hidden="true"
-                    />
-                  </button>
-                }
-                items={mobileMenuItems}
-                align="left"
-                menuId="mobile-user-menu"
-                wrapperClassName="w-full"
-                menuClassName="w-full max-h-[55vh] overflow-y-auto"
-                open={isMobileUserMenuOpen}
-                onOpenChange={setIsMobileUserMenuOpen}
-              />
+                    <span className="flex-shrink-0" aria-hidden="true">{item.icon}</span>
+                    <span className="min-w-0 break-words">{item.label}</span>
+                  </Link>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  handleLogout();
+                }}
+                className="flex w-full min-h-11 items-center gap-3 rounded-md px-3 py-2 text-base font-medium text-red-600 transition-colors hover:bg-seafoam/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              >
+                <ArrowRightOnRectangleIcon className="h-5 w-5 flex-shrink-0" aria-hidden="true" />
+                {tNav('logout')}
+              </button>
             </>
           ) : (
             <>
