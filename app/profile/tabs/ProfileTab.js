@@ -15,6 +15,7 @@ export default function ProfileTab({
   savedProfileData,
   followersCount,
   followingCount,
+  onNavigateToSection,
   handleProfileChange,
   handleAvatarUpload,
   handleSocialLinkChange,
@@ -40,7 +41,11 @@ export default function ProfileTab({
       </Card>
 
       <Card>
-        <ProfileCompleteness user={user} profileData={profileData} />
+        <ProfileCompleteness
+          user={user}
+          profileData={profileData}
+          onNavigateToSection={onNavigateToSection}
+        />
       </Card>
 
       <Card>

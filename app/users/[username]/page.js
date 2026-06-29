@@ -121,20 +121,22 @@ function FollowCounts({ userId, username }) {
   if (!counts) return null;
 
   return (
-    <div className="flex gap-4 mt-2 text-sm text-gray-600">
+    <div className="grid grid-cols-2 gap-2 mt-4 sm:max-w-sm">
       <Link
         href={`/users/${username}/followers`}
-        className="hover:text-blue-600 hover:underline"
+        className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 hover:border-blue-200 hover:bg-blue-50"
       >
-        <span className="font-semibold text-gray-900">{counts.followersCount}</span>{' '}
-        {counts.followersCount === 1 ? 'Follower' : 'Followers'}
+        <span className="block text-base font-semibold text-gray-900">{counts.followersCount}</span>
+        <span className="block text-xs text-gray-500">
+          {counts.followersCount === 1 ? 'Follower' : 'Followers'}
+        </span>
       </Link>
       <Link
         href={`/users/${username}/following`}
-        className="hover:text-blue-600 hover:underline"
+        className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 hover:border-blue-200 hover:bg-blue-50"
       >
-        <span className="font-semibold text-gray-900">{counts.followingCount}</span>{' '}
-        Following
+        <span className="block text-base font-semibold text-gray-900">{counts.followingCount}</span>
+        <span className="block text-xs text-gray-500">Following</span>
       </Link>
     </div>
   );
@@ -362,6 +364,10 @@ export default function PublicUserProfilePage() {
   const displayName = user?.firstNameNative && user?.lastNameNative
     ? `${user.firstNameNative} ${user.lastNameNative}`
     : user?.firstNameNative || user?.lastNameNative || '';
+  const profileTitle = displayName || user?.nickname || user?.username || '';
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short' })
+    : null;
   const politicalStatusLabel = formatPoliticalAffiliationStatus(
     user?.politicalAffiliationStatus,
     user?.politicalAffiliationOtherText
@@ -405,13 +411,25 @@ export default function PublicUserProfilePage() {
         {!authLoading && !loading && !error && user && (
           <div className="max-w-4xl mx-auto space-y-6">
             <Card>
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+              <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
                 <UserAvatar user={user} size="h-24 w-24" textSize="text-2xl" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <h1 className="text-2xl font-bold text-gray-900 truncate">
-                      {user.username}
-                    </h1>
+                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                    <div className="min-w-0">
+                      <h1 className="text-2xl font-bold text-gray-900 truncate">
+                        {profileTitle}
+                      </h1>
+                      {user.username && (
+                        <p className="text-sm text-gray-500 mt-0.5 truncate">@{user.username}</p>
+                      )}
+                    </div>
+                    <FollowButton
+                      targetUserId={user.id}
+                      onCountChange={() => setCountsKey((k) => k + 1)}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap mt-3">
                     {user.role && (
                       <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
                         {user.role}
@@ -452,17 +470,15 @@ export default function PublicUserProfilePage() {
                             </span>
                           ) : null;
                         })()}
-                    <FollowButton
-                      targetUserId={user.id}
-                      onCountChange={() => setCountsKey((k) => k + 1)}
-                    />
                   </div>
-                  {displayName && (
-                    <p className="text-sm text-gray-600 mt-1 truncate">{displayName}</p>
+
+                  {user.nickname && displayName && (
+                    <p className="text-sm text-gray-600 mt-3 truncate">{user.nickname}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    Member since {new Date(user.createdAt).toLocaleDateString()}
-                  </p>
+
+                  {memberSince && (
+                    <p className="text-xs text-gray-500 mt-3">Member since {memberSince}</p>
+                  )}
                   <FollowCounts key={countsKey} userId={user.id} username={user.username} />
                 </div>
               </div>

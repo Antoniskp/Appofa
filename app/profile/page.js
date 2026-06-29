@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Card from '@/components/ui/Card';
@@ -28,8 +28,29 @@ function getTabFromHash(hash) {
 function ProfileContent() {
   const tProfile = useTranslations('profile');
   const [activeTab, setActiveTab] = useState(
-    () => getTabFromHash(window.location.hash) || 'profile'
+    () => getTabFromHash(typeof window !== 'undefined' ? window.location.hash : '') || 'profile'
   );
+
+  const selectTab = useCallback((tabId) => {
+    if (!PROFILE_TAB_IDS.has(tabId)) return;
+    setActiveTab(tabId);
+    if (typeof window !== 'undefined') {
+      window.history.replaceState(null, '', `#${tabId}`);
+    }
+  }, []);
+
+  const handleNavigateToSection = useCallback((tabId, sectionId) => {
+    if (!PROFILE_TAB_IDS.has(tabId)) return;
+    selectTab(tabId);
+
+    window.setTimeout(() => {
+      const target = document.getElementById(sectionId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        target.focus?.({ preventScroll: true });
+      }
+    }, 80);
+  }, [selectTab]);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -130,7 +151,7 @@ function ProfileContent() {
                 <button
                   key={tab.id}
                   type="button"
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => selectTab(tab.id)}
                   className={`whitespace-nowrap py-3 px-1 text-sm font-medium border-b-2 transition ${
                     isActive
                       ? 'border-blue-600 text-blue-600'
@@ -151,6 +172,7 @@ function ProfileContent() {
             savedProfileData={savedProfileData}
             followersCount={followersCount}
             followingCount={followingCount}
+            onNavigateToSection={handleNavigateToSection}
             handleProfileChange={handleProfileChange}
             handleAvatarUpload={handleAvatarUpload}
             handleSocialLinkChange={handleSocialLinkChange}

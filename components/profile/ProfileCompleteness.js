@@ -1,7 +1,6 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { authAPI } from '@/lib/api';
 
@@ -18,7 +17,8 @@ const STEPS = [
     labelKey: 'completeness_step_nationality',
     points: 20,
     isDone: ({ profileData }) => Boolean(profileData?.nationality),
-    href: '#profile-location-heading',
+    tabId: 'location-politics',
+    sectionId: 'profile-location-heading',
     missingLabelKey: 'completeness_add_nationality',
   },
   {
@@ -26,7 +26,8 @@ const STEPS = [
     labelKey: 'completeness_step_home_location',
     points: 20,
     isDone: ({ profileData }) => Boolean(profileData?.homeLocationId),
-    href: '#profile-location-heading',
+    tabId: 'location-politics',
+    sectionId: 'profile-location-heading',
     missingLabelKey: 'completeness_add_home_location',
   },
   {
@@ -34,7 +35,8 @@ const STEPS = [
     labelKey: 'completeness_step_full_name',
     points: 15,
     isDone: ({ profileData }) => Boolean(profileData?.firstNameNative && profileData?.lastNameNative),
-    href: '#profile-basic-info-heading',
+    tabId: 'profile',
+    sectionId: 'profile-basic-info-heading',
     missingLabelKey: 'completeness_add_full_name',
   },
   {
@@ -42,7 +44,8 @@ const STEPS = [
     labelKey: 'completeness_step_bio',
     points: 10,
     isDone: ({ profileData }) => Boolean(profileData?.bio),
-    href: '#profile-about-heading',
+    tabId: 'profile',
+    sectionId: 'profile-about-heading',
     missingLabelKey: 'completeness_add_bio',
   },
   {
@@ -50,12 +53,13 @@ const STEPS = [
     labelKey: 'completeness_step_avatar',
     points: 10,
     isDone: ({ profileData }) => Boolean(profileData?.avatar),
-    href: '#profile-basic-info-heading',
+    tabId: 'profile',
+    sectionId: 'profile-basic-info-heading',
     missingLabelKey: 'completeness_add_avatar',
   },
 ];
 
-export default function ProfileCompleteness({ user, profileData }) {
+export default function ProfileCompleteness({ user, profileData, onNavigateToSection }) {
   const t = useTranslations('profile');
   const [resendStatus, setResendStatus] = useState(null);
   const [sendingResend, setSendingResend] = useState(false);
@@ -132,14 +136,15 @@ export default function ProfileCompleteness({ user, profileData }) {
             }
 
             return (
-              <Link
+              <button
                 key={step.key}
-                href={step.href || '#'}
+                type="button"
+                onClick={() => onNavigateToSection?.(step.tabId || 'profile', step.sectionId)}
                 className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100"
               >
                 <span aria-hidden="true">•</span>
                 {t(step.missingLabelKey)}
-              </Link>
+              </button>
             );
           })}
         </div>
