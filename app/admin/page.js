@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { DocumentTextIcon, UserGroupIcon, ShieldCheckIcon, UserIcon, MapPinIcon, EnvelopeIcon, FlagIcon, StarIcon, PhotoIcon, HeartIcon, UsersIcon, GlobeEuropeAfricaIcon } from '@heroicons/react/24/outline';
+import { UserGroupIcon, ShieldCheckIcon, UserIcon } from '@heroicons/react/24/outline';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { authAPI, notificationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
@@ -11,11 +11,14 @@ import Card, { StatsCard } from '@/components/ui/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { getVisibleAdminNavItems } from '@/components/admin/adminNav';
 
 function AdminDashboardContent() {
   const tAdmin = useTranslations('admin');
   const tCommon = useTranslations('common');
   const { user } = useAuth();
+  const quickActions = getVisibleAdminNavItems(user?.role)
+    .filter((action) => action.href !== '/admin');
   const [userStats, setUserStats] = useState({
     total: 0,
     byRole: {
@@ -123,38 +126,24 @@ function AdminDashboardContent() {
           <Card className="mb-8">
             <h2 className="text-xl font-semibold mb-4">{tAdmin('quick_actions')}</h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {[
-                { href: '/admin/users', label: tAdmin('manage_users'), icon: UsersIcon },
-                { href: '/admin/articles', label: tAdmin('all_articles'), icon: DocumentTextIcon },
-                { href: '/articles', label: tAdmin('view_articles'), icon: DocumentTextIcon },
-                { href: '/admin/locations', label: tAdmin('manage_locations'), icon: MapPinIcon },
-                { href: '/admin/messages', label: tAdmin('manage_messages'), icon: EnvelopeIcon },
-                { href: '/admin/persons', label: tAdmin('manage_persons'), icon: UserGroupIcon },
-                { href: '/admin/reports', label: tAdmin('reports'), icon: FlagIcon },
-                { href: '/admin/dream-team', label: tAdmin('dream_team'), icon: StarIcon },
-                { href: '/admin/manifests', label: tAdmin('manage_manifests'), icon: DocumentTextIcon },
-                { href: '/admin/hero', label: tAdmin('hero_settings'), icon: PhotoIcon },
-                {
-                  href: '/admin/geo',
-                  label: tAdmin('geo_countries'),
-                  description: tAdmin('geo_countries_description'),
-                  icon: GlobeEuropeAfricaIcon,
-                },
-                { href: '/admin/status', label: tAdmin('system_health'), icon: HeartIcon },
-                { href: '/admin/worker-status', label: 'Worker Status', icon: HeartIcon },
-              ].map((action) => (
-                <Link
-                  key={action.href}
-                  href={action.href}
-                  className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition group"
-                >
-                  <action.icon className="h-8 w-8 text-gray-500 group-hover:text-blue-600 transition" />
-                  <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 text-center">{action.label}</span>
-                  {action.description && (
-                    <span className="text-xs text-gray-500 text-center">{action.description}</span>
-                  )}
-                </Link>
-              ))}
+              {quickActions.map((action) => {
+                const label = action.translationKey ? tAdmin(action.translationKey) : action.label;
+                const description = action.descriptionKey ? tAdmin(action.descriptionKey) : action.description;
+
+                return (
+                  <Link
+                    key={action.href}
+                    href={action.href}
+                    className="flex flex-col items-center gap-2 p-4 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:shadow-md transition group"
+                  >
+                    <action.icon className="h-8 w-8 text-gray-500 group-hover:text-blue-600 transition" />
+                    <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 text-center">{label}</span>
+                    {description && (
+                      <span className="text-xs text-gray-500 text-center">{description}</span>
+                    )}
+                  </Link>
+                );
+              })}
             </div>
           </Card>
 

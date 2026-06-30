@@ -1,87 +1,59 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  AdjustmentsHorizontalIcon,
   Bars3Icon,
-  BuildingOfficeIcon,
-  DocumentTextIcon,
-  EnvelopeIcon,
-  FlagIcon,
-  GlobeEuropeAfricaIcon,
-  HeartIcon,
-  HomeIcon,
-  IdentificationIcon,
-  MapPinIcon,
-  PhotoIcon,
-  ShieldExclamationIcon,
-  StarIcon,
-  UserGroupIcon,
-  UserMinusIcon,
-  UsersIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
+import { adminSummaryAPI } from '@/lib/api';
+import { getVisibleAdminNavSections } from './adminNav';
 
-const navSections = [
-  {
-    label: 'Overview',
-    items: [
-      { href: '/admin', label: 'Dashboard', icon: HomeIcon },
-    ],
-  },
-  {
-    label: 'People',
-    items: [
-      { href: '/admin/users', label: 'Users', icon: UsersIcon },
-      { href: '/admin/persons', label: 'Persons', icon: UserGroupIcon },
-      { href: '/admin/persons/claims', label: 'Person Claims', icon: IdentificationIcon },
-      { href: '/admin/removal-requests', label: 'Removal Requests', icon: UserMinusIcon },
-      { href: '/admin/organizations', label: 'Organizations', icon: BuildingOfficeIcon },
-    ],
-  },
-  {
-    label: 'Content',
-    items: [
-      { href: '/admin/homepage', label: 'Homepage', icon: AdjustmentsHorizontalIcon },
-      { href: '/admin/hero', label: 'Hero Settings', icon: PhotoIcon },
-      { href: '/admin/articles', label: 'Articles', icon: DocumentTextIcon },
-      { href: '/admin/manifests', label: 'Manifests', icon: DocumentTextIcon },
-      { href: '/admin/dream-team', label: 'Dream Team', icon: StarIcon },
-    ],
-  },
-  {
-    label: 'Moderation',
-    items: [
-      { href: '/admin/reports', label: 'Reports', icon: FlagIcon },
-      { href: '/admin/messages', label: 'Messages', icon: EnvelopeIcon },
-      { href: '/admin/newsletter', label: 'Newsletter', icon: EnvelopeIcon },
-    ],
-  },
-  {
-    label: 'Locations & Access',
-    items: [
-      { href: '/admin/locations', label: 'Locations', icon: MapPinIcon },
-      { href: '/admin/geo', label: 'Geo & Countries', icon: GlobeEuropeAfricaIcon, adminOnly: true },
-      { href: '/admin/ip-rules', label: 'IP Rules', icon: ShieldExclamationIcon, adminOnly: true },
-    ],
-  },
-  {
-    label: 'System',
-    items: [
-      { href: '/admin/status', label: 'System Health', icon: HeartIcon, adminOnly: true },
-      { href: '/admin/worker-status', label: 'Worker Status', icon: HeartIcon, adminOnly: true },
-    ],
-  },
-];
+function AdminQueueBadge({ count }) {
+  if (!count || count < 1) return null;
+
+  const label = count > 99 ? '99+' : String(count);
+
+  return (
+    <span
+      className="ml-auto inline-flex min-w-5 items-center justify-center rounded-full bg-red-100 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-red-700"
+      aria-label={`${count} pending`}
+      title={`${count} pending`}
+    >
+      {label}
+    </span>
+  );
+}
 
 export default function AdminSidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isAdmin = user?.role === 'admin';
+  const [queueCounts, setQueueCounts] = useState({});
+  const navSections = getVisibleAdminNavSections(user?.role);
+
+  useEffect(() => {
+    if (!['admin', 'moderator'].includes(user?.role)) {
+      setQueueCounts({});
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    adminSummaryAPI.getQueueCounts()
+      .then((counts) => {
+        if (!cancelled) setQueueCounts(counts || {});
+      })
+      .catch(() => {
+        if (!cancelled) setQueueCounts({});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.role]);
 
   const isActive = (href) => {
     if (href === '/admin') return pathname === '/admin';
@@ -91,16 +63,13 @@ export default function AdminSidebar() {
   const navContent = (
     <nav className="flex flex-col gap-4 p-3" aria-label="Admin navigation">
       {navSections.map((section) => {
-        const visibleItems = section.items.filter((item) => !item.adminOnly || isAdmin);
-        if (visibleItems.length === 0) return null;
-
         return (
           <div key={section.label}>
             <div className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">
               {section.label}
             </div>
             <div className="flex flex-col gap-1">
-              {visibleItems.map((item) => {
+              {section.items.map((item) => {
                 const active = isActive(item.href);
                 return (
                   <Link
@@ -116,6 +85,7 @@ export default function AdminSidebar() {
                   >
                     <item.icon className={`h-5 w-5 flex-shrink-0 ${active ? 'text-blue-600' : 'text-gray-400'}`} />
                     <span className="truncate">{item.label}</span>
+                    <AdminQueueBadge count={queueCounts[item.href]} />
                   </Link>
                 );
               })}
