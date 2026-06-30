@@ -40,7 +40,7 @@
  *     popup?:   string,    – HTML for click popup
  *     tooltip?: string,    – HTML for hover tooltip
  *     id?:      string,    – identifier for hover linking
- *     variant?: 'default' | 'hovered' | 'selected' | 'creatorLive' | 'viralVideo', – icon variant (uses DivIcon circles)
+ *     variant?: 'default' | 'hovered' | 'selected', – icon variant (uses DivIcon circles)
  *   }
  *
  * Extra BaseMap props:
@@ -159,32 +159,6 @@ function resolveMarkerIcon(variant) {
       });
     }
     return _explorerIcons.explorer;
-  }
-  if (variant === 'creatorLive') {
-    if (!_explorerIcons.creatorLive) {
-      _explorerIcons.creatorLive = L.divIcon({
-        html: '<div style="width:18px;height:18px;border-radius:50%;background:#dc2626;border:3px solid #fff;box-shadow:0 2px 8px rgba(220,38,38,0.55)"></div>',
-        className: '',
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -13],
-        tooltipAnchor: [9, -9],
-      });
-    }
-    return _explorerIcons.creatorLive;
-  }
-  if (variant === 'viralVideo') {
-    if (!_explorerIcons.viralVideo) {
-      _explorerIcons.viralVideo = L.divIcon({
-        html: '<div style="width:16px;height:16px;border-radius:4px;background:#f59e0b;border:2px solid #fff;box-shadow:0 2px 8px rgba(245,158,11,0.5);transform:rotate(45deg)"></div>',
-        className: '',
-        iconSize: [16, 16],
-        iconAnchor: [8, 8],
-        popupAnchor: [0, -12],
-        tooltipAnchor: [8, -8],
-      });
-    }
-    return _explorerIcons.viralVideo;
   }
   return DEFAULT_ICON;
 }

@@ -5,11 +5,8 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
   ArrowTopRightOnSquareIcon,
-  BoltIcon,
   FunnelIcon,
   MapPinIcon,
-  PlusCircleIcon,
-  SparklesIcon,
   VideoCameraIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
@@ -22,16 +19,6 @@ const BaseMap = dynamic(() => import('@/components/map/BaseMap'), { ssr: false }
 
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
-const DEFAULT_CREATOR_CONTENT = [];
-
-const INITIAL_CONTENT_FORM = {
-  type: 'creator-live',
-  title: '',
-  creator: '',
-  platform: 'TikTok',
-  url: '',
-  cameraId: '',
-};
 
 function isValidCoord(value, min, max) {
   if (value == null || value === '') return false;
@@ -71,33 +58,6 @@ function getSafeCameraUrl(url) {
   }
 }
 
-function getSafeSocialUrl(url) {
-  try {
-    const parsed = new URL(url);
-    const allowedHosts = [
-      'tiktok.com',
-      'www.tiktok.com',
-      'instagram.com',
-      'www.instagram.com',
-      'youtube.com',
-      'www.youtube.com',
-      'youtu.be',
-      'x.com',
-      'www.x.com',
-      'twitter.com',
-      'www.twitter.com',
-    ];
-
-    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:')
-      && allowedHosts.some((host) => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`))) {
-      return parsed.toString();
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 function getEmbedTypeLabel(camera, t) {
   if (camera.embedType === 'image') return t('badge_image');
   if (camera.embedType === 'iframe') return t('badge_iframe');
@@ -125,27 +85,6 @@ function buildCameraMarkers(cameras, highlightedMarkerId = null) {
       tooltip: buildCameraTooltip(camera),
       variant: camera.id === highlightedMarkerId ? 'hovered' : 'explorer',
     }];
-  });
-}
-
-function buildCreatorTooltip(item) {
-  const title = escapeHtml(item.title);
-  const creator = escapeHtml(item.creator);
-  const locationLabel = escapeHtml(item.locationLabel);
-  const status = escapeHtml(item.status);
-  return `${title}${creator ? ` - ${creator}` : ''}${locationLabel ? ` - ${locationLabel}` : ''}${status ? ` (${status})` : ''}`;
-}
-
-function buildCreatorMarkers(items, highlightedMarkerId = null) {
-  return items.map((item) => {
-    const id = `content:${item.id}`;
-    return {
-      id,
-      lat: Number(item.lat),
-      lng: Number(item.lng),
-      tooltip: buildCreatorTooltip(item),
-      variant: id === highlightedMarkerId ? 'hovered' : (item.type === 'creator-live' ? 'creatorLive' : 'viralVideo'),
-    };
   });
 }
 
@@ -261,170 +200,11 @@ function CameraCard({ camera, t, isHighlighted, onHoverChange }) {
   );
 }
 
-function CreatorContentCard({ item, t, isHighlighted, onHoverChange }) {
-  const safeUrl = getSafeSocialUrl(item.url);
-  const isLive = item.type === 'creator-live';
-
-  return (
-    <article
-      className={`rounded-lg border bg-white p-4 shadow-sm transition ${isHighlighted ? 'border-red-400 ring-2 ring-red-100' : 'border-gray-200 hover:border-red-200 hover:shadow-md'}`}
-      onMouseEnter={() => onHoverChange(`content:${item.id}`)}
-      onMouseLeave={() => onHoverChange(null)}
-    >
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-gray-900">{item.title}</h2>
-            <p className="mt-1 truncate text-sm text-gray-600">{item.creator || t('creator_unknown')} · {item.locationLabel}</p>
-          </div>
-          <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isLive ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-800'}`}>
-            {isLive ? t('creator_live_badge') : t('viral_video_badge')}
-          </span>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-            {isLive ? <BoltIcon className="mr-1 h-4 w-4 text-red-600" /> : <SparklesIcon className="mr-1 h-4 w-4 text-amber-600" />}
-            {item.platform}
-          </span>
-          {item.source === 'local' && (
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              {t('submitted_pending_badge')}
-            </span>
-          )}
-        </div>
-
-        {safeUrl && (
-          <a
-            href={safeUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-white transition-colors ${isLive ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'}`}
-          >
-            <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-            {isLive ? t('open_creator_live') : t('open_viral_video')}
-          </a>
-        )}
-      </div>
-    </article>
-  );
-}
-
-function CreatorSubmissionPanel({ t, cameras, form, error, notice, onChange, onSubmit }) {
-  const mappableCameras = cameras.filter(hasMapLocation);
-
-  return (
-    <section className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="mb-4 flex items-start gap-3">
-        <div className="rounded-md bg-red-50 p-2 text-red-600">
-          <PlusCircleIcon className="h-5 w-5" />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">{t('creator_submit_title')}</h2>
-          <p className="mt-1 text-sm text-gray-600">{t('creator_submit_description')}</p>
-        </div>
-      </div>
-
-      <form className="grid gap-3" onSubmit={onSubmit}>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm font-medium text-gray-700">
-            {t('creator_type_label')}
-            <select
-              value={form.type}
-              onChange={(event) => onChange({ type: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="creator-live">{t('creator_type_live')}</option>
-              <option value="viral-video">{t('creator_type_viral')}</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-gray-700">
-            {t('creator_location_label')}
-            <select
-              value={form.cameraId}
-              onChange={(event) => onChange({ cameraId: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">{t('creator_location_placeholder')}</option>
-              {mappableCameras.map((camera) => (
-                <option key={camera.id} value={camera.id}>
-                  {camera.label}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <label className="grid gap-1 text-sm font-medium text-gray-700">
-            {t('creator_title_label')}
-            <input
-              value={form.title}
-              onChange={(event) => onChange({ title: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder={t('creator_title_placeholder')}
-            />
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-gray-700">
-            {t('creator_handle_label')}
-            <input
-              value={form.creator}
-              onChange={(event) => onChange({ creator: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder="@creator"
-            />
-          </label>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-[150px_minmax(0,1fr)]">
-          <label className="grid gap-1 text-sm font-medium text-gray-700">
-            {t('creator_platform_label')}
-            <select
-              value={form.platform}
-              onChange={(event) => onChange({ platform: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="TikTok">TikTok</option>
-              <option value="Instagram">Instagram</option>
-              <option value="YouTube">YouTube</option>
-              <option value="X">X</option>
-            </select>
-          </label>
-          <label className="grid gap-1 text-sm font-medium text-gray-700">
-            {t('creator_url_label')}
-            <input
-              value={form.url}
-              onChange={(event) => onChange({ url: event.target.value })}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-              placeholder="https://www.tiktok.com/@creator/live"
-            />
-          </label>
-        </div>
-
-        {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-        {notice && <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{notice}</p>}
-
-        <button
-          type="submit"
-          className="inline-flex w-fit items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
-        >
-          <PlusCircleIcon className="h-4 w-4" />
-          {t('creator_submit_action')}
-        </button>
-      </form>
-    </section>
-  );
-}
-
 export default function CamerasPageClient() {
   const t = useTranslations('cameras');
   const [activeFilter, setActiveFilter] = useState('all');
   const [hoveredMarkerId, setHoveredMarkerId] = useState(null);
   const [hoveredCardId, setHoveredCardId] = useState(null);
-  const [creatorSubmissions, setCreatorSubmissions] = useState([]);
-  const [contentForm, setContentForm] = useState(INITIAL_CONTENT_FORM);
-  const [contentFormError, setContentFormError] = useState('');
-  const [contentFormNotice, setContentFormNotice] = useState('');
   const {
     data: cameras,
     loading,
@@ -443,14 +223,7 @@ export default function CamerasPageClient() {
   );
 
   const allCameras = cameras || [];
-  const allCreatorContent = useMemo(
-    () => [...creatorSubmissions, ...DEFAULT_CREATOR_CONTENT],
-    [creatorSubmissions]
-  );
   const filteredCameras = useMemo(() => {
-    if (activeFilter === 'creatorLive' || activeFilter === 'viral') {
-      return [];
-    }
     if (activeFilter === 'mapped') {
       return allCameras.filter((camera) => hasMapLocation(camera));
     }
@@ -465,54 +238,29 @@ export default function CamerasPageClient() {
     }
     return allCameras;
   }, [activeFilter, allCameras]);
-  const filteredCreatorContent = useMemo(() => {
-    if (activeFilter === 'exact' || activeFilter === 'image') {
-      return [];
-    }
-    if (activeFilter === 'creatorLive' || activeFilter === 'live') {
-      return allCreatorContent.filter((item) => item.type === 'creator-live');
-    }
-    if (activeFilter === 'viral') {
-      return allCreatorContent.filter((item) => item.type === 'viral-video');
-    }
-    return allCreatorContent;
-  }, [activeFilter, allCreatorContent]);
 
   const highlightedMarkerId = hoveredCardId || hoveredMarkerId || null;
   const markers = useMemo(
-    () => [
-      ...buildCameraMarkers(filteredCameras, highlightedMarkerId),
-      ...buildCreatorMarkers(filteredCreatorContent, highlightedMarkerId),
-    ],
-    [filteredCameras, filteredCreatorContent, highlightedMarkerId]
+    () => buildCameraMarkers(filteredCameras, highlightedMarkerId),
+    [filteredCameras, highlightedMarkerId]
   );
   // Stable bounds and center — derived from filteredCameras coordinates only so that
   // BaseMap.fitBounds is NOT re-triggered when hover/focus state changes (which only
   // affect marker icon variant, not the viewport).  fitBounds fires only when the
   // camera data or the active filter actually changes.
   const bounds = useMemo(() => {
-    const cameraPts = filteredCameras
+    const pts = filteredCameras
       .filter(hasMapLocation)
       .map((c) => ({ lat: Number(c.mapLocation.lat), lng: Number(c.mapLocation.lng) }));
-    const creatorPts = filteredCreatorContent.map((item) => ({ lat: Number(item.lat), lng: Number(item.lng) }));
-    const pts = [...cameraPts, ...creatorPts];
     return getMapBounds(pts);
-  }, [filteredCameras, filteredCreatorContent]);
+  }, [filteredCameras]);
   const mapCenter = useMemo(() => {
     const first = filteredCameras.find(hasMapLocation);
-    const firstContent = filteredCreatorContent[0];
-    if (!first && firstContent) {
-      return [Number(firstContent.lat), Number(firstContent.lng)];
-    }
     return first ? [Number(first.mapLocation.lat), Number(first.mapLocation.lng)] : GREECE_CENTER;
-  }, [filteredCameras, filteredCreatorContent]);
-  const cameraMarkerCount = filteredCameras.filter(hasMapLocation).length;
-  const unmappedCount = filteredCameras.length - cameraMarkerCount;
+  }, [filteredCameras]);
+  const unmappedCount = filteredCameras.length - markers.length;
   const mappedCount = allCameras.filter(hasMapLocation).length;
   const liveCount = allCameras.filter((camera) => camera.embedType !== 'image').length;
-  const creatorLiveCount = allCreatorContent.filter((item) => item.type === 'creator-live').length;
-  const viralCount = allCreatorContent.filter((item) => item.type === 'viral-video').length;
-  const showCreatorSubmissionPanel = activeFilter !== 'exact' && activeFilter !== 'image';
 
   const filters = [
     { id: 'all', label: t('filter_all') },
@@ -520,71 +268,14 @@ export default function CamerasPageClient() {
     { id: 'exact', label: t('filter_exact') },
     { id: 'image', label: t('filter_image') },
     { id: 'live', label: t('filter_live') },
-    { id: 'creatorLive', label: t('filter_creator_live') },
-    { id: 'viral', label: t('filter_viral') },
   ];
 
-  function handleMarkerClick(markerId) {
-    if (markerId?.startsWith('content:')) {
-      const contentId = markerId.replace('content:', '');
-      const item = filteredCreatorContent.find((content) => content.id === contentId);
-      const safeUrl = item ? getSafeSocialUrl(item.url) : null;
-      if (safeUrl && typeof window !== 'undefined') {
-        window.open(safeUrl, '_blank', 'noopener,noreferrer');
-      }
-      return;
-    }
-
-    const camera = filteredCameras.find((c) => c.id === markerId);
+  function handleMarkerClick(cameraId) {
+    const camera = filteredCameras.find((c) => c.id === cameraId);
     const safeUrl = camera ? getSafeCameraUrl(camera.url) : null;
     if (safeUrl && typeof window !== 'undefined') {
       window.open(safeUrl, '_blank', 'noopener,noreferrer');
     }
-  }
-
-  function handleContentFormChange(partial) {
-    setContentForm((current) => ({ ...current, ...partial }));
-    setContentFormError('');
-    setContentFormNotice('');
-  }
-
-  function handleContentSubmit(event) {
-    event.preventDefault();
-    const selectedCamera = allCameras.find((camera) => camera.id === contentForm.cameraId);
-    const safeUrl = getSafeSocialUrl(contentForm.url);
-
-    if (!selectedCamera || !hasMapLocation(selectedCamera)) {
-      setContentFormError(t('creator_error_location'));
-      return;
-    }
-    if (!contentForm.title.trim()) {
-      setContentFormError(t('creator_error_title'));
-      return;
-    }
-    if (!safeUrl) {
-      setContentFormError(t('creator_error_url'));
-      return;
-    }
-
-    const mapLocation = selectedCamera.mapLocation;
-    const newItem = {
-      id: `local-${Date.now()}`,
-      type: contentForm.type,
-      title: contentForm.title.trim(),
-      creator: contentForm.creator.trim(),
-      platform: contentForm.platform,
-      url: safeUrl,
-      lat: Number(mapLocation.lat),
-      lng: Number(mapLocation.lng),
-      locationLabel: getLocationLabel(mapLocation) || selectedCamera.label,
-      status: contentForm.type === 'creator-live' ? t('creator_live_badge') : t('viral_video_badge'),
-      source: 'local',
-    };
-
-    setCreatorSubmissions((current) => [newItem, ...current]);
-    setContentForm({ ...INITIAL_CONTENT_FORM, cameraId: contentForm.cameraId });
-    setContentFormNotice(t('creator_submit_success'));
-    setActiveFilter(contentForm.type === 'creator-live' ? 'creatorLive' : 'viral');
   }
 
   return (
@@ -606,8 +297,6 @@ export default function CamerasPageClient() {
                 <span>{t('summary_total', { count: allCameras.length })}</span>
                 <span>{t('summary_mapped', { count: mappedCount })}</span>
                 <span>{t('filter_live')}: {liveCount}</span>
-                <span>{t('filter_creator_live')}: {creatorLiveCount}</span>
-                <span>{t('filter_viral')}: {viralCount}</span>
               </div>
             )}
           </div>
@@ -649,7 +338,7 @@ export default function CamerasPageClient() {
               </div>
               {!loading && !error && (
                 <p className="rounded-md bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
-                  {t('summary_map_items', { count: markers.length })}
+                  {t('summary_mapped', { count: markers.length })}
                 </p>
               )}
             </div>
@@ -691,11 +380,9 @@ export default function CamerasPageClient() {
           <section>
             <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900">{t('map_content_title')}</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">{t('list_title')}</h2>
                 {!loading && !error && (
-                  <p className="mt-1 text-sm text-gray-600">
-                    {t('summary_content_total', { cameras: filteredCameras.length, content: filteredCreatorContent.length })}
-                  </p>
+                  <p className="mt-1 text-sm text-gray-600">{t('summary_total', { count: filteredCameras.length })}</p>
                 )}
               </div>
             </div>
@@ -711,60 +398,24 @@ export default function CamerasPageClient() {
                 description={error}
                 action={{ text: t('retry'), onClick: refetch }}
               />
-            ) : filteredCameras.length === 0 && filteredCreatorContent.length === 0 ? (
+            ) : filteredCameras.length === 0 ? (
               <EmptyState
                 title={t('no_filtered_cameras_title')}
                 description={t('no_filtered_cameras_description')}
               />
             ) : (
-              <div className="space-y-6">
-                {showCreatorSubmissionPanel && (
-                  <CreatorSubmissionPanel
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                {filteredCameras.map((camera) => (
+                  <CameraCard
+                    key={camera.id}
+                    camera={camera}
                     t={t}
-                    cameras={allCameras}
-                    form={contentForm}
-                    error={contentFormError}
-                    notice={contentFormNotice}
-                    onChange={handleContentFormChange}
-                    onSubmit={handleContentSubmit}
+                    isHighlighted={camera.id === hoveredMarkerId || camera.id === hoveredCardId}
+                    onHoverChange={(id) => {
+                      setHoveredCardId(id);
+                    }}
                   />
-                )}
-
-                {filteredCreatorContent.length > 0 && (
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-gray-900">{t('creator_content_heading')}</h3>
-                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                      {filteredCreatorContent.map((item) => (
-                        <CreatorContentCard
-                          key={item.id}
-                          item={item}
-                          t={t}
-                          isHighlighted={`content:${item.id}` === hoveredMarkerId || `content:${item.id}` === hoveredCardId}
-                          onHoverChange={setHoveredCardId}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {filteredCameras.length > 0 && (
-                  <div>
-                    <h3 className="mb-3 text-lg font-semibold text-gray-900">{t('camera_content_heading')}</h3>
-                    <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                      {filteredCameras.map((camera) => (
-                        <CameraCard
-                          key={camera.id}
-                          camera={camera}
-                          t={t}
-                          isHighlighted={camera.id === hoveredMarkerId || camera.id === hoveredCardId}
-                          onHoverChange={(id) => {
-                            setHoveredCardId(id);
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                ))}
               </div>
             )}
           </section>

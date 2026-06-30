@@ -1,32 +1,29 @@
-# Issue: Creator live and viral video map layer
+# Issue: Curated creator and viral video map layer
 
 ## Goal
 
-Turn the cameras page into a live discovery map where existing camera locations can also surface approved creator content: TikTok Live links, Instagram/YouTube short-form links, and viral videos tied to the same real-world places.
+Let Appofa optionally surface hand-approved creator links and viral videos around existing camera locations without depending on TikTok API access or adding a complicated public submission flow.
 
 ## User Story
 
-As a TikToker or local creator, I want to pin my live stream or viral video to a real map location so people already watching that place can discover my content.
+As an admin/moderator, I want to add an approved creator link or viral video to a mapped location so the cameras page can show useful local context without opening the map to spam.
 
-As an Appofa visitor, I want to switch between cameras, live creators, and viral videos so I can understand what is happening in a place from both fixed cameras and human creators.
+As an Appofa visitor, I want the camera map to stay simple first, with optional curated social context only when the team has reviewed it.
 
 ## Product Shape
 
-- Existing camera pins remain the base layer.
-- Creator live pins are attached to mapped camera locations.
-- Viral video pins are attached to mapped camera locations.
-- Users can filter cameras, live creator links, and viral videos.
-- Creator submissions should be stored as pending moderation before public display.
-- Live links should expire automatically; viral links can have a longer retention period.
+- Existing camera pins remain the primary experience.
+- No public "add TikTok link" form on the cameras page.
+- No TikTok API dependency for the first version.
+- Admins can manually add approved social/video URLs later.
+- Public display should happen only after moderation.
+- Live links should expire automatically if used; viral links can have a longer retention period.
 
-## MVP Implemented
+## Decision
 
-- Adds a "Pin a creator link" panel to `/cameras`.
-- Allows an in-session creator/viral link to be attached to an existing mapped camera.
-- Validates title, mapped camera selection, and safe social URL host.
-- Adds map filters for creator live links and viral videos.
-- Adds distinct Leaflet marker styles for live creator links and viral videos.
-- Keeps camera marker behavior intact.
+Do not add a creator submission box to `/cameras` right now. It is too much friction, creates moderation risk, and implies a TikTok integration we do not currently have.
+
+Keep the cameras page focused on cameras. Revisit social pins only as an admin-curated layer after the camera map itself feels strong.
 
 ## Backend Follow-Up
 
@@ -45,8 +42,8 @@ As an Appofa visitor, I want to switch between cameras, live creators, and viral
   - `expires_at`
   - `submitted_by`
   - `reviewed_by`
-- Add public API for approved map content.
-- Add authenticated submission API.
+- Add admin CRUD for approved map content.
+- Add public API for approved map content only.
 - Add admin moderation queue.
 - Add automatic expiry for live links.
 - Add reporting/removal flow.
@@ -57,6 +54,7 @@ As an Appofa visitor, I want to switch between cameras, live creators, and viral
 - Only allow trusted social/video hosts at first.
 - Expire live links by default.
 - Keep exact location choices tied to existing camera/location data in the first version.
+- Do not require TikTok API access for MVP.
 - Add disclosure guidance for paid/sponsored creator content later.
 
 ## Success Metrics
