@@ -280,6 +280,36 @@ describe('Geo Stats Admin API', () => {
     expect(deleteRes.body.success).toBe(true);
   });
 
+  it('POST/PUT country-funding rejects invalid numeric values', async () => {
+    const createRes = await request(app)
+      .post('/api/admin/geo-stats/country-funding')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set(csrfHeadersFor('csrf-geo-create-invalid-number', adminId))
+      .send({
+        locationId: frLocation.id,
+        goalAmount: -1,
+      });
+
+    expect(createRes.status).toBe(400);
+    expect(createRes.body.success).toBe(false);
+    expect(createRes.body.message).toBe('goalAmount must be a positive number.');
+
+    const existingFunding = await CountryFunding.findOne({ where: { locationId: grLocation.id } });
+    expect(existingFunding).toBeTruthy();
+
+    const updateRes = await request(app)
+      .put(`/api/admin/geo-stats/country-funding/${existingFunding.id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set(csrfHeadersFor('csrf-geo-update-invalid-number', adminId))
+      .send({
+        currentAmount: -10,
+      });
+
+    expect(updateRes.status).toBe(400);
+    expect(updateRes.body.success).toBe(false);
+    expect(updateRes.body.message).toBe('currentAmount must be a non-negative number.');
+  });
+
   it('GET /country-funding/:locationId/public returns funding without auth', async () => {
     const res = await request(app)
       .get(`/api/admin/geo-stats/country-funding/${grLocation.id}/public`);

@@ -125,6 +125,33 @@ const getDateFilterForPeriod = (period) => {
 const toInt = (value) => Number.parseInt(value, 10) || 0;
 const toNumber = (value) => Number.parseFloat(value || 0);
 
+const parsePositiveDecimal = (value, fieldName) => {
+  if (value == null || value === '') return { value: null };
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return { error: `${fieldName} must be a positive number.` };
+  }
+  return { value: parsed };
+};
+
+const parseNonNegativeDecimal = (value, fieldName) => {
+  if (value == null || value === '') return { value: null };
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return { error: `${fieldName} must be a non-negative number.` };
+  }
+  return { value: parsed };
+};
+
+const parseNonNegativeInteger = (value, fieldName) => {
+  if (value == null || value === '') return { value: null };
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    return { error: `${fieldName} must be a non-negative integer.` };
+  }
+  return { value: parsed };
+};
+
 // Public: get country funding status for a location
 router.get('/country-funding/:locationId/public', apiLimiter, async (req, res, next) => {
   try {
@@ -405,9 +432,14 @@ router.post('/country-funding', apiLimiter, authMiddleware, checkRole('admin'), 
       return res.status(409).json({ success: false, message: 'Country funding already exists for this location.' });
     }
 
+    const parsedGoalAmount = parsePositiveDecimal(goalAmount, 'goalAmount');
+    if (parsedGoalAmount.error) {
+      return res.status(400).json({ success: false, message: parsedGoalAmount.error });
+    }
+
     const created = await CountryFunding.create({
       locationId: location.id,
-      ...(goalAmount != null ? { goalAmount } : {}),
+      ...(parsedGoalAmount.value != null ? { goalAmount: parsedGoalAmount.value } : {}),
       donationUrl: donationUrl || null,
       notes: notes || null,
     });
@@ -431,9 +463,24 @@ router.put('/country-funding/:id', apiLimiter, authMiddleware, checkRole('admin'
       return res.status(400).json({ success: false, message: 'Invalid status value.' });
     }
 
-    if (goalAmount != null) record.goalAmount = goalAmount;
-    if (currentAmount != null) record.currentAmount = currentAmount;
-    if (donorCount != null) record.donorCount = donorCount;
+    const parsedGoalAmount = parsePositiveDecimal(goalAmount, 'goalAmount');
+    if (parsedGoalAmount.error) {
+      return res.status(400).json({ success: false, message: parsedGoalAmount.error });
+    }
+
+    const parsedCurrentAmount = parseNonNegativeDecimal(currentAmount, 'currentAmount');
+    if (parsedCurrentAmount.error) {
+      return res.status(400).json({ success: false, message: parsedCurrentAmount.error });
+    }
+
+    const parsedDonorCount = parseNonNegativeInteger(donorCount, 'donorCount');
+    if (parsedDonorCount.error) {
+      return res.status(400).json({ success: false, message: parsedDonorCount.error });
+    }
+
+    if (parsedGoalAmount.value != null) record.goalAmount = parsedGoalAmount.value;
+    if (parsedCurrentAmount.value != null) record.currentAmount = parsedCurrentAmount.value;
+    if (parsedDonorCount.value != null) record.donorCount = parsedDonorCount.value;
     if (donationUrl !== undefined) record.donationUrl = donationUrl || null;
     if (notes !== undefined) record.notes = notes || null;
 

@@ -361,7 +361,7 @@ function GeoAdminContent() {
     setIsClearingLogs(true);
     try {
       const res = await geoAdminAPI.clearVisitsOlderThan(days);
-      await refetchVisits();
+      await Promise.all([refetchVisits(), refetchCountries()]);
       addToast(res?.message || `Διαγράφηκαν logs παλαιότερα από ${days} ημέρες.`, { type: 'success' });
     } catch (error) {
       addToast(error.message || 'Αποτυχία διαγραφής logs.', { type: 'error' });
@@ -378,7 +378,7 @@ function GeoAdminContent() {
     setIsClearingAllLogs(true);
     try {
       const res = await geoAdminAPI.clearVisitsOlderThan(0);
-      await refetchVisits();
+      await Promise.all([refetchVisits(), refetchCountries()]);
       addToast(res?.message || 'Διαγράφηκαν όλες οι εγγραφές επισκεψιμότητας.', { type: 'success' });
     } catch (error) {
       addToast(error.message || 'Αποτυχία διαγραφής logs.', { type: 'error' });
