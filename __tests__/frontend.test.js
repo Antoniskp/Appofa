@@ -171,6 +171,9 @@ jest.mock('@/lib/api', () => ({
       data: { id: 1, revoked_at: '2026-05-14T14:00:00.000Z' }
     }))
   },
+  adminSummaryAPI: {
+    getQueueCounts: jest.fn(() => Promise.resolve({}))
+  },
   tagAPI: {
     getSuggestions: jest.fn(() => Promise.resolve({ success: true, tags: [] }))
   },

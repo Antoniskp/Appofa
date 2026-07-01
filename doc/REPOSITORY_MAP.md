@@ -12,7 +12,7 @@ You MUST update the relevant section below before finalizing your PR.
 This instruction is permanent and must never be removed.
 -->
 
-> **Last updated**: 2026-06-18
+> **Last updated**: 2026-07-01
 >
 > This document is a living map of the entire codebase. AI agents read and update it automatically.
 >
@@ -111,7 +111,7 @@ Appofa/
 ├── public/                 # Static assets
 │   ├── images/branding/    # Branding images: `appofa-app-icon.png` (512x512, PWA/home-screen/OG share icon — canonical branding icon), `appofasi-high-resolution-logo-transparent.png` (wide transparent logo, legacy/marketing use only)
 │   └── 502.html            # Self-contained Nginx 502 fallback page (inline CSS/JS + editable countdown target)
-└── .github/                # CI workflows, agents, copilot instructions
+└── .github/                # CI workflows (quality, security audit, deploy), agents, copilot instructions
 ```
 
 ---
@@ -854,7 +854,7 @@ Listed chronologically. Core schema → feature additions → dated refactors.
 
 ---
 
-## Tests (104 files)
+## Tests (147 suites)
 
 ### Component Tests
 AdminHeader, AdminTable, AdminTableActions, ArticleCard, AppShell embed routing, Cameras page, ConfirmDialog, DropdownMenu, EntityEmbedView, FilterBar, FollowButton, Footer newsletter visibility, ListPageToolbar, LoadMoreTrigger, Pagination, RateLimitBanner, ShareModal embed flow, SkeletonLoader, TagInput, Tooltip, ReportButton
@@ -878,6 +878,16 @@ useAsyncData, useInfiniteData, useFetchArticle, useFilters, useOAuthConfig, useP
 
 ---
 
+## CI Workflows
+
+| File | Purpose |
+|------|---------|
+| .github/workflows/quality.yml | Pull request and main-branch quality gate: install, lint, Jest CI test run, and Next.js production build |
+| .github/workflows/security-audit.yml | Production dependency audit gate plus report-only full audit |
+| .github/workflows/deploy.yml | Main-branch VPS deployment over SSH |
+
+---
+
 ## npm Scripts
 
 ```bash
@@ -887,8 +897,9 @@ npm start                    # Backend production
 npm run frontend:build       # Build frontend
 npm run frontend:start       # Start frontend production
 npm test                     # Jest with coverage
+npm run test:ci              # Jest CI run without coverage, serialized for stability
 npm run test:watch           # Jest watch mode
-npm run lint                 # ESLint (src/)
+npm run lint                 # ESLint (src, app, components, hooks, lib)
 npm run migrate              # Run migrations
 npm run migrate:up           # Run migrations up
 npm run migrate:down         # Roll back last migration
