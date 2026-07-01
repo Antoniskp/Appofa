@@ -46,8 +46,6 @@ export default function HomePage() {
 
   const [manifestData, setManifestData] = useState([]);
   const [manifestLoading, setManifestLoading] = useState(true);
-  const [locationDiscovery, setLocationDiscovery] = useState([]);
-  const [locationDiscoveryLoading, setLocationDiscoveryLoading] = useState(true);
   const [prefectures, setPrefectures] = useState([]);
   const [prefecturesLoading, setPrefecturesLoading] = useState(true);
   const [articleTags, setArticleTags] = useState([]);
@@ -149,19 +147,6 @@ export default function HomePage() {
       }
     };
 
-    const fetchLocationDiscovery = async () => {
-      try {
-        const response = await locationAPI.getAll({ sort: 'mostUsers', limit: 6 });
-        if (response.success) {
-          setLocationDiscovery(response.locations || []);
-        }
-      } catch {
-        // non-critical — fail silently
-      } finally {
-        setLocationDiscoveryLoading(false);
-      }
-    };
-
     const fetchPrefectures = async () => {
       try {
         // Scope prefectures to Greece only: first resolve Greece's location ID, then
@@ -219,7 +204,6 @@ export default function HomePage() {
     fetchPolls();
     fetchLatestNews();
     fetchVideos();
-    fetchLocationDiscovery();
     fetchPrefectures();
     fetchTagsForType('article', setArticleTags);
     fetchTagsForType('suggestion', setSuggestionTags);
