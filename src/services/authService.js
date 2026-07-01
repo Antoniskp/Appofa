@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const { Op } = require('sequelize');
 const { User } = require('../models');
 const { PROFILE_VISIBILITY, isValidProfileVisibility } = require('../utils/profileVisibility');
+const { getJwtExpiresIn } = require('../config/session');
 const { sendMail } = require('./mailService');
 const {
   normalizeRequiredText,
@@ -46,7 +47,7 @@ function generateToken(user) {
       emailVerified: Boolean(user.emailVerified)
     },
     process.env.JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn: getJwtExpiresIn() }
   );
 }
 

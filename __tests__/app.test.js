@@ -329,6 +329,10 @@ describe('News Application Integration Tests', () => {
       expect(response.status).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.data.user.email).toBe('admin@test.com');
+      expect(response.headers['set-cookie']).toEqual(expect.arrayContaining([
+        expect.stringContaining('auth_token='),
+        expect.stringContaining('csrf_token='),
+      ]));
     });
 
     test('should not get profile without token', async () => {

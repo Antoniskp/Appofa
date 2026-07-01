@@ -5,6 +5,7 @@ const badgeService = require('../services/badgeService');
 const { User } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
+const { getSessionMaxAgeMs } = require('../config/session');
 require('dotenv').config();
 
 const AUTH_COOKIE = 'auth_token';
@@ -13,7 +14,7 @@ const authCookieOptions = {
   httpOnly: true,
   sameSite: 'lax',
   secure: process.env.NODE_ENV === 'production',
-  maxAge: 24 * 60 * 60 * 1000,
+  maxAge: getSessionMaxAgeMs(),
   path: '/'
 };
 
@@ -21,7 +22,7 @@ const csrfCookieOptions = {
   httpOnly: false,
   sameSite: 'lax',
   secure: process.env.NODE_ENV === 'production',
-  maxAge: 2 * 60 * 60 * 1000,
+  maxAge: getSessionMaxAgeMs(),
   path: '/'
 };
 
@@ -179,7 +180,7 @@ const authController = {
   getProfile: async (req, res) => {
     try {
       const userJson = await userService.getUserProfile(req.user.id);
-      ensureUserCsrfCookie(req, res, req.user.id);
+      setAuthCookies(res, authService.generateToken(userJson), req.user.id);
       res.status(200).json({ success: true, data: { user: userJson } });
     } catch (error) {
       if (error.status) {

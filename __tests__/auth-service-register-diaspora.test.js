@@ -1,5 +1,6 @@
 const { sequelize, User, Location } = require('../src/models');
 const authService = require('../src/services/authService');
+const jwt = require('jsonwebtoken');
 
 describe('authService.registerUser diaspora fields', () => {
   beforeAll(async () => {
@@ -56,5 +57,19 @@ describe('authService.registerUser diaspora fields', () => {
 
     const persisted = await User.findByPk(user.id);
     expect(persisted.profileVisibility).toBe('public');
+  });
+
+  it('issues long-lived app sessions by default', async () => {
+    const { token } = await authService.registerUser({
+      username: 'longsessiontest',
+      email: 'long-session-register@test.com',
+      password: 'Session123!',
+      firstNameNative: 'Long',
+      lastNameNative: 'Session',
+    });
+
+    const decoded = jwt.decode(token);
+    const lifetimeSeconds = decoded.exp - decoded.iat;
+    expect(lifetimeSeconds).toBeGreaterThanOrEqual(29 * 24 * 60 * 60);
   });
 });
