@@ -29,15 +29,16 @@ function SummaryStat({ label, value, helper, icon: Icon, tone, tab, onTabSelect,
       type="button"
       onClick={handleClick}
       disabled={disabled || !tab}
-      className={`flex min-h-[96px] w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors disabled:cursor-default disabled:opacity-70 ${statToneClasses[tone]}`}
+      className={`flex min-h-[64px] w-full items-center gap-3 rounded-lg border px-3 py-2 text-left transition-colors disabled:cursor-default disabled:opacity-70 ${statToneClasses[tone]}`}
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-current/20 bg-white/70">
-        <Icon className="h-5 w-5" />
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-current/20 bg-white/70">
+        <Icon className="h-4 w-4" />
       </span>
       <span className="min-w-0">
-        <span className="block text-2xl font-bold leading-none text-gray-900">{disabled ? '-' : value}</span>
-        <span className="mt-1 block text-sm font-semibold text-gray-900">{label}</span>
-        <span className="mt-1 block text-xs leading-5 text-gray-600">{helper}</span>
+        <span className="block text-sm font-semibold text-gray-900">{label}</span>
+        <span className="mt-0.5 block text-xs leading-5 text-gray-600">
+          <span className="font-semibold text-gray-900">{disabled ? '-' : value}</span> {helper}
+        </span>
       </span>
     </button>
   );
@@ -49,7 +50,7 @@ export default function LocationActionSummary({ counts, loading, isAuthenticated
     {
       label: 'Ψηφοφορίες',
       value: counts.polls,
-      helper: 'ενεργές για αυτή την περιοχή',
+      helper: 'ενεργές',
       icon: ClipboardDocumentListIcon,
       tone: 'blue',
       tab: 'polls',
@@ -57,7 +58,7 @@ export default function LocationActionSummary({ counts, loading, isAuthenticated
     {
       label: 'Προτάσεις',
       value: counts.suggestions,
-      helper: 'ιδέες και προβλήματα πολιτών',
+      helper: 'ανοιχτές',
       icon: ChatBubbleLeftRightIcon,
       tone: 'emerald',
       tab: 'suggestions',
@@ -65,7 +66,7 @@ export default function LocationActionSummary({ counts, loading, isAuthenticated
     {
       label: 'Νέα και άρθρα',
       value: contentCount,
-      helper: `${counts.news} ειδήσεις, ${counts.articles} άρθρα`,
+      helper: `σύνολο (${counts.news} ειδήσεις, ${counts.articles} άρθρα)`,
       icon: NewspaperIcon,
       tone: 'purple',
       tab: counts.news > 0 ? 'news' : 'articles',
@@ -73,7 +74,7 @@ export default function LocationActionSummary({ counts, loading, isAuthenticated
     {
       label: 'Τοπικοί χρήστες',
       value: counts.users,
-      helper: 'μέλη που συνδέονται με την περιοχή',
+      helper: 'συνδεδεμένοι',
       icon: UserGroupIcon,
       tone: 'slate',
       tab: 'users',
@@ -81,14 +82,11 @@ export default function LocationActionSummary({ counts, loading, isAuthenticated
   ];
 
   return (
-    <section className="mb-8 rounded-lg border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <section className="mb-8 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Τοπική δραστηριότητα</p>
-          <h2 className="mt-1 text-xl font-bold text-gray-900">Τι συμβαίνει εδώ τώρα;</h2>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-            Γρήγορη εικόνα για ψηφοφορίες, προτάσεις, περιεχόμενο και ανθρώπους που συνδέονται με αυτή την περιοχή.
-          </p>
+          <h2 className="mt-1 text-lg font-semibold text-gray-900">Τι συμβαίνει εδώ τώρα;</h2>
         </div>
         <div className="flex flex-wrap gap-2">
           {isAuthenticated ? (
@@ -128,7 +126,7 @@ export default function LocationActionSummary({ counts, loading, isAuthenticated
           )}
         </div>
       </div>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <SummaryStat
             key={stat.label}

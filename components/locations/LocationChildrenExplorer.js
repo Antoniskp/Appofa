@@ -20,6 +20,7 @@
  */
 
 import { useState, useMemo, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { getChildLocationTerminology } from '@/lib/constants/locations';
@@ -107,8 +108,26 @@ function computeMapCenter(location, children) {
   return [avgLat, avgLng];
 }
 
+function RelatedLocationChip({ location, tone = 'gray' }) {
+  const toneClasses = {
+    blue: 'border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100',
+    gray: 'border-gray-200 bg-white text-gray-800 hover:bg-gray-50',
+  };
+
+  return (
+    <Link
+      href={`/locations/${location.slug || location.id}`}
+      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-medium transition-colors ${toneClasses[tone] || toneClasses.gray}`}
+    >
+      {location.name_local || location.name}
+    </Link>
+  );
+}
+
 export default function LocationChildrenExplorer({
   location,
+  parent = null,
+  siblings = [],
   children = [],
   loading = false,
 }) {
@@ -236,15 +255,25 @@ export default function LocationChildrenExplorer({
   const showMap = !loading && hasGeometry && mapCenter;
   const showPills = !loading && children.length > 0;
   const useDesktopSplitLayout = showMap && showPills;
+  const visibleSiblings = siblings.slice(0, 8);
+  const hasRelatedLocations = Boolean(parent || visibleSiblings.length > 0);
 
-  // Don't render anything when there are no children (after loading completes)
-  if (!loading && children.length === 0) return null;
+  // Don't render anything when there is no hierarchy context to show.
+  if (!loading && children.length === 0 && !hasRelatedLocations) return null;
 
   return (
     <section id="location-children-explorer" className="mb-8">
-      <h2 className="text-lg font-semibold text-gray-900 mb-3">
-        {childTerms.label}{!loading ? ` (${children.length})` : ''}
-      </h2>
+      <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Εξερεύνηση</p>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {childTerms.label}{!loading && children.length > 0 ? ` (${children.length})` : ''}
+          </h2>
+        </div>
+        {hasRelatedLocations && (
+          <p className="text-sm text-gray-500">Γονική και κοντινές τοποθεσίες σε ένα σημείο.</p>
+        )}
+      </div>
       <div className="bg-white rounded-lg shadow-md p-3 space-y-3">
         {/* Map + pills explorer layout */}
         {loading ? (
@@ -327,6 +356,37 @@ export default function LocationChildrenExplorer({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {!loading && hasRelatedLocations && (
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+            <div className="grid gap-3 md:grid-cols-2">
+              {parent && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Ανήκει σε</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <RelatedLocationChip location={parent} tone="blue" />
+                  </div>
+                </div>
+              )}
+
+              {visibleSiblings.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">Κοντινές τοποθεσίες</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {visibleSiblings.map((sibling) => (
+                      <RelatedLocationChip key={sibling.id} location={sibling} />
+                    ))}
+                  </div>
+                  {siblings.length > visibleSiblings.length && (
+                    <p className="mt-2 text-xs text-gray-500">
+                      +{siblings.length - visibleSiblings.length} ακόμα κοντινές τοποθεσίες
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

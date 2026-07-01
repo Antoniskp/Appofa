@@ -13,7 +13,6 @@ import LocationRoles from '@/components/LocationRoles';
 import LocationActionSummary from '@/components/locations/LocationActionSummary';
 import LocationBreadcrumb from '@/components/locations/LocationBreadcrumb';
 import LocationHeader from '@/components/locations/LocationHeader';
-import LocationRelatedLocations from '@/components/locations/LocationRelatedLocations';
 import LocationEditForm from '@/components/locations/LocationEditForm';
 import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
@@ -538,6 +537,15 @@ export default function LocationDetailPage() {
         {/* Location Sections (published, non-header types) — shown between header and tabs */}
         {!isEditing && (
           <>
+            {/* Unified children explorer — shown for all location types that have children */}
+            <LocationChildrenExplorer
+              location={location}
+              parent={location.parent}
+              siblings={siblings}
+              children={children}
+              loading={secondaryLoading}
+            />
+
             <LocationActionSummary
               counts={{
                 polls: activePolls.length,
@@ -549,13 +557,6 @@ export default function LocationDetailPage() {
               loading={secondaryLoading}
               isAuthenticated={isAuthenticated}
               onTabSelect={handleTabChange}
-            />
-
-            {/* Unified children explorer — shown for all location types that have children */}
-            <LocationChildrenExplorer
-              location={location}
-              children={children}
-              loading={secondaryLoading}
             />
 
             {/* Map — shown when the location has its own geometry AND no children explorer */}
@@ -615,18 +616,6 @@ export default function LocationDetailPage() {
                 ) : (
                   <LocationSections sections={mergedBodySections} />
                 )}
-              </div>
-            )}
-
-            {(location.parent || siblings.length > 0 || (!hasChildren && children.length > 0)) && (
-              <div className="mb-8">
-                <LocationRelatedLocations
-                  location={location}
-                  parent={location.parent}
-                  siblings={siblings}
-                  children={children}
-                  hideChildren={hasChildren}
-                />
               </div>
             )}
 
