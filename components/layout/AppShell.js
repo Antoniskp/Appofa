@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import TopNav from '@/components/TopNav';
 import Footer from '@/components/Footer';
 import CookieBanner from '@/components/layout/CookieBanner';
+import PushSubscriptionSync from '@/components/notifications/PushSubscriptionSync';
 
 export default function AppShell({ children }) {
   const pathname = usePathname();
@@ -15,6 +16,7 @@ export default function AppShell({ children }) {
 
   return (
     <>
+      <PushSubscriptionSync />
       <TopNav />
       <main className="flex-grow">
         {children}

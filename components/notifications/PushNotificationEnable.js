@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { pushAPI } from '@/lib/api';
+import { ensurePushSubscription, getVapidPublicKey, isPushSupported } from '@/lib/pushNotifications';
+
+/** Convert a VAPID base64url public key to a Uint8Array for pushManager.subscribe(). */
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
 
 /**
  * PushNotificationEnable — "Enable notifications" button for iOS PWA users.
@@ -22,14 +30,6 @@ import { pushAPI } from '@/lib/api';
  *   4. notificationService.createNotification() calls pushService.sendPushToUser() automatically
  */
 
-/** Convert a VAPID base64url public key to a Uint8Array for pushManager.subscribe(). */
-function urlBase64ToUint8Array(base64String) {
-  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = atob(base64);
-  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
-}
-
 export default function PushNotificationEnable() {
   // 'default' | 'granted' | 'denied' | 'unsupported'
   const [permission, setPermission] = useState('default');
@@ -39,7 +39,7 @@ export default function PushNotificationEnable() {
   // Read the current permission state on mount — does NOT trigger any prompt.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!('Notification' in window)) {
+    if (!isPushSupported()) {
       setPermission('unsupported');
       return;
     }
@@ -87,7 +87,7 @@ export default function PushNotificationEnable() {
     try {
       // ── Step 1: Request notification permission ────────────────────────────
       // This MUST be called from a direct user gesture on iOS.
-      if (!('Notification' in window)) {
+      if (!isPushSupported()) {
         setStatusText('Οι ειδοποιήσεις δεν υποστηρίζονται από αυτό τον browser.');
         setPermission('unsupported');
         return;
@@ -119,7 +119,7 @@ export default function PushNotificationEnable() {
       // ── Step 3: Subscribe to push ──────────────────────────────────────────
       // NEXT_PUBLIC_VAPID_PUBLIC_KEY must be set in the environment.
       // Generate a VAPID key pair with: npx web-push generate-vapid-keys
-      const vapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+      const vapidKey = getVapidPublicKey();
       if (!vapidKey) {
         // Permission is granted and SW is ready; push subscription cannot proceed
         // without a VAPID key. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY in .env (see README).
@@ -138,7 +138,7 @@ export default function PushNotificationEnable() {
       }
 
       // ── Step 4: Send subscription to backend ──────────────────────────────
-      await pushAPI.subscribe(subscription);
+      await ensurePushSubscription();
 
       setStatusText('Οι ειδοποιήσεις ενεργοποιήθηκαν επιτυχώς!');
     } catch (err) {
