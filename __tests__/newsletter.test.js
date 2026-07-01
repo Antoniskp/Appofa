@@ -451,6 +451,7 @@ describe('Newsletter API', () => {
     expect(testResponse.status).toBe(200);
     expect(testResponse.body.success).toBe(true);
     expect(sendMailMock).toHaveBeenCalledTimes(1);
+    expect(sendMailMock.mock.calls[0][0].headers).toBeUndefined();
 
     const logsCount = await NewsletterSendLog.count({ where: { campaignId } });
     expect(logsCount).toBe(0);
@@ -538,7 +539,12 @@ describe('Newsletter API', () => {
     expect(successfulEmailCall[0].subject).toBe('Audience campaign');
     expect(successfulEmailCall[0].html).toContain('Appofa Newsletter');
     expect(successfulEmailCall[0].html).toContain('unsubscribe');
+    expect(successfulEmailCall[0].headers).toMatchObject({
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    });
+    expect(successfulEmailCall[0].headers['List-Unsubscribe']).toMatch(/^<http:\/\/localhost:3001\/newsletter\/unsubscribe\?token=.+>$/);
     expect(successfulEmailCall[0].text).toContain('Unsubscribe:');
+    expect(successfulEmailCall[0].text).toContain('---');
 
     const logs = await NewsletterSendLog.findAll({
       where: { campaignId },

@@ -1097,6 +1097,12 @@ function buildCampaignMessage({ campaign, unsubscribeLink, isTest }) {
     ? 'Unsubscribe link preview'
     : 'To stop receiving these emails, unsubscribe here';
   const subject = isTest ? `[TEST] ${campaign.subject}` : campaign.subject;
+  const headers = isTest
+    ? undefined
+    : {
+      'List-Unsubscribe': `<${unsubscribeLink}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    };
 
   const html = `
     <html>
@@ -1132,16 +1138,16 @@ function buildCampaignMessage({ campaign, unsubscribeLink, isTest }) {
     ...(isTest ? ['[TEST SEND]'] : []),
     textBody,
     '',
-    '—',
+    '---',
     footerIntro,
     `${isTest ? 'Unsubscribe link preview' : 'Unsubscribe'}: ${unsubscribeLink}`,
   ].join('\n');
 
-  return { subject, html, text };
+  return { subject, html, text, headers };
 }
 
-async function sendMail({ to, subject, html, text }) {
-  return deliverMail({ to, subject, html, text });
+async function sendMail({ to, subject, html, text, headers }) {
+  return deliverMail({ to, subject, html, text, headers });
 }
 
 async function sendCampaignTestEmail(campaignId, payload = {}) {
@@ -1161,6 +1167,7 @@ async function sendCampaignTestEmail(campaignId, payload = {}) {
     subject: rendered.subject,
     html: rendered.html,
     text: rendered.text,
+    headers: rendered.headers,
   });
 
   return { email: emailResult.value };
@@ -1229,6 +1236,7 @@ async function sendCampaignNow(campaignId) {
             subject: rendered.subject,
             html: rendered.html,
             text: rendered.text,
+            headers: rendered.headers,
           });
 
           log.status = 'sent';
