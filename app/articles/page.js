@@ -115,10 +115,10 @@ function ArticlesContent() {
             {user && (
               <Link
                 href="/editor"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+                className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium sm:justify-start sm:whitespace-nowrap"
               >
-                <PlusCircleIcon className="h-5 w-5" />
-                 {tArticles('create_new')}
+                <PlusCircleIcon className="h-5 w-5 shrink-0" />
+                 <span className="truncate">{tArticles('create_new')}</span>
               </Link>
             )}
           </div>

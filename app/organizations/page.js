@@ -79,30 +79,30 @@ export default function OrganizationsPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-8">
       <div className="app-container">
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+        <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="min-w-0 text-2xl font-bold text-gray-900">{t('title')}</h1>
           {canCreateOrganization && (
             <Link
               href="/admin/organizations"
-              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex min-w-0 max-w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors sm:justify-start"
             >
-              {t('create_button')}
+              <span className="truncate">{t('create_button')}</span>
             </Link>
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-wrap gap-3">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap">
           <input
             type="text"
             placeholder={t('search_placeholder')}
             value={filters.search}
             onChange={(e) => updateFilter('search', e.target.value)}
-            className="flex-1 min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full min-w-0 flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:min-w-[220px]"
           />
           <select
             value={filters.type}
             onChange={(e) => updateFilter('type', e.target.value)}
-            className="min-w-[220px] px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[220px]"
           >
             <option value="">{t('all_types')}</option>
             {ORGANIZATION_TYPES.map((type) => (

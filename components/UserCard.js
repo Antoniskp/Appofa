@@ -21,19 +21,19 @@ export default function UserCard({ user }) {
   const visibleTags = expertiseArea.slice(0, 2);
 
   return (
-    <Card hoverable href={`/users/${user.username}`}>
-      <div className="flex items-center gap-4">
+    <Card hoverable href={`/users/${user.username}`} className="min-w-0 overflow-hidden" padding="sm">
+      <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
         {/* Avatar */}
-        <UserAvatar user={user} size="h-16 w-16" textSize="text-xl" />
+        <UserAvatar user={user} size="h-12 w-12 sm:h-16 sm:w-16" textSize="text-lg sm:text-xl" />
         
         {/* User Info */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-lg font-semibold text-gray-900 truncate">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 mb-1">
+            <h3 className="min-w-0 flex-1 text-base sm:text-lg font-semibold text-gray-900 truncate">
               {user.username}
             </h3>
             {user.role && (
-              <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm">
+              <Badge variant={user.role === 'admin' ? 'danger' : 'primary'} size="sm" className="max-w-full shrink-0">
                 {user.role}
               </Badge>
             )}
@@ -52,7 +52,7 @@ export default function UserCard({ user }) {
               {visibleTags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700"
+                  className="inline-flex max-w-full items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 break-words"
                 >
                   {getExpertiseTagLabel(tag)}
                 </span>

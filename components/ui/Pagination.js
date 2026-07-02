@@ -28,7 +28,7 @@ export default function Pagination({
   const maxVisible = 5;
   
   let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
-  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+  const endPage = Math.min(totalPages, startPage + maxVisible - 1);
   
   if (endPage - startPage < maxVisible - 1) {
     startPage = Math.max(1, endPage - maxVisible + 1);
@@ -39,7 +39,7 @@ export default function Pagination({
   }
 
   return (
-    <div className={`flex justify-center items-center gap-2 mt-8 ${className}`}>
+    <div className={`flex flex-wrap justify-center items-center gap-2 mt-8 ${className}`}>
       {/* Previous Button */}
       <Button
         onClick={onPrevious}

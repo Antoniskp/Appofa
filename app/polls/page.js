@@ -149,10 +149,10 @@ function PollsContent() {
             user && (
               <Link
                 href="/polls/create"
-                className="inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+                className="inline-flex min-w-0 max-w-full items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium md:justify-start md:whitespace-nowrap"
               >
-                <PlusCircleIcon className="h-5 w-5" />
-                {tPolls('new_poll')}
+                <PlusCircleIcon className="h-5 w-5 shrink-0" />
+                <span className="truncate">{tPolls('new_poll')}</span>
               </Link>
             )
           }

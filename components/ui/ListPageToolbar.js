@@ -33,12 +33,12 @@ export default function ListPageToolbar({
   return (
     <div className={`flex flex-col gap-3 mb-8 ${className}`}>
       {/* Primary toolbar row */}
-      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start">
+      <div className="flex min-w-0 flex-col gap-3 md:flex-row md:flex-wrap md:items-start">
         {searchSlot && (
           <div className="flex-1 min-w-0 md:min-w-[240px]">{searchSlot}</div>
         )}
         {hasControls && (
-          <div className="flex items-start gap-2 flex-shrink-0 md:flex-wrap">
+          <div className="flex w-full min-w-0 flex-col items-stretch gap-2 md:w-auto md:flex-row md:flex-shrink-0 md:flex-wrap md:items-start">
             {filtersSlot}
             {actionsSlot}
           </div>

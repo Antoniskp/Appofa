@@ -87,9 +87,9 @@ function PersonCard({ profile, t }) {
   return (
     <Link
       href={href}
-      className="group block bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-5"
+      className="group block min-w-0 overflow-hidden bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow p-4 sm:p-5"
     >
-      <div className="flex items-start gap-4">
+      <div className="flex min-w-0 items-start gap-3 sm:gap-4">
         {photo ? (
           <img
             src={photo}
@@ -102,7 +102,7 @@ function PersonCard({ profile, t }) {
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h2 className="text-base font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
+            <h2 className="min-w-0 max-w-full text-base font-semibold text-gray-900 truncate group-hover:text-blue-700 transition-colors">
               {displayName}
             </h2>
             <ClaimStatusBadge status={profile.claimStatus} t={t} />
@@ -127,7 +127,7 @@ function PersonCard({ profile, t }) {
               {visibleTags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700"
+                  className="inline-flex max-w-full items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 break-words"
                 >
                   {getExpertiseTagLabel(tag)}
                 </span>
@@ -243,9 +243,9 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
         onChange={(id) => onFilterChange('locationId', id || '')}
       />
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-3">
+      <div className="flex min-w-0 flex-col sm:flex-row flex-wrap gap-3">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative w-full min-w-0 flex-1 sm:min-w-[200px]">
           <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             type="text"
@@ -260,7 +260,7 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
         <select
           value={filters.domainId}
           onChange={(e) => handleDomainChange(e.target.value)}
-          className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px] ${
+          className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
             filters.domainId ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
           }`}
         >
@@ -277,7 +277,7 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
           <select
             value={filters.professionId}
             onChange={(e) => handleProfessionChange(e.target.value)}
-            className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px] ${
+            className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
               filters.professionId ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
             }`}
           >
@@ -295,7 +295,7 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
           <select
             value={filters.specializationId}
             onChange={(e) => onFilterChange('specializationId', e.target.value)}
-            className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px] ${
+            className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
               filters.specializationId ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
             }`}
           >
@@ -309,14 +309,14 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
         )}
 
         {/* Expertise – custom accordion dropdown */}
-        <div className="relative" ref={expertiseRef}>
+        <div className="relative w-full min-w-0 sm:w-auto" ref={expertiseRef}>
           <button
             ref={expertiseTriggerRef}
             type="button"
             aria-haspopup="listbox"
             aria-expanded={expertiseOpen}
             onClick={() => setExpertiseOpen((v) => !v)}
-            className={`border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[180px] inline-flex items-center justify-between gap-2 ${
+            className={`inline-flex w-full min-w-0 items-center justify-between gap-2 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[180px] ${
               filters.expertiseArea
                 ? 'border-blue-400 bg-blue-50 text-blue-700'
                 : 'border-gray-300 text-gray-700'
@@ -334,7 +334,7 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
             <div
               role="listbox"
               aria-label={t('all_expertise')}
-              className="absolute z-30 mt-1 w-72 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto"
+              className="absolute z-30 mt-1 w-full max-w-[calc(100vw-4rem)] sm:w-72 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto"
             >
               {/* "All" option */}
               <button
@@ -401,7 +401,7 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
           <button
             type="button"
             onClick={onReset}
-            className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 whitespace-nowrap"
+            className="w-full px-3 py-2 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 sm:w-auto sm:whitespace-nowrap"
           >
             {t('clear_filters')}
           </button>
@@ -667,13 +667,13 @@ export default function UsersPage() {
 
         {/* View mode tab bar + action buttons */}
         <div className="mb-6 flex items-center gap-2 flex-wrap">
-          <div className="flex gap-1 bg-white rounded-xl border border-gray-200 p-1">
+          <div className="grid w-full grid-cols-3 gap-1 bg-white rounded-xl border border-gray-200 p-1 sm:w-auto sm:flex">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setViewMode(tab.id)}
-                className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`min-w-0 px-2 sm:px-4 py-1.5 rounded-lg text-sm font-medium transition-colors truncate ${
                   viewMode === tab.id
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-600 hover:bg-gray-50'
@@ -687,7 +687,7 @@ export default function UsersPage() {
           {/* Compact action buttons */}
           <Link
             href="/worthy-citizens"
-            className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-medium rounded-lg border border-amber-200 transition-colors whitespace-nowrap"
+            className="inline-flex min-w-0 max-w-full items-center gap-1 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-medium rounded-lg border border-amber-200 transition-colors sm:whitespace-nowrap"
           >
             🏆 {t('worthy_citizens_cta')}
           </Link>
@@ -695,7 +695,7 @@ export default function UsersPage() {
           {isAuthenticated && (user?.role === 'moderator' || user?.role === 'admin') && (
             <Link
               href="/admin/persons/create"
-              className="inline-flex items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors whitespace-nowrap"
+            className="inline-flex min-w-0 max-w-full items-center px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-medium rounded-lg transition-colors sm:whitespace-nowrap"
             >
               + {t('create_person')}
             </Link>

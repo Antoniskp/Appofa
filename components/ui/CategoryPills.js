@@ -30,7 +30,7 @@ export default function CategoryPills({
   return (
     <div className={`flex flex-wrap gap-2 ${className}`}>
       <button
-        className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${!selected ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+        className={`max-w-full whitespace-normal break-words px-4 py-1 rounded-full border text-sm font-medium transition-colors ${!selected ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
         onClick={() => onSelect('')}
       >
         {allLabel}
@@ -40,7 +40,7 @@ export default function CategoryPills({
         return (
           <button
             key={key}
-            className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${selected === key ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
+            className={`max-w-full whitespace-normal break-words px-4 py-1 rounded-full border text-sm font-medium transition-colors ${selected === key ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}`}
             onClick={() => onSelect(key)}
           >
             {cat.label || cat}
@@ -53,7 +53,7 @@ export default function CategoryPills({
       {topTags.map((tag) => (
         <button
           key={tag}
-          className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${selectedTag === tag ? 'bg-purple-600 text-white border-purple-600' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'}`}
+          className={`max-w-full whitespace-normal break-words px-4 py-1 rounded-full border text-sm font-medium transition-colors ${selectedTag === tag ? 'bg-purple-600 text-white border-purple-600' : 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100'}`}
           onClick={() => onTagSelect?.(selectedTag === tag ? '' : tag)}
         >
           {tag}
