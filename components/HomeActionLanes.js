@@ -8,8 +8,6 @@ import {
   LightBulbIcon,
   MapPinIcon,
   NewspaperIcon,
-  UserCircleIcon,
-  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 
 const signedInActions = (user) => [
@@ -39,14 +37,6 @@ const signedInActions = (user) => [
     tone: 'amber',
     label: 'Νέα πρόταση',
   },
-  {
-    title: 'Ολοκλήρωσε προφίλ',
-    description: 'Βελτίωσε την παρουσία σου και βοήθησε τους άλλους να σε αναγνωρίζουν.',
-    href: '/profile',
-    icon: UserCircleIcon,
-    tone: 'indigo',
-    label: 'Προφίλ',
-  },
 ];
 
 const guestActions = [
@@ -73,14 +63,6 @@ const guestActions = [
     icon: ChatBubbleLeftRightIcon,
     tone: 'amber',
     label: 'Προτάσεις',
-  },
-  {
-    title: 'Δημιούργησε λογαριασμό',
-    description: 'Κράτησε την περιοχή σου, ακολούθησε θέματα και συμμετείχε πιο ουσιαστικά.',
-    href: '/register',
-    icon: UserPlusIcon,
-    tone: 'indigo',
-    label: 'Εγγραφή',
   },
 ];
 
@@ -127,15 +109,15 @@ export default function HomeActionLanes({ user }) {
       <div className="app-container py-12">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Γρήγορη εκκίνηση</p>
-            <h2 className="mt-1 text-2xl font-bold text-gray-900">Τι θέλεις να κάνεις τώρα;</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Ξεκίνα από εδώ</p>
+            <h2 className="mt-1 text-2xl font-bold text-gray-900">Τρεις απλοί τρόποι συμμετοχής</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
               {user
-                ? 'Συνέχισε από τα σημεία που δίνουν άμεση αξία: περιοχή, ψηφοφορίες, προτάσεις και προφίλ.'
-                : 'Διάλεξε μια απλή διαδρομή και γνώρισε την πλατφόρμα μέσα από πραγματικές ενέργειες.'}
+                ? 'Άνοιξε την περιοχή σου, ψήφισε σε ενεργά θέματα ή κατέθεσε μια πρόταση για την κοινότητα.'
+                : 'Δεν χρειάζεται να μάθεις όλη την πλατφόρμα. Ξεκίνα με περιοχή, ψηφοφορίες ή προτάσεις.'}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" aria-label="Περισσότερες ενότητες">
             {secondaryLinks.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
@@ -148,7 +130,7 @@ export default function HomeActionLanes({ user }) {
             ))}
           </div>
         </div>
-        <div className="mt-7 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-7 grid gap-4 md:grid-cols-3">
           {actions.map((action) => (
             <ActionCard key={action.href} action={action} />
           ))}

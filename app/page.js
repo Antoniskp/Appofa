@@ -16,12 +16,11 @@ import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
 import CountryEntryPopup from '@/components/geo/CountryEntryPopup';
 
-const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
-const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
+  const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
+  const ExploreLocationsMap = dynamic(() => import('@/components/locations/ExploreLocationsMap'), { ssr: false });
 
 export default function HomePage() {
   const tHome = useTranslations('home');
-  const tCommon = useTranslations('common');
   const { user } = useAuth();
 
   const [latestArticles, setLatestArticles] = useState([]);
@@ -258,57 +257,10 @@ export default function HomePage() {
     <div className="bg-gray-50">
       <CountryEntryPopup isAuthenticated={Boolean(user)} />
       <HomeHero />
-      <GovernmentSnapshotSection />
       {homepageSettings?.infoSection?.enabled && isVisibleForAudience(homepageSettings?.infoSection?.audience) && (
         <HomepageInfoSection settings={homepageSettings.infoSection} />
       )}
       <HomeActionLanes user={user} />
-
-      {/* CTA / Engagement Banner */}
-      <section className="bg-gradient-to-r from-blue-600 to-blue-800">
-        <div className="app-container py-12 text-center">
-          <h2 className="text-3xl font-bold text-white mb-2">{tHome('cta_title')}</h2>
-          <p className="text-blue-100 mb-6">
-            {tHome('cta_description')}
-          </p>
-          {user ? (
-            <div className="flex justify-center gap-4 flex-wrap">
-              <Link
-                href="/articles/new"
-                className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
-              >
-                {tHome('cta_write_article')}
-              </Link>
-              <Link
-                href="/suggestions/new"
-                className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
-              >
-                {tHome('cta_submit_suggestion')}
-              </Link>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-4">
-              <p className="text-blue-100 text-sm">
-                {tHome('cta_guest_description')}
-              </p>
-              <div className="flex justify-center gap-3 flex-wrap">
-                <Link
-                  href="/locations"
-                  className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg border border-blue-300 hover:bg-blue-400 transition-colors"
-                >
-                  {tHome('cta_view_locations')}
-                </Link>
-                <Link
-                  href="/register"
-                  className="bg-white text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors"
-                >
-                  {tCommon('register')}
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
 
       <HomepageSection
         title={tHome('top_polls_title')}
@@ -362,6 +314,8 @@ export default function HomePage() {
           }
         />
       )}
+
+      <GovernmentSnapshotSection />
 
       <HomepageSection
         title={tHome('latest_content_title')}

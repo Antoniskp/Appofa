@@ -242,6 +242,127 @@ export default function TopNav() {
     }
   ];
 
+  const guestPrimaryItems = [
+    {
+      id: 'locations',
+      label: tNav('locations'),
+      href: '/locations',
+      icon: <MapPinIcon className="h-4 w-4" />,
+      mobileIcon: <MapPinIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'polls',
+      label: tNav('polls'),
+      href: '/polls',
+      icon: <ClipboardDocumentListIcon className="h-4 w-4" />,
+      mobileIcon: <ClipboardDocumentListIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'suggestions',
+      label: tNav('suggestions'),
+      href: '/suggestions',
+      icon: <LightBulbIcon className="h-4 w-4" />,
+      mobileIcon: <LightBulbIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'news',
+      label: tNav('news'),
+      href: '/news',
+      icon: <NewspaperIcon className="h-4 w-4" />,
+      mobileIcon: <NewspaperIcon className="h-5 w-5" />,
+    },
+  ];
+
+  const guestMoreItems = [
+    {
+      id: 'articles',
+      label: tNav('articles'),
+      href: '/articles',
+      icon: <DocumentTextIcon className="h-4 w-4" />,
+      mobileIcon: <DocumentTextIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'videos',
+      label: tNav('videos'),
+      href: '/videos',
+      icon: <VideoCameraIcon className="h-4 w-4" />,
+      mobileIcon: <VideoCameraIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'civic-questions',
+      label: tNav('civic_polls'),
+      href: '/civic-questions',
+      icon: <ChatBubbleLeftRightIcon className="h-4 w-4" />,
+      mobileIcon: <ChatBubbleLeftRightIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'dream-team',
+      label: tNav('dream_team'),
+      href: '/dream-team',
+      icon: <TrophyIcon className="h-4 w-4" />,
+      mobileIcon: <TrophyIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'users',
+      label: tNav('users'),
+      href: '/users',
+      icon: <UsersIcon className="h-4 w-4" />,
+      mobileIcon: <UsersIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'cameras',
+      label: tNav('cameras'),
+      href: '/cameras',
+      icon: <VideoCameraIcon className="h-4 w-4" />,
+      mobileIcon: <VideoCameraIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'platform',
+      label: tNav('platform'),
+      href: '/platform',
+      icon: <WrenchScrewdriverIcon className="h-4 w-4" />,
+      mobileIcon: <WrenchScrewdriverIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'government',
+      label: tNav('government'),
+      href: '/elections',
+      icon: <FlagIcon className="h-4 w-4" />,
+      mobileIcon: <FlagIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'citizen-help',
+      label: tNav('citizen_help'),
+      href: '/citizen-help',
+      icon: <LifebuoyIcon className="h-4 w-4" />,
+      mobileIcon: <LifebuoyIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'education',
+      label: tNav('education'),
+      href: '/education',
+      icon: <AcademicCapIcon className="h-4 w-4" />,
+      mobileIcon: <AcademicCapIcon className="h-5 w-5" />,
+    },
+  ];
+
+  const guestNavSections = [
+    {
+      id: 'start',
+      label: tNav('start_here'),
+      menuId: 'desktop-nav-start-menu',
+      items: guestPrimaryItems,
+    },
+    {
+      id: 'more',
+      label: tNav('more'),
+      menuId: 'desktop-nav-more-menu',
+      items: guestMoreItems,
+    },
+  ];
+
+  const activeNavSections = user ? navSections : guestNavSections;
+
   const mobileAccountLinks = [
     {
       id: 'profile',
@@ -290,7 +411,7 @@ export default function TopNav() {
               />
             </Link>
             <div className="hidden md:ml-6 md:flex md:items-center md:gap-2">
-              {navSections.map((section) => {
+              {user ? navSections.map((section) => {
                 const sectionActive = section.items.some((item) => isPathActive(item.href));
 
                 return (
@@ -310,7 +431,38 @@ export default function TopNav() {
                     menuId={section.menuId}
                   />
                 );
-              })}
+              }) : (
+                <>
+                  {guestPrimaryItems.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                        isPathActive(item.href)
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-blue-900 hover:bg-seafoam/40'
+                      }`}
+                    >
+                      {item.icon}
+                      {item.label}
+                    </Link>
+                  ))}
+                  <DropdownMenu
+                    triggerText={tNav('more')}
+                    triggerClassName={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                      guestMoreItems.some((item) => isPathActive(item.href))
+                        ? 'bg-blue-50 text-blue-700'
+                        : 'text-blue-900 hover:bg-seafoam/40'
+                    }`}
+                    items={guestMoreItems.map((item) => ({
+                      ...item,
+                      className: isPathActive(item.href) ? 'bg-blue-50 text-blue-700 font-semibold' : '',
+                    }))}
+                    align="left"
+                    menuId="desktop-nav-more-menu"
+                  />
+                </>
+              )}
             </div>
           </div>
           <div className="hidden md:flex items-center gap-4 ml-auto">
@@ -371,7 +523,7 @@ export default function TopNav() {
       </div>
       <div className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} max-h-[calc(100dvh-4rem)] overflow-y-auto`} id="mobile-menu">
         <div className="border-t border-seafoam px-4 py-4 space-y-4">
-          {navSections.map((section) => (
+          {activeNavSections.map((section) => (
             <section key={section.id} aria-labelledby={`mobile-nav-section-${section.id}`}>
               <p
                 id={`mobile-nav-section-${section.id}`}

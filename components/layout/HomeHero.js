@@ -14,39 +14,17 @@ import {
   LightBulbIcon,
   CheckBadgeIcon,
   ShieldCheckIcon,
-  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
-const DEFAULT_TITLE = 'Αποφάσεις που ξεκινούν από εσένα.';
-const DEFAULT_SUBTITLE = 'Συμμετείχε σε ανοιχτές ψηφοφορίες, κατέθεσε προτάσεις και επηρέασε τις εξελίξεις στην περιοχή σου με διαφάνεια και πραγματικό αντίκτυπο.';
+const DEFAULT_TITLE = 'Δες τι συμβαίνει γύρω σου. Ψήφισε. Πρότεινε λύσεις.';
+const DEFAULT_SUBTITLE = 'Η Απόφαση βοηθά τους πολίτες να παρακολουθούν την περιοχή τους, να συμμετέχουν σε ανοιχτές ψηφοφορίες και να βλέπουν προτάσεις από την κοινότητα.';
 const SLIDE_INTERVAL_MS = 5000;
 
-const NAV_CARDS = [
-  {
-    icon: ChartBarIcon,
-    title: 'Ψήφισε σε θέματά σου',
-    description: 'Συμμετείχε σε ψηφοφορίες ανοιχτές για όλους — χωρίς εγγραφή',
-    href: '/polls',
-  },
-  {
-    icon: LightBulbIcon,
-    title: 'Κάνε πρόταση',
-    description: 'Υπόβαλε ιδέες και προτάσεις για τον τόπο σου',
-    href: '/suggestions',
-  },
-  {
-    icon: MapPinIcon,
-    title: 'Βρες την περιοχή σου',
-    description: 'Δες τι συμβαίνει στον δήμο, την περιφέρεια ή τη χώρα σου',
-    href: '/locations',
-  },
-];
-
 const HERO_PROMISES = [
-  { icon: CheckBadgeIcon, label: 'Ανοιχτές ψηφοφορίες' },
-  { icon: MapPinIcon, label: 'Τοπική συμμετοχή' },
-  { icon: ShieldCheckIcon, label: 'Διαφανής διαδικασία' },
+  { icon: MapPinIcon, label: 'Διάλεξε περιοχή' },
+  { icon: CheckBadgeIcon, label: 'Ψήφισε σε ανοιχτά θέματα' },
+  { icon: LightBulbIcon, label: 'Δες και κατέθεσε προτάσεις' },
 ];
 
 function StatSkeleton() {
@@ -200,34 +178,13 @@ export default function HomeHero() {
                 Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη
               </p>
 
-              {/* Slide title/subtitle – all slides stacked absolutely to prevent reflow */}
-              <div className="relative mt-4 min-h-[11rem] md:min-h-[8rem]">
-                {activeSlides.length > 0 ? (
-                  activeSlides.map((slide, idx) => (
-                    <div
-                      key={slide.id}
-                      className={`absolute inset-0 transition-opacity duration-500 ${
-                        idx === currentSlideIdx ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                      }`}
-                    >
-                      <h1 className="text-3xl md:text-5xl font-extrabold mb-3 leading-tight tracking-tight">
-                        {slide.title}
-                      </h1>
-                      <p className="max-w-2xl text-base md:text-lg leading-7 text-white/85 mb-3">
-                        {slide.subtitle}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <div className="absolute inset-0">
-                    <h1 className="text-3xl md:text-5xl font-extrabold mb-3 leading-tight tracking-tight">
-                      {DEFAULT_TITLE}
-                    </h1>
-                    <p className="max-w-2xl text-base md:text-lg leading-7 text-white/85 mb-3">
-                      {DEFAULT_SUBTITLE}
-                    </p>
-                  </div>
-                )}
+              <div className="mt-4">
+                <h1 className="text-3xl md:text-5xl font-extrabold mb-3 leading-tight tracking-tight">
+                  {DEFAULT_TITLE}
+                </h1>
+                <p className="max-w-2xl text-base md:text-lg leading-7 text-white/85 mb-3">
+                  {DEFAULT_SUBTITLE}
+                </p>
               </div>
 
               {/* CTA link – always rendered to reserve space; hidden when no link */}
@@ -329,20 +286,20 @@ export default function HomeHero() {
                 ) : (
                   <>
                     <Link 
-                      href="/register" 
-                      className="inline-flex items-center gap-2 bg-white text-indigo-700 px-5 py-2.5 rounded-xl font-semibold hover:bg-cyan-50 focus:bg-cyan-50 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
-                    >
-                      <UserPlusIcon className="w-4 h-4" />
-                      Εγγραφή
-                    </Link>
-
-                    <Link 
                       href="/locations" 
                       className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
                     >
                       <MapPinIcon className="w-4 h-4" />
                       Βρες την Περιοχή σου
                       <ArrowRightIcon className="w-4 h-4" />
+                    </Link>
+
+                    <Link 
+                      href="/polls?voteRestriction=anyone" 
+                      className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                    >
+                      <ChartBarIcon className="w-4 h-4" />
+                      Δες ανοιχτές ψηφοφορίες
                     </Link>
                   </>
                 )}
@@ -388,27 +345,6 @@ export default function HomeHero() {
               </div>
             )}
 
-          </div>
-        </div>
-
-        {/* Icon navigation cards */}
-        <div className="relative app-container pb-8">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {NAV_CARDS.map(({ icon: Icon, title, description, href }) => (
-              <Link
-                key={href}
-                href={href}
-                className="group flex min-h-32 items-start gap-4 rounded-lg border border-gray-200 bg-white p-4 text-left shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-400"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-cyan-50 transition-colors group-hover:bg-cyan-100">
-                  <Icon className="h-6 w-6 text-cyan-700" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-gray-900">{title}</p>
-                  <p className="mt-1 text-xs leading-5 text-gray-500">{description}</p>
-                </div>
-              </Link>
-            ))}
           </div>
         </div>
       </section>

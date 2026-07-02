@@ -181,13 +181,14 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
-  test('shows tagline and guest CTA set with register + location only', async () => {
+  test('shows stable value prop and guest CTA set with location + open polls', async () => {
     useAuth.mockReturnValue({ user: null, loading: false });
     const { container, root } = await renderHero(buildSlide('/polls'));
 
     expect(container.textContent).toContain('Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη');
-    expect(container.querySelector('a[href="/register"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/register"]')).toBeFalsy();
     expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeTruthy();
     expect(container.querySelector('a[href="/polls"]')).toBeTruthy(); // slide CTA only
     expect(container.textContent).not.toContain('Γίνε Moderator');
 
