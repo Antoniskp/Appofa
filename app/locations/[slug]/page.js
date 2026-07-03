@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { locationAPI, locationSectionAPI, suggestionAPI, geoAPI } from '@/lib/api';
+import { locationAPI, locationSectionAPI, suggestionAPI, geoAPI, candidateRegistrationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
 import { useAsyncData } from '@/hooks/useAsyncData';
@@ -63,6 +63,7 @@ export default function LocationDetailPage() {
   const isAuthenticated = !authLoading && !!user;
   const [entities, setEntities] = useState({ articles: [], users: [], polls: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 });
   const [suggestions, setSuggestions] = useState([]);
+  const [candidates, setCandidates] = useState([]);
   const [children, setChildren] = useState([]);
   const [siblings, setSiblings] = useState([]);
   const [breadcrumb, setBreadcrumb] = useState([]);
@@ -101,6 +102,7 @@ export default function LocationDetailPage() {
         // Reset secondary state to prevent stale data from previous location
         setEntities({ articles: [], users: [], polls: [], usersCount: 0, unclaimed: [], unclaimedCount: 0 });
         setSuggestions([]);
+        setCandidates([]);
         setChildren([]);
         setSiblings([]);
         setSections([]);
@@ -139,7 +141,7 @@ export default function LocationDetailPage() {
         // Use the resolved numeric ID for subsequent queries
         const locId = loc.id;
         // Fetch all secondary data in parallel
-        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes] =
+        const [entitiesRes, childrenRes, sectionsRes, suggestionsRes, siblingsRes, candidatesRes] =
           await Promise.allSettled([
             // 0: linked entities/content
             locationAPI.getLocationEntities(locId),
@@ -151,6 +153,8 @@ export default function LocationDetailPage() {
             suggestionAPI.getAll({ locationId: locId, limit: 50 }),
             // 4: sibling locations (same parent)
             loc.parent?.id ? locationAPI.getAll({ parent_id: loc.parent.id }) : Promise.resolve({ success: true, locations: [] }),
+            // 5: candidate registrations scoped to this location tree
+            candidateRegistrationAPI.getAll({ locationId: locId, limit: 50 }),
           ]);
 
         if (entitiesRes.status === 'fulfilled' && entitiesRes.value.success) {
@@ -188,6 +192,12 @@ export default function LocationDetailPage() {
           setSiblings((siblingsRes.value.locations || []).filter((item) => item.id !== locId));
         } else if (siblingsRes.status === 'rejected') {
           console.error('Failed to load sibling locations:', siblingsRes.reason);
+        }
+
+        if (candidatesRes.status === 'fulfilled' && candidatesRes.value.success) {
+          setCandidates(candidatesRes.value.data?.registrations || []);
+        } else if (candidatesRes.status === 'rejected') {
+          console.error('Failed to load candidate registrations:', candidatesRes.reason);
         }
 
         setSecondaryLoading(false);
@@ -424,7 +434,7 @@ export default function LocationDetailPage() {
 
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
-  const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0;
+  const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0 || candidates.length > 0;
   // True when the location has or is loading child locations.
   // Controls LocationChildrenExplorer rendering and suppresses duplicate child chips in header/related.
   const hasChildren = children.length > 0 || secondaryLoading;
@@ -435,6 +445,7 @@ export default function LocationDetailPage() {
     articles: `Άρθρα${regularArticles.length ? ` (${regularArticles.length})` : ''}`,
     users: `Χρήστες${entities.usersCount ? ` (${entities.usersCount})` : ''}`,
     unclaimed: `Αδιεκδίκητα${entities.unclaimedCount ? ` (${entities.unclaimedCount})` : ''}`,
+    candidates: `Candidates${candidates.length ? ` (${candidates.length})` : ''}`,
     suggestions: `Προτάσεις${suggestions.length ? ` (${suggestions.length})` : ''}`,
     elections: '🗳️ Εκλογές',
   };
@@ -446,6 +457,7 @@ export default function LocationDetailPage() {
     articles: regularArticles.length,
     users: entities.usersCount,
     unclaimed: entities.unclaimedCount,
+    candidates: candidates.length,
     suggestions: suggestions.length,
     elections: 1,
   };
@@ -580,6 +592,7 @@ export default function LocationDetailPage() {
                 regularArticles={regularArticles}
                 entities={entities}
                 suggestions={suggestions}
+                candidates={candidates}
                 isAuthenticated={isAuthenticated}
                 locationIdentifier={location.slug || location.id}
                 canManageLocations={canManageLocations()}

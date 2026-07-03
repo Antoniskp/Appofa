@@ -4,6 +4,7 @@ import { idSlug } from '@/lib/utils/slugify';
 import UserRow from '@/components/user/UserRow';
 import LoginLink from '@/components/ui/LoginLink';
 import LocationElectionsTab from '@/components/locations/LocationElectionsTab';
+import LocationCandidatesTab from '@/components/locations/LocationCandidatesTab';
 import { VALID_TABS } from '@/lib/constants/locations';
 
 const CLAIM_STATUS_BADGES = {
@@ -111,6 +112,7 @@ export default function LocationTabs({
   regularArticles,
   entities,
   suggestions,
+  candidates = [],
   isAuthenticated,
   locationIdentifier,
   canManageLocations = false,
@@ -406,6 +408,20 @@ export default function LocationTabs({
               </div>
             </div>
           )}
+        </div>
+
+        {/* Candidate registrations tab */}
+        <div
+          id="tabpanel-candidates"
+          role="tabpanel"
+          aria-labelledby="tab-candidates"
+          hidden={activeTab !== 'candidates'}
+        >
+          <LocationCandidatesTab
+            candidates={candidates}
+            loading={loading}
+            locationIdentifier={locationIdentifier}
+          />
         </div>
 
         {/* Suggestions tab */}
