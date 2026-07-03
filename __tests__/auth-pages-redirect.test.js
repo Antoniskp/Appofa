@@ -80,15 +80,19 @@ jest.mock('@/lib/api', () => ({
   authAPI: {
     getProfile: jest.fn(() => Promise.resolve({ success: true })),
     initiateGithubOAuth: jest.fn(() => Promise.resolve({ success: true })),
-    initiateGoogleOAuth: jest.fn(() => Promise.resolve({ success: true }))
+    initiateGoogleOAuth: jest.fn(() => Promise.resolve({ success: true })),
+    checkUsernameAvailability: jest.fn(() => Promise.resolve({ success: true, available: true }))
   },
   geoAPI: {
     detect: jest.fn(() => Promise.resolve({ success: true, data: { countryCode: null, countryName: null } })),
+  },
+  locationAPI: {
+    getById: jest.fn(() => Promise.resolve({ success: true, location: { hasModerator: true } })),
   }
 }));
 
 const { useAuth } = require('@/lib/auth-context');
-const { geoAPI } = require('@/lib/api');
+const { authAPI, geoAPI, locationAPI } = require('@/lib/api');
 
 const buildAuthState = (overrides = {}) => ({
   user: null,
@@ -122,8 +126,12 @@ const renderPage = async (Component) => {
 describe('Auth pages redirect behavior', () => {
   afterEach(() => {
     useAuth.mockReset();
+    authAPI.checkUsernameAvailability.mockReset();
+    authAPI.checkUsernameAvailability.mockResolvedValue({ success: true, available: true });
     geoAPI.detect.mockReset();
     geoAPI.detect.mockResolvedValue({ success: true, data: { countryCode: null, countryName: null } });
+    locationAPI.getById.mockReset();
+    locationAPI.getById.mockResolvedValue({ success: true, location: { hasModerator: true } });
     mockRouter.push.mockReset();
     mockSearchParams.get.mockReset();
     mockSearchParams.get.mockReturnValue(null);

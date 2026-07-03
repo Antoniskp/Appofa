@@ -624,7 +624,7 @@ const authController = {
       return res.status(400).json({ success: false, message: 'Invalid username.' });
     }
     try {
-      const available = await userService.isUsernameAvailable(username.trim(), req.user.id);
+      const available = await userService.isUsernameAvailable(username.trim(), req.user?.id);
       return res.status(200).json({ success: true, available });
     } catch (error) {
       console.error('Username availability check error:', error);

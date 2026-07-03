@@ -72,4 +72,28 @@ describe('authService.registerUser diaspora fields', () => {
     const lifetimeSeconds = decoded.exp - decoded.iat;
     expect(lifetimeSeconds).toBeGreaterThanOrEqual(29 * 24 * 60 * 60);
   });
+
+  it('requires stronger passwords for new registrations', async () => {
+    await expect(authService.registerUser({
+      username: 'shortpasstest',
+      email: 'short-pass-register@test.com',
+      password: 'pass123',
+    })).rejects.toMatchObject({
+      status: 400,
+      message: expect.stringMatching(/at least 8/i),
+    });
+  });
+
+  it('still lets existing shorter-password accounts log in', async () => {
+    await User.create({
+      username: 'legacyshortpass',
+      email: 'legacy-short-pass@test.com',
+      password: 'pass123',
+      role: 'viewer',
+    });
+
+    const { user, token } = await authService.loginUser('legacy-short-pass@test.com', 'pass123');
+    expect(user.username).toBe('legacyshortpass');
+    expect(token).toBeTruthy();
+  });
 });

@@ -6,7 +6,8 @@ const optionalAuthMiddleware = require('../middleware/optionalAuth');
 const csrfProtection = require('../middleware/csrfProtection');
 const checkRole = require('../middleware/checkRole');
 const {
-  authLimiter,
+  loginLimiter,
+  registerLimiter,
   apiLimiter,
   uploadLimiter,
   passwordResetRequestLimiter,
@@ -18,8 +19,8 @@ const { avatarUpload } = require('../middleware/upload');
 router.get('/csrf', optionalAuthMiddleware, apiLimiter, authMiddleware, authController.refreshCsrf);
 
 // Public routes with rate limiting
-router.post('/register', authLimiter, authController.register);
-router.post('/login', authLimiter, authController.login);
+router.post('/register', registerLimiter, authController.register);
+router.post('/login', loginLimiter, authController.login);
 router.post('/forgot-password', passwordResetRequestLimiter, authController.forgotPassword);
 router.post('/reset-password', passwordResetAttemptLimiter, authController.resetPassword);
 router.get('/verify-email', apiLimiter, authController.verifyEmail);
@@ -48,8 +49,8 @@ router.put('/users/:id/role', apiLimiter, authMiddleware, csrfProtection, checkR
 router.put('/users/:id/verify', apiLimiter, authMiddleware, csrfProtection, checkRole('admin', 'moderator'), authController.verifyUser);
 router.delete('/users/:id', apiLimiter, authMiddleware, csrfProtection, checkRole('admin'), authController.adminDeleteUser);
 
-// Registered users only: check if a username is available
-router.get('/check-username', apiLimiter, authMiddleware, authController.checkUsernameAvailability);
+// Public during signup; authenticated users can also use it while editing their own profile.
+router.get('/check-username', optionalAuthMiddleware, apiLimiter, authController.checkUsernameAvailability);
 
 // Public search endpoint (guests see public profiles only; authenticated users see registered+public)
 router.get('/users/search', optionalAuthMiddleware, apiLimiter, authController.searchUsers);

@@ -147,10 +147,10 @@ const apiLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-// Stricter rate limiter for authentication routes - 5 requests per 15 minutes
-const authLimiter = rateLimit({
+// Stricter rate limiter for login routes - 5 failed requests per 15 minutes
+const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login/register requests per windowMs
+  max: 5, // Limit each IP to 5 failed login requests per windowMs
   skip: skipForWhitelist,
   message: {
     success: false,
@@ -159,6 +159,20 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
+});
+
+// Registration can involve typing/retrying form details, so it gets a little more room
+// while still slowing automated signup abuse.
+const registerLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  skip: skipForWhitelist,
+  handler: makeRateLimitHandler(
+    'Too many registration attempts from this IP, please try again later.'
+  ),
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true,
 });
 
 // Password reset request limiter - 5 requests per hour per IP.
@@ -263,7 +277,9 @@ const ipBlockMiddleware = async (req, res, next) => {
 
 module.exports = {
   apiLimiter,
-  authLimiter,
+  authLimiter: loginLimiter,
+  loginLimiter,
+  registerLimiter,
   passwordResetRequestLimiter,
   passwordResetAttemptLimiter,
   createLimiter,

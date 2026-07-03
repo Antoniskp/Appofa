@@ -3,8 +3,7 @@ const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookm
 const {
   normalizeRequiredText,
   normalizeOptionalText,
-  normalizeInteger,
-  normalizePassword
+  normalizeInteger
 } = require('../utils/validators');
 const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
@@ -28,7 +27,6 @@ const USERNAME_MAX_LENGTH = 50;
 const NAME_MAX_LENGTH = 100;
 const MOBILE_TEL_MAX_LENGTH = 30;
 const BIO_MAX_LENGTH = 280;
-const PASSWORD_MIN_LENGTH = 6;
 const VALID_HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/;
 const ALLOWED_SOCIAL_KEYS = new Set(['website', 'x', 'twitter', 'instagram', 'facebook', 'linkedin', 'github', 'youtube', 'tiktok']);
 const VALID_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
@@ -498,7 +496,7 @@ async function deleteUserAccount(userId, password, mode) {
   if (!user) throw new ServiceError(404, 'User not found.');
 
   if (user.password) {
-    const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
+    const passwordResult = normalizeRequiredText(password, 'Password', 1);
     if (passwordResult.error) throw new ServiceError(400, passwordResult.error);
 
     const isValidPassword = await user.comparePassword(passwordResult.value);

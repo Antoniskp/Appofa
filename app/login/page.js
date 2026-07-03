@@ -13,6 +13,7 @@ import { authAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
 import { getAndClearReturnTo } from '@/lib/auth-redirect';
+import AlertMessage from '@/components/ui/AlertMessage';
 
 const resolvePostLoginDestination = () => {
   const destination = getAndClearReturnTo();
@@ -31,11 +32,14 @@ function LoginForm() {
     password: '',
   });
   const [loading, setLoading] = useState(false);
+  const [inlineError, setInlineError] = useState('');
+  const [showSessionExpired, setShowSessionExpired] = useState(false);
   const { config: oauthConfig } = useOAuthConfig();
 
   useEffect(() => {
     // Handle OAuth callback
     const errorParam = searchParams.get('error');
+    setShowSessionExpired(searchParams.get('reason') === 'session_expired');
 
     if (searchParams.get('oauth')) {
       setLoading(true);
@@ -61,7 +65,7 @@ function LoginForm() {
       };
       error(errorMessages[errorParam] || tAuth('oauth_failed'));
     }
-  }, [searchParams, router, success, error]);
+  }, [searchParams, router, success, error, tAuth]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -70,6 +74,7 @@ function LoginForm() {
   }, [user, authLoading, router]);
 
   const handleChange = (e) => {
+    setInlineError('');
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -85,7 +90,9 @@ function LoginForm() {
       success(tAuth('welcome_redirect'));
       router.push(resolvePostLoginDestination());
     } catch (err) {
-      error(err.message || tAuth('invalid_credentials'));
+      const message = err.message || tAuth('invalid_credentials');
+      setInlineError(message);
+      error(message);
     } finally {
       setLoading(false);
     }
@@ -132,6 +139,13 @@ function LoginForm() {
           </p>
         </div>
 
+        {showSessionExpired && (
+          <AlertMessage tone="error" message={tAuth('session_expired_message')} />
+        )}
+        {inlineError && (
+          <AlertMessage tone="error" message={inlineError} />
+        )}
+
         {/* OAuth Buttons */}
         <OAuthButtons
           config={oauthConfig}
@@ -147,22 +161,22 @@ function LoginForm() {
             <FormInput
               name="email"
               type="email"
-               label={tAuth('email')}
+              label={tAuth('email')}
               value={formData.email}
               onChange={handleChange}
               required
               autoComplete="email"
-               placeholder={tAuth('email')}
+              placeholder={tAuth('email')}
             />
             <FormInput
               name="password"
               type="password"
-               label={tAuth('password')}
+              label={tAuth('password')}
               value={formData.password}
               onChange={handleChange}
               required
               autoComplete="current-password"
-               placeholder={tAuth('password')}
+              placeholder={tAuth('password')}
             />
             <div className="text-right">
               <Link href="/forgot-password" className="text-sm font-medium text-blue-600 hover:text-blue-500">

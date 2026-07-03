@@ -15,7 +15,7 @@ require('dotenv').config();
 
 const USERNAME_MIN_LENGTH = 3;
 const USERNAME_MAX_LENGTH = 50;
-const PASSWORD_MIN_LENGTH = 6;
+const PASSWORD_MIN_LENGTH = 8;
 const NAME_MAX_LENGTH = 100;
 const PASSWORD_RESET_DEFAULT_TTL_MINUTES = 60;
 const PASSWORD_RESET_TOKEN_BYTES = 32;
@@ -223,7 +223,7 @@ async function loginUser(email, password) {
   const emailResult = normalizeEmail(email);
   if (emailResult.error) throw new ServiceError(400, emailResult.error);
 
-  const passwordResult = normalizePassword(password, 'Password', PASSWORD_MIN_LENGTH);
+  const passwordResult = normalizeRequiredText(password, 'Password', 1);
   if (passwordResult.error) throw new ServiceError(400, passwordResult.error);
 
   const user = await User.findOne({ where: { email: emailResult.value } });
@@ -237,7 +237,7 @@ async function loginUser(email, password) {
 }
 
 async function changePassword(userId, currentPassword, newPassword) {
-  const currentPasswordResult = normalizePassword(currentPassword, 'Current password', PASSWORD_MIN_LENGTH);
+  const currentPasswordResult = normalizeRequiredText(currentPassword, 'Current password', 1);
   if (currentPasswordResult.error) throw new ServiceError(400, currentPasswordResult.error);
 
   const newPasswordResult = normalizePassword(newPassword, 'New password', PASSWORD_MIN_LENGTH);
