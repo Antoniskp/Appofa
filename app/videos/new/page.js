@@ -34,7 +34,7 @@ function NewVideoContent() {
 
 export default function NewVideoPage() {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'editor', 'moderator', 'viewer']}>
+    <ProtectedRoute allowedRoles={['admin', 'editor', 'moderator', 'viewer', 'candidate']}>
       <NewVideoContent />
     </ProtectedRoute>
   );

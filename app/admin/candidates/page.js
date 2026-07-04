@@ -43,6 +43,7 @@ function AdminCandidatesContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [selected, setSelected] = useState(null);
   const [processingId, setProcessingId] = useState(null);
+  const [reviewNotes, setReviewNotes] = useState('');
 
   const { data: registrations, loading, error, refetch } = useAsyncData(
     async () => {
@@ -57,13 +58,18 @@ function AdminCandidatesContent() {
     { initialData: [] }
   );
 
-  const updateStatus = async (registration, nextStatus) => {
+  const openDetails = (registration) => {
+    setSelected(registration);
+    setReviewNotes(registration.reviewNotes || '');
+  };
+
+  const updateStatus = async (registration, nextStatus, notes = reviewNotes) => {
     setProcessingId(registration.id);
     try {
-      await candidateRegistrationAPI.update(registration.id, { status: nextStatus });
+      await candidateRegistrationAPI.update(registration.id, { status: nextStatus, reviewNotes: notes });
       toastSuccess(`Candidate registration ${nextStatus}.`);
       if (selected?.id === registration.id) {
-        setSelected((prev) => prev ? { ...prev, status: nextStatus } : prev);
+        setSelected((prev) => prev ? { ...prev, status: nextStatus, reviewNotes: notes } : prev);
       }
       refetch();
     } catch (err) {
@@ -130,7 +136,7 @@ function AdminCandidatesContent() {
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              updateStatus(row, 'approved');
+              updateStatus(row, 'approved', row.reviewNotes || '');
             }}
             disabled={processingId === row.id || row.status === 'approved'}
             className="rounded bg-green-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
@@ -141,7 +147,7 @@ function AdminCandidatesContent() {
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              updateStatus(row, 'rejected');
+              updateStatus(row, 'rejected', row.reviewNotes || '');
             }}
             disabled={processingId === row.id || row.status === 'rejected'}
             className="rounded bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
@@ -152,7 +158,7 @@ function AdminCandidatesContent() {
             type="button"
             onClick={(event) => {
               event.stopPropagation();
-              updateStatus(row, 'archived');
+              updateStatus(row, 'archived', row.reviewNotes || '');
             }}
             disabled={processingId === row.id || row.status === 'archived'}
             className="rounded border border-gray-300 px-2.5 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
@@ -204,7 +210,7 @@ function AdminCandidatesContent() {
           data={registrations}
           loading={loading}
           emptyMessage="No candidate registrations found."
-          onRowClick={(row) => setSelected(row)}
+          onRowClick={openDetails}
           actions={false}
         />
 
@@ -227,7 +233,10 @@ function AdminCandidatesContent() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelected(null)}
+                  onClick={() => {
+                    setSelected(null);
+                    setReviewNotes('');
+                  }}
                   className="rounded p-1 text-gray-500 hover:bg-gray-100"
                   aria-label="Close"
                 >
@@ -274,6 +283,18 @@ function AdminCandidatesContent() {
                     <dd className="mt-1 whitespace-pre-wrap leading-6 text-gray-700">{selected.platform}</dd>
                   </div>
                 )}
+                <div className="md:col-span-2">
+                  <dt className="font-medium text-gray-500">Review notes / rejection reason</dt>
+                  <dd className="mt-1">
+                    <textarea
+                      value={reviewNotes}
+                      onChange={(event) => setReviewNotes(event.target.value)}
+                      rows={4}
+                      placeholder="Optional internal note. If rejecting, explain what the candidate should fix."
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </dd>
+                </div>
               </dl>
 
               <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">

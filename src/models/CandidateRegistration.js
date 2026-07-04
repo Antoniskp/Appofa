@@ -71,6 +71,10 @@ const CandidateRegistration = sequelize.define('CandidateRegistration', {
     type: DataTypes.DATE,
     allowNull: true,
   },
+  reviewNotes: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
 }, {
   timestamps: true,
   indexes: [

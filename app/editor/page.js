@@ -275,7 +275,7 @@ function EditorDashboardContent() {
 
 export default function EditorDashboard() {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'editor', 'moderator', 'viewer']}>
+    <ProtectedRoute allowedRoles={['admin', 'editor', 'moderator', 'viewer', 'candidate']}>
       <EditorDashboardContent />
     </ProtectedRoute>
   );

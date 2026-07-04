@@ -31,6 +31,18 @@ exports.listMine = async (req, res) => {
   }
 };
 
+exports.getRegistration = async (req, res) => {
+  try {
+    const registration = await candidateRegistrationService.getRegistrationById(
+      parseInt(req.params.id, 10),
+      req.user || null
+    );
+    return res.json({ success: true, data: { registration } });
+  } catch (error) {
+    return handleError(res, error, 'Error fetching candidate registration.');
+  }
+};
+
 exports.createRegistration = async (req, res) => {
   try {
     const registration = await candidateRegistrationService.createRegistration(req.user.id, req.body);

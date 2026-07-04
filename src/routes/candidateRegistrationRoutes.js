@@ -8,6 +8,7 @@ const { apiLimiter } = require('../middleware/rateLimiter');
 
 router.get('/', optionalAuthMiddleware, apiLimiter, controller.listRegistrations);
 router.get('/mine', apiLimiter, authMiddleware, controller.listMine);
+router.get('/:id', optionalAuthMiddleware, apiLimiter, controller.getRegistration);
 router.post('/', apiLimiter, authMiddleware, csrfProtection, controller.createRegistration);
 router.put('/:id', apiLimiter, authMiddleware, csrfProtection, controller.updateRegistration);
 router.delete('/:id', apiLimiter, authMiddleware, csrfProtection, controller.archiveRegistration);

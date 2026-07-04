@@ -72,6 +72,9 @@ export function CandidateRegistrationCard({ registration }) {
             <p className="mt-2 text-sm leading-6 text-gray-600 line-clamp-3">{registration.platform}</p>
           )}
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
+            <Link href={`/candidate-registrations/${registration.id}`} className="font-medium text-blue-700 hover:text-blue-900">
+              View campaign
+            </Link>
             <Link href={getProfileHref(candidate)} className="font-medium text-blue-700 hover:text-blue-900">
               View profile
             </Link>

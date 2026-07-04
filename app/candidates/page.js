@@ -2,167 +2,173 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MagnifyingGlassIcon, UserCircleIcon, MapPinIcon } from '@heroicons/react/24/outline';
-import { CheckBadgeIcon } from '@heroicons/react/24/solid';
-import { personAPI, locationAPI } from '@/lib/api';
-import { useAsyncData } from '@/hooks/useAsyncData';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { candidateRegistrationAPI } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 import { useInfiniteData } from '@/hooks/useInfiniteData';
 import { useFilters } from '@/hooks/useFilters';
+import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
-import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
+import LocationSelector from '@/components/ui/LocationSelector';
+import { CandidateRegistrationCard, POSITION_TYPE_LABELS } from '@/components/locations/LocationCandidatesTab';
 
-function ClaimStatusBadge({ status }) {
-  if (status === 'unclaimed') {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
-        Αδιεκδίκητο
-      </span>
-    );
-  }
-  if (status === 'pending') {
-    return (
-      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-        Σε Αναμονή
-      </span>
-    );
-  }
-  if (status === 'claimed') {
-    return (
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-        <CheckBadgeIcon className="h-3 w-3" /> Επαληθευμένο
-      </span>
-    );
-  }
-  return null;
-}
+const POSITION_OPTIONS = ['mayor', 'parliamentary', 'local_council', 'county_council', 'regional_council', 'other'];
+const STATUS_OPTIONS = ['approved', 'submitted', 'rejected', 'archived', 'all'];
 
-function PersonCard({ profile }) {
-  return (
-    <Link href={`/persons/${profile.slug}`} className="block bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow overflow-hidden">
-      <div className="p-5">
-        <div className="flex items-start gap-4">
-          {profile.photo ? (
-            <img src={profile.photo} alt={profile.fullName} className="w-14 h-14 rounded-full object-cover flex-shrink-0" />
-          ) : (
-            <UserCircleIcon className="w-14 h-14 text-gray-300 flex-shrink-0" />
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base font-semibold text-gray-900 truncate">{profile.fullName}</h2>
-              <ClaimStatusBadge status={profile.claimStatus} />
-            </div>
-            {profile.constituency && (
-              <p className="mt-1 flex items-center gap-1 text-sm text-gray-500">
-                <MapPinIcon className="h-4 w-4 flex-shrink-0" />
-                {profile.constituency.name}
-              </p>
-            )}
-            {profile.bio && (
-              <p className="mt-2 text-sm text-gray-600 line-clamp-2">{profile.bio}</p>
-            )}
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
+export default function CandidatesPage() {
+  const { user } = useAuth();
+  const isStaff = ['admin', 'moderator'].includes(user?.role);
+  const [locationKey, setLocationKey] = useState(0);
+  const { filters, updateFilter } = useFilters({
+    search: '',
+    locationId: '',
+    positionType: '',
+    electionCycle: '',
+    partyMode: '',
+    status: 'approved',
+  });
 
-export default function PersonsPage() {
-  const {
-    filters,
-    updateFilter
-  } = useFilters({ search: '', constituencyId: '', claimStatus: '' });
-
-  const { data: locations } = useAsyncData(
-    async () => {
-      const res = await locationAPI.getAll({ limit: 200 });
-      return res.data || [];
-    },
-    [],
-    { initialData: [] }
-  );
-
-  const { items: persons, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
-    async (p, lim) => {
-      const params = { page: p, limit: lim };
+  const { items: registrations, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
+    async (page, limit) => {
+      const params = { page, limit };
       if (filters.search) params.search = filters.search;
-      if (filters.constituencyId) params.constituencyId = filters.constituencyId;
-      if (filters.claimStatus) params.claimStatus = filters.claimStatus;
-      const res = await personAPI.getAll(params);
+      if (filters.locationId) params.locationId = filters.locationId;
+      if (filters.positionType) params.positionType = filters.positionType;
+      if (filters.electionCycle) params.electionCycle = filters.electionCycle;
+      if (filters.partyMode) params.partyMode = filters.partyMode;
+      if (isStaff && filters.status) params.status = filters.status;
+      const res = await candidateRegistrationAPI.getAll(params);
+      const totalPages = res?.data?.pagination?.totalPages ?? 1;
       return {
-        items: res?.data?.profiles || [],
-        hasMore: p < (res?.data?.pagination?.totalPages ?? 1),
+        items: res?.data?.registrations || [],
+        hasMore: page < totalPages,
       };
     },
     12,
-    [filters]
+    [filters, isStaff]
   );
 
+  const clearFilters = () => {
+    updateFilter('search', '');
+    updateFilter('locationId', '');
+    updateFilter('positionType', '');
+    updateFilter('electionCycle', '');
+    updateFilter('partyMode', '');
+    updateFilter('status', 'approved');
+    setLocationKey((value) => value + 1);
+  };
+
   return (
-    <div className="bg-gray-50 min-h-screen py-8">
+    <div className="min-h-screen bg-gray-50 py-8">
       <div className="app-container">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Public Person Profiles</h1>
-          <p className="mt-1 text-gray-500">Browse and discover public person profiles.</p>
+        <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Candidates</h1>
+            <p className="mt-1 text-gray-600">Discover approved candidate registrations by location, role, and election cycle.</p>
+          </div>
+          <div className="flex gap-3">
+            <Link href="/profile#candidates" className="rounded border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              My registrations
+            </Link>
+            <Link href="/candidates/register" className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+              Register
+            </Link>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 flex flex-col sm:flex-row flex-wrap gap-3">
-          <div className="relative w-full sm:flex-1">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+            <div className="relative lg:col-span-2">
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(event) => updateFilter('search', event.target.value)}
+                placeholder="Search candidate name"
+                className="w-full rounded-md border border-gray-300 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="lg:col-span-2">
+              <LocationSelector
+                key={locationKey}
+                value={filters.locationId}
+                onChange={(value) => updateFilter('locationId', value || '')}
+                placeholder="Any location"
+                allowClear
+              />
+            </div>
+            <select
+              value={filters.positionType}
+              onChange={(event) => updateFilter('positionType', event.target.value)}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Position type"
+            >
+              <option value="">All positions</option>
+              {POSITION_OPTIONS.map((position) => (
+                <option key={position} value={position}>{POSITION_TYPE_LABELS[position]}</option>
+              ))}
+            </select>
             <input
-              type="text"
-              placeholder="Search by name..."
-              value={filters.search}
-              onChange={(e) => updateFilter('search', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={filters.electionCycle}
+              onChange={(event) => updateFilter('electionCycle', event.target.value)}
+              placeholder="Election cycle"
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            <select
+              value={filters.partyMode}
+              onChange={(event) => updateFilter('partyMode', event.target.value)}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Party mode"
+            >
+              <option value="">Party or independent</option>
+              <option value="independent">Independent only</option>
+              <option value="party">Party/list only</option>
+            </select>
+            {isStaff && (
+              <select
+                value={filters.status}
+                onChange={(event) => updateFilter('status', event.target.value)}
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Status"
+              >
+                {STATUS_OPTIONS.map((status) => (
+                  <option key={status} value={status}>{status === 'all' ? 'All statuses' : status}</option>
+                ))}
+              </select>
+            )}
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Clear
+            </button>
           </div>
-          <select
-            value={filters.constituencyId}
-            onChange={(e) => updateFilter('constituencyId', e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Constituencies</option>
-            {locations.map((loc) => (
-              <option key={loc.id} value={loc.id}>{loc.name}</option>
-            ))}
-          </select>
-          <select
-            value={filters.claimStatus}
-            onChange={(e) => updateFilter('claimStatus', e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">All Statuses</option>
-            <option value="unclaimed">Unclaimed</option>
-            <option value="pending">Claim Pending</option>
-            <option value="claimed">Verified</option>
-          </select>
         </div>
 
         {initialLoading && <SkeletonLoader count={6} type="card" />}
-        {error && <p className="text-red-500 text-center py-8">Failed to load persons.</p>}
+        {error && <p className="py-8 text-center text-red-600">Failed to load candidates.</p>}
 
-        {!initialLoading && !error && persons.length === 0 && (
-          <EmptyState message="No persons found." />
+        {!initialLoading && !error && registrations.length === 0 && (
+          <EmptyState message="No candidate registrations found." />
         )}
 
-        {!error && persons.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {persons.map((profile) => (
-              <PersonCard key={profile.id} profile={profile} />
+        {!error && registrations.length > 0 && (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {registrations.map((registration) => (
+              <CandidateRegistrationCard key={registration.id} registration={registration} />
             ))}
           </div>
         )}
 
-        {!initialLoading && !error && persons.length > 0 && (
+        {!initialLoading && !error && registrations.length > 0 && (
           <LoadMoreTrigger
             hasMore={hasMore}
             loading={loading}
             onLoadMore={loadMore}
             skeletonType="card"
-            skeletonCount={3}
+            skeletonCount={2}
           />
         )}
       </div>

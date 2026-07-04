@@ -76,6 +76,10 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: true,
       },
+      reviewNotes: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,

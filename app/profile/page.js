@@ -10,10 +10,12 @@ import ProfileTab from '@/app/profile/tabs/ProfileTab';
 import LocationPoliticsTab from '@/app/profile/tabs/LocationPoliticsTab';
 import SkillsTab from '@/app/profile/tabs/SkillsTab';
 import SettingsTab from '@/app/profile/tabs/SettingsTab';
+import CandidatesTab from '@/app/profile/tabs/CandidatesTab';
 
 const PROFILE_TABS = [
   { id: 'profile', labelKey: 'tab_profile' },
   { id: 'location-politics', labelKey: 'tab_location_politics' },
+  { id: 'candidates', label: 'Candidates' },
   { id: 'skills', labelKey: 'tab_skills_interests' },
   { id: 'settings', labelKey: 'tab_settings' },
 ];
@@ -158,7 +160,7 @@ function ProfileContent() {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  {tProfile(tab.labelKey)}
+                  {tab.label || tProfile(tab.labelKey)}
                 </button>
               );
             })}
@@ -217,6 +219,10 @@ function ProfileContent() {
           />
         )}
 
+        {activeTab === 'candidates' && (
+          <CandidatesTab />
+        )}
+
         {activeTab === 'settings' && (
           <SettingsTab
             profileData={profileData}
@@ -270,7 +276,7 @@ function ProfileContent() {
 
 export default function ProfilePage() {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'moderator', 'editor', 'viewer']}>
+    <ProtectedRoute allowedRoles={['admin', 'moderator', 'editor', 'viewer', 'candidate']}>
       <Suspense fallback={
         <div className="min-h-screen flex items-center justify-center">
           <SkeletonLoader />

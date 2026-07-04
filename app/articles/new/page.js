@@ -66,7 +66,7 @@ function NewArticleContent() {
 
 export default function NewArticlePage() {
   return (
-    <ProtectedRoute allowedRoles={['admin', 'editor', 'moderator', 'viewer']}>
+    <ProtectedRoute allowedRoles={['admin', 'editor', 'moderator', 'viewer', 'candidate']}>
       <NewArticleContent />
     </ProtectedRoute>
   );

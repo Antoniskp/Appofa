@@ -2,6 +2,7 @@
 
 const { Op } = require('sequelize');
 const { CandidateRegistration, Location, User } = require('../models');
+const dbConfig = require('../config/database');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
 const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
 
@@ -77,6 +78,23 @@ function serializeRegistration(registration) {
   };
 }
 
+function buildCandidateSearchWhere(search) {
+  const term = cleanString(search, 100);
+  if (!term) return null;
+  const escaped = term.replace(/[%_\\]/g, '\\$&');
+  const likeOp = dbConfig.getDialect() === 'postgres' ? Op.iLike : Op.like;
+  return {
+    [Op.or]: [
+      { username: { [likeOp]: `%${escaped}%` } },
+      { firstNameNative: { [likeOp]: `%${escaped}%` } },
+      { lastNameNative: { [likeOp]: `%${escaped}%` } },
+      { firstNameEn: { [likeOp]: `%${escaped}%` } },
+      { lastNameEn: { [likeOp]: `%${escaped}%` } },
+      { nickname: { [likeOp]: `%${escaped}%` } },
+    ],
+  };
+}
+
 async function createRegistration(userId, data) {
   const locationId = parseInt(data.locationId, 10);
   if (!Number.isInteger(locationId)) {
@@ -130,7 +148,9 @@ async function createRegistration(userId, data) {
   return getRegistrationById(registration.id, userId);
 }
 
-async function getRegistrationById(id, viewerUserId = null) {
+async function getRegistrationById(id, viewer = null) {
+  const viewerUserId = typeof viewer === 'object' ? viewer?.id : viewer;
+  const isStaff = ['admin', 'moderator'].includes(viewer?.role);
   const registration = await CandidateRegistration.findByPk(id, {
     include: [
       { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'type'] },
@@ -147,7 +167,7 @@ async function getRegistrationById(id, viewerUserId = null) {
   });
 
   if (!registration) throw new ServiceError(404, 'Candidate registration not found.');
-  if (registration.status !== 'approved' && registration.userId !== viewerUserId) {
+  if (registration.status !== 'approved' && registration.userId !== viewerUserId && !isStaff) {
     throw new ServiceError(404, 'Candidate registration not found.');
   }
   return serializeRegistration(registration);
@@ -158,6 +178,9 @@ async function listRegistrations({
   limit = 20,
   locationId,
   positionType,
+  electionCycle,
+  partyMode,
+  search,
   userId,
   status = 'approved',
   includeDescendants = true,
@@ -180,6 +203,18 @@ async function listRegistrations({
     where.positionType = normalizePositionType(positionType);
   }
 
+  const normalizedElectionCycle = cleanString(electionCycle, 80);
+  if (normalizedElectionCycle) {
+    where.electionCycle = normalizedElectionCycle;
+  }
+
+  if (partyMode === 'independent') {
+    where.isIndependent = true;
+  } else if (partyMode === 'party') {
+    where.isIndependent = false;
+    where.partyName = { [Op.ne]: null };
+  }
+
   if (userId) {
     where.userId = parseInt(userId, 10);
   }
@@ -192,6 +227,15 @@ async function listRegistrations({
       : { [Op.in]: await getDescendantLocationIds(parsedLocationId, true) };
   }
 
+  const candidateWhere = {
+    profileVisibility: { [Op.in]: getDiscoverableVisibilities(Boolean(viewer)) },
+    claimStatus: null,
+  };
+  const searchWhere = buildCandidateSearchWhere(search);
+  if (searchWhere) {
+    Object.assign(candidateWhere, searchWhere);
+  }
+
   const { count, rows } = await CandidateRegistration.findAndCountAll({
     where,
     distinct: true,
@@ -201,10 +245,7 @@ async function listRegistrations({
         model: User,
         as: 'candidate',
         required: true,
-        where: {
-          profileVisibility: { [Op.in]: getDiscoverableVisibilities(Boolean(viewer)) },
-          claimStatus: null,
-        },
+        where: candidateWhere,
         attributes: [
           'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
           'nickname', 'avatar', 'avatarUrl', 'avatarColor', 'photo', 'bio', 'isVerified', 'slug',
@@ -229,13 +270,43 @@ async function listRegistrations({
 }
 
 async function listMine(userId, query = {}) {
-  return listRegistrations({
-    ...query,
-    userId,
-    status: query.status || 'all',
-    includeDescendants: false,
-    viewer: { id: userId },
+  const pageNum = Math.max(1, parseInt(query.page, 10) || 1);
+  const limitNum = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 20));
+  const offset = (pageNum - 1) * limitNum;
+  const where = { userId };
+  if (query.status && query.status !== 'all') {
+    if (!STATUSES.has(query.status)) throw new ServiceError(400, 'Invalid candidate registration status.');
+    where.status = query.status;
+  }
+
+  const { count, rows } = await CandidateRegistration.findAndCountAll({
+    where,
+    include: [
+      { model: Location, as: 'location', attributes: ['id', 'name', 'name_local', 'slug', 'type'] },
+      {
+        model: User,
+        as: 'candidate',
+        required: true,
+        attributes: [
+          'id', 'username', 'firstNameNative', 'lastNameNative', 'firstNameEn', 'lastNameEn',
+          'nickname', 'avatar', 'avatarUrl', 'avatarColor', 'photo', 'bio', 'isVerified', 'slug',
+        ],
+      },
+    ],
+    limit: limitNum,
+    offset,
+    order: [['createdAt', 'DESC']],
   });
+
+  return {
+    registrations: rows.map(serializeRegistration),
+    pagination: {
+      currentPage: pageNum,
+      totalPages: Math.ceil(count / limitNum),
+      totalItems: count,
+      itemsPerPage: limitNum,
+    },
+  };
 }
 
 async function updateRegistration(userId, userRole, id, data) {
@@ -267,10 +338,16 @@ async function updateRegistration(userId, userRole, id, data) {
     updates.status = data.status;
     updates.reviewedByUserId = userId;
     updates.reviewedAt = new Date();
+    updates.reviewNotes = cleanString(data.reviewNotes, 3000);
+  } else if (isOwner && Object.keys(updates).length > 0 && registration.status !== 'archived') {
+    updates.status = 'submitted';
+    updates.reviewedByUserId = null;
+    updates.reviewedAt = null;
+    updates.reviewNotes = null;
   }
 
   await registration.update(updates);
-  return getRegistrationById(registration.id, userId);
+  return getRegistrationById(registration.id, { id: userId, role: userRole });
 }
 
 async function archiveRegistration(userId, userRole, id) {
