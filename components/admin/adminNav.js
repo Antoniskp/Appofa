@@ -15,6 +15,7 @@ import {
   UserGroupIcon,
   UserMinusIcon,
   UsersIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 
 const ADMIN_ROLES = ['admin'];
@@ -33,6 +34,7 @@ export const adminNavSections = [
       { href: '/admin/reports', label: 'Reports', icon: FlagIcon, roles: STAFF_ROLES, translationKey: 'reports' },
       { href: '/admin/messages', label: 'Messages', icon: EnvelopeIcon, roles: STAFF_ROLES, translationKey: 'manage_messages' },
       { href: '/admin/persons/claims', label: 'Person Claims', icon: IdentificationIcon, roles: STAFF_ROLES },
+      { href: '/admin/candidates', label: 'Candidate Registrations', icon: UserPlusIcon, roles: STAFF_ROLES },
       { href: '/admin/removal-requests', label: 'Removal Requests', icon: UserMinusIcon, roles: STAFF_ROLES },
     ],
   },

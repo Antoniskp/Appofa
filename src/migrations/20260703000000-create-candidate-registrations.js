@@ -63,7 +63,7 @@ module.exports = {
       status: {
         type: Sequelize.STRING(30),
         allowNull: false,
-        defaultValue: 'approved',
+        defaultValue: 'submitted',
       },
       reviewedByUserId: {
         type: Sequelize.INTEGER,

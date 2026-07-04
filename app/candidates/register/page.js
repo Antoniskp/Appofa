@@ -83,7 +83,7 @@ export default function CandidateRegistrationPage() {
         locationId: Number(form.locationId),
       });
       const locationSlug = response.data?.registration?.location?.slug;
-      toastSuccess('Candidate registration published.');
+      toastSuccess('Candidate registration submitted for review.');
       router.push(locationSlug ? `/locations/${locationSlug}?tab=candidates#location-content` : '/candidates');
     } catch (err) {
       toastError(err.message || 'Could not register candidate profile.');
@@ -128,7 +128,7 @@ export default function CandidateRegistrationPage() {
       <div className="app-container max-w-3xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Register as a candidate</h1>
-          <p className="mt-1 text-gray-600">Create a public campaign listing for a location where residents can discover you.</p>
+          <p className="mt-1 text-gray-600">Submit a campaign listing for moderator review before it appears on location pages.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-5">
@@ -250,7 +250,7 @@ export default function CandidateRegistrationPage() {
               Cancel
             </Link>
             <Button type="submit" loading={submitting}>
-              Publish candidate listing
+              Submit for review
             </Button>
           </div>
         </form>

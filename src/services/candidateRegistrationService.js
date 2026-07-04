@@ -110,7 +110,7 @@ async function createRegistration(userId, data) {
     platform: cleanString(data.platform, 5000),
     websiteUrl: validateUrl(data.websiteUrl),
     contactEmail: cleanString(data.contactEmail, 255),
-    status: 'approved',
+    status: 'submitted',
   };
 
   const registration = existing
@@ -167,8 +167,11 @@ async function listRegistrations({
   const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 20));
   const offset = (pageNum - 1) * limitNum;
   const where = {};
+  const isStaff = ['admin', 'moderator'].includes(viewer?.role);
 
-  if (status !== 'all') {
+  if (!isStaff) {
+    where.status = 'approved';
+  } else if (status !== 'all') {
     if (!STATUSES.has(status)) throw new ServiceError(400, 'Invalid candidate registration status.');
     where.status = status;
   }

@@ -59,7 +59,7 @@ const CandidateRegistration = sequelize.define('CandidateRegistration', {
   status: {
     type: DataTypes.STRING(30),
     allowNull: false,
-    defaultValue: 'approved',
+    defaultValue: 'submitted',
   },
   reviewedByUserId: {
     type: DataTypes.INTEGER,
