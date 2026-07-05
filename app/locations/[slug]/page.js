@@ -434,6 +434,12 @@ export default function LocationDetailPage() {
 
   // Filter out archived polls (single iteration)
   const activePolls = entities.polls.filter(poll => poll.status !== 'archived');
+  const mapSummaryCounts = {
+    polls: activePolls.length,
+    suggestions: suggestions.length,
+    users: entities.usersCount,
+    candidates: candidates.length,
+  };
   const hasContent = entities.articles.length > 0 || entities.polls.length > 0 || suggestions.length > 0 || candidates.length > 0;
   // True when the location has or is loading child locations.
   // Controls LocationChildrenExplorer rendering and suppresses duplicate child chips in header/related.
@@ -562,12 +568,17 @@ export default function LocationDetailPage() {
               onTabSelect={handleTabChange}
             />
 
-            {/* Map — shown when the location has its own geometry AND no children explorer */}
-            {!hasChildren && ((location?.lat && location?.lng) || location?.boundary_geojson) && (
+            {/* Map: own geometry plus child-location markers when available */}
+            {((location?.lat && location?.lng) || location?.boundary_geojson || children.some((child) => child.lat && child.lng)) && (
               <div id="location-map" className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                  <LocationMap location={location} className="h-72 w-full" />
+                  <LocationMap
+                    location={location}
+                    childLocations={children}
+                    summaryCounts={mapSummaryCounts}
+                    className="h-80 w-full"
+                  />
                 </div>
               </div>
             )}

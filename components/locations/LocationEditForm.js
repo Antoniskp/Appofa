@@ -32,7 +32,93 @@ export default function LocationEditForm({
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [uploadStep, setUploadStep] = useState(''); // '' | 'converting' | 'uploading'
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [geoSearchQuery, setGeoSearchQuery] = useState('');
+  const [isSearchingGeo, setIsSearchingGeo] = useState(false);
   const imageFileRef = useRef(null);
+
+  const hasCoords = editedData.lat !== '' && editedData.lng !== '';
+  const hasBoundary = !!editedData.boundary_geojson;
+  const hasViewport = !!editedData.map_default_center_lat && !!editedData.map_default_center_lng && !!editedData.map_default_zoom;
+  const mapHealthItems = [
+    { label: 'Coordinates', ok: hasCoords },
+    { label: 'Boundary', ok: hasBoundary },
+    { label: 'Default viewport', ok: hasViewport },
+    { label: 'Boundary color', ok: !editedData.boundary_color || /^#[0-9A-Fa-f]{6}$/.test(String(editedData.boundary_color).trim()) },
+  ];
+
+  const applyParentCenter = () => {
+    const parent = location.parent;
+    if (!parent?.lat || !parent?.lng) {
+      toastError('Parent location does not have coordinates.');
+      return;
+    }
+    onInputChange('map_default_center_lat', String(parent.lat));
+    onInputChange('map_default_center_lng', String(parent.lng));
+    onInputChange('map_default_zoom', String(location.type === 'municipality' ? 11 : 8));
+  };
+
+  const applyBoundaryViewport = () => {
+    try {
+      const parsed = typeof editedData.boundary_geojson === 'string'
+        ? JSON.parse(editedData.boundary_geojson)
+        : editedData.boundary_geojson;
+      const coords = [];
+      const collect = (node) => {
+        if (!Array.isArray(node)) return;
+        if (node.length >= 2 && Number.isFinite(Number(node[0])) && Number.isFinite(Number(node[1]))) {
+          coords.push([Number(node[0]), Number(node[1])]);
+          return;
+        }
+        node.forEach(collect);
+      };
+      if (parsed?.type === 'FeatureCollection') {
+        parsed.features?.forEach((feature) => collect(feature?.geometry?.coordinates));
+      } else if (parsed?.type === 'Feature') {
+        collect(parsed.geometry?.coordinates);
+      } else {
+        collect(parsed?.coordinates);
+      }
+      if (!coords.length) {
+        toastError('Boundary does not contain usable coordinates.');
+        return;
+      }
+      const lngs = coords.map(([lng]) => lng);
+      const lats = coords.map(([, lat]) => lat);
+      const latCenter = (Math.min(...lats) + Math.max(...lats)) / 2;
+      const lngCenter = (Math.min(...lngs) + Math.max(...lngs)) / 2;
+      onInputChange('map_default_center_lat', latCenter.toFixed(6));
+      onInputChange('map_default_center_lng', lngCenter.toFixed(6));
+      onInputChange('map_default_zoom', String(location.type === 'country' ? 6 : location.type === 'periphery' ? 8 : 11));
+      toastSuccess('Viewport centered from boundary.');
+    } catch {
+      toastError('Boundary GeoJSON is not valid JSON.');
+    }
+  };
+
+  const searchPlace = async () => {
+    const query = geoSearchQuery.trim() || editedData.name_local || editedData.name;
+    if (!query) return;
+    setIsSearchingGeo(true);
+    try {
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(query)}`);
+      const results = await response.json();
+      const first = results?.[0];
+      if (!first?.lat || !first?.lon) {
+        toastError('No map result found for that place.');
+        return;
+      }
+      onInputChange('lat', String(Number(first.lat).toFixed(6)));
+      onInputChange('lng', String(Number(first.lon).toFixed(6)));
+      onInputChange('map_default_center_lat', String(Number(first.lat).toFixed(6)));
+      onInputChange('map_default_center_lng', String(Number(first.lon).toFixed(6)));
+      onInputChange('map_default_zoom', String(location.type === 'country' ? 6 : 12));
+      toastSuccess('Coordinates updated from place search.');
+    } catch {
+      toastError('Place search failed. Try again or set coordinates manually.');
+    } finally {
+      setIsSearchingGeo(false);
+    }
+  };
 
   const handleImageFileChange = async (e) => {
     const file = e.target.files?.[0];
@@ -183,6 +269,50 @@ export default function LocationEditForm({
           />
         </div>
         <div className="md:col-span-2">
+          <div className="mb-3 rounded-lg border border-gray-200 bg-white p-3">
+            <div className="mb-3 flex flex-wrap gap-2">
+              {mapHealthItems.map((item) => (
+                <span
+                  key={item.label}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${item.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-800'}`}
+                >
+                  {item.ok ? 'OK' : 'Missing'} · {item.label}
+                </span>
+              ))}
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                type="search"
+                value={geoSearchQuery}
+                onChange={(e) => setGeoSearchQuery(e.target.value)}
+                className="min-w-0 flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder={editedData.name_local || editedData.name || 'Search place'}
+                aria-label="Search place for coordinates"
+              />
+              <button
+                type="button"
+                onClick={searchPlace}
+                disabled={isSearchingGeo}
+                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                {isSearchingGeo ? 'Searching...' : 'Find place'}
+              </button>
+              <button
+                type="button"
+                onClick={applyParentCenter}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Use parent center
+              </button>
+              <button
+                type="button"
+                onClick={applyBoundaryViewport}
+                className="rounded-md border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+              >
+                Fit boundary
+              </button>
+            </div>
+          </div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Coordinates (lat, lng)</label>
           <LocationPickerMap
             lat={editedData.lat}

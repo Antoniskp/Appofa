@@ -82,6 +82,9 @@ function buildCameraMarkers(cameras, highlightedMarkerId = null) {
       id: camera.id,
       lat: Number(mapLocation.lat),
       lng: Number(mapLocation.lng),
+      label: camera.label,
+      meta: getLocationLabel(mapLocation),
+      href: mapLocation.slug ? `/locations/${mapLocation.slug}` : null,
       tooltip: buildCameraTooltip(camera),
       variant: camera.id === highlightedMarkerId ? 'hovered' : 'explorer',
     }];
@@ -363,6 +366,8 @@ export default function CamerasPageClient() {
                 onMarkerClick={handleMarkerClick}
                 className="h-[360px] w-full overflow-hidden rounded-lg sm:h-[460px] xl:h-[620px]"
                 scrollWheelZoom
+                tileMode="political"
+                showFullscreenControl
               />
             ) : (
               <EmptyState

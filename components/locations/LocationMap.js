@@ -61,6 +61,15 @@ function isValidCoord(value, min, max) {
   return isFinite(n) && n >= min && n <= max;
 }
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 /**
  * Normalises a boundary_geojson value (string or object) into a form that
  * Leaflet's L.geoJSON() can consume (FeatureCollection or Feature).
@@ -134,12 +143,24 @@ function getBoundaryBounds(geojson) {
   };
 }
 
+function getMarkersBounds(markers) {
+  if (!markers.length) return null;
+  return {
+    north: Math.max(...markers.map((marker) => marker.lat)),
+    south: Math.min(...markers.map((marker) => marker.lat)),
+    east: Math.max(...markers.map((marker) => marker.lng)),
+    west: Math.min(...markers.map((marker) => marker.lng)),
+  };
+}
+
 // Fallback centre for Greece, used when a boundary is present but no lat/lng are available.
 const GREECE_CENTER = [38.5, 23.8];
 const GREECE_ZOOM = 6;
 
 export default function LocationMap({
   location,
+  childLocations = [],
+  summaryCounts,
   className,
   overlays = [],
   scrollWheelZoom = false,
@@ -193,8 +214,27 @@ export default function LocationMap({
       ]
     : [];
 
-  // Nothing to render if we have neither valid coords nor a boundary polygon.
-  if (!hasValidCoords && !normalizedBoundary) return null;
+  const childMarkers = childLocations
+    .filter((child) => isValidCoord(child.lat, -90, 90) && isValidCoord(child.lng, -180, 180))
+    .map((child) => {
+      const childName = child.name_local || child.name;
+      const href = child.slug ? `/locations/${child.slug}` : null;
+      const userCount = Number(child.userCount || 0);
+      return {
+        id: child.id ? `child-${child.id}` : undefined,
+        lat: Number(child.lat),
+        lng: Number(child.lng),
+        label: childName,
+        meta: `${userCount} users${child.moderatorPreview ? ' - moderator assigned' : ''}`,
+        href,
+        variant: 'explorer',
+        tooltip: escapeHtml(childName),
+        popup: `<div style="min-width:160px"><strong>${escapeHtml(childName)}</strong>${userCount > 0 ? `<div style="font-size:12px;color:#64748b;margin-top:3px">${userCount} users</div>` : ''}${href ? `<a href="${escapeHtml(href)}" style="display:inline-block;margin-top:8px;color:#1d4ed8;font-weight:600;text-decoration:none">Open location</a>` : ''}</div>`,
+      };
+    });
+
+  // Nothing to render if we have neither valid coords nor a boundary polygon nor child markers.
+  if (!hasValidCoords && !normalizedBoundary && childMarkers.length === 0) return null;
 
   const hasDefaultCenter =
     isValidCoord(location.map_default_center_lat, -90, 90)
@@ -205,11 +245,26 @@ export default function LocationMap({
   const zoom = Number.isFinite(Number(location.map_default_zoom))
     ? Number(location.map_default_zoom)
     : (hasValidCoords ? 12 : GREECE_ZOOM);
-  const initialBounds = boundaryBounds || bounding_box || null;
-
-  const markers = hasValidCoords
-    ? [{ lat: Number(lat), lng: Number(lng), popup: displayName }]
-    : [];
+  const locationHref = location.slug ? `/locations/${location.slug}` : null;
+  const pollsHref = locationHref ? `${locationHref}?tab=polls#location-content` : '#location-content';
+  const suggestionsHref = locationHref ? `${locationHref}?tab=suggestions#location-content` : '#location-content';
+  const actionLinks = [
+    summaryCounts?.polls != null ? `<a href="${escapeHtml(pollsHref)}" style="color:#1d4ed8;font-weight:600;text-decoration:none">Polls (${Number(summaryCounts.polls || 0)})</a>` : null,
+    summaryCounts?.suggestions != null ? `<a href="${escapeHtml(suggestionsHref)}" style="color:#1d4ed8;font-weight:600;text-decoration:none">Suggestions (${Number(summaryCounts.suggestions || 0)})</a>` : null,
+  ].filter(Boolean).join('<span style="color:#cbd5e1"> · </span>');
+  const markers = [
+    ...(hasValidCoords
+      ? [{
+          lat: Number(lat),
+          lng: Number(lng),
+          label: displayName,
+          href: locationHref,
+          popup: `<div style="min-width:170px"><strong>${escapeHtml(displayName)}</strong>${actionLinks ? `<div style="font-size:12px;margin-top:8px">${actionLinks}</div>` : ''}</div>`,
+        }]
+      : []),
+    ...childMarkers,
+  ];
+  const initialBounds = boundaryBounds || bounding_box || (childMarkers.length > 0 ? getMarkersBounds(markers) : null);
 
   return (
     <BaseMap
@@ -217,11 +272,13 @@ export default function LocationMap({
       zoom={zoom}
       bounds={initialBounds}
       markers={markers}
+      clusterMarkers={childMarkers.length > 8}
       overlays={overlays}
       polygonLayers={polygonLayers}
       className={className || 'h-64 w-full rounded-lg overflow-hidden'}
       scrollWheelZoom={scrollWheelZoom}
       interactive={interactive}
+      showFullscreenControl
     />
   );
 }

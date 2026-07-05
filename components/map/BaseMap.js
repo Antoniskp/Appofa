@@ -61,7 +61,7 @@
  * Attribution: © OpenStreetMap contributors © CARTO (required; kept minimal via setPrefix).
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -78,6 +78,54 @@ const DEFAULT_ICON = L.icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
+
+const TILE_MODES = {
+  light: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20,
+  },
+  political: {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
+    subdomains: 'abc',
+    maxZoom: 19,
+  },
+  satellite: {
+    url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    attribution:
+      'Tiles &copy; Esri &mdash; Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community',
+    maxZoom: 19,
+  },
+};
+
+function getTileModeConfig(tileMode) {
+  return TILE_MODES[tileMode] || TILE_MODES.light;
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getSafeHref(href) {
+  if (!href) return null;
+  const value = String(href);
+  if (value.startsWith('/') || value.startsWith('#')) return value;
+  try {
+    const parsed = new URL(value);
+    return ['http:', 'https:'].includes(parsed.protocol) ? parsed.toString() : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Convert a bounding-box object {north, south, east, west} to a Leaflet LatLngBounds.
@@ -180,13 +228,21 @@ function buildClusterPopup(clusterMarkers) {
   const visible = clusterMarkers.slice(0, 8);
   const remainingCount = clusterMarkers.length - visible.length;
   const items = visible
-    .map((marker) => `<li>${marker.tooltip || marker.popup || marker.id || 'Marker'}</li>`)
+    .map((marker) => {
+      const label = escapeHtml(marker.label || marker.tooltip || marker.id || 'Marker');
+      const href = getSafeHref(marker.href);
+      const source = href
+        ? `<a href="${escapeHtml(href)}" style="color:#1d4ed8;text-decoration:none;font-weight:600">${label}</a>`
+        : `<span style="font-weight:600">${label}</span>`;
+      const meta = marker.meta ? `<div style="font-size:11px;color:#64748b;margin-top:1px">${escapeHtml(marker.meta)}</div>` : '';
+      return `<li style="margin:4px 0">${source}${meta}</li>`;
+    })
     .join('');
   const remaining = remainingCount > 0
     ? `<li><strong>+${remainingCount} more</strong></li>`
     : '';
 
-  return `<div><strong>${clusterMarkers.length} markers in this area</strong><ul style="margin:6px 0 0;padding-left:18px">${items}${remaining}</ul></div>`;
+  return `<div><strong>${clusterMarkers.length} markers in this area</strong><ul style="margin:6px 0 0;padding-left:18px">${items}${remaining}</ul><div style="font-size:11px;color:#64748b;margin-top:8px">Click the cluster to zoom in.</div></div>`;
 }
 
 function getMarkerClusters(markers, map, radius, fallbackZoom) {
@@ -242,6 +298,8 @@ export default function BaseMap({
   className = 'h-64 w-full rounded-lg overflow-hidden',
   scrollWheelZoom = false,
   interactive = true,
+  tileMode = 'light',
+  showFullscreenControl = false,
   onMapClick,
   onMarkerHover,
   onMarkerClick,
@@ -261,6 +319,8 @@ export default function BaseMap({
   onMarkerClickRef.current = onMarkerClick;
   const onMarkersReadyRef = useRef(onMarkersReady);
   onMarkersReadyRef.current = onMarkersReady;
+  const tileLayerRef = useRef(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Initialise the map once on mount
   useEffect(() => {
@@ -282,12 +342,8 @@ export default function BaseMap({
     // Tile layer — CARTO Positron (clean light design, free for non-commercial use).
     // Attribution is required by both OSM (ODbL) and CARTO's terms of service.
     // We remove the default "Leaflet" prefix to keep it minimal while staying compliant.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>',
-      subdomains: 'abcd',
-      maxZoom: 20,
-    }).addTo(map);
+    const initialTile = getTileModeConfig(tileMode);
+    tileLayerRef.current = L.tileLayer(initialTile.url, initialTile).addTo(map);
 
     // Remove the default "Leaflet" prefix — attribution links remain (legally required).
     map.attributionControl?.setPrefix(false);
@@ -310,8 +366,27 @@ export default function BaseMap({
       markersLayerRef.current = null;
       overlaysLayerRef.current = null;
       polyLayersGroupRef.current = null;
+      tileLayerRef.current = null;
     };
   }, []);  // Empty deps: map is initialised once; scrollWheelZoom/interactive aren't reactive
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !tileLayerRef.current) return;
+    const nextTile = getTileModeConfig(tileMode);
+    map.removeLayer?.(tileLayerRef.current);
+    tileLayerRef.current = L.tileLayer(nextTile.url, nextTile).addTo(map);
+    map.attributionControl?.setPrefix(false);
+  }, [tileMode]);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+    const timeout = setTimeout(() => {
+      map.invalidateSize?.();
+    }, 40);
+    return () => clearTimeout(timeout);
+  }, [isExpanded]);
 
   // Sync bounds / center / zoom whenever they change
   useEffect(() => {
@@ -385,7 +460,15 @@ export default function BaseMap({
         const currentZoom = map.getZoom();
         const maxZoom = typeof map.getMaxZoom === 'function' ? map.getMaxZoom() : 20;
         if (currentZoom < Math.min(maxZoom, 18)) {
-          map.setView([cluster.lat, cluster.lng], currentZoom + 2);
+          const nextZoom = currentZoom + 2;
+          if (cluster.markers.length > 1 && typeof L.latLngBounds === 'function' && typeof map.fitBounds === 'function') {
+            const markerBounds = L.latLngBounds(cluster.markers.map((marker) => [marker.lat, marker.lng]));
+            if (markerBounds?.isValid?.()) {
+              map.fitBounds(markerBounds, { padding: [32, 32], maxZoom: nextZoom });
+              return;
+            }
+          }
+          map.setView([cluster.lat, cluster.lng], nextZoom);
         }
       });
     }
@@ -567,5 +650,22 @@ export default function BaseMap({
     });
   }, [polygonLayers]);
 
-  return <div ref={mapContainerRef} className={className} />;
+  return (
+    <div className={isExpanded ? 'fixed inset-3 z-[2000] rounded-xl bg-white p-2 shadow-2xl' : 'relative'}>
+      <div
+        ref={mapContainerRef}
+        className={isExpanded ? 'h-full w-full rounded-lg overflow-hidden' : className}
+      />
+      {showFullscreenControl && (
+        <button
+          type="button"
+          onClick={() => setIsExpanded((value) => !value)}
+          className="absolute right-3 top-3 z-[1000] rounded-md border border-gray-200 bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
+          aria-pressed={isExpanded}
+        >
+          {isExpanded ? 'Close map' : 'Expand map'}
+        </button>
+      )}
+    </div>
+  );
 }

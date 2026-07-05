@@ -225,6 +225,27 @@ function styleFeature(feature, baseStyle) {
   };
 }
 
+function getActivityStyle(feature, baseStyle, maxUserCount) {
+  const count = Number(feature?.properties?.userCount || 0);
+  if (!Number.isFinite(count) || count <= 0 || maxUserCount <= 0) {
+    return {
+      ...baseStyle,
+      color: '#94a3b8',
+      fillColor: '#cbd5e1',
+      fillOpacity: 0.10,
+    };
+  }
+  const ratio = Math.min(1, count / maxUserCount);
+  const fillOpacity = 0.16 + (ratio * 0.34);
+  const color = ratio > 0.66 ? '#166534' : ratio > 0.33 ? '#0f766e' : '#2563eb';
+  return {
+    ...baseStyle,
+    color,
+    fillColor: color,
+    fillOpacity,
+  };
+}
+
 function Skeleton() {
   return (
     <div className="h-[420px] w-full rounded-xl overflow-hidden bg-gray-100 animate-pulse" />
@@ -240,8 +261,11 @@ function RegionInfoCard({ region, onClose }) {
   const href = region.slug
     ? `/locations/${region.slug}`
     : `/locations?type=periphery&region=${region.code}`;
+  const moderatorName = region.moderatorPreview
+    ? [region.moderatorPreview.firstNameNative, region.moderatorPreview.lastNameNative].filter(Boolean).join(' ') || region.moderatorPreview.username
+    : '';
   return (
-    <div className="absolute top-3 right-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 min-w-[180px] max-w-[220px] pointer-events-auto">
+    <div className="absolute top-14 right-3 z-[1000] bg-white/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-3 min-w-[180px] max-w-[220px] pointer-events-auto">
       <div className="flex items-start justify-between gap-2 mb-1">
         <p className="font-semibold text-gray-900 text-sm leading-tight">{region.name}</p>
         <button
@@ -256,6 +280,19 @@ function RegionInfoCard({ region, onClose }) {
       </div>
       {region.capital && (
         <p className="text-xs text-gray-500 mb-2">Πρωτεύουσα: {region.capital}</p>
+      )}
+      <div className="mb-2 grid grid-cols-2 gap-2 text-xs">
+        <div className="rounded-md bg-blue-50 px-2 py-1 text-blue-800">
+          <span className="block font-semibold">{region.userCount ?? 0}</span>
+          <span>Users</span>
+        </div>
+        <div className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-800">
+          <span className="block font-semibold">{moderatorName ? 'Yes' : 'No'}</span>
+          <span>Moderator</span>
+        </div>
+      </div>
+      {moderatorName && (
+        <p className="mb-2 truncate text-xs text-gray-500">Moderator: {moderatorName}</p>
       )}
       <Link
         href={href}
@@ -286,6 +323,7 @@ export default memo(function GreeceBoundaryMap({
   const [fallbackGeoData, setFallbackGeoData] = useState(null);
   const [fallbackGeoError, setFallbackGeoError] = useState(false);
   const [selectedRegion, setSelectedRegion] = useState(null);
+  const [layerMode, setLayerMode] = useState('activity');
 
   // Build a feature collection from location boundary_geojson values when available.
   const locationFeatureCollection = useMemo(
@@ -298,6 +336,14 @@ export default memo(function GreeceBoundaryMap({
   );
 
   const useFallback = !locationFeatureCollection;
+  const maxUserCount = useMemo(() => {
+    return Math.max(
+      0,
+      ...prefectures
+        .map((item) => Number(item.userCount || 0))
+        .filter((value) => Number.isFinite(value))
+    );
+  }, [prefectures]);
 
   // Only load the static fallback file when no location boundaries are available.
   useEffect(() => {
@@ -321,6 +367,8 @@ export default memo(function GreeceBoundaryMap({
       capital: p.capital || '',
       code: p.code || '',
       slug: p.slug || null,
+      userCount: linkedLocation?.userCount || p.userCount || 0,
+      moderatorPreview: linkedLocation?.moderatorPreview || p.moderatorPreview || null,
     });
   }, [locationLookup, onLocationSelect]);
 
@@ -341,6 +389,9 @@ export default memo(function GreeceBoundaryMap({
         id: String(p.id),
         lat: Number(p.lat),
         lng: Number(p.lng),
+        label: p.name_local || p.name,
+        meta: `${Number(p.userCount || 0)} users${p.moderatorPreview ? ' - moderator assigned' : ''}`,
+        href: p.slug ? `/locations/${p.slug}` : null,
         tooltip: buildTooltip({
           name: p.name_local || p.name,
           userCount: typeof p.userCount === 'number' ? p.userCount : null,
@@ -373,6 +424,9 @@ export default memo(function GreeceBoundaryMap({
           if (linkedLocation && Number(linkedLocation.id) === Number(hoveredLocationId)) {
             return styleFeature(feature, POLY_HOVER_STYLE);
           }
+          if (layerMode === 'activity') {
+            return getActivityStyle(feature, baseStyle, maxUserCount);
+          }
           return styleFeature(feature, baseStyle);
         },
         hoverStyle: POLY_HOVER_STYLE,
@@ -393,6 +447,8 @@ export default memo(function GreeceBoundaryMap({
     locationLookup,
     selectedLocationId,
     hoveredLocationId,
+    layerMode,
+    maxUserCount,
     onLayerInit,
   ]);
 
@@ -406,6 +462,23 @@ export default memo(function GreeceBoundaryMap({
 
   return (
     <div className={`relative ${className || 'h-[420px] w-full rounded-xl overflow-hidden'}`}>
+      <div className="absolute left-3 top-3 z-[1000] flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-white/95 p-1 shadow-sm">
+        {[
+          { id: 'activity', label: 'Activity' },
+          { id: 'light', label: 'Simple' },
+          { id: 'political', label: 'Political' },
+          { id: 'satellite', label: 'Satellite' },
+        ].map((mode) => (
+          <button
+            key={mode.id}
+            type="button"
+            onClick={() => setLayerMode(mode.id)}
+            className={`rounded-md px-2 py-1 text-xs font-semibold transition ${layerMode === mode.id ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'}`}
+          >
+            {mode.label}
+          </button>
+        ))}
+      </div>
       <BaseMap
         center={GREECE_CENTER}
         zoom={GREECE_ZOOM}
@@ -414,6 +487,8 @@ export default memo(function GreeceBoundaryMap({
         className="h-full w-full"
         scrollWheelZoom={false}
         interactive={true}
+        tileMode={layerMode === 'satellite' ? 'satellite' : layerMode === 'political' ? 'political' : 'light'}
+        showFullscreenControl
         onMarkerHover={onMarkerHover}
         onMarkersReady={onMarkersReady}
       />
