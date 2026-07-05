@@ -19,16 +19,16 @@ const signedInActions = (user) => [
   {
     title: 'Η περιοχή σου',
     description: user?.homeLocation
-      ? 'Άνοιξε τον τοπικό πίνακα με ψηφοφορίες, προτάσεις, νέα και ρόλους.'
-      : 'Διάλεξε περιοχή για να βλέπεις πιο σχετικό περιεχόμενο.',
+      ? 'Δες ψηφοφορίες, προτάσεις, νέα και ρόλους που αφορούν τον τόπο σου.'
+      : 'Σύνδεσε την περιοχή σου για πιο σχετικές ψηφοφορίες, νέα και προτάσεις.',
     href: user?.homeLocation?.slug ? `/locations/${user.homeLocation.slug}` : '/locations',
     icon: MapPinIcon,
     tone: 'blue',
     label: user?.homeLocation ? 'Τοπικός πίνακας' : 'Βρες περιοχή',
   },
   {
-    title: 'Ψήφισε τώρα',
-    description: 'Δες ανοιχτές ψηφοφορίες και θέματα όπου μπορείς να συμμετέχεις άμεσα.',
+    title: 'Πάρε θέση',
+    description: 'Βρες ανοιχτές ψηφοφορίες και συμμετείχε στα θέματα που σε αφορούν.',
     href: '/polls',
     icon: ClipboardDocumentListIcon,
     tone: 'emerald',
@@ -36,7 +36,7 @@ const signedInActions = (user) => [
   },
   {
     title: 'Πρότεινε λύση',
-    description: 'Κατέθεσε μια ιδέα ή πρόβλημα για την κοινότητα που σε αφορά.',
+    description: 'Κατέγραψε ένα πρόβλημα ή μια ιδέα και άνοιξέ τη στην κοινότητα.',
     href: '/suggestions/new',
     icon: LightBulbIcon,
     tone: 'amber',
@@ -47,15 +47,15 @@ const signedInActions = (user) => [
 const guestActions = [
   {
     title: 'Βρες την περιοχή σου',
-    description: 'Ξεκίνα από δήμο, περιφέρεια ή χώρα και δες τι συμβαίνει εκεί.',
+    description: 'Ξεκίνα από δήμο, περιφέρεια ή χώρα και δες θέματα που αφορούν τον τόπο σου.',
     href: '/locations',
     icon: MapPinIcon,
     tone: 'blue',
     label: 'Περιοχές',
   },
   {
-    title: 'Ψήφισε χωρίς λογαριασμό',
-    description: 'Δες μόνο ψηφοφορίες που είναι ανοιχτές σε επισκέπτες χωρίς εγγραφή.',
+    title: 'Ψήφισε χωρίς εγγραφή',
+    description: 'Άνοιξε ψηφοφορίες που δέχονται συμμετοχή από επισκέπτες.',
     href: '/polls?voteRestriction=anyone',
     icon: ClipboardDocumentListIcon,
     tone: 'emerald',
@@ -63,7 +63,7 @@ const guestActions = [
   },
   {
     title: 'Δες προτάσεις πολιτών',
-    description: 'Παρακολούθησε ιδέες, προβλήματα και λύσεις που ανοίγουν δημόσια.',
+    description: 'Δες ιδέες, προβλήματα και λύσεις που συζητιούνται δημόσια.',
     href: '/suggestions',
     icon: ChatBubbleLeftRightIcon,
     tone: 'amber',
@@ -80,40 +80,40 @@ const secondaryLinks = [
 const civicPathActions = (user) => [
   {
     href: user ? '/profile' : '/register',
-    title: user ? 'Ολοκλήρωσε προφίλ' : 'Εγγράψου',
+    title: user ? 'Συμπλήρωσε προφίλ' : 'Δημιούργησε προφίλ',
     description: user
       ? 'Κράτησε ενημερωμένη την περιοχή και τη δημόσια παρουσία σου.'
-      : 'Φτιάξε προφίλ και σύνδεσε την περιοχή σου.',
+      : 'Σύνδεσε την περιοχή σου και ξεκίνα με πιο σχετικό περιεχόμενο.',
     icon: UserPlusIcon,
   },
   {
     href: '/independents',
-    title: 'Βρες ανεξάρτητους',
-    description: 'Δες ανεξάρτητους υποψηφίους και δημόσια πρόσωπα.',
+    title: 'Δες ανεξάρτητους',
+    description: 'Βρες ανεξάρτητους υποψηφίους και δημόσια πρόσωπα στην πλατφόρμα.',
     icon: UserGroupIcon,
   },
   {
     href: '/manifest-supporters',
-    title: 'Στήριξε',
-    description: 'Υποστήριξε όσους δεσμεύονται σε καθαρή συμμετοχή.',
+    title: 'Στήριξε δεσμεύσεις',
+    description: 'Δες ποιοι αποδέχονται δημόσιες αρχές συμμετοχής και λογοδοσίας.',
     icon: HandRaisedIcon,
   },
   {
     href: '/candidates',
-    title: 'Προώθησε',
-    description: 'Μοιράσου και ανάδειξε υποψηφίους που εμπιστεύεσαι.',
+    title: 'Ανάδειξε πρόσωπα',
+    description: 'Μοιράσου και πρότεινε υποψηφίους που εμπιστεύεσαι.',
     icon: MegaphoneIcon,
   },
   {
     href: '/suggestions/new',
     title: 'Πρότεινε λύσεις',
-    description: 'Κατέθεσε ιδέες για την περιοχή που σε αφορά.',
+    description: 'Κατέθεσε ιδέες που μπορούν να βελτιώσουν την περιοχή σου.',
     icon: LightBulbIcon,
   },
   {
     href: '/suggestions',
     title: 'Ανάδειξε προβλήματα',
-    description: 'Άνοιξε δημόσια θέματα και ψήφισε προτεραιότητες.',
+    description: 'Δώσε ορατότητα σε δημόσια θέματα και ψήφισε προτεραιότητες.',
     icon: FlagIcon,
   },
 ];
@@ -158,15 +158,15 @@ export default function HomeActionLanes({ user }) {
           <div className="grid gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
-                Τι μπορείς να κάνεις
+                Τρόποι συμμετοχής
               </p>
               <h2 className="mt-2 text-2xl font-bold leading-tight md:text-3xl">
-                Βαρέθηκες τα κόμματα και τις κενές υποσχέσεις;
+                Από την αγανάκτηση στη δράση.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-700">
-                Υπάρχει πιο πρακτικός τρόπος συμμετοχής: βρες ανεξάρτητους
-                υποψηφίους, στήριξέ τους, πρότεινε λύσεις για την περιοχή σου,
-                ανάδειξε προβλήματα και ψήφισε όσα έχουν σημασία.
+                Βρες ανεξάρτητους υποψηφίους, στήριξε δημόσιες δεσμεύσεις,
+                πρότεινε λύσεις για την περιοχή σου, ανάδειξε προβλήματα και
+                ψήφισε όσα έχουν πραγματική σημασία.
               </p>
             </div>
 
@@ -195,12 +195,12 @@ export default function HomeActionLanes({ user }) {
 
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Ξεκίνα από εδώ</p>
-            <h2 className="mt-1 text-2xl font-bold text-gray-900">Τρεις απλοί τρόποι συμμετοχής</h2>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Ξεκίνα εδώ</p>
+            <h2 className="mt-1 text-2xl font-bold text-gray-900">Τρεις απλές κινήσεις</h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
               {user
-                ? 'Άνοιξε την περιοχή σου, ψήφισε σε ενεργά θέματα ή κατέθεσε μια πρόταση για την κοινότητα.'
-                : 'Δεν χρειάζεται να μάθεις όλη την πλατφόρμα. Ξεκίνα με περιοχή, ψηφοφορίες ή προτάσεις.'}
+                ? 'Άνοιξε την περιοχή σου, ψήφισε σε ενεργά θέματα ή κατέθεσε μια πρόταση.'
+                : 'Δεν χρειάζεται να μάθεις όλη την πλατφόρμα. Ξεκίνα με την περιοχή σου, μια ψηφοφορία ή μια πρόταση.'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2" aria-label="Περισσότερες ενότητες">

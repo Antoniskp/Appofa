@@ -17,14 +17,14 @@ import {
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
-const DEFAULT_TITLE = 'Δες τι συμβαίνει γύρω σου. Ψήφισε. Πρότεινε λύσεις.';
-const DEFAULT_SUBTITLE = 'Η Απόφαση βοηθά τους πολίτες να παρακολουθούν την περιοχή τους, να συμμετέχουν σε ανοιχτές ψηφοφορίες και να βλέπουν προτάσεις από την κοινότητα.';
+const DEFAULT_TITLE = 'Η περιοχή σου, οι αποφάσεις σου.';
+const DEFAULT_SUBTITLE = 'Παρακολούθησε τι συμβαίνει γύρω σου, ψήφισε σε ανοιχτά θέματα και κατέθεσε προτάσεις που μπορούν να γίνουν πράξη.';
 const SLIDE_INTERVAL_MS = 5000;
 
 const HERO_PROMISES = [
   { icon: MapPinIcon, label: 'Διάλεξε περιοχή' },
-  { icon: CheckBadgeIcon, label: 'Ψήφισε σε ανοιχτά θέματα' },
-  { icon: LightBulbIcon, label: 'Δες και κατέθεσε προτάσεις' },
+  { icon: CheckBadgeIcon, label: 'Πάρε θέση' },
+  { icon: LightBulbIcon, label: 'Πρότεινε λύσεις' },
 ];
 
 function StatSkeleton() {
@@ -148,7 +148,7 @@ export default function HomeHero() {
   const isExternalLink = !!(normalizedLinkUrl && /^https?:\/\//.test(normalizedLinkUrl));
   const isInternalLink = !!(normalizedLinkUrl && normalizedLinkUrl.startsWith('/'));
   const hasLink = !!(isExternalLink || isInternalLink);
-  const linkText = (currentSlide && currentSlide.linkText) ? currentSlide.linkText : 'Μάθε περισσότερα';
+  const linkText = (currentSlide && currentSlide.linkText) ? currentSlide.linkText : 'Δες περισσότερα';
   const slideTitle = currentSlide?.title?.trim() || DEFAULT_TITLE;
   const slideSubtitle = currentSlide?.subtitle?.trim() || DEFAULT_SUBTITLE;
   const showArrows = activeSlides.length >= 2;
@@ -177,7 +177,7 @@ export default function HomeHero() {
               )}
 
               <p className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-50 backdrop-blur">
-                Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη
+                Πολιτική συμμετοχή, κοντά στην καθημερινότητα
               </p>
 
               <div
@@ -268,7 +268,7 @@ export default function HomeHero() {
                       className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
                     >
                       <MapPinIcon className="w-4 h-4" />
-                      {user?.homeLocation ? 'Δες την Περιοχή σου' : 'Βρες την Περιοχή σου'}
+                      {user?.homeLocation ? 'Άνοιξε την περιοχή σου' : 'Βρες την περιοχή σου'}
                       <ArrowRightIcon className="w-4 h-4" />
                     </Link>
 
@@ -277,7 +277,7 @@ export default function HomeHero() {
                       className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
                     >
                       <ChartBarIcon className="w-4 h-4" />
-                      Δες Ψηφοφορίες
+                      Δες ψηφοφορίες
                     </Link>
 
                     {(user.role === 'admin' || user.role === 'moderator') && (
@@ -297,7 +297,7 @@ export default function HomeHero() {
                       className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
                     >
                       <MapPinIcon className="w-4 h-4" />
-                      Βρες την Περιοχή σου
+                      Βρες την περιοχή σου
                       <ArrowRightIcon className="w-4 h-4" />
                     </Link>
 
@@ -306,7 +306,7 @@ export default function HomeHero() {
                       className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
                     >
                       <ChartBarIcon className="w-4 h-4" />
-                      Δες ανοιχτές ψηφοφορίες
+                      Ψήφισε χωρίς εγγραφή
                     </Link>
                   </>
                 )}
@@ -330,8 +330,8 @@ export default function HomeHero() {
               <div className="md:w-72 lg:w-80 shrink-0">
                 <div className="rounded-lg border border-white/20 bg-white/[0.12] p-4 shadow-2xl shadow-black/10 backdrop-blur-md animate-fade-in">
                   <div className="mb-4 border-b border-white/15 pb-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100">Ζωντανή κοινότητα</p>
-                    <p className="mt-1 text-sm text-white/75">Η δραστηριότητα που χτίζεται μέσα στην πλατφόρμα.</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-cyan-100">Η κοινότητα σε αριθμούς</p>
+                    <p className="mt-1 text-sm text-white/75">Ψηφοφορίες, προτάσεις και συμμετοχή που μεγαλώνουν καθημερινά.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                   {statsLoading ? (
