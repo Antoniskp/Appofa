@@ -3,7 +3,7 @@
 const { Op } = require('sequelize');
 const { CandidateRegistration, Location, User } = require('../models');
 const dbConfig = require('../config/database');
-const { getDescendantLocationIds } = require('../utils/locationUtils');
+const { getDescendantLocationIds, getAncestorLocationIds } = require('../utils/locationUtils');
 const { PROFILE_VISIBILITY, getDiscoverableVisibilities } = require('../utils/profileVisibility');
 
 const POSITION_TYPES = new Set([
@@ -16,6 +16,13 @@ const POSITION_TYPES = new Set([
 ]);
 
 const STATUSES = new Set(['draft', 'submitted', 'approved', 'rejected', 'archived']);
+
+const POSITION_TYPES_BY_LOCATION_TYPE = {
+  international: ['other'],
+  country: ['parliamentary', 'regional_council', 'other'],
+  prefecture: ['county_council', 'regional_council', 'parliamentary', 'other'],
+  municipality: ['mayor', 'local_council', 'other'],
+};
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -52,6 +59,29 @@ function normalizePositionType(positionType) {
     throw new ServiceError(400, 'Invalid candidate position type.');
   }
   return normalized;
+}
+
+function getPositionTypesForLocationType(locationType) {
+  return POSITION_TYPES_BY_LOCATION_TYPE[locationType] || ['other'];
+}
+
+function validatePositionForLocation(positionType, location) {
+  const allowedTypes = getPositionTypesForLocationType(location?.type);
+  if (!allowedTypes.includes(positionType)) {
+    throw new ServiceError(400, 'This candidate position is not available for the selected location type.');
+  }
+}
+
+async function assertUserCanRegisterAtLocation(userId, locationId) {
+  const user = await User.findByPk(userId, { attributes: ['id', 'homeLocationId'] });
+  if (!user?.homeLocationId) {
+    throw new ServiceError(400, 'Set your home location before registering as a candidate.');
+  }
+
+  const allowedLocationIds = await getAncestorLocationIds(user.homeLocationId, true);
+  if (!allowedLocationIds.map(Number).includes(Number(locationId))) {
+    throw new ServiceError(403, 'You can only register as a candidate for your own location hierarchy.');
+  }
 }
 
 function serializeRegistration(registration) {
@@ -107,6 +137,8 @@ async function createRegistration(userId, data) {
   }
 
   const positionType = normalizePositionType(data.positionType);
+  validatePositionForLocation(positionType, location);
+  await assertUserCanRegisterAtLocation(userId, locationId);
   const electionCycle = cleanString(data.electionCycle, 80) || 'current';
 
   const existing = await CandidateRegistration.findOne({
@@ -320,12 +352,14 @@ async function updateRegistration(userId, userRole, id, data) {
   if (!isOwner && !isModerator) throw new ServiceError(403, 'You cannot update this candidate registration.');
 
   const updates = {};
+  let targetLocation = null;
   if (data.locationId !== undefined) {
     const locationId = parseInt(data.locationId, 10);
     if (!Number.isInteger(locationId)) throw new ServiceError(400, 'Invalid location.');
     const location = await Location.findByPk(locationId);
     if (!location) throw new ServiceError(404, 'Location not found.');
     updates.locationId = locationId;
+    targetLocation = location;
   }
   if (data.positionType !== undefined) updates.positionType = normalizePositionType(data.positionType);
   if (data.positionTitle !== undefined) updates.positionTitle = cleanString(data.positionTitle, 160);
@@ -352,6 +386,17 @@ async function updateRegistration(userId, userRole, id, data) {
     updates.reviewNotes = null;
   }
 
+  if (isOwner) {
+    const targetLocationId = updates.locationId || registration.locationId;
+    if (!targetLocation) {
+      targetLocation = await Location.findByPk(targetLocationId);
+      if (!targetLocation) throw new ServiceError(404, 'Location not found.');
+    }
+    const targetPositionType = updates.positionType || registration.positionType;
+    validatePositionForLocation(targetPositionType, targetLocation);
+    await assertUserCanRegisterAtLocation(userId, targetLocationId);
+  }
+
   await registration.update(updates);
   return getRegistrationById(registration.id, { id: userId, role: userRole });
 }
@@ -368,6 +413,7 @@ async function archiveRegistration(userId, userRole, id) {
 
 module.exports = {
   POSITION_TYPES: Array.from(POSITION_TYPES),
+  POSITION_TYPES_BY_LOCATION_TYPE,
   createRegistration,
   getRegistrationById,
   listRegistrations,

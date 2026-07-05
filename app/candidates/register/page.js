@@ -1,23 +1,38 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { candidateRegistrationAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
-import LocationSelector from '@/components/ui/LocationSelector';
 import Button from '@/components/ui/Button';
 import { POSITION_TYPE_LABELS } from '@/components/locations/LocationCandidatesTab';
 
-const POSITION_OPTIONS = [
-  'mayor',
-  'parliamentary',
-  'local_council',
-  'county_council',
-  'regional_council',
-  'other',
-];
+const POSITION_OPTIONS_BY_LOCATION_TYPE = {
+  international: ['other'],
+  country: ['parliamentary', 'regional_council', 'other'],
+  prefecture: ['county_council', 'regional_council', 'parliamentary', 'other'],
+  municipality: ['mayor', 'local_council', 'other'],
+};
+
+function buildLocationChain(homeLocation) {
+  const chain = [];
+  const seen = new Set();
+  let current = homeLocation;
+
+  while (current?.id && !seen.has(current.id)) {
+    chain.push(current);
+    seen.add(current.id);
+    current = current.parent;
+  }
+
+  return chain;
+}
+
+function getPositionOptions(locationType) {
+  return POSITION_OPTIONS_BY_LOCATION_TYPE[locationType] || ['other'];
+}
 
 export default function CandidateRegistrationPage() {
   const router = useRouter();
@@ -28,7 +43,7 @@ export default function CandidateRegistrationPage() {
   const [initialLocationLoading, setInitialLocationLoading] = useState(false);
   const [form, setForm] = useState({
     locationId: '',
-    positionType: 'mayor',
+    positionType: 'other',
     positionTitle: '',
     electionCycle: 'current',
     partyName: '',
@@ -38,17 +53,38 @@ export default function CandidateRegistrationPage() {
     websiteUrl: '',
     contactEmail: '',
   });
+  const locationOptions = useMemo(() => buildLocationChain(user?.homeLocation), [user?.homeLocation]);
+  const selectedLocation = locationOptions.find((location) => String(location.id) === String(form.locationId));
+  const positionOptions = getPositionOptions(selectedLocation?.type);
+
+  useEffect(() => {
+    if (!user || form.locationId || locationOptions.length === 0) return;
+    const defaultLocation = locationOptions[0];
+    setForm((prev) => ({
+      ...prev,
+      locationId: defaultLocation.id,
+      positionType: getPositionOptions(defaultLocation.type)[0],
+    }));
+  }, [user, form.locationId, locationOptions]);
 
   useEffect(() => {
     const locationParam = searchParams.get('location');
-    if (!locationParam) return;
+    if (!locationParam || locationOptions.length === 0) return;
 
     let cancelled = false;
     setInitialLocationLoading(true);
     locationAPI.getById(locationParam)
       .then((res) => {
-        if (!cancelled && res?.success && res.location?.id) {
-          setForm((prev) => ({ ...prev, locationId: res.location.id }));
+        if (cancelled || !res?.success || !res.location?.id) return;
+        const scopedLocation = locationOptions.find((location) => Number(location.id) === Number(res.location.id));
+        if (scopedLocation) {
+          setForm((prev) => ({
+            ...prev,
+            locationId: scopedLocation.id,
+            positionType: getPositionOptions(scopedLocation.type).includes(prev.positionType)
+              ? prev.positionType
+              : getPositionOptions(scopedLocation.type)[0],
+          }));
         }
       })
       .catch(() => {})
@@ -59,7 +95,15 @@ export default function CandidateRegistrationPage() {
     return () => {
       cancelled = true;
     };
-  }, [searchParams]);
+  }, [searchParams, locationOptions]);
+
+  useEffect(() => {
+    if (!selectedLocation) return;
+    const availablePositions = getPositionOptions(selectedLocation.type);
+    if (!availablePositions.includes(form.positionType)) {
+      updateField('positionType', availablePositions[0]);
+    }
+  }, [selectedLocation, form.positionType]);
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -73,6 +117,10 @@ export default function CandidateRegistrationPage() {
     }
     if (!form.locationId) {
       toastError('Please select a location.');
+      return;
+    }
+    if (!selectedLocation) {
+      toastError('Please choose one of your profile locations.');
       return;
     }
 
@@ -132,14 +180,36 @@ export default function CandidateRegistrationPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-5">
+          {locationOptions.length === 0 && (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Set your home location on your profile before registering as a candidate.
+              <Link href="/profile" className="ml-1 font-medium text-amber-950 underline">
+                Update profile
+              </Link>
+            </div>
+          )}
+
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">Location *</label>
-            <LocationSelector
+            <select
               value={form.locationId}
-              onChange={(value) => updateField('locationId', value || '')}
-              placeholder={initialLocationLoading ? 'Loading location...' : 'Select campaign location'}
-              allowClear
-            />
+              onChange={(event) => updateField('locationId', event.target.value)}
+              disabled={initialLocationLoading || locationOptions.length === 0}
+              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+            >
+              {locationOptions.length === 0 ? (
+                <option value="">No profile location set</option>
+              ) : (
+                locationOptions.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name_local || location.name} ({location.type})
+                  </option>
+                ))
+              )}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Candidate registrations are limited to your home location and its parent locations.
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -150,7 +220,7 @@ export default function CandidateRegistrationPage() {
                 onChange={(event) => updateField('positionType', event.target.value)}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {POSITION_OPTIONS.map((position) => (
+                {positionOptions.map((position) => (
                   <option key={position} value={position}>{POSITION_TYPE_LABELS[position]}</option>
                 ))}
               </select>
@@ -249,7 +319,7 @@ export default function CandidateRegistrationPage() {
             <Link href="/candidates" className="rounded px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
               Cancel
             </Link>
-            <Button type="submit" loading={submitting}>
+            <Button type="submit" loading={submitting} disabled={locationOptions.length === 0}>
               Submit for review
             </Button>
           </div>

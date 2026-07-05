@@ -9,6 +9,7 @@ describe('Candidate registrations API', () => {
   let viewerUser;
   let viewerToken;
   let testLocation;
+  let outsideLocation;
 
   const withCsrf = (userId, authToken, csrfToken) => {
     storeCsrfToken(csrfToken, userId);
@@ -51,16 +52,66 @@ describe('Candidate registrations API', () => {
     ({ user: adminUser, token: adminToken } = await registerAndLogin('candidate_admin', 'admin'));
     ({ user: viewerUser, token: viewerToken } = await registerAndLogin('candidate_viewer'));
 
+    const country = await Location.create({
+      name: 'Candidate Test Country',
+      name_local: 'Candidate Country Local',
+      slug: 'candidate-test-country',
+      type: 'country',
+    });
+    const prefecture = await Location.create({
+      name: 'Candidate Test Prefecture',
+      name_local: 'Candidate Prefecture Local',
+      slug: 'candidate-test-prefecture',
+      type: 'prefecture',
+      parent_id: country.id,
+    });
     testLocation = await Location.create({
       name: 'Candidate Test Location',
       name_local: 'Candidate Local',
       slug: 'candidate-test-location',
       type: 'municipality',
+      parent_id: prefecture.id,
     });
+    outsideLocation = await Location.create({
+      name: 'Candidate Outside Location',
+      name_local: 'Candidate Outside Local',
+      slug: 'candidate-outside-location',
+      type: 'municipality',
+    });
+
+    await viewerUser.update({ homeLocationId: testLocation.id });
   });
 
   afterAll(async () => {
     await sequelize.close();
+  });
+
+  it('rejects registrations outside the user location hierarchy', async () => {
+    const createRes = await request(app)
+      .post('/api/candidate-registrations')
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-candidate-outside-location'))
+      .send({
+        locationId: outsideLocation.id,
+        positionType: 'mayor',
+        electionCycle: 'current',
+      });
+
+    expect(createRes.status).toBe(403);
+    expect(createRes.body.message).toMatch(/own location hierarchy/i);
+  });
+
+  it('rejects positions that do not match the selected location type', async () => {
+    const createRes = await request(app)
+      .post('/api/candidate-registrations')
+      .set(withCsrf(viewerUser.id, viewerToken, 'csrf-candidate-bad-position'))
+      .send({
+        locationId: testLocation.id,
+        positionType: 'county_council',
+        electionCycle: 'current',
+      });
+
+    expect(createRes.status).toBe(400);
+    expect(createRes.body.message).toMatch(/not available/i);
   });
 
   it('creates a submitted registration, promotes the user, and hides it from public lists until approved', async () => {
