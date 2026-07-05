@@ -19,7 +19,7 @@ jest.mock('@/lib/api', () => ({
 }));
 
 const { locationAPI } = require('@/lib/api');
-const { buildLocationBreadcrumb } = require('../app/locations/[slug]/page');
+const { buildLocationBreadcrumb, shouldShowMainLocationMap } = require('../app/locations/[slug]/page');
 
 describe('buildLocationBreadcrumb', () => {
   beforeEach(() => {
@@ -60,5 +60,39 @@ describe('buildLocationBreadcrumb', () => {
     expect(breadcrumb.map((c) => c.slug)).toEqual(['greece', 'attica', 'athens']);
     expect(locationAPI.getById).toHaveBeenNthCalledWith(1, 3);
     expect(locationAPI.getById).toHaveBeenNthCalledWith(2, 1);
+  });
+});
+
+describe('shouldShowMainLocationMap', () => {
+  test('hides the main map when mapped children will render the hierarchy map', () => {
+    expect(shouldShowMainLocationMap({
+      location: { id: 1, name: 'Greece', lat: 38.5, lng: 23.8 },
+      children: [{ id: 2, name: 'Attica', boundary_geojson: { type: 'Polygon', coordinates: [] } }],
+      secondaryLoading: false,
+    })).toBe(false);
+  });
+
+  test('hides the main map while child geometry is still loading', () => {
+    expect(shouldShowMainLocationMap({
+      location: { id: 1, name: 'Greece', lat: 38.5, lng: 23.8 },
+      children: [],
+      secondaryLoading: true,
+    })).toBe(false);
+  });
+
+  test('shows the main map for a location with own geometry and no mapped children', () => {
+    expect(shouldShowMainLocationMap({
+      location: { id: 3, name: 'Athens', lat: 37.9838, lng: 23.7275 },
+      children: [],
+      secondaryLoading: false,
+    })).toBe(true);
+  });
+
+  test('keeps the main map hidden when there is no geometry anywhere', () => {
+    expect(shouldShowMainLocationMap({
+      location: { id: 4, name: 'Unknown', lat: null, lng: null },
+      children: [{ id: 5, name: 'Child', lat: null, lng: null }],
+      secondaryLoading: false,
+    })).toBe(false);
   });
 });

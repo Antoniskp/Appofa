@@ -53,6 +53,24 @@ export async function buildLocationBreadcrumb(locationIdOrSlug) {
   return crumbs;
 }
 
+function hasMapGeometry(locationLike) {
+  return Boolean(
+    (locationLike?.lat && locationLike?.lng)
+    || locationLike?.boundary_geojson
+  );
+}
+
+export function shouldShowMainLocationMap({ location, children = [], secondaryLoading = false } = {}) {
+  const hasOwnGeometry = hasMapGeometry(location);
+  const hasChildGeometry = children.some(hasMapGeometry);
+
+  // Parent pages with mapped children already get a richer hierarchy map below.
+  // While child data is loading, wait so the page does not briefly show two map slots.
+  if (secondaryLoading || hasChildGeometry) return false;
+
+  return hasOwnGeometry;
+}
+
 export default function LocationDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -444,6 +462,7 @@ export default function LocationDetailPage() {
   // True when the location has or is loading child locations.
   // Controls LocationChildrenExplorer rendering and suppresses duplicate child chips in header/related.
   const hasChildren = children.length > 0 || secondaryLoading;
+  const showMainLocationMap = shouldShowMainLocationMap({ location, children, secondaryLoading });
 
   const TAB_LABELS = {
     polls: `Ψηφοφορίες${activePolls.length ? ` (${activePolls.length})` : ''}`,
@@ -568,14 +587,13 @@ export default function LocationDetailPage() {
               onTabSelect={handleTabChange}
             />
 
-            {/* Map: own geometry plus child-location markers when available */}
-            {((location?.lat && location?.lng) || location?.boundary_geojson || children.some((child) => child.lat && child.lng)) && (
+            {/* Map: own geometry only when the hierarchy explorer will not render a map. */}
+            {showMainLocationMap && (
               <div id="location-map" className="mb-8">
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">Χάρτης</h2>
                 <div className="bg-white rounded-lg shadow-md overflow-hidden">
                   <LocationMap
                     location={location}
-                    childLocations={children}
                     summaryCounts={mapSummaryCounts}
                     className="h-80 w-full"
                   />
