@@ -5,9 +5,14 @@ import {
   ArrowRightIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
+  FlagIcon,
+  HandRaisedIcon,
   LightBulbIcon,
   MapPinIcon,
+  MegaphoneIcon,
   NewspaperIcon,
+  UserGroupIcon,
+  UserPlusIcon,
 } from '@heroicons/react/24/outline';
 
 const signedInActions = (user) => [
@@ -72,6 +77,47 @@ const secondaryLinks = [
   { href: '/organizations', label: 'Οργανισμοί', icon: ChatBubbleLeftRightIcon },
 ];
 
+const civicPathActions = (user) => [
+  {
+    href: user ? '/profile' : '/register',
+    title: user ? 'Ολοκλήρωσε προφίλ' : 'Εγγράψου',
+    description: user
+      ? 'Κράτησε ενημερωμένη την περιοχή και τη δημόσια παρουσία σου.'
+      : 'Φτιάξε προφίλ και σύνδεσε την περιοχή σου.',
+    icon: UserPlusIcon,
+  },
+  {
+    href: '/independents',
+    title: 'Βρες ανεξάρτητους',
+    description: 'Δες ανεξάρτητους υποψηφίους και δημόσια πρόσωπα.',
+    icon: UserGroupIcon,
+  },
+  {
+    href: '/manifest-supporters',
+    title: 'Στήριξε',
+    description: 'Υποστήριξε όσους δεσμεύονται σε καθαρή συμμετοχή.',
+    icon: HandRaisedIcon,
+  },
+  {
+    href: '/candidates',
+    title: 'Προώθησε',
+    description: 'Μοιράσου και ανάδειξε υποψηφίους που εμπιστεύεσαι.',
+    icon: MegaphoneIcon,
+  },
+  {
+    href: '/suggestions/new',
+    title: 'Πρότεινε λύσεις',
+    description: 'Κατέθεσε ιδέες για την περιοχή που σε αφορά.',
+    icon: LightBulbIcon,
+  },
+  {
+    href: '/suggestions',
+    title: 'Ανέφερε προβλήματα',
+    description: 'Άνοιξε δημόσια θέματα και ψήφισε προτεραιότητες.',
+    icon: FlagIcon,
+  },
+];
+
 const toneClasses = {
   blue: 'bg-blue-50 text-blue-700 border-blue-200 group-hover:bg-blue-100',
   emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200 group-hover:bg-emerald-100',
@@ -103,10 +149,50 @@ function ActionCard({ action }) {
 
 export default function HomeActionLanes({ user }) {
   const actions = user ? signedInActions(user) : guestActions;
+  const pathActions = civicPathActions(user);
 
   return (
     <section className="border-t border-gray-200 bg-white">
       <div className="app-container py-12">
+        <div className="mb-12 rounded-lg border border-slate-200 bg-slate-950 px-5 py-6 text-white shadow-sm sm:px-7 lg:px-8">
+          <div className="grid gap-7 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)] lg:items-center">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-cyan-200">
+                Τι μπορείς να κάνεις
+              </p>
+              <h2 className="mt-2 text-2xl font-bold leading-tight md:text-3xl">
+                Βαρέθηκες τα κόμματα και τις κενές υποσχέσεις;
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
+                Υπάρχει πιο πρακτικός τρόπος συμμετοχής: γράψου, βρες ανεξάρτητους
+                υποψηφίους, στήριξέ τους, πρότεινε λύσεις για την περιοχή σου,
+                ανέφερε προβλήματα και ψήφισε όσα έχουν σημασία.
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {pathActions.map(({ href, title, description, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  className="group rounded-lg border border-white/10 bg-white/[0.06] p-4 transition hover:-translate-y-0.5 hover:border-cyan-300/60 hover:bg-white/[0.1] focus:outline-none focus:ring-2 focus:ring-cyan-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-cyan-400/15 text-cyan-100">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <span className="flex min-w-0 flex-1 items-center justify-between gap-2 text-sm font-semibold">
+                      <span>{title}</span>
+                      <ArrowRightIcon className="h-4 w-4 shrink-0 text-cyan-200 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-slate-300">{description}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Ξεκίνα από εδώ</p>
