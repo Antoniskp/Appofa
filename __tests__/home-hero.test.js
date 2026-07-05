@@ -166,6 +166,30 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
+  test('changes headline and subtitle with the active slide', async () => {
+    const { container, root } = await renderHero([
+      { ...buildSlide('/polls'), id: 1, title: 'First hero title', subtitle: 'First hero subtitle' },
+      { ...buildSlide('/news'), id: 2, title: 'Second hero title', subtitle: 'Second hero subtitle' },
+    ]);
+
+    expect(container.textContent).toContain('First hero title');
+    expect(container.textContent).toContain('First hero subtitle');
+
+    const arrowRow = container.querySelector('div.flex.items-center.gap-3.mb-4');
+    const buttons = arrowRow.querySelectorAll('button');
+    await act(async () => {
+      buttons[buttons.length - 1].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(container.textContent).toContain('Second hero title');
+    expect(container.textContent).toContain('Second hero subtitle');
+    expect(container.textContent).not.toContain('First hero title');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('renders updated community metric labels and values', async () => {
     const { container, root } = await renderHero(buildSlide('/polls'));
 

@@ -149,6 +149,8 @@ export default function HomeHero() {
   const isInternalLink = !!(normalizedLinkUrl && normalizedLinkUrl.startsWith('/'));
   const hasLink = !!(isExternalLink || isInternalLink);
   const linkText = (currentSlide && currentSlide.linkText) ? currentSlide.linkText : 'Μάθε περισσότερα';
+  const slideTitle = currentSlide?.title?.trim() || DEFAULT_TITLE;
+  const slideSubtitle = currentSlide?.subtitle?.trim() || DEFAULT_SUBTITLE;
   const showArrows = activeSlides.length >= 2;
 
   return (
@@ -178,12 +180,17 @@ export default function HomeHero() {
                 Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη
               </p>
 
-              <div className="mt-4">
+              <div
+                key={currentSlide?.id || 'default-slide'}
+                className="mt-4 animate-fade-in"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 <h1 className="text-3xl md:text-5xl font-extrabold mb-3 leading-tight tracking-tight">
-                  {DEFAULT_TITLE}
+                  {slideTitle}
                 </h1>
                 <p className="max-w-2xl text-base md:text-lg leading-7 text-white/85 mb-3">
-                  {DEFAULT_SUBTITLE}
+                  {slideSubtitle}
                 </p>
               </div>
 
