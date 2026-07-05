@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { candidateRegistrationAPI } from '@/lib/api';
@@ -28,6 +28,12 @@ export default function CandidatesPage() {
     partyMode: '',
     status: 'approved',
   });
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('partyMode') === 'independent') {
+      updateFilter('partyMode', 'independent');
+    }
+  }, [updateFilter]);
 
   const { items: registrations, loading, initialLoading, error, hasMore, loadMore } = useInfiniteData(
     async (page, limit) => {

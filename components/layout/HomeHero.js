@@ -182,36 +182,36 @@ export default function HomeHero() {
 
               <div
                 key={currentSlide?.id || 'default-slide'}
-                className="mt-4 animate-fade-in"
+                className="mt-4 min-h-[11.5rem] overflow-hidden animate-fade-in md:min-h-[14rem]"
                 aria-live="polite"
                 aria-atomic="true"
               >
-                <h1 className="text-3xl md:text-5xl font-extrabold mb-3 leading-tight tracking-tight">
+                <h1 className="mb-3 line-clamp-2 text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">
                   {slideTitle}
                 </h1>
-                <p className="max-w-2xl text-base md:text-lg leading-7 text-white/85 mb-3">
+                <p className="mb-3 max-w-2xl line-clamp-3 text-base leading-7 text-white/85 md:text-lg">
                   {slideSubtitle}
                 </p>
               </div>
 
               {/* CTA link – always rendered to reserve space; hidden when no link */}
-              <div className={`mb-3 transition-opacity duration-500 ${hasLink ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+              <div className={`mb-3 flex min-h-11 items-start transition-opacity duration-500 ${hasLink ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
                 {!hasLink ? (
                   <span
                     aria-hidden="true"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 font-semibold border border-transparent"
+                    className="inline-flex min-h-11 max-w-full items-center gap-2 border border-transparent px-5 py-2.5 font-semibold"
                   >
-                    {linkText}
+                    <span className="min-w-0 truncate">{linkText}</span>
                     <ArrowRightIcon className="w-4 h-4" />
                   </span>
                 ) : isInternalLink ? (
                   <Link
                     href={normalizedLinkUrl}
                     tabIndex={hasLink ? 0 : -1}
-                    className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                    className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl border border-white/30 bg-white/20 px-5 py-2.5 font-semibold text-white backdrop-blur-md transition hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
-                    {linkText}
-                    <ArrowRightIcon className="w-4 h-4" />
+                    <span className="min-w-0 truncate">{linkText}</span>
+                    <ArrowRightIcon className="w-4 h-4 shrink-0" />
                   </Link>
                 ) : (
                   <a
@@ -219,10 +219,10 @@ export default function HomeHero() {
                     target="_blank"
                     rel="noopener noreferrer"
                     tabIndex={hasLink ? 0 : -1}
-                    className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
+                    className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl border border-white/30 bg-white/20 px-5 py-2.5 font-semibold text-white backdrop-blur-md transition hover:bg-white/30 focus:bg-white/30 focus:outline-none focus:ring-2 focus:ring-white/50"
                   >
-                    {linkText}
-                    <ArrowRightIcon className="w-4 h-4" />
+                    <span className="min-w-0 truncate">{linkText}</span>
+                    <ArrowRightIcon className="w-4 h-4 shrink-0" />
                   </a>
                 )}
               </div>

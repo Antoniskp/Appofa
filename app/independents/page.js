@@ -7,12 +7,14 @@ import {
   ArrowRightIcon,
   CheckBadgeIcon,
   ClipboardDocumentCheckIcon,
+  IdentificationIcon,
   FunnelIcon,
   MapPinIcon,
   ScaleIcon,
+  UserGroupIcon,
   UserCircleIcon,
 } from '@heroicons/react/24/outline';
-import { personAPI, manifestAPI } from '@/lib/api';
+import { personAPI, manifestAPI, candidateRegistrationAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import SearchInput from '@/components/ui/SearchInput';
@@ -20,9 +22,11 @@ import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import EmptyState from '@/components/ui/EmptyState';
 import Pagination from '@/components/ui/Pagination';
 import Badge from '@/components/ui/Badge';
+import { CandidateRegistrationCard } from '@/components/locations/LocationCandidatesTab';
 import locationRolesConfig from '@/config/locationRoles.json';
 
 const PAGE_SIZE = 12;
+const FEATURED_CANDIDATE_LIMIT = 6;
 const DIRECT_DEMOCRACY_HINTS = ['direct', 'democracy', 'democratic', 'dimokrat', 'δημοκρα'];
 
 function getDisplayName(profile, fallbackName) {
@@ -95,6 +99,29 @@ function ManifestCommitment({ acceptances = [], selectedManifestSlug, t }) {
     <Badge variant="success" icon={<ClipboardDocumentCheckIcon />}>
       {t('card.manifest_accepted')}
     </Badge>
+  );
+}
+
+function ActionCard({ icon: Icon, title, description, href, action }) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <div className="flex items-start gap-4">
+        <span className="rounded-lg bg-blue-50 p-2 text-blue-700">
+          <Icon className="h-6 w-6" />
+        </span>
+        <div>
+          <h2 className="text-base font-semibold text-gray-900">{title}</h2>
+          <p className="mt-2 text-sm leading-6 text-gray-600">{description}</p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-700">
+            {action}
+            <ArrowRightIcon className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -220,6 +247,25 @@ export default function IndependentsPage() {
   const profiles = data?.profiles || [];
   const pagination = data?.pagination || { currentPage: page, totalPages: 1 };
   const selectedManifest = manifests.find((manifest) => manifest.slug === selectedManifestSlug);
+  const {
+    data: candidateData,
+    loading: candidatesLoading,
+    error: candidatesError,
+  } = useAsyncData(
+    async () => {
+      const res = await candidateRegistrationAPI.getAll({
+        page: 1,
+        limit: FEATURED_CANDIDATE_LIMIT,
+        partyMode: 'independent',
+      });
+      return res?.success ? res.data : { registrations: [], pagination: { totalItems: 0 } };
+    },
+    [],
+    { initialData: { registrations: [], pagination: { totalItems: 0 } } }
+  );
+  const independentCandidates = candidateData?.registrations || [];
+  const independentCandidateTotal = candidateData?.pagination?.totalItems || independentCandidates.length;
+  const hasOfficeFilters = Boolean(search.trim() || locationId || roleKey || committedOnly);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -237,17 +283,17 @@ export default function IndependentsPage() {
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link
-                href="/polls"
+                href="/candidates/register"
                 className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
               >
-                {t('hero.polls_cta')}
+                {t('hero.register_cta')}
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
               <Link
-                href="/manifest-supporters"
+                href="/candidates?partyMode=independent"
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
               >
-                {t('hero.supporters_cta')}
+                {t('hero.browse_cta')}
               </Link>
             </div>
           </div>
@@ -255,6 +301,105 @@ export default function IndependentsPage() {
       </section>
 
       <div className="app-container py-8">
+        <div className="mb-8 grid gap-4 lg:grid-cols-3">
+          <ActionCard
+            icon={IdentificationIcon}
+            title={t('actions.register_title')}
+            description={t('actions.register_description')}
+            href="/candidates/register"
+            action={t('actions.register_action')}
+          />
+          <ActionCard
+            icon={UserGroupIcon}
+            title={t('actions.discover_title')}
+            description={t('actions.discover_description')}
+            href="/candidates?partyMode=independent"
+            action={t('actions.discover_action')}
+          />
+          <ActionCard
+            icon={ClipboardDocumentCheckIcon}
+            title={t('actions.manifest_title')}
+            description={t('actions.manifest_description')}
+            href="/manifest-supporters"
+            action={t('actions.manifest_action')}
+          />
+        </div>
+
+        <section className="mb-8">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                {t('candidates.eyebrow')}
+              </p>
+              <h2 className="mt-1 text-xl font-bold text-gray-900">
+                {t('candidates.title')}
+              </h2>
+              <p className="mt-1 text-sm leading-6 text-gray-600">
+                {t('candidates.description')}
+              </p>
+            </div>
+            <Link
+              href="/candidates?partyMode=independent"
+              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              {t('candidates.view_all')}
+              <ArrowRightIcon className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {candidatesLoading && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <SkeletonLoader count={4} type="card" />
+            </div>
+          )}
+
+          {!candidatesLoading && candidatesError && (
+            <EmptyState
+              type="error"
+              title={t('candidates.load_error_title')}
+              description={candidatesError}
+            />
+          )}
+
+          {!candidatesLoading && !candidatesError && independentCandidates.length === 0 && (
+            <EmptyState
+              type="empty"
+              title={t('candidates.empty_title')}
+              description={t('candidates.empty_description')}
+              action={{ text: t('candidates.empty_action'), href: '/candidates/register' }}
+            />
+          )}
+
+          {!candidatesLoading && !candidatesError && independentCandidates.length > 0 && (
+            <>
+              <p className="mb-3 text-sm text-gray-600">
+                {t('candidates.showing', {
+                  count: independentCandidates.length,
+                  total: independentCandidateTotal,
+                })}
+              </p>
+              <div className="grid gap-4 lg:grid-cols-2">
+                {independentCandidates.map((registration) => (
+                  <CandidateRegistrationCard key={registration.id} registration={registration} />
+                ))}
+              </div>
+            </>
+          )}
+        </section>
+
+        <section>
+          <div className="mb-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+              {t('officials.eyebrow')}
+            </p>
+            <h2 className="mt-1 text-xl font-bold text-gray-900">
+              {t('officials.title')}
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-gray-600">
+              {t('officials.description')}
+            </p>
+          </div>
+
         <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-gray-800">
             <FunnelIcon className="h-5 w-5 text-blue-600" />
@@ -328,7 +473,7 @@ export default function IndependentsPage() {
           <EmptyState
             type="empty"
             title={t('states.empty_title')}
-            description={t('states.empty_description')}
+            description={hasOfficeFilters ? t('states.filtered_empty_description') : t('states.empty_description')}
           />
         )}
 
@@ -364,6 +509,7 @@ export default function IndependentsPage() {
             />
           </>
         )}
+        </section>
       </div>
     </div>
   );

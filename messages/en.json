@@ -50,11 +50,38 @@
   },
   "independents": {
     "hero": {
-      "eyebrow": "Independent public officials",
-      "title": "Organize officials around the majority mandate",
-      "description": "Find independent parliamentarians, mayors and civic office holders, then identify who has accepted the direct-democracy manifest: the stronger promise to act according to the public majority.",
-      "polls_cta": "See majority polls",
-      "supporters_cta": "View manifest supporters"
+      "eyebrow": "Independent candidates",
+      "title": "Help independent candidates become visible",
+      "description": "This page is the independent lane for Appofasi: register a candidacy, discover approved independent campaigns, and connect campaign promises with public-majority commitments when they exist.",
+      "register_cta": "Register as candidate",
+      "browse_cta": "Browse independent campaigns"
+    },
+    "actions": {
+      "register_title": "Register a candidacy",
+      "register_description": "Create a public campaign listing for your location, role, election cycle, platform, links, and independent status.",
+      "register_action": "Start registration",
+      "discover_title": "Discover campaigns",
+      "discover_description": "Browse approved independent registrations first, even before anyone holds a public office on the platform.",
+      "discover_action": "Open candidates",
+      "manifest_title": "Compare commitments",
+      "manifest_description": "See who has accepted Appofasi manifests and use polls to connect candidates with public-majority positions.",
+      "manifest_action": "View supporters"
+    },
+    "candidates": {
+      "eyebrow": "Approved registrations",
+      "title": "Independent candidate campaigns",
+      "description": "These are current approved independent candidate registrations, not only people already assigned to public offices.",
+      "view_all": "View all",
+      "load_error_title": "Could not load independent candidate registrations",
+      "empty_title": "No independent candidate registrations yet",
+      "empty_description": "The page is ready for independent campaigns. The first approved independent registrations will appear here.",
+      "empty_action": "Register as candidate",
+      "showing": "Showing {count} of {total} independent candidate registrations"
+    },
+    "officials": {
+      "eyebrow": "Public-office profiles",
+      "title": "Independent officials with assigned roles",
+      "description": "This secondary list appears when independent person profiles are assigned to active public-office roles."
     },
     "filters": {
       "title": "Filters",
@@ -76,7 +103,8 @@
     "states": {
       "load_error_title": "Could not load independent officials",
       "empty_title": "No independent officials found",
-      "empty_description": "Try removing a filter, or add public office role assignments to independent person profiles."
+      "empty_description": "No independent public-office profiles have active role assignments yet.",
+      "filtered_empty_description": "Try removing a filter, or add public office role assignments to independent person profiles."
     },
     "results": {
       "showing": "Showing {count} independent officials",
