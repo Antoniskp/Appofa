@@ -164,6 +164,14 @@ describe('Comment System Tests', () => {
       expect(res.body.success).toBe(true);
       expect(Array.isArray(res.body.data.comments)).toBe(true);
     });
+
+    it('should return 200 for location entityType', async () => {
+      const res = await request(app)
+        .get(`/api/comments?entityType=location&entityId=${locationId}`);
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data.comments)).toBe(true);
+    });
   });
 
   // ─── POST /api/comments ───────────────────────────────────────────────────
@@ -306,6 +314,25 @@ describe('Comment System Tests', () => {
         .send({ entityType: 'civic_question', entityId: testCivicQuestionId, body: 'Civic comment!' });
       expect(res.status).toBe(201);
       expect(res.body.data.comment.entityType).toBe('civic_question');
+    });
+
+    it('should create a comment on a location wall', async () => {
+      const res = await request(app)
+        .post('/api/comments')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ entityType: 'location', entityId: locationId, body: 'Local wall post!' });
+      expect(res.status).toBe(201);
+      expect(res.body.data.comment.entityType).toBe('location');
+    });
+
+    it('should return 404 when location entity does not exist', async () => {
+      const res = await request(app)
+        .post('/api/comments')
+        .set('Authorization', `Bearer ${viewerToken}`)
+        .set(csrfHeaders(viewerUserId))
+        .send({ entityType: 'location', entityId: 99999, body: 'Missing location' });
+      expect(res.status).toBe(404);
     });
 
     it('should return 404 when civic_question entity does not exist', async () => {

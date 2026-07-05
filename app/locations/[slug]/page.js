@@ -18,6 +18,7 @@ import LocationTabs from '@/components/locations/LocationTabs';
 import CountryFundingBanner from '@/components/locations/CountryFundingBanner';
 import LocationMap from '@/components/locations/LocationMap';
 import LocationChildrenExplorer from '@/components/locations/LocationChildrenExplorer';
+import CommentsThread from '@/components/comments/CommentsThread';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import { VALID_TABS, ALWAYS_VISIBLE_TABS, DEFAULT_TAB, HEADER_SECTION_TYPES } from '@/lib/constants/locations';
 
@@ -625,6 +626,16 @@ export default function LocationDetailPage() {
                   isAuthenticated,
                   currentUserId: user?.id ?? null,
                 }}
+              />
+            </div>
+
+            <div id="location-wall" className="mb-8 bg-white rounded-lg shadow-md p-6">
+              <CommentsThread
+                entityType="location"
+                entityId={location.id}
+                title="Wall"
+                composerPlaceholder={`Post about ${location.name_local || location.name}...`}
+                emptyMessage="No wall posts yet."
               />
             </div>
 

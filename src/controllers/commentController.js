@@ -1,4 +1,4 @@
-const { Comment, User, Article, Poll, CivicQuestion } = require('../models');
+const { Comment, User, Article, Poll, CivicQuestion, Location } = require('../models');
 const badgeService = require('../services/badgeService');
 const notificationService = require('../services/notificationService');
 const { isValidProfileVisibility, VALID_PROFILE_VISIBILITY } = require('../utils/profileVisibility');
@@ -26,6 +26,10 @@ async function getEntitySettings(entityType, entityId) {
     const entity = await CivicQuestion.findByPk(entityId);
     if (!entity) return null;
     return { entity, ownerId: entity.creatorId, enabled: entity.commentsEnabled, locked: entity.commentsLocked };
+  } else if (entityType === 'location') {
+    const entity = await Location.findByPk(entityId);
+    if (!entity) return null;
+    return { entity, ownerId: null, enabled: true, locked: false };
   }
   return null;
 }
@@ -67,7 +71,7 @@ const commentController = {
         return res.status(400).json({ success: false, message: 'entityType and entityId are required.' });
       }
 
-      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question'];
+      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question', 'location'];
       if (!validEntityTypes.includes(entityType)) {
         return res.status(400).json({ success: false, message: 'Invalid entityType.' });
       }
@@ -112,7 +116,7 @@ const commentController = {
     try {
       const { entityType, entityId, parentId, body } = req.body;
 
-      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question'];
+      const validEntityTypes = ['article', 'poll', 'user_profile', 'civic_question', 'location'];
       if (!entityType || !validEntityTypes.includes(entityType)) {
         return res.status(400).json({ success: false, message: 'Invalid entityType.' });
       }

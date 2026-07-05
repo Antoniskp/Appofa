@@ -520,6 +520,9 @@ export default function PublicUserProfilePage() {
               entityId={user.id}
               commentsEnabled={user.profileCommentsEnabled !== false}
               commentsLocked={user.profileCommentsLocked === true}
+              title="Wall"
+              composerPlaceholder={`Post on ${profileTitle || 'this profile'}'s wall...`}
+              emptyMessage="No wall posts yet."
             />
           </div>
         )}

@@ -219,6 +219,9 @@ export default function CommentsThread({
   entityId,
   commentsEnabled = true,
   commentsLocked = false,
+  title = 'Comments',
+  composerPlaceholder = 'Write a comment...',
+  emptyMessage,
 }) {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
@@ -266,7 +269,7 @@ export default function CommentsThread({
   return (
     <div className="mt-8 border-t border-gray-200 pt-6">
       <h2 className="text-lg font-semibold mb-4">
-        Comments{' '}
+        {title}{' '}
         {totalCount > 0 && (
           <span className="text-gray-400 text-base font-normal">
             ({totalCount})
@@ -311,6 +314,7 @@ export default function CommentsThread({
               <CommentForm
                 entityType={entityType}
                 entityId={entityId}
+                placeholder={composerPlaceholder}
                 onSuccess={handleCommentAdded}
               />
             ) : (
@@ -329,7 +333,7 @@ export default function CommentsThread({
             <p className="text-sm text-red-500">{error}</p>
           ) : comments.length === 0 ? (
             <p className="text-sm text-gray-400">
-              {user ? 'No comments yet. Be the first to comment!' : 'No comments yet.'}
+              {emptyMessage || (user ? 'No comments yet. Be the first to comment!' : 'No comments yet.')}
             </p>
           ) : (
             <div className="space-y-4">
