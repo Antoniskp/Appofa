@@ -44,6 +44,10 @@ const GeoVisit = sequelize.define('GeoVisit', {
     type: DataTypes.STRING(10),
     allowNull: true,
   },
+  userAgent: {
+    type: DataTypes.STRING(500),
+    allowNull: true,
+  },
 }, {
   timestamps: true,
   indexes: [

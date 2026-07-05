@@ -111,6 +111,7 @@ describe('Geo Stats Admin API', () => {
         sessionHash: 'a'.repeat(64),
         ipAddress: '1.1.1.1',
         path: '/',
+        userAgent: 'Mozilla/5.0 Real Browser',
       },
       {
         countryCode: 'GR',
@@ -120,6 +121,7 @@ describe('Geo Stats Admin API', () => {
         sessionHash: 'b'.repeat(64),
         ipAddress: '2.2.2.2',
         path: '/articles',
+        userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
       },
       {
         countryCode: 'FR',
@@ -129,6 +131,7 @@ describe('Geo Stats Admin API', () => {
         sessionHash: 'c'.repeat(64),
         ipAddress: '3.3.3.3',
         path: '/',
+        userAgent: 'Mozilla/5.0 Safari',
       },
       {
         countryCode: 'FR',
@@ -138,6 +141,7 @@ describe('Geo Stats Admin API', () => {
         sessionHash: 'd'.repeat(64),
         ipAddress: '4.4.4.4',
         path: '/old',
+        userAgent: 'Mozilla/5.0 Bingbot',
         createdAt: tenDaysAgo,
         updatedAt: tenDaysAgo,
       },
@@ -175,11 +179,20 @@ describe('Geo Stats Admin API', () => {
       diaspora: 1,
     });
     expect(res.body.data.topPaths.length).toBeGreaterThan(0);
+    expect(res.body.data.trafficSummary).toMatchObject({ human: 2, crawler: 1 });
+    expect(res.body.data.crawlerGroups).toEqual(expect.arrayContaining([
+      expect.objectContaining({ key: 'google', label: 'Google', visits: 1, trafficType: 'crawler' }),
+    ]));
+    expect(res.body.data.ipGroups).toEqual(expect.arrayContaining([
+      expect.objectContaining({ ipAddress: '2.2.2.2', crawlerKey: 'google', visits: 1 }),
+    ]));
     expect(res.body.data.recentVisits.length).toBeGreaterThan(0);
     expect(res.body.data.recentVisits[0]).toEqual(expect.objectContaining({
       ipAddress: expect.any(String),
       path: expect.any(String),
       countryCode: expect.any(String),
+      trafficType: expect.any(String),
+      crawlerLabel: expect.any(String),
       createdAt: expect.any(String),
     }));
     const visitWithUser = res.body.data.recentVisits.find((row) => row.userId === visitorUser.id);
@@ -334,6 +347,7 @@ describe('Geo Stats Admin API', () => {
     const res = await request(app)
       .post('/api/admin/geo-stats/track')
       .set('x-forwarded-for', '::ffff:185.230.31.201')
+      .set('User-Agent', 'Mozilla/5.0 Test Browser')
       .send({
         path: '/locations/gr',
         countryCode: 'gr-1',
@@ -348,6 +362,7 @@ describe('Geo Stats Admin API', () => {
     expect(saved.countryCode).toBe('GR');
     expect(saved.countryName).toBe('Greece');
     expect(saved.ipAddress).toBe('185.230.31.201');
+    expect(saved.userAgent).toBe('Mozilla/5.0 Test Browser');
     expect(saved.locale).toBe('el-GR');
     expect(saved.isAuthenticated).toBe(false);
     expect(saved.userId).toBeNull();

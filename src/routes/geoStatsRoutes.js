@@ -52,6 +52,64 @@ const getValidTrackingIp = (...candidates) => {
   return null;
 };
 
+const CRAWLER_USER_AGENT_PATTERNS = [
+  { key: 'google', label: 'Google', pattern: /(googlebot|adsbot-google|mediapartners-google|apis-google|google-inspectiontool|googleother)/i },
+  { key: 'bing', label: 'Bing / Microsoft', pattern: /(bingbot|adidxbot|msnbot|bingpreview)/i },
+  { key: 'yandex', label: 'Yandex', pattern: /(yandexbot|yandeximages|yandexmobilebot)/i },
+  { key: 'facebook', label: 'Meta / Facebook', pattern: /(facebookexternalhit|facebot|meta-externalagent|meta-externalfetcher)/i },
+  { key: 'twitter', label: 'X / Twitter', pattern: /(twitterbot)/i },
+  { key: 'linkedin', label: 'LinkedIn', pattern: /(linkedinbot)/i },
+  { key: 'slack', label: 'Slack', pattern: /(slackbot|slack-imgproxy)/i },
+  { key: 'discord', label: 'Discord', pattern: /(discordbot)/i },
+  { key: 'ahrefs', label: 'Ahrefs', pattern: /(ahrefsbot)/i },
+  { key: 'semrush', label: 'Semrush', pattern: /(semrushbot)/i },
+  { key: 'generic', label: 'Other crawlers', pattern: /(bot|crawler|spider|scraper|preview|fetcher|indexer|monitoring|uptime)/i },
+];
+
+const classifyUserAgent = (userAgent) => {
+  const ua = String(userAgent || '').trim();
+  if (!ua) {
+    return {
+      trafficType: 'human',
+      crawlerKey: 'human',
+      crawlerLabel: 'Human / unknown',
+    };
+  }
+  const match = CRAWLER_USER_AGENT_PATTERNS.find((item) => item.pattern.test(ua));
+  if (!match) {
+    return {
+      trafficType: 'human',
+      crawlerKey: 'human',
+      crawlerLabel: 'Human / unknown',
+    };
+  }
+  return {
+    trafficType: 'crawler',
+    crawlerKey: match.key,
+    crawlerLabel: match.label,
+  };
+};
+
+const bumpGroup = (map, key, defaults, row) => {
+  const existing = map.get(key) || {
+    ...defaults,
+    visits: 0,
+    authenticated: 0,
+    firstSeen: null,
+    lastSeen: null,
+  };
+  const createdAt = row.createdAt ? new Date(row.createdAt) : null;
+  existing.visits += 1;
+  if (row.isAuthenticated) existing.authenticated += 1;
+  if (createdAt && (!existing.firstSeen || createdAt < new Date(existing.firstSeen))) {
+    existing.firstSeen = createdAt.toISOString();
+  }
+  if (createdAt && (!existing.lastSeen || createdAt > new Date(existing.lastSeen))) {
+    existing.lastSeen = createdAt.toISOString();
+  }
+  map.set(key, existing);
+};
+
 router.post('/track', apiLimiter, async (req, res, next) => {
   try {
     const { path: visitPath, countryCode, locale } = req.body;
@@ -104,6 +162,7 @@ router.post('/track', apiLimiter, async (req, res, next) => {
       ipAddress,
       path: String(visitPath).slice(0, 500),
       locale: locale ? String(locale).slice(0, 10) : null,
+      userAgent: req.headers['user-agent'] ? String(req.headers['user-agent']).slice(0, 500) : null,
     });
     return res.json({ success: true });
   } catch (err) {
@@ -183,8 +242,13 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
       where.countryCode = String(req.query.countryCode).trim().toUpperCase();
     }
 
-    const [totalVisits, byCountryRows, topPathRows, recentVisitRows] = await Promise.all([
+    const [totalVisits, allVisitRows, byCountryRows, topPathRows, recentVisitRows] = await Promise.all([
       GeoVisit.count({ where }),
+      GeoVisit.findAll({
+        attributes: ['ipAddress', 'path', 'countryCode', 'countryName', 'createdAt', 'isAuthenticated', 'userAgent'],
+        where,
+        order: [['createdAt', 'DESC']],
+      }),
       GeoVisit.findAll({
         attributes: [
           'countryCode',
@@ -214,13 +278,55 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
         limit: 10,
       }),
       GeoVisit.findAll({
-        attributes: ['ipAddress', 'path', 'countryCode', 'countryName', 'createdAt', 'isAuthenticated', 'userId'],
+        attributes: ['ipAddress', 'path', 'countryCode', 'countryName', 'createdAt', 'isAuthenticated', 'userId', 'userAgent'],
         include: [{ model: User, as: 'user', attributes: ['id', 'username'], required: false }],
         where,
         order: [['createdAt', 'DESC']],
         limit: 100,
       }),
     ]);
+
+    const trafficTypeCounts = { human: 0, crawler: 0 };
+    const crawlerGroupMap = new Map();
+    const ipGroupMap = new Map();
+
+    allVisitRows.forEach((row) => {
+      const classification = classifyUserAgent(row.userAgent);
+      trafficTypeCounts[classification.trafficType] += 1;
+
+      bumpGroup(
+        crawlerGroupMap,
+        classification.crawlerKey,
+        {
+          key: classification.crawlerKey,
+          label: classification.crawlerLabel,
+          trafficType: classification.trafficType,
+        },
+        row
+      );
+
+      const ipKey = row.ipAddress || 'no-ip';
+      bumpGroup(
+        ipGroupMap,
+        ipKey,
+        {
+          ipAddress: row.ipAddress || null,
+          countryCode: row.countryCode || null,
+          countryName: row.countryName || null,
+          trafficType: classification.trafficType,
+          crawlerKey: classification.crawlerKey,
+          crawlerLabel: classification.crawlerLabel,
+          samplePath: row.path || null,
+        },
+        row
+      );
+    });
+
+    const crawlerGroups = Array.from(crawlerGroupMap.values())
+      .sort((a, b) => b.visits - a.visits);
+    const ipGroups = Array.from(ipGroupMap.values())
+      .sort((a, b) => b.visits - a.visits)
+      .slice(0, 20);
 
     return res.json({
       success: true,
@@ -238,7 +344,14 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
           path: row.path,
           visits: toInt(row.get('visits')),
         })),
+        trafficSummary: {
+          human: trafficTypeCounts.human,
+          crawler: trafficTypeCounts.crawler,
+        },
+        crawlerGroups,
+        ipGroups,
         recentVisits: recentVisitRows.map((row) => ({
+          ...classifyUserAgent(row.userAgent),
           ipAddress: row.ipAddress || null,
           path: row.path || null,
           countryCode: row.countryCode || null,
@@ -246,6 +359,7 @@ router.get('/visits', apiLimiter, authMiddleware, checkRole('admin'), async (req
           isAuthenticated: Boolean(row.isAuthenticated),
           userId: row.userId || null,
           username: row.user?.username || null,
+          userAgent: row.userAgent || null,
           createdAt: row.createdAt,
         })),
       },

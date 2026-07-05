@@ -93,15 +93,37 @@ const visitsData = {
       visits: 5,
     },
   ],
+  trafficSummary: { human: 1, crawler: 1 },
+  crawlerGroups: [
+    { key: 'human', label: 'Human / unknown', trafficType: 'human', visits: 1, lastSeen: '2026-06-20T10:20:30.000Z' },
+    { key: 'google', label: 'Google', trafficType: 'crawler', visits: 1, lastSeen: '2026-06-20T10:19:30.000Z' },
+  ],
+  ipGroups: [
+    { ipAddress: '203.0.113.45', countryCode: 'GR', countryName: 'Greece', trafficType: 'human', crawlerLabel: 'Human / unknown', visits: 1 },
+    { ipAddress: '66.249.66.1', countryCode: 'US', countryName: 'United States', trafficType: 'crawler', crawlerLabel: 'Google', visits: 1 },
+  ],
   recentVisits: [
     {
       countryCode: 'GR',
       countryName: 'Greece',
       username: 'antonis',
       isAuthenticated: true,
+      trafficType: 'human',
+      crawlerLabel: 'Human / unknown',
       path: '/country/gr/some/very/long/path/that/needs/truncation/in/the/recent/visits/table?view=full&mode=admin',
       ipAddress: '203.0.113.45',
       createdAt: '2026-06-20T10:20:30.000Z',
+    },
+    {
+      countryCode: 'US',
+      countryName: 'United States',
+      username: null,
+      isAuthenticated: false,
+      trafficType: 'crawler',
+      crawlerLabel: 'Google',
+      path: '/robots.txt',
+      ipAddress: '66.249.66.1',
+      createdAt: '2026-06-20T10:19:30.000Z',
     },
   ],
 };
@@ -181,6 +203,27 @@ describe('Admin geo page traffic tables', () => {
     expect(ipCell.className).toContain('whitespace-nowrap');
     expect(recentDateCell).toBeTruthy();
     expect(recentDateCell.className).toContain('whitespace-nowrap');
+  });
+
+  test('groups crawlers and filters recent visits away from real traffic by default', async () => {
+    await act(async () => {
+      root.render(React.createElement(AdminGeoPage));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('Known crawlers');
+    expect(container.textContent).toContain('Google');
+    expect(container.textContent).toContain('Top IP groups');
+    expect(container.textContent).toContain('66.249.66.1');
+    expect(container.textContent).not.toContain('/robots.txt');
+
+    const crawlersButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent === 'Crawlers');
+    await act(async () => {
+      crawlersButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      await flushPromises();
+    });
+
+    expect(container.textContent).toContain('/robots.txt');
   });
 
   test('also truncates long redirect paths in access rules and keeps access-rule dates on one line', async () => {

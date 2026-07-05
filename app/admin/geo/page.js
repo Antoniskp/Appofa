@@ -19,6 +19,11 @@ const PERIODS = [
   { key: 'all', label: 'Όλο το ιστορικό' },
 ];
 const LOG_RETENTION_OPTIONS = [1, 30, 90, 180];
+const TRAFFIC_FILTERS = [
+  { key: 'human', label: 'Real traffic' },
+  { key: 'crawler', label: 'Crawlers' },
+  { key: 'all', label: 'All' },
+];
 
 const STATUS_META = {
   unlocked: { label: 'Ξεκλείδωτη', className: 'bg-emerald-100 text-emerald-700' },
@@ -79,6 +84,7 @@ function GeoAdminContent() {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState('traffic');
   const [period, setPeriod] = useState('7d');
+  const [trafficFilter, setTrafficFilter] = useState('human');
   const [isFundingModalOpen, setIsFundingModalOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -117,13 +123,13 @@ function GeoAdminContent() {
       const res = await geoAdminAPI.getVisits({ period });
       if (!res?.success) throw new Error(res?.message || 'Αποτυχία φόρτωσης επισκεψιμότητας.');
       return res.data || {
-        totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [],
+        totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [], trafficSummary: {}, crawlerGroups: [], ipGroups: [],
       };
     },
     [period],
     {
       initialData: {
-        totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [],
+        totalVisits: 0, byCountry: [], topPaths: [], recentVisits: [], trafficSummary: {}, crawlerGroups: [], ipGroups: [],
       },
       onError: (message) => addToast(message || 'Αποτυχία φόρτωσης επισκεψιμότητας.', { type: 'error' }),
     }
@@ -197,8 +203,16 @@ function GeoAdminContent() {
       uniqueCountries: byCountry.length,
       authenticated: byCountry.reduce((sum, row) => sum + Number(row.authenticated || 0), 0),
       diaspora: byCountry.reduce((sum, row) => sum + Number(row.diaspora || 0), 0),
+      realTraffic: Number(visits?.trafficSummary?.human || 0),
+      crawlerTraffic: Number(visits?.trafficSummary?.crawler || 0),
     };
   }, [visits]);
+
+  const filteredRecentVisits = useMemo(() => {
+    const rows = visits?.recentVisits || [];
+    if (trafficFilter === 'all') return rows;
+    return rows.filter((row) => (row.trafficType || 'human') === trafficFilter);
+  }, [trafficFilter, visits]);
 
   const accessRuleRows = useMemo(
     () => (countryRules || []).map((rule) => {
@@ -551,8 +565,9 @@ function GeoAdminContent() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { label: 'Συνολικές Επισκέψεις', value: summary.totalVisits },
+                { label: 'Real traffic', value: summary.realTraffic },
+                { label: 'Known crawlers', value: summary.crawlerTraffic },
                 { label: 'Μοναδικές Χώρες', value: summary.uniqueCountries },
-                { label: 'Συνδεδεμένοι Χρήστες', value: summary.authenticated },
               ].map((card) => (
                 <div key={card.label} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
                   <p className="text-sm text-gray-500">{card.label}</p>
@@ -636,8 +651,100 @@ function GeoAdminContent() {
                   </div>
                 </div>
 
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 font-semibold">Crawler groups</div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Group</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visits</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last seen</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {(visits?.crawlerGroups || []).map((row) => (
+                            <tr key={row.key} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-gray-900">
+                                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+                                  row.trafficType === 'crawler' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+                                }`}>
+                                  {row.label}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700">{row.visits || 0}</td>
+                              <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                                {row.lastSeen ? new Date(row.lastSeen).toLocaleString('el-GR') : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                          {(visits?.crawlerGroups || []).length === 0 && (
+                            <tr>
+                              <td colSpan={3} className="px-4 py-6 text-center text-sm text-gray-500">No traffic groups yet.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                    <div className="px-4 py-3 border-b border-gray-100 font-semibold">Top IP groups</div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visits</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Country</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {(visits?.ipGroups || []).map((row) => (
+                            <tr key={row.ipAddress || 'no-ip'} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-xs text-gray-700 font-mono tracking-tight whitespace-nowrap">{row.ipAddress || '—'}</td>
+                              <td className="px-4 py-3 text-sm text-gray-700">
+                                {row.trafficType === 'crawler' ? row.crawlerLabel : 'Real / unknown'}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-700">{row.visits || 0}</td>
+                              <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                                <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
+                              </td>
+                            </tr>
+                          ))}
+                          {(visits?.ipGroups || []).length === 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-4 py-6 text-center text-sm text-gray-500">No IP groups yet.</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                  <div className="px-4 py-3 border-b border-gray-100 font-semibold">Πρόσφατες Επισκέψεις</div>
+                  <div className="px-4 py-3 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3">
+                    <div className="font-semibold">Πρόσφατες Επισκέψεις</div>
+                    <div className="flex flex-wrap gap-2" aria-label="Traffic filter">
+                      {TRAFFIC_FILTERS.map((option) => (
+                        <button
+                          key={option.key}
+                          type="button"
+                          onClick={() => setTrafficFilter(option.key)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
+                            trafficFilter === option.key
+                              ? 'border-blue-600 bg-blue-50 text-blue-700'
+                              : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
@@ -646,12 +753,13 @@ function GeoAdminContent() {
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Χρήστης</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Διαδρομή</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ημερομηνία</th>
                           <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Ενέργεια</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
-                        {(visits?.recentVisits || []).map((row, index) => (
+                        {filteredRecentVisits.map((row, index) => (
                           <tr key={`${row.createdAt || 'no-date'}-${row.ipAddress || 'no-ip'}-${index}`} className="hover:bg-gray-50">
                             <td className="px-4 py-3 text-sm text-gray-900">
                               <CountryFlag code={row.countryCode} /> {resolveCountryLabel(row.countryCode, row.countryName)}
@@ -671,6 +779,13 @@ function GeoAdminContent() {
                               </span>
                             </td>
                             <td className="px-4 py-3 text-xs text-gray-700 font-mono tracking-tight whitespace-nowrap">{row.ipAddress || '—'}</td>
+                            <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                              {row.trafficType === 'crawler' ? (
+                                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">{row.crawlerLabel}</span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">Real / unknown</span>
+                              )}
+                            </td>
                             <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                               {row.createdAt ? new Date(row.createdAt).toLocaleString('el-GR') : '—'}
                             </td>
@@ -693,9 +808,9 @@ function GeoAdminContent() {
                             </td>
                           </tr>
                         ))}
-                        {(visits?.recentVisits || []).length === 0 && (
+                        {filteredRecentVisits.length === 0 && (
                           <tr>
-                            <td colSpan={6} className="px-4 py-6 text-center text-sm text-gray-500">Δεν υπάρχουν δεδομένα.</td>
+                            <td colSpan={7} className="px-4 py-6 text-center text-sm text-gray-500">No visits match this filter.</td>
                           </tr>
                         )}
                       </tbody>

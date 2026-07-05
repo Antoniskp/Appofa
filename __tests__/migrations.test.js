@@ -389,6 +389,21 @@ describe('Database Migrations', () => {
     });
   });
 
+  describe('20260705000001-add-user-agent-to-geo-visits', () => {
+    test('adds GeoVisits.userAgent only when missing and rolls back cleanly', async () => {
+      await runMigration('20260420000000-create-geo-visits.js');
+      await runMigration('20260705000001-add-user-agent-to-geo-visits.js');
+      await expect(runMigration('20260705000001-add-user-agent-to-geo-visits.js')).resolves.not.toThrow();
+
+      let tableDescription = await queryInterface.describeTable('GeoVisits');
+      expect(tableDescription).toHaveProperty('userAgent');
+
+      await rollbackMigration('20260705000001-add-user-agent-to-geo-visits.js');
+      tableDescription = await queryInterface.describeTable('GeoVisits');
+      expect(tableDescription).not.toHaveProperty('userAgent');
+    });
+  });
+
   describe('20260420000001-create-country-fundings', () => {
     test('creates CountryFundings table with all columns', async () => {
       await runMigration('001-create-locations-table.js');
