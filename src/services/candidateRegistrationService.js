@@ -122,14 +122,17 @@ async function createRegistration(userId, data) {
     positionType,
     positionTitle: cleanString(data.positionTitle, 160),
     electionCycle,
-    partyName: cleanString(data.partyName, 160),
     isIndependent: Boolean(data.isIndependent),
     slogan: cleanString(data.slogan, 180),
     platform: cleanString(data.platform, 5000),
     websiteUrl: validateUrl(data.websiteUrl),
     contactEmail: cleanString(data.contactEmail, 255),
     status: 'submitted',
+    reviewedByUserId: null,
+    reviewedAt: null,
+    reviewNotes: null,
   };
+  payload.partyName = payload.isIndependent ? null : cleanString(data.partyName, 160);
 
   const registration = existing
     ? await existing.update(payload)
@@ -328,7 +331,10 @@ async function updateRegistration(userId, userRole, id, data) {
   if (data.positionTitle !== undefined) updates.positionTitle = cleanString(data.positionTitle, 160);
   if (data.electionCycle !== undefined) updates.electionCycle = cleanString(data.electionCycle, 80) || 'current';
   if (data.partyName !== undefined) updates.partyName = cleanString(data.partyName, 160);
-  if (data.isIndependent !== undefined) updates.isIndependent = Boolean(data.isIndependent);
+  if (data.isIndependent !== undefined) {
+    updates.isIndependent = Boolean(data.isIndependent);
+    if (updates.isIndependent) updates.partyName = null;
+  }
   if (data.slogan !== undefined) updates.slogan = cleanString(data.slogan, 180);
   if (data.platform !== undefined) updates.platform = cleanString(data.platform, 5000);
   if (data.websiteUrl !== undefined) updates.websiteUrl = validateUrl(data.websiteUrl);

@@ -228,7 +228,7 @@ function AdminCandidatesContent() {
                   <h2 className="text-xl font-bold text-gray-900">{getCandidateName(selected.candidate)}</h2>
                   <p className="text-sm text-gray-500">
                     {selected.positionTitle || POSITION_TYPE_LABELS[selected.positionType] || selected.positionType}
-                    {selected.location ? ` · ${selected.location.name_local || selected.location.name}` : ''}
+                    {selected.location ? ` - ${selected.location.name_local || selected.location.name}` : ''}
                   </p>
                 </div>
                 <button
