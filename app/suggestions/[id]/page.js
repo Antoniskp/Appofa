@@ -1,570 +1,90 @@
-'use client';
+import SuggestionDetailClient from './SuggestionDetailClient';
 
-import { useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import {
-  ArrowLeftIcon,
-  HandThumbUpIcon,
-  HandThumbDownIcon,
-  MapPinIcon,
-  LightBulbIcon,
-  ExclamationTriangleIcon,
-  PencilSquareIcon,
-  TrashIcon,
-  ShareIcon,
-} from '@heroicons/react/24/outline';
-import {
-  HandThumbUpIcon as HandThumbUpSolid,
-  HandThumbDownIcon as HandThumbDownSolid,
-} from '@heroicons/react/24/solid';
-import { suggestionAPI } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
-import { useToast } from '@/components/ToastProvider';
-import SkeletonLoader from '@/components/ui/SkeletonLoader';
-import EmptyState from '@/components/ui/EmptyState';
-import Badge from '@/components/ui/Badge';
-import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { useAsyncData } from '@/hooks/useAsyncData';
-import { TooltipIconButton } from '@/components/ui/Tooltip';
-import ShareModal from '@/components/ui/ShareModal';
-import LoginLink from '@/components/ui/LoginLink';
-import UserAvatar from '@/components/user/UserAvatar';
-import { getEmbedPath } from '@/lib/utils/embed';
+const SITE_URL = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'https://appofasi.gr';
+const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+async function fetchSuggestion(id) {
+  try {
+    const numericId = parseInt(id, 10);
+    if (!numericId) return null;
 
-const TYPE_LABELS = {
-  idea: 'Ιδέα',
-  problem: 'Πρόβλημα',
-  problem_request: 'Ερώτημα Κοινότητας',
-  location_suggestion: 'Τοποθεσία',
-};
+    const res = await fetch(`${API_URL}/api/suggestions/${numericId}`, {
+      next: { revalidate: 60 },
+    });
 
-const TYPE_VARIANTS = {
-  idea: 'primary',
-  problem: 'warning',
-  problem_request: 'danger',
-  location_suggestion: 'success',
-};
-
-const STATUS_LABELS = {
-  open: 'Ανοιχτό',
-  under_review: 'Σε Εξέταση',
-  implemented: 'Υλοποιήθηκε',
-  rejected: 'Απορρίφθηκε',
-};
-
-const STATUS_VARIANTS = {
-  open: 'info',
-  under_review: 'warning',
-  implemented: 'success',
-  rejected: 'danger',
-};
-
-const RESPONSE_CONFIG = {
-  idea: {
-    sectionTitle: 'Σχόλια & Απόψεις',
-    submitLabel: 'Προσθήκη Σχολίου',
-    placeholder: 'Μοιραστείτε την άποψή σας για αυτή την ιδέα...',
-    loginPrompt: 'για να προσθέσετε σχόλιο.',
-    emptyText: 'Δεν υπάρχουν σχόλια ακόμα. Γίνετε ο πρώτος!',
-  },
-  problem: {
-    sectionTitle: 'Προτεινόμενες Λύσεις',
-    submitLabel: 'Υποβολή Λύσης',
-    placeholder: 'Περιγράψτε την πρότασή σας για λύση...',
-    loginPrompt: 'για να προτείνετε λύση.',
-    emptyText: 'Δεν υπάρχουν λύσεις ακόμα. Γίνετε ο πρώτος που θα προτείνει!',
-  },
-  problem_request: {
-    sectionTitle: 'Αναφερόμενα Προβλήματα',
-    submitLabel: 'Αναφέρετε το Πρόβλημά σας',
-    placeholder: 'Περιγράψτε το πρόβλημα που αντιμετωπίζετε...',
-    loginPrompt: 'για να αναφέρετε το πρόβλημά σας.',
-    emptyText: 'Κανείς δεν έχει αναφέρει πρόβλημα ακόμα. Γίνετε ο πρώτος!',
-  },
-  location_suggestion: {
-    sectionTitle: 'Σχόλια',
-    submitLabel: 'Προσθήκη Σχολίου',
-    placeholder: 'Μοιραστείτε την άποψή σας για αυτή την τοποθεσία...',
-    loginPrompt: 'για να προσθέσετε σχόλιο.',
-    emptyText: 'Δεν υπάρχουν σχόλια ακόμα.',
-  },
-};
-
-// ─── Vote Buttons Component ───────────────────────────────────────────────────
-
-const VOTE_LABELS = {
-  idea:                { up: 'Approve',         down: 'Disapprove'    },
-  problem:             { up: 'It is a problem',  down: 'Not a problem' },
-  problem_request:     { up: 'I have this too',  down: 'Not relevant'  },
-  location_suggestion: { up: 'Good location',   down: 'Bad location'  },
-};
-
-function VoteButtons({ upvotes, downvotes, myVote, onVote, disabled, type }) {
-  const labels = VOTE_LABELS[type] || VOTE_LABELS.idea;
-  return (
-    <div className="flex items-center gap-1.5">
-      <button
-        onClick={() => onVote(1)}
-        disabled={disabled}
-        title={labels.up}
-        className={`p-1.5 rounded-lg transition-colors ${
-          myVote === 1
-            ? 'bg-green-100 text-green-700'
-            : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-        } disabled:opacity-40 disabled:cursor-not-allowed`}
-      >
-        {myVote === 1 ? (
-          <HandThumbUpSolid className="h-5 w-5" />
-        ) : (
-          <HandThumbUpIcon className="h-5 w-5" />
-        )}
-      </button>
-
-      <span className="text-sm font-bold min-w-[1.5rem] text-center text-green-600">
-        {upvotes}
-      </span>
-
-      <button
-        onClick={() => onVote(-1)}
-        disabled={disabled}
-        title={labels.down}
-        className={`p-1.5 rounded-lg transition-colors ${
-          myVote === -1
-            ? 'bg-red-100 text-red-600'
-            : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
-        } disabled:opacity-40 disabled:cursor-not-allowed`}
-      >
-        {myVote === -1 ? (
-          <HandThumbDownSolid className="h-5 w-5" />
-        ) : (
-          <HandThumbDownIcon className="h-5 w-5" />
-        )}
-      </button>
-
-      <span className="text-sm font-bold min-w-[1.5rem] text-center text-red-500">
-        {downvotes}
-      </span>
-    </div>
-  );
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json?.data || null;
+  } catch {
+    return null;
+  }
 }
 
-// ─── Solution Card ────────────────────────────────────────────────────────────
+export async function generateMetadata({ params }) {
+  const suggestion = await fetchSuggestion(params.id);
+  if (!suggestion) {
+    return {
+      title: 'Πρόταση | Απόφαση',
+      alternates: { canonical: `${SITE_URL}/suggestions/${params.id}` },
+    };
+  }
 
-function SolutionCard({ solution, user, onVote, votingId }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
-      <p className="text-sm text-gray-800 whitespace-pre-wrap">{solution.body}</p>
-      <div className="flex flex-wrap items-center justify-between mt-3 gap-3">
-        <div className="flex items-center gap-3 text-xs text-gray-500">
-          {solution.author && (
-            <span
-              className="inline-flex items-center gap-1.5 text-gray-600"
-              aria-label={`Συντάκτης απάντησης: ${solution.author.username}`}
-            >
-              <UserAvatar user={solution.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-              <span>{solution.author.username}</span>
-            </span>
-          )}
-          <span>{new Date(solution.createdAt).toLocaleDateString('el-GR')}</span>
-        </div>
-        <VoteButtons
-          upvotes={solution.upvotes ?? 0}
-          downvotes={solution.downvotes ?? 0}
-          myVote={solution.myVote}
-          onVote={(val) => onVote(solution.id, val)}
-          disabled={!user || votingId === `sol-${solution.id}`}
-          type="idea"
-        />
-      </div>
-    </div>
-  );
+  const canonicalUrl = `${SITE_URL}/suggestions/${suggestion.id}`;
+  const description = suggestion.body || `Δείτε την πρόταση "${suggestion.title}" στην Απόφαση.`;
+
+  return {
+    title: suggestion.title,
+    description,
+    alternates: { canonical: canonicalUrl },
+    openGraph: {
+      type: 'article',
+      title: suggestion.title,
+      description,
+      url: canonicalUrl,
+      images: [{ url: DEFAULT_OG_IMAGE, width: 1200, height: 630, alt: suggestion.title }],
+      publishedTime: suggestion.createdAt,
+      modifiedTime: suggestion.updatedAt,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: suggestion.title,
+      description,
+      images: [DEFAULT_OG_IMAGE],
+    },
+  };
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+export default async function SuggestionDetailPage({ params }) {
+  const suggestion = await fetchSuggestion(params.id);
+  const canonicalUrl = suggestion ? `${SITE_URL}/suggestions/${suggestion.id}` : null;
 
-export default function SuggestionDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const { user } = useAuth();
-  const { addToast } = useToast();
-  const tCommon = useTranslations('common');
-
-  const suggestionId = parseInt(params.id, 10);
-
-  const [suggestion, setSuggestion] = useState(null);
-  const [votingId, setVotingId] = useState(null);
-  const [solutionBody, setSolutionBody] = useState('');
-  const [submittingSolution, setSubmittingSolution] = useState(false);
-  const [solutionError, setSolutionError] = useState('');
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-
-  const fetchSuggestion = useCallback(async () => {
-    const res = await suggestionAPI.getById(suggestionId);
-    if (res.success) return res.data;
-    throw new Error(res.message || 'Σφάλμα φόρτωσης');
-  }, [suggestionId]);
-
-  const { loading, error } = useAsyncData(fetchSuggestion, [suggestionId], {
-    onSuccess: (data) => setSuggestion(data),
-  });
-
-  // ── Vote on suggestion ─────────────────────────────────────────────────────
-  const handleSuggestionVote = async (value) => {
-    if (!user) {
-      addToast('Πρέπει να συνδεθείτε για να ψηφίσετε.', { type: 'info' });
-      return;
-    }
-    setVotingId('suggestion');
-    try {
-      const res = await suggestionAPI.voteSuggestion(suggestionId, value);
-      if (res.success) {
-        setSuggestion((prev) => ({
-          ...prev,
-          upvotes: res.data.upvotes,
-          downvotes: res.data.downvotes,
-          score: res.data.score,
-          myVote: res.data.myVote,
-        }));
-      } else {
-        addToast(res.message || 'Σφάλμα ψηφοφορίας.', { type: 'error' });
+  const jsonLd = suggestion
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'CreativeWork',
+        name: suggestion.title,
+        description: suggestion.body || '',
+        image: DEFAULT_OG_IMAGE,
+        dateCreated: suggestion.createdAt,
+        dateModified: suggestion.updatedAt || suggestion.createdAt,
+        url: canonicalUrl,
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': canonicalUrl,
+        },
       }
-    } catch (err) {
-      addToast(err.message || 'Σφάλμα ψηφοφορίας.', { type: 'error' });
-    } finally {
-      setVotingId(null);
-    }
-  };
-
-  // ── Vote on solution ───────────────────────────────────────────────────────
-  const handleSolutionVote = async (solutionId, value) => {
-    if (!user) {
-      addToast('Πρέπει να συνδεθείτε για να ψηφίσετε.', { type: 'info' });
-      return;
-    }
-    setVotingId(`sol-${solutionId}`);
-    try {
-      const res = await suggestionAPI.voteSolution(solutionId, value);
-      if (res.success) {
-        setSuggestion((prev) => ({
-          ...prev,
-          solutions: prev.solutions
-            .map((s) =>
-              s.id === solutionId
-                ? { ...s, upvotes: res.data.upvotes, downvotes: res.data.downvotes, score: res.data.score, myVote: res.data.myVote }
-                : s
-            )
-            .sort((a, b) => b.score - a.score || new Date(a.createdAt) - new Date(b.createdAt)),
-        }));
-      } else {
-        addToast(res.message || 'Σφάλμα ψηφοφορίας.', { type: 'error' });
-      }
-    } catch (err) {
-      addToast(err.message || 'Σφάλμα ψηφοφορίας.', { type: 'error' });
-    } finally {
-      setVotingId(null);
-    }
-  };
-
-  // ── Submit a new solution ──────────────────────────────────────────────────
-  const handleSubmitSolution = async (e) => {
-    e.preventDefault();
-    setSolutionError('');
-    if (!solutionBody.trim() || solutionBody.trim().length < 10) {
-      setSolutionError('Η λύση πρέπει να έχει τουλάχιστον 10 χαρακτήρες.');
-      return;
-    }
-    setSubmittingSolution(true);
-    try {
-      const res = await suggestionAPI.createSolution(suggestionId, { body: solutionBody });
-      if (res.success) {
-        setSuggestion((prev) => ({
-          ...prev,
-          solutions: [res.data, ...(prev.solutions || [])],
-        }));
-        setSolutionBody('');
-        addToast('Η λύση προστέθηκε!', { type: 'success' });
-      } else {
-        addToast(res.message || 'Σφάλμα υποβολής.', { type: 'error' });
-      }
-    } catch (err) {
-      addToast(err.message || 'Σφάλμα υποβολής.', { type: 'error' });
-    } finally {
-      setSubmittingSolution(false);
-    }
-  };
-
-  // ── Delete suggestion ──────────────────────────────────────────────────────
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      const res = await suggestionAPI.delete(suggestionId);
-      if (res.success) {
-        addToast('Η πρόταση διαγράφηκε.', { type: 'success' });
-        router.push('/suggestions');
-      } else {
-        addToast(res.message || 'Σφάλμα κατά τη διαγραφή.', { type: 'error' });
-      }
-    } catch (err) {
-      addToast(err.message || 'Σφάλμα κατά τη διαγραφή.', { type: 'error' });
-    } finally {
-      setIsDeleting(false);
-      setShowDeleteDialog(false);
-    }
-  };
-
-  // ── Render ─────────────────────────────────────────────────────────────────
-
-  if (loading) {
-    return (
-      <div className="bg-gray-50 min-h-screen py-8">
-        <div className="app-container max-w-3xl">
-          <SkeletonLoader count={3} type="card" />
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !suggestion) {
-    return (
-      <div className="bg-gray-50 min-h-screen py-8">
-        <div className="app-container max-w-3xl">
-          <EmptyState
-            title="Η πρόταση δεν βρέθηκε"
-            description={error || 'Η πρόταση που ζητήσατε δεν υπάρχει.'}
-            action={{ label: 'Πίσω στις Προτάσεις', href: '/suggestions' }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  const isOwner = user?.id === suggestion.authorId;
-  const isPrivileged = user && ['admin', 'moderator'].includes(user.role);
-  const canAddSolution =
-    user &&
-    suggestion.status !== 'implemented' &&
-    suggestion.status !== 'rejected';
-
-  const responseConfig = RESPONSE_CONFIG[suggestion.type] || RESPONSE_CONFIG.idea;
+    : null;
 
   return (
     <>
-    <div className="bg-gray-50 min-h-screen py-8">
-      <div className="app-container max-w-3xl">
-        {/* Back */}
-        <Link
-          href="/suggestions"
-          className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 mb-6"
-        >
-          <ArrowLeftIcon className="h-4 w-4" />
-          Πίσω στις Προτάσεις
-        </Link>
-
-        {/* Suggestion Card */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm mb-6">
-          {/* Badges row */}
-          <div className="flex flex-wrap items-center gap-2 mb-4">
-            <Badge variant={TYPE_VARIANTS[suggestion.type] || 'default'}>
-              {TYPE_LABELS[suggestion.type] || suggestion.type}
-            </Badge>
-            <Badge variant={STATUS_VARIANTS[suggestion.status] || 'default'}>
-              {STATUS_LABELS[suggestion.status] || suggestion.status}
-            </Badge>
-            {suggestion.location && (
-              <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                <MapPinIcon className="h-3.5 w-3.5" />
-                {suggestion.location.name}
-              </span>
-            )}
-          </div>
-
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">{suggestion.title}</h1>
-          <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{suggestion.body}</p>
-
-          {/* Footer row */}
-          <div className="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-gray-100 gap-3">
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              {suggestion.author && (
-                <span
-                  className="inline-flex items-center gap-1.5 font-medium text-gray-700"
-                  aria-label={`Δημιουργός πρότασης: ${suggestion.author.username}`}
-                >
-                  <UserAvatar user={suggestion.author} size="h-6 w-6" textSize="text-xs" showBadges={false} />
-                  <span>{suggestion.author.username}</span>
-                </span>
-              )}
-              {!suggestion.author && (
-                <span className="font-medium text-gray-700">
-                  {suggestion.hideCreator ? tCommon('anonymous') : tCommon('unknown')}
-                </span>
-              )}
-              <span>{new Date(suggestion.createdAt).toLocaleDateString('el-GR')}</span>
-              {(isOwner || isPrivileged) && (
-                <Link
-                  href={`/suggestions/${suggestion.id}/edit`}
-                  className="inline-flex items-center gap-1 text-blue-500 hover:text-blue-700"
-                >
-                  <PencilSquareIcon className="h-3.5 w-3.5" />
-                  Επεξεργασία
-                </Link>
-              )}
-              {(isOwner || isPrivileged) && (
-                <button
-                  onClick={() => setShowDeleteDialog(true)}
-                  className="inline-flex items-center gap-1 text-red-400 hover:text-red-600"
-                >
-                  <TrashIcon className="h-3.5 w-3.5" />
-                  Διαγραφή
-                </button>
-              )}
-              <TooltipIconButton
-                icon={ShareIcon}
-                tooltip="Κοινοποίηση πρότασης"
-                onClick={() => setShowShareModal(true)}
-              />
-            </div>
-
-            <VoteButtons
-              upvotes={suggestion.upvotes ?? 0}
-              downvotes={suggestion.downvotes ?? 0}
-              myVote={suggestion.myVote}
-              onVote={handleSuggestionVote}
-              disabled={!user || votingId === 'suggestion'}
-              type={suggestion.type}
-            />
-          </div>
-
-          {!user && (
-            <p className="text-xs text-gray-400 mt-3 text-right">
-              <LoginLink className="text-blue-500 hover:underline">
-                Συνδεθείτε
-              </LoginLink>{' '}
-              για να ψηφίσετε.
-            </p>
-          )}
-
-          {(() => {
-            const effectivePopulation = suggestion.location?.population_override ?? suggestion.location?.population;
-            if (!effectivePopulation || effectivePopulation <= 0) return null;
-            const upvotes = suggestion.upvotes ?? 0;
-            const downvotes = suggestion.downvotes ?? 0;
-            if (upvotes === 0 && downvotes === 0) return null;
-            const approvedPct = Math.round(upvotes / effectivePopulation * 100);
-            const disapprovedPct = Math.round(downvotes / effectivePopulation * 100);
-            return (
-              <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 space-y-1">
-                {upvotes > 0 && (
-                  <p><span className="font-semibold text-green-700">{approvedPct}%</span> του πληθυσμού της τοποθεσίας ενέκρινε αυτή την πρόταση.</p>
-                )}
-                {downvotes > 0 && (
-                  <p><span className="font-semibold text-red-600">{disapprovedPct}%</span> του πληθυσμού της τοποθεσίας διαφώνησε με αυτή την πρόταση.</p>
-                )}
-              </div>
-            );
-          })()}
-        </div>
-
-        {/* Response Section */}
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-4">
-            {responseConfig.sectionTitle}{' '}
-            <span className="text-gray-400 font-normal text-base">
-              ({suggestion.solutions?.length || 0})
-            </span>
-          </h2>
-
-          {/* Responses List */}
-          {suggestion.solutions && suggestion.solutions.length > 0 ? (
-            <div className="space-y-3 mb-5">
-              {suggestion.solutions.map((sol) => (
-                <SolutionCard
-                  key={sol.id}
-                  solution={sol}
-                  user={user}
-                  onVote={handleSolutionVote}
-                  votingId={votingId}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-dashed border-gray-200 p-8 text-center text-gray-400 text-sm mb-5">
-              {responseConfig.emptyText}
-            </div>
-          )}
-
-          {/* Add Response Form */}
-          {canAddSolution ? (
-            <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-              <h3 className="text-sm font-semibold text-gray-800 mb-3">
-                {responseConfig.submitLabel}
-              </h3>
-              <form onSubmit={handleSubmitSolution}>
-                <textarea
-                  value={solutionBody}
-                  onChange={(e) => {
-                    setSolutionBody(e.target.value);
-                    if (solutionError) setSolutionError('');
-                  }}
-                  rows={4}
-                  placeholder={responseConfig.placeholder}
-                  maxLength={5000}
-                  className={`w-full border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[100px] ${
-                    solutionError ? 'border-red-400' : 'border-gray-300 focus:border-blue-500'
-                  }`}
-                />
-                {solutionError && (
-                  <p className="text-red-500 text-xs mt-1">{solutionError}</p>
-                )}
-                <div className="flex justify-end mt-3">
-                  <button
-                    type="submit"
-                    disabled={submittingSolution}
-                    className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {submittingSolution ? 'Υποβολή...' : responseConfig.submitLabel}
-                  </button>
-                </div>
-              </form>
-            </div>
-          ) : !user ? (
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 text-center">
-              <LoginLink className="text-blue-600 hover:underline font-medium">
-                Συνδεθείτε
-              </LoginLink>{' '}
-              {responseConfig.loginPrompt}
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </div>
-
-    <ConfirmDialog
-      isOpen={showDeleteDialog}
-      onCancel={() => setShowDeleteDialog(false)}
-      onConfirm={handleDelete}
-      title="Διαγραφή Πρότασης"
-      message="Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή την πρόταση; Η ενέργεια δεν μπορεί να αναιρεθεί."
-      confirmText={isDeleting ? 'Διαγράφεται...' : 'Διαγραφή'}
-      cancelText="Άκυρο"
-      destructive
-      loading={isDeleting}
-    />
-    {showShareModal && (
-      <ShareModal
-        url={typeof window !== 'undefined' ? window.location.href : ''}
-        title={suggestion.title}
-        shareText="Δείτε αυτή την πρόταση στο Appofa! 💡"
-        embedPath={getEmbedPath('suggestions', suggestion.id)}
-        embedHeight={540}
-        onClose={() => setShowShareModal(false)}
-      />
-    )}
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <SuggestionDetailClient />
     </>
   );
 }

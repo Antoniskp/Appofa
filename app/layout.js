@@ -8,7 +8,7 @@ import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.SITE_URL || 'https://appofasi.gr';
-const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/appofa-app-icon.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 const APP_ICON = '/images/branding/appofa-app-icon.png';
 
 export const metadata = {
@@ -37,21 +37,16 @@ export const metadata = {
     title: 'Απόφαση',
     description: 'Η πύλη σας για τελευταίες ειδήσεις, δημοσκοπήσεις και τοπικά νέα',
     url: SITE_URL,
-    images: [{ url: DEFAULT_OG_IMAGE }],
+    images: [{ url: DEFAULT_OG_IMAGE, width: 1536, height: 1024, alt: 'Απόφαση' }],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Απόφαση',
     description: 'Η πύλη σας για τελευταίες ειδήσεις, δημοσκοπήσεις και τοπικά νέα',
     images: [DEFAULT_OG_IMAGE],
   },
   alternates: {
     canonical: SITE_URL,
-    languages: {
-      el: SITE_URL,
-      en: SITE_URL,
-      ro: SITE_URL,
-    },
   },
 };
 

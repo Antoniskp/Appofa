@@ -1,0 +1,387 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { 
+  CalendarIcon, 
+  UserIcon, 
+  EyeIcon, 
+  PencilSquareIcon,
+  ClockIcon,
+  BookmarkIcon,
+  ShareIcon,
+  PrinterIcon,
+} from '@heroicons/react/24/outline';
+import { BookmarkIcon as BookmarkIconSolid } from '@heroicons/react/24/solid';
+import { pollAPI, bookmarkAPI } from '@/lib/api';
+import CommentsThread from '@/components/comments/CommentsThread';
+import { useAuth } from '@/lib/auth-context';
+import { usePermissions } from '@/hooks/usePermissions';
+import PollVoting from '@/components/polls/PollVoting';
+import PollResults from '@/components/polls/PollResults';
+import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import EmptyState from '@/components/ui/EmptyState';
+import Badge from '@/components/ui/Badge';
+import { useToast } from '@/components/ToastProvider';
+import { TooltipIconButton } from '@/components/ui/Tooltip';
+import { idSlug } from '@/lib/utils/slugify';
+import { getEmbedPath } from '@/lib/utils/embed';
+import { buildTaxonomyHref } from '@/lib/utils/taxonomyLinks';
+import ReportButton from '@/components/ReportButton';
+import ShareModal from '@/components/ui/ShareModal';
+
+export default function PollDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { user } = useAuth();
+  const { isAdmin } = usePermissions();
+  const { addToast } = useToast();
+  
+  const [poll, setPoll] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [isBookmarked, setIsBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
+  const [bookmarkCount, setBookmarkCount] = useState(0);
+  const [showShareModal, setShowShareModal] = useState(false);
+
+  // Support both numeric IDs and slug-prefixed IDs like "42-my-poll-title"
+  const pollId = parseInt(params.id, 10);
+
+  const fetchPoll = async () => {
+    setLoading(true);
+    setError('');
+    
+    try {
+      const response = await pollAPI.getById(pollId);
+      if (response.success) {
+        setPoll(response.data);
+      }
+    } catch (err) {
+      setError(err.message || 'Σφάλμα κατά τη φόρτωση της δημοσκόπησης');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (pollId) {
+      fetchPoll();
+    }
+  }, [pollId]);
+
+  // Redirect old numeric-only URLs to canonical slug URLs
+  useEffect(() => {
+    if (!poll) return;
+    const canonical = idSlug(poll.id, poll.title);
+    if (params.id !== canonical) {
+      router.replace(`/polls/${canonical}`);
+    }
+  }, [poll, params.id, router]);
+
+  const handleVoteSuccess = () => {
+    // Refresh poll data after voting
+    fetchPoll();
+  };
+
+  const handleShare = () => {
+    setShowShareModal(true);
+  };
+
+  const handleBookmark = () => {
+    if (!user) {
+      addToast('Συνδεθείτε για να αποθηκεύσετε δημοσκοπήσεις.', { type: 'info' });
+      return;
+    }
+
+    if (!poll?.id || bookmarkLoading) return;
+
+    setBookmarkLoading(true);
+    bookmarkAPI.toggle('poll', poll.id)
+      .then((response) => {
+        setIsBookmarked(Boolean(response.data?.bookmarked));
+        setBookmarkCount((prev) => (
+          response.data?.bookmarked ? prev + 1 : Math.max(prev - 1, 0)
+        ));
+        addToast(
+          response.data?.bookmarked ? 'Η δημοσκόπηση αποθηκεύτηκε.' : 'Ο σελιδοδείκτης αφαιρέθηκε.',
+          { type: 'success' }
+        );
+      })
+      .catch((err) => {
+        addToast(err.message || 'Σφάλμα κατά την ενημέρωση σελιδοδείκτη.', { type: 'error' });
+      })
+      .finally(() => {
+        setBookmarkLoading(false);
+      });
+  };
+
+  // Check if user can view results
+  const canViewResults = (poll) => {
+    if (!poll) return false;
+    
+    if (poll.resultsVisibility === 'always') return true;
+    if (poll.resultsVisibility === 'after_deadline' && (poll.status === 'closed' || (poll.deadline && new Date() >= new Date(poll.deadline)))) return true;
+    if (poll.resultsVisibility === 'after_vote' && poll.userVote) return true;
+    
+    // Creator and admin can always view results
+    if (user && (poll.creatorId === user.id || isAdmin)) return true;
+    
+    return false;
+  };
+
+  const isPollActive = poll && poll.status === 'active' && (!poll.deadline || new Date(poll.deadline) > new Date());
+  const isCreator = user && poll && poll.creatorId === user.id;
+  const canEdit = isCreator || isAdmin;
+  const showResults = canViewResults(poll);
+  const creatorLabel = poll?.hideCreator ? 'Ανώνυμος' : (poll?.creator?.username || 'Άγνωστος');
+
+  useEffect(() => {
+    if (!user || !poll?.id) {
+      setIsBookmarked(false);
+      return;
+    }
+
+    let isActive = true;
+    bookmarkAPI.getStatus('poll', poll.id)
+      .then((response) => {
+        if (isActive) {
+          setIsBookmarked(Boolean(response.data?.bookmarked));
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setIsBookmarked(false);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [user, poll?.id]);
+
+  useEffect(() => {
+    if (!poll?.id) {
+      setBookmarkCount(0);
+      return;
+    }
+
+    let isActive = true;
+    bookmarkAPI.getCount('poll', poll.id)
+      .then((response) => {
+        if (isActive) {
+          setBookmarkCount(response.data?.count || 0);
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setBookmarkCount(0);
+        }
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, [poll?.id]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="app-container max-w-4xl">
+          <SkeletonLoader type="card" count={1} />
+          <div className="mt-6">
+            <SkeletonLoader type="text" count={5} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !poll) {
+    return (
+      <div className="bg-gray-50 min-h-screen py-8">
+        <div className="app-container max-w-4xl">
+          <EmptyState
+            type="error"
+            title="Δεν Βρέθηκε η Δημοσκόπηση"
+            description={error || 'Η δημοσκόπηση που ζητήσατε δεν υπάρχει.'}
+            action={{
+              text: 'Επιστροφή στις Δημοσκοπήσεις',
+              onClick: () => router.push('/polls')
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+    <div className="bg-gray-50 min-h-screen py-8">
+      <div className="app-container max-w-4xl">
+        {/* Header */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+          <div className="mb-8">
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Badge variant={poll.type === 'simple' ? 'primary' : 'purple'}>
+                {poll.type === 'simple' ? 'Απλή' : 'Σύνθετη'}
+              </Badge>
+              <Badge variant={isPollActive ? 'success' : 'gray'}>
+                {isPollActive ? 'Ενεργή' : 'Κλειστή'}
+              </Badge>
+              {poll.category && (
+                <Link href={buildTaxonomyHref('/polls', 'category', poll.category)} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                  <Badge variant="primary" className="cursor-pointer hover:opacity-90 transition-opacity">{poll.category}</Badge>
+                </Link>
+              )}
+              {Array.isArray(poll.tags) && poll.tags.length > 0 && (
+                poll.tags.filter(Boolean).map((tag) => (
+                  <Link key={tag} href={buildTaxonomyHref('/polls', 'tag', tag)} className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    <Badge variant="purple" size="md" className="cursor-pointer hover:opacity-90 transition-opacity">
+                      {tag}
+                    </Badge>
+                  </Link>
+                ))
+              )}
+              {poll.visibility === 'locals_only' && (
+                <Badge variant="orange">Τοπική</Badge>
+              )}
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">{poll.title}</h1>
+            
+            {poll.description && (
+              <p className="text-gray-700 text-lg mb-4 whitespace-pre-wrap">
+                {poll.description}
+              </p>
+            )}
+            
+            {/* Meta Information with Share/Bookmark/Print */}
+            <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 border-t border-gray-200 pt-4">
+              <div className="flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                <span>Δημιουργός: <strong>{creatorLabel}</strong></span>
+              </div>
+              <span>•</span>
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4" />
+                <span>Δημιουργήθηκε: {new Date(poll.createdAt).toLocaleDateString('el-GR')}</span>
+              </div>
+              {poll.deadline && (
+                <>
+                  <span>•</span>
+                  <div className="flex items-center gap-2">
+                    <ClockIcon className="h-4 w-4" />
+                    <span>Λήγει: {new Date(poll.deadline).toLocaleDateString('el-GR')} {new Date(poll.deadline).toLocaleTimeString('el-GR', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </>
+              )}
+              <span>•</span>
+              <div className="flex items-center gap-2">
+                <EyeIcon className="h-4 w-4" />
+                <span>Ορατότητα: <strong>{poll.visibility === 'public' ? 'Δημόσια' : poll.visibility === 'locals_only' ? 'Τοπική' : 'Μόνο Συνδεδεμένοι'}</strong></span>
+              </div>
+              
+              {/* Share, Bookmark, Print buttons on the right */}
+              <div className="ml-auto flex gap-2">
+                <TooltipIconButton
+                  icon={ShareIcon}
+                  tooltip="Κοινοποίηση δημοσκόπησης"
+                  onClick={handleShare}
+                />
+                <div className="flex items-center gap-1">
+                  <TooltipIconButton
+                    icon={isBookmarked ? BookmarkIconSolid : BookmarkIcon}
+                    tooltip={isBookmarked ? 'Αφαίρεση από τα σελιδοδείκτες' : 'Αποθήκευση'}
+                    onClick={handleBookmark}
+                    disabled={bookmarkLoading}
+                    variant={isBookmarked ? 'primary' : 'default'}
+                  />
+                  {bookmarkCount > 0 && (
+                    <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                      {bookmarkCount}
+                    </span>
+                  )}
+                </div>
+                <TooltipIconButton
+                  icon={PrinterIcon}
+                  tooltip="Εκτύπωση"
+                  onClick={() => window.print()}
+                />
+                <ReportButton contentType="poll" contentId={poll.id} />
+                {canEdit && (
+                  <TooltipIconButton
+                    icon={PencilSquareIcon}
+                    tooltip="Επεξεργασία"
+                    onClick={() => router.push(`/polls/${poll.id}/edit`)}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Voting Section */}
+        {isPollActive && (
+          <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Ψηφοφορία</h2>
+            <PollVoting poll={poll} onVoteSuccess={handleVoteSuccess} />
+          </div>
+        )}
+
+        {/* Results Section */}
+        {showResults && (
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Αποτελέσματα</h2>
+            <PollResults poll={poll} canView={showResults} canEdit={canEdit} />
+          </div>
+        )}
+
+        {/* Results Not Available Message */}
+        {!showResults && !isPollActive && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 text-center">
+            <p className="text-gray-600">
+              Τα αποτελέσματα θα είναι διαθέσιμα {
+                poll.resultsVisibility === 'after_deadline' ? 'μετά την προθεσμία της δημοσκόπησης' :
+                poll.resultsVisibility === 'after_vote' ? 'αφού ψηφίσετε' :
+                'σύντομα'
+              }.
+            </p>
+          </div>
+        )}
+
+        {/* Comments */}
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mt-6">
+          <CommentsThread
+            entityType="poll"
+            entityId={poll.id}
+            commentsEnabled={poll.commentsEnabled !== false}
+            commentsLocked={poll.commentsLocked === true}
+          />
+        </div>
+
+        {/* Back Link */}
+        <div className="mt-6">
+          <Link
+            href="/polls"
+            className="text-blue-600 hover:text-blue-800 font-medium"
+          >
+            ← Επιστροφή στις Δημοσκοπήσεις
+          </Link>
+        </div>
+      </div>
+
+    </div>
+      {showShareModal && (
+        <ShareModal
+          url={typeof window !== 'undefined' ? window.location.href : ''}
+          title={poll.title}
+          shareText="Δείτε αυτή τη δημοσκόπηση στο Appofa! 📊"
+          embedPath={getEmbedPath('polls', poll.id, poll.title)}
+          embedHeight={620}
+          onClose={() => setShowShareModal(false)}
+        />
+      )}
+    </>
+  );
+}

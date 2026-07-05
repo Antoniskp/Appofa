@@ -5,6 +5,15 @@ const SITE_URL = process.env.SITE_URL || 'https://appofasi.gr';
 const API_URL = process.env.API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/images/branding/news default.png`;
 
+function absoluteImageUrl(url) {
+  if (!url) return DEFAULT_OG_IMAGE;
+  try {
+    return new URL(url, SITE_URL).toString();
+  } catch {
+    return DEFAULT_OG_IMAGE;
+  }
+}
+
 async function fetchArticle(id) {
   try {
     const numericId = parseInt(id, 10);
@@ -28,7 +37,7 @@ export async function generateMetadata({ params }) {
 
   const slug = idSlug(article.id, article.title);
   const canonicalUrl = `${SITE_URL}/videos/${slug}`;
-  const image = `${SITE_URL}/images/branding/appofasi-high-resolution-logo-transparent.png`;
+  const image = absoluteImageUrl(article.sourceMeta?.thumbnailUrl || article.bannerImageUrl);
   const description = article.summary || article.content?.substring(0, 160) || '';
 
   return {
@@ -40,12 +49,12 @@ export async function generateMetadata({ params }) {
       title: article.title,
       description,
       url: canonicalUrl,
-      images: [{ url: image }],
+      images: [{ url: image, width: 1200, height: 630, alt: article.title }],
       publishedTime: article.publishedAt || article.createdAt,
       modifiedTime: article.updatedAt,
     },
     twitter: {
-      card: 'summary',
+      card: 'summary_large_image',
       title: article.title,
       description,
       images: [image],
@@ -62,7 +71,7 @@ export default async function VideoDetailPage({ params }) {
         '@type': 'VideoObject',
         name: article.title,
         description: article.summary || article.content?.substring(0, 160) || '',
-        thumbnailUrl: article.sourceMeta?.thumbnailUrl || DEFAULT_OG_IMAGE,
+        thumbnailUrl: absoluteImageUrl(article.sourceMeta?.thumbnailUrl || article.bannerImageUrl),
         uploadDate: article.publishedAt || article.createdAt,
         url: `${SITE_URL}/videos/${idSlug(article.id, article.title)}`,
       }

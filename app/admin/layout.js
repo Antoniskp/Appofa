@@ -1,11 +1,10 @@
 export const metadata = {
-  title: 'Ειδοποιήσεις',
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export default function NotificationsLayout({ children }) {
+export default function AdminLayout({ children }) {
   return children;
 }
