@@ -11,6 +11,7 @@ import {
   MapPinIcon,
   MegaphoneIcon,
   NewspaperIcon,
+  ShieldCheckIcon,
   UserGroupIcon,
   UserPlusIcon,
 } from '@heroicons/react/24/outline';
@@ -87,6 +88,12 @@ const civicPathActions = (user) => [
     icon: UserPlusIcon,
   },
   {
+    href: '/polls/create',
+    title: 'Άνοιξε ψηφοφορία',
+    description: 'Ρώτησε την κοινότητα για θέματα που χρειάζονται καθαρή δημόσια γνώμη.',
+    icon: ClipboardDocumentListIcon,
+  },
+  {
     href: '/independents',
     title: 'Δες ανεξάρτητους',
     description: 'Βρες ανεξάρτητους υποψηφίους και δημόσια πρόσωπα στην πλατφόρμα.',
@@ -103,6 +110,12 @@ const civicPathActions = (user) => [
     title: 'Ανάδειξε πρόσωπα',
     description: 'Μοιράσου και πρότεινε υποψηφίους που εμπιστεύεσαι.',
     icon: MegaphoneIcon,
+  },
+  {
+    href: '/become-moderator',
+    title: 'Βοήθησε στη διαχείριση',
+    description: 'Κράτησε τις συζητήσεις χρήσιμες, καθαρές και κοντά στα πραγματικά θέματα.',
+    icon: ShieldCheckIcon,
   },
   {
     href: '/suggestions/new',
@@ -161,16 +174,16 @@ export default function HomeActionLanes({ user }) {
                 Τρόποι συμμετοχής
               </p>
               <h2 className="mt-2 text-2xl font-bold leading-tight md:text-3xl">
-                Από την αγανάκτηση στη δράση.
+                Βοήθησε να γίνει η κοινότητα πιο χρήσιμη.
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-700">
-                Βρες ανεξάρτητους υποψηφίους, στήριξε δημόσιες δεσμεύσεις,
-                πρότεινε λύσεις για την περιοχή σου, ανάδειξε προβλήματα και
-                ψήφισε όσα έχουν πραγματική σημασία.
+                Ψήφισε σε ανοιχτές ψηφοφορίες, άνοιξε νέες ερωτήσεις, πρότεινε
+                λύσεις, ανάδειξε ανθρώπους και βοήθησε στη διαχείριση ώστε οι
+                δημόσιες συζητήσεις να μένουν καθαρές και πρακτικές.
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {pathActions.map(({ href, title, description, icon: Icon }) => (
                 <Link
                   key={href}
