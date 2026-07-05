@@ -291,8 +291,9 @@ const createLocation = async (locationData) => {
  */
 const getLocations = async (queryParams) => {
   try {
-    const { type, parent_id, search, code, limit = 100, offset = 0, sort } = queryParams;
+    const { type, parent_id, search, code, limit = 100, offset = 0, sort, includeUserCounts } = queryParams;
     const escapedSearch = search ? search.replace(/[\\%_]/g, '\\$&') : null;
+    const shouldIncludeUserCounts = sort === 'mostUsers' || includeUserCounts === true || includeUserCounts === 'true' || includeUserCounts === '1';
 
     const whereClause = {};
 
@@ -319,7 +320,7 @@ const getLocations = async (queryParams) => {
     const parsedOffset = parseInt(offset, 10);
     let locations;
 
-    if (sort === 'mostUsers') {
+    if (shouldIncludeUserCounts) {
       const whereConditions = [];
       const replacements = { limit: parsedLimit, offset: parsedOffset };
 
@@ -348,6 +349,10 @@ const getLocations = async (queryParams) => {
       }
 
       const whereSql = whereConditions.length > 0 ? ` AND ${whereConditions.join(' AND ')}` : '';
+
+      const orderSql = sort === 'mostUsers'
+        ? 'ORDER BY "userCount" DESC, l.name ASC'
+        : 'ORDER BY l.name ASC';
 
       const locationsRaw = await sequelize.query(
         `WITH RECURSIVE location_tree AS (
@@ -388,7 +393,7 @@ const getLocations = async (queryParams) => {
         LEFT JOIN user_counts uc ON uc.location_id = l.id
         LEFT JOIN "Locations" parent ON parent.id = l.parent_id
         WHERE 1=1${whereSql}
-        ORDER BY "userCount" DESC, l.name ASC
+        ${orderSql}
         LIMIT :limit OFFSET :offset`,
         {
           replacements,

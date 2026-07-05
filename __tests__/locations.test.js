@@ -225,6 +225,61 @@ describe('Location API Tests', () => {
       expect(countsById[municipality.id]).toBe(2);
       expect(treeLocations.find((location) => location.id === municipality.id)?.parent?.id).toBe(prefecture.id);
     });
+
+    it('should include aggregate user counts without changing default name ordering', async () => {
+      const country = await Location.create({ name: 'User Count Homepage Country', slug: 'user-count-homepage-country', type: 'country' });
+      const alpha = await Location.create({ name: 'A Homepage Prefecture', slug: 'a-homepage-prefecture', type: 'prefecture', parent_id: country.id });
+      const beta = await Location.create({ name: 'B Homepage Prefecture', slug: 'b-homepage-prefecture', type: 'prefecture', parent_id: country.id });
+      const alphaMunicipality = await Location.create({ name: 'A Homepage Municipality', slug: 'a-homepage-municipality', type: 'municipality', parent_id: alpha.id });
+
+      const [alphaUser, betaUserOne, betaUserTwo] = await Promise.all([
+        User.create({
+          username: 'homepage_count_alpha',
+          email: 'homepage_count_alpha@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: alphaMunicipality.id,
+          profileVisibility: 'registered'
+        }),
+        User.create({
+          username: 'homepage_count_beta_one',
+          email: 'homepage_count_beta_one@test.com',
+          password: 'password123',
+          role: 'viewer',
+          profileVisibility: 'registered'
+        }),
+        User.create({
+          username: 'homepage_count_beta_two',
+          email: 'homepage_count_beta_two@test.com',
+          password: 'password123',
+          role: 'viewer',
+          homeLocationId: beta.id,
+          profileVisibility: 'registered'
+        })
+      ]);
+
+      await Promise.all([
+        LocationLink.create({ location_id: alphaMunicipality.id, entity_type: 'user', entity_id: alphaUser.id }),
+        LocationLink.create({ location_id: beta.id, entity_type: 'user', entity_id: betaUserOne.id })
+      ]);
+
+      const response = await request(app)
+        .get('/api/locations')
+        .query({
+          type: 'prefecture',
+          parent_id: country.id,
+          includeUserCounts: true,
+          limit: 10
+        })
+        .expect(200);
+
+      expect(response.body.success).toBe(true);
+      expect(response.body.locations.map((location) => location.name)).toEqual([
+        'A Homepage Prefecture',
+        'B Homepage Prefecture'
+      ]);
+      expect(response.body.locations.map((location) => location.userCount)).toEqual([1, 2]);
+    });
   });
 
   describe('POST /api/locations', () => {

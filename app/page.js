@@ -159,6 +159,7 @@ export default function HomePage() {
         const response = await locationAPI.getAll({
           type: 'prefecture',
           parent_id: greeceId,
+          includeUserCounts: true,
           limit: 50,
         });
         if (response.success) {

@@ -661,7 +661,7 @@ describe('ExploreLocationsMap — prefecture pills', () => {
 //
 // The fix uses a 2-step API pattern:
 //   1. `locationAPI.getAll({ type: 'country', code: 'GR', limit: 1 })` → resolve Greece ID
-//   2. `locationAPI.getAll({ type: 'prefecture', parent_id: greeceId, limit: 50 })` → Greek prefectures only
+//   2. `locationAPI.getAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, limit: 50 })` → Greek prefectures only with aggregate user counts
 //
 // These tests verify the contract for that pattern.
 
@@ -674,7 +674,7 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
         ? greeceRes.locations[0].id
         : null;
     if (!greeceId) return [];
-    const response = await mockGetAll({ type: 'prefecture', parent_id: greeceId, limit: 50 });
+    const response = await mockGetAll({ type: 'prefecture', parent_id: greeceId, includeUserCounts: true, limit: 50 });
     return response.success ? (response.locations || []) : [];
   }
 
@@ -701,7 +701,7 @@ describe('homepage Greek prefecture scoping — regression for Cyprus pills bug'
     // First call: country code lookup
     expect(mockGetAll).toHaveBeenNthCalledWith(1, { type: 'country', code: 'GR', limit: 1 });
     // Second call: prefectures scoped to Greece's ID
-    expect(mockGetAll).toHaveBeenNthCalledWith(2, { type: 'prefecture', parent_id: 7, limit: 50 });
+    expect(mockGetAll).toHaveBeenNthCalledWith(2, { type: 'prefecture', parent_id: 7, includeUserCounts: true, limit: 50 });
 
     expect(prefectures).toHaveLength(2);
     const names = prefectures.map((p) => p.name);
