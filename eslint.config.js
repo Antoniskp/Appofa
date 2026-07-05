@@ -1,11 +1,7 @@
 const js = require('@eslint/js');
 const globals = require('globals');
-
-const noopRule = {
-  create() {
-    return {};
-  },
-};
+const nextPlugin = require('@next/eslint-plugin-next');
+const reactHooksPlugin = require('eslint-plugin-react-hooks');
 
 module.exports = [
   js.configs.recommended,
@@ -19,16 +15,8 @@ module.exports = [
   },
   {
     plugins: {
-      '@next/next': {
-        rules: {
-          'no-img-element': noopRule,
-        },
-      },
-      'react-hooks': {
-        rules: {
-          'exhaustive-deps': noopRule,
-        },
-      },
+      '@next/next': nextPlugin,
+      'react-hooks': reactHooksPlugin,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -44,6 +32,8 @@ module.exports = [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'no-var': 'error',
       'prefer-const': 'warn',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
   },
   {
@@ -53,6 +43,9 @@ module.exports = [
       'hooks/**/*.js',
       'lib/**/*.js',
     ],
+    rules: {
+      '@next/next/no-img-element': 'warn',
+    },
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

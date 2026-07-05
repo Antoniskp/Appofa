@@ -80,12 +80,21 @@ describe('News Application Integration Tests', () => {
     await sequelize.close();
   });
 
-  test('should enable schema sync in non-production environments', () => {
+  test('should enable schema sync only when explicitly requested outside production', () => {
     const originalEnv = process.env.NODE_ENV;
+    const originalAutoSync = process.env.AUTO_SYNC_SCHEMA;
     process.env.NODE_ENV = 'test';
+    delete process.env.AUTO_SYNC_SCHEMA;
     const { shouldSyncSchema } = require('../src/index');
+    expect(shouldSyncSchema()).toBe(false);
+    process.env.AUTO_SYNC_SCHEMA = 'true';
     expect(shouldSyncSchema()).toBe(true);
     process.env.NODE_ENV = originalEnv;
+    if (originalAutoSync === undefined) {
+      delete process.env.AUTO_SYNC_SCHEMA;
+    } else {
+      process.env.AUTO_SYNC_SCHEMA = originalAutoSync;
+    }
   });
 
   test('should disable schema sync in production environments', () => {

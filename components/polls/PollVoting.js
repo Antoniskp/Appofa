@@ -440,9 +440,9 @@ function hexWithLowOpacity(hex) {
  * Submits the vote immediately on click (single-click vote).
  */
 function BinaryPollOptions({ options, selectedOptionId, isSubmitting, hasVoted, onSelect, useCustomColors }) {
+  const [justVoted, setJustVoted] = useState(null); // option id that triggered pop animation
   if (!options || options.length < 2) return null;
   const [yesOpt, noOpt] = [options[0], options[1]];
-  const [justVoted, setJustVoted] = useState(null); // option id that triggered pop animation
 
   const handleSelect = (id) => {
     setJustVoted(id);

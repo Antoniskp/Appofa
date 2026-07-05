@@ -11,7 +11,8 @@ const {
   normalizeBoolean,
   normalizeStringArray,
   normalizeEnum,
-  normalizeUrl
+  normalizeUrl,
+  normalizePublicHttpUrl
 } = require('../utils/validators');
 
 // ---------------------------------------------------------------------------
@@ -51,7 +52,7 @@ const sanitizeArticle = (article, user) => {
 const normalizeStatus = (status) => normalizeEnum(status, ARTICLE_STATUSES, 'Status');
 const normalizeType = (type) => normalizeEnum(type, ARTICLE_TYPES, 'Article type');
 const normalizeTags = (tags) => normalizeStringArray(tags, 'Tags');
-const normalizeBannerImageUrl = (value) => normalizeUrl(value, 'Banner image URL', true);
+const normalizeBannerImageUrl = (value) => normalizePublicHttpUrl(value, 'Banner image URL', true);
 
 /**
  * Check if a moderator can manage (update/delete) a given article.

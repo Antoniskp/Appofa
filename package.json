@@ -4,7 +4,7 @@
   "description": "Application for news, education and polls",
   "main": "src/index.js",
   "scripts": {
-    "lint": "eslint src app components hooks lib",
+    "lint": "eslint src app components hooks lib && node scripts/check-migrations.js",
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "test": "jest --coverage",
@@ -93,7 +93,9 @@
     "js-yaml": ">=4.2.0"
   },
   "devDependencies": {
+    "@next/eslint-plugin-next": "^16.2.10",
     "eslint": "^9.39.3",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^16.5.0",
     "jest": "^30.3.0",
     "jest-environment-jsdom": "^30.3.0",

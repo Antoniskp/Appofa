@@ -2,7 +2,10 @@
  * Shared validation utility functions for controllers
  */
 
+const net = require('net');
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const BLOCKED_PUBLIC_URL_HOSTNAMES = new Set(['localhost', 'localhost.localdomain']);
 
 /**
  * Normalize and validate a required text field
@@ -211,6 +214,65 @@ const normalizeUrl = (value, fieldLabel = 'URL', allowRelative = true) => {
   return { value: trimmedValue };
 };
 
+const isPrivateIPv4 = (hostname) => {
+  const parts = hostname.split('.').map((part) => Number.parseInt(part, 10));
+  if (parts.length !== 4 || parts.some((part) => Number.isNaN(part) || part < 0 || part > 255)) {
+    return false;
+  }
+
+  const [a, b] = parts;
+  return (
+    a === 10 ||
+    a === 127 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254) ||
+    a === 0
+  );
+};
+
+const isPrivateIPv6 = (hostname) => {
+  const normalized = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  return (
+    normalized === '::1' ||
+    normalized === '::' ||
+    normalized.startsWith('fc') ||
+    normalized.startsWith('fd') ||
+    normalized.startsWith('fe80:')
+  );
+};
+
+const isBlockedPublicUrlHost = (hostname) => {
+  const normalized = hostname.replace(/\.$/, '').toLowerCase();
+  if (!normalized || BLOCKED_PUBLIC_URL_HOSTNAMES.has(normalized) || normalized.endsWith('.localhost')) {
+    return true;
+  }
+  const ipHost = normalized.replace(/^\[|\]$/g, '');
+  if (net.isIP(ipHost) === 4) return isPrivateIPv4(ipHost);
+  if (net.isIP(ipHost) === 6) return isPrivateIPv6(ipHost);
+  return false;
+};
+
+/**
+ * Normalize and validate a public HTTP(S) URL.
+ * Use this for user-provided media URLs that may be fetched by clients or image optimizers.
+ */
+const normalizePublicHttpUrl = (value, fieldLabel = 'URL', allowRelative = true) => {
+  const result = normalizeUrl(value, fieldLabel, allowRelative);
+  if (result.error || result.value == null || result.value === undefined || result.value.startsWith('/')) {
+    return result;
+  }
+
+  const parsedUrl = new URL(result.value);
+  if (parsedUrl.username || parsedUrl.password) {
+    return { error: `${fieldLabel} must not include credentials.` };
+  }
+  if (isBlockedPublicUrlHost(parsedUrl.hostname)) {
+    return { error: `${fieldLabel} must use a public hostname.` };
+  }
+  return result;
+};
+
 /**
  * Normalize and validate an integer
  * @param {*} value - The value to validate
@@ -257,6 +319,7 @@ module.exports = {
   normalizeStringArray,
   normalizeEnum,
   normalizeUrl,
+  normalizePublicHttpUrl,
   normalizeInteger,
   escapeLikePattern,
 };

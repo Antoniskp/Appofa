@@ -3,7 +3,8 @@ const { User, Location, LocationLink, Article, Poll, PollOption, PollVote, Bookm
 const {
   normalizeRequiredText,
   normalizeOptionalText,
-  normalizeInteger
+  normalizeInteger,
+  normalizePublicHttpUrl
 } = require('../utils/validators');
 const { getDescendantLocationIds, getAncestorLocationIds, getManageableLocationIdsFromAssignments } = require('../utils/locationUtils');
 const dbConfig = require('../config/database');
@@ -210,15 +211,8 @@ async function updateUserProfile(userId, data) {
         // Allow server-generated upload paths (set by the avatar upload endpoint)
         user.avatar = trimmedAvatar;
       } else {
-        let avatarUrl;
-        try {
-          avatarUrl = new URL(trimmedAvatar);
-        } catch {
-          throw new ServiceError(400, 'Avatar URL is malformed.');
-        }
-        if (!['http:', 'https:'].includes(avatarUrl.protocol)) {
-          throw new ServiceError(400, 'Avatar URL must use HTTP or HTTPS protocol.');
-        }
+        const avatarResult = normalizePublicHttpUrl(trimmedAvatar, 'Avatar URL', false);
+        if (avatarResult.error) throw new ServiceError(400, avatarResult.error);
         user.avatar = trimmedAvatar;
       }
     } else {

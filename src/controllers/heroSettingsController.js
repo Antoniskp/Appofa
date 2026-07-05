@@ -1,5 +1,6 @@
 const { randomUUID } = require('crypto');
 const HeroSettings = require('../models/HeroSettings');
+const { normalizePublicHttpUrl } = require('../utils/validators');
 
 const DEFAULT_SETTINGS = {
   backgroundImageUrl: '',
@@ -96,8 +97,11 @@ const updateHeroSettings = async (req, res) => {
     if (backgroundImageUrl !== undefined && typeof backgroundImageUrl !== 'string') {
       return res.status(400).json({ success: false, message: 'backgroundImageUrl must be a string.' });
     }
-    if (backgroundImageUrl && backgroundImageUrl.trim() && !/^https?:\/\//i.test(backgroundImageUrl.trim())) {
-      return res.status(400).json({ success: false, message: 'backgroundImageUrl must be a valid http or https URL.' });
+    if (backgroundImageUrl && backgroundImageUrl.trim()) {
+      const backgroundImageResult = normalizePublicHttpUrl(backgroundImageUrl, 'backgroundImageUrl', false);
+      if (backgroundImageResult.error) {
+        return res.status(400).json({ success: false, message: backgroundImageResult.error });
+      }
     }
     if (backgroundColor !== undefined) {
       if (typeof backgroundColor !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(backgroundColor)) {

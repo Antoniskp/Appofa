@@ -327,11 +327,6 @@ export default function AdminDreamTeamPage() {
     { initialData: [] }
   );
 
-  if (!authLoading && user && !['admin', 'moderator'].includes(user.role)) {
-    router.replace('/');
-    return null;
-  }
-
   // Derive sorted list of countries present in the DB (scalable — no hardcoding).
   const availableCountries = useMemo(() => {
     const codes = [...new Set(allPositions.map((p) => p.countryCode).filter(Boolean))].sort();
@@ -364,6 +359,11 @@ export default function AdminDreamTeamPage() {
     }
     return acc;
   }, [positions]);
+
+  if (!authLoading && user && !['admin', 'moderator'].includes(user.role)) {
+    router.replace('/');
+    return null;
+  }
 
   const renderGroup = (scope) => {
     const group = grouped[scope];

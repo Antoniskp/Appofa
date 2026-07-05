@@ -28,6 +28,7 @@ app.set('trust proxy', 1);
 
 const PORT = process.env.PORT || 3000;
 const isProductionEnv = () => process.env.NODE_ENV === 'production';
+const shouldSyncSchema = () => !isProductionEnv() && process.env.AUTO_SYNC_SCHEMA === 'true';
 
 // Middleware
 app.use(helmet(helmetConfig));
@@ -85,8 +86,8 @@ const startServer = async () => {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
 
-    if (!isProductionEnv()) {
-      // Sync database models in non-production environments
+    if (shouldSyncSchema()) {
+      // Explicitly opt in to model sync for disposable local databases.
       await sequelize.sync({ alter: true });
       console.log('Database models synchronized.');
       
@@ -106,8 +107,10 @@ const startServer = async () => {
           console.warn('Warning: Could not apply column comments:', error.message);
         }
       }
-    } else {
+    } else if (isProductionEnv()) {
       console.log('Skipping Sequelize sync in production. Run migrations before starting the server.');
+    } else {
+      console.log('Skipping Sequelize sync. Set AUTO_SYNC_SCHEMA=true only for disposable local databases.');
     }
 
     try {
@@ -142,4 +145,4 @@ if (require.main === module) {
 
 module.exports = app;
 module.exports.startServer = startServer;
-module.exports.shouldSyncSchema = () => !isProductionEnv();
+module.exports.shouldSyncSchema = shouldSyncSchema;
