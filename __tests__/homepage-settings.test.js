@@ -67,9 +67,7 @@ describe('Homepage Settings API', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.manifestSection).toEqual({ enabled: true, audience: 'all' });
-    expect(res.body.data.infoSection.enabled).toBe(false);
-    expect(res.body.data.infoSection.audience).toBe('guest');
-    expect(res.body.data.infoSection.bodyText).toBe('');
+    expect(res.body.data.infoSection).toBeUndefined();
   });
 
   it('PUT should reject unauthenticated requests', async () => {
@@ -88,20 +86,9 @@ describe('Homepage Settings API', () => {
     expect(res.status).toBe(403);
   });
 
-  it('PUT should update manifest and info sections for admin', async () => {
+  it('PUT should update manifest section for admin', async () => {
     const payload = {
       manifestSection: { enabled: false, audience: 'registered' },
-      infoSection: {
-        enabled: true,
-        audience: 'guest',
-        bannerText: 'Καλώς ήρθες',
-        subText: 'Μάθε πρώτα τα βασικά',
-        bodyText: '  Αναλυτικό μήνυμα δοκιμής  ',
-        experimentalNotice: false,
-        quickLinks: [{ icon: '🧭', text: 'Οδηγίες', href: '/instructions' }],
-        roadmap: ['Βήμα Α'],
-        done: ['Βήμα 0'],
-      },
     };
 
     const res = await request(app)
@@ -112,11 +99,7 @@ describe('Homepage Settings API', () => {
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
     expect(res.body.data.manifestSection).toEqual(payload.manifestSection);
-    expect(res.body.data.infoSection).toMatchObject({
-      ...payload.infoSection,
-      bodyText: 'Αναλυτικό μήνυμα δοκιμής',
-    });
-    expect(res.body.data.infoSection.bodyText).toBe('Αναλυτικό μήνυμα δοκιμής');
+    expect(res.body.data.infoSection).toBeUndefined();
   });
 
   it('PUT should validate object payloads', async () => {
@@ -124,7 +107,7 @@ describe('Homepage Settings API', () => {
       .put('/api/homepage-settings')
       .set('Authorization', `Bearer ${adminToken}`)
       .set(csrfHeadersFor('csrf-homepage-admin-2', adminId))
-      .send({ infoSection: [] });
+      .send({ manifestSection: [] });
     expect(res.status).toBe(400);
   });
 });

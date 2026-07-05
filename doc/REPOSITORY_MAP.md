@@ -159,7 +159,7 @@ Appofa/
 | ManifestAcceptance | ManifestAcceptances | id, manifestId, userId, acceptedAt | belongsTo: Manifest, User |
 | UserBadge | UserBadges | id, userId, badgeName, earnedAt | belongsTo: User |
 | HeroSettings | HeroSettings | id, isActive, slide data fields | — |
-| HomepageSettings | HomepageSettings | id, manifestSection(JSON), infoSection(JSON) | — |
+| HomepageSettings | HomepageSettings | id, manifestSection(JSON) | — |
 | Tag | Tags | id, name (unique lowercase) | hasMany: TaggableItem; belongsToMany: Article, Poll, Suggestion (via TaggableItems) |
 | TaggableItem | TaggableItems | id, tagId, entityType (article\|poll\|suggestion), entityId | belongsTo: Tag |
 | IpAccessRule | IpAccessRules | id, ip (STRING 45, unique), type (whitelist\|blacklist), reason, createdByUserId | belongsTo: User (createdBy) |

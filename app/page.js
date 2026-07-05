@@ -9,7 +9,6 @@ import { useAuth } from '@/lib/auth-context';
 import HomeHero from '@/components/HomeHero';
 import HomeActionLanes from '@/components/HomeActionLanes';
 import GovernmentSnapshotSection from '@/components/GovernmentSnapshotSection';
-import HomepageInfoSection from '@/components/HomepageInfoSection';
 import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
@@ -258,9 +257,6 @@ export default function HomePage() {
     <div className="bg-gray-50">
       <CountryEntryPopup isAuthenticated={Boolean(user)} />
       <HomeHero />
-      {homepageSettings?.infoSection?.enabled && isVisibleForAudience(homepageSettings?.infoSection?.audience) && (
-        <HomepageInfoSection settings={homepageSettings.infoSection} />
-      )}
       <HomeActionLanes user={user} />
 
       <HomepageSection
