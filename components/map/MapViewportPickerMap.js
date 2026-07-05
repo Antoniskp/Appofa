@@ -102,7 +102,6 @@ export default function MapViewportPickerMap({ lat, lng, zoom, onChange, classNa
       mapRef.current = null;
     };
     // Intentionally empty deps: Leaflet map must only be initialised once.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keep map view in sync when parent values change externally

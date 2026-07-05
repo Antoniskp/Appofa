@@ -115,7 +115,6 @@ function HolderAvatar({ photo, name, avatarColor, size = 'md' }) {
     : 'h-10 w-10 text-sm';
   if (photo) {
     return (
-      /* eslint-disable-next-line @next/next/no-img-element */
       <img
         src={photo}
         alt={name || ''}

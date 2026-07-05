@@ -56,7 +56,7 @@ describe('CountryFundingBanner', () => {
     expect(container.textContent).toContain('🇬🇧');
     expect(container.textContent).toContain('Geo IP');
     expect(container.textContent).toContain('Fallback από backend /api/geo/detect (IP lookup)');
-    expect(container.textContent).toContain('Μόνο πληροφοριακό (δεν εφαρμόζεται ως redirect/country mode)');
+    expect(container.textContent).toContain('Μόνο πληροφοριακό — δεν χρησιμοποιείται για ανακατευθύνσεις');
     expect(container.textContent).toContain('Η εφαρμοσμένη λειτουργία χώρας διαφέρει από την ανίχνευση.');
 
     const hrefs = Array.from(container.querySelectorAll('a')).map((node) => node.getAttribute('href'));

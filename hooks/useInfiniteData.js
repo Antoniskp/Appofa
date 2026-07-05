@@ -26,7 +26,6 @@ export function useInfiniteData(fetchFn, limit = 15, resetDeps = []) {
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState(null);
   const isMounted = useRef(true);
-
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -64,7 +63,6 @@ export function useInfiniteData(fetchFn, limit = 15, resetDeps = []) {
   }, [fetchFn, limit]);
 
   // Reset when resetDeps change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     load(1, true);
   }, resetDeps);

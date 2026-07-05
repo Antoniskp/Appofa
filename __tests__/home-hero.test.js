@@ -209,7 +209,7 @@ describe('HomeHero CTA link behavior', () => {
     useAuth.mockReturnValue({ user: null, loading: false });
     const { container, root } = await renderHero(buildSlide('/polls'));
 
-    expect(container.textContent).toContain('Η πλατφόρμα πολιτικής συμμετοχής για κάθε πολίτη');
+    expect(container.textContent).toContain('Πολιτική συμμετοχή, κοντά στην καθημερινότητα');
     expect(container.querySelector('a[href="/register"]')).toBeFalsy();
     expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
     expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeTruthy();

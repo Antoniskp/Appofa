@@ -74,7 +74,6 @@ export default function VideoEmbedField({
     if (value !== inputValue) {
       setInputValue(value || '');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const fetchPreview = useCallback(async (url) => {
@@ -116,7 +115,6 @@ export default function VideoEmbedField({
       if (onChangeRef.current) onChangeRef.current(null);
     }
   // fetchPreview has no reactive dependencies - all state is accessed via refs
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleInputChange = (e) => {

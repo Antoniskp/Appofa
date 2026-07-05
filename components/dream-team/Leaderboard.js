@@ -58,7 +58,6 @@ export default function Leaderboard({ currentUserId }) {
 
   useEffect(() => {
     loadData(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

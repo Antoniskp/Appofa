@@ -75,6 +75,9 @@ jest.mock('@/lib/api', () => ({
     getProfile: jest.fn(() => Promise.resolve({
       success: true,
       data: { user: null }
+    })),
+    checkUsernameAvailability: jest.fn(() => Promise.resolve({
+      available: true
     }))
   },
   articleAPI: {
@@ -274,8 +277,8 @@ describe('Frontend smoke tests', () => {
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Αποφάσεις που ξεκινούν από εσένα.');
-    expect(container.textContent).toContain('Νέα & Άρθρα');
+    expect(container.textContent).toContain('Η περιοχή σου, οι αποφάσεις σου.');
+    expect(container.textContent).toContain('Νέα και Αναλύσεις');
 
     await act(async () => {
       root.unmount();
@@ -289,7 +292,7 @@ describe('Frontend smoke tests', () => {
     const HomePage = require('../app/page').default;
     const { container, root } = await renderPage(HomePage);
 
-    expect(container.textContent).toContain('Μερικές ψηφοφορίες είναι ανοιχτές για όλους!');
+    expect(container.textContent).toContain('Ορισμένες ψηφοφορίες είναι ανοιχτές χωρίς εγγραφή');
     expect(container.textContent).not.toContain('Ψηφίστε χωρίς εγγραφή');
     expect(pollAPI.getAll).not.toHaveBeenCalledWith(expect.objectContaining({
       voteRestriction: 'anyone',
@@ -431,7 +434,7 @@ describe('Frontend smoke tests', () => {
     const { container, root } = await renderPage(RegisterPage);
 
     expect(container.textContent).toContain('Δημιουργία λογαριασμού');
-    expect(container.textContent).toContain('Εγγραφείτε άμεσα με Google ή GitHub — χωρίς φόρμα');
+    expect(container.textContent).toContain('Δημιούργησε πρώτα τον λογαριασμό.');
     expect(container.textContent).toContain('Ή εγγραφή με email');
     expect(container.textContent).toContain('Επιβεβαίωση κωδικού');
 
@@ -460,34 +463,24 @@ describe('Frontend smoke tests', () => {
       await flushPromises();
     });
 
-    const nextButtons = Array.from(container.querySelectorAll('button')).filter(
-      (button) => button.textContent.includes('Next')
+    const optionalSetupButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Προσθήκη στοιχείων')
     );
 
     await act(async () => {
-      nextButtons[0].dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      optionalSetupButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();
     });
 
-    expect(container.textContent).toContain('Η εθνικότητα μας βοηθάει να σου δείχνουμε σχετικά θέματα και στατιστικά.');
-    expect(container.textContent).toContain('Δεν βρίσκεις τον δήμο σου; Επίλεξε τον νομό σου');
+    expect(container.textContent).toContain('Μας βοηθά να εμφανίζουμε σχετικά θέματα και στατιστικά.');
+    expect(container.textContent).toContain('Δεν βρίσκεις τον δήμο σου; Επίλεξε προς το παρόν την περιφέρεια ή τον νομό σου.');
 
-    const greekQuickSelectButton = Array.from(container.querySelectorAll('button')).find(
-      (button) => button.textContent.includes('Είμαι Έλληνας / Ελληνίδα')
+    const selectedNationalityButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.className.includes('border-blue-500')
     );
-    expect(greekQuickSelectButton.className).toContain('border-blue-500');
+    expect(selectedNationalityButton?.textContent).toContain('Γρήγορη επιλογή για ελληνική εθνικότητα');
 
-    const stepTwoNextButton = Array.from(container.querySelectorAll('button')).find(
-      (button) => button.textContent.includes('Επόμενο')
-    );
-
-    await act(async () => {
-      stepTwoNextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await flushPromises();
-    });
-
-    expect(container.textContent).toContain('Σχεδόν έτοιμος/η! Ένα τελευταίο βήμα.');
-    expect(container.textContent).toContain('Εθνικότητα: GR');
+    expect(container.querySelector('input[name="profileVisibility"][value="registered"]').checked).toBe(true);
 
     await act(async () => {
       root.unmount();
@@ -496,33 +489,38 @@ describe('Frontend smoke tests', () => {
 
   test('register page shows password validation before advancing from step 1', async () => {
     mockSearchParams.get.mockReturnValue(null);
-    useAuth.mockReturnValue(buildAuthState());
+    const registerMock = jest.fn(() => Promise.resolve({ success: true }));
+    useAuth.mockReturnValue(buildAuthState({ register: registerMock }));
     const RegisterPage = require('../app/register/page').default;
     const { container, root } = await renderPage(RegisterPage);
 
+    const usernameInput = container.querySelector('input[name="username"]');
+    const emailInput = container.querySelector('input[name="email"]');
     const passwordInput = container.querySelector('input[name="password"]');
     const confirmPasswordInput = container.querySelector('input[name="confirmPassword"]');
+    const gdprConsent = container.querySelector('input[name="gdpr_consent"]');
 
     await act(async () => {
+      setInputValue(usernameInput, 'shortpass');
+      setInputValue(emailInput, 'shortpass@test.com');
       setInputValue(passwordInput, '12345');
       passwordInput.dispatchEvent(new Event('blur', { bubbles: true }));
       setInputValue(confirmPasswordInput, '12345');
       confirmPasswordInput.dispatchEvent(new Event('blur', { bubbles: true }));
+      setCheckboxValue(gdprConsent, true);
       await flushPromises();
     });
-
-    expect(container.textContent).toContain('Ο κωδικός πρέπει να έχει τουλάχιστον {min} χαρακτήρες');
-
-    const nextButton = Array.from(container.querySelectorAll('button')).find(
-      (button) => button.textContent.includes('Next')
-    );
 
     await act(async () => {
-      nextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      const submitButton = Array.from(container.querySelectorAll('button')).find(
+        (button) => button.textContent.includes('Δημιουργία λογαριασμού')
+      );
+      submitButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();
     });
 
-    expect(container.textContent).not.toContain('Η εθνικότητα μας βοηθάει να σου δείχνουμε σχετικά θέματα και στατιστικά.');
+    expect(container.textContent).toContain('Αδύναμος κωδικός');
+    expect(registerMock).not.toHaveBeenCalled();
 
     await act(async () => {
       root.unmount();
@@ -554,12 +552,12 @@ describe('Frontend smoke tests', () => {
       await flushPromises();
     });
 
-    const accountNextButton = Array.from(container.querySelectorAll('button')).find(
-      (button) => button.textContent.includes('Next')
+    const optionalSetupButton = Array.from(container.querySelectorAll('button')).find(
+      (button) => button.textContent.includes('Προσθήκη στοιχείων')
     );
 
     await act(async () => {
-      accountNextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      optionalSetupButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();
     });
 
@@ -572,15 +570,6 @@ describe('Frontend smoke tests', () => {
 
     await act(async () => {
       setCheckboxValue(diasporaCheckbox, true);
-      await flushPromises();
-    });
-
-    const stepTwoNextButton = Array.from(container.querySelectorAll('button')).find(
-      (button) => button.textContent.includes('Επόμενο')
-    );
-
-    await act(async () => {
-      stepTwoNextButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();
     });
 
@@ -625,14 +614,8 @@ describe('Frontend smoke tests', () => {
     });
 
     await act(async () => {
-      const firstNext = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Next'));
-      firstNext.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-      await flushPromises();
-    });
-
-    await act(async () => {
-      const secondNext = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Επόμενο'));
-      secondNext.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      const optionalSetupButton = Array.from(container.querySelectorAll('button')).find((button) => button.textContent.includes('Προσθήκη στοιχείων'));
+      optionalSetupButton.dispatchEvent(new MouseEvent('click', { bubbles: true }));
       await flushPromises();
     });
 

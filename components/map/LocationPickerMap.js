@@ -134,7 +134,6 @@ export default function LocationPickerMap({ lat, lng, onChange, className }) {
     };
     // Intentionally empty deps: Leaflet map must only be initialised once.
     // Coordinate prop changes are handled by the sync useEffect below.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Keep marker position in sync when parent lat/lng change externally

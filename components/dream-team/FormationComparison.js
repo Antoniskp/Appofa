@@ -121,7 +121,6 @@ export default function FormationComparison({ formationA = null, publicFormation
     } finally {
       if (side === 'left') setLoadingLeft(false); else setLoadingRight(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Pre-populate if formationA is provided

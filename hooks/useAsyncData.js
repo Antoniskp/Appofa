@@ -83,12 +83,10 @@ export function useAsyncData(
         setLoading(false);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...dependencies]);
 
   useEffect(() => {
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [...dependencies]);
 
   useEffect(() => {

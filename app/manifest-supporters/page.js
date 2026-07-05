@@ -55,7 +55,6 @@ function ManifestSupportersContent() {
       const page = pageMap[manifest.slug] || 1;
       fetchSupporters(manifest.slug, page);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [manifests, pageMap]);
 
   // Auto-scroll to highlighted manifest
