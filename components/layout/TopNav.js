@@ -161,9 +161,9 @@ export default function TopNav() {
           mobileIcon: <UsersIcon className="h-5 w-5" />
         },
         {
-          id: 'independents',
-          label: tNav('independents'),
-          href: '/independents',
+          id: 'candidates',
+          label: tNav('candidates'),
+          href: '/candidates',
           icon: <FlagIcon className="h-4 w-4" />,
           mobileIcon: <FlagIcon className="h-5 w-5" />
         }
@@ -315,6 +315,13 @@ export default function TopNav() {
       href: '/cameras',
       icon: <VideoCameraIcon className="h-4 w-4" />,
       mobileIcon: <VideoCameraIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'candidates',
+      label: tNav('candidates'),
+      href: '/candidates',
+      icon: <FlagIcon className="h-4 w-4" />,
+      mobileIcon: <FlagIcon className="h-5 w-5" />,
     },
     {
       id: 'platform',

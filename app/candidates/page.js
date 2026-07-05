@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { ArrowRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { candidateRegistrationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useInfiniteData } from '@/hooks/useInfiniteData';
@@ -75,6 +75,45 @@ export default function CandidatesPage() {
               Register
             </Link>
           </div>
+        </div>
+
+        <div className="mb-6 grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+          <div className="rounded-lg border border-blue-100 bg-white p-5 shadow-sm">
+            <h2 className="text-base font-semibold text-gray-900">Candidate registrations</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-600">
+              Browse people who registered for a public campaign listing, including party-backed and independent campaigns.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => updateFilter('partyMode', 'independent')}
+                className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100"
+              >
+                Show independent registrations
+              </button>
+              <button
+                type="button"
+                onClick={() => updateFilter('partyMode', 'party')}
+                className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Show party/list registrations
+              </button>
+            </div>
+          </div>
+          <Link
+            href="/independents"
+            className="group rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition hover:border-blue-300 hover:shadow-md"
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Independent lane</p>
+            <h2 className="mt-2 text-base font-semibold text-gray-900">Independent public officials</h2>
+            <p className="mt-1 text-sm leading-6 text-gray-600">
+              See independent profiles, office roles, and manifesto commitments in one focused view.
+            </p>
+            <span className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-700">
+              Open independents
+              <ArrowRightIcon className="h-4 w-4 transition group-hover:translate-x-0.5" />
+            </span>
+          </Link>
         </div>
 
         <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4">

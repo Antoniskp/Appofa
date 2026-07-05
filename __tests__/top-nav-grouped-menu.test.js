@@ -144,9 +144,11 @@ describe('TopNav simplified navigation', () => {
     expect(moreDropdown).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/cameras"]')).toBeTruthy();
     expect(moreDropdown.querySelector('a[href="/users"]')).toBeTruthy();
+    expect(moreDropdown.querySelector('a[href="/candidates"]')).toBeTruthy();
 
     const mobileCamerasLink = container.querySelector('#mobile-menu a[href="/cameras"]');
     expect(mobileCamerasLink).toBeTruthy();
+    expect(container.querySelector('#mobile-menu a[href="/candidates"]')).toBeTruthy();
   });
 
   test('guest More dropdown includes sub-page links without the legacy all-pages item', () => {
@@ -283,6 +285,11 @@ describe('TopNav simplified navigation', () => {
   test('authenticated users keep the grouped desktop sections', async () => {
     mockAuthUser = { username: 'demo', homeLocation: { slug: 'athens' } };
     await renderTopNav();
+
+    const communityDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-community-menu"]');
+    expect(communityDropdown).toBeTruthy();
+    expect(communityDropdown.querySelector('a[href="/candidates"]')).toBeTruthy();
+    expect(communityDropdown.querySelector('a[href="/independents"]')).toBeFalsy();
 
     const participationDropdown = container.querySelector('[data-testid="dropdown-desktop-nav-participation-menu"]');
     expect(participationDropdown).toBeTruthy();
