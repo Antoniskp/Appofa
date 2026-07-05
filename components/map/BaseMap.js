@@ -650,11 +650,15 @@ export default function BaseMap({
     });
   }, [polygonLayers]);
 
+  const wrapperClassName = isExpanded
+    ? 'fixed inset-3 z-[2000] rounded-xl bg-white p-2 shadow-2xl'
+    : `relative ${className}`;
+
   return (
-    <div className={isExpanded ? 'fixed inset-3 z-[2000] rounded-xl bg-white p-2 shadow-2xl' : 'relative'}>
+    <div className={wrapperClassName}>
       <div
         ref={mapContainerRef}
-        className={isExpanded ? 'h-full w-full rounded-lg overflow-hidden' : className}
+        className={isExpanded ? 'h-full w-full rounded-lg overflow-hidden' : 'h-full w-full'}
       />
       {showFullscreenControl && (
         <button
