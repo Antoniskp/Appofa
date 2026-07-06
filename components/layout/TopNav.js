@@ -18,6 +18,7 @@ import {
   NewspaperIcon,
   ShieldCheckIcon,
   TrophyIcon,
+  TagIcon,
   UserCircleIcon,
   UserPlusIcon,
   UsersIcon,
@@ -96,6 +97,13 @@ export default function TopNav() {
           href: '/videos',
           icon: <VideoCameraIcon className="h-4 w-4" />,
           mobileIcon: <VideoCameraIcon className="h-5 w-5" />
+        },
+        {
+          id: 'topics',
+          label: tNav('topics'),
+          href: '/topics',
+          icon: <TagIcon className="h-4 w-4" />,
+          mobileIcon: <TagIcon className="h-5 w-5" />
         }
       ]
     },
@@ -280,6 +288,13 @@ export default function TopNav() {
       href: '/articles',
       icon: <DocumentTextIcon className="h-4 w-4" />,
       mobileIcon: <DocumentTextIcon className="h-5 w-5" />,
+    },
+    {
+      id: 'topics',
+      label: tNav('topics'),
+      href: '/topics',
+      icon: <TagIcon className="h-4 w-4" />,
+      mobileIcon: <TagIcon className="h-5 w-5" />,
     },
     {
       id: 'videos',
