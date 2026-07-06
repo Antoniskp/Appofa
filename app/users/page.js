@@ -23,7 +23,9 @@ import LoadMoreTrigger from '@/components/ui/LoadMoreTrigger';
 import LocationFilterBreadcrumb from '@/components/ui/LocationFilterBreadcrumb';
 import {
   DOMAINS,
+  EMPLOYMENT_TYPES,
   EXPERTISE_TAG_GROUPS,
+  SERVICE_MODES,
   getExpertiseTagLabel,
   getSpecializations,
   resolveProfessionLabel,
@@ -232,7 +234,8 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
     : t('all_expertise');
 
   const hasActiveFilters =
-    filters.search || filters.locationId || filters.domainId || filters.expertiseArea;
+    filters.search || filters.locationId || filters.domainId || filters.expertiseArea ||
+    filters.employmentType || filters.serviceMode || filters.availableForHire;
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
@@ -309,6 +312,44 @@ function FilterBar({ filters, onFilterChange, onReset, resetKey, t }) {
         )}
 
         {/* Expertise – custom accordion dropdown */}
+        <select
+          value={filters.employmentType || ''}
+          onChange={(e) => onFilterChange('employmentType', e.target.value)}
+          className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[170px] ${
+            filters.employmentType ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
+          }`}
+        >
+          <option value="">Any work type</option>
+          {EMPLOYMENT_TYPES.map((type) => (
+            <option key={type.id} value={type.id}>{type.label}</option>
+          ))}
+        </select>
+
+        <select
+          value={filters.serviceMode || ''}
+          onChange={(e) => onFilterChange('serviceMode', e.target.value)}
+          className={`w-full min-w-0 border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:w-auto sm:min-w-[150px] ${
+            filters.serviceMode ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
+          }`}
+        >
+          <option value="">Any service mode</option>
+          {SERVICE_MODES.map((mode) => (
+            <option key={mode.id} value={mode.id}>{mode.label}</option>
+          ))}
+        </select>
+
+        <label className={`inline-flex w-full min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm sm:w-auto ${
+          filters.availableForHire ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
+        }`}>
+          <input
+            type="checkbox"
+            checked={Boolean(filters.availableForHire)}
+            onChange={(e) => onFilterChange('availableForHire', e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>Available</span>
+        </label>
+
         <div className="relative w-full min-w-0 sm:w-auto" ref={expertiseRef}>
           <button
             ref={expertiseTriggerRef}
@@ -444,6 +485,9 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
       if (filters.professionId) params.professionId = filters.professionId;
       if (filters.specializationId) params.specializationId = filters.specializationId;
       if (filters.expertiseArea) params.expertiseArea = filters.expertiseArea;
+      if (filters.employmentType) params.employmentType = filters.employmentType;
+      if (filters.serviceMode) params.serviceMode = filters.serviceMode;
+      if (filters.availableForHire) params.availableForHire = 'true';
       const res = await personAPI.getAll(params);
       return {
         items: res?.data?.profiles || [],
@@ -466,6 +510,9 @@ function UnifiedPanel({ viewMode, filters, t, isAuthenticated, authLoading, onVi
       if (filters.professionId) params.professionId = filters.professionId;
       if (filters.specializationId) params.specializationId = filters.specializationId;
       if (filters.expertiseArea) params.expertiseArea = filters.expertiseArea;
+      if (filters.employmentType) params.employmentType = filters.employmentType;
+      if (filters.serviceMode) params.serviceMode = filters.serviceMode;
+      if (filters.availableForHire) params.availableForHire = 'true';
       const res = await authAPI.searchUsers(params);
       if (res?.success) {
         setUsersTotalPages(res.data.pagination?.totalPages || 1);
@@ -603,6 +650,9 @@ export default function UsersPage() {
     professionId: '',
     specializationId: '',
     expertiseArea: '',
+    employmentType: '',
+    serviceMode: '',
+    availableForHire: false,
   });
 
   // Increment to force LocationFilterBreadcrumb remount on reset
@@ -613,7 +663,17 @@ export default function UsersPage() {
   }
 
   function handleReset() {
-    setFilters({ search: '', locationId: '', domainId: '', professionId: '', specializationId: '', expertiseArea: '' });
+    setFilters({
+      search: '',
+      locationId: '',
+      domainId: '',
+      professionId: '',
+      specializationId: '',
+      expertiseArea: '',
+      employmentType: '',
+      serviceMode: '',
+      availableForHire: false,
+    });
     setFilterResetKey((k) => k + 1);
   }
 

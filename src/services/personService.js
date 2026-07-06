@@ -21,7 +21,6 @@ const dbConfig = require('../config/database');
 const { normalizeGreek, sanitizeForLike } = require('../utils/greekNormalize');
 const {
   validateExpertiseTagIds,
-  VALID_EXPERTISE_TAG_IDS,
   DOMAIN_MAP,
 } = require('../utils/professionTaxonomy');
 const { getDescendantLocationIds } = require('../utils/locationUtils');
@@ -32,6 +31,29 @@ const CLAIM_TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
 // Legacy hardcoded party IDs — kept to validate existing User.partyId values during the
 // transition period while organizations are used as the new source of truth
 const LEGACY_PARTY_IDS = new Set(politicalParties.parties.map((p) => p.id));
+
+function professionalQueryMatches(profile, query) {
+  if (!query) return true;
+  const professions = Array.isArray(profile.professions) ? profile.professions : [];
+  if (query.domainId || query.professionId || query.specializationId || query.subspecializationId ||
+      query.employmentType || query.availableForHire === true || Array.isArray(query.serviceModes)) {
+    return professions.some((entry) => {
+      if (!entry || typeof entry !== 'object') return false;
+      if (query.domainId && entry.domainId !== query.domainId) return false;
+      if (query.professionId && entry.professionId !== query.professionId) return false;
+      if (query.specializationId && entry.specializationId && entry.specializationId !== query.specializationId) return false;
+      if (query.subspecializationId && entry.subspecializationId && entry.subspecializationId !== query.subspecializationId) return false;
+      if (query.employmentType && entry.employmentType !== query.employmentType) return false;
+      if (query.availableForHire === true && entry.availableForHire !== true) return false;
+      if (Array.isArray(query.serviceModes) && query.serviceModes.length > 0) {
+        const entryModes = Array.isArray(entry.serviceModes) ? entry.serviceModes : [];
+        if (!query.serviceModes.some((mode) => entryModes.includes(mode))) return false;
+      }
+      return true;
+    });
+  }
+  return true;
+}
 
 class ServiceError extends Error {
   constructor(status, message) {
@@ -211,6 +233,13 @@ async function getPersons({
   expertiseArea,
   locationId,
   domainId,
+  professionId,
+  specializationId,
+  subspecializationId,
+  employmentType,
+  serviceMode,
+  serviceModes,
+  availableForHire,
   independentOnly,
   officialOnly,
   roleKey,
@@ -248,6 +277,29 @@ async function getPersons({
     const safeDomainId = sanitizeForLike(domainId);
     where.professions = { [likeOp]: `%"domainId":"${safeDomainId}"%` };
   }
+
+  const serviceModeValues = [
+    ...(Array.isArray(serviceModes) ? serviceModes : serviceModes ? [serviceModes] : []),
+    ...(Array.isArray(serviceMode) ? serviceMode : serviceMode ? [serviceMode] : []),
+  ].filter((mode) => typeof mode === 'string');
+  const professionalQuery = {
+    domainId: typeof domainId === 'string' && DOMAIN_MAP.has(domainId) ? domainId : undefined,
+    professionId: typeof professionId === 'string' ? professionId : undefined,
+    specializationId: typeof specializationId === 'string' ? specializationId : undefined,
+    subspecializationId: typeof subspecializationId === 'string' ? subspecializationId : undefined,
+    employmentType: typeof employmentType === 'string' ? employmentType : undefined,
+    serviceModes: serviceModeValues,
+    availableForHire: ['true', '1', 'yes'].includes(String(availableForHire || '').toLowerCase()),
+  };
+  const hasProfessionalFilter = Boolean(
+    professionalQuery.domainId ||
+    professionalQuery.professionId ||
+    professionalQuery.specializationId ||
+    professionalQuery.subspecializationId ||
+    professionalQuery.employmentType ||
+    professionalQuery.availableForHire ||
+    professionalQuery.serviceModes.length > 0,
+  );
 
   const includeFilters = {
     officialOnly: officialOnly === true || officialOnly === 'true' || officialOnly === '1',
@@ -299,6 +351,26 @@ async function getPersons({
     manifestAcceptanceInclude.where = { manifestId: includeFilters.manifestId };
   } else if (includeFilters.manifestIds && manifestAcceptanceInclude) {
     manifestAcceptanceInclude.where = { manifestId: { [Op.in]: includeFilters.manifestIds } };
+  }
+
+  if (hasProfessionalFilter) {
+    const allRows = await User.findAll({
+      where,
+      include,
+      distinct: true,
+      order: [['createdAt', 'DESC']]
+    });
+    const filteredRows = allRows.filter((row) => professionalQueryMatches(row.toJSON(), professionalQuery));
+    const count = filteredRows.length;
+    return {
+      profiles: filteredRows.slice(offset, offset + limitNum),
+      pagination: {
+        currentPage: pageNum,
+        totalPages: Math.ceil(count / limitNum),
+        totalItems: count,
+        itemsPerPage: limitNum
+      }
+    };
   }
 
   const { count, rows } = await User.findAndCountAll({

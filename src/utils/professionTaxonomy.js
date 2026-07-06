@@ -48,6 +48,8 @@ for (const domain of professionsData.domains) {
  * Set of all valid expertise tag IDs.
  */
 const VALID_EXPERTISE_TAG_IDS = new Set(expertiseTagsData.expertiseTags.map((t) => t.id));
+const VALID_EMPLOYMENT_TYPES = new Set(['employee', 'self_employed', 'business_owner', 'freelance', 'public_sector', 'private_sector', 'volunteer']);
+const VALID_SERVICE_MODES = new Set(['in_person', 'remote', 'hybrid', 'mobile', 'on_site']);
 
 // ─── Normalization ────────────────────────────────────────────────────────────
 
@@ -104,7 +106,15 @@ function validateProfessionalIdentity(entry) {
     throw err;
   }
 
-  const { domainId, professionId, specializationId, subspecializationId } = entry;
+  const {
+    domainId,
+    professionId,
+    specializationId,
+    subspecializationId,
+    employmentType,
+    serviceModes,
+    availableForHire,
+  } = entry;
 
   if (!domainId || typeof domainId !== 'string') {
     const err = new Error('Each profession entry must have a domainId.');
@@ -161,6 +171,37 @@ function validateProfessionalIdentity(entry) {
       }
       result.subspecializationId = subspecializationId;
     }
+  }
+
+  if (employmentType !== undefined && employmentType !== null && employmentType !== '') {
+    if (typeof employmentType !== 'string' || !VALID_EMPLOYMENT_TYPES.has(employmentType)) {
+      const err = new Error(`employmentType must be one of: ${Array.from(VALID_EMPLOYMENT_TYPES).join(', ')}.`);
+      err.status = 400;
+      throw err;
+    }
+    result.employmentType = employmentType;
+  }
+
+  if (serviceModes !== undefined && serviceModes !== null) {
+    if (!Array.isArray(serviceModes)) {
+      const err = new Error('serviceModes must be an array.');
+      err.status = 400;
+      throw err;
+    }
+    const uniqueServiceModes = [];
+    for (const mode of serviceModes) {
+      if (typeof mode !== 'string' || !VALID_SERVICE_MODES.has(mode)) {
+        const err = new Error(`serviceModes must contain only: ${Array.from(VALID_SERVICE_MODES).join(', ')}.`);
+        err.status = 400;
+        throw err;
+      }
+      if (!uniqueServiceModes.includes(mode)) uniqueServiceModes.push(mode);
+    }
+    if (uniqueServiceModes.length > 0) result.serviceModes = uniqueServiceModes;
+  }
+
+  if (availableForHire !== undefined && availableForHire !== null) {
+    result.availableForHire = Boolean(availableForHire);
   }
 
   return result;
@@ -234,6 +275,9 @@ function resolveProfessionLabel(entry) {
  *   + profession match:    +3
  *   + specialization:      +4
  *   + subspecialization:   +5
+ *   employment type match: +2
+ *   service mode match:    +2 per matching mode
+ *   available for hire:    +2
  *   expertise tag match:   +4 per matching tag
  *
  * @param {Object} profile - { professions: Array, expertiseArea: Array }
@@ -265,6 +309,20 @@ function scoreSpecialistMatch(profile, query) {
       }
     }
 
+    if (query.employmentType && entry.employmentType === query.employmentType) {
+      entryScore += 2;
+    }
+
+    if (Array.isArray(query.serviceModes) && Array.isArray(entry.serviceModes)) {
+      for (const mode of query.serviceModes) {
+        if (entry.serviceModes.includes(mode)) entryScore += 2;
+      }
+    }
+
+    if (query.availableForHire === true && entry.availableForHire === true) {
+      entryScore += 2;
+    }
+
     if (entryScore > bestProfessionScore) bestProfessionScore = entryScore;
   }
 
@@ -284,6 +342,8 @@ module.exports = {
   PROFESSION_MAP,
   SPECIALIZATION_MAP,
   VALID_EXPERTISE_TAG_IDS,
+  VALID_EMPLOYMENT_TYPES,
+  VALID_SERVICE_MODES,
   normalizeProfessions,
   normalizeExpertiseTagId,
   normalizeExpertiseTags,

@@ -173,6 +173,27 @@ describe('scoreSpecialistMatch', () => {
       scoreSpecialistMatch(generic, query),
     );
   });
+
+  test('scores professional service metadata matches', () => {
+    const profile = makeProfile([
+      {
+        domainId: 'transport-logistics',
+        professionId: 'taxi-driver',
+        employmentType: 'self_employed',
+        serviceModes: ['mobile'],
+        availableForHire: true,
+      },
+    ]);
+    const query = {
+      domainId: 'transport-logistics',
+      professionId: 'taxi-driver',
+      employmentType: 'self_employed',
+      serviceModes: ['mobile'],
+      availableForHire: true,
+    };
+
+    expect(scoreSpecialistMatch(profile, query)).toBe(11);
+  });
 });
 
 // ─── userService.searchUsers taxonomy integration ─────────────────────────────
@@ -327,5 +348,44 @@ describe('userService.searchUsers — taxonomy filtering', () => {
     for (const u of result.users) {
       expect(u._relevanceScore).toBeUndefined();
     }
+  });
+
+  test('filters by employment type, service mode, and hire availability', async () => {
+    await createTestUser({
+      username: 'available_taxi_driver',
+      professions: [
+        {
+          domainId: 'transport-logistics',
+          professionId: 'taxi-driver',
+          employmentType: 'self_employed',
+          serviceModes: ['mobile'],
+          availableForHire: true,
+        },
+      ],
+    });
+    await createTestUser({
+      username: 'unavailable_taxi_driver',
+      professions: [
+        {
+          domainId: 'transport-logistics',
+          professionId: 'taxi-driver',
+          employmentType: 'employee',
+          serviceModes: ['in_person'],
+          availableForHire: false,
+        },
+      ],
+    });
+
+    const result = await userService.searchUsers('', 1, 100, null, null, {
+      domainId: 'transport-logistics',
+      professionId: 'taxi-driver',
+      employmentType: 'self_employed',
+      serviceModes: ['mobile'],
+      availableForHire: true,
+    }, authenticatedViewer);
+    const usernames = result.users.map((u) => u.username);
+
+    expect(usernames).toContain('available_taxi_driver');
+    expect(usernames).not.toContain('unavailable_taxi_driver');
   });
 });

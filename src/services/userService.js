@@ -38,6 +38,37 @@ const MAX_INTERESTS = 10;
 const MAX_EXPERTISE_AREAS = 5;
 const DAYS_PER_YEAR = 365.25;
 
+function professionalQueryMatches(profile, query) {
+  if (!query) return true;
+  const professions = Array.isArray(profile.professions) ? profile.professions : [];
+
+  if (query.domainId || query.professionId || query.specializationId || query.subspecializationId ||
+      query.employmentType || query.availableForHire === true || Array.isArray(query.serviceModes)) {
+    const matchedProfession = professions.some((entry) => {
+      if (!entry || typeof entry !== 'object') return false;
+      if (query.domainId && entry.domainId !== query.domainId) return false;
+      if (query.professionId && entry.professionId !== query.professionId) return false;
+      if (query.specializationId && entry.specializationId && entry.specializationId !== query.specializationId) return false;
+      if (query.subspecializationId && entry.subspecializationId && entry.subspecializationId !== query.subspecializationId) return false;
+      if (query.employmentType && entry.employmentType !== query.employmentType) return false;
+      if (query.availableForHire === true && entry.availableForHire !== true) return false;
+      if (Array.isArray(query.serviceModes) && query.serviceModes.length > 0) {
+        const entryModes = Array.isArray(entry.serviceModes) ? entry.serviceModes : [];
+        if (!query.serviceModes.some((mode) => entryModes.includes(mode))) return false;
+      }
+      return true;
+    });
+    if (!matchedProfession) return false;
+  }
+
+  if (Array.isArray(query.expertiseTags) && query.expertiseTags.length > 0) {
+    const expertiseTags = Array.isArray(profile.expertiseArea) ? profile.expertiseArea : [];
+    if (!query.expertiseTags.some((tag) => expertiseTags.includes(tag))) return false;
+  }
+
+  return true;
+}
+
 class ServiceError extends Error {
   constructor(status, message) {
     super(message);
@@ -1115,8 +1146,17 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
 
   // Taxonomy pre-filter at DB level: use LIKE on the professions JSON text to narrow
   // down candidates by domainId before in-memory scoring.
-  const hasTaxonomyFilter = taxonomyQuery && taxonomyQuery.domainId;
-  if (hasTaxonomyFilter) {
+  const hasProfessionalFilter = taxonomyQuery && (
+    taxonomyQuery.domainId ||
+    taxonomyQuery.professionId ||
+    taxonomyQuery.specializationId ||
+    taxonomyQuery.subspecializationId ||
+    taxonomyQuery.employmentType ||
+    taxonomyQuery.availableForHire === true ||
+    (Array.isArray(taxonomyQuery.serviceModes) && taxonomyQuery.serviceModes.length > 0) ||
+    (Array.isArray(taxonomyQuery.expertiseTags) && taxonomyQuery.expertiseTags.length > 0)
+  );
+  if (taxonomyQuery?.domainId) {
     const isPostgres = dbConfig.getDialect() === 'postgres';
     const likeOp = isPostgres ? Op.iLike : Op.like;
     const safeDomainId = taxonomyQuery.domainId.replace(/[%_\\]/g, '\\$&');
@@ -1129,22 +1169,27 @@ async function searchUsers(search, page, limit, expertiseArea, locationId, taxon
     'professions', 'expertiseArea', 'partyId', 'politicalAffiliationStatus', 'politicalAffiliationOtherText', 'createdAt', 'displayBadgeSlug', 'displayBadgeTier',
   ];
 
-  // When taxonomy filtering is active, fetch all matching rows for in-memory scoring then paginate
-  if (hasTaxonomyFilter) {
+  // When professional filtering is active, fetch matching rows for precise in-memory filtering/scoring then paginate.
+  if (hasProfessionalFilter) {
     const allUsers = await User.findAll({
       where: whereClause,
       attributes: userAttributes,
       order: [['username', 'ASC']],
     });
 
-    const scored = allUsers.map((u) => {
-      const plain = u.toJSON();
-      plain._relevanceScore = scoreSpecialistMatch(
+    const scored = allUsers
+      .map((u) => u.toJSON())
+      .filter((plain) => professionalQueryMatches(
         { professions: plain.professions, expertiseArea: plain.expertiseArea },
         taxonomyQuery,
-      );
-      return plain;
-    });
+      ))
+      .map((plain) => {
+        plain._relevanceScore = scoreSpecialistMatch(
+          { professions: plain.professions, expertiseArea: plain.expertiseArea },
+          taxonomyQuery,
+        );
+        return plain;
+      });
 
     scored.sort((a, b) =>
       b._relevanceScore - a._relevanceScore ||

@@ -77,7 +77,15 @@ export function useProfileForm() {
   const [avatarSourceUpdating, setAvatarSourceUpdating] = useState(false);
   const [uploadedAvatarUrl, setUploadedAvatarUrl] = useState(null);
   const [hasPassword, setHasPassword] = useState(false);
-  const [profPicker, setProfPicker] = useState({ domainId: '', professionId: '', specializationId: '', subspecializationId: '' });
+  const [profPicker, setProfPicker] = useState({
+    domainId: '',
+    professionId: '',
+    specializationId: '',
+    subspecializationId: '',
+    employmentType: '',
+    serviceModes: [],
+    availableForHire: false,
+  });
   const [intPicker, setIntPicker] = useState({ categoryId: '', interestId: '', subInterestId: '' });
   const [followersCount, setFollowersCount] = useState(undefined);
   const [followingCount, setFollowingCount] = useState(undefined);
@@ -584,8 +592,19 @@ export function useProfileForm() {
     const entry = { domainId: profPicker.domainId, professionId: profPicker.professionId };
     if (profPicker.specializationId) entry.specializationId = profPicker.specializationId;
     if (profPicker.subspecializationId) entry.subspecializationId = profPicker.subspecializationId;
+    if (profPicker.employmentType) entry.employmentType = profPicker.employmentType;
+    if (Array.isArray(profPicker.serviceModes) && profPicker.serviceModes.length > 0) entry.serviceModes = profPicker.serviceModes;
+    if (profPicker.availableForHire) entry.availableForHire = true;
     setProfileData((prev) => ({ ...prev, professions: [...(prev.professions || []), entry] }));
-    setProfPicker({ domainId: '', professionId: '', specializationId: '', subspecializationId: '' });
+    setProfPicker({
+      domainId: '',
+      professionId: '',
+      specializationId: '',
+      subspecializationId: '',
+      employmentType: '',
+      serviceModes: [],
+      availableForHire: false,
+    });
   };
 
   const handleRemoveProfession = (idx) => {

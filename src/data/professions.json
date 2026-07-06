@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "domains": [
     {
       "id": "technology-it",
@@ -576,6 +576,127 @@
           { "id": "circular-economy", "label": "Circular Economy", "subspecializations": [] }
         ]},
         { "id": "forester", "label": "Forester", "specializations": [] }
+      ]
+    },
+    {
+      "id": "transport-logistics",
+      "label": "Transport / Logistics",
+      "professions": [
+        { "id": "taxi-driver", "label": "Taxi Driver", "specializations": [
+          { "id": "city-taxi", "label": "City Taxi", "subspecializations": [] },
+          { "id": "airport-transfer", "label": "Airport Transfer", "subspecializations": [] },
+          { "id": "private-transfer", "label": "Private Transfer", "subspecializations": [] }
+        ]},
+        { "id": "professional-driver", "label": "Professional Driver", "specializations": [
+          { "id": "chauffeur", "label": "Chauffeur", "subspecializations": [] },
+          { "id": "bus-driver", "label": "Bus Driver", "subspecializations": [] },
+          { "id": "truck-driver", "label": "Truck Driver", "subspecializations": [] }
+        ]},
+        { "id": "courier", "label": "Courier", "specializations": [
+          { "id": "local-delivery", "label": "Local Delivery", "subspecializations": [] },
+          { "id": "food-delivery", "label": "Food Delivery", "subspecializations": [] },
+          { "id": "parcel-delivery", "label": "Parcel Delivery", "subspecializations": [] }
+        ]},
+        { "id": "moving-service", "label": "Moving Service", "specializations": [
+          { "id": "home-moving", "label": "Home Moving", "subspecializations": [] },
+          { "id": "business-moving", "label": "Business Moving", "subspecializations": [] }
+        ]},
+        { "id": "logistics-coordinator", "label": "Logistics Coordinator", "specializations": [] }
+      ]
+    },
+    {
+      "id": "home-local-services",
+      "label": "Home / Local Services",
+      "professions": [
+        { "id": "electrician", "label": "Electrician", "specializations": [
+          { "id": "home-electrical", "label": "Home Electrical", "subspecializations": [] },
+          { "id": "commercial-electrical", "label": "Commercial Electrical", "subspecializations": [] },
+          { "id": "solar-installation", "label": "Solar Installation", "subspecializations": [] }
+        ]},
+        { "id": "plumber", "label": "Plumber", "specializations": [
+          { "id": "repairs", "label": "Repairs", "subspecializations": [] },
+          { "id": "heating-systems", "label": "Heating Systems", "subspecializations": [] },
+          { "id": "bathroom-installation", "label": "Bathroom Installation", "subspecializations": [] }
+        ]},
+        { "id": "carpenter", "label": "Carpenter", "specializations": [
+          { "id": "furniture", "label": "Furniture", "subspecializations": [] },
+          { "id": "doors-windows", "label": "Doors & Windows", "subspecializations": [] }
+        ]},
+        { "id": "painter-decorator", "label": "Painter / Decorator", "specializations": [] },
+        { "id": "cleaner", "label": "Cleaner", "specializations": [
+          { "id": "home-cleaning", "label": "Home Cleaning", "subspecializations": [] },
+          { "id": "office-cleaning", "label": "Office Cleaning", "subspecializations": [] },
+          { "id": "short-term-rental-cleaning", "label": "Short-term Rental Cleaning", "subspecializations": [] }
+        ]},
+        { "id": "gardener", "label": "Gardener", "specializations": [] },
+        { "id": "appliance-technician", "label": "Appliance Technician", "specializations": [] },
+        { "id": "locksmith", "label": "Locksmith", "specializations": [] },
+        { "id": "hvac-technician", "label": "HVAC Technician", "specializations": [] }
+      ]
+    },
+    {
+      "id": "hospitality-tourism",
+      "label": "Hospitality / Tourism",
+      "professions": [
+        { "id": "tour-guide", "label": "Tour Guide", "specializations": [
+          { "id": "cultural-tours", "label": "Cultural Tours", "subspecializations": [] },
+          { "id": "food-wine-tours", "label": "Food & Wine Tours", "subspecializations": [] },
+          { "id": "outdoor-tours", "label": "Outdoor Tours", "subspecializations": [] }
+        ]},
+        { "id": "travel-agent", "label": "Travel Agent", "specializations": [] },
+        { "id": "hotel-professional", "label": "Hotel Professional", "specializations": [
+          { "id": "hotel-manager", "label": "Hotel Manager", "subspecializations": [] },
+          { "id": "front-desk", "label": "Front Desk", "subspecializations": [] },
+          { "id": "guest-relations", "label": "Guest Relations", "subspecializations": [] }
+        ]},
+        { "id": "restaurant-professional", "label": "Restaurant Professional", "specializations": [
+          { "id": "restaurant-owner", "label": "Restaurant Owner", "subspecializations": [] },
+          { "id": "chef", "label": "Chef", "subspecializations": [] },
+          { "id": "waiter", "label": "Waiter", "subspecializations": [] },
+          { "id": "barista", "label": "Barista", "subspecializations": [] }
+        ]},
+        { "id": "event-planner", "label": "Event Planner", "specializations": [] },
+        { "id": "short-term-rental-host", "label": "Short-term Rental Host", "specializations": [] }
+      ]
+    },
+    {
+      "id": "beauty-personal-care",
+      "label": "Beauty / Personal Care",
+      "professions": [
+        { "id": "hairdresser", "label": "Hairdresser", "specializations": [] },
+        { "id": "barber", "label": "Barber", "specializations": [] },
+        { "id": "beautician", "label": "Beautician", "specializations": [
+          { "id": "skin-care", "label": "Skin Care", "subspecializations": [] },
+          { "id": "makeup", "label": "Makeup", "subspecializations": [] }
+        ]},
+        { "id": "nail-technician", "label": "Nail Technician", "specializations": [] },
+        { "id": "massage-therapist", "label": "Massage Therapist", "specializations": [] },
+        { "id": "personal-stylist", "label": "Personal Stylist", "specializations": [] }
+      ]
+    },
+    {
+      "id": "retail-local-business",
+      "label": "Retail / Local Business",
+      "professions": [
+        { "id": "shop-owner", "label": "Shop Owner", "specializations": [
+          { "id": "grocery", "label": "Grocery", "subspecializations": [] },
+          { "id": "clothing", "label": "Clothing", "subspecializations": [] },
+          { "id": "electronics", "label": "Electronics", "subspecializations": [] },
+          { "id": "hardware", "label": "Hardware", "subspecializations": [] }
+        ]},
+        { "id": "pharmacist", "label": "Pharmacist", "specializations": [] },
+        { "id": "real-estate-agent", "label": "Real Estate Agent", "specializations": [
+          { "id": "residential-sales", "label": "Residential Sales", "subspecializations": [] },
+          { "id": "rentals", "label": "Rentals", "subspecializations": [] },
+          { "id": "commercial-real-estate", "label": "Commercial Real Estate", "subspecializations": [] }
+        ]},
+        { "id": "insurance-agent", "label": "Insurance Agent", "specializations": [] },
+        { "id": "market-vendor", "label": "Market Vendor", "specializations": [] },
+        { "id": "mechanic", "label": "Mechanic", "specializations": [
+          { "id": "car-mechanic", "label": "Car Mechanic", "subspecializations": [] },
+          { "id": "motorcycle-mechanic", "label": "Motorcycle Mechanic", "subspecializations": [] },
+          { "id": "bicycle-repair", "label": "Bicycle Repair", "subspecializations": [] }
+        ]}
       ]
     },
     {

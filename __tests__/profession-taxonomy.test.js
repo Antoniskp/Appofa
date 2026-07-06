@@ -129,6 +129,38 @@ describe('validateProfessionalIdentity', () => {
     expect(result.subspecializationId).toBe('sports-injuries');
   });
 
+  test('preserves valid professional service metadata', () => {
+    const result = validateProfessionalIdentity({
+      domainId: 'transport-logistics',
+      professionId: 'taxi-driver',
+      specializationId: 'airport-transfer',
+      employmentType: 'self_employed',
+      serviceModes: ['mobile', 'on_site', 'mobile'],
+      availableForHire: true,
+    });
+
+    expect(result.employmentType).toBe('self_employed');
+    expect(result.serviceModes).toEqual(['mobile', 'on_site']);
+    expect(result.availableForHire).toBe(true);
+  });
+
+  test('throws 400 for invalid professional service metadata', () => {
+    expect(() =>
+      validateProfessionalIdentity({
+        domainId: 'transport-logistics',
+        professionId: 'taxi-driver',
+        employmentType: 'gig-economy',
+      })
+    ).toThrow();
+    expect(() =>
+      validateProfessionalIdentity({
+        domainId: 'transport-logistics',
+        professionId: 'taxi-driver',
+        serviceModes: ['teleport'],
+      })
+    ).toThrow();
+  });
+
   test('throws 400 for missing domainId', () => {
     expect(() => validateProfessionalIdentity({ professionId: 'software-engineer' })).toThrow();
     try {
@@ -281,12 +313,19 @@ describe('Taxonomy data integrity', () => {
   const professionsData = require('../src/data/professions.json');
   const expertiseTagsData = require('../src/data/expertiseTags.json');
 
-  test('taxonomy has version 2', () => {
-    expect(professionsData.version).toBe(2);
+  test('taxonomy has version 3', () => {
+    expect(professionsData.version).toBe(3);
   });
 
-  test('taxonomy has at least 14 domains', () => {
-    expect(professionsData.domains.length).toBeGreaterThanOrEqual(14);
+  test('taxonomy has at least 19 domains', () => {
+    expect(professionsData.domains.length).toBeGreaterThanOrEqual(19);
+  });
+
+  test('taxonomy includes local service professions', () => {
+    const domains = new Map(professionsData.domains.map((domain) => [domain.id, domain]));
+    expect(domains.get('transport-logistics')?.professions.some((p) => p.id === 'taxi-driver')).toBe(true);
+    expect(domains.get('home-local-services')?.professions.some((p) => p.id === 'electrician')).toBe(true);
+    expect(domains.get('hospitality-tourism')?.professions.some((p) => p.id === 'tour-guide')).toBe(true);
   });
 
   test('all domain IDs are unique', () => {

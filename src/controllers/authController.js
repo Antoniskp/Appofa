@@ -6,6 +6,7 @@ const { User } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 const { getSessionMaxAgeMs } = require('../config/session');
+const { VALID_EMPLOYMENT_TYPES, VALID_SERVICE_MODES } = require('../utils/professionTaxonomy');
 require('dotenv').config();
 
 const AUTH_COOKIE = 'auth_token';
@@ -502,6 +503,10 @@ const authController = {
         specializationId,
         subspecializationId,
         expertiseTags,
+        employmentType,
+        serviceMode,
+        serviceModes,
+        availableForHire,
       } = req.query;
 
       // Build taxonomy query if at least domainId is provided
@@ -523,6 +528,20 @@ const authController = {
             .filter((t) => typeof t === 'string' && TAXONOMY_ID_RE.test(t));
           if (tags.length > 0) taxonomyQuery.expertiseTags = tags;
         }
+      }
+
+      const serviceModeValues = [
+        ...(Array.isArray(serviceModes) ? serviceModes : serviceModes ? [serviceModes] : []),
+        ...(Array.isArray(serviceMode) ? serviceMode : serviceMode ? [serviceMode] : []),
+      ].filter((mode) => typeof mode === 'string' && VALID_SERVICE_MODES.has(mode));
+      const hasEmploymentType = typeof employmentType === 'string' && VALID_EMPLOYMENT_TYPES.has(employmentType);
+      const wantsAvailableForHire = ['true', '1', 'yes'].includes(String(availableForHire || '').toLowerCase());
+
+      if (hasEmploymentType || serviceModeValues.length > 0 || wantsAvailableForHire) {
+        taxonomyQuery = taxonomyQuery || {};
+        if (hasEmploymentType) taxonomyQuery.employmentType = employmentType;
+        if (serviceModeValues.length > 0) taxonomyQuery.serviceModes = [...new Set(serviceModeValues)];
+        if (wantsAvailableForHire) taxonomyQuery.availableForHire = true;
       }
 
       const result = await userService.searchUsers(search, page, limit, expertiseArea, locationId, taxonomyQuery, req.user || null);

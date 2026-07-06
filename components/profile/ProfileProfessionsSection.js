@@ -4,7 +4,10 @@ import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   DOMAINS,
-  getProfession,
+  EMPLOYMENT_TYPES,
+  SERVICE_MODES,
+  getEmploymentTypeLabel,
+  getServiceModeLabel,
   getSpecializations,
   getSubspecializations,
   resolveProfessionLabel,
@@ -40,12 +43,27 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
     return domain ? domain.professions : [];
   }, [picker.domainId]);
 
+  function toggleServiceMode(modeId) {
+    const current = Array.isArray(picker.serviceModes) ? picker.serviceModes : [];
+    const next = current.includes(modeId)
+      ? current.filter((id) => id !== modeId)
+      : [...current, modeId];
+    onPickerChange({ ...picker, serviceModes: next });
+  }
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2">
         {(professions || []).map((entry, idx) => (
-          <span key={idx} className="inline-flex items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-            {resolveProfessionLabel(entry)}
+          <span key={idx} className="inline-flex max-w-full items-center gap-1 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+            <span className="truncate">
+              {resolveProfessionLabel(entry)}
+              {entry.employmentType ? ` · ${getEmploymentTypeLabel(entry.employmentType)}` : ''}
+              {entry.availableForHire ? ` · ${t('available_for_hire_short')}` : ''}
+              {Array.isArray(entry.serviceModes) && entry.serviceModes.length > 0
+                ? ` · ${entry.serviceModes.map(getServiceModeLabel).join(', ')}`
+                : ''}
+            </span>
             <button
               type="button"
               onClick={() => onRemove(idx)}
@@ -59,7 +77,7 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
         {/* Domain */}
         <select
           value={picker.domainId}
-          onChange={(e) => onPickerChange({ domainId: e.target.value, professionId: '', specializationId: '', subspecializationId: '' })}
+          onChange={(e) => onPickerChange({ ...picker, domainId: e.target.value, professionId: '', specializationId: '', subspecializationId: '' })}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">{t('profession_domain_placeholder')}</option>
@@ -103,6 +121,48 @@ export default function ProfileProfessionsSection({ professions, picker, onPicke
             <option key={s.id} value={s.id}>{s.label}</option>
           ))}
         </select>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <select
+          value={picker.employmentType || ''}
+          onChange={(e) => onPickerChange({ ...picker, employmentType: e.target.value })}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+        >
+          <option value="">{t('employment_type_placeholder')}</option>
+          {EMPLOYMENT_TYPES.map((type) => (
+            <option key={type.id} value={type.id}>{type.label}</option>
+          ))}
+        </select>
+        <label className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={Boolean(picker.availableForHire)}
+            onChange={(e) => onPickerChange({ ...picker, availableForHire: e.target.checked })}
+            className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>{t('available_for_hire')}</span>
+        </label>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {SERVICE_MODES.map((mode) => {
+          const checked = Array.isArray(picker.serviceModes) && picker.serviceModes.includes(mode.id);
+          return (
+            <label
+              key={mode.id}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                checked ? 'border-blue-400 bg-blue-50 text-blue-700' : 'border-gray-300 text-gray-700'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => toggleServiceMode(mode.id)}
+                className="h-3.5 w-3.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>{mode.label}</span>
+            </label>
+          );
+        })}
       </div>
       <div>
         <button
