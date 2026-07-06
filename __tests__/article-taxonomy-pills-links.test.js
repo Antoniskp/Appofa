@@ -28,8 +28,8 @@ describe('Article taxonomy pill links', () => {
 
     expect(html).toContain('href="/news"');
     expect(html).toContain('href="/news?category=%CE%A0%CE%BF%CE%BB%CE%B9%CF%84%CE%B9%CE%BA%CE%AE"');
-    expect(html).toContain('href="/news?tag=%CE%95%CE%BB%CE%BB%CE%AC%CE%B4%CE%B1"');
-    expect(html).toContain('href="/news?tag=%CE%95%CE%BA%CE%BB%CE%BF%CE%B3%CE%AD%CF%82"');
+    expect(html).toContain('href="/topics/%CE%B5%CE%BB%CE%BB%CE%AC%CE%B4%CE%B1"');
+    expect(html).toContain('href="/topics/%CE%B5%CE%BA%CE%BB%CE%BF%CE%B3%CE%AD%CF%82"');
     expect(html).toContain('Νέα');
     expect(html).toContain('Πολιτική');
     expect(html).toContain('Ελλάδα');
@@ -39,6 +39,6 @@ describe('Article taxonomy pill links', () => {
   test('builds personal article type links to filtered articles page', () => {
     expect(getArticleTypeHref('personal')).toBe('/articles?type=personal');
     expect(buildTaxonomyHref('/polls', 'category', 'Economy')).toBe('/polls?category=Economy');
-    expect(buildTaxonomyHref('/polls', 'tag', 'Tax reform')).toBe('/polls?tag=Tax+reform');
+    expect(buildTaxonomyHref('/polls', 'tag', 'Tax reform')).toBe('/topics/tax-reform');
   });
 });
