@@ -19,8 +19,6 @@ const DEFAULT_TITLE = 'Η περιοχή σου, οι αποφάσεις σου.
 const DEFAULT_SUBTITLE = 'Παρακολούθησε τι συμβαίνει γύρω σου, ψήφισε σε ανοιχτά θέματα και κατέθεσε προτάσεις που μπορούν να γίνουν πράξη.';
 const SLIDE_INTERVAL_MS = 5000;
 
-const HERO_SIGNALS = ['Τοπική εικόνα', 'Ανοιχτή γνώμη', 'Προτάσεις που φαίνονται'];
-
 function StatSkeleton() {
   return (
     <div className="flex flex-col items-center gap-1 animate-pulse">
@@ -254,21 +252,6 @@ export default function HomeHero() {
                 </button>
               </div>
 
-              <div className="mt-5 grid max-w-2xl gap-2 sm:grid-cols-3">
-                {HERO_SIGNALS.map((label, index) => (
-                  <div
-                    key={label}
-                    className="rounded-lg border border-white/15 bg-white/[0.08] px-3 py-2.5 backdrop-blur"
-                  >
-                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-cyan-100/80">
-                      0{index + 1}
-                    </span>
-                    <span className="mt-1 block text-sm font-semibold text-white/95">
-                      {label}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
 
             {/* Right – community stats */}
