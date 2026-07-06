@@ -296,10 +296,12 @@ describe('Push Notification routes', () => {
       const origPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       const origPrivate = process.env.VAPID_PRIVATE_KEY;
       const origMailto = process.env.VAPID_MAILTO;
+      const origSubject = process.env.VAPID_SUBJECT;
 
       delete process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
       delete process.env.VAPID_PRIVATE_KEY;
       delete process.env.VAPID_MAILTO;
+      delete process.env.VAPID_SUBJECT;
 
       // Force VAPID re-check by clearing the cached flag via jest.spyOn
       // (pushService caches _vapidConfigured; simply calling with missing keys suffices)
@@ -314,6 +316,38 @@ describe('Push Notification routes', () => {
       process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = origPublic;
       process.env.VAPID_PRIVATE_KEY = origPrivate;
       process.env.VAPID_MAILTO = origMailto;
+      if (origSubject == null) {
+        delete process.env.VAPID_SUBJECT;
+      } else {
+        process.env.VAPID_SUBJECT = origSubject;
+      }
+    });
+
+    it('accepts VAPID_SUBJECT as an alias for VAPID_MAILTO', async () => {
+      const origMailto = process.env.VAPID_MAILTO;
+      const origSubject = process.env.VAPID_SUBJECT;
+
+      delete process.env.VAPID_MAILTO;
+      process.env.VAPID_SUBJECT = 'mailto:subject@test.com';
+
+      const status = pushService.getVapidConfigStatus();
+
+      expect(status).toEqual(expect.objectContaining({
+        configured: true,
+        hasMailto: true,
+        mailtoSource: 'VAPID_SUBJECT',
+      }));
+
+      if (origMailto == null) {
+        delete process.env.VAPID_MAILTO;
+      } else {
+        process.env.VAPID_MAILTO = origMailto;
+      }
+      if (origSubject == null) {
+        delete process.env.VAPID_SUBJECT;
+      } else {
+        process.env.VAPID_SUBJECT = origSubject;
+      }
     });
   });
 

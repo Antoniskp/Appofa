@@ -61,7 +61,7 @@ function ensureVapidConfigured() {
 
   const publicKey = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const mailto = process.env.VAPID_MAILTO;
+  const mailto = process.env.VAPID_MAILTO || process.env.VAPID_SUBJECT;
 
   if (!publicKey || !privateKey || !mailto) {
     console.warn('[pushService] Push notifications are disabled — VAPID keys not configured. Set NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, and VAPID_MAILTO in the environment.');
@@ -84,7 +84,8 @@ function getVapidConfigStatus() {
     hasPublicKey: Boolean(process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
     publicKeySource: process.env.VAPID_PUBLIC_KEY ? 'VAPID_PUBLIC_KEY' : (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' : null),
     hasPrivateKey: Boolean(process.env.VAPID_PRIVATE_KEY),
-    hasMailto: Boolean(process.env.VAPID_MAILTO),
+    hasMailto: Boolean(process.env.VAPID_MAILTO || process.env.VAPID_SUBJECT),
+    mailtoSource: process.env.VAPID_MAILTO ? 'VAPID_MAILTO' : (process.env.VAPID_SUBJECT ? 'VAPID_SUBJECT' : null),
   };
 }
 
