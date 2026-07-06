@@ -205,14 +205,14 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
-  test('shows stable value prop and guest CTA set with location + open polls', async () => {
+  test('keeps fixed homepage action links out of the guest hero', async () => {
     useAuth.mockReturnValue({ user: null, loading: false });
     const { container, root } = await renderHero(buildSlide('/polls'));
 
     expect(container.textContent).toContain('Πολιτική συμμετοχή, κοντά στην καθημερινότητα');
     expect(container.querySelector('a[href="/register"]')).toBeFalsy();
-    expect(container.querySelector('a[href="/locations"]')).toBeTruthy();
-    expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeTruthy();
+    expect(container.querySelector('a[href="/locations"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/polls?voteRestriction=anyone"]')).toBeFalsy();
     expect(container.querySelector('a[href="/polls"]')).toBeTruthy(); // slide CTA only
     expect(container.textContent).not.toContain('Γίνε Moderator');
 
@@ -221,7 +221,7 @@ describe('HomeHero CTA link behavior', () => {
     });
   });
 
-  test('shows logged-in CTA set with location, polls and admin link for admin', async () => {
+  test('keeps fixed homepage action links out of the logged-in hero', async () => {
     useAuth.mockReturnValue({
       user: {
         role: 'admin',
@@ -232,10 +232,11 @@ describe('HomeHero CTA link behavior', () => {
     });
     const { container, root } = await renderHero(buildSlide('/suggestions'));
 
-    expect(container.querySelector('a[href="/locations/athens"]')).toBeTruthy();
-    expect(container.querySelector('a[href="/polls"]')).toBeTruthy();
-    expect(container.querySelector('a[href="/admin"]')).toBeTruthy();
-    expect(container.textContent).toContain('Admin / Moderator');
+    expect(container.querySelector('a[href="/locations/athens"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/polls"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/admin"]')).toBeFalsy();
+    expect(container.querySelector('a[href="/suggestions"]')).toBeTruthy(); // slide CTA only
+    expect(container.textContent).not.toContain('Admin / Moderator');
 
     await act(async () => {
       root.unmount();

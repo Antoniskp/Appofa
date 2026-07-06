@@ -6,14 +6,12 @@ import { useAuth } from '@/lib/auth-context';
 import { statsAPI, heroSettingsAPI } from '@/lib/api';
 import { useAsyncData } from '@/hooks/useAsyncData';
 import { 
-  MapPinIcon, 
   ChartBarIcon,
   ArrowRightIcon,
   ArrowLeftIcon,
   UsersIcon,
   LightBulbIcon,
   CheckBadgeIcon,
-  ShieldCheckIcon,
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
@@ -21,11 +19,7 @@ const DEFAULT_TITLE = 'Η περιοχή σου, οι αποφάσεις σου.
 const DEFAULT_SUBTITLE = 'Παρακολούθησε τι συμβαίνει γύρω σου, ψήφισε σε ανοιχτά θέματα και κατέθεσε προτάσεις που μπορούν να γίνουν πράξη.';
 const SLIDE_INTERVAL_MS = 5000;
 
-const HERO_PROMISES = [
-  { icon: MapPinIcon, label: 'Διάλεξε περιοχή' },
-  { icon: CheckBadgeIcon, label: 'Πάρε θέση' },
-  { icon: LightBulbIcon, label: 'Πρότεινε λύσεις' },
-];
+const HERO_SIGNALS = ['Τοπική εικόνα', 'Ανοιχτή γνώμη', 'Προτάσεις που φαίνονται'];
 
 function StatSkeleton() {
   return (
@@ -260,67 +254,19 @@ export default function HomeHero() {
                 </button>
               </div>
 
-              <div className="flex flex-wrap gap-3">
-                {!authLoading && user ? (
-                  <>
-                    <Link 
-                      href={user?.homeLocation ? `/locations/${user.homeLocation.slug}` : '/locations'} 
-                      className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
-                    >
-                      <MapPinIcon className="w-4 h-4" />
-                      {user?.homeLocation ? 'Άνοιξε την περιοχή σου' : 'Βρες την περιοχή σου'}
-                      <ArrowRightIcon className="w-4 h-4" />
-                    </Link>
-
-                    <Link 
-                      href="/polls" 
-                      className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                    >
-                      <ChartBarIcon className="w-4 h-4" />
-                      Δες ψηφοφορίες
-                    </Link>
-
-                    {(user.role === 'admin' || user.role === 'moderator') && (
-                      <Link 
-                        href="/admin" 
-                        className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                      >
-                        <ShieldCheckIcon className="w-4 h-4" />
-                        Admin / Moderator
-                      </Link>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Link 
-                      href="/locations" 
-                      className="inline-flex items-center gap-2 bg-amber-500 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-amber-600 focus:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-white/50 transition shadow-lg hover:shadow-xl hover:-translate-y-0.5 focus:-translate-y-0.5 transform"
-                    >
-                      <MapPinIcon className="w-4 h-4" />
-                      Βρες την περιοχή σου
-                      <ArrowRightIcon className="w-4 h-4" />
-                    </Link>
-
-                    <Link 
-                      href="/polls?voteRestriction=anyone" 
-                      className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50 transition border border-white/30"
-                    >
-                      <ChartBarIcon className="w-4 h-4" />
-                      Ψήφισε χωρίς εγγραφή
-                    </Link>
-                  </>
-                )}
-              </div>
-
-              <div className="mt-5 flex flex-wrap gap-2">
-                {HERO_PROMISES.map(({ icon: Icon, label }) => (
-                  <span
+              <div className="mt-5 grid max-w-2xl gap-2 sm:grid-cols-3">
+                {HERO_SIGNALS.map((label, index) => (
+                  <div
                     key={label}
-                    className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-white/10 px-3 py-2 text-xs font-semibold text-white/90 backdrop-blur"
+                    className="rounded-lg border border-white/15 bg-white/[0.08] px-3 py-2.5 backdrop-blur"
                   >
-                    <Icon className="h-4 w-4 text-cyan-200" />
-                    {label}
-                  </span>
+                    <span className="block text-[11px] font-semibold uppercase tracking-wide text-cyan-100/80">
+                      0{index + 1}
+                    </span>
+                    <span className="mt-1 block text-sm font-semibold text-white/95">
+                      {label}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
