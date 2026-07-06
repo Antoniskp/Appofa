@@ -44,6 +44,8 @@ async function createNotification({
         unreadCount,
         url: actionUrl || '/notifications',
       });
+    }).then((result) => {
+      console.log('[notificationService] push delivery result', { userId, type, result });
     }).catch((err) => {
       console.error('[notificationService] push delivery failed for user', userId, err.message);
     });
@@ -74,6 +76,8 @@ function _fanOutPush(userIds, payload) {
           unreadCount,
           url: payload.actionUrl || '/notifications',
         });
+      }).then((result) => {
+        console.log('[notificationService] push fan-out result', { userId, result });
       }).catch((err) => {
         console.error('[notificationService] push delivery failed for user', userId, err.message);
       });

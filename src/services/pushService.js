@@ -59,7 +59,7 @@ function buildPushPayload(payload = {}) {
 function ensureVapidConfigured() {
   if (_vapidConfigured) return true;
 
-  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const publicKey = process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   const mailto = process.env.VAPID_MAILTO;
 
@@ -76,6 +76,16 @@ function ensureVapidConfigured() {
     console.error('[pushService] Failed to configure VAPID:', err.message);
     return false;
   }
+}
+
+function getVapidConfigStatus() {
+  return {
+    configured: ensureVapidConfigured(),
+    hasPublicKey: Boolean(process.env.VAPID_PUBLIC_KEY || process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY),
+    publicKeySource: process.env.VAPID_PUBLIC_KEY ? 'VAPID_PUBLIC_KEY' : (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ? 'NEXT_PUBLIC_VAPID_PUBLIC_KEY' : null),
+    hasPrivateKey: Boolean(process.env.VAPID_PRIVATE_KEY),
+    hasMailto: Boolean(process.env.VAPID_MAILTO),
+  };
 }
 
 /**
@@ -140,6 +150,51 @@ async function sendPushToUser(userId, payload) {
   }
 
   return { sent, failed, staleRemoved: staleIds.length, skipped: false };
+}
+
+async function getPushStatusForUser(userId) {
+  let subscriptions = [];
+  try {
+    subscriptions = await PushSubscription.findAll({
+      where: { userId },
+      attributes: ['id', 'endpoint', 'userAgent', 'createdAt', 'updatedAt'],
+      order: [['updatedAt', 'DESC']],
+    });
+  } catch (err) {
+    console.error('[pushService] status DB lookup failed for userId', userId, err.message);
+  }
+
+  const endpointHostFor = (endpoint) => {
+    try {
+      return new URL(endpoint).hostname;
+    } catch {
+      return 'invalid-endpoint';
+    }
+  };
+
+  return {
+    vapid: getVapidConfigStatus(),
+    subscriptionCount: subscriptions.length,
+    providerHosts: [...new Set(subscriptions.map((sub) => endpointHostFor(sub.endpoint)))],
+    latestSubscriptionAt: subscriptions[0]?.updatedAt || null,
+    subscriptions: subscriptions.map((sub) => ({
+      id: sub.id,
+      endpointHost: endpointHostFor(sub.endpoint),
+      userAgent: sub.userAgent,
+      createdAt: sub.createdAt,
+      updatedAt: sub.updatedAt,
+    })),
+  };
+}
+
+async function sendTestPushToUser(userId) {
+  const unreadCount = await getUnreadCount(userId);
+  return sendPushToUser(userId, {
+    title: 'Appofa test notification',
+    body: 'If this appears while the app is closed, Web Push is working on this device.',
+    unreadCount,
+    url: '/notifications',
+  });
 }
 
 /**
@@ -216,7 +271,10 @@ async function getUnreadCount(userId) {
 
 module.exports = {
   buildPushPayload,
+  getVapidConfigStatus,
+  getPushStatusForUser,
   sendPushToUser,
+  sendTestPushToUser,
   saveSubscription,
   removeSubscription,
   getUnreadCount,

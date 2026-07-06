@@ -126,6 +126,56 @@ describe('Push Notification routes', () => {
     });
   });
 
+  describe('GET /api/push/status', () => {
+    it('returns diagnostic push status for the current user', async () => {
+      await request(app)
+        .post('/api/push/subscribe')
+        .set(authHeaders())
+        .send({
+          endpoint: 'https://push.example.com/sub/status-test',
+          keys: { p256dh: 'BNcRdreALRFX-status', auth: 'tBHItJI5-status' },
+        });
+
+      const res = await request(app)
+        .get('/api/push/status')
+        .set(authHeaders());
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.subscriptionCount).toBeGreaterThanOrEqual(1);
+      expect(res.body.data.vapid).toEqual(expect.objectContaining({
+        configured: true,
+        hasPublicKey: true,
+        hasPrivateKey: true,
+        hasMailto: true,
+      }));
+      expect(res.body.data.providerHosts).toContain('push.example.com');
+    });
+  });
+
+  describe('POST /api/push/test', () => {
+    it('sends a test push to the current user subscriptions', async () => {
+      webPush.sendNotification.mockClear();
+
+      await request(app)
+        .post('/api/push/subscribe')
+        .set(authHeaders())
+        .send({
+          endpoint: 'https://push.example.com/sub/direct-test',
+          keys: { p256dh: 'BNcRdreALRFX-direct', auth: 'tBHItJI5-direct' },
+        });
+
+      const res = await request(app)
+        .post('/api/push/test')
+        .set(authHeaders());
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.sent).toBeGreaterThanOrEqual(1);
+      expect(webPush.sendNotification).toHaveBeenCalled();
+    });
+  });
+
   describe('DELETE /api/push/subscribe', () => {
     it('removes a subscription by endpoint', async () => {
       // First create a subscription to remove

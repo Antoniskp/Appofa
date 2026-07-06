@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ensurePushSubscription, getVapidPublicKey, isPushSupported } from '@/lib/pushNotifications';
+import { pushAPI } from '@/lib/api';
 
 /** Convert a VAPID base64url public key to a Uint8Array for pushManager.subscribe(). */
 function urlBase64ToUint8Array(base64String) {
@@ -35,6 +36,53 @@ export default function PushNotificationEnable() {
   const [permission, setPermission] = useState('default');
   const [statusText, setStatusText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pushStatus, setPushStatus] = useState(null);
+  const [testResult, setTestResult] = useState(null);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [testLoading, setTestLoading] = useState(false);
+  const [repairLoading, setRepairLoading] = useState(false);
+
+  const loadStatus = useCallback(async () => {
+    setStatusLoading(true);
+    try {
+      const res = await pushAPI.status();
+      setPushStatus(res.data || null);
+    } catch (err) {
+      console.warn('[PushNotificationEnable] Failed to load push status:', err);
+    } finally {
+      setStatusLoading(false);
+    }
+  }, []);
+
+  const handleTestPush = useCallback(async () => {
+    setTestLoading(true);
+    setTestResult(null);
+    try {
+      const res = await pushAPI.test();
+      setTestResult(res.data || null);
+      await loadStatus();
+    } catch (err) {
+      console.error('[PushNotificationEnable] Failed to send test push:', err);
+      setTestResult({ sent: 0, failed: 1, staleRemoved: 0, skipped: true });
+    } finally {
+      setTestLoading(false);
+    }
+  }, [loadStatus]);
+
+  const handleSyncDevice = useCallback(async () => {
+    setRepairLoading(true);
+    setStatusText('');
+    try {
+      await ensurePushSubscription();
+      await loadStatus();
+      setStatusText('This device subscription was synced with the server.');
+    } catch (err) {
+      console.error('[PushNotificationEnable] Failed to sync push subscription:', err);
+      setStatusText('Could not sync this device subscription. Please try again.');
+    } finally {
+      setRepairLoading(false);
+    }
+  }, [loadStatus]);
 
   // Read the current permission state on mount — does NOT trigger any prompt.
   useEffect(() => {
@@ -45,6 +93,12 @@ export default function PushNotificationEnable() {
     }
     setPermission(Notification.permission);
   }, []);
+
+  useEffect(() => {
+    if (permission === 'granted') {
+      loadStatus();
+    }
+  }, [permission, loadStatus]);
 
   if (permission === 'unsupported') {
     return (
@@ -67,10 +121,64 @@ export default function PushNotificationEnable() {
   }
 
   if (permission === 'granted') {
+    const subscriptionCount = pushStatus?.subscriptionCount ?? 0;
+    const providerHosts = pushStatus?.providerHosts?.join(', ') || 'none';
+    const vapidOk = pushStatus?.vapid?.configured;
+
     return (
-      <div className="mt-4 flex items-center gap-2 rounded-lg bg-green-50 border border-green-200 p-3">
-        <span className="text-green-600 text-base" aria-hidden="true">✓</span>
-        <p className="text-sm text-green-700">Οι ειδοποιήσεις push είναι ενεργοποιημένες.</p>
+      <div className="mt-4 rounded-lg bg-green-50 border border-green-200 p-3">
+        <div className="flex items-center gap-2">
+          <span className="text-green-600 text-base" aria-hidden="true">OK</span>
+          <p className="text-sm text-green-700">Push permission is enabled on this device.</p>
+        </div>
+        <div className="mt-3 rounded-md bg-white/70 border border-green-100 p-2 text-xs text-gray-600">
+          {statusLoading ? (
+            <p>Checking server push status...</p>
+          ) : (
+            <>
+              <p>Server subscriptions: {subscriptionCount}</p>
+              <p>Push provider: {providerHosts}</p>
+              <p>VAPID configured: {vapidOk ? 'yes' : 'no'}</p>
+              {pushStatus?.latestSubscriptionAt && (
+                <p>Last synced: {new Date(pushStatus.latestSubscriptionAt).toLocaleString()}</p>
+              )}
+            </>
+          )}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={loadStatus}
+            disabled={statusLoading}
+            className="px-3 py-1.5 rounded-md border border-green-200 bg-white text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
+          >
+            Refresh status
+          </button>
+          <button
+            type="button"
+            onClick={handleTestPush}
+            disabled={testLoading}
+            className="px-3 py-1.5 rounded-md bg-green-700 text-xs font-medium text-white hover:bg-green-800 disabled:opacity-50"
+          >
+            {testLoading ? 'Sending...' : 'Send test push'}
+          </button>
+          <button
+            type="button"
+            onClick={handleSyncDevice}
+            disabled={repairLoading}
+            className="px-3 py-1.5 rounded-md border border-green-200 bg-white text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50"
+          >
+            {repairLoading ? 'Syncing...' : 'Sync this device'}
+          </button>
+        </div>
+        {testResult && (
+          <p className="mt-2 text-xs text-gray-600">
+            Test result: sent {testResult.sent ?? 0}, failed {testResult.failed ?? 0}, stale removed {testResult.staleRemoved ?? 0}{testResult.skipped ? ', skipped' : ''}
+          </p>
+        )}
+        {statusText && (
+          <p className="mt-2 text-xs text-gray-600">{statusText}</p>
+        )}
       </div>
     );
   }
@@ -139,6 +247,7 @@ export default function PushNotificationEnable() {
 
       // ── Step 4: Send subscription to backend ──────────────────────────────
       await ensurePushSubscription();
+      await loadStatus();
 
       setStatusText('Οι ειδοποιήσεις ενεργοποιήθηκαν επιτυχώς!');
     } catch (err) {

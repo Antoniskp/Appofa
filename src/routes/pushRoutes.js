@@ -10,6 +10,12 @@ const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 // All push routes require authentication; rate-limit before auth to prevent DoS
 router.use(apiLimiter, authMiddleware);
 
+// Inspect current push setup for this account/device set
+router.get('/status', ctrl.status);
+
+// Send a direct test push to this account's subscribed devices
+router.post('/test', createLimiter, csrfProtection, ctrl.test);
+
 // Register / refresh a push subscription for this device
 router.post('/subscribe', createLimiter, csrfProtection, ctrl.subscribe);
 
