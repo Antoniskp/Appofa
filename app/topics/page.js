@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { TagIcon } from '@heroicons/react/24/outline';
-import { tagAPI } from '@/lib/api';
+import { topicAPI } from '@/lib/api';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
 import SearchInput from '@/components/ui/SearchInput';
@@ -17,7 +17,7 @@ export default function TopicsPage() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    tagAPI.getTopics({ limit: 100 })
+    topicAPI.getAll({ limit: 100 })
       .then((res) => {
         if (cancelled) return;
         setTopics(Array.isArray(res?.topics) ? res.topics : []);
@@ -104,6 +104,7 @@ export default function TopicsPage() {
                   <span>{topic.counts?.article || 0} articles</span>
                   <span>{topic.counts?.poll || 0} polls</span>
                   <span>{topic.counts?.suggestion || 0} suggestions</span>
+                  {topic.externalLinks?.length > 0 && <span>{topic.externalLinks.length} links</span>}
                 </div>
               </Link>
             ))}

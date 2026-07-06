@@ -38,6 +38,8 @@ const Manifest = require('./Manifest');
 const ManifestAcceptance = require('./ManifestAcceptance');
 const Tag = require('./Tag');
 const TaggableItem = require('./TaggableItem');
+const Topic = require('./Topic');
+const TopicExternalLink = require('./TopicExternalLink');
 const Notification = require('./Notification');
 const IpAccessRule = require('./IpAccessRule');
 const GeoVisit = require('./GeoVisit');
@@ -426,6 +428,15 @@ Tag.belongsToMany(Suggestion, {
   constraints: false
 });
 
+// Topic curation associations
+Topic.belongsTo(Tag, { foreignKey: 'tagId', as: 'tag' });
+Tag.hasOne(Topic, { foreignKey: 'tagId', as: 'topic' });
+Topic.hasMany(TopicExternalLink, { foreignKey: 'topicId', as: 'externalLinks' });
+TopicExternalLink.belongsTo(Topic, { foreignKey: 'topicId', as: 'topic' });
+Topic.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
+Topic.belongsTo(User, { foreignKey: 'updatedByUserId', as: 'updatedBy' });
+TopicExternalLink.belongsTo(User, { foreignKey: 'submittedByUserId', as: 'submittedBy' });
+
 // Notification associations
 Notification.belongsTo(User, { foreignKey: 'userId', as: 'recipient' });
 Notification.belongsTo(User, { foreignKey: 'actorId', as: 'actor' });
@@ -560,6 +571,8 @@ module.exports = {
   ManifestAcceptance,
   Tag,
   TaggableItem,
+  Topic,
+  TopicExternalLink,
   Notification,
   IpAccessRule,
   GeoVisit,

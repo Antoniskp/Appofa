@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeftIcon, NewspaperIcon, ChatBubbleLeftRightIcon, ChartBarIcon } from '@heroicons/react/24/outline';
-import { articleAPI, pollAPI, suggestionAPI, tagAPI } from '@/lib/api';
+import { ArrowLeftIcon, NewspaperIcon, ChatBubbleLeftRightIcon, ChartBarIcon, LinkIcon } from '@heroicons/react/24/outline';
+import { articleAPI, pollAPI, suggestionAPI, topicAPI } from '@/lib/api';
 import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
@@ -33,6 +33,40 @@ function Section({ title, icon: Icon, href, children, count }) {
   );
 }
 
+function ExternalLinkCard({ link }) {
+  const providerLabel = link.provider === 'x' ? 'X' : link.provider === 'twitter' ? 'Twitter' : link.provider;
+  return (
+    <a
+      href={link.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition flex flex-col"
+    >
+      {link.thumbnailUrl ? (
+        <img
+          src={link.thumbnailUrl}
+          alt={link.title || 'Topic link'}
+          className="h-36 w-full object-cover bg-gray-100"
+          loading="lazy"
+        />
+      ) : (
+        <div className="h-28 bg-gray-100 flex items-center justify-center text-sm font-medium text-gray-500">
+          {providerLabel || 'Link'}
+        </div>
+      )}
+      <div className="p-4 flex flex-col flex-1">
+        <div className="text-xs font-semibold uppercase text-purple-700 mb-2">{providerLabel || 'website'}</div>
+        <h3 className="text-sm font-semibold text-gray-900 line-clamp-2">
+          {link.title || link.url}
+        </h3>
+        {link.description && (
+          <p className="text-sm text-gray-600 mt-2 line-clamp-3">{link.description}</p>
+        )}
+      </div>
+    </a>
+  );
+}
+
 export default function TopicDetailPage() {
   const params = useParams();
   const slug = params?.slug ? decodeURIComponent(params.slug) : '';
@@ -49,13 +83,13 @@ export default function TopicDetailPage() {
     setLoading(true);
     setError('');
 
-    tagAPI.getTopicBySlug(slug)
+    topicAPI.getBySlug(slug)
       .then(async (topicRes) => {
         if (!topicRes?.success || !topicRes.topic) {
           throw new Error(topicRes?.message || 'Topic not found.');
         }
         const topicData = topicRes.topic;
-        const tag = topicData.name;
+        const tag = topicData.tagName || topicData.name;
         const [articleRes, newsRes, pollRes, suggestionRes] = await Promise.all([
           articleAPI.getAll({ tag, status: 'published', type: 'articles', limit: 6 }),
           articleAPI.getAll({ tag, status: 'published', type: 'news', limit: 6 }),
@@ -134,7 +168,7 @@ export default function TopicDetailPage() {
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">{topic.name}</h1>
           <p className="text-gray-600 max-w-3xl">
-            Articles, news, polls, and suggestions connected through this topic.
+            {topic.description || 'Articles, news, polls, and suggestions connected through this topic.'}
           </p>
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
             <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
@@ -151,6 +185,16 @@ export default function TopicDetailPage() {
             </div>
           </div>
         </header>
+
+        {topic.externalLinks?.length > 0 && (
+          <Section title="External links" icon={LinkIcon} count={topic.externalLinks.length}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {topic.externalLinks.map((link) => (
+                <ExternalLinkCard key={link.id || link.url} link={link} />
+              ))}
+            </div>
+          </Section>
+        )}
 
         <Section
           title="Articles and news"

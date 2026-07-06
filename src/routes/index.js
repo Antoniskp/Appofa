@@ -10,6 +10,7 @@ const messageRoutes = require('./messageRoutes');
 const statsRoutes = require('./statsRoutes');
 const followRoutes = require('./followRoutes');
 const tagRoutes = require('./tagRoutes');
+const topicRoutes = require('./topicRoutes');
 const commentRoutes = require('./commentRoutes');
 const endorsementRoutes = require('./endorsementRoutes');
 const suggestionRoutes = require('./suggestionRoutes');
@@ -51,6 +52,7 @@ const routes = [
   { prefix: '/api/stats', router: statsRoutes },
   { prefix: '/api/users', router: followRoutes },
   { prefix: '/api/tags', router: tagRoutes },
+  { prefix: '/api/topics', router: topicRoutes },
   { prefix: '/api/comments', router: commentRoutes },
   { prefix: '/api/endorsements', router: endorsementRoutes },
   { prefix: '/api/suggestions', router: suggestionRoutes },
