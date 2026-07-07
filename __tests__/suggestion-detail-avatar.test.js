@@ -83,7 +83,7 @@ jest.mock('@/components/user/UserAvatar', () => {
   };
 });
 
-const SuggestionDetailPage = require('../app/suggestions/[id]/page').default;
+const SuggestionDetailClient = require('../app/suggestions/[id]/SuggestionDetailClient').default;
 
 describe('Suggestion detail author avatars', () => {
   let container;
@@ -114,7 +114,7 @@ describe('Suggestion detail author avatars', () => {
 
   test('renders suggestion creator and solution author with UserAvatar instead of @username text', async () => {
     await act(async () => {
-      root.render(React.createElement(SuggestionDetailPage));
+      root.render(React.createElement(SuggestionDetailClient));
     });
 
     const avatars = container.querySelectorAll('[data-testid="user-avatar"]');
@@ -141,7 +141,7 @@ describe('Suggestion detail author avatars', () => {
     });
 
     await act(async () => {
-      root.render(React.createElement(SuggestionDetailPage));
+      root.render(React.createElement(SuggestionDetailClient));
     });
 
     const avatars = container.querySelectorAll('[data-testid="user-avatar"]');

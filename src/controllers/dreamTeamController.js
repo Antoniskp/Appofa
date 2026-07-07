@@ -742,8 +742,10 @@ const dreamTeamController = {
 
   // ── Formations ──────────────────────────────────────────────────────────────
 
-  // Helper to serialise a formation for the API response
-  _serializeFormation: async (formation, requestUserId) => {
+  // Helper to serialise a formation for the API response.
+  // likedFormationIds: a Set<number> of formation IDs liked by the requesting user,
+  // or null/undefined when the user is unauthenticated.
+  _serializeFormation: async (formation, likedFormationIds) => {
     const picks = (formation.picks || []).map((p) => ({
       positionSlug: p.positionSlug,
       candidateUserId: p.candidateUserId,
@@ -752,12 +754,7 @@ const dreamTeamController = {
       avatar: p.avatar,
     }));
 
-    let likedByMe = false;
-    if (requestUserId) {
-      likedByMe = !!(await FormationLike.findOne({
-        where: { formationId: formation.id, userId: requestUserId },
-      }));
-    }
+    const likedByMe = likedFormationIds?.has(formation.id) ?? false;
 
     // Lazy backfill: if this formation has no shareSlug, generate and persist one now.
     // If two concurrent requests race on the same formation both will generate distinct
@@ -795,6 +792,21 @@ const dreamTeamController = {
     };
   },
 
+  // Helper: build a Set of liked formation IDs for a given user and list of formation IDs.
+  // Returns an empty Set when userId is falsy or formations list is empty.
+  _getLikedSet: async (formationIds, userId) => {
+    const likedSet = new Set();
+    if (userId && formationIds.length > 0) {
+      const likes = await FormationLike.findAll({
+        where: { userId, formationId: { [Op.in]: formationIds } },
+        attributes: ['formationId'],
+        raw: true,
+      });
+      likes.forEach((l) => likedSet.add(l.formationId));
+    }
+    return likedSet;
+  },
+
   // GET /api/dream-team/formations
   getMyFormations: async (req, res) => {
     try {
@@ -808,8 +820,9 @@ const dreamTeamController = {
         order: [['updatedAt', 'DESC']],
       });
 
+      const likedSet = await dreamTeamController._getLikedSet(formations.map((f) => f.id), userId);
       const data = await Promise.all(
-        formations.map((f) => dreamTeamController._serializeFormation(f, userId)),
+        formations.map((f) => dreamTeamController._serializeFormation(f, likedSet)),
       );
       return res.json({ success: true, data });
     } catch (error) {
@@ -851,7 +864,8 @@ const dreamTeamController = {
         ],
       });
 
-      const data = await dreamTeamController._serializeFormation(full, userId);
+      const likedSet = await dreamTeamController._getLikedSet([full.id], userId);
+      const data = await dreamTeamController._serializeFormation(full, likedSet);
       badgeService.evaluate(userId).catch(err => console.error('Badge evaluation error:', err));
       return res.status(201).json({ success: true, data });
     } catch (error) {
@@ -878,7 +892,8 @@ const dreamTeamController = {
         return res.status(403).json({ success: false, message: 'Δεν έχετε πρόσβαση σε αυτή τη σύνθεση.' });
       }
 
-      const data = await dreamTeamController._serializeFormation(formation, requestUserId);
+      const likedSet = await dreamTeamController._getLikedSet([formation.id], requestUserId);
+      const data = await dreamTeamController._serializeFormation(formation, likedSet);
       return res.json({ success: true, data });
     } catch (error) {
       console.error('dreamTeamController.getFormation error:', error);
@@ -923,7 +938,8 @@ const dreamTeamController = {
         ],
       });
 
-      const data = await dreamTeamController._serializeFormation(full, userId);
+      const likedSet = await dreamTeamController._getLikedSet([full.id], userId);
+      const data = await dreamTeamController._serializeFormation(full, likedSet);
       return res.json({ success: true, data });
     } catch (error) {
       console.error('dreamTeamController.updateFormation error:', error);
@@ -1011,7 +1027,8 @@ const dreamTeamController = {
         ],
       });
 
-      const data = await dreamTeamController._serializeFormation(full, userId);
+      const likedSet = await dreamTeamController._getLikedSet([full.id], userId);
+      const data = await dreamTeamController._serializeFormation(full, likedSet);
       return res.json({ success: true, data });
     } catch (error) {
       console.error('dreamTeamController.updateFormationPicks error:', error);
@@ -1066,8 +1083,9 @@ const dreamTeamController = {
         subQuery: false,
       });
 
+      const likedSet = await dreamTeamController._getLikedSet(rows.map((f) => f.id), requestUserId);
       const data = await Promise.all(
-        rows.map((f) => dreamTeamController._serializeFormation(f, requestUserId)),
+        rows.map((f) => dreamTeamController._serializeFormation(f, likedSet)),
       );
 
       return res.json({
@@ -1141,7 +1159,8 @@ const dreamTeamController = {
         return res.status(403).json({ success: false, message: 'Αυτή η σύνθεση είναι ιδιωτική.' });
       }
 
-      const data = await dreamTeamController._serializeFormation(formation, requestUserId);
+      const likedSet = await dreamTeamController._getLikedSet([formation.id], requestUserId);
+      const data = await dreamTeamController._serializeFormation(formation, likedSet);
       return res.json({ success: true, data });
     } catch (error) {
       console.error('dreamTeamController.getSharedFormation error:', error);
@@ -1227,7 +1246,8 @@ const dreamTeamController = {
         return res.json({ success: true, data: null });
       }
 
-      const data = await dreamTeamController._serializeFormation(formation, requestUserId);
+      const likedSet = await dreamTeamController._getLikedSet([formation.id], requestUserId);
+      const data = await dreamTeamController._serializeFormation(formation, likedSet);
       return res.json({ success: true, data });
     } catch (error) {
       console.error('dreamTeamController.getFormationOfTheWeek error:', error);
@@ -1272,25 +1292,42 @@ const dreamTeamController = {
         isCurrentUser: row.userId === requestUserId,
       }));
 
-      // If user is logged in and not in top list, find their rank
+      // If user is logged in and not in top list, find their rank via a DB-level COUNT.
+      // Uses a CTE to compute the user's total once and avoid O(N) correlated subqueries.
+      // Also checks whether the user has any public formations — users without public
+      // formations are not ranked (currentUserRank remains null).
       let currentUserRank = null;
       if (requestUserId && !leaderboard.some((r) => r.isCurrentUser)) {
-        const allRanked = await Formation.findAll({
-          where: { isPublic: true },
-          attributes: [
-            'userId',
-            [sequelize.fn('SUM', sequelize.col('likeCount')), 'totalLikes'],
-          ],
-          group: ['userId'],
-          order: [[sequelize.literal('"totalLikes"'), 'DESC']],
-          subQuery: false,
-        });
-        const userIdx = allRanked.findIndex((r) => r.userId === requestUserId);
-        if (userIdx >= 0) {
-          const userRow = allRanked[userIdx];
+        const rankResult = await sequelize.query(
+          `WITH my_public_formations AS (
+             SELECT id FROM "Formations"
+             WHERE "isPublic" = true AND "userId" = :userId
+           ),
+           my_total AS (
+             SELECT COALESCE(SUM("likeCount"), 0) AS total
+             FROM "Formations"
+             WHERE "id" IN (SELECT id FROM my_public_formations)
+           ),
+           better_users AS (
+             SELECT "userId"
+             FROM "Formations"
+             WHERE "isPublic" = true
+             GROUP BY "userId"
+             HAVING SUM("likeCount") > (SELECT total FROM my_total)
+           )
+           SELECT
+             (SELECT COUNT(*)::int FROM better_users) AS "betterCount",
+             (SELECT total FROM my_total)::int          AS "myTotalLikes",
+             (SELECT COUNT(*)::int FROM my_public_formations) AS "publicFormationCount"`,
+          { replacements: { userId: requestUserId }, type: sequelize.QueryTypes.SELECT }
+        );
+        const publicFormationCount = rankResult[0]?.publicFormationCount ?? 0;
+        if (publicFormationCount > 0) {
+          const betterCount = rankResult[0]?.betterCount ?? 0;
+          const myTotalLikes = rankResult[0]?.myTotalLikes ?? 0;
           currentUserRank = {
-            rank: userIdx + 1,
-            totalLikes: parseInt(userRow.dataValues.totalLikes, 10) || 0,
+            rank: betterCount + 1,
+            totalLikes: myTotalLikes,
           };
         }
       }
@@ -1324,16 +1361,30 @@ const dreamTeamController = {
       const hasPublicFormation = formations.some((f) => f.isPublic);
       const hasShared = formations.some((f) => f.shareSlug);
 
-      // Rank: count users with more total likes
-      const allUsers = await Formation.findAll({
-        where: { isPublic: true },
-        attributes: ['userId', [sequelize.fn('SUM', sequelize.col('likeCount')), 'totalLikes']],
-        group: ['userId'],
-        order: [[sequelize.literal('"totalLikes"'), 'DESC']],
-        subQuery: false,
-      });
-      const rankIndex = allUsers.findIndex((r) => r.userId === userId);
-      const rank = rankIndex >= 0 ? rankIndex + 1 : null;
+      // Rank: count users with strictly more total likes via a DB-level CTE query.
+      // The CTE computes my_total once, avoiding O(N) correlated subquery re-evaluation.
+      // Users without public formations are not ranked (rank = null).
+      let rank = null;
+      if (hasPublicFormation) {
+        const betterUsersResult = await sequelize.query(
+          `WITH my_total AS (
+             SELECT COALESCE(SUM("likeCount"), 0) AS total
+             FROM "Formations"
+             WHERE "isPublic" = true AND "userId" = :userId
+           )
+           SELECT COUNT(*)::int AS "count"
+           FROM (
+             SELECT "userId"
+             FROM "Formations"
+             WHERE "isPublic" = true
+             GROUP BY "userId"
+             HAVING SUM("likeCount") > (SELECT total FROM my_total)
+           ) sub`,
+          { replacements: { userId }, type: sequelize.QueryTypes.SELECT }
+        );
+        const betterCount = betterUsersResult[0]?.count ?? 0;
+        rank = betterCount + 1;
+      }
 
       const avgCompletion = formationCount === 0 ? 0 : Math.round(
         formations.reduce((sum, f) => {
@@ -1363,7 +1414,8 @@ const dreamTeamController = {
   // GET /api/dream-team/formations/activity
   getActivityFeed: async (req, res) => {
     try {
-      const { limit = 15 } = req.query;
+      const rawLimit = parseInt(req.query.limit, 10) || 15;
+      const limit = Math.min(rawLimit, 50);
 
       // Recent public formations created
       const recentFormations = await Formation.findAll({
@@ -1372,7 +1424,7 @@ const dreamTeamController = {
           { model: User, as: 'author', attributes: ['id', 'username', 'firstNameNative', 'lastNameNative', 'avatar'] },
         ],
         order: [['createdAt', 'DESC']],
-        limit: parseInt(limit, 10),
+        limit,
         attributes: ['id', 'name', 'shareSlug', 'likeCount', 'createdAt', 'userId'],
       });
 
