@@ -47,6 +47,11 @@ export const metadata = {
   },
   alternates: {
     canonical: SITE_URL,
+    languages: {
+      el: SITE_URL,
+      en: SITE_URL,
+      ro: SITE_URL,
+    },
   },
 };
 
