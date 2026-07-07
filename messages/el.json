@@ -51,38 +51,38 @@
   },
   "independents": {
     "hero": {
-      "eyebrow": "Independent candidates",
-      "title": "Help independent candidates become visible",
-      "description": "This page is the independent lane for Appofasi: register a candidacy, discover approved independent campaigns, and connect campaign promises with public-majority commitments when they exist.",
-      "register_cta": "Register as candidate",
-      "browse_cta": "Browse independent campaigns"
+      "eyebrow": "Ανεξάρτητοι υποψήφιοι",
+      "title": "Βοήθησε τους ανεξάρτητους υποψηφίους να γίνουν ορατοί",
+      "description": "Αυτή η σελίδα είναι ο χώρος των ανεξαρτήτων στο Appofasi: εγγράψτε υποψηφιότητα, ανακαλύψτε εγκεκριμένες ανεξάρτητες καμπάνιες και συνδέστε τις υποσχέσεις υποψηφίων με δεσμεύσεις πλειοψηφικής εντολής, όταν υπάρχουν.",
+      "register_cta": "Εγγραφή ως υποψήφιος",
+      "browse_cta": "Εξερεύνηση ανεξάρτητων καμπανιών"
     },
     "actions": {
-      "register_title": "Register a candidacy",
-      "register_description": "Create a public campaign listing for your location, role, election cycle, platform, links, and independent status.",
-      "register_action": "Start registration",
-      "discover_title": "Discover campaigns",
-      "discover_description": "Browse approved independent registrations first, even before anyone holds a public office on the platform.",
-      "discover_action": "Open candidates",
-      "manifest_title": "Compare commitments",
-      "manifest_description": "See who has accepted Appofasi manifests and use polls to connect candidates with public-majority positions.",
-      "manifest_action": "View supporters"
+      "register_title": "Εγγραφή υποψηφιότητας",
+      "register_description": "Δημιουργήστε μια δημόσια καταχώρηση καμπάνιας για την τοποθεσία, τον ρόλο, τον εκλογικό κύκλο, την πλατφόρμα, τους συνδέσμους και την ανεξάρτητη ιδιότητά σας.",
+      "register_action": "Έναρξη εγγραφής",
+      "discover_title": "Ανακάλυψη καμπανιών",
+      "discover_description": "Περιηγηθείτε στις εγκεκριμένες ανεξάρτητες εγγραφές, ακόμα και πριν κάποιος κατέχει δημόσιο αξίωμα στην πλατφόρμα.",
+      "discover_action": "Εμφάνιση υποψηφίων",
+      "manifest_title": "Σύγκριση δεσμεύσεων",
+      "manifest_description": "Δείτε ποιος έχει αποδεχθεί μανιφέστα του Appofasi και χρησιμοποιήστε δημοσκοπήσεις για να συνδέσετε υποψηφίους με θέσεις πλειοψηφίας.",
+      "manifest_action": "Προβολή υποστηρικτών"
     },
     "candidates": {
-      "eyebrow": "Approved registrations",
-      "title": "Independent candidate campaigns",
-      "description": "These are current approved independent candidate registrations, not only people already assigned to public offices.",
-      "view_all": "View all",
-      "load_error_title": "Could not load independent candidate registrations",
-      "empty_title": "No independent candidate registrations yet",
-      "empty_description": "The page is ready for independent campaigns. The first approved independent registrations will appear here.",
-      "empty_action": "Register as candidate",
-      "showing": "Showing {count} of {total} independent candidate registrations"
+      "eyebrow": "Εγκεκριμένες εγγραφές",
+      "title": "Καμπάνιες ανεξάρτητων υποψηφίων",
+      "description": "Αυτές είναι οι τρέχουσες εγκεκριμένες εγγραφές ανεξάρτητων υποψηφίων, όχι μόνο άτομα που έχουν ήδη ανατεθεί σε δημόσια αξιώματα.",
+      "view_all": "Προβολή όλων",
+      "load_error_title": "Δεν ήταν δυνατή η φόρτωση εγγραφών ανεξάρτητων υποψηφίων",
+      "empty_title": "Δεν υπάρχουν ακόμα εγγραφές ανεξάρτητων υποψηφίων",
+      "empty_description": "Η σελίδα είναι έτοιμη για ανεξάρτητες καμπάνιες. Οι πρώτες εγκεκριμένες ανεξάρτητες εγγραφές θα εμφανιστούν εδώ.",
+      "empty_action": "Εγγραφή ως υποψήφιος",
+      "showing": "Εμφανίζονται {count} από {total} εγγραφές ανεξάρτητων υποψηφίων"
     },
     "officials": {
-      "eyebrow": "Public-office profiles",
-      "title": "Independent officials with assigned roles",
-      "description": "This secondary list appears when independent person profiles are assigned to active public-office roles."
+      "eyebrow": "Προφίλ δημοσίων αξιωμάτων",
+      "title": "Ανεξάρτητοι αξιωματούχοι με ανατεθειμένους ρόλους",
+      "description": "Αυτή η δευτερεύουσα λίστα εμφανίζεται όταν τα ανεξάρτητα προφίλ προσώπων έχουν ανατεθεί σε ενεργούς ρόλους δημοσίου αξιώματος."
     },
     "filters": {
       "title": "Φίλτρα",
@@ -104,7 +104,7 @@
     "states": {
       "load_error_title": "Δεν ήταν δυνατή η φόρτωση των ανεξάρτητων αξιωματούχων",
       "empty_title": "Δεν βρέθηκαν ανεξάρτητοι αξιωματούχοι",
-      "empty_description": "No independent public-office profiles have active role assignments yet.",
+      "empty_description": "Δεν υπάρχουν ακόμα ανεξάρτητα προφίλ δημοσίων αξιωμάτων με ενεργές αναθέσεις ρόλων.",
       "filtered_empty_description": "Δοκιμάστε να αφαιρέσετε κάποιο φίλτρο ή προσθέστε αναθέσεις δημόσιου αξιώματος σε ανεξάρτητα προφίλ προσώπων."
     },
     "results": {
