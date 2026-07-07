@@ -1292,27 +1292,30 @@ const dreamTeamController = {
         isCurrentUser: row.userId === requestUserId,
       }));
 
-      // If user is logged in and not in top list, find their rank via a DB-level COUNT
+      // If user is logged in and not in top list, find their rank via a DB-level COUNT.
+      // Uses a CTE to compute the user's total once and avoid O(N) correlated subqueries.
       let currentUserRank = null;
       if (requestUserId && !leaderboard.some((r) => r.isCurrentUser)) {
-        const betterCountResult = await sequelize.query(
-          `SELECT COUNT(*)::int AS "betterCount" FROM (
-             SELECT "userId", SUM("likeCount") AS total
+        const rankResult = await sequelize.query(
+          `WITH my_total AS (
+             SELECT COALESCE(SUM("likeCount"), 0) AS total
+             FROM "Formations"
+             WHERE "isPublic" = true AND "userId" = :userId
+           ),
+           better_users AS (
+             SELECT "userId"
              FROM "Formations"
              WHERE "isPublic" = true
              GROUP BY "userId"
-             HAVING SUM("likeCount") > (
-               SELECT COALESCE(SUM("likeCount"), 0)
-               FROM "Formations"
-               WHERE "isPublic" = true AND "userId" = :userId
-             )
-           ) sub`,
+             HAVING SUM("likeCount") > (SELECT total FROM my_total)
+           )
+           SELECT
+             (SELECT COUNT(*)::int FROM better_users) AS "betterCount",
+             (SELECT total FROM my_total)::int          AS "myTotalLikes"`,
           { replacements: { userId: requestUserId }, type: sequelize.QueryTypes.SELECT }
         );
-        const betterCount = betterCountResult[0]?.betterCount ?? 0;
-        const myTotalLikes = await Formation.sum('likeCount', {
-          where: { isPublic: true, userId: requestUserId },
-        }) || 0;
+        const betterCount = rankResult[0]?.betterCount ?? 0;
+        const myTotalLikes = rankResult[0]?.myTotalLikes ?? 0;
         currentUserRank = {
           rank: betterCount + 1,
           totalLikes: myTotalLikes,
@@ -1348,19 +1351,21 @@ const dreamTeamController = {
       const hasPublicFormation = formations.some((f) => f.isPublic);
       const hasShared = formations.some((f) => f.shareSlug);
 
-      // Rank: count users with strictly more total likes via a DB-level COUNT subquery
-      // (avoids loading all Formation rows into Node.js memory)
+      // Rank: count users with strictly more total likes via a DB-level CTE query.
+      // The CTE computes my_total once, avoiding O(N) correlated subquery re-evaluation.
       const betterUsersResult = await sequelize.query(
-        `SELECT COUNT(*)::int AS "count" FROM (
-           SELECT "userId", SUM("likeCount") AS total
+        `WITH my_total AS (
+           SELECT COALESCE(SUM("likeCount"), 0) AS total
+           FROM "Formations"
+           WHERE "isPublic" = true AND "userId" = :userId
+         )
+         SELECT COUNT(*)::int AS "count"
+         FROM (
+           SELECT "userId"
            FROM "Formations"
            WHERE "isPublic" = true
            GROUP BY "userId"
-           HAVING SUM("likeCount") > (
-             SELECT COALESCE(SUM("likeCount"), 0)
-             FROM "Formations"
-             WHERE "isPublic" = true AND "userId" = :userId
-           )
+           HAVING SUM("likeCount") > (SELECT total FROM my_total)
          ) sub`,
         { replacements: { userId }, type: sequelize.QueryTypes.SELECT }
       );
