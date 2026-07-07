@@ -1,7 +1,7 @@
 'use strict';
 
 const { Op } = require('sequelize');
-const { Tag, TaggableItem, Topic, TopicExternalLink, sequelize } = require('../models');
+const { Tag, TaggableItem, Topic, TopicExternalLink, TopicFollow, sequelize } = require('../models');
 const { slugifyTopic } = require('../utils/topicUtils');
 const { normalizePublicHttpUrl } = require('../utils/validators');
 
@@ -80,10 +80,50 @@ function totalCounts(counts) {
   return (counts.article || 0) + (counts.poll || 0) + (counts.suggestion || 0);
 }
 
-function topicDto(topic, counts = {}, links = []) {
+async function getFollowStates(topicIds, userId) {
+  const result = {};
+  const ids = [...new Set(topicIds.filter(Boolean))];
+  ids.forEach((id) => {
+    result[id] = { followersCount: 0, isFollowing: false };
+  });
+
+  if (!ids.length) return result;
+
+  const countRows = await TopicFollow.findAll({
+    where: { topicId: { [Op.in]: ids } },
+    attributes: [
+      'topicId',
+      [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+    ],
+    group: ['topicId'],
+    raw: true
+  });
+
+  countRows.forEach((row) => {
+    if (!result[row.topicId]) result[row.topicId] = { followersCount: 0, isFollowing: false };
+    result[row.topicId].followersCount = parseInt(row.count, 10) || 0;
+  });
+
+  if (userId) {
+    const followedRows = await TopicFollow.findAll({
+      where: { topicId: { [Op.in]: ids }, userId },
+      attributes: ['topicId'],
+      raw: true
+    });
+    followedRows.forEach((row) => {
+      if (!result[row.topicId]) result[row.topicId] = { followersCount: 0, isFollowing: false };
+      result[row.topicId].isFollowing = true;
+    });
+  }
+
+  return result;
+}
+
+function topicDto(topic, counts = {}, links = [], followState = {}) {
   const data = plain(topic);
   const tag = data.tag || null;
   const resolvedCounts = counts || { article: 0, poll: 0, suggestion: 0 };
+  const resolvedFollowState = followState || {};
   return {
     id: data.id,
     tagId: data.tagId,
@@ -97,6 +137,8 @@ function topicDto(topic, counts = {}, links = []) {
     tagName: tag?.name || data.name,
     count: totalCounts(resolvedCounts),
     counts: resolvedCounts,
+    followersCount: resolvedFollowState.followersCount || 0,
+    isFollowing: Boolean(resolvedFollowState.isFollowing),
     externalLinks: links.map((link) => plain(link))
   };
 }
@@ -117,11 +159,13 @@ function fallbackTopicDto(tag, counts = {}) {
     tagName: data.name,
     count: totalCounts(resolvedCounts),
     counts: resolvedCounts,
+    followersCount: 0,
+    isFollowing: false,
     externalLinks: []
   };
 }
 
-async function listTopics({ includeHidden = false, q = '', limit = 100 } = {}) {
+async function listTopics({ includeHidden = false, q = '', limit = 100, userId = null } = {}) {
   const parsedLimit = Math.min(200, Math.max(1, parseInt(limit, 10) || 100));
   const term = String(q || '').trim().toLowerCase();
   const searchOperator = sequelize.getDialect() === 'postgres' ? Op.iLike : Op.like;
@@ -152,11 +196,13 @@ async function listTopics({ includeHidden = false, q = '', limit = 100 } = {}) {
   });
 
   const topicTagIds = topics.map((topic) => topic.tagId).filter(Boolean);
+  const followStates = await getFollowStates(topics.map((topic) => topic.id), userId);
   const countsByTagId = await getCountsForTagIds(topicTagIds);
   const curated = topics.map((topic) => topicDto(
     topic,
     topic.tagId ? countsByTagId[topic.tagId] : undefined,
-    topic.externalLinks || []
+    topic.externalLinks || [],
+    followStates[topic.id]
   ));
 
   const usedTagIds = new Set(topicTagIds);
@@ -184,7 +230,7 @@ async function listTopics({ includeHidden = false, q = '', limit = 100 } = {}) {
     .slice(0, parsedLimit);
 }
 
-async function getTopicBySlug(slug, { includeHidden = false } = {}) {
+async function getTopicBySlug(slug, { includeHidden = false, userId = null } = {}) {
   const normalizedSlug = slugifyTopic(decodeURIComponent(String(slug || '')));
   if (!normalizedSlug) return null;
 
@@ -208,7 +254,13 @@ async function getTopicBySlug(slug, { includeHidden = false } = {}) {
 
   if (topic) {
     const countsByTagId = topic.tagId ? await getCountsForTagIds([topic.tagId]) : {};
-    return topicDto(topic, topic.tagId ? countsByTagId[topic.tagId] : undefined, topic.externalLinks || []);
+    const followStates = await getFollowStates([topic.id], userId);
+    return topicDto(
+      topic,
+      topic.tagId ? countsByTagId[topic.tagId] : undefined,
+      topic.externalLinks || [],
+      followStates[topic.id]
+    );
   }
 
   const tags = await Tag.findAll({ order: [['name', 'ASC']] });
@@ -224,6 +276,35 @@ async function findOrCreateTagForTopic(name, transaction) {
   if (!tagName) return null;
   const [tag] = await Tag.findOrCreate({ where: { name: tagName }, transaction });
   return tag;
+}
+
+async function ensureTopicForSlug(slug, userId = null) {
+  const normalizedSlug = slugifyTopic(decodeURIComponent(String(slug || '')));
+  if (!normalizedSlug) return null;
+
+  const existingTopic = await Topic.findOne({ where: { slug: normalizedSlug } });
+  if (existingTopic) return existingTopic;
+
+  const tags = await Tag.findAll({ order: [['name', 'ASC']] });
+  const tag = tags.find((item) => slugifyTopic(item.name) === normalizedSlug);
+  if (!tag) return null;
+
+  try {
+    return await Topic.create({
+      tagId: tag.id,
+      name: tag.name,
+      slug: normalizedSlug,
+      status: 'active',
+      isFeatured: false,
+      createdByUserId: userId,
+      updatedByUserId: userId
+    });
+  } catch (error) {
+    if (error.name === 'SequelizeUniqueConstraintError') {
+      return Topic.findOne({ where: { slug: normalizedSlug } });
+    }
+    throw error;
+  }
 }
 
 function normalizeTopicPayload(payload) {
@@ -363,9 +444,91 @@ async function updateTopic(id, payload, userId) {
   }
 }
 
+async function followTopic(slug, userId) {
+  if (!userId) return { success: false, status: 401, message: 'Authentication required.' };
+
+  try {
+    const topic = await ensureTopicForSlug(slug, userId);
+    if (!topic || topic.status === 'hidden') {
+      return { success: false, status: 404, message: 'Topic not found.' };
+    }
+
+    await TopicFollow.findOrCreate({
+      where: { topicId: topic.id, userId },
+      defaults: { topicId: topic.id, userId }
+    });
+
+    return { success: true, data: await getTopicBySlug(topic.slug, { userId }) };
+  } catch (error) {
+    console.error('followTopic error:', error);
+    return { success: false, status: 500, message: 'Failed to follow topic.' };
+  }
+}
+
+async function unfollowTopic(slug, userId) {
+  if (!userId) return { success: false, status: 401, message: 'Authentication required.' };
+
+  try {
+    const normalizedSlug = slugifyTopic(decodeURIComponent(String(slug || '')));
+    const topic = await Topic.findOne({ where: { slug: normalizedSlug } });
+    if (!topic) {
+      return { success: false, status: 404, message: 'Topic not found.' };
+    }
+
+    await TopicFollow.destroy({ where: { topicId: topic.id, userId } });
+    return { success: true, data: await getTopicBySlug(topic.slug, { userId }) };
+  } catch (error) {
+    console.error('unfollowTopic error:', error);
+    return { success: false, status: 500, message: 'Failed to unfollow topic.' };
+  }
+}
+
+async function listFollowedTopics(userId) {
+  if (!userId) return [];
+
+  const follows = await TopicFollow.findAll({
+    where: { userId },
+    include: [
+      {
+        model: Topic,
+        as: 'topic',
+        required: true,
+        where: { status: 'active' },
+        include: [
+          { model: Tag, as: 'tag', required: false, attributes: ['id', 'name'] },
+          {
+            model: TopicExternalLink,
+            as: 'externalLinks',
+            required: false,
+            where: { status: 'approved' },
+            separate: true,
+            order: [['order', 'ASC'], ['createdAt', 'DESC']]
+          }
+        ]
+      }
+    ],
+    order: [['createdAt', 'DESC']]
+  });
+
+  const topics = follows.map((follow) => follow.topic).filter(Boolean);
+  const tagIds = topics.map((topic) => topic.tagId).filter(Boolean);
+  const countsByTagId = await getCountsForTagIds(tagIds);
+  const followStates = await getFollowStates(topics.map((topic) => topic.id), userId);
+
+  return topics.map((topic) => topicDto(
+    topic,
+    topic.tagId ? countsByTagId[topic.tagId] : undefined,
+    topic.externalLinks || [],
+    followStates[topic.id]
+  ));
+}
+
 module.exports = {
   listTopics,
   getTopicBySlug,
   createTopic,
-  updateTopic
+  updateTopic,
+  followTopic,
+  unfollowTopic,
+  listFollowedTopics
 };

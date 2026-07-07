@@ -40,6 +40,7 @@ const Tag = require('./Tag');
 const TaggableItem = require('./TaggableItem');
 const Topic = require('./Topic');
 const TopicExternalLink = require('./TopicExternalLink');
+const TopicFollow = require('./TopicFollow');
 const Notification = require('./Notification');
 const IpAccessRule = require('./IpAccessRule');
 const GeoVisit = require('./GeoVisit');
@@ -433,6 +434,10 @@ Topic.belongsTo(Tag, { foreignKey: 'tagId', as: 'tag' });
 Tag.hasOne(Topic, { foreignKey: 'tagId', as: 'topic' });
 Topic.hasMany(TopicExternalLink, { foreignKey: 'topicId', as: 'externalLinks' });
 TopicExternalLink.belongsTo(Topic, { foreignKey: 'topicId', as: 'topic' });
+Topic.hasMany(TopicFollow, { foreignKey: 'topicId', as: 'followers' });
+TopicFollow.belongsTo(Topic, { foreignKey: 'topicId', as: 'topic' });
+TopicFollow.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(TopicFollow, { foreignKey: 'userId', as: 'topicFollows' });
 Topic.belongsTo(User, { foreignKey: 'createdByUserId', as: 'createdBy' });
 Topic.belongsTo(User, { foreignKey: 'updatedByUserId', as: 'updatedBy' });
 TopicExternalLink.belongsTo(User, { foreignKey: 'submittedByUserId', as: 'submittedBy' });
@@ -573,6 +578,7 @@ module.exports = {
   TaggableItem,
   Topic,
   TopicExternalLink,
+  TopicFollow,
   Notification,
   IpAccessRule,
   GeoVisit,

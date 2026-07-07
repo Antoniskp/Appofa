@@ -10,6 +10,7 @@ import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import EmptyState from '@/components/ui/EmptyState';
 import SkeletonLoader from '@/components/ui/SkeletonLoader';
+import TopicFollowButton from '@/components/topics/TopicFollowButton';
 
 function Section({ title, icon: Icon, href, children, count }) {
   return (
@@ -166,10 +167,15 @@ export default function TopicDetailPage() {
             <span className="rounded-full bg-purple-50 px-3 py-1">Topic</span>
             <span>{topic.count} linked items</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">{topic.name}</h1>
-          <p className="text-gray-600 max-w-3xl">
-            {topic.description || 'Articles, news, polls, and suggestions connected through this topic.'}
-          </p>
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">{topic.name}</h1>
+              <p className="text-gray-600 max-w-3xl">
+                {topic.description || 'Articles, news, polls, and suggestions connected through this topic.'}
+              </p>
+            </div>
+            <TopicFollowButton topic={topic} onChange={setTopic} className="shrink-0" />
+          </div>
           <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
             <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
               <div className="text-2xl font-bold text-gray-900">{topic.counts?.article || 0}</div>

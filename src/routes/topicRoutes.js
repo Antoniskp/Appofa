@@ -8,8 +8,11 @@ const checkRole = require('../middleware/checkRole');
 const csrfProtection = require('../middleware/csrfProtection');
 
 router.get('/', apiLimiter, optionalAuth, topicController.listTopics);
+router.get('/following/me', apiLimiter, authMiddleware, topicController.listFollowedTopics);
 router.get('/:slug', apiLimiter, optionalAuth, topicController.getTopic);
 
+router.post('/:slug/follow', apiLimiter, authMiddleware, csrfProtection, topicController.followTopic);
+router.delete('/:slug/follow', apiLimiter, authMiddleware, csrfProtection, topicController.unfollowTopic);
 router.post('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, topicController.createTopic);
 router.put('/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), csrfProtection, topicController.updateTopic);
 
