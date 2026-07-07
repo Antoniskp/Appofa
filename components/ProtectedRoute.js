@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { saveReturnTo } from '@/lib/auth-redirect';
 
 export default function ProtectedRoute({ children, allowedRoles = [] }) {
   const { user, loading, authError } = useAuth();
@@ -12,6 +13,7 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
     if (!loading && authError?.status !== 429) {
       if (!user) {
         // Not logged in, redirect to login
+        saveReturnTo();
         router.push('/login');
       } else if (allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
         // Logged in but not authorized, redirect to home

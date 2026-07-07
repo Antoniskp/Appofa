@@ -167,6 +167,39 @@ describe('Auth pages redirect behavior', () => {
     });
   });
 
+  test('login page honors safe next destinations and preserves them for account creation', async () => {
+    mockSearchParams.get.mockImplementation((key) => (key === 'next' ? '/locations/athens?tab=polls#location-content' : null));
+    useAuth.mockReturnValue(buildAuthState({ user: { id: 1 }, loading: false }));
+    const LoginPage = require('../app/login/page').default;
+
+    const { container, root } = await renderPage(LoginPage);
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/locations/athens?tab=polls#location-content');
+    const registerLink = [...container.querySelectorAll('a')].find((link) => (
+      link.getAttribute('href')?.startsWith('/register?next=')
+    ));
+    expect(registerLink).toBeTruthy();
+    expect(decodeURIComponent(registerLink.getAttribute('href'))).toBe('/register?next=/locations/athens?tab=polls#location-content');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('login page rejects unsafe next destinations', async () => {
+    mockSearchParams.get.mockImplementation((key) => (key === 'next' ? 'https://evil.example/phish' : null));
+    useAuth.mockReturnValue(buildAuthState({ user: { id: 1 }, loading: false }));
+    const LoginPage = require('../app/login/page').default;
+
+    const { root } = await renderPage(LoginPage);
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   test('login page avoids redirecting authenticated users back to auth pages', async () => {
     localStorage.setItem('returnTo', '/login');
     useAuth.mockReturnValue(buildAuthState({ user: { id: 1 }, loading: false }));
@@ -204,6 +237,25 @@ describe('Auth pages redirect behavior', () => {
 
     expect(mockRouter.push).toHaveBeenCalledTimes(1);
     expect(mockRouter.push).toHaveBeenCalledWith('/');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  test('register page honors safe next destinations and preserves them for login', async () => {
+    mockSearchParams.get.mockImplementation((key) => (key === 'next' ? '/locations/athens' : null));
+    useAuth.mockReturnValue(buildAuthState({ user: { id: 1 }, loading: false }));
+    const RegisterPage = require('../app/register/page').default;
+
+    const { container, root } = await renderPage(RegisterPage);
+
+    expect(mockRouter.push).toHaveBeenCalledWith('/locations/athens');
+    const loginLink = [...container.querySelectorAll('a')].find((link) => (
+      link.getAttribute('href')?.startsWith('/login?next=')
+    ));
+    expect(loginLink).toBeTruthy();
+    expect(decodeURIComponent(loginLink.getAttribute('href'))).toBe('/login?next=/locations/athens');
 
     await act(async () => {
       root.unmount();

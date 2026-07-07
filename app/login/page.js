@@ -12,13 +12,8 @@ import AuthDivider from '@/components/ui/AuthDivider';
 import { authAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
-import { getAndClearReturnTo } from '@/lib/auth-redirect';
+import { buildAuthPath, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
 import AlertMessage from '@/components/ui/AlertMessage';
-
-const resolvePostLoginDestination = () => {
-  const destination = getAndClearReturnTo();
-  return destination === '/login' || destination === '/register' ? '/' : destination;
-};
 
 function LoginForm() {
   const tAuth = useTranslations('auth');
@@ -35,6 +30,8 @@ function LoginForm() {
   const [inlineError, setInlineError] = useState('');
   const [showSessionExpired, setShowSessionExpired] = useState(false);
   const { config: oauthConfig } = useOAuthConfig();
+  const nextDestination = getPendingAuthDestination(searchParams);
+  const registerHref = buildAuthPath('/register', nextDestination);
 
   useEffect(() => {
     // Handle OAuth callback
@@ -47,7 +44,7 @@ function LoginForm() {
         .then((response) => {
           if (response.success) {
             success(tAuth('welcome_redirect'));
-            router.push(resolvePostLoginDestination());
+            router.push(resolveAuthDestination(searchParams));
           }
         })
         .catch((err) => {
@@ -69,9 +66,9 @@ function LoginForm() {
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push(resolvePostLoginDestination());
+      router.push(resolveAuthDestination(searchParams));
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, searchParams]);
 
   const handleChange = (e) => {
     setInlineError('');
@@ -88,7 +85,7 @@ function LoginForm() {
     try {
       await login(formData);
       success(tAuth('welcome_redirect'));
-      router.push(resolvePostLoginDestination());
+      router.push(resolveAuthDestination(searchParams));
     } catch (err) {
       const message = err.message || tAuth('invalid_credentials');
       setInlineError(message);
@@ -101,6 +98,7 @@ function LoginForm() {
   const handleGithubLogin = async () => {
     try {
       setLoading(true);
+      saveReturnTo(nextDestination);
       const response = await authAPI.initiateGithubOAuth('login');
       if (response.success && response.data.authUrl) {
         window.location.href = response.data.authUrl;
@@ -114,6 +112,7 @@ function LoginForm() {
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+      saveReturnTo(nextDestination);
       const response = await authAPI.initiateGoogleOAuth('login');
       if (response.success && response.data.authUrl) {
         window.location.href = response.data.authUrl;
@@ -133,7 +132,7 @@ function LoginForm() {
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             {tAuth('or')}{' '}
-            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+            <Link href={registerHref} className="font-medium text-blue-600 hover:text-blue-500">
               {tAuth('create_new_account')}
             </Link>
           </p>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   CheckCircleIcon,
@@ -23,6 +23,7 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import { authAPI, geoAPI, locationAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
+import { buildAuthPath, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
 
 const PASSWORD_MIN_LENGTH = 8;
 const USERNAME_CHECK_DELAY_MS = 350;
@@ -70,9 +71,10 @@ function PasswordInput({
   );
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const t = useTranslations('auth');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { register, user, loading: authLoading } = useAuth();
   const { success, error } = useToast();
   const [formData, setFormData] = useState({
@@ -99,12 +101,14 @@ export default function RegisterPage() {
   const [locationHasModerator, setLocationHasModerator] = useState(null);
   const [usernameAvailability, setUsernameAvailability] = useState({ status: 'idle', message: '' });
   const { config: oauthConfig } = useOAuthConfig();
+  const nextDestination = getPendingAuthDestination(searchParams);
+  const loginHref = buildAuthPath('/login', nextDestination);
 
   useEffect(() => {
     if (!authLoading && user) {
-      router.push('/');
+      router.push(resolveAuthDestination(searchParams));
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading, router, searchParams]);
 
   useEffect(() => {
     geoAPI.detect()
@@ -252,7 +256,7 @@ export default function RegisterPage() {
     try {
       await register(prepareRegistrationData(formData));
       success(t('register_success_verify_email'));
-      router.push(wantsModerator ? '/become-moderator' : '/verify-email');
+      router.push(wantsModerator ? '/become-moderator' : resolveAuthDestination(searchParams));
     } catch (err) {
       error(err.message || t('register_fail'));
     } finally {
@@ -263,6 +267,7 @@ export default function RegisterPage() {
   const handleGithubSignup = async () => {
     try {
       setLoading(true);
+      saveReturnTo(nextDestination);
       const response = await authAPI.initiateGithubOAuth('signup');
       if (response.success && response.data.authUrl) {
         window.location.href = response.data.authUrl;
@@ -276,6 +281,7 @@ export default function RegisterPage() {
   const handleGoogleSignup = async () => {
     try {
       setLoading(true);
+      saveReturnTo(nextDestination);
       const response = await authAPI.initiateGoogleOAuth('signup');
       if (response.success && response.data.authUrl) {
         window.location.href = response.data.authUrl;
@@ -631,7 +637,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-gray-600">
               {t('already_have_account')}{' '}
-              <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              <Link href={loginHref} className="font-medium text-blue-600 hover:text-blue-500">
                 {t('submit_login')}
               </Link>
             </p>
@@ -639,5 +645,19 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  const t = useTranslations('common');
+
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-600">{t('loading')}</p>
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }

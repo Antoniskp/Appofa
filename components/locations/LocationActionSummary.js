@@ -10,6 +10,7 @@ import {
   UserGroupIcon,
   UserPlusIcon,
 } from '@heroicons/react/24/outline';
+import { saveReturnTo } from '@/lib/auth-redirect';
 
 const statToneClasses = {
   blue: 'border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100',
@@ -53,6 +54,7 @@ function SummaryStat({ label, value, helper, icon: Icon, tone, tab, onTabSelect,
 
 function GuestLocationBridge({ counts }) {
   const hasActivity = counts.polls > 0 || counts.suggestions > 0 || counts.news > 0 || counts.articles > 0;
+  const handleAuthClick = () => saveReturnTo();
 
   return (
     <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4">
@@ -80,6 +82,7 @@ function GuestLocationBridge({ counts }) {
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
           <Link
             href="/register"
+            onClick={handleAuthClick}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
           >
             <UserPlusIcon className="h-4 w-4" />

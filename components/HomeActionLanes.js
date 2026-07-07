@@ -15,6 +15,7 @@ import {
   UserGroupIcon,
   UserPlusIcon,
 } from '@heroicons/react/24/outline';
+import { saveReturnTo } from '@/lib/auth-redirect';
 
 const signedInActions = (user) => [
   {
@@ -167,6 +168,8 @@ function ActionCard({ action }) {
 }
 
 function GuestRegistrationBridge() {
+  const handleAuthClick = () => saveReturnTo();
+
   return (
     <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-5 text-gray-900 sm:px-6">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -189,6 +192,7 @@ function GuestRegistrationBridge() {
         <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
           <Link
             href="/register"
+            onClick={handleAuthClick}
             className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
           >
             Δημιουργία προφίλ
