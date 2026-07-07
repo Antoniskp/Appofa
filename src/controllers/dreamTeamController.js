@@ -1294,13 +1294,19 @@ const dreamTeamController = {
 
       // If user is logged in and not in top list, find their rank via a DB-level COUNT.
       // Uses a CTE to compute the user's total once and avoid O(N) correlated subqueries.
+      // Also checks whether the user has any public formations — users without public
+      // formations are not ranked (currentUserRank remains null).
       let currentUserRank = null;
       if (requestUserId && !leaderboard.some((r) => r.isCurrentUser)) {
         const rankResult = await sequelize.query(
-          `WITH my_total AS (
+          `WITH my_public_formations AS (
+             SELECT id FROM "Formations"
+             WHERE "isPublic" = true AND "userId" = :userId
+           ),
+           my_total AS (
              SELECT COALESCE(SUM("likeCount"), 0) AS total
              FROM "Formations"
-             WHERE "isPublic" = true AND "userId" = :userId
+             WHERE "id" IN (SELECT id FROM my_public_formations)
            ),
            better_users AS (
              SELECT "userId"
@@ -1311,15 +1317,19 @@ const dreamTeamController = {
            )
            SELECT
              (SELECT COUNT(*)::int FROM better_users) AS "betterCount",
-             (SELECT total FROM my_total)::int          AS "myTotalLikes"`,
+             (SELECT total FROM my_total)::int          AS "myTotalLikes",
+             (SELECT COUNT(*)::int FROM my_public_formations) AS "publicFormationCount"`,
           { replacements: { userId: requestUserId }, type: sequelize.QueryTypes.SELECT }
         );
-        const betterCount = rankResult[0]?.betterCount ?? 0;
-        const myTotalLikes = rankResult[0]?.myTotalLikes ?? 0;
-        currentUserRank = {
-          rank: betterCount + 1,
-          totalLikes: myTotalLikes,
-        };
+        const publicFormationCount = rankResult[0]?.publicFormationCount ?? 0;
+        if (publicFormationCount > 0) {
+          const betterCount = rankResult[0]?.betterCount ?? 0;
+          const myTotalLikes = rankResult[0]?.myTotalLikes ?? 0;
+          currentUserRank = {
+            rank: betterCount + 1,
+            totalLikes: myTotalLikes,
+          };
+        }
       }
 
       return res.json({ success: true, data: leaderboard, hasMore, currentUserRank });
@@ -1353,24 +1363,28 @@ const dreamTeamController = {
 
       // Rank: count users with strictly more total likes via a DB-level CTE query.
       // The CTE computes my_total once, avoiding O(N) correlated subquery re-evaluation.
-      const betterUsersResult = await sequelize.query(
-        `WITH my_total AS (
-           SELECT COALESCE(SUM("likeCount"), 0) AS total
-           FROM "Formations"
-           WHERE "isPublic" = true AND "userId" = :userId
-         )
-         SELECT COUNT(*)::int AS "count"
-         FROM (
-           SELECT "userId"
-           FROM "Formations"
-           WHERE "isPublic" = true
-           GROUP BY "userId"
-           HAVING SUM("likeCount") > (SELECT total FROM my_total)
-         ) sub`,
-        { replacements: { userId }, type: sequelize.QueryTypes.SELECT }
-      );
-      const betterCount = betterUsersResult[0]?.count ?? null;
-      const rank = betterCount !== null ? betterCount + 1 : null;
+      // Users without public formations are not ranked (rank = null).
+      let rank = null;
+      if (hasPublicFormation) {
+        const betterUsersResult = await sequelize.query(
+          `WITH my_total AS (
+             SELECT COALESCE(SUM("likeCount"), 0) AS total
+             FROM "Formations"
+             WHERE "isPublic" = true AND "userId" = :userId
+           )
+           SELECT COUNT(*)::int AS "count"
+           FROM (
+             SELECT "userId"
+             FROM "Formations"
+             WHERE "isPublic" = true
+             GROUP BY "userId"
+             HAVING SUM("likeCount") > (SELECT total FROM my_total)
+           ) sub`,
+          { replacements: { userId }, type: sequelize.QueryTypes.SELECT }
+        );
+        const betterCount = betterUsersResult[0]?.count ?? 0;
+        rank = betterCount + 1;
+      }
 
       const avgCompletion = formationCount === 0 ? 0 : Math.round(
         formations.reduce((sum, f) => {
