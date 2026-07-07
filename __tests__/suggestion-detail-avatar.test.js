@@ -83,7 +83,7 @@ jest.mock('@/components/user/UserAvatar', () => {
   };
 });
 
-const SuggestionDetailPage = require('../app/suggestions/[id]/page').default;
+const SuggestionDetailPage = require('../app/suggestions/[id]/SuggestionDetailClient').default;
 
 describe('Suggestion detail author avatars', () => {
   let container;
