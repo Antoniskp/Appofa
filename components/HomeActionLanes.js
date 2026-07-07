@@ -190,15 +190,13 @@ export default function HomeActionLanes({ user }) {
                   href={href}
                   className="group overflow-hidden rounded-lg border border-blue-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex items-center justify-between gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
                       <Icon className="h-5 w-5" />
                     </span>
-                    <span className="flex min-w-0 flex-1 items-center justify-between gap-2 text-sm font-semibold">
-                      <span className="min-w-0 flex-1 break-words leading-5">{title}</span>
-                      <ArrowRightIcon className="h-4 w-4 shrink-0 text-blue-600 transition-transform group-hover:translate-x-0.5" />
-                    </span>
+                    <ArrowRightIcon className="h-4 w-4 shrink-0 text-blue-600 transition-transform group-hover:translate-x-0.5" />
                   </div>
+                  <h3 className="mt-3 text-sm font-semibold leading-5 text-gray-900">{title}</h3>
                   <p className="mt-3 text-xs leading-5 text-gray-600">{description}</p>
                 </Link>
               ))}
