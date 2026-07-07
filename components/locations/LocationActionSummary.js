@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import {
+  BellAlertIcon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
   NewspaperIcon,
@@ -16,6 +17,12 @@ const statToneClasses = {
   purple: 'border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100',
   slate: 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100',
 };
+
+const guestBenefits = [
+  'Κράτησε την περιοχή σου στο προφίλ',
+  'Λάβε ενημερώσεις για νέες ψηφοφορίες και προτάσεις',
+  'Χτίσε δημόσια παρουσία με τοπική συμμετοχή',
+];
 
 function SummaryStat({ label, value, helper, icon: Icon, tone, tab, onTabSelect, disabled }) {
   const handleClick = () => {
@@ -41,6 +48,52 @@ function SummaryStat({ label, value, helper, icon: Icon, tone, tab, onTabSelect,
         </span>
       </span>
     </button>
+  );
+}
+
+function GuestLocationBridge({ counts }) {
+  const hasActivity = counts.polls > 0 || counts.suggestions > 0 || counts.news > 0 || counts.articles > 0;
+
+  return (
+    <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-emerald-200 bg-white text-emerald-700">
+            <BellAlertIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-emerald-950">
+              {hasActivity
+                ? 'Μην χάσεις όσα αλλάζουν σε αυτή την περιοχή.'
+                : 'Γίνε από τους πρώτους που θα ενεργοποιήσουν αυτή την περιοχή.'}
+            </p>
+            <div className="mt-2 grid gap-2 text-sm text-emerald-900 md:grid-cols-3">
+              {guestBenefits.map((benefit) => (
+                <span key={benefit} className="flex gap-2">
+                  <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-600" />
+                  <span>{benefit}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+          >
+            <UserPlusIcon className="h-4 w-4" />
+            Εγγραφή και επιλογή περιοχής
+          </Link>
+          <Link
+            href="/newsletter"
+            className="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-white px-4 py-2 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+          >
+            Ενημερώσεις email
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -136,6 +189,7 @@ export default function LocationActionSummary({ counts, loading, isAuthenticated
           />
         ))}
       </div>
+      {!isAuthenticated && <GuestLocationBridge counts={counts} />}
     </section>
   );
 }

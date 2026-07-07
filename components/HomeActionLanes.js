@@ -48,7 +48,7 @@ const signedInActions = (user) => [
 const guestActions = [
   {
     title: 'Βρες την περιοχή σου',
-    description: 'Ξεκίνα από δήμο, περιφέρεια ή χώρα και δες θέματα που αφορούν τον τόπο σου.',
+    description: 'Ξεκίνα από δήμο, περιφέρεια ή χώρα και δες τι συζητιέται εκεί πριν δημιουργήσεις προφίλ.',
     href: '/locations',
     icon: MapPinIcon,
     tone: 'blue',
@@ -56,7 +56,7 @@ const guestActions = [
   },
   {
     title: 'Ψήφισε χωρίς εγγραφή',
-    description: 'Άνοιξε ψηφοφορίες που δέχονται συμμετοχή από επισκέπτες.',
+    description: 'Πάρε μια πρώτη θέση σε ανοιχτές ψηφοφορίες και κράτησε ιστορικό όταν εγγραφείς.',
     href: '/polls?voteRestriction=anyone',
     icon: ClipboardDocumentListIcon,
     tone: 'emerald',
@@ -64,7 +64,7 @@ const guestActions = [
   },
   {
     title: 'Δες προτάσεις πολιτών',
-    description: 'Δες ιδέες, προβλήματα και λύσεις που συζητιούνται δημόσια.',
+    description: 'Βρες ιδέες και προβλήματα που αξίζουν στήριξη, μετά φτιάξε προφίλ για να τα ακολουθείς.',
     href: '/suggestions',
     icon: ChatBubbleLeftRightIcon,
     tone: 'amber',
@@ -138,6 +138,12 @@ const toneClasses = {
   indigo: 'bg-indigo-50 text-indigo-700 border-indigo-200 group-hover:bg-indigo-100',
 };
 
+const guestRegistrationBenefits = [
+  'Αποθήκευση περιοχής και πιο σχετικές ενημερώσεις',
+  'Παρακολούθηση ψηφοφοριών, προτάσεων και απαντήσεων',
+  'Δημόσια παρουσία με σήματα συμμετοχής και αξιοπιστίας',
+];
+
 function ActionCard({ action }) {
   const Icon = action.icon;
   return (
@@ -157,6 +163,46 @@ function ActionCard({ action }) {
       <h3 className="mt-4 text-base font-bold text-gray-900">{action.title}</h3>
       <p className="mt-2 text-sm leading-6 text-gray-600">{action.description}</p>
     </Link>
+  );
+}
+
+function GuestRegistrationBridge() {
+  return (
+    <div className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 px-5 py-5 text-gray-900 sm:px-6">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+            Επόμενο βήμα
+          </p>
+          <h3 className="mt-1 text-lg font-bold leading-7">
+            Δημιούργησε προφίλ όταν βρεις κάτι που σε αφορά.
+          </h3>
+          <div className="mt-4 grid gap-3 text-sm text-gray-700 md:grid-cols-3">
+            {guestRegistrationBenefits.map((benefit) => (
+              <div key={benefit} className="flex gap-2">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-emerald-500" />
+                <span>{benefit}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-2 sm:flex-row lg:flex-col xl:flex-row">
+          <Link
+            href="/register"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+          >
+            Δημιουργία προφίλ
+            <ArrowRightIcon className="h-4 w-4" />
+          </Link>
+          <Link
+            href="/newsletter"
+            className="inline-flex items-center justify-center rounded-md border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 hover:bg-emerald-100 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2"
+          >
+            Ενημερώσεις email
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -232,6 +278,7 @@ export default function HomeActionLanes({ user }) {
             <ActionCard key={action.href} action={action} />
           ))}
         </div>
+        {!user && <GuestRegistrationBridge />}
       </div>
     </section>
   );
