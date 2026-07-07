@@ -839,7 +839,8 @@ const organizationController = {
         where.visibility = 'public';
       }
 
-      const polls = await Poll.findAll({
+      const { page, limit, offset } = parsePagination(req.query);
+      const { count, rows: polls } = await Poll.findAndCountAll({
         where,
         include: [
           {
@@ -849,12 +850,20 @@ const organizationController = {
           },
         ],
         order: [['createdAt', 'DESC']],
+        limit,
+        offset,
       });
 
       return res.status(200).json({
         success: true,
         data: {
           polls: polls.map(serializeOrgPoll),
+          pagination: {
+            currentPage: page,
+            totalPages: Math.max(1, Math.ceil(count / limit)),
+            totalItems: count,
+            itemsPerPage: limit,
+          },
         },
       });
     } catch (error) {
@@ -943,7 +952,8 @@ const organizationController = {
         where.visibility = 'public';
       }
 
-      const suggestions = await Suggestion.findAll({
+      const { page, limit, offset } = parsePagination(req.query);
+      const { count, rows: suggestions } = await Suggestion.findAndCountAll({
         where,
         include: [
           {
@@ -963,12 +973,20 @@ const organizationController = {
           },
         ],
         order: [['createdAt', 'DESC']],
+        limit,
+        offset,
       });
 
       return res.status(200).json({
         success: true,
         data: {
           suggestions: suggestions.map((item) => serializeOrgSuggestion(item, req.user || null)),
+          pagination: {
+            currentPage: page,
+            totalPages: Math.max(1, Math.ceil(count / limit)),
+            totalItems: count,
+            itemsPerPage: limit,
+          },
         },
       });
     } catch (error) {
