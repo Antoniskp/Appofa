@@ -183,8 +183,8 @@ describe('CamerasPageClient', () => {
       marker.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
     });
 
-    const harbourTitle = Array.from(container.querySelectorAll('h2')).find((el) => el.textContent === 'Harbour camera');
-    expect(harbourTitle.closest('article').className).toContain('border-blue-400');
+    const harbourTitle = Array.from(container.querySelectorAll('h3')).find((el) => el.textContent === 'Harbour camera');
+    expect(harbourTitle.closest('article').className).toContain('bg-blue-50');
 
     const showOnMapButton = Array.from(container.querySelectorAll('button')).find((btn) => btn.textContent === 'Εστίαση στον χάρτη');
     expect(showOnMapButton).toBeUndefined();

@@ -64,6 +64,33 @@ function getEmbedTypeLabel(camera, t) {
   return t('badge_live_link');
 }
 
+function getCameraGroupLocation(camera) {
+  return camera.location || camera.sourceLocation || camera.mapLocation || null;
+}
+
+function groupCamerasByLocation(cameras, t) {
+  const groupsByKey = new Map();
+
+  cameras.forEach((camera) => {
+    const location = getCameraGroupLocation(camera);
+    const label = getLocationLabel(location) || t('map_unavailable');
+    const key = location?.id || location?.slug || label;
+
+    if (!groupsByKey.has(key)) {
+      groupsByKey.set(key, {
+        key,
+        label,
+        slug: location?.slug || null,
+        cameras: [],
+      });
+    }
+
+    groupsByKey.get(key).cameras.push(camera);
+  });
+
+  return Array.from(groupsByKey.values());
+}
+
 function buildCameraTooltip(camera) {
   const label = escapeHtml(camera.label);
   const locationLabel = escapeHtml(getLocationLabel(camera.mapLocation));
@@ -101,105 +128,66 @@ function getMapBounds(markers) {
   };
 }
 
-function CameraCard({ camera, t, isHighlighted, onHoverChange }) {
-  const associatedLocation = camera.location;
-  const sourceLocation = camera.sourceLocation;
-  const showSourceLocation = sourceLocation && (!associatedLocation || associatedLocation.id !== sourceLocation.id);
-  const mapLocationAvailable = hasMapLocation(camera);
+function CameraRow({ camera, t, isHighlighted, onHoverChange }) {
   const safeCameraUrl = getSafeCameraUrl(camera.url);
-  const primaryLocation = associatedLocation || sourceLocation || camera.mapLocation;
-  const primaryLocationLabel = getLocationLabel(primaryLocation);
 
   return (
     <article
-      className={`rounded-lg border bg-white p-4 shadow-sm transition ${isHighlighted ? 'border-blue-400 ring-2 ring-blue-100' : 'border-gray-200 hover:border-blue-200 hover:shadow-md'}`}
+      className={`flex items-center justify-between gap-3 border-t px-3 py-2.5 transition first:border-t-0 sm:px-4 ${isHighlighted ? 'border-blue-200 bg-blue-50' : 'border-gray-100 hover:bg-slate-50'}`}
       onMouseEnter={() => onHoverChange(camera.id)}
       onMouseLeave={() => onHoverChange(null)}
     >
-      <div className="space-y-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="text-lg font-semibold text-gray-900">{camera.label}</h2>
-            {primaryLocationLabel && (
-              <p className="mt-1 truncate text-sm text-gray-600">{primaryLocationLabel}</p>
-            )}
-          </div>
-          <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${mapLocationAvailable ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'}`}>
-            {mapLocationAvailable ? t('map_available') : t('map_unavailable')}
-          </span>
-        </div>
+      <h3 className="min-w-0 flex-1 truncate text-sm font-medium text-gray-900">{camera.label}</h3>
 
-        <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-            <VideoCameraIcon className="mr-1 h-4 w-4 text-blue-600" />
-            {getEmbedTypeLabel(camera, t)}
-          </span>
-          {mapLocationAvailable && (
-            <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${camera.mapLocationSource === 'camera' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-              {camera.mapLocationSource === 'camera' ? t('pin_source_exact') : t('pin_source_source')}
-            </span>
-          )}
-        </div>
-
-        <div className="space-y-2 text-sm text-gray-600">
-          {associatedLocation && (
-            <div className="flex items-start gap-2">
-              <MapPinIcon className="mt-0.5 h-4 w-4 text-blue-500" />
-              <div>
-                <p className="font-medium text-gray-700">{t('associated_location')}</p>
-                {associatedLocation.slug ? (
-                  <Link href={`/locations/${associatedLocation.slug}`} className="text-blue-600 hover:underline">
-                    {getLocationLabel(associatedLocation)}
-                  </Link>
-                ) : (
-                  <span>{getLocationLabel(associatedLocation)}</span>
-                )}
-              </div>
-            </div>
-          )}
-
-          {showSourceLocation && (
-            <div className="flex items-start gap-2">
-              <MapPinIcon className="mt-0.5 h-4 w-4 text-slate-400" />
-              <div>
-                <p className="font-medium text-gray-700">{t('source_location')}</p>
-                {sourceLocation.slug ? (
-                  <Link href={`/locations/${sourceLocation.slug}`} className="text-blue-600 hover:underline">
-                    {getLocationLabel(sourceLocation)}
-                  </Link>
-                ) : (
-                  <span>{getLocationLabel(sourceLocation)}</span>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-2 border-t border-gray-100 pt-4">
-          {safeCameraUrl && (
-            <a
-              href={safeCameraUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={t('open_camera_new_tab_aria', { label: camera.label })}
-              className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-            >
-              <ArrowTopRightOnSquareIcon className="h-4 w-4" />
-              {t('open_camera')}
-            </a>
-          )}
-          {camera.mapLocation?.slug && (
-            <Link
-              href={`/locations/${camera.mapLocation.slug}`}
-              className="inline-flex items-center gap-2 rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
-            >
-              <MapPinIcon className="h-4 w-4" />
-              {t('view_location')}
-            </Link>
-          )}
-        </div>
-      </div>
+      {safeCameraUrl && (
+        <a
+          href={safeCameraUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t('open_camera_new_tab_aria', { label: camera.label })}
+          title={getEmbedTypeLabel(camera, t)}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-blue-600 text-white transition-colors hover:bg-blue-700"
+        >
+          <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+        </a>
+      )}
     </article>
+  );
+}
+
+function CameraLocationGroup({ group, t, highlightedCameraId, onHoverChange }) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 bg-slate-50 px-4 py-3">
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-semibold text-gray-900">{group.label}</h2>
+          <p className="mt-0.5 text-xs font-medium text-gray-500">{t('summary_total', { count: group.cameras.length })}</p>
+        </div>
+
+        {group.slug && (
+          <Link
+            href={`/locations/${group.slug}`}
+            aria-label={t('view_location_aria', { location: group.label })}
+            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+          >
+            <MapPinIcon className="h-4 w-4" />
+            {t('view_location')}
+          </Link>
+        )}
+      </header>
+
+      <div>
+        {group.cameras.map((camera) => (
+          <CameraRow
+            key={camera.id}
+            camera={camera}
+            t={t}
+            isHighlighted={camera.id === highlightedCameraId}
+            onHoverChange={onHoverChange}
+          />
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -241,6 +229,10 @@ export default function CamerasPageClient() {
     }
     return allCameras;
   }, [activeFilter, allCameras]);
+  const cameraGroups = useMemo(
+    () => groupCamerasByLocation(filteredCameras, t),
+    [filteredCameras, t]
+  );
 
   const highlightedMarkerId = hoveredCardId || hoveredMarkerId || null;
   const markers = useMemo(
@@ -393,7 +385,7 @@ export default function CamerasPageClient() {
             </div>
 
             {loading ? (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <div className="space-y-4">
                 <SkeletonLoader type="card" count={4} variant="grid" />
               </div>
             ) : error ? (
@@ -409,13 +401,13 @@ export default function CamerasPageClient() {
                 description={t('no_filtered_cameras_description')}
               />
             ) : (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {filteredCameras.map((camera) => (
-                  <CameraCard
-                    key={camera.id}
-                    camera={camera}
+              <div className="space-y-4">
+                {cameraGroups.map((group) => (
+                  <CameraLocationGroup
+                    key={group.key}
+                    group={group}
                     t={t}
-                    isHighlighted={camera.id === hoveredMarkerId || camera.id === hoveredCardId}
+                    highlightedCameraId={hoveredMarkerId || hoveredCardId}
                     onHoverChange={(id) => {
                       setHoveredCardId(id);
                     }}
