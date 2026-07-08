@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { candidateRegistrationAPI, locationAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ToastProvider';
@@ -35,6 +36,7 @@ function getPositionOptions(locationType) {
 }
 
 export default function CandidateRegistrationPage() {
+  const t = useTranslations('candidates');
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
@@ -116,11 +118,11 @@ export default function CandidateRegistrationPage() {
       return;
     }
     if (!form.locationId) {
-      toastError('Please select a location.');
+      toastError(t('register_page.error_select_location'));
       return;
     }
     if (!selectedLocation) {
-      toastError('Please choose one of your profile locations.');
+      toastError(t('register_page.error_profile_location'));
       return;
     }
 
@@ -131,10 +133,10 @@ export default function CandidateRegistrationPage() {
         locationId: Number(form.locationId),
       });
       const locationSlug = response.data?.registration?.location?.slug;
-      toastSuccess('Candidate registration submitted for review.');
+      toastSuccess(t('register_page.success'));
       router.push(locationSlug ? `/locations/${locationSlug}?tab=candidates#location-content` : '/candidates');
     } catch (err) {
-      toastError(err.message || 'Could not register candidate profile.');
+      toastError(err.message || t('register_page.error_fallback'));
     } finally {
       setSubmitting(false);
     }
@@ -144,7 +146,7 @@ export default function CandidateRegistrationPage() {
     return (
       <div className="min-h-screen bg-gray-50 py-10">
         <div className="app-container">
-          <p className="text-gray-500">Loading...</p>
+          <p className="text-gray-500">{t('register_page.loading')}</p>
         </div>
       </div>
     );
@@ -155,14 +157,14 @@ export default function CandidateRegistrationPage() {
       <div className="min-h-screen bg-gray-50 py-10">
         <div className="app-container max-w-2xl">
           <div className="rounded-lg border border-gray-200 bg-white p-6">
-            <h1 className="text-2xl font-bold text-gray-900">Register as a candidate</h1>
-            <p className="mt-2 text-gray-600">Log in first so your candidate listing can be attached to your profile.</p>
+            <h1 className="text-2xl font-bold text-gray-900">{t('register_page.login_required_title')}</h1>
+            <p className="mt-2 text-gray-600">{t('register_page.login_required_description')}</p>
             <div className="mt-5 flex gap-3">
               <Link href="/login" className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700">
-                Log in
+                {t('register_page.log_in')}
               </Link>
               <Link href="/register" className="rounded border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50">
-                Create account
+                {t('register_page.create_account')}
               </Link>
             </div>
           </div>
@@ -175,22 +177,22 @@ export default function CandidateRegistrationPage() {
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="app-container max-w-3xl">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Register as a candidate</h1>
-          <p className="mt-1 text-gray-600">Submit a campaign listing for moderator review before it appears on location pages.</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('register_page.title')}</h1>
+          <p className="mt-1 text-gray-600">{t('register_page.description')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm space-y-5">
           {locationOptions.length === 0 && (
             <div className="rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              Set your home location on your profile before registering as a candidate.
+              {t('register_page.no_home_location')}
               <Link href="/profile" className="ml-1 font-medium text-amber-950 underline">
-                Update profile
+                {t('register_page.update_profile')}
               </Link>
             </div>
           )}
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Location *</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.location_label')}</label>
             <select
               value={form.locationId}
               onChange={(event) => updateField('locationId', event.target.value)}
@@ -198,7 +200,7 @@ export default function CandidateRegistrationPage() {
               className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
             >
               {locationOptions.length === 0 ? (
-                <option value="">No profile location set</option>
+                <option value="">{t('register_page.no_location_set')}</option>
               ) : (
                 locationOptions.map((location) => (
                   <option key={location.id} value={location.id}>
@@ -208,29 +210,29 @@ export default function CandidateRegistrationPage() {
               )}
             </select>
             <p className="mt-1 text-xs text-gray-500">
-              Candidate registrations are limited to your home location and its parent locations.
+              {t('register_page.location_help')}
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Position *</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.position_label')}</label>
               <select
                 value={form.positionType}
                 onChange={(event) => updateField('positionType', event.target.value)}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {positionOptions.map((position) => (
-                  <option key={position} value={position}>{POSITION_TYPE_LABELS[position]}</option>
+                  <option key={position} value={position}>{t(`position_types.${position}`)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Custom title</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.custom_title_label')}</label>
               <input
                 value={form.positionTitle}
                 onChange={(event) => updateField('positionTitle', event.target.value)}
-                placeholder="e.g. Mayor of Athens"
+                placeholder={t('register_page.custom_title_placeholder')}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 maxLength={160}
               />
@@ -239,21 +241,21 @@ export default function CandidateRegistrationPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Election cycle</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.election_cycle_label')}</label>
               <input
                 value={form.electionCycle}
                 onChange={(event) => updateField('electionCycle', event.target.value)}
-                placeholder="current, 2027, local 2028..."
+                placeholder={t('register_page.election_cycle_placeholder')}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 maxLength={80}
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Party or list</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.party_label')}</label>
               <input
                 value={form.partyName}
                 onChange={(event) => updateField('partyName', event.target.value)}
-                placeholder="Leave blank if independent"
+                placeholder={t('register_page.party_placeholder')}
                 disabled={form.isIndependent}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 maxLength={160}
@@ -268,27 +270,27 @@ export default function CandidateRegistrationPage() {
               onChange={(event) => updateField('isIndependent', event.target.checked)}
               className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-            Independent candidate
+            {t('register_page.is_independent')}
           </label>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Campaign slogan</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.slogan_label')}</label>
             <input
               value={form.slogan}
               onChange={(event) => updateField('slogan', event.target.value)}
-              placeholder="One short line people will remember"
+              placeholder={t('register_page.slogan_placeholder')}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               maxLength={180}
             />
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Platform</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.platform_label')}</label>
             <textarea
               value={form.platform}
               onChange={(event) => updateField('platform', event.target.value)}
               rows={6}
-              placeholder="Describe your priorities, local problems you want to solve, and what residents should expect from you."
+              placeholder={t('register_page.platform_placeholder')}
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
               maxLength={5000}
             />
@@ -296,7 +298,7 @@ export default function CandidateRegistrationPage() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Website</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.website_label')}</label>
               <input
                 value={form.websiteUrl}
                 onChange={(event) => updateField('websiteUrl', event.target.value)}
@@ -305,7 +307,7 @@ export default function CandidateRegistrationPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Public contact email</label>
+              <label className="mb-1 block text-sm font-medium text-gray-700">{t('register_page.email_label')}</label>
               <input
                 type="email"
                 value={form.contactEmail}
@@ -317,10 +319,10 @@ export default function CandidateRegistrationPage() {
 
           <div className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-5">
             <Link href="/candidates" className="rounded px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100">
-              Cancel
+              {t('register_page.cancel')}
             </Link>
             <Button type="submit" loading={submitting} disabled={locationOptions.length === 0}>
-              Submit for review
+              {t('register_page.submit')}
             </Button>
           </div>
         </form>
