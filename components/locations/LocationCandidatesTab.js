@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { CheckBadgeIcon, MapPinIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 
 export const POSITION_TYPE_LABELS = {
@@ -12,13 +13,13 @@ export const POSITION_TYPE_LABELS = {
   other: 'Other position',
 };
 
-function getDisplayName(user) {
-  if (!user) return 'Candidate';
+function getDisplayName(user, fallback = 'Candidate') {
+  if (!user) return fallback;
   return [user.firstNameNative, user.lastNameNative].filter(Boolean).join(' ').trim()
     || [user.firstNameEn, user.lastNameEn].filter(Boolean).join(' ').trim()
     || user.nickname
     || user.username
-    || 'Candidate';
+    || fallback;
 }
 
 function getProfileHref(user) {
@@ -29,9 +30,10 @@ function getProfileHref(user) {
 }
 
 export function CandidateRegistrationCard({ registration }) {
+  const t = useTranslations('candidates');
   const candidate = registration.candidate;
-  const name = getDisplayName(candidate);
-  const position = registration.positionTitle || POSITION_TYPE_LABELS[registration.positionType] || registration.positionType;
+  const name = getDisplayName(candidate, t('card.candidate_fallback'));
+  const position = registration.positionTitle || t(`position_types.${registration.positionType}`) || POSITION_TYPE_LABELS[registration.positionType] || registration.positionType;
   const avatar = candidate?.avatarUrl || candidate?.avatar || candidate?.photo;
 
   return (
@@ -50,14 +52,14 @@ export function CandidateRegistrationCard({ registration }) {
             {candidate?.isVerified && (
               <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
                 <CheckBadgeIcon className="h-3.5 w-3.5" />
-                Verified
+                {t('card.verified')}
               </span>
             )}
           </div>
           <div className="mt-1 flex flex-wrap gap-2 text-xs text-gray-500">
             <span className="rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-700">{position}</span>
             {registration.electionCycle && <span>{registration.electionCycle}</span>}
-            <span>{registration.isIndependent ? 'Independent' : (registration.partyName || 'No party listed')}</span>
+            <span>{registration.isIndependent ? t('card.independent') : (registration.partyName || t('card.no_party'))}</span>
           </div>
           {registration.location && (
             <p className="mt-2 flex items-center gap-1 text-xs text-gray-500">
@@ -73,14 +75,14 @@ export function CandidateRegistrationCard({ registration }) {
           )}
           <div className="mt-3 flex flex-wrap gap-3 text-sm">
             <Link href={`/candidate-registrations/${registration.id}`} className="font-medium text-blue-700 hover:text-blue-900">
-              View campaign
+              {t('card.view_campaign')}
             </Link>
             <Link href={getProfileHref(candidate)} className="font-medium text-blue-700 hover:text-blue-900">
-              View profile
+              {t('card.view_profile')}
             </Link>
             {registration.websiteUrl && (
               <a href={registration.websiteUrl} target="_blank" rel="noreferrer" className="font-medium text-gray-700 hover:text-gray-900">
-                Website
+                {t('card.website')}
               </a>
             )}
           </div>
@@ -91,23 +93,25 @@ export function CandidateRegistrationCard({ registration }) {
 }
 
 export default function LocationCandidatesTab({ candidates = [], loading = false, locationIdentifier }) {
+  const t = useTranslations('candidates');
+
   if (loading) {
-    return <p className="text-center text-gray-400 py-8 animate-pulse">Loading...</p>;
+    return <p className="text-center text-gray-400 py-8 animate-pulse">{t('tab.loading')}</p>;
   }
 
   if (candidates.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50/80 px-5 py-8 text-center">
-        <h3 className="text-base font-semibold text-gray-900">No candidate registrations yet</h3>
+        <h3 className="text-base font-semibold text-gray-900">{t('tab.no_registrations_title')}</h3>
         <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-          Be the first to register for this location and make your campaign visible to local residents.
+          {t('tab.no_registrations_description')}
         </p>
         <div className="mt-4">
           <Link
             href={`/candidates/register${locationIdentifier ? `?location=${encodeURIComponent(locationIdentifier)}` : ''}`}
             className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
           >
-            Register as candidate
+            {t('tab.register_as_candidate')}
           </Link>
         </div>
       </div>
@@ -121,7 +125,7 @@ export default function LocationCandidatesTab({ candidates = [], loading = false
           href={`/candidates/register${locationIdentifier ? `?location=${encodeURIComponent(locationIdentifier)}` : ''}`}
           className="inline-flex items-center rounded-lg border border-blue-600 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
         >
-          Register here
+          {t('tab.register_here')}
         </Link>
       </div>
       <div className="grid gap-3 md:grid-cols-2">

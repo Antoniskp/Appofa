@@ -52,7 +52,7 @@ Appofa/
 ├── proxy.js                 # Next.js edge proxy (country metadata/cookies, blocked-country rules, no home auto-redirect)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
 ├── config/map-data/         # Political mapping datasets (region/district metadata + GeoJSON geometry)
-├── messages/                # next-intl locale messages (el.json, en.json, ro.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages)
+├── messages/                # next-intl locale messages (el.json, en.json, ro.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages/candidates)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (23 files)
 │   ├── services/           # Business logic (15 files)
@@ -499,7 +499,7 @@ Appofa/
 
 ## Frontend Pages (142)
 
-> i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`) and shared nav/footer/article cards now use `useTranslations(...)`.
+> i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`, `/candidates`) and shared nav/footer/article cards now use `useTranslations(...)`.
 
 ### Main Pages
 | Route | Description |
