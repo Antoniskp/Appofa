@@ -15,8 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const DEFAULT_BG_COLOR = '#1a2a3a';
-const DEFAULT_TITLE = 'Η περιοχή σου, οι αποφάσεις σου.';
-const DEFAULT_SUBTITLE = 'Παρακολούθησε τι συμβαίνει γύρω σου, ψήφισε σε ανοιχτά θέματα και κατέθεσε προτάσεις που μπορούν να γίνουν πράξη.';
+const DEFAULT_TITLE = 'Η φωνή των ανεξάρτητων, οι αποφάσεις της κοινότητας.';
+const DEFAULT_SUBTITLE = 'Δίνουμε ορατότητα σε ανεξάρτητους υποψηφίους και ενεργούς πολίτες με εργαλεία για κοινές αποφάσεις, ενώ κόμματα και οργανώσεις συμμετέχουν ισότιμα στον δημόσιο διάλογο.';
 const SLIDE_INTERVAL_MS = 5000;
 
 function StatSkeleton() {
@@ -169,7 +169,7 @@ export default function HomeHero() {
               )}
 
               <p className="inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-cyan-50 backdrop-blur">
-                Πολιτική συμμετοχή, κοντά στην καθημερινότητα
+                Χώρος ανεξάρτητων φωνών · Εργαλείο αποφάσεων
               </p>
 
               <div

@@ -41,6 +41,7 @@ describe('HomeActionLanes registration prompts', () => {
     expect(container.textContent).toContain('Αποθήκευση περιοχής');
     expect(container.querySelector('a[href="/register"]')).toBeTruthy();
     expect(container.querySelector('a[href="/newsletter"]')).toBeTruthy();
+    expect(container.textContent).toContain('Κόμμα ή οργάνωση; Έλα μαζί μας');
 
     await act(async () => {
       root.unmount();
