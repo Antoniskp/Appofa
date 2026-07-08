@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {
   ArrowRightIcon,
+  BuildingOffice2Icon,
   ChatBubbleLeftRightIcon,
   ClipboardDocumentListIcon,
   FlagIcon,
@@ -99,6 +100,12 @@ const civicPathActions = (user) => [
     title: 'Δες ανεξάρτητους',
     description: 'Βρες ανεξάρτητους υποψηφίους και δημόσια πρόσωπα στην πλατφόρμα.',
     icon: UserGroupIcon,
+  },
+  {
+    href: '/organizations',
+    title: 'Κόμμα ή οργάνωση; Έλα μαζί μας',
+    description: 'Δημιούργησε προφίλ οργανισμού, δημοσίευσε θέσεις και συμμετείχε στον δημόσιο διάλογο.',
+    icon: BuildingOffice2Icon,
   },
   {
     href: '/manifest-supporters',
