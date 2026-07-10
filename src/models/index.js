@@ -59,6 +59,7 @@ const PushSubscription = require('./PushSubscription');
 const WorkerToken = require('./WorkerToken');
 const MunicipalityDistrictMap = require('./MunicipalityDistrictMap');
 const CandidateRegistration = require('./CandidateRegistration');
+const OnboardingEvent = require('./OnboardingEvent');
 
 // Define associations
 User.hasMany(Article, {
@@ -535,6 +536,10 @@ CandidateRegistration.belongsTo(User, { foreignKey: 'reviewedByUserId', as: 'rev
 User.hasMany(CandidateRegistration, { foreignKey: 'userId', as: 'candidateRegistrations' });
 Location.hasMany(CandidateRegistration, { foreignKey: 'locationId', as: 'candidateRegistrations' });
 
+// OnboardingEvent associations
+OnboardingEvent.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(OnboardingEvent, { foreignKey: 'userId', as: 'onboardingEvents' });
+
 module.exports = {
   sequelize,
   User,
@@ -597,4 +602,5 @@ module.exports = {
   WorkerToken,
   MunicipalityDistrictMap,
   CandidateRegistration,
+  OnboardingEvent,
 };

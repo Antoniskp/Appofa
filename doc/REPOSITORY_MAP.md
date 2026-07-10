@@ -52,11 +52,11 @@ Appofa/
 ├── proxy.js                 # Next.js edge proxy (country metadata/cookies, blocked-country rules, no home auto-redirect)
 ├── i18n.js                  # next-intl request config (cookie-based locale/messages)
 ├── config/map-data/         # Political mapping datasets (region/district metadata + GeoJSON geometry)
-├── messages/                # next-intl locale messages (el.json, en.json, ro.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages/candidates/onboarding)
+├── messages/                # next-intl locale messages (el.json, en.json, ro.json; namespaces: common/nav/footer/home/auth/articles/news/profile/admin/editor/polls/organizations/static_pages/candidates/onboarding/moderator/creator)
 ├── src/                    # Backend (Express + Sequelize)
 │   ├── controllers/        # Request handlers (23 files)
 │   ├── services/           # Business logic (15 files)
-│   ├── models/             # Sequelize models (48 models)
+│   ├── models/             # Sequelize models (49 models)
 │   ├── routes/             # Express route definitions (29 files)
 │   ├── middleware/         # Auth, CSRF, rate-limit, geo access, error handling (8 files)
 │   ├── migrations/         # DB migrations (88 files)
@@ -212,6 +212,8 @@ Appofa/
 | GET | /onboarding | ✅ | Get current user's onboarding state (goal, secondaryGoals, dismissed, completedAt, profile fields) |
 | PUT | /onboarding | ✅ | Update onboarding goal/secondaryGoals/dismissed/completed |
 | GET | /contribution-summary | ✅ | **Phase 2** — Creator contribution summary: `hasContributed`, `totalCount`, `articleCount`, `pollCount`, `suggestionCount` (scoped to current user) |
+| GET | /my-contributions | ✅ | **Phase 3** — Current user's contributions grouped by type with status. `?type=all|articles|polls|suggestions`; max 50 items. |
+| GET | /profile-readiness | ✅ | **Phase 3** — Own public-profile readiness: completeness score, candidate status, follower/following counts, profile discoverability, claim status. Scoped to `req.user.id`. |
 
 ### Newsletter (`/api/newsletter`)
 | Method | Path | Auth | Description |
@@ -407,7 +409,8 @@ Appofa/
 | solutionRoutes.js | /api/solutions | POST /:id/vote |
 | statsRoutes.js | /api/stats | GET /community, GET /user/home-location |
 | tagRoutes.js | /api/tags | GET /suggestions?entityType=article\|poll\|suggestion&q=prefix |
-| adminRoutes.js | /api/admin | GET /health, GET /worker-status/health (dispatches `health_request` over worker WS; 503 when no worker connected), POST /worker-status/test-snapshot (dispatches `snapshot_request` over worker WS; 503 when no worker connected), POST /worker-tokens, GET /worker-tokens, POST /worker-tokens/:id/revoke, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check |
+| adminRoutes.js | /api/admin | GET /health, GET /worker-status/health (dispatches `health_request` over worker WS; 503 when no worker connected), POST /worker-status/test-snapshot (dispatches `snapshot_request` over worker WS; 503 when no worker connected), POST /worker-tokens, GET /worker-tokens, POST /worker-tokens/:id/revoke, dream-team management endpoints, GET/POST/DELETE /ip-rules, POST /ip-rules/check, **Phase 3**: GET /onboarding/funnel (admin-only, date/goal filters, abandonment; `?from=&to=&goal=`), GET /users/:userId/onboarding-context (admin/moderator, batched 8-query context) |
+| onboardingEventRoutes.js | /api/onboarding | **Phase 3**: POST /events (auth + CSRF + rateLimiter; validates eventType, goal, sanitized allowlisted metadata; idempotent for ONCE_PER_USER_EVENTS) |
 | geoStatsRoutes.js | /api/admin/geo-stats | POST /track (normalizes countryCode to ISO-2; rejects `XX`/`T1`), GET /country-funding/:locationId/public, GET /visits (includes `userId`/`username` when available), DELETE /visits?olderThanDays=N, GET /countries, GET /country-funding, POST /country-funding, PUT /country-funding/:id, DELETE /country-funding/:id |
 | geoDetectRoutes.js | /api/geo | GET /detect (returns `countryCode`, `countryName`, plus detection transparency metadata: `detectionSource`, `trustedForCountryRedirect`) |
 | geoAccessRoutes.js | /api/geo + /api/admin/geo-access | Public: GET /access-rules (blocked countries with optional redirectPath). Admin: GET/POST/DELETE /rules (POST accepts optional redirectPath), GET/PUT /settings |
@@ -509,7 +512,9 @@ Appofa/
 |-------|-------------|
 | `/` | Home page (DB-driven hero with fallback copy emphasizing independent civic voices + practical decision tools, and `HomeActionLanes` participation grid including both independents and organizations CTAs; sections ordered as Government Snapshot → optional Info → CTA banner → polls/suggestions/locations → merged `Νέα & Άρθρα` → videos → manifest supporters; authenticated users with incomplete onboarding see a dismissible `OnboardingCard`) |
 | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics (inline password validation before advancing) → optional nationality/location with inline non-GR diaspora toggle/residence handling → GDPR/summary, plus GR quick-select onboarding and moderator-interest opt-in; `/verify-email` handles token confirm + expired-token resend flow; after successful registration, new users are routed to `/onboarding` unless an explicit `next` destination was set) |
-| `/onboarding` | **Phase 2 goal-based onboarding** for new users: choose one primary participation goal (moderator / creator / independent / citizen) with optional secondary interests, then see a personalized derived checklist. Phase 2 enhancements: moderator checklist step reflects real application status from `GET /api/messages/mine/moderator-application` (submitted / under_review / approved); creator checklist reflects actual first-contribution via `GET /api/auth/contribution-summary` and shows template cards (article/news/poll/suggestion/video); independent checklist adds person-search step + candidate registration status; all checklist completion derived from real data, no separate checkbox storage |
+| `/onboarding` | **Phase 2 goal-based onboarding** for new users: choose one primary participation goal (moderator / creator / independent / citizen) with optional secondary interests, then see a personalized derived checklist. Phase 2 enhancements: moderator checklist step reflects real application status from `GET /api/messages/mine/moderator-application` (submitted / under_review / approved); creator checklist reflects actual first-contribution via `GET /api/auth/contribution-summary` and shows template cards (article/news/poll/suggestion/video); independent checklist adds person-search step + candidate registration status; all checklist completion derived from real data, no separate checkbox storage. **Phase 3**: records funnel events (`onboarding_viewed`, `goal_selected`, `onboarding_dismissed`); allDone block shows goal-specific workspace CTAs. |
+| `/moderator` | **Phase 3** — Moderator guided workspace (role-gated: `moderator`/`admin` only). Shows assigned location from most-recent approved moderator application, 4-step first-actions checklist (review location page, check sections, review reports, read rules), admin quick links. Records `onboarding_viewed` on mount. Directs approved moderators from `OnboardingCard`. |
+| `/creator` | **Phase 3** — Creator contributions workspace (authenticated). Shows own articles/polls/suggestions with status badges, grouped by type, max 50/type. Draft → continue editing links, template CTA for new contribution, editor-note distinguishing creator vs editor privileges. |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile with sticky 4-tab layout (`Profile`, `Location & Politics`, `Skills & Interests`, `Settings`); tab content is split into `app/profile/tabs/*` while form state/effects/handlers are centralized in `hooks/useProfileForm.js`; includes profile-completeness card, newsletter preference toggle, and `?verified=1` success toast handling |
 | `/users`, `/users/[username]` | Unified people directory with visibility enforcement (`profileVisibility`): guests see only `public` profiles, authenticated users see `registered+public`, and `hidden` profiles are excluded from discovery. Profile page access is now optional-auth and enforces the same model (owner/admin/moderator can still access hidden directly). Shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) remains across tabs; person cards are fully clickable; `/discover-people` and `/persons` list pages are retired (404). |
@@ -568,9 +573,10 @@ Appofa/
 | `/admin/locations` | Location admin |
 | `/admin/organizations` | Organization admin — table with search/filter, parent-org dropdown, location/parent columns, highlighted editing row, direct public-profile links |
 | `/admin/manifests` | Manifest admin |
-| `/admin/messages/*` | Message admin |
+| `/admin/messages/*` | Message admin (moderator applications show enriched **onboarding context**: goal, profile readiness %, email verification, home location, contribution summary — loaded lazily per message) |
 | `/admin/removal-requests` | Removal request admin |
 | `/admin/reports` | Report admin |
+| `/admin/onboarding` | **Phase 3** — Onboarding funnel analytics (admin-only): conversion table by goal × event type, abandonment count/rate, date range + goal filters |
 
 ### Static Pages (51 pages in `(statics)` layout)
 Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, github-files, etc.

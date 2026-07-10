@@ -20,7 +20,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { useAuth } from '@/lib/auth-context';
-import { authAPI, messageAPI, candidateRegistrationAPI } from '@/lib/api';
+import { authAPI, messageAPI, candidateRegistrationAPI, onboardingEventAPI } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -385,6 +385,8 @@ function OnboardingContent() {
           setPhase('choose');
         }
       }
+      // Record onboarding viewed (idempotent)
+      onboardingEventAPI.record({ eventType: 'onboarding_viewed' }).catch(() => {});
     } catch {
       setPhase('choose');
     }
@@ -462,6 +464,8 @@ function OnboardingContent() {
       if (res.success) setOnboardingData(res.data.onboarding);
       setExtendedData({});
       setPhase('checklist');
+      // Record goal selected (idempotent)
+      onboardingEventAPI.record({ eventType: 'goal_selected', goal: primaryGoal }).catch(() => {});
     } catch (err) {
       console.error('Failed to save onboarding goal:', err);
       // continue to checklist even on error
@@ -474,6 +478,7 @@ function OnboardingContent() {
   const handleSkip = async () => {
     try {
       await authAPI.updateOnboarding({ dismissed: true });
+      onboardingEventAPI.record({ eventType: 'onboarding_dismissed', goal: primaryGoal || null }).catch(() => {});
     } catch {
       // ignore
     }
@@ -626,8 +631,42 @@ function OnboardingContent() {
                   <CheckCircleSolid className="h-10 w-10 text-green-500 mx-auto mb-2" aria-hidden="true" />
                   <h2 className="text-lg font-bold text-green-900">{t('all_done_title')}</h2>
                   <p className="text-sm text-green-800 mt-1">{t('all_done_body')}</p>
-                  <div className="mt-4">
-                    <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:underline focus:outline-none focus:underline">
+                  <div className="mt-4 flex flex-col items-center gap-2">
+                    {/* Goal-specific next destination */}
+                    {primaryGoal === 'moderator' && extendedData.isApprovedModerator && (
+                      <Link
+                        href="/moderator"
+                        onClick={() => {
+                          authAPI.updateOnboarding({ completed: true }).catch(() => {});
+                          onboardingEventAPI.record({ eventType: 'onboarding_completed', goal: primaryGoal }).catch(() => {});
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                      >
+                        {t('go_to_moderator_workspace')}
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </Link>
+                    )}
+                    {primaryGoal === 'creator' && extendedData.hasContributed && (
+                      <Link
+                        href="/creator"
+                        onClick={() => {
+                          authAPI.updateOnboarding({ completed: true }).catch(() => {});
+                          onboardingEventAPI.record({ eventType: 'onboarding_completed', goal: primaryGoal }).catch(() => {});
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+                      >
+                        {t('go_to_creator_workspace')}
+                        <ChevronRightIcon className="h-4 w-4" />
+                      </Link>
+                    )}
+                    <Link
+                      href="/"
+                      onClick={() => {
+                        authAPI.updateOnboarding({ completed: true }).catch(() => {});
+                        onboardingEventAPI.record({ eventType: 'onboarding_completed', goal: primaryGoal }).catch(() => {});
+                      }}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:underline focus:outline-none focus:underline"
+                    >
                       {t('explore_platform')}
                       <ChevronRightIcon className="h-4 w-4" />
                     </Link>

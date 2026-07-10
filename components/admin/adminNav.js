@@ -1,6 +1,7 @@
 import {
   AdjustmentsHorizontalIcon,
   BuildingOfficeIcon,
+  ChartBarIcon,
   DocumentTextIcon,
   EnvelopeIcon,
   FlagIcon,
@@ -72,6 +73,7 @@ export const adminNavSections = [
     items: [
       { href: '/admin/status', label: 'System Health', icon: HeartIcon, roles: ADMIN_ROLES, translationKey: 'system_health' },
       { href: '/admin/worker-status', label: 'Worker Status', icon: HeartIcon, roles: ADMIN_ROLES },
+      { href: '/admin/onboarding', label: 'Onboarding Funnel', icon: ChartBarIcon, roles: ADMIN_ROLES },
     ],
   },
 ];

@@ -4,11 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ChevronRightIcon, XMarkIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
-import { authAPI } from '@/lib/api';
+import { authAPI, onboardingEventAPI } from '@/lib/api';
 
 /**
  * Compact dismissible onboarding progress card for the homepage/dashboard.
  * Only shown to authenticated users who have not completed or dismissed onboarding.
+ *
+ * Phase 3: records onboarding_dismissed / onboarding_resumed events;
+ * directs approved moderators to /moderator workspace after completion.
  *
  * @param {Object} props
  * @param {Object} props.user - Authenticated user object from useAuth()
@@ -37,9 +40,25 @@ export default function OnboardingCard({ user }) {
   const handleDismiss = async () => {
     setDismissed(true);
     try {
-      await authAPI.updateOnboarding({ dismissed: true });
+      await Promise.all([
+        authAPI.updateOnboarding({ dismissed: true }),
+        onboardingEventAPI.record({
+          eventType: 'onboarding_dismissed',
+          goal: state?.onboardingGoal || null,
+        }),
+      ]);
     } catch {
       // non-fatal
+    }
+  };
+
+  const handleResumeCta = () => {
+    // Fire-and-forget: record resumed event if previously dismissed
+    if (state?.onboardingDismissed) {
+      onboardingEventAPI.record({
+        eventType: 'onboarding_resumed',
+        goal: state?.onboardingGoal || null,
+      }).catch(() => {});
     }
   };
 
@@ -61,6 +80,12 @@ export default function OnboardingCard({ user }) {
   if (isComplete) return null;
 
   const hasGoal = Boolean(state.onboardingGoal);
+
+  // Approved moderators: direct them to the moderator workspace
+  const isApprovedModerator = user.role === 'moderator' || user.role === 'admin';
+  const ctaHref = isApprovedModerator && state.onboardingGoal === 'moderator'
+    ? '/moderator'
+    : '/onboarding';
 
   return (
     <div
@@ -103,7 +128,8 @@ export default function OnboardingCard({ user }) {
 
       {/* CTA */}
       <Link
-        href="/onboarding"
+        href={ctaHref}
+        onClick={handleResumeCta}
         className="flex-shrink-0 inline-flex items-center gap-1 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 transition-colors"
         aria-label={t('card_cta')}
       >

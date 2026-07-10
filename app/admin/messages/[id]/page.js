@@ -6,9 +6,81 @@ import { useParams } from 'next/navigation';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Card from '@/components/ui/Card';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import { messageAPI } from '@/lib/api';
+import { messageAPI, adminAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import AdminLayout from '@/components/admin/AdminLayout';
+
+/** Onboarding context card for moderator applications — admin/moderator only */
+function OnboardingContextCard({ userId }) {
+  const { data: ctx, loading } = useAsyncData(
+    async () => {
+      if (!userId) return null;
+      const res = await adminAPI.getUserOnboardingContext(userId);
+      return res.success ? res.data.context : null;
+    },
+    [userId],
+    { initialData: null }
+  );
+
+  if (loading) return <p className="text-sm text-gray-500 py-2">Loading context…</p>;
+  if (!ctx) return null;
+
+  const { profileCompleteness, contributions, onboardingGoal, homeLocation, emailVerified, followerCount, candidateRegistration, memberSince } = ctx;
+  const completeness = profileCompleteness?.completedCount ?? 0;
+  const total = profileCompleteness?.totalFields ?? 0;
+  const pct = total > 0 ? Math.round((completeness / total) * 100) : 0;
+
+  return (
+    <Card>
+      <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider mb-4">Onboarding Context</h3>
+      <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3 text-sm">
+        <div>
+          <dt className="text-gray-500">Onboarding Goal</dt>
+          <dd className="font-medium text-gray-900 capitalize">{onboardingGoal || '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-gray-500">Email Verified</dt>
+          <dd className={`font-medium ${emailVerified ? 'text-green-700' : 'text-red-600'}`}>
+            {emailVerified ? 'Yes' : 'No'}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-gray-500">Profile Completeness</dt>
+          <dd className="font-medium text-gray-900">{pct}% ({completeness}/{total})</dd>
+        </div>
+        <div>
+          <dt className="text-gray-500">Home Location</dt>
+          <dd className="font-medium text-gray-900">{homeLocation?.name || '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-gray-500">Contributions</dt>
+          <dd className="font-medium text-gray-900">
+            {contributions?.total ?? 0}
+            <span className="font-normal text-gray-500 ml-1">
+              ({contributions?.articleCount ?? 0}A / {contributions?.pollCount ?? 0}P / {contributions?.suggestionCount ?? 0}S)
+            </span>
+          </dd>
+        </div>
+        <div>
+          <dt className="text-gray-500">Followers</dt>
+          <dd className="font-medium text-gray-900">{followerCount ?? 0}</dd>
+        </div>
+        {candidateRegistration && (
+          <div>
+            <dt className="text-gray-500">Candidate Reg.</dt>
+            <dd className="font-medium text-gray-900 capitalize">{candidateRegistration.status}</dd>
+          </div>
+        )}
+        {memberSince && (
+          <div>
+            <dt className="text-gray-500">Member Since</dt>
+            <dd className="font-medium text-gray-900">{new Date(memberSince).toLocaleDateString('el-GR')}</dd>
+          </div>
+        )}
+      </dl>
+    </Card>
+  );
+}
 
 function MessageDetailContent() {
   const params = useParams();
@@ -190,6 +262,11 @@ function MessageDetailContent() {
                   </div>
                 </div>
               </Card>
+
+              {/* Onboarding context for moderator applications */}
+              {message.type === 'moderator_application' && message.userId && (
+                <OnboardingContextCard userId={message.userId} />
+              )}
 
               {/* Response Form */}
               <Card>

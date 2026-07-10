@@ -35,6 +35,7 @@ const pushRoutes = require('./pushRoutes');
 const politicalAffiliationRoutes = require('./politicalAffiliationRoutes');
 const mediaRoutes = require('./mediaRoutes');
 const candidateRegistrationRoutes = require('./candidateRegistrationRoutes');
+const onboardingEventRoutes = require('./onboardingEventRoutes');
 
 const geoRoutes = express.Router();
 geoRoutes.use(geoAccessPublicRoutes);
@@ -79,6 +80,7 @@ const routes = [
   { prefix: '/api/media', router: mediaRoutes },
   { prefix: '/api/candidate-registrations', router: candidateRegistrationRoutes },
   { prefix: '/api/users/:id/political-affiliations', router: politicalAffiliationRoutes },
+  { prefix: '/api/onboarding', router: onboardingEventRoutes },
 ];
 
 function registerRoutes(app) {
