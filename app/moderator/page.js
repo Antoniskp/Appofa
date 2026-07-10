@@ -52,7 +52,10 @@ function ModeratorWorkspaceContent() {
     { initialData: null }
   );
 
-  // Record workspace viewed event once on mount
+  // Record workspace viewed event once on mount.
+  // We reuse the existing `onboarding_viewed` event type (with goal=moderator) to
+  // keep the funnel analytics unified — a separate workspace_viewed event type
+  // would need schema/migration changes and is idempotent either way.
   useEffect(() => {
     if (user?.id) {
       onboardingEventAPI.record({

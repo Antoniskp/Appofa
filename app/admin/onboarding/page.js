@@ -16,6 +16,9 @@ const GOAL_LABELS = {
   _all: 'All goals',
 };
 
+// Key used in funnel aggregations to represent events recorded without a specific goal
+const ALL_GOALS_KEY = '_all';
+
 const EVENT_LABELS = {
   registration: 'Registration',
   onboarding_viewed: 'Onboarding viewed',
@@ -86,7 +89,7 @@ function FunnelTable({ byEventType = {}, goal }) {
                 ))}
                 {goal && (
                   <td className="px-4 py-2 text-right text-gray-700 tabular-nums">
-                    {row[goal] ?? row['_all'] ?? 0}
+                    {row[goal] ?? row[ALL_GOALS_KEY] ?? 0}
                   </td>
                 )}
               </tr>

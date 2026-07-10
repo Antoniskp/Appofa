@@ -44,6 +44,8 @@ const ALL_EVENT_TYPES = [
 
 const ALLOWED_GOALS = ['moderator', 'creator', 'independent', 'citizen'];
 
+const MAX_METADATA_LENGTH = 1000;
+
 const OnboardingEvent = sequelize.define('OnboardingEvent', {
   id: {
     type: DataTypes.INTEGER,
@@ -70,7 +72,7 @@ const OnboardingEvent = sequelize.define('OnboardingEvent', {
       isIn: [[...ALLOWED_GOALS, null]],
     },
   },
-  // Bounded JSON metadata — max 1 000 chars when serialized
+  // Bounded JSON metadata — max MAX_METADATA_LENGTH chars when serialized
   metadata: {
     type: DataTypes.TEXT,
     allowNull: true,
@@ -85,7 +87,7 @@ const OnboardingEvent = sequelize.define('OnboardingEvent', {
         return;
       }
       const str = JSON.stringify(val);
-      this.setDataValue('metadata', str.length <= 1000 ? str : null);
+      this.setDataValue('metadata', str.length <= MAX_METADATA_LENGTH ? str : null);
     },
   },
 }, {

@@ -63,10 +63,12 @@ const SUGGESTION_STATUS_COLORS = {
   rejected: 'bg-red-100 text-red-700',
 };
 
+const DEFAULT_STATUS_COLOR = 'bg-gray-100 text-gray-700';
+
 function statusColor(type, status) {
-  if (type === 'articles') return ARTICLE_STATUS_COLORS[status] || 'bg-gray-100 text-gray-700';
-  if (type === 'polls') return POLL_STATUS_COLORS[status] || 'bg-gray-100 text-gray-700';
-  return SUGGESTION_STATUS_COLORS[status] || 'bg-gray-100 text-gray-700';
+  if (type === 'articles') return ARTICLE_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
+  if (type === 'polls') return POLL_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
+  return SUGGESTION_STATUS_COLORS[status] || DEFAULT_STATUS_COLOR;
 }
 
 function ContributionList({ type, items = [], total = 0, t, onLoadMore, loading }) {

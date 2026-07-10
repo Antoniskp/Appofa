@@ -820,67 +820,67 @@ const authController = {
   getMyContributions: async (req, res) => {
     try {
       const userId = req.user.id;
-      const { type = 'all', status, page = '1', limit = '20' } = req.query;
+      const { type: contributionType = 'all', status, page = '1', limit = '20' } = req.query;
 
       const pageNum = Math.max(1, parseInt(page, 10) || 1);
       const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
       const offset = (pageNum - 1) * limitNum;
 
       const VALID_TYPES = ['all', 'articles', 'polls', 'suggestions'];
-      if (!VALID_TYPES.includes(type)) {
+      if (!VALID_TYPES.includes(contributionType)) {
         return res.status(400).json({ success: false, message: 'Invalid type parameter.' });
       }
 
       const result = {};
 
-      if (type === 'all' || type === 'articles') {
+      if (contributionType === 'all' || contributionType === 'articles') {
         const artWhere = { authorId: userId };
         if (status) artWhere.status = status;
         const { count, rows } = await Article.findAndCountAll({
           where: artWhere,
           attributes: ['id', 'title', 'type', 'status', 'createdAt', 'updatedAt'],
           order: [['updatedAt', 'DESC']],
-          limit: type === 'all' ? 10 : limitNum,
-          offset: type === 'all' ? 0 : offset,
+          limit: contributionType === 'all' ? 10 : limitNum,
+          offset: contributionType === 'all' ? 0 : offset,
         });
         result.articles = {
           items: rows,
           total: count,
-          ...(type !== 'all' && { page: pageNum, limit: limitNum }),
+          ...(contributionType !== 'all' && { page: pageNum, limit: limitNum }),
         };
       }
 
-      if (type === 'all' || type === 'polls') {
+      if (contributionType === 'all' || contributionType === 'polls') {
         const pollWhere = { creatorId: userId };
         if (status) pollWhere.status = status;
         const { count, rows } = await Poll.findAndCountAll({
           where: pollWhere,
           attributes: ['id', 'title', 'status', 'visibility', 'createdAt', 'updatedAt'],
           order: [['updatedAt', 'DESC']],
-          limit: type === 'all' ? 10 : limitNum,
-          offset: type === 'all' ? 0 : offset,
+          limit: contributionType === 'all' ? 10 : limitNum,
+          offset: contributionType === 'all' ? 0 : offset,
         });
         result.polls = {
           items: rows,
           total: count,
-          ...(type !== 'all' && { page: pageNum, limit: limitNum }),
+          ...(contributionType !== 'all' && { page: pageNum, limit: limitNum }),
         };
       }
 
-      if (type === 'all' || type === 'suggestions') {
+      if (contributionType === 'all' || contributionType === 'suggestions') {
         const sugWhere = { authorId: userId };
         if (status) sugWhere.status = status;
         const { count, rows } = await Suggestion.findAndCountAll({
           where: sugWhere,
           attributes: ['id', 'title', 'status', 'visibility', 'createdAt', 'updatedAt'],
           order: [['updatedAt', 'DESC']],
-          limit: type === 'all' ? 10 : limitNum,
-          offset: type === 'all' ? 0 : offset,
+          limit: contributionType === 'all' ? 10 : limitNum,
+          offset: contributionType === 'all' ? 0 : offset,
         });
         result.suggestions = {
           items: rows,
           total: count,
-          ...(type !== 'all' && { page: pageNum, limit: limitNum }),
+          ...(contributionType !== 'all' && { page: pageNum, limit: limitNum }),
         };
       }
 
