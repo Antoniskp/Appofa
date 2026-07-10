@@ -426,7 +426,8 @@ function OnboardingContent() {
       }
 
       setExtendedData(next);
-    } catch {
+    } catch (err) {
+      console.error('Failed to load extended onboarding data:', err);
       // fail-open: extended data stays empty
     } finally {
       setExtendedLoading(false);
@@ -461,7 +462,8 @@ function OnboardingContent() {
       if (res.success) setOnboardingData(res.data.onboarding);
       setExtendedData({});
       setPhase('checklist');
-    } catch {
+    } catch (err) {
+      console.error('Failed to save onboarding goal:', err);
       // continue to checklist even on error
       setPhase('checklist');
     } finally {

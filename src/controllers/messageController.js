@@ -182,8 +182,8 @@ const messageController = {
           type: 'system_announcement',
           entityType: 'message',
           entityId: newMessage.id,
-          title: 'Η αίτησή σου για Moderator υποβλήθηκε',
-          body: 'Θα σε ενημερώσουμε όταν η αίτησή σου εξεταστεί.',
+          title: 'Your moderator application was submitted',
+          body: 'We will notify you when your application has been reviewed.',
           actionUrl: '/become-moderator',
           metadata: { messageId: newMessage.id },
         }).catch((err) => console.error('Error creating moderator application notification:', err));
