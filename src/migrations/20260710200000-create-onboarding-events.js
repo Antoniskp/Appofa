@@ -5,6 +5,7 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     const tables = await queryInterface.showAllTables();
     if (tables.includes('OnboardingEvents')) return;
+    const isSqlite = queryInterface.sequelize.getDialect() === 'sqlite';
 
     await queryInterface.createTable('OnboardingEvents', {
       id: {
@@ -34,7 +35,9 @@ module.exports = {
       createdAt: {
         type: Sequelize.DATE,
         allowNull: false,
-        defaultValue: Sequelize.fn('NOW'),
+        defaultValue: isSqlite
+          ? Sequelize.literal('CURRENT_TIMESTAMP')
+          : Sequelize.fn('NOW'),
       },
     });
 
