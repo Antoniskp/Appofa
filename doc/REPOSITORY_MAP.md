@@ -209,6 +209,9 @@ Appofa/
 | GET | /users/search | ✅ | Search users (public) |
 | GET | /users/:id/public | ✅ | Public user profile |
 | GET | /users/public-stats | — | Public users-strip stats: `totalUsers`, `registeredUsers` (`claimStatus IS NULL`), `claimFlowProfiles` (`claimStatus IS NOT NULL`, legacy alias `publicUsers`), `hiddenUsers`/`nonSearchableUsers` (`profileVisibility='hidden'`) |
+| GET | /onboarding | ✅ | Get current user's onboarding state (goal, secondaryGoals, dismissed, completedAt, profile fields) |
+| PUT | /onboarding | ✅ | Update onboarding goal/secondaryGoals/dismissed/completed |
+| GET | /contribution-summary | ✅ | **Phase 2** — Creator contribution summary: `hasContributed`, `totalCount`, `articleCount`, `pollCount`, `suggestionCount` (scoped to current user) |
 
 ### Newsletter (`/api/newsletter`)
 | Method | Path | Auth | Description |
@@ -390,7 +393,7 @@ Appofa/
 | bookmarkRoutes.js | /api/bookmarks | GET /, GET /count, GET /status, POST /toggle |
 | followRoutes.js | /api/users | POST /:id/follow, DELETE /:id/follow, GET /:id/follow/status, GET /:id/followers, GET /:id/following |
 | endorsementRoutes.js | /api/endorsements | GET /topics, GET /leaderboard, GET /status, POST /, DELETE / |
-| messageRoutes.js | /api/messages | POST /, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
+| messageRoutes.js | /api/messages | POST /, **GET /mine/moderator-application**, GET /, GET /:id, PUT /:id/status, PUT /:id/respond, DELETE /:id |
 | newsletterRoutes.js | /api/newsletter | POST /subscribe, GET/POST /unsubscribe, GET/PUT /me/preference, GET /admin/subscribers, GET /admin/stats, GET /admin/subscribers/export, POST /admin/subscribers, POST /admin/subscribers/bulk, POST /admin/subscribers/import-csv, PUT /admin/subscribers/:id, GET/POST /admin/campaigns, GET/PUT /admin/campaigns/:id, POST /admin/campaigns/:id/test-send, POST /admin/campaigns/:id/send, POST /admin/campaigns/:id/schedule, POST /admin/campaigns/process-due, GET /admin/campaigns/:id/logs |
 | reportRoutes.js | /api/reports | POST /, GET /, GET /content/:type/:id, GET /:id, POST /:id/review |
 | personRemovalRequestRoutes.js | /api/removal-requests | POST /, GET /, GET /:id, POST /:id/review |
@@ -506,7 +509,7 @@ Appofa/
 |-------|-------------|
 | `/` | Home page (DB-driven hero with fallback copy emphasizing independent civic voices + practical decision tools, and `HomeActionLanes` participation grid including both independents and organizations CTAs; sections ordered as Government Snapshot → optional Info → CTA banner → polls/suggestions/locations → merged `Νέα & Άρθρα` → videos → manifest supporters; authenticated users with incomplete onboarding see a dismissible `OnboardingCard`) |
 | `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email` | Authentication (includes password reset request + token reset flow; `/register` is a 3-step wizard with account basics (inline password validation before advancing) → optional nationality/location with inline non-GR diaspora toggle/residence handling → GDPR/summary, plus GR quick-select onboarding and moderator-interest opt-in; `/verify-email` handles token confirm + expired-token resend flow; after successful registration, new users are routed to `/onboarding` unless an explicit `next` destination was set) |
-| `/onboarding` | **Phase 1 goal-based onboarding** for new users: choose one primary participation goal (moderator / creator / independent / citizen) with optional secondary interests, then see a personalized derived checklist; checklist completion is derived from real profile data (no separate checkbox storage); users can skip and resume later; moderator-interest flag from registration pre-selects the moderator goal; OAuth new users also reach this page |
+| `/onboarding` | **Phase 2 goal-based onboarding** for new users: choose one primary participation goal (moderator / creator / independent / citizen) with optional secondary interests, then see a personalized derived checklist. Phase 2 enhancements: moderator checklist step reflects real application status from `GET /api/messages/mine/moderator-application` (submitted / under_review / approved); creator checklist reflects actual first-contribution via `GET /api/auth/contribution-summary` and shows template cards (article/news/poll/suggestion/video); independent checklist adds person-search step + candidate registration status; all checklist completion derived from real data, no separate checkbox storage |
 | `/newsletter/unsubscribe` | Public tokenized newsletter unsubscribe confirmation page |
 | `/profile` | User profile with sticky 4-tab layout (`Profile`, `Location & Politics`, `Skills & Interests`, `Settings`); tab content is split into `app/profile/tabs/*` while form state/effects/handlers are centralized in `hooks/useProfileForm.js`; includes profile-completeness card, newsletter preference toggle, and `?verified=1` success toast handling |
 | `/users`, `/users/[username]` | Unified people directory with visibility enforcement (`profileVisibility`): guests see only `public` profiles, authenticated users see `registered+public`, and `hidden` profiles are excluded from discovery. Profile page access is now optional-auth and enforces the same model (owner/admin/moderator can still access hidden directly). Shared filter bar (search, home-location button via `LocationFilterBreadcrumb`, domain, expertise) remains across tabs; person cards are fully clickable; `/discover-people` and `/persons` list pages are retired (404). |

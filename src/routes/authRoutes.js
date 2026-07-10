@@ -76,4 +76,7 @@ router.post('/me/avatar', uploadLimiter, authMiddleware, csrfProtection, (req, r
 router.get('/onboarding', apiLimiter, authMiddleware, authController.getOnboarding);
 router.put('/onboarding', apiLimiter, authMiddleware, csrfProtection, authController.updateOnboarding);
 
+// Creator contribution summary (authenticated)
+router.get('/contribution-summary', apiLimiter, authMiddleware, authController.getContributionSummary);
+
 module.exports = router;

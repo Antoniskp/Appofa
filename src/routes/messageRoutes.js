@@ -10,6 +10,9 @@ const { apiLimiter, createLimiter } = require('../middleware/rateLimiter');
 // Public routes
 router.post('/', optionalAuthMiddleware, createLimiter, messageController.createMessage);
 
+// Authenticated user — own moderator application status (no admin notes exposed)
+router.get('/mine/moderator-application', apiLimiter, authMiddleware, messageController.getMyModeratorApplication);
+
 // Admin/Moderator routes
 router.get('/', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), messageController.getAllMessages);
 router.get('/:id', apiLimiter, authMiddleware, checkRole('admin', 'moderator'), messageController.getMessage);
