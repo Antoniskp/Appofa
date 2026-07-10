@@ -693,6 +693,91 @@ const authController = {
       return res.status(500).json({ success: false, message: 'Error uploading avatar.' });
     }
   },
+
+  // Get onboarding state for the current user
+  getOnboarding: async (req, res) => {
+    try {
+      const user = await User.findByPk(req.user.id, {
+        attributes: [
+          'id',
+          'onboardingGoal',
+          'onboardingSecondaryGoals',
+          'onboardingDismissed',
+          'onboardingCompletedAt',
+          'emailVerified',
+          'firstNameNative',
+          'lastNameNative',
+          'bio',
+          'avatar',
+          'homeLocationId',
+          'nationality',
+        ],
+      });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+      res.status(200).json({ success: true, data: { onboarding: user } });
+    } catch (error) {
+      console.error('Get onboarding error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching onboarding state.' });
+    }
+  },
+
+  // Update onboarding state for the current user
+  updateOnboarding: async (req, res) => {
+    const ALLOWED_GOALS = ['moderator', 'creator', 'independent', 'citizen'];
+    try {
+      const { goal, secondaryGoals, dismissed, completed } = req.body;
+
+      if (goal !== undefined && goal !== null && !ALLOWED_GOALS.includes(goal)) {
+        return res.status(422).json({ success: false, message: 'Invalid onboarding goal.' });
+      }
+
+      if (secondaryGoals !== undefined && !Array.isArray(secondaryGoals)) {
+        return res.status(422).json({ success: false, message: 'secondaryGoals must be an array.' });
+      }
+
+      if (secondaryGoals !== undefined) {
+        for (const g of secondaryGoals) {
+          if (!ALLOWED_GOALS.includes(g)) {
+            return res.status(422).json({ success: false, message: `Invalid secondary goal: ${g}` });
+          }
+        }
+      }
+
+      const user = await User.findByPk(req.user.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      if (goal !== undefined) user.onboardingGoal = goal || null;
+      if (secondaryGoals !== undefined) user.onboardingSecondaryGoals = secondaryGoals;
+      if (dismissed !== undefined) user.onboardingDismissed = Boolean(dismissed);
+      if (completed === true && !user.onboardingCompletedAt) {
+        user.onboardingCompletedAt = new Date();
+      } else if (completed === false) {
+        user.onboardingCompletedAt = null;
+      }
+
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: 'Onboarding state updated.',
+        data: {
+          onboarding: {
+            onboardingGoal: user.onboardingGoal,
+            onboardingSecondaryGoals: user.onboardingSecondaryGoals,
+            onboardingDismissed: user.onboardingDismissed,
+            onboardingCompletedAt: user.onboardingCompletedAt,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Update onboarding error:', error);
+      res.status(500).json({ success: false, message: 'Error updating onboarding state.' });
+    }
+  },
 };
 
 module.exports = authController;

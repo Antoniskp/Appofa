@@ -72,4 +72,8 @@ router.post('/me/avatar', uploadLimiter, authMiddleware, csrfProtection, (req, r
   });
 }, authController.uploadAvatar);
 
+// Onboarding endpoints
+router.get('/onboarding', apiLimiter, authMiddleware, authController.getOnboarding);
+router.put('/onboarding', apiLimiter, authMiddleware, csrfProtection, authController.updateOnboarding);
+
 module.exports = router;

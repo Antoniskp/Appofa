@@ -376,6 +376,35 @@ const User = sequelize.define('User', {
     references: { model: 'Users', key: 'id' },
     onDelete: 'SET NULL'
   },
+  // Onboarding fields
+  onboardingGoal: {
+    type: DataTypes.ENUM('moderator', 'creator', 'independent', 'citizen'),
+    allowNull: true
+  },
+  onboardingSecondaryGoals: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('onboardingSecondaryGoals');
+      if (!raw) return [];
+      try { return JSON.parse(raw); } catch (err) {
+        console.error('Failed to parse onboardingSecondaryGoals JSON:', err.message);
+        return [];
+      }
+    },
+    set(val) {
+      this.setDataValue('onboardingSecondaryGoals', val && val.length > 0 ? JSON.stringify(val) : null);
+    }
+  },
+  onboardingDismissed: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+  onboardingCompletedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   fullNameNative: {
     type: DataTypes.VIRTUAL,
     get() {
