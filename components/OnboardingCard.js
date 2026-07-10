@@ -68,9 +68,16 @@ export default function OnboardingCard({ user }) {
       role="region"
       aria-label={t('card_title')}
     >
-      {/* Progress ring / icon */}
-      <div className="flex-shrink-0 relative h-10 w-10" aria-hidden="true">
-        <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
+      {/* Progress ring — aria-hidden because the percentage is conveyed by the visible text label below */}
+      <div
+        className="flex-shrink-0 relative h-10 w-10"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${pct}%`}
+      >
+        <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36" aria-hidden="true">
           <circle cx="18" cy="18" r="15.9" fill="none" stroke="#dbeafe" strokeWidth="3.5" />
           <circle
             cx="18" cy="18" r="15.9"
@@ -81,7 +88,7 @@ export default function OnboardingCard({ user }) {
             strokeLinecap="round"
           />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-700">
+        <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-blue-700" aria-hidden="true">
           {pct}%
         </span>
       </div>

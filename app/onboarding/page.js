@@ -195,15 +195,6 @@ function GoalCard({ goalKey, selected, secondary, onPrimary, onSecondary, t }) {
           <CheckCircleSolid className="h-5 w-5 text-blue-600 flex-shrink-0" aria-hidden="true" />
         )}
       </div>
-      {isPrimary && onSecondary && (
-        <button
-          type="button"
-          className="mt-3 text-xs text-blue-600 hover:underline focus:outline-none focus:underline"
-          onClick={(e) => { e.stopPropagation(); }}
-          aria-label="Primary goal selected"
-          tabIndex={-1}
-        />
-      )}
     </div>
   );
 }
