@@ -23,7 +23,7 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import { authAPI, geoAPI, locationAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
-import { buildAuthPath, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
+import { buildAuthPath, getAuthDestinationFromSearchParams, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
 
 const PASSWORD_MIN_LENGTH = 8;
 const USERNAME_CHECK_DELAY_MS = 350;
@@ -256,7 +256,19 @@ function RegisterForm() {
     try {
       await register(prepareRegistrationData(formData));
       success(t('register_success_verify_email'));
-      router.push(wantsModerator ? '/become-moderator' : resolveAuthDestination(searchParams));
+
+      // If the user had an explicit destination (action they were trying to complete), honour it.
+      // Otherwise always route new users to onboarding so they can choose their participation goal.
+      const explicitNext = getAuthDestinationFromSearchParams(searchParams);
+      if (explicitNext) {
+        router.push(explicitNext);
+      } else {
+        // Persist moderator intent before routing so the onboarding page can pre-select it.
+        if (wantsModerator) {
+          try { await authAPI.updateOnboarding({ goal: 'moderator' }); } catch { /* non-fatal */ }
+        }
+        router.push('/onboarding');
+      }
     } catch (err) {
       error(err.message || t('register_fail'));
     } finally {

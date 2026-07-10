@@ -13,6 +13,7 @@ import ArticleCard from '@/components/articles/ArticleCard';
 import PollCard from '@/components/polls/PollCard';
 import SuggestionCard from '@/components/SuggestionCard';
 import HomepageSection from '@/components/HomepageSection';
+import OnboardingCard from '@/components/OnboardingCard';
 import CountryEntryPopup from '@/components/geo/CountryEntryPopup';
 
   const VideoThumbnailCard = dynamic(() => import('@/components/articles/VideoThumbnailCard'));
@@ -258,6 +259,12 @@ export default function HomePage() {
       <CountryEntryPopup isAuthenticated={Boolean(user)} />
       <HomeHero />
       <HomeActionLanes user={user} />
+
+      {user && (
+        <div className="app-container pt-4 pb-0">
+          <OnboardingCard user={user} />
+        </div>
+      )}
 
       <HomepageSection
         title={tHome('top_polls_title')}

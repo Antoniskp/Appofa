@@ -97,6 +97,7 @@ async function handleGithubCallback(code, state) {
     let user = await User.findOne({
       where: { githubId: githubUser.id.toString() }
     });
+    let isNewUser = false;
 
     if (user) {
       user.githubAccessToken = encryptToken(accessToken);
@@ -136,11 +137,13 @@ async function handleGithubCallback(code, state) {
           role: 'viewer',
           emailVerified: true
         });
+        isNewUser = true;
       }
     }
 
     const token = generateToken(user);
-    return { redirectUrl: `${frontendUrl}/login?oauth=1`, user, token };
+    const oauthParam = isNewUser ? 'oauth=1&new=1' : 'oauth=1';
+    return { redirectUrl: `${frontendUrl}/login?${oauthParam}`, user, token };
   }
 }
 
@@ -249,6 +252,7 @@ async function handleGoogleCallback(code, state) {
     let user = await User.findOne({
       where: { googleId: googleUser.id.toString() }
     });
+    let isNewUser = false;
 
     if (user) {
       user.googleAccessToken = encryptToken(accessToken);
@@ -288,11 +292,13 @@ async function handleGoogleCallback(code, state) {
           role: 'viewer',
           emailVerified: true
         });
+        isNewUser = true;
       }
     }
 
     const token = generateToken(user);
-    return { redirectUrl: `${frontendUrl}/login?oauth=1`, user, token };
+    const oauthParam = isNewUser ? 'oauth=1&new=1' : 'oauth=1';
+    return { redirectUrl: `${frontendUrl}/login?${oauthParam}`, user, token };
   }
 }
 

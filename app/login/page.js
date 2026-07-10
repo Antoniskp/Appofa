@@ -12,7 +12,7 @@ import AuthDivider from '@/components/ui/AuthDivider';
 import { authAPI } from '@/lib/api';
 import { useOAuthConfig } from '@/hooks/useOAuthConfig';
 import Button from '@/components/ui/Button';
-import { buildAuthPath, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
+import { buildAuthPath, getAuthDestinationFromSearchParams, getPendingAuthDestination, resolveAuthDestination, saveReturnTo } from '@/lib/auth-redirect';
 import AlertMessage from '@/components/ui/AlertMessage';
 
 function LoginForm() {
@@ -44,7 +44,14 @@ function LoginForm() {
         .then((response) => {
           if (response.success) {
             success(tAuth('welcome_redirect'));
-            router.push(resolveAuthDestination(searchParams));
+            // New OAuth users who have no explicit next destination go to onboarding
+            const isNewOAuthUser = searchParams.get('new') === '1';
+            const explicitNext = getAuthDestinationFromSearchParams(searchParams);
+            if (isNewOAuthUser && !explicitNext) {
+              router.push('/onboarding');
+            } else {
+              router.push(resolveAuthDestination(searchParams));
+            }
           }
         })
         .catch((err) => {
