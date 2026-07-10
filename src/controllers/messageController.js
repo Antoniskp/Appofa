@@ -1,4 +1,5 @@
 const { Message, User, Location } = require('../models');
+const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
   normalizeOptionalText,
@@ -99,6 +100,24 @@ const messageController = {
       // For moderator applications, locationId is required
       let validatedLocationId = null;
       if (typeResult.value === 'moderator_application') {
+        // Prevent duplicate pending applications for authenticated users
+        if (userId) {
+          const existing = await Message.findOne({
+            where: {
+              userId,
+              type: 'moderator_application',
+              status: { [Op.in]: ['pending', 'read', 'in_progress'] },
+            },
+          });
+          if (existing) {
+            return res.status(409).json({
+              success: false,
+              message: 'You already have a pending moderator application.',
+              data: { existingApplicationId: existing.id },
+            });
+          }
+        }
+
         if (!locationId) {
           return res.status(400).json({
             success: false,
@@ -156,7 +175,19 @@ const messageController = {
         }
       });
 
-      // TODO: Optional - send notification to Discord webhook or email
+      // Send a submission confirmation notification for moderator applications
+      if (typeResult.value === 'moderator_application' && userId) {
+        notificationService.createNotification({
+          userId,
+          type: 'system_announcement',
+          entityType: 'message',
+          entityId: newMessage.id,
+          title: 'Your moderator application was submitted',
+          body: 'We will notify you when your application has been reviewed.',
+          actionUrl: '/become-moderator',
+          metadata: { messageId: newMessage.id },
+        }).catch((err) => console.error('Error creating moderator application notification:', err));
+      }
     } catch (error) {
       console.error('Create message error:', error);
       res.status(500).json({
@@ -521,7 +552,81 @@ const messageController = {
         message: 'Error deleting message.'
       });
     }
-  }
+  },
+
+  /**
+   * Get the current user's latest moderator application status.
+   * Exposes only safe public-facing fields — never adminNotes or other users' data.
+   * GET /api/messages/mine/moderator-application
+   */
+  getMyModeratorApplication: async (req, res) => {
+    // Map internal Message status → user-facing stage
+    const STAGE_MAP = {
+      pending: 'submitted',
+      read: 'under_review',
+      in_progress: 'under_review',
+      responded: 'decision_available',
+      archived: 'closed',
+    };
+
+    try {
+      const userId = req.user.id;
+
+      // Derive approval from the user's actual platform role
+      const user = await User.findByPk(userId, { attributes: ['id', 'role'] });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      const isApprovedModerator = user.role === 'moderator' || user.role === 'admin';
+
+      const application = await Message.findOne({
+        where: { userId, type: 'moderator_application' },
+        order: [['createdAt', 'DESC']],
+        attributes: ['id', 'status', 'subject', 'locationId', 'createdAt', 'updatedAt', 'response', 'respondedAt'],
+        include: [
+          {
+            model: Location,
+            as: 'location',
+            attributes: ['id', 'name', 'type', 'slug'],
+          },
+        ],
+      });
+
+      if (!application) {
+        return res.json({
+          success: true,
+          data: {
+            application: null,
+            isApprovedModerator,
+          },
+        });
+      }
+
+      return res.json({
+        success: true,
+        data: {
+          application: {
+            id: application.id,
+            status: application.status,
+            stage: STAGE_MAP[application.status] || 'submitted',
+            subject: application.subject,
+            locationId: application.locationId,
+            location: application.location || null,
+            createdAt: application.createdAt,
+            updatedAt: application.updatedAt,
+            // Include response so user can see admin reply, but never adminNotes
+            response: application.response || null,
+            respondedAt: application.respondedAt || null,
+          },
+          isApprovedModerator,
+        },
+      });
+    } catch (error) {
+      console.error('Get my moderator application error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching moderator application.' });
+    }
+  },
 };
 
 module.exports = messageController;

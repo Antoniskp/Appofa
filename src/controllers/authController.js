@@ -2,7 +2,7 @@ const authService = require('../services/authService');
 const oauthService = require('../services/oauthService');
 const userService = require('../services/userService');
 const badgeService = require('../services/badgeService');
-const { User } = require('../models');
+const { User, Article, Poll, Suggestion } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 const { getSessionMaxAgeMs } = require('../config/session');
@@ -776,6 +776,38 @@ const authController = {
     } catch (error) {
       console.error('Update onboarding error:', error);
       res.status(500).json({ success: false, message: 'Error updating onboarding state.' });
+    }
+  },
+
+  // Get creator contribution summary for the current authenticated user
+  // Returns boolean/count data — no sensitive content exposed
+  getContributionSummary: async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      const [articleCount, pollCount, suggestionCount] = await Promise.all([
+        Article.count({ where: { authorId: userId } }),
+        Poll.count({ where: { creatorId: userId } }),
+        Suggestion.count({ where: { authorId: userId } }),
+      ]);
+
+      const totalCount = articleCount + pollCount + suggestionCount;
+
+      res.status(200).json({
+        success: true,
+        data: {
+          summary: {
+            hasContributed: totalCount > 0,
+            totalCount,
+            articleCount,
+            pollCount,
+            suggestionCount,
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Get contribution summary error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching contribution summary.' });
     }
   },
 };

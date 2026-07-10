@@ -12,10 +12,15 @@ import {
   UserIcon,
   GlobeAltIcon,
   XMarkIcon,
+  NewspaperIcon,
+  VideoCameraIcon,
+  ChartBarIcon,
+  LightBulbIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { CheckCircleIcon as CheckCircleSolid } from '@heroicons/react/24/solid';
 import { useAuth } from '@/lib/auth-context';
-import { authAPI } from '@/lib/api';
+import { authAPI, messageAPI, candidateRegistrationAPI } from '@/lib/api';
 import Button from '@/components/ui/Button';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -28,8 +33,17 @@ const GOAL_ICONS = {
   citizen: GlobeAltIcon,
 };
 
+// Creator contribution templates — route to existing creation flows
+const CREATOR_TEMPLATES = [
+  { key: 'article', Icon: NewspaperIcon, href: '/articles/create', labelKey: 'template_article_label', descKey: 'template_article_desc' },
+  { key: 'news', Icon: NewspaperIcon, href: '/news/create', labelKey: 'template_news_label', descKey: 'template_news_desc' },
+  { key: 'poll', Icon: ChartBarIcon, href: '/polls/create', labelKey: 'template_poll_label', descKey: 'template_poll_desc' },
+  { key: 'suggestion', Icon: LightBulbIcon, href: '/civic-questions/create', labelKey: 'template_suggestion_label', descKey: 'template_suggestion_desc' },
+  { key: 'video', Icon: VideoCameraIcon, href: '/videos/create', labelKey: 'template_video_label', descKey: 'template_video_desc' },
+];
+
 /** Derive per-goal checklist items from actual user data */
-function buildChecklist(goal, onboardingData, t) {
+function buildChecklist(goal, onboardingData, t, extendedData) {
   const {
     emailVerified,
     firstNameNative,
@@ -39,6 +53,13 @@ function buildChecklist(goal, onboardingData, t) {
     homeLocationId,
     nationality,
   } = onboardingData || {};
+
+  const {
+    moderatorApplication,
+    isApprovedModerator,
+    hasContributed,
+    hasCandidateRegistration,
+  } = extendedData || {};
 
   const commonSteps = [
     {
@@ -75,6 +96,39 @@ function buildChecklist(goal, onboardingData, t) {
     },
   ];
 
+  // Build moderator application step based on real status
+  const buildModeratorApplyStep = () => {
+    if (isApprovedModerator) {
+      return {
+        key: 'moderator_apply',
+        label: t('step_moderator_apply_done'),
+        doneLabel: t('step_moderator_apply_done'),
+        action: t('step_moderator_apply_action'),
+        done: true,
+        href: '/become-moderator',
+      };
+    }
+    if (moderatorApplication && ['submitted', 'under_review'].includes(moderatorApplication.stage)) {
+      return {
+        key: 'moderator_apply',
+        label: t('step_moderator_apply_pending'),
+        doneLabel: t('step_moderator_apply_pending'),
+        action: t('step_moderator_apply_action'),
+        done: false,
+        href: '/become-moderator',
+        statusBadge: t(`mod_stage_${moderatorApplication.stage}`) || t('mod_stage_submitted'),
+      };
+    }
+    return {
+      key: 'moderator_apply',
+      label: t('step_moderator_apply'),
+      doneLabel: t('step_moderator_apply'),
+      action: t('step_moderator_apply_action'),
+      done: false,
+      href: '/become-moderator',
+    };
+  };
+
   const goalExtras = {
     moderator: [
       {
@@ -93,14 +147,7 @@ function buildChecklist(goal, onboardingData, t) {
         done: Boolean(bio),
         href: '/profile#profile',
       },
-      {
-        key: 'moderator_apply',
-        label: t('step_moderator_apply'),
-        doneLabel: t('step_moderator_apply'),
-        action: t('step_moderator_apply_action'),
-        done: false,
-        href: '/become-moderator',
-      },
+      buildModeratorApplyStep(),
     ],
     creator: [
       {
@@ -114,10 +161,10 @@ function buildChecklist(goal, onboardingData, t) {
       {
         key: 'first_content',
         label: t('step_first_content'),
-        doneLabel: t('step_first_content'),
+        doneLabel: t('step_first_content_done'),
         action: t('step_first_content_action'),
-        done: false,
-        href: '/polls',
+        done: Boolean(hasContributed),
+        href: '/polls/create',
       },
     ],
     independent: [
@@ -138,12 +185,21 @@ function buildChecklist(goal, onboardingData, t) {
         href: '/profile#profile',
       },
       {
+        key: 'person_search',
+        label: t('step_person_search'),
+        doneLabel: t('step_person_search_done'),
+        action: t('step_person_search_action'),
+        done: false,
+        href: '/users',
+      },
+      {
         key: 'candidate_register',
         label: t('step_candidate_register'),
-        doneLabel: t('step_candidate_register'),
+        doneLabel: t('step_candidate_register_done'),
         action: t('step_candidate_register_action'),
-        done: false,
+        done: Boolean(hasCandidateRegistration),
         href: '/candidates/register',
+        notice: hasCandidateRegistration ? t('candidate_registration_notice') : undefined,
       },
     ],
     citizen: [
@@ -218,6 +274,11 @@ function ChecklistStep({ step, isNextAction }) {
       <span className={`flex-1 text-sm ${step.done ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
         {step.done ? step.doneLabel : step.label}
       </span>
+      {step.statusBadge && !step.done && (
+        <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 border border-yellow-200">
+          {step.statusBadge}
+        </span>
+      )}
       {!step.done && (
         <Link
           href={step.href}
@@ -225,6 +286,72 @@ function ChecklistStep({ step, isNextAction }) {
         >
           {step.action}
           <ChevronRightIcon className="h-3.5 w-3.5" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+/** Creator template selection panel shown under the first_content step */
+function CreatorTemplates({ t }) {
+  return (
+    <div className="mt-3 mb-2 rounded-xl border border-gray-200 bg-white p-4">
+      <p className="text-xs font-semibold text-gray-600 mb-3 uppercase tracking-wide">
+        {t('creator_templates_title')}
+      </p>
+      <p className="text-xs text-gray-500 mb-3">{t('creator_intro')}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {CREATOR_TEMPLATES.map(({ key, Icon, href, labelKey, descKey }) => (
+          <Link
+            key={key}
+            href={href}
+            className="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-left hover:border-blue-400 hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <Icon className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <p className="text-xs font-semibold text-gray-900">{t(labelKey)}</p>
+              <p className="text-xs text-gray-500 mt-0.5">{t(descKey)}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Independent profile readiness panel */
+function IndependentProfilePanel({ onboardingData, t }) {
+  const { emailVerified, firstNameNative, avatar, bio, homeLocationId, username } = onboardingData || {};
+  const missing = [];
+  if (!emailVerified) missing.push(t('step_email'));
+  if (!firstNameNative) missing.push(t('step_fullname'));
+  if (!homeLocationId) missing.push(t('step_location'));
+  if (!bio) missing.push(t('step_bio'));
+
+  if (missing.length === 0 && !username) return null;
+
+  return (
+    <div className="mt-3 mb-2 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+      <p className="text-xs font-semibold text-indigo-700 mb-2 uppercase tracking-wide">
+        {t('independent_profile_title')}
+      </p>
+      {missing.length > 0 && (
+        <ul className="space-y-1 mb-3">
+          {missing.map((item) => (
+            <li key={item} className="flex items-center gap-1.5 text-xs text-indigo-800">
+              <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 flex-shrink-0" aria-hidden="true" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      )}
+      {username && (
+        <Link
+          href={`/users/${username}`}
+          className="inline-flex items-center gap-1 text-xs font-medium text-indigo-700 hover:underline focus:outline-none focus:underline"
+        >
+          {t('independent_preview_link')}
+          <ChevronRightIcon className="h-3 w-3" />
         </Link>
       )}
     </div>
@@ -240,6 +367,9 @@ function OnboardingContent() {
   const [secondaryGoals, setSecondaryGoals] = useState([]);
   const [onboardingData, setOnboardingData] = useState(null);
   const [saving, setSaving] = useState(false);
+  // Extended data per goal (loaded lazily when checklist phase activates)
+  const [extendedData, setExtendedData] = useState({});
+  const [extendedLoading, setExtendedLoading] = useState(false);
 
   const loadOnboarding = useCallback(async () => {
     try {
@@ -264,6 +394,52 @@ function OnboardingContent() {
     loadOnboarding();
   }, [loadOnboarding]);
 
+  // Load goal-specific extended data when the checklist phase activates
+  const loadExtendedData = useCallback(async (goal) => {
+    if (!goal) return;
+    setExtendedLoading(true);
+    try {
+      const next = {};
+
+      if (goal === 'moderator') {
+        const res = await messageAPI.getMyModeratorApplication();
+        if (res.success) {
+          next.moderatorApplication = res.data.application || null;
+          next.isApprovedModerator = res.data.isApprovedModerator || false;
+        }
+      }
+
+      if (goal === 'creator') {
+        const res = await authAPI.getContributionSummary();
+        if (res.success) {
+          next.hasContributed = res.data.summary.hasContributed;
+        }
+      }
+
+      if (goal === 'independent') {
+        const res = await candidateRegistrationAPI.getMine({ limit: 1 });
+        if (res.success) {
+          const regs = res.data?.registrations || [];
+          next.hasCandidateRegistration = regs.length > 0;
+          next.candidateRegistration = regs[0] || null;
+        }
+      }
+
+      setExtendedData(next);
+    } catch (err) {
+      console.error('Failed to load extended onboarding data:', err);
+      // fail-open: extended data stays empty
+    } finally {
+      setExtendedLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (phase === 'checklist' && primaryGoal) {
+      loadExtendedData(primaryGoal);
+    }
+  }, [phase, primaryGoal, loadExtendedData]);
+
   const handleSelectPrimary = (goal) => {
     if (primaryGoal === goal) return;
     setPrimaryGoal(goal);
@@ -284,8 +460,10 @@ function OnboardingContent() {
       await authAPI.updateOnboarding({ goal: primaryGoal, secondaryGoals });
       const res = await authAPI.getOnboarding();
       if (res.success) setOnboardingData(res.data.onboarding);
+      setExtendedData({});
       setPhase('checklist');
-    } catch {
+    } catch (err) {
+      console.error('Failed to save onboarding goal:', err);
       // continue to checklist even on error
       setPhase('checklist');
     } finally {
@@ -315,7 +493,7 @@ function OnboardingContent() {
   }
 
   const checklist = phase === 'checklist' && primaryGoal
-    ? buildChecklist(primaryGoal, onboardingData, t)
+    ? buildChecklist(primaryGoal, onboardingData, t, extendedData)
     : [];
   const doneCount = checklist.filter((s) => s.done).length;
   const totalCount = checklist.length;
@@ -468,13 +646,27 @@ function OnboardingContent() {
                 </div>
               )}
 
-              <div className="space-y-2" role="list" aria-label={t('your_checklist')}>
-                {checklist.map((step, index) => (
-                  <div key={step.key} role="listitem">
-                    <ChecklistStep step={step} isNextAction={!allDone && index === checklist.findIndex((s) => !s.done)} />
-                  </div>
-                ))}
-              </div>
+              {extendedLoading ? (
+                <div className="flex justify-center py-4" aria-label="Loading checklist details">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
+                </div>
+              ) : (
+                <div className="space-y-2" role="list" aria-label={t('your_checklist')}>
+                  {checklist.map((step, index) => (
+                    <div key={step.key} role="listitem">
+                      <ChecklistStep step={step} isNextAction={!allDone && index === checklist.findIndex((s) => !s.done)} />
+                      {/* Creator templates panel — shown directly under first_content step */}
+                      {step.key === 'first_content' && primaryGoal === 'creator' && !step.done && (
+                        <CreatorTemplates t={t} />
+                      )}
+                      {/* Independent profile readiness panel */}
+                      {step.key === 'person_search' && primaryGoal === 'independent' && (
+                        <IndependentProfilePanel onboardingData={onboardingData} t={t} />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-8 flex justify-between items-center">
                 <button
