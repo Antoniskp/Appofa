@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sequelize, User, Article, Location, LocationLink, Poll, PollOption, PollVote } = require('../models');
+const { sequelize, User, Article, Location, LocationLink, Poll, PollOption, PollVote, CandidateRegistration, Follow, Suggestion, UserLocationRole } = require('../models');
 const { Op } = require('sequelize');
 const authMiddleware = require('../middleware/auth');
 const checkRole = require('../middleware/checkRole');
@@ -448,3 +448,124 @@ router.post('/ip-rules/check', apiLimiter, authMiddleware, checkRole('admin'), c
     res.json({ success: true, ip, status });
   } catch (err) { next(err); }
 });
+
+
+// ─── Onboarding Funnel Analytics (admin-only) ─────────────────────────────────
+
+const onboardingEventController = require('../controllers/onboardingEventController');
+
+router.get(
+  '/onboarding/funnel',
+  apiLimiter,
+  authMiddleware,
+  checkRole('admin'),
+  onboardingEventController.getAdminFunnel
+);
+
+// ─── Admin: onboarding context for a specific user (admin/moderator) ──────────
+
+/**
+ * GET /api/admin/users/:userId/onboarding-context
+ * Returns concise onboarding context for use in moderator/candidate review UIs.
+ * Batches all needed lookups in parallel to avoid N+1 queries.
+ * Never exposes: message body, claim evidence, private emails, tokens, admin notes.
+ */
+router.get(
+  '/users/:userId/onboarding-context',
+  apiLimiter,
+  authMiddleware,
+  checkRole('admin', 'moderator'),
+  async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      if (!userId || isNaN(userId)) {
+        return res.status(400).json({ success: false, message: 'Invalid userId.' });
+      }
+
+      const [user, followerCount, followingCount, articleCount, pollCount, suggestionCount, candidateReg, locationRole] = await Promise.all([
+        User.findByPk(userId, {
+          attributes: [
+            'id', 'role', 'emailVerified', 'firstNameNative', 'lastNameNative',
+            'bio', 'avatar', 'homeLocationId', 'nationality', 'profileVisibility',
+            'onboardingGoal', 'onboardingSecondaryGoals', 'onboardingDismissed', 'onboardingCompletedAt',
+            'createdAt',
+          ],
+          include: [
+            { model: Location, as: 'homeLocation', attributes: ['id', 'name', 'type', 'slug'], required: false },
+          ],
+        }),
+        Follow.count({ where: { followingId: userId } }),
+        Follow.count({ where: { followerId: userId } }),
+        Article.count({ where: { authorId: userId } }),
+        Poll.count({ where: { creatorId: userId } }),
+        Suggestion.count({ where: { authorId: userId } }),
+        CandidateRegistration.findOne({
+          where: { userId },
+          attributes: ['id', 'status', 'positionType', 'createdAt'],
+          order: [['createdAt', 'DESC']],
+        }),
+        UserLocationRole.findOne({
+          where: { userId, roleKey: 'moderator' },
+          include: [{ model: Location, as: 'location', attributes: ['id', 'name', 'slug'], required: false }],
+          order: [['createdAt', 'DESC']],
+        }),
+      ]);
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      // Profile completeness (same definition as profile-readiness endpoint)
+      const fields = {
+        email: Boolean(user.emailVerified),
+        name: Boolean(user.firstNameNative && user.lastNameNative),
+        bio: Boolean(user.bio),
+        avatar: Boolean(user.avatar),
+        location: Boolean(user.homeLocationId),
+        nationality: Boolean(user.nationality),
+      };
+      const completedCount = Object.values(fields).filter(Boolean).length;
+      const totalFields = Object.keys(fields).length;
+
+      return res.json({
+        success: true,
+        data: {
+          context: {
+            userId: user.id,
+            role: user.role,
+            onboardingGoal: user.onboardingGoal,
+            onboardingSecondaryGoals: user.onboardingSecondaryGoals,
+            onboardingCompletedAt: user.onboardingCompletedAt,
+            // Note: onboardingDismissed shown only as neutral context, not a trust signal
+            onboardingDismissed: user.onboardingDismissed,
+            emailVerified: user.emailVerified,
+            homeLocation: user.homeLocation || null,
+            profileCompleteness: { completedCount, totalFields, fields },
+            contributions: {
+              articleCount,
+              pollCount,
+              suggestionCount,
+              total: articleCount + pollCount + suggestionCount,
+            },
+            followerCount,
+            followingCount,
+            candidateRegistration: candidateReg ? {
+              id: candidateReg.id,
+              status: candidateReg.status,
+              positionType: candidateReg.positionType,
+              createdAt: candidateReg.createdAt,
+            } : null,
+            assignedModeratorLocation: locationRole ? {
+              locationId: locationRole.locationId,
+              location: locationRole.location || null,
+            } : null,
+            memberSince: user.createdAt,
+          },
+        },
+      });
+    } catch (err) {
+      console.error('Admin onboarding context error:', err);
+      return res.status(500).json({ success: false, message: 'Failed to fetch onboarding context.' });
+    }
+  }
+);

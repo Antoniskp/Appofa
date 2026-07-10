@@ -2,7 +2,7 @@ const authService = require('../services/authService');
 const oauthService = require('../services/oauthService');
 const userService = require('../services/userService');
 const badgeService = require('../services/badgeService');
-const { User, Article, Poll, Suggestion } = require('../models');
+const { User, Article, Poll, Suggestion, CandidateRegistration, Follow } = require('../models');
 const { generateCsrfToken, storeCsrfToken, ensureCsrfToken, CSRF_COOKIE } = require('../utils/csrf');
 const { getCookie } = require('../utils/cookies');
 const { getSessionMaxAgeMs } = require('../config/session');
@@ -808,6 +808,167 @@ const authController = {
     } catch (error) {
       console.error('Get contribution summary error:', error);
       res.status(500).json({ success: false, message: 'Error fetching contribution summary.' });
+    }
+  },
+
+  /**
+   * GET /api/auth/my-contributions
+   * Returns the current user's own articles, polls, and suggestions.
+   * Supports ?type (articles|polls|suggestions|all), ?status, ?page, ?limit (max 50).
+   * Scoped strictly to req.user.id — never accepts a userId param.
+   */
+  getMyContributions: async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { type = 'all', status, page = '1', limit = '20' } = req.query;
+
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 20));
+      const offset = (pageNum - 1) * limitNum;
+
+      const VALID_TYPES = ['all', 'articles', 'polls', 'suggestions'];
+      if (!VALID_TYPES.includes(type)) {
+        return res.status(400).json({ success: false, message: 'Invalid type parameter.' });
+      }
+
+      const result = {};
+
+      if (type === 'all' || type === 'articles') {
+        const artWhere = { authorId: userId };
+        if (status) artWhere.status = status;
+        const { count, rows } = await Article.findAndCountAll({
+          where: artWhere,
+          attributes: ['id', 'title', 'type', 'status', 'createdAt', 'updatedAt'],
+          order: [['updatedAt', 'DESC']],
+          limit: type === 'all' ? 10 : limitNum,
+          offset: type === 'all' ? 0 : offset,
+        });
+        result.articles = {
+          items: rows,
+          total: count,
+          ...(type !== 'all' && { page: pageNum, limit: limitNum }),
+        };
+      }
+
+      if (type === 'all' || type === 'polls') {
+        const pollWhere = { creatorId: userId };
+        if (status) pollWhere.status = status;
+        const { count, rows } = await Poll.findAndCountAll({
+          where: pollWhere,
+          attributes: ['id', 'title', 'status', 'visibility', 'createdAt', 'updatedAt'],
+          order: [['updatedAt', 'DESC']],
+          limit: type === 'all' ? 10 : limitNum,
+          offset: type === 'all' ? 0 : offset,
+        });
+        result.polls = {
+          items: rows,
+          total: count,
+          ...(type !== 'all' && { page: pageNum, limit: limitNum }),
+        };
+      }
+
+      if (type === 'all' || type === 'suggestions') {
+        const sugWhere = { authorId: userId };
+        if (status) sugWhere.status = status;
+        const { count, rows } = await Suggestion.findAndCountAll({
+          where: sugWhere,
+          attributes: ['id', 'title', 'status', 'visibility', 'createdAt', 'updatedAt'],
+          order: [['updatedAt', 'DESC']],
+          limit: type === 'all' ? 10 : limitNum,
+          offset: type === 'all' ? 0 : offset,
+        });
+        result.suggestions = {
+          items: rows,
+          total: count,
+          ...(type !== 'all' && { page: pageNum, limit: limitNum }),
+        };
+      }
+
+      return res.json({ success: true, data: result });
+    } catch (error) {
+      console.error('Get my contributions error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching contributions.' });
+    }
+  },
+
+  /**
+   * GET /api/auth/profile-readiness
+   * Privacy-conscious readiness summary for the current authenticated user.
+   * Shows only metrics computable from current data. Never exposes other users' data.
+   */
+  getProfileReadiness: async (req, res) => {
+    try {
+      const userId = req.user.id;
+
+      const user = await User.findByPk(userId, {
+        attributes: [
+          'id', 'role', 'emailVerified', 'firstNameNative', 'lastNameNative',
+          'bio', 'avatar', 'homeLocationId', 'nationality', 'profileVisibility',
+          'claimStatus', 'slug', 'onboardingGoal',
+        ],
+      });
+
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found.' });
+      }
+
+      // Profile completeness fields
+      const fields = {
+        email: Boolean(user.emailVerified),
+        name: Boolean(user.firstNameNative && user.lastNameNative),
+        bio: Boolean(user.bio),
+        avatar: Boolean(user.avatar),
+        location: Boolean(user.homeLocationId),
+        nationality: Boolean(user.nationality),
+      };
+      const completedCount = Object.values(fields).filter(Boolean).length;
+      const totalFields = Object.keys(fields).length;
+      const completenessPercent = Math.round((completedCount / totalFields) * 100);
+
+      // Follower / following counts
+      const [followerCount, followingCount] = await Promise.all([
+        Follow.count({ where: { followingId: userId } }),
+        Follow.count({ where: { followerId: userId } }),
+      ]);
+
+      // Candidate registrations summary (own registrations only)
+      const candidateRegistrations = await CandidateRegistration.findAll({
+        where: { userId },
+        attributes: ['id', 'status', 'positionType', 'createdAt'],
+        order: [['createdAt', 'DESC']],
+        limit: 5,
+      });
+
+      const profilePublicUrl = user.slug ? `/users/${user.slug}` : null;
+      const isDiscoverable = user.profileVisibility !== 'hidden';
+
+      return res.json({
+        success: true,
+        data: {
+          readiness: {
+            fields,
+            completedCount,
+            totalFields,
+            completenessPercent,
+            isDiscoverable,
+            profileVisibility: user.profileVisibility,
+            profilePublicUrl,
+            followerCount,
+            followingCount,
+            candidateRegistrations: candidateRegistrations.map((r) => ({
+              id: r.id,
+              status: r.status,
+              positionType: r.positionType,
+              createdAt: r.createdAt,
+            })),
+            hasCandidateRegistration: candidateRegistrations.length > 0,
+            hasApprovedRegistration: candidateRegistrations.some((r) => r.status === 'approved'),
+          },
+        },
+      });
+    } catch (error) {
+      console.error('Get profile readiness error:', error);
+      return res.status(500).json({ success: false, message: 'Error fetching profile readiness.' });
     }
   },
 };

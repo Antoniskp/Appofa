@@ -79,4 +79,10 @@ router.put('/onboarding', apiLimiter, authMiddleware, csrfProtection, authContro
 // Creator contribution summary (authenticated)
 router.get('/contribution-summary', apiLimiter, authMiddleware, authController.getContributionSummary);
 
+// Creator workspace: my contributions with status grouping (authenticated, scoped to req.user)
+router.get('/my-contributions', apiLimiter, authMiddleware, authController.getMyContributions);
+
+// Independent: own public profile readiness summary (authenticated, scoped to req.user)
+router.get('/profile-readiness', apiLimiter, authMiddleware, authController.getProfileReadiness);
+
 module.exports = router;

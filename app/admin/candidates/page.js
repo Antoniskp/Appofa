@@ -7,7 +7,7 @@ import AdminLayout from '@/components/admin/AdminLayout';
 import AdminTable from '@/components/admin/AdminTable';
 import Pagination from '@/components/ui/Pagination';
 import { useAsyncData } from '@/hooks/useAsyncData';
-import { candidateRegistrationAPI } from '@/lib/api';
+import { candidateRegistrationAPI, adminAPI } from '@/lib/api';
 import { useToast } from '@/components/ToastProvider';
 import { POSITION_TYPE_LABELS } from '@/components/locations/LocationCandidatesTab';
 
@@ -34,6 +34,40 @@ function getProfileHref(candidate) {
   if (candidate.slug) return `/persons/${candidate.slug}`;
   if (candidate.username) return `/users/${candidate.username}`;
   return `/users/${candidate.id}`;
+}
+
+/** Inline onboarding context for a candidate's user — loaded lazily */
+function CandidateOnboardingContext({ userId }) {
+  const { data: ctx, loading } = useAsyncData(
+    async () => {
+      if (!userId) return null;
+      const res = await adminAPI.getUserOnboardingContext(userId);
+      return res.success ? res.data.context : null;
+    },
+    [userId],
+    { initialData: null }
+  );
+
+  if (loading) return <p className="text-xs text-gray-400 py-1">Loading context…</p>;
+  if (!ctx) return null;
+
+  const { onboardingGoal, profileCompleteness, contributions, emailVerified, homeLocation } = ctx;
+  const pct = profileCompleteness?.totalFields > 0
+    ? Math.round((profileCompleteness.completedCount / profileCompleteness.totalFields) * 100)
+    : 0;
+
+  return (
+    <div className="rounded-md border border-indigo-100 bg-indigo-50 p-3 mt-4">
+      <p className="text-xs font-semibold text-indigo-700 mb-2 uppercase tracking-wide">Onboarding Context</p>
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+        <div><dt className="text-gray-500 inline">Goal: </dt><dd className="inline font-medium text-gray-800 capitalize">{onboardingGoal || '—'}</dd></div>
+        <div><dt className="text-gray-500 inline">Email: </dt><dd className={`inline font-medium ${emailVerified ? 'text-green-700' : 'text-red-600'}`}>{emailVerified ? 'Verified' : 'Unverified'}</dd></div>
+        <div><dt className="text-gray-500 inline">Profile: </dt><dd className="inline font-medium text-gray-800">{pct}%</dd></div>
+        <div><dt className="text-gray-500 inline">Location: </dt><dd className="inline font-medium text-gray-800">{homeLocation?.name || '—'}</dd></div>
+        <div><dt className="text-gray-500 inline">Contributions: </dt><dd className="inline font-medium text-gray-800">{contributions?.total ?? 0}</dd></div>
+      </dl>
+    </div>
+  );
 }
 
 function AdminCandidatesContent() {
@@ -296,6 +330,11 @@ function AdminCandidatesContent() {
                   </dd>
                 </div>
               </dl>
+
+              {/* Onboarding context — loaded lazily when detail panel opens */}
+              {selected.candidate?.id && (
+                <CandidateOnboardingContext userId={selected.candidate.id} />
+              )}
 
               <div className="mt-6 flex flex-wrap justify-end gap-2 border-t border-gray-100 pt-4">
                 <button
