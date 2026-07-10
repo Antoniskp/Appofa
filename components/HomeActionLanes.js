@@ -240,7 +240,7 @@ export default function HomeActionLanes({ user }) {
               </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {pathActions.map(({ href, title, description, icon: Icon }) => (
                 <Link
                   key={href}
