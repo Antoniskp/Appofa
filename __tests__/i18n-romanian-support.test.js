@@ -43,6 +43,16 @@ describe('Romanian i18n wiring', () => {
 
     expect(roKeys).toEqual(enKeys);
   });
+
+  test('keeps Greek message schema aligned with English', () => {
+    const en = require('../messages/en.json');
+    const el = require('../messages/el.json');
+
+    const enKeys = collectLeafKeys(en).sort();
+    const elKeys = collectLeafKeys(el).sort();
+
+    expect(elKeys).toEqual(enKeys);
+  });
 });
 
 describe('LanguageSwitcher Romanian option', () => {

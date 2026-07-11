@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { locationAPI } from '@/lib/api';
 
 // Helper function to format location name with local name
@@ -20,6 +21,7 @@ export default function CascadingLocationSelector({
   className = '',
   allowClear = true
 }) {
+  const t = useTranslations('common');
   const [countries, setCountries] = useState([]);
   const [prefectures, setPrefectures] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
@@ -246,7 +248,7 @@ export default function CascadingLocationSelector({
       {/* Country Dropdown */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
-          Country *
+          {t('location_selector.label_country')} *
         </label>
         <div className="flex gap-2">
           <select
@@ -255,7 +257,7 @@ export default function CascadingLocationSelector({
             className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             disabled={loading}
           >
-            <option value="">Select a country</option>
+            <option value="">{t('location_selector.select_country')}</option>
             {countries.map((country) => (
               <option key={country.id} value={country.id}>
                 {formatLocationName(country)}
@@ -279,7 +281,7 @@ export default function CascadingLocationSelector({
       {selectedCountry && !isInternational && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Prefecture
+            {t('location_selector.label_prefecture')}
           </label>
           <select
             value={selectedPrefecture?.id || ''}
@@ -287,7 +289,7 @@ export default function CascadingLocationSelector({
             className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             disabled={loading || prefectures.length === 0}
           >
-            <option value="">Select a prefecture</option>
+            <option value="">{t('location_selector.select_prefecture')}</option>
             {prefectures.map((prefecture) => (
               <option key={prefecture.id} value={prefecture.id}>
                 {formatLocationName(prefecture)}
@@ -295,7 +297,7 @@ export default function CascadingLocationSelector({
             ))}
           </select>
           {prefectures.length === 0 && !loading && (
-            <p className="mt-1 text-xs text-gray-500">No prefectures available</p>
+            <p className="mt-1 text-xs text-gray-500">{t('location_selector.no_prefectures')}</p>
           )}
         </div>
       )}
@@ -304,7 +306,7 @@ export default function CascadingLocationSelector({
       {selectedPrefecture && !isInternational && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            City/Municipality
+            {t('location_selector.label_city')}
           </label>
           <select
             value={selectedMunicipality?.id || ''}
@@ -312,7 +314,7 @@ export default function CascadingLocationSelector({
             className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 bg-white focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
             disabled={loading || municipalities.length === 0}
           >
-            <option value="">Select a city/municipality</option>
+            <option value="">{t('location_selector.select_city')}</option>
             {municipalities.map((municipality) => (
               <option key={municipality.id} value={municipality.id}>
                 {formatLocationName(municipality)}
@@ -320,19 +322,19 @@ export default function CascadingLocationSelector({
             ))}
           </select>
           {municipalities.length === 0 && !loading && (
-            <p className="mt-1 text-xs text-gray-500">No municipalities available</p>
+            <p className="mt-1 text-xs text-gray-500">{t('location_selector.no_municipalities')}</p>
           )}
         </div>
       )}
 
       {loading && (
-        <div className="text-sm text-gray-500">Loading...</div>
+        <div className="text-sm text-gray-500">{t('loading')}</div>
       )}
 
       {/* Display selected location summary */}
       {selectedCountry && (
         <div className="text-sm text-gray-600">
-          <strong>Selected:</strong>{' '}
+          <strong>{t('location_selector.selected_label')}:</strong>{' '}
           {selectedMunicipality ? (
             <>
               {formatLocationName(selectedMunicipality)}

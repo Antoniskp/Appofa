@@ -640,6 +640,23 @@
       "guest_cta": "Αποκτήστε υψηλότερα όρια δημιουργώντας λογαριασμό:",
       "sign_up": "Εγγραφή",
       "sign_in": "Σύνδεση"
+    },
+    "yes": "Ναι",
+    "no": "Όχι",
+    "users_label": "Χρήστες",
+    "moderator_label": "Συντονιστής",
+    "capital_label": "Πρωτεύουσα",
+    "explore_locations": "Εξερεύνησε περιοχές",
+    "location_selector": {
+      "select_country": "Επιλέξτε χώρα",
+      "select_prefecture": "Επιλέξτε νομό",
+      "select_city": "Επιλέξτε δήμο/πόλη",
+      "label_country": "Χώρα",
+      "label_prefecture": "Νομός",
+      "label_city": "Δήμος/Πόλη",
+      "no_prefectures": "Δεν υπάρχουν διαθέσιμοι νομοί",
+      "no_municipalities": "Δεν υπάρχουν διαθέσιμοι δήμοι",
+      "selected_label": "Επιλεγμένο"
     }
   },
   "footer": {
@@ -1050,7 +1067,8 @@
     "role_assign_must_be_user": "Παρακαλώ επιλέξτε εγγεγραμμένο χρήστη πλατφόρμας για αυτό τον ρόλο.",
     "role_assign_must_be_person": "Παρακαλώ επιλέξτε προφίλ προσώπου (μη διεκδικημένο) για αυτό τον ρόλο.",
     "unassign": "Αφαίρεση ανάθεσης",
-    "role_title_placeholder": "π.χ. Πρόεδρος, Διευθυντής, Καθηγητής"
+    "role_title_placeholder": "π.χ. Πρόεδρος, Διευθυντής, Καθηγητής",
+    "is_required": "απαιτείται"
   },
   "static_pages": {
     "instructions_title": "Οδηγίες",
