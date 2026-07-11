@@ -245,6 +245,22 @@ describe('Suggestions & Solutions API Tests', () => {
       expect(res.status).toBe(400);
     });
 
+    it('should reject locals-only voting without a location', async () => {
+      const res = await request(app)
+        .post('/api/suggestions')
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({
+          title: 'Local-only voting needs a place',
+          body: 'This should not be created because local voting has no location.',
+          type: 'idea',
+          voteRestriction: 'locals_only'
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Location is required');
+    });
+
     it('should create a suggestion when authenticated', async () => {
       const res = await request(app)
         .post('/api/suggestions')
@@ -616,6 +632,17 @@ describe('Suggestions & Solutions API Tests', () => {
         .send({ status: 'under_review' });
       expect(res.status).toBe(200);
       expect(res.body.data.status).toBe('under_review');
+    });
+
+    it('should reject update to locals-only voting without a location', async () => {
+      const res = await request(app)
+        .patch(`/api/suggestions/${testSuggestionId}`)
+        .set('Authorization', `Bearer ${user1Token}`)
+        .set(csrfHeadersFor(csrf1, user1Id))
+        .send({ locationId: null, voteRestriction: 'locals_only' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Location is required');
     });
 
     it('should allow admin to update any suggestion', async () => {

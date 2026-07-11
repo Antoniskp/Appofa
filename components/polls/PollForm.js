@@ -14,6 +14,17 @@ import { locationAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 
+const DEFAULT_PALETTE = ['#3b82f6', '#10b981', '#fb923c', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#ef4444'];
+
+const inferBinaryStyle = (pollOptions = []) => {
+  const firstText = String(pollOptions[0]?.text || '').trim().toLowerCase();
+  const secondText = String(pollOptions[1]?.text || '').trim().toLowerCase();
+  if (firstText === 'συμφωνώ' || secondText === 'διαφωνώ') {
+    return 'agree_disagree';
+  }
+  return 'yes_no';
+};
+
 /**
  * Unified poll form for create and edit modes
  * @param {Object} poll - Existing poll data (for edit mode)
@@ -74,7 +85,7 @@ export default function PollForm({
         category: poll.category || '',
         tags: Array.isArray(poll.tags) ? poll.tags : [],
         type: poll.type || 'simple',
-        binaryStyle: 'yes_no',
+        binaryStyle: inferBinaryStyle(poll.options),
         visibility: poll.visibility || 'public',
         voteRestriction: poll.voteRestriction || 'authenticated',
         resultsVisibility: poll.resultsVisibility || 'after_vote',
@@ -146,8 +157,6 @@ export default function PollForm({
       })
       .catch(() => {});
   }, []);
-
-  const DEFAULT_PALETTE = ['#3b82f6', '#10b981', '#fb923c', '#8b5cf6', '#ec4899', '#f59e0b', '#14b8a6', '#ef4444'];
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -248,8 +257,8 @@ export default function PollForm({
       }
     }
 
-    if (formData.voteRestriction === 'locals_only' && !formData.locationId) {
-      alert('Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία');
+    if ((formData.voteRestriction === 'locals_only' || formData.visibility === 'locals_only') && !formData.locationId) {
+      alert('Πρέπει να επιλέξετε τοποθεσία για τοπική δημοσκόπηση');
       return;
     }
     
@@ -333,12 +342,14 @@ export default function PollForm({
               name="type"
               value={formData.type}
               onChange={handleInputChange}
+              disabled={mode === 'edit'}
               required
               options={[
                 { value: 'simple', label: 'Απλή' },
                 { value: 'complex', label: 'Σύνθετη' },
                 { value: 'binary', label: 'Δυαδική (Ναι/Όχι)' },
               ]}
+              helpText={mode === 'edit' ? 'Ο τύπος δημοσκόπησης δεν αλλάζει μετά τη δημιουργία.' : undefined}
             />
           </div>
 
@@ -514,7 +525,7 @@ export default function PollForm({
 
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Τοποθεσία {formData.voteRestriction === 'locals_only' ? <span className="text-red-500">*</span> : <span className="text-gray-500">(Προαιρετικό)</span>}
+            Τοποθεσία {(formData.voteRestriction === 'locals_only' || formData.visibility === 'locals_only') ? <span className="text-red-500">*</span> : <span className="text-gray-500">(Προαιρετικό)</span>}
           </label>
           <CascadingLocationSelector
             value={formData.locationId}

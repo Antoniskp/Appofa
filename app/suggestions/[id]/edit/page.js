@@ -133,6 +133,9 @@ export default function EditSuggestionPage() {
     if (!form.body.trim() || form.body.trim().length < 10) {
       errs.body = 'Η περιγραφή πρέπει να έχει τουλάχιστον 10 χαρακτήρες.';
     }
+    if (form.voteRestriction === 'locals_only' && !form.locationId) {
+      errs.locationId = 'Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία.';
+    }
     return errs;
   };
 
@@ -142,6 +145,9 @@ export default function EditSuggestionPage() {
     if (errors[e.target.name]) {
       setErrors((prev) => ({ ...prev, [e.target.name]: '' }));
     }
+    if (e.target.name === 'voteRestriction' && value !== 'locals_only' && errors.locationId) {
+      setErrors((prev) => ({ ...prev, locationId: '' }));
+    }
   };
 
   const handleLocationChange = (locationId) => {
@@ -150,6 +156,9 @@ export default function EditSuggestionPage() {
       locationId: locationId || null,
       voteRestriction: locationId ? 'locals_only' : 'authenticated',
     }));
+    if (errors.locationId) {
+      setErrors((prev) => ({ ...prev, locationId: '' }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -311,6 +320,9 @@ export default function EditSuggestionPage() {
               </select>
               {form.voteRestriction === 'locals_only' && !form.locationId && (
                 <p className="text-amber-600 text-xs mt-1">⚠️ Πρέπει να επιλέξετε τοποθεσία για τοπική ψηφοφορία</p>
+              )}
+              {errors.locationId && (
+                <p className="text-red-500 text-xs mt-1">{errors.locationId}</p>
               )}
             </div>
 

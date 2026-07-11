@@ -1279,6 +1279,9 @@ describe('Poll API Tests', () => {
           ]
         });
       const pollToUpdateId = createResponse.body.data.id;
+      const internationalLocation = await Location.findOne({
+        where: { type: 'international', slug: 'international' }
+      });
 
       const csrfToken = 'test-csrf-token-update';
       const headers = csrfHeaderFor(csrfToken, adminUserId);
@@ -1291,6 +1294,7 @@ describe('Poll API Tests', () => {
           title: 'Updated Poll Title',
           description: 'Updated description',
           visibility: 'locals_only',
+          locationId: internationalLocation.id,
           resultsVisibility: 'after_deadline'
         });
 
@@ -1299,7 +1303,109 @@ describe('Poll API Tests', () => {
       expect(response.body.data.title).toBe('Updated Poll Title');
       expect(response.body.data.description).toBe('Updated description');
       expect(response.body.data.visibility).toBe('locals_only');
+      expect(response.body.data.locationId).toBe(internationalLocation.id);
       expect(response.body.data.resultsVisibility).toBe('after_deadline');
+    });
+
+    test('should reject local-only visibility without a location', async () => {
+      const csrfToken = 'test-csrf-token-local-visibility-without-location';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Local-only poll without location',
+          type: 'simple',
+          visibility: 'locals_only',
+          resultsVisibility: 'always',
+          options: [
+            { text: 'Option 1' },
+            { text: 'Option 2' }
+          ]
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Location is required');
+    });
+
+    test('should persist editable poll option and comment settings', async () => {
+      const createCsrfToken = 'test-csrf-token-update-options-create';
+      const createHeaders = csrfHeaderFor(createCsrfToken, adminUserId);
+      const createResponse = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...createHeaders.Cookie])
+        .set('x-csrf-token', createCsrfToken)
+        .send({
+          title: 'Poll To Update Options',
+          type: 'complex',
+          visibility: 'public',
+          resultsVisibility: 'always',
+          useCustomColors: true,
+          options: [
+            { text: 'Old A', photoUrl: '/old-a.jpg', linkUrl: 'https://example.com/a', displayText: 'Old display A', color: '#3b82f6' },
+            { text: 'Old B', photoUrl: '/old-b.jpg', linkUrl: 'https://example.com/b', displayText: 'Old display B', color: '#10b981' }
+          ]
+        });
+
+      const pollToUpdateId = createResponse.body.data.id;
+      const firstOptionId = createResponse.body.data.options[0].id;
+      const secondOptionId = createResponse.body.data.options[1].id;
+
+      const csrfToken = 'test-csrf-token-update-options';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+      const response = await request(app)
+        .put(`/api/polls/${pollToUpdateId}`)
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          allowUserContributions: true,
+          commentsEnabled: false,
+          commentsLocked: true,
+          useCustomColors: true,
+          options: [
+            {
+              id: firstOptionId,
+              text: 'Updated A',
+              photoUrl: '/updated-a.jpg',
+              linkUrl: 'https://example.com/updated-a',
+              displayText: 'Updated display A',
+              answerType: 'custom',
+              color: '#ef4444'
+            },
+            {
+              text: 'New C',
+              photoUrl: '/new-c.jpg',
+              linkUrl: 'https://example.com/new-c',
+              displayText: 'New display C',
+              answerType: 'custom',
+              color: '#8b5cf6'
+            }
+          ]
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.allowUserContributions).toBe(true);
+      expect(response.body.data.commentsEnabled).toBe(false);
+      expect(response.body.data.commentsLocked).toBe(true);
+      expect(response.body.data.options).toHaveLength(2);
+      expect(response.body.data.options.find((option) => option.id === secondOptionId)).toBeUndefined();
+      expect(response.body.data.options.find((option) => option.id === firstOptionId)).toMatchObject({
+        text: 'Updated A',
+        photoUrl: '/updated-a.jpg',
+        linkUrl: 'https://example.com/updated-a',
+        displayText: 'Updated display A',
+        color: '#ef4444'
+      });
+      expect(response.body.data.options.find((option) => option.text === 'New C')).toMatchObject({
+        photoUrl: '/new-c.jpg',
+        linkUrl: 'https://example.com/new-c',
+        displayText: 'New display C',
+        color: '#8b5cf6'
+      });
     });
 
     test('should allow admin to update any poll', async () => {

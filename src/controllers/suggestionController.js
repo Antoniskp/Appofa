@@ -12,6 +12,9 @@ const SUGGESTION_VISIBILITIES = ['public', 'private', 'locals_only'];
 const SUGGESTION_VOTE_RESTRICTIONS = ['authenticated', 'locals_only'];
 const VOTE_VALUES = [-1, 1];
 
+const requiresLocation = (visibility, voteRestriction) =>
+  visibility === 'locals_only' || voteRestriction === 'locals_only';
+
 /**
  * Compute the aggregate score (sum of vote values) for a given target.
  */
@@ -297,6 +300,10 @@ const suggestionController = {
         }
       }
 
+      if (requiresLocation(visibilityResult.value, voteRestrictionResult.value) && !parsedLocationId) {
+        return res.status(400).json({ success: false, message: 'Location is required for local-only suggestions.' });
+      }
+
       const suggestion = await Suggestion.create({
         title: titleResult.value,
         body: bodyResult.value,
@@ -419,6 +426,13 @@ const suggestionController = {
           }
           updates.locationId = parsedLocId;
         }
+      }
+
+      const nextVisibility = updates.visibility !== undefined ? updates.visibility : suggestion.visibility;
+      const nextVoteRestriction = updates.voteRestriction !== undefined ? updates.voteRestriction : suggestion.voteRestriction;
+      const nextLocationId = updates.locationId !== undefined ? updates.locationId : suggestion.locationId;
+      if (requiresLocation(nextVisibility, nextVoteRestriction) && !nextLocationId) {
+        return res.status(400).json({ success: false, message: 'Location is required for local-only suggestions.' });
       }
 
       if (req.body.category !== undefined) {

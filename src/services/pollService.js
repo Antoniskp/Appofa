@@ -31,6 +31,7 @@ const TITLE_MAX_LENGTH = 200;
 const DESCRIPTION_MAX_LENGTH = 2000;
 const OPTION_TEXT_MIN_LENGTH = 1;
 const OPTION_TEXT_MAX_LENGTH = 500;
+const HEX_COLOR_REGEX = /^#[0-9a-f]{6}$/i;
 
 // ---------------------------------------------------------------------------
 // Private helpers
@@ -83,6 +84,34 @@ const sanitizePoll = (poll, user) => {
 };
 
 const isOrgScopedPrivatePoll = (poll) => Boolean(poll?.organizationId) && poll.visibility === 'private';
+
+const requiresLocation = (visibility, voteRestriction) =>
+  visibility === 'locals_only' || voteRestriction === 'locals_only';
+
+const validateHexColor = (value, fieldLabel) => {
+  if (value === undefined || value === null || value === '') {
+    return { value: null };
+  }
+  if (typeof value !== 'string' || !HEX_COLOR_REGEX.test(value.trim())) {
+    return { error: `${fieldLabel} must be a valid hex colour.` };
+  }
+  return { value: value.trim() };
+};
+
+const getBinaryOptionsForStyle = (style) => (
+  style === 'agree_disagree'
+    ? [{ text: 'Συμφωνώ', order: 0 }, { text: 'Διαφωνώ', order: 1 }]
+    : [{ text: 'Ναι', order: 0 }, { text: 'Όχι', order: 1 }]
+);
+
+const inferBinaryStyleFromOptions = (options = []) => {
+  const firstText = String(options[0]?.text || '').trim().toLowerCase();
+  const secondText = String(options[1]?.text || '').trim().toLowerCase();
+  if (firstText === 'συμφωνώ' || secondText === 'διαφωνώ') {
+    return 'agree_disagree';
+  }
+  return 'yes_no';
+};
 
 const hasActiveOrgMembership = async (organizationId, userId) => {
   const orgMembership = await OrganizationMember.findOne({
@@ -240,9 +269,9 @@ const createPoll = async (userId, pollData) => {
       }
     }
 
-    if (voteRestrictionResult.value === 'locals_only' && !locationIdValue) {
+    if (requiresLocation(visibilityResult.value, voteRestrictionResult.value) && !locationIdValue) {
       await transaction.rollback();
-      return { success: false, status: 400, message: 'Location is required when vote restriction is locals_only.' };
+      return { success: false, status: 400, message: 'Location is required for local-only polls.' };
     }
 
     // Validate booleans
@@ -300,17 +329,20 @@ const createPoll = async (userId, pollData) => {
     if (isBinary) {
       // Auto-create options based on binaryStyle
       const style = (binaryStyle && BINARY_STYLES.includes(binaryStyle)) ? binaryStyle : 'yes_no';
-      const binaryOptions = style === 'agree_disagree'
-        ? [{ text: 'Συμφωνώ', order: 0 }, { text: 'Διαφωνώ', order: 1 }]
-        : [{ text: 'Ναι', order: 0 }, { text: 'Όχι', order: 1 }];
+      const binaryOptions = getBinaryOptionsForStyle(style);
 
       for (let i = 0; i < binaryOptions.length; i++) {
         const opt = binaryOptions[i];
-        const color = (useCustomColors && Array.isArray(binaryColors) && binaryColors[i])
-          ? binaryColors[i]
-          : null;
+        const colorResult = validateHexColor(
+          useCustomColors && Array.isArray(binaryColors) ? binaryColors[i] : null,
+          `Binary option ${i + 1} color`
+        );
+        if (colorResult.error) {
+          await transaction.rollback();
+          return { success: false, status: 400, message: colorResult.error };
+        }
         const pollOption = await PollOption.create(
-          { pollId: poll.id, text: opt.text, order: opt.order, color },
+          { pollId: poll.id, text: opt.text, order: opt.order, color: colorResult.value },
           { transaction }
         );
         createdOptions.push(pollOption);
@@ -318,7 +350,14 @@ const createPoll = async (userId, pollData) => {
     } else {
       for (let i = 0; i < options.length; i++) {
         const option = options[i];
-        const optionColor = (useCustomColors && option.color) ? option.color : null;
+        const optionColorResult = validateHexColor(
+          useCustomColors ? option.color : null,
+          `Option ${i + 1} color`
+        );
+        if (optionColorResult.error) {
+          await transaction.rollback();
+          return { success: false, status: 400, message: optionColorResult.error };
+        }
 
         // For simple polls, text is required
         if (typeResult.value === 'simple') {
@@ -338,7 +377,7 @@ const createPoll = async (userId, pollData) => {
               pollId: poll.id,
               text: optionTextResult.value,
               order: i,
-              color: optionColor
+              color: optionColorResult.value
             },
             { transaction }
           );
@@ -365,7 +404,7 @@ const createPoll = async (userId, pollData) => {
               displayText: option.displayText || null,
               answerType: answerTypeValue,
               order: i,
-              color: optionColor
+              color: optionColorResult.value
             },
             { transaction }
           );
@@ -910,6 +949,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       description,
       category,
       tags,
+      binaryStyle,
       deadline,
       status,
       locationId,
@@ -918,7 +958,11 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       resultsVisibility,
       hideCreator,
       options,
-      useCustomColors
+      useCustomColors,
+      allowUserContributions,
+      binaryColors,
+      commentsEnabled,
+      commentsLocked
     } = updateData;
 
     const poll = await Poll.findByPk(pollId, {
@@ -1081,10 +1125,11 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
     }
 
     const nextVoteRestriction = updates.voteRestriction ?? poll.voteRestriction;
+    const nextVisibility = updates.visibility ?? poll.visibility;
     const nextLocationId = updates.locationId !== undefined ? updates.locationId : poll.locationId;
-    if (nextVoteRestriction === 'locals_only' && !nextLocationId) {
+    if (requiresLocation(nextVisibility, nextVoteRestriction) && !nextLocationId) {
       await transaction.rollback();
-      return { success: false, status: 400, message: 'Location is required when vote restriction is locals_only.' };
+      return { success: false, status: 400, message: 'Location is required for local-only polls.' };
     }
 
     if (hideCreator !== undefined) {
@@ -1100,19 +1145,181 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
       updates.useCustomColors = useCustomColors === true;
     }
 
+    if (allowUserContributions !== undefined) {
+      const allowUserContributionsResult = normalizeBoolean(allowUserContributions, 'Allow user contributions');
+      if (allowUserContributionsResult.error) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: allowUserContributionsResult.error };
+      }
+      updates.allowUserContributions = allowUserContributionsResult.value;
+    }
+
+    if (commentsEnabled !== undefined) {
+      const commentsEnabledResult = normalizeBoolean(commentsEnabled, 'commentsEnabled');
+      if (commentsEnabledResult.error) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: commentsEnabledResult.error };
+      }
+      updates.commentsEnabled = commentsEnabledResult.value;
+    }
+
+    if (commentsLocked !== undefined) {
+      const commentsLockedResult = normalizeBoolean(commentsLocked, 'commentsLocked');
+      if (commentsLockedResult.error) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: commentsLockedResult.error };
+      }
+      updates.commentsLocked = commentsLockedResult.value;
+    }
+
     // Update the poll
     await poll.update(updates, { transaction });
 
-    // Update option colors if options array is provided (non-binary polls only)
-    if (poll.type !== 'binary' && Array.isArray(options)) {
-      for (const optionData of options) {
-        if (optionData.id && optionData.color !== undefined) {
-          await PollOption.update(
-            { color: optionData.color || null },
-            { where: { id: optionData.id, pollId }, transaction }
+    const nextUseCustomColors = updates.useCustomColors ?? poll.useCustomColors;
+
+    if (poll.type === 'binary') {
+      if (binaryStyle !== undefined && !BINARY_STYLES.includes(binaryStyle)) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: `Binary style must be one of: ${BINARY_STYLES.join(', ')}.` };
+      }
+
+      if (binaryStyle !== undefined || binaryColors !== undefined || useCustomColors !== undefined) {
+        const existingOptions = await PollOption.findAll({
+          where: { pollId },
+          order: [['order', 'ASC']],
+          transaction
+        });
+        const style = binaryStyle && BINARY_STYLES.includes(binaryStyle)
+          ? binaryStyle
+          : inferBinaryStyleFromOptions(existingOptions);
+        const binaryOptions = getBinaryOptionsForStyle(style);
+
+        for (let i = 0; i < binaryOptions.length; i++) {
+          const colorResult = validateHexColor(
+            nextUseCustomColors && Array.isArray(binaryColors) ? binaryColors[i] : null,
+            `Binary option ${i + 1} color`
           );
+          if (colorResult.error) {
+            await transaction.rollback();
+            return { success: false, status: 400, message: colorResult.error };
+          }
+
+          const payload = {
+            text: binaryOptions[i].text,
+            order: binaryOptions[i].order,
+            color: colorResult.value
+          };
+
+          if (existingOptions[i]) {
+            await existingOptions[i].update(payload, { transaction });
+          } else {
+            await PollOption.create({ pollId, ...payload }, { transaction });
+          }
         }
       }
+    } else if (options !== undefined) {
+      if (!Array.isArray(options)) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: 'Options must be an array.' };
+      }
+
+      const nextAllowUserContributions = updates.allowUserContributions ?? poll.allowUserContributions;
+      const minOptionsRequired = nextAllowUserContributions ? 0 : 2;
+      const submittedOptions = options.filter(option => option && typeof option === 'object');
+      if (submittedOptions.length < minOptionsRequired) {
+        await transaction.rollback();
+        return { success: false, status: 400, message: 'At least 2 options are required.' };
+      }
+
+      const existingOptions = await PollOption.findAll({ where: { pollId }, transaction });
+      const existingOptionIds = new Set(existingOptions.map(option => option.id));
+      const keptOptionIds = [];
+
+      for (let i = 0; i < submittedOptions.length; i++) {
+        const optionData = submittedOptions[i];
+        const optionColorResult = validateHexColor(
+          nextUseCustomColors ? optionData.color : null,
+          `Option ${i + 1} color`
+        );
+        if (optionColorResult.error) {
+          await transaction.rollback();
+          return { success: false, status: 400, message: optionColorResult.error };
+        }
+
+        let optionText = null;
+        if (poll.type === 'simple') {
+          const optionTextResult = normalizeRequiredText(
+            optionData.text,
+            `Option ${i + 1} text`,
+            OPTION_TEXT_MIN_LENGTH,
+            OPTION_TEXT_MAX_LENGTH
+          );
+          if (optionTextResult.error) {
+            await transaction.rollback();
+            return { success: false, status: 400, message: optionTextResult.error };
+          }
+          optionText = optionTextResult.value;
+        } else {
+          const optionTextResult = normalizeOptionalText(
+            optionData.text,
+            `Option ${i + 1} text`,
+            null,
+            OPTION_TEXT_MAX_LENGTH
+          );
+          if (optionTextResult.error) {
+            await transaction.rollback();
+            return { success: false, status: 400, message: optionTextResult.error };
+          }
+          optionText = optionTextResult.value;
+        }
+
+        let answerTypeValue = null;
+        if (poll.type === 'complex' && optionData.answerType) {
+          const answerTypeResult = normalizeEnum(optionData.answerType, ANSWER_TYPES, 'Answer type');
+          if (answerTypeResult.error) {
+            await transaction.rollback();
+            return { success: false, status: 400, message: answerTypeResult.error };
+          }
+          answerTypeValue = answerTypeResult.value;
+        }
+
+        const optionPayload = {
+          text: optionText,
+          photoUrl: poll.type === 'complex' ? (optionData.photoUrl || null) : null,
+          linkUrl: poll.type === 'complex' ? (optionData.linkUrl || null) : null,
+          displayText: poll.type === 'complex' ? (optionData.displayText || null) : null,
+          answerType: answerTypeValue,
+          order: i,
+          color: optionColorResult.value
+        };
+
+        if (optionData.id !== undefined && optionData.id !== null) {
+          const optionIdResult = normalizeInteger(optionData.id, `Option ${i + 1} ID`, 1);
+          if (optionIdResult.error || !existingOptionIds.has(optionIdResult.value)) {
+            await transaction.rollback();
+            return { success: false, status: 400, message: 'Invalid poll option.' };
+          }
+
+          await PollOption.update(optionPayload, {
+            where: { id: optionIdResult.value, pollId },
+            transaction
+          });
+          keptOptionIds.push(optionIdResult.value);
+        } else {
+          const createdOption = await PollOption.create({ pollId, ...optionPayload }, { transaction });
+          keptOptionIds.push(createdOption.id);
+        }
+      }
+
+      await PollOption.destroy({
+        where: {
+          pollId,
+          ...(keptOptionIds.length > 0 ? { id: { [Op.notIn]: keptOptionIds } } : {})
+        },
+        transaction
+      });
+    } else if (useCustomColors === false) {
+      await PollOption.update({ color: null }, { where: { pollId }, transaction });
     }
 
     // Update LocationLink if locationId changed
