@@ -1,7 +1,7 @@
 'use strict';
 
 const crypto = require('crypto');
-const { Poll, PollOption, PollVote, Comment, User, Location, Organization, LocationLink, Tag, TaggableItem, OrganizationMember, sequelize } = require('../models');
+const { Poll, PollOption, PollVote, Comment, User, Location, Organization, LocationLink, Tag, TaggableItem, OrganizationMember, MediaAsset, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const {
   normalizeRequiredText,
@@ -121,6 +121,42 @@ const hasActiveOrgMembership = async (organizationId, userId) => {
   return Boolean(orgMembership);
 };
 
+const resolvePollOptionMedia = async (option, userId, userRole) => {
+  const input = option && typeof option === 'object' ? option : {};
+  const mediaAssetIdResult = normalizeInteger(input.mediaAssetId, 'Option media asset id', 1);
+  const hasMediaAssetId = input.mediaAssetId !== undefined && input.mediaAssetId !== null && input.mediaAssetId !== '';
+
+  if (hasMediaAssetId && mediaAssetIdResult.error) {
+    return { error: mediaAssetIdResult.error };
+  }
+
+  if (!hasMediaAssetId) {
+    return {
+      mediaAssetId: null,
+      photoUrl: input.photoUrl || null,
+    };
+  }
+
+  const asset = await MediaAsset.findByPk(mediaAssetIdResult.value, {
+    attributes: ['id', 'uploadedByUserId', 'usageType', 'status', 'deletedAt', 'url', 'variants'],
+  });
+  if (!asset || asset.deletedAt || asset.status !== 'active') {
+    return { error: 'Selected option image is not available.' };
+  }
+
+  const userCanManageAny = userRole === 'admin' || userRole === 'moderator';
+  const canUseShared = ['admin', 'moderator', 'editor'].includes(userRole) && asset.usageType === 'shared';
+  if (!userCanManageAny && asset.uploadedByUserId !== userId && !canUseShared) {
+    return { error: 'You do not have permission to use this media asset.' };
+  }
+
+  const optionPhotoUrl = asset.variants?.thumbnail?.url || asset.variants?.articleCover?.url || asset.url || null;
+  return {
+    mediaAssetId: asset.id,
+    photoUrl: optionPhotoUrl,
+  };
+};
+
 /**
  * Returns the poll locationIds that `user` may access for locals_only polls.
  *   - 'all'  → admin user, bypass all location checks
@@ -153,6 +189,8 @@ const createPoll = async (userId, pollData) => {
   const transaction = await sequelize.transaction();
 
   try {
+    const creatorUser = await User.findByPk(userId, { attributes: ['id', 'role'], transaction });
+    const creatorRole = creatorUser?.role || 'viewer';
     const {
       title,
       description,
@@ -384,6 +422,11 @@ const createPoll = async (userId, pollData) => {
 
           createdOptions.push(pollOption);
         } else {
+          const mediaResolution = await resolvePollOptionMedia(option, userId, creatorRole);
+          if (mediaResolution.error) {
+            await transaction.rollback();
+            return { success: false, status: 400, message: mediaResolution.error };
+          }
           // For complex polls, answerType is optional
           let answerTypeValue = null;
           if (option.answerType) {
@@ -399,7 +442,8 @@ const createPoll = async (userId, pollData) => {
             {
               pollId: poll.id,
               text: option.text || null,
-              photoUrl: option.photoUrl || null,
+              mediaAssetId: mediaResolution.mediaAssetId,
+              photoUrl: mediaResolution.photoUrl,
               linkUrl: option.linkUrl || null,
               displayText: option.displayText || null,
               answerType: answerTypeValue,
@@ -442,7 +486,7 @@ const createPoll = async (userId, pollData) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
+          attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
         },
         {
           model: Location,
@@ -691,7 +735,7 @@ const getAllPolls = async (filters, user, clientIp, userAgent) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
+          attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,
@@ -819,7 +863,7 @@ const getPollById = async (pollId, user, clientIp, userAgent) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
+          attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,
@@ -1283,9 +1327,18 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
           answerTypeValue = answerTypeResult.value;
         }
 
+        const mediaResolution = poll.type === 'complex'
+          ? await resolvePollOptionMedia(optionData, userId, userRole)
+          : { mediaAssetId: null, photoUrl: null };
+        if (mediaResolution.error) {
+          await transaction.rollback();
+          return { success: false, status: 400, message: mediaResolution.error };
+        }
+
         const optionPayload = {
           text: optionText,
-          photoUrl: poll.type === 'complex' ? (optionData.photoUrl || null) : null,
+          mediaAssetId: poll.type === 'complex' ? mediaResolution.mediaAssetId : null,
+          photoUrl: poll.type === 'complex' ? mediaResolution.photoUrl : null,
           linkUrl: poll.type === 'complex' ? (optionData.linkUrl || null) : null,
           displayText: poll.type === 'complex' ? (optionData.displayText || null) : null,
           answerType: answerTypeValue,
@@ -1366,7 +1419,7 @@ const updatePoll = async (pollId, userId, userRole, updateData) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
+          attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color']
         },
         {
           model: Location,
@@ -1676,7 +1729,9 @@ const votePoll = async (pollId, optionId, userId, userRole, clientIp, userAgent)
  */
 const addPollOption = async (pollId, userId, optionData) => {
   try {
-    const { text, photoUrl, linkUrl, displayText, answerType, color } = optionData;
+    const { text, photoUrl, linkUrl, displayText, answerType, color, mediaAssetId } = optionData;
+    const optionUser = await User.findByPk(userId, { attributes: ['id', 'role'] });
+    const optionUserRole = optionUser?.role || 'viewer';
 
     const poll = await Poll.findByPk(pollId, {
       include: [
@@ -1735,8 +1790,14 @@ const addPollOption = async (pollId, userId, optionData) => {
         answerTypeValue = answerTypeResult.value;
       }
 
+      const mediaResolution = await resolvePollOptionMedia({ mediaAssetId, photoUrl }, userId, optionUserRole);
+      if (mediaResolution.error) {
+        return { success: false, status: 400, message: mediaResolution.error };
+      }
+
       newOptionData.text = text || null;
-      newOptionData.photoUrl = photoUrl || null;
+      newOptionData.mediaAssetId = mediaResolution.mediaAssetId;
+      newOptionData.photoUrl = mediaResolution.photoUrl;
       newOptionData.linkUrl = linkUrl || null;
       newOptionData.displayText = displayText || null;
       newOptionData.answerType = answerTypeValue;
@@ -1776,7 +1837,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
+          attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,
@@ -1890,6 +1951,7 @@ const getResults = async (pollId, user, clientIp, userAgent) => {
       return {
         id: option.id,
         text: option.text,
+        mediaAssetId: option.mediaAssetId || null,
         photoUrl: option.photoUrl,
         linkUrl: option.linkUrl,
         displayText: option.displayText,
@@ -1983,7 +2045,7 @@ const getMyVotedPolls = async (userId, page, limit) => {
             {
               model: PollOption,
               as: 'options',
-              attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
+              attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
               include: [
                 {
                   model: PollVote,
@@ -2067,7 +2129,7 @@ const exportPoll = async (pollId, userId, userRole) => {
         {
           model: PollOption,
           as: 'options',
-          attributes: ['id', 'text', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
+          attributes: ['id', 'text', 'mediaAssetId', 'photoUrl', 'linkUrl', 'displayText', 'answerType', 'order', 'color'],
           include: [
             {
               model: PollVote,
@@ -2106,6 +2168,7 @@ const exportPoll = async (pollId, userId, userRole) => {
       return {
         id: option.id,
         text: option.text,
+        mediaAssetId: option.mediaAssetId || null,
         photoUrl: option.photoUrl || null,
         linkUrl: option.linkUrl || null,
         displayText: option.displayText || null,

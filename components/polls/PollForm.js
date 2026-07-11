@@ -10,7 +10,7 @@ import CascadingLocationSelector from '@/components/ui/CascadingLocationSelector
 import TagInput from '@/components/ui/TagInput';
 import Tooltip from '@/components/ui/Tooltip';
 import ConfirmDialog from '@/components/ui/ConfirmDialog';
-import { locationAPI, tagAPI } from '@/lib/api';
+import { locationAPI, mediaAPI, tagAPI } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import articleCategories from '@/config/articleCategories.json';
 
@@ -68,13 +68,21 @@ export default function PollForm({
   const hasAutoFilledLocation = useRef(false);
 
   const [options, setOptions] = useState([
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#3b82f6' },
-    { text: '', photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#10b981' },
+    { text: '', mediaAssetId: null, photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#3b82f6' },
+    { text: '', mediaAssetId: null, photoUrl: '', linkUrl: '', displayText: '', answerType: 'custom', color: '#10b981' },
   ]);
 
   const [imageErrors, setImageErrors] = useState({});
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [selectedLocationName, setSelectedLocationName] = useState('');
+  const [mediaLibrary, setMediaLibrary] = useState([]);
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [mediaQuota, setMediaQuota] = useState(null);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaError, setMediaError] = useState('');
+  const [uploadingOptionIndex, setUploadingOptionIndex] = useState(null);
+  const [mediaTargetIndex, setMediaTargetIndex] = useState(0);
+  const mediaUploadRef = useRef(null);
 
   // Initialize form data from poll prop (edit mode)
   useEffect(() => {
@@ -105,6 +113,7 @@ export default function PollForm({
         setOptions(poll.options.map(opt => ({
           id: opt.id,
           text: opt.text || '',
+          mediaAssetId: opt.mediaAssetId || null,
           photoUrl: opt.photoUrl || '',
           linkUrl: opt.linkUrl || '',
           displayText: opt.displayText || '',
@@ -114,6 +123,32 @@ export default function PollForm({
       }
     }
   }, [poll]);
+
+  const loadMediaLibrary = useCallback(async (searchTerm = mediaSearch) => {
+    if (formData.type !== 'complex') return;
+    setMediaLoading(true);
+    setMediaError('');
+    try {
+      const response = await mediaAPI.list({
+        usageType: 'shared',
+        entityType: 'shared',
+        shared: 'true',
+        search: searchTerm || undefined,
+        limit: 18,
+      });
+      setMediaLibrary(response.media || []);
+      setMediaQuota(response.quota || null);
+    } catch (error) {
+      setMediaError(error.message || 'Αποτυχία φόρτωσης βιβλιοθήκης πολυμέσων.');
+    } finally {
+      setMediaLoading(false);
+    }
+  }, [formData.type, mediaSearch]);
+
+  useEffect(() => {
+    if (formData.type !== 'complex') return;
+    loadMediaLibrary();
+  }, [formData.type, loadMediaLibrary]);
 
   useEffect(() => {
     if (!hasAutoFilledLocation.current && mode === 'create' && user?.homeLocationId && formData.locationId === null) {
@@ -191,6 +226,7 @@ export default function PollForm({
     const nextColor = DEFAULT_PALETTE[options.length % DEFAULT_PALETTE.length];
     setOptions(prev => [...prev, {
       text: '',
+      mediaAssetId: null,
       photoUrl: '',
       linkUrl: '',
       displayText: '',
@@ -204,6 +240,7 @@ export default function PollForm({
     const minOptions = formData.allowUserContributions ? 0 : 2;
     if (options.length > minOptions) {
       setOptions(prev => prev.filter((_, i) => i !== index));
+      setMediaTargetIndex((prev) => Math.max(0, Math.min(prev, options.length - 2)));
       // Reindex error states after removal
       setImageErrors(prev => {
         const newErrors = {};
@@ -237,6 +274,52 @@ export default function PollForm({
 
   const handleImageLoad = (index) => {
     clearImageError(index);
+  };
+
+  const applyOptionMediaAsset = (index, asset) => {
+    if (!asset) return;
+    const photoUrl = asset?.variants?.thumbnail?.url || asset?.variants?.articleCover?.url || asset?.url || '';
+    setOptions((prev) => {
+      const next = [...prev];
+      next[index] = {
+        ...next[index],
+        mediaAssetId: asset.id || null,
+        photoUrl,
+      };
+      return next;
+    });
+    clearImageError(index);
+  };
+
+  const requestOptionUpload = (index) => {
+    if (!mediaUploadRef.current) return;
+    mediaUploadRef.current.dataset.index = String(index);
+    mediaUploadRef.current.click();
+  };
+
+  const handleOptionUpload = async (event) => {
+    const file = event.target.files?.[0];
+    const index = Number(event.target.dataset.index);
+    event.target.value = '';
+    if (!file || !Number.isInteger(index) || index < 0) return;
+
+    setUploadingOptionIndex(index);
+    setMediaError('');
+    try {
+      const response = await mediaAPI.upload(file, {
+        usageType: 'shared',
+        entityType: 'shared',
+      });
+      if (response.media) {
+        applyOptionMediaAsset(index, response.media);
+        setMediaQuota(response.quota || mediaQuota);
+        setMediaLibrary((prev) => [response.media, ...prev.filter((item) => item.id !== response.media.id)].slice(0, 18));
+      }
+    } catch (error) {
+      setMediaError(error.message || 'Αποτυχία ανεβάσματος εικόνας επιλογής.');
+    } finally {
+      setUploadingOptionIndex(null);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -629,10 +712,28 @@ export default function PollForm({
                           type="url"
                           name={`option-photoUrl-${index}`}
                           value={option.photoUrl}
-                          onChange={(e) => handleOptionChange(index, 'photoUrl', e.target.value)}
+                          onChange={(e) => {
+                            handleOptionChange(index, 'photoUrl', e.target.value);
+                            if (option.mediaAssetId) handleOptionChange(index, 'mediaAssetId', null);
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                           placeholder="https://example.com/image.png"
                         />
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => requestOptionUpload(index)}
+                            disabled={uploadingOptionIndex === index}
+                            className="rounded border border-gray-300 bg-white px-2 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                          >
+                            {uploadingOptionIndex === index ? 'Ανέβασμα...' : 'Ανέβασμα από βιβλιοθήκη'}
+                          </button>
+                          {option.mediaAssetId ? (
+                            <span className="rounded bg-green-100 px-2 py-1 text-xs text-green-800">
+                              Συνδεδεμένο asset #{option.mediaAssetId}
+                            </span>
+                          ) : null}
+                        </div>
                         {option.photoUrl && imageErrors[index] && (
                           <p className="mt-1 text-xs text-red-600">
                             Δεν ήταν δυνατή η φόρτωση της εικόνας
@@ -671,6 +772,85 @@ export default function PollForm({
         </div>
       </div>
       )}
+
+      {/* Submit Buttons */}
+      {formData.type === 'complex' && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h4 className="text-sm font-semibold text-gray-900">Βιβλιοθήκη πολυμέσων επιλογών</h4>
+            <button
+              type="button"
+              onClick={() => loadMediaLibrary()}
+              disabled={mediaLoading}
+              className="rounded border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+            >
+              {mediaLoading ? 'Φόρτωση...' : 'Ανανέωση'}
+            </button>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              type="search"
+              value={mediaSearch}
+              onChange={(e) => setMediaSearch(e.target.value)}
+              placeholder="Αναζήτηση εικόνων βιβλιοθήκης"
+              className="w-full sm:w-72 rounded border border-gray-300 px-3 py-1.5 text-sm"
+            />
+            <button
+              type="button"
+              onClick={() => loadMediaLibrary(mediaSearch)}
+              disabled={mediaLoading}
+              className="rounded bg-blue-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              Αναζήτηση
+            </button>
+            <select
+              value={mediaTargetIndex}
+              onChange={(e) => setMediaTargetIndex(Number(e.target.value) || 0)}
+              className="rounded border border-gray-300 px-2 py-1.5 text-xs"
+            >
+              {options.map((_, index) => (
+                <option key={index} value={index}>Εφαρμογή σε επιλογή {index + 1}</option>
+              ))}
+            </select>
+          </div>
+          {mediaQuota && (
+            <p className="text-xs text-gray-600">
+              Χώρος: {(mediaQuota.usedBytes / (1024 * 1024)).toFixed(1)}MB / {(mediaQuota.totalBytes / (1024 * 1024)).toFixed(1)}MB
+              {' '}({(Math.max(0, mediaQuota.remainingBytes || 0) / (1024 * 1024)).toFixed(1)}MB διαθέσιμα)
+            </p>
+          )}
+          {mediaError ? <AlertMessage message={mediaError} /> : null}
+          {mediaLibrary.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+              {mediaLibrary.map((asset) => {
+                const thumbUrl = asset?.variants?.thumbnail?.url || asset.url;
+                return (
+                  <button
+                    key={asset.id}
+                    type="button"
+                    onClick={() => {
+                      applyOptionMediaAsset(Math.max(0, Math.min(mediaTargetIndex, options.length - 1)), asset);
+                    }}
+                    title={asset.altText || asset.originalName || `Asset #${asset.id}`}
+                    className="overflow-hidden rounded border border-gray-200 hover:border-blue-400"
+                  >
+                    <Image src={thumbUrl} alt={asset.altText || 'Media asset'} width={80} height={80} className="h-16 w-full object-cover" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      <input
+        ref={mediaUploadRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+        data-index=""
+        className="hidden"
+        onChange={handleOptionUpload}
+      />
 
       {/* Submit Buttons */}
       <div className="flex gap-4 items-center">

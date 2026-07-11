@@ -22,6 +22,7 @@ export default function ArticleBannerImageField({
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState('');
+  const [quota, setQuota] = useState(null);
   const [search, setSearch] = useState('');
 
   const t = {
@@ -39,6 +40,7 @@ export default function ArticleBannerImageField({
     captionLabel: uiText.captionLabel || 'Caption',
     creditLabel: uiText.creditLabel || 'Credit',
     emptyLibrary: uiText.emptyLibrary || 'No media found for this search.',
+    quotaStatus: uiText.quotaStatus || 'Storage usage',
   };
 
   const emitFieldChange = (name, nextValue, type = 'text') => {
@@ -62,6 +64,7 @@ export default function ArticleBannerImageField({
     try {
       const response = await mediaAPI.list({ usageType: 'article_cover', shared: 'true', limit: 12, search });
       setMedia(response.media || []);
+      setQuota(response.quota || null);
     } catch (err) {
       setError(err.message || t.libraryError);
     } finally {
@@ -90,6 +93,7 @@ export default function ArticleBannerImageField({
       });
       if (response.media) {
         applyMediaAsset(response.media);
+        setQuota(response.quota || null);
         setMedia((current) => [response.media, ...current.filter((item) => item.id !== response.media.id)].slice(0, 12));
       }
     } catch (err) {
@@ -125,6 +129,11 @@ export default function ArticleBannerImageField({
             className="h-40 w-full object-cover"
           />
         </div>
+      )}
+      {quota && (
+        <p className="text-xs text-gray-500">
+          {t.quotaStatus}: {(Number(quota.usedBytes || 0) / (1024 * 1024)).toFixed(1)}MB / {(Number(quota.totalBytes || 0) / (1024 * 1024)).toFixed(1)}MB
+        </p>
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

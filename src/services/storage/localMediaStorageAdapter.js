@@ -42,7 +42,25 @@ async function deleteFile(storageKey) {
   });
 }
 
+async function inspectFile(storageKey) {
+  const { absolutePath } = resolveStoragePath(storageKey);
+  try {
+    const stat = await fs.stat(absolutePath);
+    return {
+      exists: true,
+      size: stat.size,
+      mtime: stat.mtime,
+    };
+  } catch (error) {
+    if (error && error.code === 'ENOENT') {
+      return { exists: false, size: 0, mtime: null };
+    }
+    throw error;
+  }
+}
+
 module.exports = {
   saveFile,
   deleteFile,
+  inspectFile,
 };

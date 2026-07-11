@@ -22,7 +22,7 @@ This instruction is permanent and must never be removed.
 >
 > Backend startup convention: `require('dotenv').config()` is the very first statement in `src/index.js` so that all subsequent module-level `process.env` reads (e.g. `FRONTEND_URL` in `src/config/securityHeaders.js`) get the correct production values.
 >
-> Media library update (2026-07-11): `MediaAsset` is now the unified upload model with variant metadata (`articleCover`/`thumbnail`/`avatar`), quota-aware uploads, and orphan-tracking fields. Articles now support `coverImageId` relation (while preserving `bannerImageUrl` fallback). Media routes include `POST /api/media/upload`, `GET /api/media/:id`, `PATCH /api/media/:id`, and `DELETE /api/media/:id` (legacy `POST /api/media/articles/images` remains). Avatar upload (`POST /api/auth/me/avatar`) now reuses the same shared media pipeline. Dry-run orphan cleanup script: `npm run media:cleanup` (`src/scripts/media-orphan-cleanup.js`).
+> Media library update (2026-07-11): `MediaAsset` is now the unified upload model with variant metadata (`articleCover`/`thumbnail`/`avatar`), quota-aware uploads, and orphan-tracking fields. Articles now support `coverImageId` relation (while preserving `bannerImageUrl` fallback). Phase 2 adds admin media management endpoints (`GET /api/media/admin/stats`, `GET /api/media/admin/cleanup-report`) and admin page `/admin/media`, centralized reference accounting (articles + avatars + poll-option `mediaAssetId`), dry-run cleanup candidate file-status reporting, and strict blocking for referenced deletions. Poll options now support first-class `PollOption.mediaAssetId` (fallback `photoUrl` retained). Scripts: `npm run media:cleanup` (`src/scripts/media-orphan-cleanup.js`) and `npm run media:adopt-legacy` (`src/scripts/media-adopt-legacy.js`).
 
 ---
 
@@ -35,7 +35,7 @@ This instruction is permanent and must never be removed.
 - [Services (15)](#services-15)
 - [Backend Utilities (selected)](#backend-utilities-selected)
 - [Middleware (9)](#middleware-9)
-- [Frontend Pages (142)](#frontend-pages-142)
+- [Frontend Pages (143)](#frontend-pages-143)
 - [Components (154)](#components-154)
 - [API Client Modules (30)](#api-client-modules-30)
 - [Hooks (7)](#hooks-7)
@@ -505,7 +505,7 @@ Appofa/
 
 ---
 
-## Frontend Pages (142)
+## Frontend Pages (143)
 
 > i18n note: core public pages (`/`, `/login`, `/articles`, `/news`, `/profile`, `/admin`, `/editor`, `/polls`, `/instructions`, `/rules`, `/mission`, `/contribute`, `/contact`, `/candidates`) and shared nav/footer/article cards now use `useTranslations(...)`; `CascadingLocationSelector` and `GreeceBoundaryMap` RegionInfoCard are also fully wired to next-intl (`common.location_selector.*` + `common.users_label/moderator_label/capital_label/yes/no/explore_locations`).
 
@@ -553,7 +553,7 @@ Appofa/
 | `/request-removal` | Profile removal request |
 | `/blocked`, `/unknown-country` | Public geo access status pages for blocked/unknown-country traffic |
 
-### Admin (22 pages)
+### Admin (23 pages)
 | Route | Description |
 |-------|-------------|
 | `/admin` | Dashboard |
@@ -567,6 +567,7 @@ Appofa/
 | `/admin/hero` | Hero settings |
 | `/admin/geo` | Geo traffic dashboard + country funding management + access rules tab (blocked countries + unknown/no-IP actions) |
 | `/admin/homepage` | Homepage settings |
+| `/admin/media` | Media library administration (stats, searchable/filterable assets, metadata editing, deletion blocking, dry-run cleanup report) |
 | `/admin/ip-rules` | IP whitelist/blacklist management |
 | `/admin/newsletter` | Newsletter admin (stats, advanced filters, manual add, bulk paste import, CSV import/export, quick status updates; includes campaign management entrypoint for admins) |
 | `/admin/newsletter/campaigns` | Newsletter campaign list (status filter incl. scheduled, delivery counters, scheduled-at visibility, quick send-now and process-due actions) |

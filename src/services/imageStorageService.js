@@ -64,6 +64,15 @@ async function deleteMediaByStorageKey(storageKey) {
   await adapter.deleteFile(storageKey);
 }
 
+async function inspectMediaStorageKey(storageKey) {
+  if (!storageKey) return { exists: false, size: 0, mtime: null };
+  const adapter = getStorageAdapter();
+  if (typeof adapter.inspectFile !== 'function') {
+    return { exists: null, size: null, mtime: null };
+  }
+  return adapter.inspectFile(storageKey);
+}
+
 /**
  * Save a user avatar WebP buffer.
  * @param {Buffer} buffer
@@ -89,5 +98,6 @@ module.exports = {
   saveLocationImage,
   saveMediaVariant,
   deleteMediaByStorageKey,
+  inspectMediaStorageKey,
   buildMediaStorageKey,
 };

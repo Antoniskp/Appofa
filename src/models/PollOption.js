@@ -34,6 +34,15 @@ const PollOption = sequelize.define('PollOption', {
     type: DataTypes.STRING,
     allowNull: true
   },
+  mediaAssetId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+    references: {
+      model: 'MediaAssets',
+      key: 'id'
+    },
+    onDelete: 'SET NULL'
+  },
   answerType: {
     type: DataTypes.ENUM('person', 'article', 'custom'),
     allowNull: true
@@ -62,6 +71,9 @@ const PollOption = sequelize.define('PollOption', {
   indexes: [
     {
       fields: ['pollId']
+    },
+    {
+      fields: ['mediaAssetId']
     }
   ]
 });

@@ -1,5 +1,5 @@
 const request = require('supertest');
-const { sequelize, User, Poll, PollOption, PollVote, Location, LocationLink, Organization, Comment } = require('../src/models');
+const { sequelize, User, Poll, PollOption, PollVote, Location, LocationLink, Organization, Comment, MediaAsset } = require('../src/models');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -28,6 +28,7 @@ describe('Poll API Tests', () => {
   let regularUserId;
   let testPollId;
   let testPollOptionId;
+  let testMediaAssetId;
 
   const csrfHeaderFor = (token, userId) => {
     const { storeCsrfToken } = require('../src/utils/csrf');
@@ -76,6 +77,33 @@ describe('Poll API Tests', () => {
 
     const regularUser = await User.findOne({ where: { email: 'user@test.com' } });
     regularUserId = regularUser.id;
+
+    const mediaAsset = await MediaAsset.create({
+      storageProvider: 'local',
+      storageKey: 'media/test-poll-option.webp',
+      url: '/uploads/media/test-poll-option.webp',
+      variants: {
+        thumbnail: {
+          url: '/uploads/media/test-poll-option.webp',
+          storageKey: 'media/test-poll-option.webp',
+          width: 64,
+          height: 64,
+          size: 128,
+          mimeType: 'image/webp',
+        },
+      },
+      originalName: 'test-poll-option.webp',
+      mimeType: 'image/webp',
+      detectedMimeType: 'image/webp',
+      size: 128,
+      width: 64,
+      height: 64,
+      usageType: 'shared',
+      entityType: 'shared',
+      status: 'active',
+      uploadedByUserId: adminUserId,
+    });
+    testMediaAssetId = mediaAsset.id;
 
     // Login admin
     const adminLogin = await request(app)
@@ -325,6 +353,41 @@ describe('Poll API Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data.type).toBe('complex');
       expect(response.body.data.options).toHaveLength(2);
+    });
+
+    test('should create complex poll option with mediaAssetId', async () => {
+      const csrfToken = 'test-csrf-token-complex-media-asset';
+      const headers = csrfHeaderFor(csrfToken, adminUserId);
+
+      const response = await request(app)
+        .post('/api/polls')
+        .set('Cookie', [`auth_token=${adminToken}`, ...headers.Cookie])
+        .set('x-csrf-token', csrfToken)
+        .send({
+          title: 'Complex with media asset option',
+          description: 'Checks media asset linkage for options',
+          type: 'complex',
+          allowUserContributions: false,
+          voteRestriction: 'authenticated',
+          visibility: 'public',
+          resultsVisibility: 'after_vote',
+          options: [
+            {
+              text: 'Media option',
+              mediaAssetId: testMediaAssetId,
+              answerType: 'custom'
+            },
+            {
+              text: 'Regular option',
+              answerType: 'custom'
+            }
+          ]
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.options[0].mediaAssetId).toBe(testMediaAssetId);
+      expect(response.body.data.options[0].photoUrl).toBe('/uploads/media/test-poll-option.webp');
     });
 
     test('should create poll with future deadline', async () => {

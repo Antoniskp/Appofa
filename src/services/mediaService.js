@@ -1,14 +1,15 @@
 'use strict';
 
-const { Op, fn, col, where } = require('sequelize');
-const { MediaAsset, User, Article } = require('../models');
+const { Op, fn, col, where, Sequelize } = require('sequelize');
+const { MediaAsset, User, Article, PollOption } = require('../models');
 const { processMediaImage } = require('./imageProcessingService');
-const { saveMediaVariant, deleteMediaByStorageKey } = require('./imageStorageService');
+const { saveMediaVariant, deleteMediaByStorageKey, inspectMediaStorageKey } = require('./imageStorageService');
 
 const UPLOAD_ROLES = new Set(['admin', 'moderator', 'editor']);
 const MANAGE_ALL_ROLES = new Set(['admin', 'moderator']);
 const MAX_IMAGE_BYTES = Math.max(1, Number(process.env.MEDIA_MAX_FILE_BYTES || (8 * 1024 * 1024)));
 const USER_QUOTA_BYTES = Math.max(MAX_IMAGE_BYTES, Number(process.env.MEDIA_USER_QUOTA_BYTES || (200 * 1024 * 1024)));
+const MAX_METADATA_TAGS = 20;
 
 const MEDIA_USAGE_TYPES = MediaAsset.MEDIA_USAGE_TYPES || ['shared', 'article_cover', 'article_body', 'avatar'];
 const MEDIA_ENTITY_TYPES = MediaAsset.MEDIA_ENTITY_TYPES || ['shared', 'article', 'avatar'];
@@ -39,6 +40,14 @@ function normalizeTags(tags) {
   return Array.from(dedup);
 }
 
+function parseTagsWithLimit(tags) {
+  const normalized = normalizeTags(tags);
+  return {
+    tags: normalized.slice(0, MAX_METADATA_TAGS),
+    exceedsLimit: normalized.length > MAX_METADATA_TAGS,
+  };
+}
+
 function normalizeUsageType(value, fallback = 'shared') {
   if (!value) return fallback;
   return MEDIA_USAGE_TYPES.includes(value) ? value : fallback;
@@ -58,6 +67,138 @@ async function getUserStorageUsage(userId) {
     },
   });
   return Number(total) || 0;
+}
+
+async function getUserQuotaSnapshot(userId) {
+  const usedBytes = await getUserStorageUsage(userId);
+  return {
+    usedBytes,
+    totalBytes: USER_QUOTA_BYTES,
+    remainingBytes: Math.max(0, USER_QUOTA_BYTES - usedBytes),
+  };
+}
+
+function getAssetVariantRecords(asset) {
+  const variants = asset?.variants || {};
+  const variantEntries = Object.entries(variants).map(([name, details]) => ({
+    name,
+    storageKey: details?.storageKey || null,
+    url: details?.url || null,
+    size: Number(details?.size) || 0,
+  }));
+
+  if (!variantEntries.some((entry) => entry.storageKey === asset.storageKey) && asset.storageKey) {
+    variantEntries.push({
+      name: 'primary',
+      storageKey: asset.storageKey,
+      url: asset.url || null,
+      size: Number(asset.size) || 0,
+    });
+  }
+
+  return variantEntries;
+}
+
+function getAssetVariantUrls(asset) {
+  return Array.from(new Set(
+    getAssetVariantRecords(asset)
+      .map((entry) => entry.url)
+      .filter(Boolean)
+      .concat(asset?.url ? [asset.url] : [])
+  ));
+}
+
+async function getReferenceSummaryForAssets(assets = []) {
+  const assetList = assets.filter(Boolean);
+  const ids = assetList.map((asset) => Number(asset.id)).filter(Boolean);
+  const summaryById = {};
+  for (const id of ids) {
+    summaryById[id] = {
+      total: 0,
+      byType: { article_cover: 0, user_avatar: 0, poll_option: 0 },
+      items: [],
+    };
+  }
+
+  if (ids.length === 0) return summaryById;
+
+  const coverArticles = await Article.findAll({
+    where: { coverImageId: { [Op.in]: ids } },
+    attributes: ['id', 'title', 'coverImageId'],
+  });
+  for (const article of coverArticles) {
+    const entry = summaryById[article.coverImageId];
+    if (!entry) continue;
+    entry.total += 1;
+    entry.byType.article_cover += 1;
+    entry.items.push({
+      type: 'article_cover',
+      id: article.id,
+      label: article.title || `Article #${article.id}`,
+    });
+  }
+
+  const pollOptionRefs = await PollOption.findAll({
+    where: { mediaAssetId: { [Op.in]: ids } },
+    attributes: ['id', 'pollId', 'text', 'mediaAssetId'],
+  });
+  for (const option of pollOptionRefs) {
+    const entry = summaryById[option.mediaAssetId];
+    if (!entry) continue;
+    entry.total += 1;
+    entry.byType.poll_option += 1;
+    entry.items.push({
+      type: 'poll_option',
+      id: option.id,
+      pollId: option.pollId,
+      label: option.text || `Option #${option.id}`,
+    });
+  }
+
+  const urlToAssetIds = new Map();
+  for (const asset of assetList) {
+    const urls = getAssetVariantUrls(asset);
+    for (const url of urls) {
+      if (!urlToAssetIds.has(url)) urlToAssetIds.set(url, new Set());
+      urlToAssetIds.get(url).add(asset.id);
+    }
+  }
+
+  const avatarUrls = Array.from(urlToAssetIds.keys());
+  if (avatarUrls.length > 0) {
+    const avatarUsers = await User.findAll({
+      where: {
+        [Op.or]: [
+          { avatar: { [Op.in]: avatarUrls } },
+          { avatarUrl: { [Op.in]: avatarUrls } },
+        ],
+      },
+      attributes: ['id', 'username', 'avatar', 'avatarUrl'],
+    });
+
+    for (const user of avatarUsers) {
+      const linkedUrls = [user.avatar, user.avatarUrl].filter(Boolean);
+      const linkedAssetIds = new Set();
+      for (const url of linkedUrls) {
+        const candidates = urlToAssetIds.get(url);
+        if (!candidates) continue;
+        for (const id of candidates) linkedAssetIds.add(id);
+      }
+      for (const id of linkedAssetIds) {
+        const entry = summaryById[id];
+        if (!entry) continue;
+        entry.total += 1;
+        entry.byType.user_avatar += 1;
+        entry.items.push({
+          type: 'user_avatar',
+          id: user.id,
+          label: user.username || `User #${user.id}`,
+        });
+      }
+    }
+  }
+
+  return summaryById;
 }
 
 function serializeMediaAsset(asset) {
@@ -89,6 +230,9 @@ function serializeMediaAsset(asset) {
     isOrphaned: Boolean(data.isOrphaned),
     orphanedAt: data.orphanedAt,
     lastReferencedAt: data.lastReferencedAt,
+    referenceCount: Number(data.referenceCount) || 0,
+    referenceSummary: data.referenceSummary || null,
+    storageStatus: data.storageStatus || null,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   };
@@ -166,6 +310,14 @@ async function uploadMediaAsset(file, user, metadata = {}, options = {}) {
 
   const usageType = normalizeUsageType(metadata.usageType, 'shared');
   const entityType = normalizeEntityType(metadata.entityType, usageType === 'avatar' ? 'avatar' : (usageType.startsWith('article') ? 'article' : 'shared'));
+  const normalizedTags = parseTagsWithLimit(metadata.tags);
+  if (normalizedTags.exceedsLimit) {
+    return {
+      success: false,
+      status: 400,
+      message: `A maximum of ${MAX_METADATA_TAGS} media tags is allowed.`,
+    };
+  }
 
   const estimatedStoredBytes = Object.values(processed.variants || {}).reduce((sum, variant) => sum + (Number(variant?.size) || 0), 0);
   if ((currentUsage + estimatedStoredBytes) > USER_QUOTA_BYTES) {
@@ -198,7 +350,7 @@ async function uploadMediaAsset(file, user, metadata = {}, options = {}) {
     altText: normalizeOptionalText(metadata.altText, 255),
     caption: normalizeOptionalText(metadata.caption, 500),
     credit: normalizeOptionalText(metadata.credit, 255),
-    tags: normalizeTags(metadata.tags),
+    tags: normalizedTags.tags,
     metadata: (metadata.metadata && typeof metadata.metadata === 'object') ? metadata.metadata : null,
     checksumSha256: processed.checksumSha256,
     uploadedByUserId: user.id,
@@ -246,11 +398,35 @@ async function listMediaAssets(query = {}, user = null) {
   }
 
   const page = Math.max(1, parseInt(query.page, 10) || 1);
-  const limit = Math.min(60, Math.max(1, parseInt(query.limit, 10) || 24));
+  const limit = Math.min(100, Math.max(1, parseInt(query.limit, 10) || 24));
+  const isAdminViewer = !!user && user.role === 'admin';
 
   const whereClause = buildListWhere(query, user);
   if (query.tag) {
     whereClause.tags = { [Op.like]: `%${String(query.tag).trim().toLowerCase()}%` };
+  }
+  if (query.tags) {
+    whereClause.tags = { [Op.like]: `%${String(query.tags).trim().toLowerCase()}%` };
+  }
+
+  if (query.referenced === 'true') whereClause.isOrphaned = false;
+  if (query.orphaned === 'true') whereClause.isOrphaned = true;
+
+  if (isAdminViewer && query.uploaderId) {
+    const uploaderId = Number(query.uploaderId);
+    if (Number.isInteger(uploaderId) && uploaderId > 0) {
+      whereClause.uploadedByUserId = uploaderId;
+    }
+  }
+
+  const fromDate = query.dateFrom ? new Date(query.dateFrom) : null;
+  const toDate = query.dateTo ? new Date(query.dateTo) : null;
+  if (fromDate && !Number.isNaN(fromDate.getTime())) {
+    whereClause.createdAt = { ...(whereClause.createdAt || {}), [Op.gte]: fromDate };
+  }
+  if (toDate && !Number.isNaN(toDate.getTime())) {
+    toDate.setUTCHours(23, 59, 59, 999);
+    whereClause.createdAt = { ...(whereClause.createdAt || {}), [Op.lte]: toDate };
   }
 
   if (query.search) {
@@ -268,6 +444,9 @@ async function listMediaAssets(query = {}, user = null) {
     ];
   }
 
+  const sortBy = ['createdAt', 'size', 'updatedAt'].includes(query.sortBy) ? query.sortBy : 'createdAt';
+  const sortDir = String(query.sortDir || 'desc').toLowerCase() === 'asc' ? 'ASC' : 'DESC';
+
   const { count, rows } = await MediaAsset.findAndCountAll({
     where: whereClause,
     include: [{
@@ -276,26 +455,31 @@ async function listMediaAssets(query = {}, user = null) {
       attributes: ['id', 'username', 'avatar', 'avatarColor'],
       required: false,
     }],
-    order: [['createdAt', 'DESC'], ['id', 'DESC']],
+    order: [[sortBy, sortDir], ['id', 'DESC']],
     limit,
     offset: (page - 1) * limit,
   });
 
-  const usedBytes = await getUserStorageUsage(user.id);
+  const referenceSummaryById = await getReferenceSummaryForAssets(rows);
+  const serialized = rows.map((asset) => {
+    const summary = referenceSummaryById[asset.id] || { total: 0, byType: {}, items: [] };
+    const item = serializeMediaAsset(asset);
+    item.referenceCount = summary.total;
+    item.referenceSummary = summary.byType;
+    return item;
+  });
+  const quota = await getUserQuotaSnapshot(user.id);
 
   return {
     success: true,
-    media: rows.map(serializeMediaAsset),
+    media: serialized,
     pagination: {
       total: count,
       page,
       limit,
       totalPages: Math.ceil(count / limit),
     },
-    quota: {
-      usedBytes,
-      totalBytes: USER_QUOTA_BYTES,
-    },
+    quota,
   };
 }
 
@@ -323,7 +507,15 @@ async function getMediaAssetById(id, user) {
     return { success: false, status: 403, message: 'You do not have permission to access this media.' };
   }
 
-  return { success: true, media: serializeMediaAsset(asset) };
+  const referenceSummaryById = await getReferenceSummaryForAssets([asset]);
+  const summary = referenceSummaryById[asset.id] || { total: 0, byType: {}, items: [] };
+  const serialized = serializeMediaAsset(asset);
+  serialized.referenceCount = summary.total;
+  serialized.referenceSummary = summary.byType;
+  if (canManageAnyMedia(user)) {
+    serialized.references = summary.items;
+  }
+  return { success: true, media: serialized };
 }
 
 async function updateMediaAssetMetadata(id, user, payload = {}) {
@@ -339,7 +531,15 @@ async function updateMediaAssetMetadata(id, user, payload = {}) {
   asset.altText = normalizeOptionalText(payload.altText, 255);
   asset.caption = normalizeOptionalText(payload.caption, 500);
   asset.credit = normalizeOptionalText(payload.credit, 255);
-  asset.tags = normalizeTags(payload.tags);
+  const normalizedTags = parseTagsWithLimit(payload.tags);
+  if (normalizedTags.exceedsLimit) {
+    return {
+      success: false,
+      status: 400,
+      message: `A maximum of ${MAX_METADATA_TAGS} media tags is allowed.`,
+    };
+  }
+  asset.tags = normalizedTags.tags;
   if (payload.metadata === null || (payload.metadata && typeof payload.metadata === 'object')) {
     asset.metadata = payload.metadata;
   }
@@ -349,20 +549,8 @@ async function updateMediaAssetMetadata(id, user, payload = {}) {
 }
 
 async function getAssetReferenceCount(asset) {
-  const articleRefs = await Article.count({ where: { coverImageId: asset.id } });
-  const variantUrls = Object.values(asset.variants || {}).map((variant) => variant?.url).filter(Boolean);
-  const avatarRefs = variantUrls.length
-    ? await User.count({
-      where: {
-        [Op.or]: [
-          { avatarUrl: { [Op.in]: variantUrls } },
-          { avatar: { [Op.in]: variantUrls } },
-        ],
-      },
-    })
-    : 0;
-
-  return articleRefs + avatarRefs;
+  const summaryById = await getReferenceSummaryForAssets([asset]);
+  return summaryById[asset.id]?.total || 0;
 }
 
 async function softDeleteMediaAsset(asset) {
@@ -392,13 +580,17 @@ async function deleteMediaAsset(id, user, options = {}) {
     return { success: false, status: 403, message: 'You do not have permission to delete this media.' };
   }
 
-  const referenceCount = await getAssetReferenceCount(asset);
-  if (referenceCount > 0 && !(options.force === true && canManageAnyMedia(user))) {
+  const referenceSummaryById = await getReferenceSummaryForAssets([asset]);
+  const summary = referenceSummaryById[asset.id] || { total: 0, byType: {}, items: [] };
+  const referenceCount = summary.total;
+  if (referenceCount > 0) {
     return {
       success: false,
       status: 409,
-      message: 'Media is currently referenced and cannot be deleted safely.',
+      message: 'Referenced media cannot be force-deleted. Detach references first to avoid broken content.',
       references: referenceCount,
+      referenceSummary: summary.byType,
+      blockers: summary.items,
     };
   }
 
@@ -424,10 +616,11 @@ async function uploadAvatarImage(file, user, metadata = {}) {
 
 async function markOrphanMediaAssets() {
   const activeAssets = await MediaAsset.findAll({ where: { deletedAt: null, status: 'active' } });
+  const referenceSummaryById = await getReferenceSummaryForAssets(activeAssets);
   let orphanedCount = 0;
 
   for (const asset of activeAssets) {
-    const references = await getAssetReferenceCount(asset);
+    const references = referenceSummaryById[asset.id]?.total || 0;
     const isOrphaned = references === 0;
     asset.isOrphaned = isOrphaned;
     asset.orphanedAt = isOrphaned ? (asset.orphanedAt || new Date()) : null;
@@ -451,18 +644,105 @@ async function cleanupOrphanMediaAssets({ dryRun = true, olderThanDays = 14 } = 
     order: [['orphanedAt', 'ASC']],
   });
 
+  const reportCandidates = [];
+  for (const asset of candidates) {
+    const variants = getAssetVariantRecords(asset);
+    const files = await Promise.all(
+      variants
+        .filter((variant) => variant.storageKey)
+        .map(async (variant) => ({
+          variant: variant.name,
+          storageKey: variant.storageKey,
+          ...(await inspectMediaStorageKey(variant.storageKey)),
+        }))
+    );
+    reportCandidates.push({
+      id: asset.id,
+      url: asset.url,
+      orphanedAt: asset.orphanedAt,
+      fileStatus: files,
+    });
+  }
+
   if (dryRun) {
-    return {
-      dryRun: true,
-      candidates: candidates.map((asset) => ({ id: asset.id, url: asset.url, orphanedAt: asset.orphanedAt })),
-    };
+    return { dryRun: true, candidates: reportCandidates };
   }
 
   for (const asset of candidates) {
     await softDeleteMediaAsset(asset);
   }
 
-  return { dryRun: false, deleted: candidates.length };
+  return { dryRun: false, deleted: candidates.length, candidates: reportCandidates };
+}
+
+async function getAdminMediaStats(user) {
+  if (!user) return { success: false, status: 401, message: 'Authentication required.' };
+  if (user.role !== 'admin') return { success: false, status: 403, message: 'Admin access required.' };
+
+  const whereActive = { status: 'active', deletedAt: null };
+  const [totalCount, totalBytes, orphanCount, orphanBytes] = await Promise.all([
+    MediaAsset.count({ where: whereActive }),
+    MediaAsset.sum('size', { where: whereActive }),
+    MediaAsset.count({ where: { ...whereActive, isOrphaned: true } }),
+    MediaAsset.sum('size', { where: { ...whereActive, isOrphaned: true } }),
+  ]);
+
+  const topAssets = await MediaAsset.findAll({
+    where: whereActive,
+    attributes: ['id', 'url', 'size', 'createdAt', 'uploadedByUserId', 'usageType', 'entityType', 'originalName'],
+    include: [{ model: User, as: 'uploadedBy', attributes: ['id', 'username'], required: false }],
+    order: [['size', 'DESC'], ['id', 'ASC']],
+    limit: 5,
+  });
+
+  const topUploadersRaw = await MediaAsset.findAll({
+    where: whereActive,
+    attributes: [
+      'uploadedByUserId',
+      [Sequelize.fn('COUNT', Sequelize.col('id')), 'assetCount'],
+      [Sequelize.fn('SUM', Sequelize.col('size')), 'totalBytes'],
+    ],
+    group: ['uploadedByUserId'],
+    order: [[Sequelize.literal('totalBytes'), 'DESC']],
+    limit: 10,
+    raw: true,
+  });
+
+  const uploaderIds = topUploadersRaw.map((row) => row.uploadedByUserId);
+  const uploaders = uploaderIds.length
+    ? await User.findAll({ where: { id: { [Op.in]: uploaderIds } }, attributes: ['id', 'username'], raw: true })
+    : [];
+  const userById = new Map(uploaders.map((u) => [u.id, u]));
+
+  return {
+    success: true,
+    stats: {
+      totalAssetCount: totalCount,
+      totalStoredBytes: Number(totalBytes) || 0,
+      orphanedAssetCount: orphanCount,
+      orphanedStoredBytes: Number(orphanBytes) || 0,
+      quotaConfig: {
+        maxFileBytes: MAX_IMAGE_BYTES,
+        userQuotaBytes: USER_QUOTA_BYTES,
+      },
+      largestAssets: topAssets.map((asset) => serializeMediaAsset(asset)),
+      largestUploaders: topUploadersRaw.map((row) => ({
+        userId: row.uploadedByUserId,
+        username: userById.get(row.uploadedByUserId)?.username || null,
+        assetCount: Number(row.assetCount) || 0,
+        totalBytes: Number(row.totalBytes) || 0,
+      })),
+    },
+  };
+}
+
+async function getAdminCleanupReport(user, query = {}) {
+  if (!user) return { success: false, status: 401, message: 'Authentication required.' };
+  if (user.role !== 'admin') return { success: false, status: 403, message: 'Admin access required.' };
+  const olderThanDays = Math.max(1, parseInt(query.olderThanDays, 10) || 14);
+  const markResult = await markOrphanMediaAssets();
+  const cleanupResult = await cleanupOrphanMediaAssets({ dryRun: true, olderThanDays });
+  return { success: true, report: { marked: markResult, cleanup: cleanupResult } };
 }
 
 module.exports = {
@@ -476,6 +756,10 @@ module.exports = {
   updateMediaAssetMetadata,
   deleteMediaAsset,
   serializeMediaAsset,
+  getUserQuotaSnapshot,
+  getReferenceSummaryForAssets,
+  getAdminMediaStats,
+  getAdminCleanupReport,
   markOrphanMediaAssets,
   cleanupOrphanMediaAssets,
 };
