@@ -70,6 +70,15 @@ select:-webkit-autofill:focus {
   }
 }
 
+/* Mobile bottom navigation safe spacing —
+   Adds bottom padding only on mobile (<md) to prevent content being
+   hidden behind the fixed MobileBottomNav bar. */
+@media (max-width: 767px) {
+  .mobile-safe-bottom {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* Modal Animations */
 @keyframes fadeIn {
   from {

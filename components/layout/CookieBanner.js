@@ -96,7 +96,7 @@ export default function CookieBanner() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="cookie-banner-title"
-      className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50"
+      className="fixed bottom-20 md:bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-96 z-50"
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4">
         <p id="cookie-banner-title" className="text-sm font-semibold text-gray-900">{t('banner_title')}</p>

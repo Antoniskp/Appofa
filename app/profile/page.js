@@ -253,7 +253,7 @@ function ProfileContent() {
         )}
       </div>
 
-      <div className="fixed bottom-0 inset-x-0 z-50 border-t border-gray-200 bg-white shadow-lg">
+      <div className="fixed bottom-16 md:bottom-0 inset-x-0 z-50 border-t border-gray-200 bg-white shadow-lg">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           {isDirty ? (
             <p className="text-sm text-amber-600 font-medium">● {tProfile('unsaved_changes')}</p>
