@@ -576,7 +576,7 @@ Appofa/
 | `/admin/messages/*` | Message admin (moderator applications show enriched **onboarding context**: goal, profile readiness %, email verification, home location, contribution summary — loaded lazily per message) |
 | `/admin/removal-requests` | Removal request admin |
 | `/admin/reports` | Report admin |
-| `/admin/onboarding` | **Phase 3** — Onboarding funnel analytics (admin-only): conversion table by goal × event type, abandonment count/rate, date range + goal filters |
+| `/admin/onboarding` | **Phase 3** — Onboarding funnel analytics (admin-only): conversion table by goal × event type, abandonment count/rate, date range + goal filters. Abandonment uses Sequelize ORM (no raw SQL) for PostgreSQL safety; date-only `to` includes full calendar day (23:59:59.999 UTC) |
 
 ### Static Pages (51 pages in `(statics)` layout)
 Informational content: about, mission, contact, contribute, instructions, FAQ, terms, privacy, rules, education guides, civic tools, platform info, categories, github-files, etc.
